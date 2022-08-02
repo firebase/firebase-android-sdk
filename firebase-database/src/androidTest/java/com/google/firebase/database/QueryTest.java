@@ -4549,6 +4549,49 @@ public class QueryTest {
   }
 
   @Test
+  public void testGetPropagatesEventsToListeners()
+      throws DatabaseException, InterruptedException, ExecutionException {
+    FirebaseApp writeApp =
+        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
+    // To ensure that we don't read the cached results, we need a separate app.
+    FirebaseApp readApp =
+        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
+    FirebaseDatabase readDb = FirebaseDatabase.getInstance(readApp);
+    FirebaseDatabase writeDb = FirebaseDatabase.getInstance(writeApp);
+    DatabaseReference writeNode = writeDb.getReference().push();
+    DatabaseReference readNode = IntegrationTestHelpers.translateReference(writeNode, readDb);
+    try {
+      Map<String, Object> toWrite =
+          new MapBuilder().put("foo1", "child1").put("foo2", "child2").build();
+      await(writeNode.setValue(toWrite));
+      Task<DataSnapshot> getTask = readNode.get();
+      AtomicBoolean receivedGetValue = new AtomicBoolean();
+      getTask.addOnCompleteListener(
+          new OnCompleteListener<DataSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DataSnapshot> task) {
+              DataSnapshot snapshot = task.getResult();
+              assertEquals(toWrite, snapshot.getValue());
+              receivedGetValue.set(true);
+            }
+          });
+      assertFalse(receivedGetValue.get());
+      DatabaseReference childRef = readNode.child("foo1");
+      new ReadFuture(
+              childRef,
+              events -> {
+                assertEquals(1, events.size());
+                assertEquals("child1", events.get(0).getSnapshot().getValue());
+                return true;
+              })
+          .timedGet();
+      await(getTask);
+    } catch (Exception e) {
+      fail("Exception occurred when attempting to test get event propagation" + e);
+    }
+  }
+
+  @Test
   public void testGetReturnsNullForEmptyNodeWhenOnline()
       throws DatabaseException, InterruptedException, ExecutionException {
     FirebaseApp app =
@@ -4611,6 +4654,7 @@ public class QueryTest {
   @Test
   public void testGetResolvesToCacheWhenOnlineAndParentListener()
       throws DatabaseException, InterruptedException {
+    // TODO(mtewani): Extract out this logic to a helper function.
     FirebaseApp writeApp =
         appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     // To ensure that we don't read the cached results, we need a separate app.

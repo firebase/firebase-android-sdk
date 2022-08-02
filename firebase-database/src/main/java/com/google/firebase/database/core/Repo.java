@@ -574,12 +574,19 @@ public class Repo implements PersistentConnection.Delegate {
                             new ValueEventRegistration(repo, listener, spec);
                         serverSyncTree.addEventRegistration(
                             eventRegistration, /*skipListenerSetup=*/ true);
+                        List<? extends Event> events;
                         if (spec.loadsAllData()) {
-                          serverSyncTree.applyServerOverwrite(spec.getPath(), serverNode);
+                          events = serverSyncTree.applyServerOverwrite(spec.getPath(), serverNode);
                         } else {
-                          serverSyncTree.applyTaggedQueryOverwrite(
-                              spec.getPath(), serverNode, getServerSyncTree().tagForQuery(spec));
+                          events =
+                              serverSyncTree.applyTaggedQueryOverwrite(
+                                  spec.getPath(),
+                                  serverNode,
+                                  getServerSyncTree().tagForQuery(spec));
                         }
+                        repo.postEvents(
+                            events); // to ensure that other listeners end up getting their cached
+                                     // events.
                         source.setResult(
                             InternalHelpers.createDataSnapshot(
                                 query.getRef(),
