@@ -35,4 +35,5 @@ jobs:
       - name: Run smoke tests
         run: |
           export ARTIFACTS=$RUNNER_TEMP
+          sudo ln -s $(which gcloud) /usr/bin/gcloud
           java -jar runner.jar smoke-tests/runner.config
