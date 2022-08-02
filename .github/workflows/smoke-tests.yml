@@ -32,8 +32,11 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v0
       - name: Download smoke tests runner
         run: curl $SMOKE_TESTS_RUNNER_JAR_URL --output runner.jar
+      - name: Add google-services.json
+        env:
+          SMOKE_TESTS_GOOGLE_SERVICES: ${{ secrets.SMOKE_TESTS_GOOGLE_SERVICES }}
+        run: echo $SMOKE_TESTS_GOOGLE_SERVICES | base64 -d > smoke-tests/google-services.json
       - name: Run smoke tests
         run: |
           export ARTIFACTS=$RUNNER_TEMP
-          which gcloud # sudo ln -s $(which gcloud) /usr/bin/gcloud
           java -jar runner.jar smoke-tests/runner.config
