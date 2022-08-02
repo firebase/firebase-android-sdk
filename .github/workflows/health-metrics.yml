@@ -35,7 +35,7 @@ jobs:
       - name: Run coverage tests (presubmit)
         if: ${{ github.event_name == 'pull_request' }}
         run: fireci coverage --pull-request
-      - name: Run coverage tests (postsubmit)
+      - name: Run coverage tests (post-submit)
         if: ${{ github.event_name == 'push' }}
         run: fireci coverage
 
@@ -71,6 +71,6 @@ jobs:
       - name: Run size tests (presubmit)
         if: ${{ github.event_name == 'pull_request' }}
         run: fireci binary_size --pull-request
-      - name: Run size tests (postsubmit)
+      - name: Run size tests (post-submit)
         if: ${{ github.event_name == 'push' }}
         run: fireci binary_size
