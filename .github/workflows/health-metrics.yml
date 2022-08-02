@@ -2,6 +2,9 @@ name: Health Metrics
 
 on: [ pull_request, push ]
 
+env:
+  GITHUB_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+
 jobs:
   coverage:
     name: Coverage

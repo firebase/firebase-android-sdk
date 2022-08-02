@@ -27,7 +27,7 @@ def post_report(test_report, metrics_service_url, access_token, metric_type):
   """Post a report to the metrics service backend."""
 
   endpoint = ''
-  if os.getenv('GITHUB_ACTIONS') == 'true':
+  if os.getenv('GITHUB_ACTIONS'):
     endpoint = _construct_request_endpoint_for_github_actions(metric_type)
   elif os.getenv('PROW_JOB_ID'):
     endpoint = _construct_request_endpoint_for_prow(metric_type)
@@ -53,8 +53,8 @@ def _construct_request_endpoint_for_github_actions(metric_type):
   endpoint = f'/repos/{repo}/commits/{commit}/{metric_type}'
   if event_name == 'pull_request':
     pull_request = os.getenv('GITHUB_PULL_REQUEST_NUMBER')
-    base_commit = os.getenv('GITHUB_PULL_REQUEST_BASE_SHA')
-    head_commit = os.getenv('GITHUB_PULL_REQUEST_HEAD_SHA')
+    base_commit = _get_commit_hash('HEAD^1')
+    head_commit = _get_commit_hash('HEAD^2')
     endpoint += f'&pull_request={pull_request}&base_commit={base_commit}&head_commit={head_commit}'
   else:
     branch = os.getenv('GITHUB_REF_NAME')
