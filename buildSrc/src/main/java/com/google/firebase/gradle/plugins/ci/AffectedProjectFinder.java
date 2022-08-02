@@ -75,19 +75,19 @@ public class AffectedProjectFinder {
       p = runtime.exec("git log --oneline --graph --decorate -10");
       lines = CharStreams.readLines(new InputStreamReader(p.getInputStream()));
       lines.forEach(System.out::println);
-      p = runtime.exec("echo HEAD@0 `git rev-parse HEAD@{0}`");
+      p = runtime.exec("echo HEAD@0 $(git rev-parse HEAD@{0})");
       lines = CharStreams.readLines(new InputStreamReader(p.getInputStream()));
       lines.forEach(System.out::println);
-      p = runtime.exec("echo HEAD@1 `git rev-parse HEAD@{1}`");
+      p = runtime.exec("echo HEAD@1 $(git rev-parse HEAD@{1})");
       lines = CharStreams.readLines(new InputStreamReader(p.getInputStream()));
       lines.forEach(System.out::println);
-      p = runtime.exec("echo HEAD `git rev-parse HEAD`");
+      p = runtime.exec("echo HEAD $(git rev-parse HEAD)");
       lines = CharStreams.readLines(new InputStreamReader(p.getInputStream()));
       lines.forEach(System.out::println);
-      p = runtime.exec("echo HEAD^1 `git rev-parse HEAD^1`");
+      p = runtime.exec("echo HEAD^1 $(git rev-parse HEAD^1)");
       lines = CharStreams.readLines(new InputStreamReader(p.getInputStream()));
       lines.forEach(System.out::println);
-      p = runtime.exec("echo HEAD^2 `git rev-parse HEAD^2`");
+      p = runtime.exec("echo HEAD^2 $(git rev-parse HEAD^2)");
       lines = CharStreams.readLines(new InputStreamReader(p.getInputStream()));
       lines.forEach(System.out::println);
       Process process =
