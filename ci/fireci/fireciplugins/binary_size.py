@@ -11,14 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import subprocess
 
 import click
 import glob
 import json
 import logging
 import os
-import re
 
 from fireci import ci_command
 from fireci import ci_utils
