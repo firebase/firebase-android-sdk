@@ -34,7 +34,8 @@ import java.util.concurrent.TimeoutException;
 public class ReadFuture implements Future<List<EventRecord>> {
 
   public interface CompletionCondition {
-    public boolean isComplete(List<EventRecord> events);
+    public boolean isComplete(List<EventRecord> events)
+        throws ExecutionException, InterruptedException;
   }
 
   private List<EventRecord> events = new ArrayList<EventRecord>();
@@ -66,6 +67,7 @@ public class ReadFuture implements Future<List<EventRecord>> {
               }
             } catch (Exception e) {
               exception = e;
+              ref.removeEventListener(valueEventListener);
               finish();
             }
           }
@@ -73,6 +75,7 @@ public class ReadFuture implements Future<List<EventRecord>> {
           @Override
           public void onCancelled(DatabaseError error) {
             wasCancelled = true;
+            ref.removeEventListener(valueEventListener);
             finish();
           }
         };
