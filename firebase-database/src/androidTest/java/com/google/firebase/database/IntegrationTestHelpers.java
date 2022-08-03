@@ -334,6 +334,14 @@ public class IntegrationTestHelpers {
     assertTrue("Operation timed out", success);
   }
 
+  public static DatabaseReference translateReference(DatabaseReference node, FirebaseDatabase db) {
+    return db.getReference().child(node.getPath().toString());
+  }
+
+  public static DataSnapshot referenceAtPath(DatabaseReference node, EventRecord record) {
+    return record.getSnapshot().child(node.getPath().toString());
+  }
+
   public static DataSnapshot getSnap(Query ref) throws InterruptedException {
 
     final Semaphore semaphore = new Semaphore(0);

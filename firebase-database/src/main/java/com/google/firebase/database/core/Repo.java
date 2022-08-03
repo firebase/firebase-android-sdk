@@ -514,12 +514,13 @@ public class Repo implements PersistentConnection.Delegate {
    */
   public Task<DataSnapshot> getValue(Query query) {
     TaskCompletionSource<DataSnapshot> source = new TaskCompletionSource<>();
+    final Repo repo = this;
     this.scheduleNow(
         new Runnable() {
           @Override
           public void run() {
             // Always check active-listener in-memory caches first. These are always at least as
-            // up to date as the persistence cache.
+            // up to date as the persistence cache
             Node serverValue = serverSyncTree.getServerValue(query.getSpec());
             if (serverValue != null) {
               source.setResult(
@@ -548,15 +549,44 @@ public class Repo implements PersistentConnection.Delegate {
                           source.setException(Objects.requireNonNull(task.getException()));
                         }
                       } else {
+                        /*
+                         * We need to replicate the behavior that occurs when running `once()`. In other words,
+                         * we need to create a new eventRegistration, register it with a view and then
+                         * overwrite the data at that location, and then remove the view.
+                         */
                         Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
-                        postEvents(
-                            serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
+                        QuerySpec spec = query.getSpec();
+                        // EventRegistrations require a listener to be attached, so a dummy
+                        // ValueEventListener was created.
+                        ValueEventListener listener =
+                            new ValueEventListener() {
+                              @Override
+                              public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                // noOp
+                              }
+
+                              @Override
+                              public void onCancelled(@NonNull DatabaseError error) {
+                                // noOp
+                              }
+                            };
+                        ValueEventRegistration eventRegistration =
+                            new ValueEventRegistration(repo, listener, spec);
+                        serverSyncTree.addEventRegistration(
+                            eventRegistration, /*skipListenerSetup=*/ true);
+                        if (spec.loadsAllData()) {
+                          serverSyncTree.applyServerOverwrite(spec.getPath(), serverNode);
+                        } else {
+                          serverSyncTree.applyTaggedQueryOverwrite(
+                              spec.getPath(), serverNode, getServerSyncTree().tagForQuery(spec));
+                        }
                         source.setResult(
                             InternalHelpers.createDataSnapshot(
                                 query.getRef(),
                                 IndexedNode.from(serverNode, query.getSpec().getIndex())));
+                        serverSyncTree.removeEventRegistration(
+                            eventRegistration, /*skipDedup=*/ true);
                       }
-                      serverSyncTree.setQueryInactive(query.getSpec());
                     });
           }
         });
