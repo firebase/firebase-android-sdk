@@ -42,7 +42,7 @@ _logger = logging.getLogger('fireci.binary_size')
   help='The URL to the metrics service, which persists data and calculates diff.'
 )
 @ci_command()
-def binary_size(pull_request, log, metrics_service_url, access_token):
+def binary_size(pull_request, log, metrics_service_url):
   """Produces and uploads binary size reports."""
 
   gradle.run('assembleAllForSmokeTests')
