@@ -79,9 +79,13 @@ public class ConfigAutoFetch {
 
   private String parseMessage(String message) {
     int left = 0;
-    while (left < message.length() && message.charAt(left) != '{') {left++;}
+    while (left < message.length() && message.charAt(left) != '{') {
+      left++;
+    }
     int right = message.length() - 1;
-    while (right >= 0 && message.charAt(right) != '}') {right--;}
+    while (right >= 0 && message.charAt(right) != '}') {
+      right--;
+    }
 
     return left >= right ? "" : message.substring(left, right + 1);
   }
@@ -140,7 +144,7 @@ public class ConfigAutoFetch {
               boolean isFeatureDisabled = jsonObject.getBoolean("featureDisabled");
               if (isFeatureDisabled) {
                 retryCallback.onError(
-                        new FirebaseRemoteConfigRealtimeUpdateStreamException("Realtime is disabled."));
+                    new FirebaseRemoteConfigRealtimeUpdateStreamException("Realtime is disabled."));
                 break;
               }
             }
