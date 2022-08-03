@@ -25,7 +25,10 @@ jobs:
           ANDROID_ROOT=/usr/local/lib/android
           ANDROID_SDK_ROOT=${ANDROID_ROOT}/sdk
           ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk-bundle
-          ln -sfn $ANDROID_SDK_ROOT/ndk/21.4.7075529 $ANDROID_NDK_ROOT
+          SDKMANAGER=${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager
+          echo "y" | $SDKMANAGER "ndk;21.4.7075529"
+          ln -sfn ${ANDROID_SDK_ROOT}/ndk/21.4.7075529 ${ANDROID_NDK_ROOT}
+          echo "ANDROID_NDK_HOME=${ANDROID_NDK_ROOT}" >> $GITHUB_ENV
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
@@ -61,7 +64,10 @@ jobs:
           ANDROID_ROOT=/usr/local/lib/android
           ANDROID_SDK_ROOT=${ANDROID_ROOT}/sdk
           ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk-bundle
-          ln -sfn $ANDROID_SDK_ROOT/ndk/21.4.7075529 $ANDROID_NDK_ROOT
+          SDKMANAGER=${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager
+          echo "y" | $SDKMANAGER "ndk;21.4.7075529"
+          ln -sfn ${ANDROID_SDK_ROOT}/ndk/21.4.7075529 ${ANDROID_NDK_ROOT}
+          echo "ANDROID_NDK_HOME=${ANDROID_NDK_ROOT}" >> $GITHUB_ENV
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
