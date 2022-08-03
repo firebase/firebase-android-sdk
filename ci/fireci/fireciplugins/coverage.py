@@ -41,13 +41,8 @@ _logger = logging.getLogger('fireci.coverage')
   default='https://api.firebase-sdk-health-metrics.com',
   help='The URL to the metrics service, which persists data and calculates diff.'
 )
-@click.option(
-  '--access-token',
-  default=ci_utils.gcloud_identity_token,
-  help='The access token, used to authorize http requests to the metrics service.'
-)
 @ci_command()
-def coverage(pull_request, log, metrics_service_url, access_token):
+def coverage(pull_request, log, metrics_service_url):
   """Produces and uploads code coverage reports."""
 
   coverage_task = 'checkCoverageChanged' if pull_request else 'checkCoverage'
@@ -56,6 +51,7 @@ def coverage(pull_request, log, metrics_service_url, access_token):
   test_results = _parse_xml_reports()
   test_report = {'coverages': test_results, 'log': log}
 
+  access_token = ci_utils.gcloud_identity_token()
   uploader.post_report(test_report, metrics_service_url, access_token, 'coverage')
 
   if process.returncode != 0:
@@ -73,7 +69,7 @@ def _parse_xml_reports():
     sdk = re.search(r'([^/]*)\.xml', xml_report).group(1)
     report = ElementTree.parse(xml_report).getroot()
     sdk_coverage = _calculate_coverage(report)
-    test_results.append({'sdk': sdk, 'type': '', 'value': sdk_coverage})
+    test_results.append({'sdk': sdk, 'filename': '', 'coverage': sdk_coverage})
 
     for source_file in report.findall('.//sourcefile'):
       file_name = source_file.attrib['name']

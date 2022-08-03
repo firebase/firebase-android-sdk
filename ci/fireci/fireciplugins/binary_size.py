@@ -41,11 +41,6 @@ _logger = logging.getLogger('fireci.binary_size')
   default='https://api.firebase-sdk-health-metrics.com',
   help='The URL to the metrics service, which persists data and calculates diff.'
 )
-@click.option(
-  '--access-token',
-  default=ci_utils.gcloud_identity_token,
-  help='The access token, used to authorize http requests to the metrics service.'
-)
 @ci_command()
 def binary_size(pull_request, log, metrics_service_url, access_token):
   """Produces and uploads binary size reports."""
@@ -62,6 +57,7 @@ def binary_size(pull_request, log, metrics_service_url, access_token):
   test_results = _measure_aar_sizes(artifacts) + _measure_apk_sizes()
   test_report = {'sizes': test_results, 'log': log}
 
+  access_token = ci_utils.gcloud_identity_token()
   uploader.post_report(test_report, metrics_service_url, access_token, 'size')
 
   if process.returncode != 0:

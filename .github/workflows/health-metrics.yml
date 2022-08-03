@@ -29,7 +29,8 @@ jobs:
           echo "y" | $SDKMANAGER "ndk;21.4.7075529"
           ln -sfn ${ANDROID_SDK_ROOT}/ndk/21.4.7075529 ${ANDROID_NDK_ROOT}
           echo "ANDROID_NDK_HOME=${ANDROID_NDK_ROOT}" >> $GITHUB_ENV
-      - uses: actions/setup-python@v4
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
       - uses: google-github-actions/auth@v0
@@ -68,7 +69,8 @@ jobs:
           echo "y" | $SDKMANAGER "ndk;21.4.7075529"
           ln -sfn ${ANDROID_SDK_ROOT}/ndk/21.4.7075529 ${ANDROID_NDK_ROOT}
           echo "ANDROID_NDK_HOME=${ANDROID_NDK_ROOT}" >> $GITHUB_ENV
-      - uses: actions/setup-python@v4
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
       - uses: google-github-actions/auth@v0
