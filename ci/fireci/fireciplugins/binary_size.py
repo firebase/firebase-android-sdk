@@ -41,8 +41,13 @@ _logger = logging.getLogger('fireci.binary_size')
   default='https://api.firebase-sdk-health-metrics.com',
   help='The URL to the metrics service, which persists data and calculates diff.'
 )
+@click.option(
+  '--access-token',
+  default=ci_utils.gcloud_identity_token,
+  help='The access token, used to authorize http requests to the metrics service.'
+)
 @ci_command()
-def binary_size(pull_request, log, metrics_service_url):
+def binary_size(pull_request, log, metrics_service_url, access_token):
   """Produces and uploads binary size reports."""
 
   gradle.run('assembleAllForSmokeTests')
