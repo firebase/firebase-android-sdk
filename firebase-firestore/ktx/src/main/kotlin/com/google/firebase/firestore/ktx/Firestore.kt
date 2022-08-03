@@ -18,12 +18,7 @@ import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldPath
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreSettings
-import com.google.firebase.firestore.QueryDocumentSnapshot
-import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.*
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 
@@ -153,6 +148,30 @@ fun firestoreSettings(init: FirebaseFirestoreSettings.Builder.() -> Unit): Fireb
     builder.init()
     return builder.build()
 }
+
+inline fun <reified T> GroupSnapshot.getField(field: String): T? = get(field, T::class.java)
+
+inline fun <reified T> GroupSnapshot.getField(
+        field: String,
+        serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior
+): T? =
+        get(field, T::class.java, serverTimestampBehavior)
+
+inline fun <reified T> GroupSnapshot.getField(fieldPath: FieldPath): T? = get(fieldPath, T::class.java)
+
+inline fun <reified T> GroupSnapshot.getField(
+        fieldPath: FieldPath,
+        serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior
+): T? =
+        get(fieldPath, T::class.java, serverTimestampBehavior)
+
+inline fun <reified T> AggregateSnapshot.getField(field: AggregateField): T? = get(field, T::class.java)
+
+inline fun <reified T> AggregateSnapshot.getField(
+        field: AggregateField,
+        serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior
+): T? =
+        get(field, T::class.java, serverTimestampBehavior)
 
 internal const val LIBRARY_NAME: String = "fire-fst-ktx"
 
