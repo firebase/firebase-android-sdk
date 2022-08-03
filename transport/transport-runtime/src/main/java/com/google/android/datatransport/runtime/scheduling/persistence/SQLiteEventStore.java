@@ -25,6 +25,7 @@ import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.android.datatransport.Encoding;
+import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
@@ -338,7 +339,19 @@ public class SQLiteEventStore
   public Iterable<PersistedEvent> loadBatch(TransportContext transportContext) {
     return inTransaction(
         db -> {
-          List<PersistedEvent> events = loadEvents(db, transportContext);
+          List<PersistedEvent> events = loadEvents(db, transportContext, config.getLoadBatchSize());
+          for (Priority p : Priority.values()) {
+            if (p == transportContext.getPriority()) {
+              continue;
+            }
+            int space = config.getLoadBatchSize() - events.size();
+            if (space <= 0) {
+              break;
+            }
+            List<PersistedEvent> additional =
+                loadEvents(db, transportContext.withPriority(p), space);
+            events.addAll(additional);
+          }
           return join(events, loadMetadata(db, events));
         });
   }
@@ -415,7 +428,8 @@ public class SQLiteEventStore
   }
 
   /** Loads all events for a backend. */
-  private List<PersistedEvent> loadEvents(SQLiteDatabase db, TransportContext transportContext) {
+  private List<PersistedEvent> loadEvents(
+      SQLiteDatabase db, TransportContext transportContext, int limit) {
     List<PersistedEvent> events = new ArrayList<>();
     Long contextId = getTransportContextId(db, transportContext);
     if (contextId == null) {
@@ -440,7 +454,7 @@ public class SQLiteEventStore
             null,
             null,
             null,
-            String.valueOf(config.getLoadBatchSize())),
+            String.valueOf(limit)),
         cursor -> {
           while (cursor.moveToNext()) {
             long id = cursor.getLong(0);
