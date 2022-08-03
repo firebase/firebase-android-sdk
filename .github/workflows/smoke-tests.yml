@@ -38,7 +38,9 @@ jobs:
       - name: Add google-services.json
         env:
           SMOKE_TESTS_GOOGLE_SERVICES: ${{ secrets.SMOKE_TESTS_GOOGLE_SERVICES }}
-        run: echo $SMOKE_TESTS_GOOGLE_SERVICES | base64 -d > /smoke-tests-google-services/google-services.json
+        run: |
+          mkdir /smoke-tests-google-services
+          echo $SMOKE_TESTS_GOOGLE_SERVICES | base64 -d > /smoke-tests-google-services/google-services.json
       - name: Run smoke tests
         run: |
           export ARTIFACTS=$RUNNER_TEMP
