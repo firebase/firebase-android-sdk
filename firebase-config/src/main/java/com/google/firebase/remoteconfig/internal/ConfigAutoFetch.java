@@ -77,6 +77,15 @@ public class ConfigAutoFetch {
     }
   }
 
+  private String parseMessage(String message) {
+    int left = 0;
+    while (left < message.length() && message.charAt(left) != '{') {left++;}
+    int right = message.length() - 1;
+    while (right >= 0 && message.charAt(right) != '}') {right--;}
+
+    return left >= right ? "" : message.substring(left, right + 1);
+  }
+
   // Check connection and establish InputStream
   @VisibleForTesting
   public void listenForNotifications() {
@@ -106,7 +115,7 @@ public class ConfigAutoFetch {
     try {
       scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
     } catch (InterruptedException ex) {
-      Log.i(TAG, "Thread Interrupted.");
+      Log.d(TAG, "Thread Interrupted.");
     }
   }
 
@@ -114,31 +123,35 @@ public class ConfigAutoFetch {
   private void handleNotifications(InputStream inputStream) throws IOException {
     BufferedReader reader = new BufferedReader((new InputStreamReader(inputStream, "utf-8")));
     String message;
+    String fullMessage = "";
     while ((message = reader.readLine()) != null) {
-      if (!message.contains("latestTemplateVersionNumber")
-          && !message.contains("featureDisabled")) {
-        continue;
-      }
+      fullMessage += message;
 
-      long targetTemplateVersion = configFetchHandler.getTemplateVersionNumber();
-      try {
-        JSONObject jsonObject =
-            new JSONObject("{" + message.substring(0, message.length() - 1) + " }");
-        if (jsonObject.has("latestTemplateVersionNumber")) {
-          targetTemplateVersion = jsonObject.getLong("latestTemplateVersionNumber");
-        } else {
-          boolean isFeatureDisabled = jsonObject.getBoolean("featureDisabled");
-          if (isFeatureDisabled) {
-            retryCallback.onError(
-                new FirebaseRemoteConfigRealtimeUpdateStreamException("Realtime is disabled."));
-            break;
+      if (message.contains("}")) {
+        fullMessage = parseMessage(fullMessage);
+        if (!fullMessage.isEmpty()) {
+          long targetTemplateVersion = configFetchHandler.getTemplateVersionNumber();
+          try {
+            JSONObject jsonObject = new JSONObject(fullMessage);
+            if (jsonObject.has("latestTemplateVersionNumber")) {
+              targetTemplateVersion = jsonObject.getLong("latestTemplateVersionNumber");
+            }
+            if (jsonObject.has("featureDisabled")) {
+              boolean isFeatureDisabled = jsonObject.getBoolean("featureDisabled");
+              if (isFeatureDisabled) {
+                retryCallback.onError(
+                        new FirebaseRemoteConfigRealtimeUpdateStreamException("Realtime is disabled."));
+                break;
+              }
+            }
+          } catch (JSONException ex) {
+            Log.e(TAG, "Unable to parse latest config update message." + ex.toString());
           }
-        }
-      } catch (JSONException ex) {
-        Log.i(TAG, "Unable to parse latest config update message." + ex.toString());
-      }
 
-      autoFetch(FETCH_RETRY, targetTemplateVersion);
+          fullMessage = "";
+          autoFetch(FETCH_RETRY, targetTemplateVersion);
+        }
+      }
     }
 
     reader.close();
@@ -181,7 +194,7 @@ public class ConfigAutoFetch {
           if (newTemplateVersion >= targetVersion) {
             executeAllListenerCallbacks();
           } else {
-            Log.i(
+            Log.d(
                 TAG,
                 "Fetched template version is the same as SDK's current version."
                     + " Retrying fetch.");

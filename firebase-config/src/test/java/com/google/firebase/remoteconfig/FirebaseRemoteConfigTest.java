@@ -1111,7 +1111,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockHttpURLConnection.getInputStream())
         .thenReturn(
             new ByteArrayInputStream(
-                "\"latestTemplateVersionNumber\": 1".getBytes(StandardCharsets.UTF_8)));
+                "{ \"latestTemplateVersionNumber\": 1 }".getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
@@ -1139,7 +1139,8 @@ public final class FirebaseRemoteConfigTest {
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpURLConnection.getInputStream())
         .thenReturn(
-            new ByteArrayInputStream("\"featureDisabled\": true".getBytes(StandardCharsets.UTF_8)));
+            new ByteArrayInputStream(
+                "{ \"featureDisabled\": true }".getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
@@ -1153,7 +1154,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockHttpURLConnection.getInputStream())
         .thenReturn(
             new ByteArrayInputStream(
-                "\"featureDisabled\": false".getBytes(StandardCharsets.UTF_8)));
+                "{ \"featureDisabled\": false }".getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
