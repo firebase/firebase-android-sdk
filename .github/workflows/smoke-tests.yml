@@ -43,6 +43,8 @@ jobs:
           sudo mkdir /smoke-tests-google-services
           sudo mv google-services.json /smoke-tests-google-services
       - name: Run smoke tests
+        env:
+          Firebase_CI: 1
         run: |
           export ARTIFACTS=$RUNNER_TEMP
           java -jar runner.jar smoke-tests/runner.config
