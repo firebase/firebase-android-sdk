@@ -31,7 +31,7 @@ import com.google.firebase.remoteconfig.internal.ConfigCacheClient
 import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
-import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient
+import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -139,7 +139,7 @@ class ConfigTests : BaseTestCase() {
             fetchHandler = mock(ConfigFetchHandler::class.java),
             getHandler = mockGetHandler,
             frcMetadata = mock(ConfigMetadataClient::class.java),
-            realtimeClient = mock(ConfigRealtimeHttpClient::class.java)
+            realtimeClient = mock(ConfigRealtimeHandler::class.java)
         )
 
         `when`(mockGetHandler.getValue("KEY")).thenReturn(StringRemoteConfigValue("non default value"))

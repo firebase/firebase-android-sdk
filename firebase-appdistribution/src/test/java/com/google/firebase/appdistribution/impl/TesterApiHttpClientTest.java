@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution.impl;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.appdistribution.impl.TestUtils.getTestFileInputStream;
 import static com.google.firebase.appdistribution.impl.TestUtils.readTestFile;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
@@ -47,7 +48,7 @@ public class TesterApiHttpClientTest {
 
   private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
   private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
-  private static final String TEST_PROJECT_ID = "777777777777";
+  private static final String TEST_PROJECT_ID = "project-id";
   private static final String TEST_AUTH_TOKEN = "fad.auth.token";
   private static final String INVALID_RESPONSE = "InvalidResponse";
   private static final String TEST_PATH = "some/url/path";
@@ -154,6 +155,27 @@ public class TesterApiHttpClientTest {
     assertThat(e.getErrorCode()).isEqualTo(Status.AUTHENTICATION_FAILURE);
     assertThat(e.getMessage()).contains(TAG);
     assertThat(e.getMessage()).contains(ErrorMessages.AUTHORIZATION_ERROR);
+    verify(mockHttpsURLConnection).disconnect();
+  }
+
+  @Test
+  public void makeGetRequest_whenResponseFailsWithApiDisabled_throwsError() throws Exception {
+    InputStream response = getTestFileInputStream("apiDisabledResponse.json");
+    when(mockHttpsURLConnection.getErrorStream()).thenReturn(response);
+    when(mockHttpsURLConnection.getResponseCode()).thenReturn(403);
+
+    FirebaseAppDistributionException e =
+        assertThrows(
+            FirebaseAppDistributionException.class,
+            () -> testerApiHttpClient.makeGetRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN));
+
+    assertThat(e.getErrorCode()).isEqualTo(Status.API_DISABLED);
+    assertThat(e.getMessage()).contains(TAG);
+    assertThat(e.getMessage()).contains(ErrorMessages.API_DISABLED);
+    assertThat(e.getMessage()).contains("Google developers console API activation");
+    assertThat(e.getMessage())
+        .contains(
+            "https://console.developers.google.com/apis/api/firebaseapptesters.googleapis.com/overview?project=123456789");
     verify(mockHttpsURLConnection).disconnect();
   }
 

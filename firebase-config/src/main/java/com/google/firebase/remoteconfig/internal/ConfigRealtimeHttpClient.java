@@ -16,13 +16,12 @@ package com.google.firebase.remoteconfig.internal;
 
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.REALTIME_REGEX_URL;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.RequestFieldKey.SDK_VERSION;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.NonNull;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.tasks.Task;
@@ -30,9 +29,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import com.google.firebase.remoteconfig.BuildConfig;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
-import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateStreamException;
 import java.io.BufferedOutputStream;
@@ -42,14 +39,10 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -69,16 +62,13 @@ public class ConfigRealtimeHttpClient {
   private final Set<ConfigUpdateListener> listeners;
 
   @GuardedBy("this")
-  private Future<?> autoFetchTask;
+  private HttpURLConnection httpURLConnection;
 
   @GuardedBy("this")
   private int httpRetriesRemaining;
 
   @GuardedBy("this")
   private long httpRetrySeconds;
-
-  @GuardedBy("this")
-  private boolean isFeatureDisabled;
 
   private final int ORIGINAL_RETRIES = 7;
 
@@ -88,9 +78,7 @@ public class ConfigRealtimeHttpClient {
   private final FirebaseInstallationsApi firebaseInstallations;
   private final Context context;
   private final String namespace;
-  private final ExecutorService executorService;
   private final Random random;
-  private final String appId;
 
   public ConfigRealtimeHttpClient(
       FirebaseApp firebaseApp,
@@ -98,12 +86,11 @@ public class ConfigRealtimeHttpClient {
       ConfigFetchHandler configFetchHandler,
       Context context,
       String namespace,
-      ExecutorService executorService) {
+      Set<ConfigUpdateListener> listeners) {
 
-    this.listeners = new LinkedHashSet<>();
-    this.autoFetchTask = null;
+    this.listeners = listeners;
+    this.httpURLConnection = null;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-    this.isFeatureDisabled = false;
 
     // Retry parameters
     this.random = new Random();
@@ -114,8 +101,6 @@ public class ConfigRealtimeHttpClient {
     this.firebaseInstallations = firebaseInstallations;
     this.context = context;
     this.namespace = namespace;
-    this.executorService = executorService;
-    this.appId = firebaseApp.getOptions().getApplicationId();
   }
 
   /**
@@ -189,8 +174,6 @@ public class ConfigRealtimeHttpClient {
     body.put("namespace", this.namespace);
     body.put(
         "lastKnownVersionNumber", Long.toString(configFetchHandler.getTemplateVersionNumber()));
-    body.put("appId", appId);
-    body.put(SDK_VERSION, BuildConfig.VERSION_NAME);
     return new JSONObject(body);
   }
 
@@ -209,10 +192,6 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  private synchronized void setBackendStateToDisabled() {
-    isFeatureDisabled = true;
-  }
-
   private synchronized int getRetryMultiplier() {
     // Return retry multiplier between range of 5 and 2.
     return random.nextInt(3) + 2;
@@ -224,7 +203,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized boolean canMakeHttpStreamConnection() {
-    return !listeners.isEmpty() && autoFetchTask == null && !isFeatureDisabled;
+    return !listeners.isEmpty() && httpURLConnection == null;
   }
 
   private String getRealtimeURL(String namespace) {
@@ -270,7 +249,7 @@ public class ConfigRealtimeHttpClient {
           new Runnable() {
             @Override
             public void run() {
-              beginRealtime();
+              beginRealtimeHttpStream();
             }
           },
           httpRetrySeconds,
@@ -282,37 +261,33 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  private synchronized Future<?> startAutoFetch(HttpURLConnection httpURLConnection) {
+  private synchronized ConfigAutoFetch startAutoFetch(HttpURLConnection httpURLConnection) {
     ConfigUpdateListener retryCallback =
         new ConfigUpdateListener() {
           @Override
           public void onEvent() {
-            pauseRealtime();
+            closeRealtimeHttpStream();
             retryHTTPConnection();
           }
 
           @Override
-          public void onError(Exception error) {
-            if (error != null) {
-              setBackendStateToDisabled();
-            }
-          }
+          public void onError(Exception error) {}
         };
 
     ConfigAutoFetch autoFetch =
         new ConfigAutoFetch(httpURLConnection, configFetchHandler, listeners, retryCallback);
-    FutureTask<String> futureTask = new autoFetchFutureTask(autoFetch, httpURLConnection);
-    return executorService.submit(futureTask);
+    return autoFetch;
   }
 
   // Kicks off Http stream listening and autofetch
-  private synchronized void beginRealtime() {
+  @SuppressLint("VisibleForTests")
+  synchronized void beginRealtimeHttpStream() {
     if (canMakeHttpStreamConnection()) {
-      HttpURLConnection httpURLConnection = makeHttpConnection();
-
+      this.httpURLConnection = makeHttpConnection();
       if (httpURLConnection != null) {
         resetRetryParameters();
-        autoFetchTask = startAutoFetch(httpURLConnection);
+        ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
+        configAutoFetch.listenForNotifications();
       } else {
         retryHTTPConnection();
       }
@@ -320,64 +295,10 @@ public class ConfigRealtimeHttpClient {
   }
 
   // Pauses Http stream listening
-  private synchronized void pauseRealtime() {
-    if (autoFetchTask != null && !autoFetchTask.isCancelled()) {
-      autoFetchTask.cancel(true);
-      autoFetchTask = null;
+  synchronized void closeRealtimeHttpStream() {
+    if (httpURLConnection != null) {
+      this.httpURLConnection.disconnect();
+      this.httpURLConnection = null;
     }
-  }
-
-  @NonNull
-  public synchronized ConfigUpdateListenerRegistration addRealtimeConfigUpdateListener(
-      @NonNull ConfigUpdateListener configUpdateListener) {
-    listeners.add(configUpdateListener);
-    if (configUpdateListener.getClass() != EmptyConfigUpdateListener.class
-        || listeners.size() > 1) {
-      beginRealtime();
-    }
-    return new ConfigUpdateListenerRegistrationInternal(configUpdateListener);
-  }
-
-  private synchronized void removeRealtimeConfigUpdateListener(ConfigUpdateListener listener) {
-    listeners.remove(listener);
-    if (listeners.isEmpty()) {
-      pauseRealtime();
-    }
-  }
-
-  private class autoFetchFutureTask extends FutureTask<String> {
-    private final HttpURLConnection httpURLConnection;
-
-    public autoFetchFutureTask(Runnable runnable, HttpURLConnection httpURLConnection) {
-      super(runnable, null);
-      this.httpURLConnection = httpURLConnection;
-    }
-
-    @Override
-    protected void done() {
-      httpURLConnection.disconnect();
-    }
-  }
-
-  public class ConfigUpdateListenerRegistrationInternal
-      implements ConfigUpdateListenerRegistration {
-    private final ConfigUpdateListener listener;
-
-    public ConfigUpdateListenerRegistrationInternal(ConfigUpdateListener listener) {
-      this.listener = listener;
-    }
-
-    public void remove() {
-      removeRealtimeConfigUpdateListener(listener);
-    }
-  }
-
-  public static class EmptyConfigUpdateListener implements ConfigUpdateListener {
-
-    @Override
-    public void onEvent() {}
-
-    @Override
-    public void onError(@NonNull Exception error) {}
   }
 }

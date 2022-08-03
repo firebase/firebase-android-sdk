@@ -48,16 +48,16 @@ public class InfoTest {
   public void canGetAReferenceToDotInfoNodes() throws DatabaseException {
     DatabaseReference root = getRootNode();
 
-    assertEquals(IntegrationTestValues.getNamespace() + "/.info", root.child(".info").toString());
+    assertEquals(IntegrationTestValues.getDatabaseUrl() + "/.info", root.child(".info").toString());
     assertEquals(
-        IntegrationTestValues.getNamespace() + "/.info/foo", root.child(".info/foo").toString());
+        IntegrationTestValues.getDatabaseUrl() + "/.info/foo", root.child(".info/foo").toString());
 
     DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
     DatabaseReference ref =
-        new DatabaseReference(IntegrationTestValues.getNamespace() + "/.info", ctx);
-    assertEquals(IntegrationTestValues.getNamespace() + "/.info", ref.toString());
-    ref = new DatabaseReference(IntegrationTestValues.getNamespace() + "/.info/foo", ctx);
-    assertEquals(IntegrationTestValues.getNamespace() + "/.info/foo", ref.toString());
+        new DatabaseReference(IntegrationTestValues.getDatabaseUrl() + "/.info", ctx);
+    assertEquals(IntegrationTestValues.getDatabaseUrl() + "/.info", ref.toString());
+    ref = new DatabaseReference(IntegrationTestValues.getDatabaseUrl() + "/.info/foo", ctx);
+    assertEquals(IntegrationTestValues.getDatabaseUrl() + "/.info/foo", ref.toString());
   }
 
   @Test

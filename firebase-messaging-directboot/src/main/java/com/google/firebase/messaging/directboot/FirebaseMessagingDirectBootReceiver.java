@@ -14,20 +14,20 @@
 package com.google.firebase.messaging.directboot;
 
 import android.content.Context;
-import android.content.Intent;
 import android.util.Log;
-import androidx.legacy.content.WakefulBroadcastReceiver;
-import com.google.android.gms.common.util.concurrent.NamedThreadFactory;
-import com.google.firebase.iid.FcmBroadcastProcessor;
-import com.google.firebase.iid.ServiceStarter;
-import com.google.firebase.messaging.directboot.threads.PoolableExecutors;
-import com.google.firebase.messaging.directboot.threads.ThreadPriority;
-import java.util.concurrent.ExecutorService;
+import androidx.annotation.NonNull;
+import androidx.annotation.WorkerThread;
+import com.google.android.gms.cloudmessaging.CloudMessage;
+import com.google.android.gms.cloudmessaging.CloudMessagingReceiver;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.messaging.FcmBroadcastProcessor;
+import com.google.firebase.messaging.ServiceStarter;
+import java.util.concurrent.ExecutionException;
 
 /**
- * WakefulBroadcastReceiver that receives FirebaseMessaging events and delivers them to the
- * application-specific {@link com.google.firebase.iid.FirebaseInstanceIdService} subclass in direct
- * boot mode.
+ * BroadcastReceiver that receives FirebaseMessaging events and delivers them to the
+ * application-specific {@link com.google.firebase.messaging.FirebaseMessagingService} subclass in
+ * direct boot mode.
  *
  * <p>This receiver is automatically added to your application's manifest file via manifest merge.
  * If necessary it can be manually declared via:
@@ -49,58 +49,20 @@ import java.util.concurrent.ExecutorService;
  *
  * @hide
  */
-public final class FirebaseMessagingDirectBootReceiver extends WakefulBroadcastReceiver {
+public final class FirebaseMessagingDirectBootReceiver extends CloudMessagingReceiver {
 
   /** TAG for log statements coming from FCM */
   static final String TAG = "FCM";
 
-  /** Action for FCM direct boot message intents */
-  private static final String ACTION_DIRECT_BOOT_REMOTE_INTENT =
-      "com.google.firebase.messaging.RECEIVE_DIRECT_BOOT";
-
-  /** All broadcasts get processed on this executor. */
-  private final ExecutorService processorExecutor =
-      PoolableExecutors.factory()
-          .newSingleThreadExecutor(
-              new NamedThreadFactory("fcm-db-intent-handle"), ThreadPriority.LOW_POWER);
-
+  /** @hide */
   @Override
-  public void onReceive(Context context, Intent intent) {
-    if (intent == null) {
-      return;
+  @WorkerThread
+  protected int onMessageReceive(@NonNull Context context, @NonNull CloudMessage message) {
+    try {
+      return Tasks.await(new FcmBroadcastProcessor(context).process(message.getIntent()));
+    } catch (ExecutionException | InterruptedException e) {
+      Log.e(TAG, "Failed to send message to service.", e);
+      return ServiceStarter.ERROR_UNKNOWN;
     }
-    if (!ACTION_DIRECT_BOOT_REMOTE_INTENT.equals(intent.getAction())) {
-      Log.d(TAG, "Unexpected intent: " + intent.getAction());
-      return;
-    }
-
-    // Just pass the intent to the service mostly unchanged.
-    // Clear the component and ensure package name is set so that the standard dispatching
-    // mechanism will find the right service in the app.
-    intent.setComponent(null);
-    intent.setPackage(context.getPackageName());
-
-    // We don't actually want to process this broadcast on the main thread, so we're going to use
-    // goAsync to deal with this in the background. Unfortunately, we need to check whether the
-    // broadcast was ordered (and thus needs a result) before calling goAsync, because once we've
-    // called goAsync then isOrderedBroadcast will always return false.
-    boolean needsResult = isOrderedBroadcast();
-    PendingResult pendingBroadcastResult = goAsync();
-
-    new FcmBroadcastProcessor(context, processorExecutor)
-        .process(intent)
-        .addOnCompleteListener(
-            processorExecutor,
-            resultCodeTask -> {
-              // If we call setResultCode on a non-ordered broadcast it'll throw, so only set the
-              // result if the broadcast was ordered
-              if (needsResult) {
-                pendingBroadcastResult.setResultCode(
-                    resultCodeTask.isSuccessful()
-                        ? resultCodeTask.getResult()
-                        : ServiceStarter.ERROR_UNKNOWN);
-              }
-              pendingBroadcastResult.finish();
-            });
   }
 }

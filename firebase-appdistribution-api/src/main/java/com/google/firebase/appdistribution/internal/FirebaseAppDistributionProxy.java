@@ -71,9 +71,4 @@ public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
   public UpdateTask updateApp() {
     return delegate.updateApp();
   }
-
-  @Override
-  public void collectAndSendFeedback() {
-    delegate.collectAndSendFeedback();
-  }
 }

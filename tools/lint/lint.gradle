@@ -19,6 +19,7 @@ plugins {
 def lintVersion = '26.4.1'
 
 dependencies {
+  compileOnly "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
   compileOnly "com.android.tools.lint:lint-api:$lintVersion"
   compileOnly "com.android.tools.lint:lint-checks:$lintVersion"
 

@@ -1,0 +1,27 @@
+{
+  "error": {
+    "code": 403,
+    "message": "Firebase App Testers API has not been used in project 123456789 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/firebaseapptesters.googleapis.com/overview?project=123456789 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.",
+    "status": "PERMISSION_DENIED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.Help",
+        "links": [
+          {
+            "description": "Google developers console API activation",
+            "url": "https://console.developers.google.com/apis/api/firebaseapptesters.googleapis.com/overview?project=123456789"
+          }
+        ]
+      },
+      {
+        "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+        "reason": "SERVICE_DISABLED",
+        "domain": "googleapis.com",
+        "metadata": {
+          "consumer": "projects/123456789",
+          "service": "firebaseapptesters.googleapis.com"
+        }
+      }
+    ]
+  }
+}
