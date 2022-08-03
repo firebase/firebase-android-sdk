@@ -46,5 +46,6 @@ jobs:
         env:
           Firebase_CI: 1
         run: |
+          echo $Firebase_CI
           export ARTIFACTS=$RUNNER_TEMP
           java -jar runner.jar smoke-tests/runner.config
