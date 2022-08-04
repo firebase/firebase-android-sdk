@@ -45,7 +45,12 @@ jobs:
       - name: Run smoke tests
         env:
           Firebase_CI: 1
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: firebase-android-sdk
+          PULL_NUMBER: ${{ github.event.pull_request.number }}
+          JOB_NAME: smoke-tests
+          BUILD_ID: ${{ github.run_id }}
         run: |
-          echo $Firebase_CI
+          echo "Firebase_CI: $Firebase_CI"
           export ARTIFACTS=$RUNNER_TEMP
           java -jar runner.jar smoke-tests/runner.config
