@@ -8,6 +8,7 @@ env:
 jobs:
   coverage:
     name: Coverage
+    if: (github.repository == 'Firebase/firebase-android-sdk' && github.event_name == 'push') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -48,6 +49,7 @@ jobs:
 
   size:
     name: Size
+    if: (github.repository == 'Firebase/firebase-android-sdk' && github.event_name == 'push') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
