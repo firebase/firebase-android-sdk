@@ -50,6 +50,7 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
   private final List<Provider<ComponentRegistrar>> unprocessedRegistrarProviders;
   private final EventBus eventBus;
   private final AtomicReference<Boolean> eagerComponentsInitializedWith = new AtomicReference<>();
+  private final ComponentRegistrarProcessor componentRegistrarProcessor;
 
   /**
    * Creates an instance of {@link ComponentRuntime} for the provided {@link ComponentRegistrar}s
@@ -62,7 +63,11 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
       Executor defaultEventExecutor,
       Iterable<ComponentRegistrar> registrars,
       Component<?>... additionalComponents) {
-    this(defaultEventExecutor, toProviders(registrars), Arrays.asList(additionalComponents));
+    this(
+        defaultEventExecutor,
+        toProviders(registrars),
+        Arrays.asList(additionalComponents),
+        ComponentRegistrarProcessor.NOOP);
   }
 
   /** A builder for creating {@link ComponentRuntime} instances. */
@@ -73,8 +78,10 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
   private ComponentRuntime(
       Executor defaultEventExecutor,
       Iterable<Provider<ComponentRegistrar>> registrars,
-      Collection<Component<?>> additionalComponents) {
+      Collection<Component<?>> additionalComponents,
+      ComponentRegistrarProcessor componentRegistrarProcessor) {
     eventBus = new EventBus(defaultEventExecutor);
+    this.componentRegistrarProcessor = componentRegistrarProcessor;
 
     List<Component<?>> componentsToAdd = new ArrayList<>();
 
@@ -106,7 +113,7 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
         try {
           ComponentRegistrar registrar = provider.get();
           if (registrar != null) {
-            componentsToAdd.addAll(registrar.getComponents());
+            componentsToAdd.addAll(componentRegistrarProcessor.processRegistrar(registrar));
             iterator.remove();
           }
         } catch (InvalidRegistrarException ex) {
@@ -218,9 +225,12 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
       if (!lazySetMap.containsKey(entry.getKey())) {
         lazySetMap.put(entry.getKey(), LazySet.fromCollection(entry.getValue()));
       } else {
+        @SuppressWarnings("unchecked")
         LazySet<Object> existingSet = (LazySet<Object>) lazySetMap.get(entry.getKey());
         for (Provider<?> provider : entry.getValue()) {
-          runnables.add(() -> existingSet.add((Provider<Object>) provider));
+          @SuppressWarnings("unchecked")
+          Provider<Object> castedProvider = (Provider<Object>) provider;
+          runnables.add(() -> existingSet.add(castedProvider));
         }
       }
     }
@@ -332,10 +342,17 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
     }
   }
 
+  @VisibleForTesting
+  Collection<Component<?>> getAllComponentsForTest() {
+    return components.keySet();
+  }
+
   public static final class Builder {
     private final Executor defaultExecutor;
     private final List<Provider<ComponentRegistrar>> lazyRegistrars = new ArrayList<>();
     private final List<Component<?>> additionalComponents = new ArrayList<>();
+    private ComponentRegistrarProcessor componentRegistrarProcessor =
+        ComponentRegistrarProcessor.NOOP;
 
     Builder(Executor defaultExecutor) {
       this.defaultExecutor = defaultExecutor;
@@ -356,8 +373,14 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
       return this;
     }
 
+    public Builder setProcessor(ComponentRegistrarProcessor processor) {
+      this.componentRegistrarProcessor = processor;
+      return this;
+    }
+
     public ComponentRuntime build() {
-      return new ComponentRuntime(defaultExecutor, lazyRegistrars, additionalComponents);
+      return new ComponentRuntime(
+          defaultExecutor, lazyRegistrars, additionalComponents, componentRegistrarProcessor);
     }
   }
 }
