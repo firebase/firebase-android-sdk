@@ -2,12 +2,8 @@ name: Smoke Tests
 
 on: [ pull_request ]
 
-env:
-  SMOKE_TESTS_RUNNER_JAR_URL: https://storage.googleapis.com/android-ci/smoke-tests-runner.jar
-
 jobs:
   smoke-tests:
-    name: Smoke Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -33,8 +29,14 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v0
+
+      # TODO(yifany): make it a fireci plugin and remove the separately distributed jar file
       - name: Download smoke tests runner
-        run: curl $SMOKE_TESTS_RUNNER_JAR_URL --output runner.jar
+        run: |
+          SMOKE_TESTS_RUNNER_URL="https://storage.googleapis.com/android-ci/smoke-tests-runner.jar"
+          curl ${SMOKE_TESTS_RUNNER_URL} --output runner.jar
+
+      # TODO(yifany): remove hardcoded reference to /smoke-tests-google-services from the runner
       - name: Add google-services.json
         env:
           SMOKE_TESTS_GOOGLE_SERVICES: ${{ secrets.SMOKE_TESTS_GOOGLE_SERVICES }}
@@ -42,15 +44,15 @@ jobs:
           echo $SMOKE_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
           sudo mkdir /smoke-tests-google-services
           sudo mv google-services.json /smoke-tests-google-services
+
+      # TODO(yifany): remove hardcoded reference to Prow environment variables from the runner
       - name: Run smoke tests
         env:
-          Firebase_CI: 1
+          FIREBASE_CI: 1
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: firebase-android-sdk
           PULL_NUMBER: ${{ github.event.pull_request.number }}
           JOB_NAME: smoke-tests
           BUILD_ID: ${{ github.run_id }}
-        run: |
-          echo "Firebase_CI: $Firebase_CI"
-          export ARTIFACTS=$RUNNER_TEMP
-          java -jar runner.jar smoke-tests/runner.config
+          ARTIFACTS: ${{ runner.temp }}
+        run: java -jar runner.jar smoke-tests/runner.config
