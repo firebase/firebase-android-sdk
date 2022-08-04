@@ -1,7 +1,6 @@
 name: FirePerf E2E Tests
 
 on:
-  pull_request:
   schedule:
     - cron: 4 */4 * * *  # every 4 hours at 04 minutes past the hour
 
