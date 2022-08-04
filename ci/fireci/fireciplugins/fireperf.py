@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import click
-import contextlib
 import logging
 import os
 import pathlib
@@ -38,7 +37,7 @@ _logger = logging.getLogger('fireci.fireperf')
 )
 @ci_command()
 def fireperf_e2e_test(target_environment, plugin_repo_dir):
-  """Run Firebase Performance end to end test."""
+  """Run Firebase Performance end-to-end test."""
 
   _logger.info('Building fireperf plugin ...')
   with chdir(plugin_repo_dir):
