@@ -186,14 +186,12 @@ class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
 fun DocumentReference.toFlow(
     metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE,
     bufferCapacity: Int? = Channel.CONFLATED
-): Flow<DocumentSnapshot?> {
+): Flow<DocumentSnapshot> {
     val flow = callbackFlow {
         val registration = addSnapshotListener(metadataChanges) { snapshot, exception ->
             if (exception != null) {
                 cancel(message = "Error getting DocumentReference snapshot", cause = exception)
-            }
-
-            if (snapshot != null) {
+            } else if (snapshot != null) {
                 trySend(snapshot)
             }
         }
@@ -220,14 +218,12 @@ fun DocumentReference.toFlow(
 fun Query.toFlow(
     metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE,
     bufferCapacity: Int? = Channel.CONFLATED
-): Flow<QuerySnapshot?> {
+): Flow<QuerySnapshot> {
     val flow = callbackFlow {
         val registration = addSnapshotListener(metadataChanges) { snapshot, exception ->
             if (exception != null) {
                 cancel(message = "Error getting Query snapshot", cause = exception)
-            }
-
-            if (snapshot != null) {
+            } else if (snapshot != null) {
                 trySend(snapshot)
             }
         }
