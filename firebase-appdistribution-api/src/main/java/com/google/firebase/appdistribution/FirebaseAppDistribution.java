@@ -119,8 +119,27 @@ public interface FirebaseAppDistribution {
    *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
+   *
+   * @param infoTextResourceId string resource ID of text to display to the tester before
+   *     collecting feedback data (e.g. Terms and Conditions)
    */
-  void startFeedback();
+  void startFeedback(int infoTextResourceId);
+
+  /**
+   * Takes a screenshot, and starts an activity to collect and submit feedback from the tester.
+   *
+   * <p>Performs the following actions:
+   *
+   * <ol>
+   *   <li>Takes a screenshot of the current activity
+   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
+   *   <li>Starts a full screen activity for the tester to compose and submit the feedback
+   * </ol>
+   *
+   * @param infoText text to display to the tester before collecting feedback data (e.g. Terms
+   *     and Conditions)
+   */
+  void startFeedback(CharSequence infoText);
 
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */
   @NonNull

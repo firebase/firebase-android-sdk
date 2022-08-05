@@ -74,7 +74,12 @@ public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback() {
+  public void startFeedback(int infoTextResourceId) {
+    return;
+  }
+
+  @Override
+  public void startFeedback(CharSequence infoText) {
     return;
   }
 
