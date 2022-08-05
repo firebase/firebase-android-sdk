@@ -120,8 +120,8 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * @param infoTextResourceId string resource ID of text to display to the tester before
-   *     collecting feedback data (e.g. Terms and Conditions)
+   * @param infoTextResourceId string resource ID of text to display to the tester before collecting
+   *     feedback data (e.g. Terms and Conditions)
    */
   void startFeedback(int infoTextResourceId);
 
@@ -136,8 +136,8 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * @param infoText text to display to the tester before collecting feedback data (e.g. Terms
-   *     and Conditions)
+   * @param infoText text to display to the tester before collecting feedback data (e.g. Terms and
+   *     Conditions)
    */
   void startFeedback(CharSequence infoText);
 

@@ -45,7 +45,6 @@ import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 /**
  * This class is the "real" implementation of the Firebase App Distribution API which should only be
@@ -331,12 +330,14 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                     .onSuccessTask(taskExecutor, unused -> releaseIdentifier.identifyRelease())
                     .onSuccessTask(
                         taskExecutor,
-                        releaseName -> launchFeedbackActivity(releaseName, infoText, screenshotFilename)))
+                        releaseName ->
+                            launchFeedbackActivity(releaseName, infoText, screenshotFilename)))
         .addOnFailureListener(
             taskExecutor, e -> LogWrapper.getInstance().e("Failed to launch feedback flow", e));
   }
 
-  private Task<Void> launchFeedbackActivity(String releaseName, CharSequence infoText, String screenshotFilename) {
+  private Task<Void> launchFeedbackActivity(
+      String releaseName, CharSequence infoText, String screenshotFilename) {
     return lifecycleNotifier.consumeForegroundActivity(
         activity -> {
           Intent intent = new Intent(activity, FeedbackActivity.class);
