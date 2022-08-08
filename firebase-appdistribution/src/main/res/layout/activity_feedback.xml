@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:padding="24dp"
     tools:context=".FeedbackActivity">
 
   <TextView
@@ -34,28 +35,29 @@
       android:id="@+id/submitButton"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_marginTop="32dp"
-      android:text="Submit"
+      android:layout_marginTop="24dp"
       android:onClick="submitFeedback"
+      android:text="Submit"
       app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintHorizontal_bias="0.5"
       app:layout_constraintStart_toStartOf="parent"
-      app:layout_constraintTop_toBottomOf="@+id/feedbackText" />
+      app:layout_constraintTop_toBottomOf="@+id/infoText" />
   <TextView
       android:id="@+id/loadingLabel"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
-      android:layout_marginTop="44dp"
+      android:layout_marginTop="24dp"
       android:text="Submitting feedback..."
       android:visibility="invisible"
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintStart_toStartOf="parent"
-      app:layout_constraintTop_toBottomOf="@+id/feedbackText" />
-  <!-- Width and height should match bitmap created in setupView() -->
+      app:layout_constraintTop_toBottomOf="@+id/infoText" />
   <ImageView
       android:id="@+id/thumbnail"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:scaleType="centerInside"
+      android:layout_marginTop="24dp"
       app:layout_constraintBottom_toBottomOf="parent"
       app:layout_constraintEnd_toEndOf="parent"
       app:layout_constraintStart_toStartOf="parent"
@@ -72,5 +74,14 @@
       app:layout_constraintStart_toStartOf="parent"
       app:layout_constraintTop_toBottomOf="@+id/submitButton"
       app:layout_constraintVertical_bias="0.403" />
+  <TextView
+      android:id="@+id/infoText"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:ems="5"
+      android:layout_marginTop="24dp"
+      app:layout_constraintEnd_toEndOf="parent"
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toBottomOf="@+id/feedbackText" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

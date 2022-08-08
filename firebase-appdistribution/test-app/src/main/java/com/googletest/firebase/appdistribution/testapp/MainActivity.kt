@@ -169,7 +169,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         feedbackButton.setOnClickListener {
-            firebaseAppDistribution.startFeedback()
+            firebaseAppDistribution.startFeedback(R.string.terms_and_conditions)
         }
     }
 
