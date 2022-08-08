@@ -19,7 +19,8 @@ package com.google.firebase.appdistribution {
     method public boolean isTesterSignedIn();
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> signInTester();
     method public void signOutTester();
-    method public void startFeedback();
+    method public void startFeedback(int);
+    method public void startFeedback(@NonNull CharSequence);
     method @NonNull public com.google.firebase.appdistribution.UpdateTask updateApp();
     method @NonNull public com.google.firebase.appdistribution.UpdateTask updateIfNewReleaseAvailable();
   }

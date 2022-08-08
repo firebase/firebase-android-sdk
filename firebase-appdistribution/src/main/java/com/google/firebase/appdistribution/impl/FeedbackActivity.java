@@ -16,9 +16,11 @@ package com.google.firebase.appdistribution.impl;
 
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.text.method.LinkMovementMethod;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -33,17 +35,21 @@ public class FeedbackActivity extends AppCompatActivity {
 
   public static final String RELEASE_NAME_EXTRA_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.RELEASE_NAME";
+  public static final String INFO_TEXT_EXTRA_KEY =
+      "com.google.firebase.appdistribution.FeedbackActivity.INFO_TEXT";
   public static final String SCREENSHOT_FILENAME_EXTRA_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT_FILE_NAME";
 
   private FeedbackSender feedbackSender;
   private String releaseName;
+  private CharSequence infoText;
   @Nullable private File screenshotFile;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     releaseName = getIntent().getStringExtra(RELEASE_NAME_EXTRA_KEY);
+    infoText = getIntent().getCharSequenceExtra(INFO_TEXT_EXTRA_KEY);
     if (getIntent().hasExtra(SCREENSHOT_FILENAME_EXTRA_KEY)) {
       screenshotFile = getFileStreamPath(getIntent().getStringExtra(SCREENSHOT_FILENAME_EXTRA_KEY));
     }
@@ -53,9 +59,14 @@ public class FeedbackActivity extends AppCompatActivity {
 
   private void setupView() {
     setContentView(R.layout.activity_feedback);
+
+    TextView infoTextView = this.findViewById(R.id.infoText);
+    infoTextView.setText(infoText);
+    infoTextView.setMovementMethod(LinkMovementMethod.getInstance());
+
     Bitmap thumbnail = readThumbnail();
     if (thumbnail != null) {
-      ImageView screenshotImageView = (ImageView) this.findViewById(R.id.thumbnail);
+      ImageView screenshotImageView = this.findViewById(R.id.thumbnail);
       screenshotImageView.setImageBitmap(thumbnail);
     } else {
       View screenshotErrorLabel = this.findViewById(R.id.screenshotErrorLabel);
@@ -73,7 +84,7 @@ public class FeedbackActivity extends AppCompatActivity {
 
   public void submitFeedback(View view) {
     setSubmittingStateEnabled(true);
-    EditText feedbackText = (EditText) findViewById(R.id.feedbackText);
+    EditText feedbackText = findViewById(R.id.feedbackText);
     feedbackSender
         .sendFeedback(releaseName, feedbackText.getText().toString(), screenshotFile)
         .addOnSuccessListener(

@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import androidx.annotation.Keep;
@@ -33,6 +34,7 @@ import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Registers FirebaseAppDistribution.
@@ -80,6 +82,8 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
     return new FeedbackSender(testerApiClient);
   }
 
+  // TODO(b/258264924): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   private FirebaseAppDistribution buildFirebaseAppDistribution(
       ComponentContainer container,
       Qualified<Executor> blockingExecutorType,
@@ -112,7 +116,8 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             lifecycleNotifier,
             releaseIdentifier,
             new ScreenshotTaker(firebaseApp, lifecycleNotifier),
-            lightweightExecutor);
+            lightweightExecutor,
+            Executors.newSingleThreadExecutor());
 
     if (context instanceof Application) {
       Application firebaseApplication = (Application) context;
