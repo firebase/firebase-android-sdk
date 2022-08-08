@@ -29,6 +29,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executors;
 
 /**
  * Registers FirebaseAppDistribution.
@@ -92,7 +93,8 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             signInStorage,
             lifecycleNotifier,
             releaseIdentifier,
-            new ScreenshotTaker(firebaseApp, lifecycleNotifier));
+            new ScreenshotTaker(firebaseApp, lifecycleNotifier),
+            Executors.newSingleThreadExecutor());
 
     if (context instanceof Application) {
       Application firebaseApplication = (Application) context;

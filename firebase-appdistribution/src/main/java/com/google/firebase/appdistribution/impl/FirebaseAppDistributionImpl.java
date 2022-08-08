@@ -18,6 +18,7 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.HOST_ACTIVITY_INTERRUPTED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.INFO_TEXT_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_FILENAME_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
@@ -44,7 +45,6 @@ import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 /**
  * This class is the "real" implementation of the Firebase App Distribution API which should only be
@@ -63,6 +63,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private final SignInStorage signInStorage;
   private final ReleaseIdentifier releaseIdentifier;
   private final ScreenshotTaker screenshotTaker;
+  private final Executor taskExecutor;
 
   private final Object updateIfNewReleaseTaskLock = new Object();
 
@@ -95,7 +96,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       @NonNull SignInStorage signInStorage,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
       @NonNull ReleaseIdentifier releaseIdentifier,
-      @NonNull ScreenshotTaker screenshotTaker) {
+      @NonNull ScreenshotTaker screenshotTaker,
+      @NonNull Executor taskExecutor) {
     this.firebaseApp = firebaseApp;
     this.testerSignInManager = testerSignInManager;
     this.newReleaseFetcher = newReleaseFetcher;
@@ -105,6 +107,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     this.releaseIdentifier = releaseIdentifier;
     this.lifecycleNotifier = lifecycleNotifier;
     this.screenshotTaker = screenshotTaker;
+    this.taskExecutor = taskExecutor;
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
     lifecycleNotifier.addOnActivityPausedListener(this::onActivityPaused);
     lifecycleNotifier.addOnActivityResumedListener(this::onActivityResumed);
@@ -306,12 +309,12 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback() {
-    startFeedback(Executors.newSingleThreadExecutor());
+  public void startFeedback(int infoTextResourceId) {
+    startFeedback(firebaseApp.getApplicationContext().getString(infoTextResourceId));
   }
 
   @VisibleForTesting
-  public void startFeedback(Executor taskExecutor) {
+  public void startFeedback(@NonNull CharSequence infoText) {
     screenshotTaker
         .takeScreenshot()
         .onSuccessTask(
@@ -327,16 +330,19 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                     .onSuccessTask(taskExecutor, unused -> releaseIdentifier.identifyRelease())
                     .onSuccessTask(
                         taskExecutor,
-                        releaseName -> launchFeedbackActivity(releaseName, screenshotFilename)))
+                        releaseName ->
+                            launchFeedbackActivity(releaseName, infoText, screenshotFilename)))
         .addOnFailureListener(
             taskExecutor, e -> LogWrapper.getInstance().e("Failed to launch feedback flow", e));
   }
 
-  private Task<Void> launchFeedbackActivity(String releaseName, String screenshotFilename) {
+  private Task<Void> launchFeedbackActivity(
+      String releaseName, CharSequence infoText, String screenshotFilename) {
     return lifecycleNotifier.consumeForegroundActivity(
         activity -> {
           Intent intent = new Intent(activity, FeedbackActivity.class);
           intent.putExtra(RELEASE_NAME_EXTRA_KEY, releaseName);
+          intent.putExtra(INFO_TEXT_EXTRA_KEY, infoText);
           intent.putExtra(SCREENSHOT_FILENAME_EXTRA_KEY, screenshotFilename);
           activity.startActivity(intent);
         });
