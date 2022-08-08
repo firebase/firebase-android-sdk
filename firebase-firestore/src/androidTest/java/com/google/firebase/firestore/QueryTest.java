@@ -63,15 +63,13 @@ public class QueryTest {
    * @param expectedDocs Ordered list of document keys that are expected to match the query
    */
   public void checkOnlineAndOfflineResultsMatch(Query query, String... expectedDocs) {
-    QuerySnapshot docsOnline = waitFor(query.get());
-    waitFor(query.firestore.getClient().disableNetwork());
-    QuerySnapshot docsOffline = waitFor(query.get());
-    waitFor(query.firestore.getClient().enableNetwork());
+    QuerySnapshot docsFromServer = waitFor(query.get(Source.SERVER));
+    QuerySnapshot docsFromCache = waitFor(query.get(Source.CACHE));
 
-    assertEquals(querySnapshotToIds(docsOnline), querySnapshotToIds(docsOffline));
+    assertEquals(querySnapshotToIds(docsFromServer), querySnapshotToIds(docsFromCache));
     List<String> expected = asList(expectedDocs);
     if (!expected.isEmpty()) {
-      assertEquals(expected, querySnapshotToIds(docsOffline));
+      assertEquals(expected, querySnapshotToIds(docsFromCache));
     }
   }
 
