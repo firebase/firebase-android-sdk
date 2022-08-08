@@ -266,7 +266,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   /**
    * Call to delete this Firebase app installation from the Firebase backend. This call may cause
-   * Firebase Cloud Messaging, Firebase Remote Config, Firebase Predictions, or Firebase In-App
+   * Firebase Cloud Messaging, Firebase Remote Config, Firebase A/B Testing, or Firebase In-App
    * Messaging to not function properly.
    */
   @NonNull
