@@ -27,6 +27,7 @@ import static com.google.firebase.appdistribution.impl.ErrorMessages.JSON_PARSIN
 import static com.google.firebase.appdistribution.impl.ErrorMessages.NETWORK_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.RELEASE_NOT_FOUND_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.UPDATE_CANCELED;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.INFO_TEXT_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_FILENAME_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
@@ -122,6 +123,7 @@ public class FirebaseAppDistributionServiceImplTest {
   private FirebaseAppDistributionImpl firebaseAppDistribution;
   private TestActivity activity;
   private FirebaseApp firebaseApp;
+  private ExecutorService taskExecutor = Executors.newSingleThreadExecutor();
 
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private TesterSignInManager mockTesterSignInManager;
@@ -162,7 +164,8 @@ public class FirebaseAppDistributionServiceImplTest {
                 mockSignInStorage,
                 mockLifecycleNotifier,
                 mockReleaseIdentifier,
-                mockScreenshotTaker));
+                mockScreenshotTaker,
+                taskExecutor));
 
     when(mockTesterSignInManager.signInTester()).thenReturn(Tasks.forResult(null));
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
@@ -632,11 +635,9 @@ public class FirebaseAppDistributionServiceImplTest {
 
   @Test
   public void startFeedback_signsInTesterAndStartsActivity() throws InterruptedException {
-    ExecutorService testExecutor = Executors.newSingleThreadExecutor();
     when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
-
-    firebaseAppDistribution.startFeedback(testExecutor);
-    TestUtils.awaitAsyncOperations(testExecutor);
+    firebaseAppDistribution.startFeedback("Some terms and conditions");
+    TestUtils.awaitAsyncOperations(taskExecutor);
 
     ArgumentCaptor<Intent> argument = ArgumentCaptor.forClass(Intent.class);
     verify(activity).startActivity(argument.capture());
@@ -645,5 +646,7 @@ public class FirebaseAppDistributionServiceImplTest {
         .isEqualTo("release-name");
     assertThat(argument.getValue().getStringExtra(SCREENSHOT_FILENAME_EXTRA_KEY))
         .isEqualTo(TEST_SCREENSHOT_FILE_NAME);
+    assertThat(argument.getValue().getStringExtra(INFO_TEXT_EXTRA_KEY))
+        .isEqualTo("Some terms and conditions");
   }
 }
