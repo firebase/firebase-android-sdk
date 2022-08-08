@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">App Distro Sample</string>
+    <string name="terms_and_conditions"><b>Before giving feedback</b> you might want to check out the <a href="http://google.com">Terms and Conditions</a></string>
 </resources>
