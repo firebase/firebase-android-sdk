@@ -314,7 +314,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   @VisibleForTesting
-  public void startFeedback(CharSequence infoText) {
+  public void startFeedback(@NonNull CharSequence infoText) {
     screenshotTaker
         .takeScreenshot()
         .onSuccessTask(

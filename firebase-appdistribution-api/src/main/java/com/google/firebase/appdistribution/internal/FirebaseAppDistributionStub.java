@@ -79,7 +79,7 @@ public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback(CharSequence infoText) {
+  public void startFeedback(@NonNull CharSequence infoText) {
     return;
   }
 

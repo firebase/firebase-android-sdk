@@ -139,7 +139,7 @@ public interface FirebaseAppDistribution {
    * @param infoText text to display to the tester before collecting feedback data (e.g. Terms and
    *     Conditions)
    */
-  void startFeedback(CharSequence infoText);
+  void startFeedback(@NonNull CharSequence infoText);
 
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */
   @NonNull
