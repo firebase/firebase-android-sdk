@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.ktx
 
-import android.support.multidex.BuildConfig
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
