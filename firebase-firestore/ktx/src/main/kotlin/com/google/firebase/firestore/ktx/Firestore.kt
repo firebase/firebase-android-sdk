@@ -183,7 +183,7 @@ class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
  * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
  * @param bufferCapacity the buffer capacity as in [Flow.buffer] or null to not buffer at all
  */
-fun DocumentReference.toFlow(
+fun DocumentReference.snapshots(
     metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE,
     bufferCapacity: Int? = Channel.CONFLATED
 ): Flow<DocumentSnapshot> {
@@ -215,7 +215,7 @@ fun DocumentReference.toFlow(
  * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
  * @param bufferCapacity the buffer capacity as in [Flow.buffer] or null to not buffer at all
  */
-fun Query.toFlow(
+fun Query.snapshots(
     metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE,
     bufferCapacity: Int? = Channel.CONFLATED
 ): Flow<QuerySnapshot> {
