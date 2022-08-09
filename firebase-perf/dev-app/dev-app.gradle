@@ -23,7 +23,7 @@ firebaseTestLab {
 }
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 31
 
     compileOptions {
         sourceCompatibility 1.8
