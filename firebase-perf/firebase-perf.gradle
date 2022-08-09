@@ -47,6 +47,8 @@ android {
         abortOnError true
     }
 
+    useLibrary 'org.apache.http.legacy'
+
     defaultConfig {
         // Note: To control the values of the auto-generated BuildConfig.java file (or any static
         // final field) in the Unit Test (with ReflectionHelpers.setStaticField()) we need to avoid
@@ -110,7 +112,6 @@ dependencies {
 
     // 3rd Party Deps
     implementation 'com.squareup.okhttp3:okhttp:3.12.1'
-    compileOnly group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
     implementation 'com.google.dagger:dagger:2.27'
     annotationProcessor 'com.google.dagger:dagger-compiler:2.27'
 
@@ -122,7 +123,6 @@ dependencies {
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
     }
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'androidx.test:rules:1.2.0'
 }
