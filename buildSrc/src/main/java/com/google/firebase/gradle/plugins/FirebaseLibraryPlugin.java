@@ -23,9 +23,6 @@ import com.android.build.gradle.internal.dsl.TestOptions;
 import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatExtension;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.firebase.gradle.plugins.apiinfo.ApiInformationTask;
-import com.google.firebase.gradle.plugins.apiinfo.GenerateApiTxtFileTask;
-import com.google.firebase.gradle.plugins.apiinfo.GetMetalavaJarTask;
 import com.google.firebase.gradle.plugins.ci.Coverage;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin;
@@ -129,7 +126,6 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
   }
 
   private static void setupApiInformationAnalysis(Project project, LibraryExtension android) {
-    File metalavaOutputJarFile = new File(project.getRootProject().getBuildDir(), "metalava.jar");
     AndroidSourceSet mainSourceSet = android.getSourceSets().getByName("main");
     File outputFile =
         project
@@ -141,14 +137,6 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                     project.getPath().substring(1).replace(":", "_")));
     File outputApiFile = new File(outputFile.getAbsolutePath() + "_api.txt");
 
-    project
-        .getTasks()
-        .register(
-            "getMetalavaJar",
-            GetMetalavaJarTask.class,
-            task -> {
-              task.setOutputFile(metalavaOutputJarFile);
-            });
     File apiTxt =
         project.file("api.txt").exists()
             ? project.file("api.txt")
@@ -160,33 +148,27 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                 "apiInformation",
                 ApiInformationTask.class,
                 task -> {
-                  task.setApiTxt(apiTxt);
-                  task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
-                  task.setSourceSet(mainSourceSet);
-                  task.setOutputFile(outputFile);
-                  task.setBaselineFile(project.file("baseline.txt"));
-                  task.setOutputApiFile(outputApiFile);
-                  if (project.hasProperty("updateBaseline")) {
-                    task.setUpdateBaseline(true);
-                  } else {
-                    task.setUpdateBaseline(false);
-                  }
-                  task.dependsOn("getMetalavaJar");
+                  task.getSources()
+                      .value(project.provider(() -> mainSourceSet.getJava().getSrcDirs()));
+                  task.getApiTxtFile().set(apiTxt);
+                  task.getBaselineFile().set(project.file("baseline.txt"));
+                  task.getOutputFile().set(outputFile);
+                  task.getOutputApiFile().set(outputApiFile);
+                  task.getUpdateBaseline().set(project.hasProperty("updateBaseline"));
                 });
 
-    TaskProvider<GenerateApiTxtFileTask> generateApiTxt =
+    TaskProvider<GenerateApiTxtTask> generateApiTxt =
         project
             .getTasks()
             .register(
                 "generateApiTxtFile",
-                GenerateApiTxtFileTask.class,
+                GenerateApiTxtTask.class,
                 task -> {
-                  task.setApiTxt(project.file("api.txt"));
-                  task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
-                  task.setSourceSet(mainSourceSet);
-                  task.setBaselineFile(project.file("baseline.txt"));
-                  task.setUpdateBaseline(project.hasProperty("updateBaseline"));
-                  task.dependsOn("getMetalavaJar");
+                  task.getSources()
+                      .value(project.provider(() -> mainSourceSet.getJava().getSrcDirs()));
+                  task.getApiTxtFile().set(project.file("api.txt"));
+                  task.getBaselineFile().set(project.file("baseline.txt"));
+                  task.getUpdateBaseline().set(project.hasProperty("updateBaseline"));
                 });
 
     TaskProvider<GenerateStubsTask> docStubs =
@@ -195,9 +177,9 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
             .register(
                 "docStubs",
                 GenerateStubsTask.class,
-                task -> {
-                  task.setSourceSet(mainSourceSet);
-                });
+                task ->
+                    task.getSources()
+                        .value(project.provider(() -> mainSourceSet.getJava().getSrcDirs())));
     project.getTasks().getByName("check").dependsOn(docStubs);
 
     android
@@ -213,7 +195,8 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                                 config.attributes(
                                     container ->
                                         container.attribute(
-                                            Attribute.of("artifactType", String.class), "jar")))
+                                            Attribute.of("artifactType", String.class),
+                                            "android-classes")))
                         .getArtifacts()
                         .getArtifactFiles();
                 apiInfo.configure(t -> t.setClassPath(jars));

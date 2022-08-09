@@ -261,7 +261,8 @@ public class FirebaseApp {
    *
    * <p>It's only required to call this to initialize Firebase if it's <strong>not possible</strong>
    * to do so automatically in {@link com.google.firebase.provider.FirebaseInitProvider}. Automatic
-   * initialization that way is the expected situation.
+   *
+   * @hide
    */
   @NonNull
   public static FirebaseApp initializeApp(
