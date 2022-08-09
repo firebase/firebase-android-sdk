@@ -204,9 +204,12 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
                 publication -> {
                   publication.from(
                       project.getComponents().findByName(firebaseLibrary.type.getComponentName()));
-                  publication.setArtifactId(firebaseLibrary.artifactId.get());
-                  publication.setGroupId(firebaseLibrary.groupId.get());
-                  firebaseLibrary.applyPomCustomization(publication.getPom());
+                  project.afterEvaluate(
+                      p -> {
+                        publication.setArtifactId(firebaseLibrary.artifactId.get());
+                        publication.setGroupId(firebaseLibrary.groupId.get());
+                        firebaseLibrary.applyPomCustomization(publication.getPom());
+                      });
                 }));
   }
 }

@@ -111,16 +111,6 @@ android.libraryVariants.all { variant ->
     }
 }
 
-configurations.all {
-    if(it.name.contains('AndroidTestRuntimeClasspath')) {
-        it.resolutionStrategy {
-            force 'org.checkerframework:checker-compat-qual:2.5.5'
-            force 'com.google.guava:guava:30.1.1-android'
-        }
-    }
-    exclude group: "com.google.protobuf", module: "protobuf-java"
-}
-
 googleJavaFormat {
     exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
     exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
