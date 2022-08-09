@@ -37,9 +37,9 @@ def api_information(auth_token, repo_name, issue_number):
     with open(os.path.join(dir_suffix, filename), 'r') as f:
       outputlines = f.readlines()
       for line in outputlines:
-        if 'error' in line:
+        if 'error:' in line:
           formatted_output_lines.append(line[line.find('error:'):])
-        elif 'warning' in line:
+        elif 'warning:' in line:
           formatted_output_lines.append(line[line.find('warning:'):])
 
     if formatted_output_lines:
