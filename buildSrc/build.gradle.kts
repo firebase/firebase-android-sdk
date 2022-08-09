@@ -105,6 +105,6 @@ tasks.withType<Test> {
         // in Gradle output.
         showStandardStreams = true
     }
-    val enablePluginTests: Boolean? by rootProject
-    enabled = enablePluginTests ?: false
+    val enablePluginTests: String? by rootProject
+    enabled = enablePluginTests == "true"
 }
