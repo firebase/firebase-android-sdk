@@ -16,7 +16,7 @@ import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
 import com.google.firebase.gradle.MultiProjectReleasePlugin
 
 buildscript {
-    ext.kotlinVersion = '1.4.32'
+    ext.kotlinVersion = '1.7.10'
     repositories {
         google()
         mavenCentral()
