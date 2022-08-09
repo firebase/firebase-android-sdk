@@ -1,0 +1,22 @@
+name: Private Mirror Sync
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Force push HEAD to private repo main branch
+        run: |
+          git remote add mirror git@github.com:FirebasePrivate/firebase-android-sdk.git
+          git push mirror HEAD:main --force --verbose
