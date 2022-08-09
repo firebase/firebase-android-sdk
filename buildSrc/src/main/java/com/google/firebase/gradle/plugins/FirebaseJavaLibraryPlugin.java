@@ -124,7 +124,7 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
                       .value(project.provider(() -> mainSourceSet.getJava().getSrcDirs()));
                   task.getApiTxtFile().set(apiTxt);
                   task.getBaselineFile().set(project.file("baseline.txt"));
-                  task.getOutputFile().set(outputApiFile);
+                  task.getOutputFile().set(outputFile);
                   task.getOutputApiFile().set(outputApiFile);
                   task.getUpdateBaseline().set(project.hasProperty("updateBaseline"));
                 });
