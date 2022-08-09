@@ -45,7 +45,9 @@ fun Project.runMetalavaWithArgs(
     val allArgs = listOf(
         "--no-banner",
         "--hide",
-        "HiddenSuperclass" // We allow having a hidden parent class
+        "HiddenSuperclass", // We allow having a hidden parent class
+        "--hide",
+        "HiddenAbstractMethod"
     ) + arguments
 
     project.javaexec {
