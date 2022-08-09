@@ -18,6 +18,8 @@ import static com.google.firebase.gradle.plugins.ClosureUtil.closureOf;
 
 import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.api.AndroidSourceSet;
+import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.dsl.TestOptions;
 import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatExtension;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -29,11 +31,15 @@ import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin;
 import java.io.File;
 import java.nio.file.Paths;
+import kotlin.Unit;
 import org.gradle.api.JavaVersion;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.publish.PublishingExtension;
+import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.tasks.TaskProvider;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
@@ -63,14 +69,19 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     // In the case of and android library signing config only affects instrumentation test APK.
     // We need it signed with default debug credentials in order for FTL to accept the APK.
     android.buildTypes(
-        types ->
+        (NamedDomainObjectContainer<BuildType> types) ->
             types
                 .getByName("release")
                 .setSigningConfig(types.getByName("debug").getSigningConfig()));
 
+    android.defaultConfig(
+        cfg -> {
+          cfg.buildConfigField("String", "VERSION_NAME", "\"" + project.getVersion() + "\"");
+        });
+
     // see https://github.com/robolectric/robolectric/issues/5456
     android.testOptions(
-        options ->
+        (TestOptions options) ->
             options
                 .getUnitTests()
                 .all(
@@ -100,6 +111,8 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     android.testServer(new FirebaseTestServer(project, firebaseLibrary.testLab, android));
 
     setupStaticAnalysis(project, firebaseLibrary);
+
+    configurePublishing(project, firebaseLibrary, android);
 
     // reduce the likelihood of kotlin module files colliding.
     project
@@ -243,5 +256,47 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     String fullyQualifiedProjectPath = project.getPath().replaceAll(":", "-");
 
     return project.getRootProject().getName() + fullyQualifiedProjectPath;
+  }
+
+  private static void configurePublishing(
+      Project project, FirebaseLibraryExtension firebaseLibrary, LibraryExtension android) {
+    android.publishing(
+        p -> {
+          p.singleVariant(
+              "release",
+              v -> {
+                v.withSourcesJar();
+                return Unit.INSTANCE;
+              });
+        });
+    project.afterEvaluate(
+        p -> {
+          project.apply(ImmutableMap.of("plugin", "maven-publish"));
+          PublishingExtension publishing =
+              project.getExtensions().getByType(PublishingExtension.class);
+          publishing.repositories(
+              repos ->
+                  repos.maven(
+                      repo -> {
+                        String s = project.getRootProject().getBuildDir() + "/m2repository";
+                        File file = new File(s);
+                        repo.setUrl(file.toURI());
+                        repo.setName("BuildDir");
+                      }));
+          publishing.publications(
+              publications ->
+                  publications.create(
+                      "mavenAar",
+                      MavenPublication.class,
+                      publication -> {
+                        publication.from(
+                            project
+                                .getComponents()
+                                .findByName(firebaseLibrary.type.getComponentName()));
+                        publication.setArtifactId(firebaseLibrary.artifactId.get());
+                        publication.setGroupId(firebaseLibrary.groupId.get());
+                        firebaseLibrary.applyPomCustomization(publication.getPom());
+                      }));
+        });
   }
 }

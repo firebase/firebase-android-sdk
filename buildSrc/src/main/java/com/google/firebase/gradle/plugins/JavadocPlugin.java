@@ -76,7 +76,8 @@ public class JavadocPlugin implements Plugin<Project> {
           if (!ext.publishJavadoc || !includeFireEscapeArtifacts) {
             applyDummyJavadoc(project);
           } else if (project.getPlugins().hasPlugin("kotlin-android")) {
-            applyDokka(project);
+            // TODO(vkryachko): undo once new dokka is available
+            applyDummyJavadoc(project);
           } else {
             applyDoclava(project);
           }
@@ -311,7 +312,9 @@ public class JavadocPlugin implements Plugin<Project> {
         .artifactView(
             view ->
                 view.attributes(
-                    attrs -> attrs.attribute(Attribute.of("artifactType", String.class), "jar")))
+                    attrs ->
+                        attrs.attribute(
+                            Attribute.of("artifactType", String.class), "android-classes")))
         .getArtifacts()
         .getArtifactFiles();
   }

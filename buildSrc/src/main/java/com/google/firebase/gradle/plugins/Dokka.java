@@ -17,7 +17,6 @@ package com.google.firebase.gradle.plugins;
 import com.android.build.api.attributes.BuildTypeAttr;
 import com.android.build.gradle.LibraryExtension;
 import com.google.common.collect.ImmutableMap;
-import com.sun.istack.Nullable;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -30,6 +29,7 @@ import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.RelativePath;
 import org.gradle.api.tasks.Copy;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.dokka.DokkaConfiguration;
 import org.jetbrains.dokka.gradle.DokkaAndroidTask;
 import org.jetbrains.dokka.gradle.DokkaTask;
@@ -70,6 +70,11 @@ final class Dokka {
 
     project.afterEvaluate(
         p -> {
+          // TODO(vkryachko): undo once new dokka is available
+          if (true) {
+            project.getTasks().register("kotlindoc");
+            return;
+          }
           String dokkaPluginName =
               android == null ? "org.jetbrains.dokka" : "org.jetbrains.dokka-android";
           project.apply(ImmutableMap.of("plugin", dokkaPluginName));
@@ -143,7 +148,9 @@ final class Dokka {
         .artifactView(
             view -> {
               view.attributes(
-                  attrs -> attrs.attribute(Attribute.of("artifactType", String.class), "jar"));
+                  attrs ->
+                      attrs.attribute(
+                          Attribute.of("artifactType", String.class), "android-classes"));
               view.componentFilter(
                   c -> !c.getDisplayName().startsWith("androidx.annotation:annotation:"));
             })
