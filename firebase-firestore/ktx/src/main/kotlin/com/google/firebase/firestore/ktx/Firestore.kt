@@ -18,22 +18,14 @@ import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldPath
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreSettings
-import com.google.firebase.firestore.MetadataChanges
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.QueryDocumentSnapshot
-import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.*
+import com.google.firebase.firestore.util.Executors.BACKGROUND_EXECUTOR
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 
 /** Returns the [FirebaseFirestore] instance of the default [FirebaseApp]. */
@@ -178,32 +170,20 @@ class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
  * - When the returned flow starts being collected, an [EventListener] will be attached.
  * - When the flow completes, the listener will be removed.
  *
- * Backpressure: by default the returned flow is conflated. If the consumer isn't fast enough,
- * it might miss some values but is always guaranteed to get the latest value. Use the [bufferCapacity] parameter
- * to change that behaviour.
- *
  * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
- * @param bufferCapacity the buffer capacity as in [Flow.buffer] or null to not buffer at all
  */
 fun DocumentReference.snapshots(
     metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE,
-    bufferCapacity: Int? = Channel.CONFLATED
 ): Flow<DocumentSnapshot> {
-    val flow = callbackFlow {
-        val registration = addSnapshotListener(metadataChanges) { snapshot, exception ->
+    return callbackFlow {
+        val registration = addSnapshotListener(BACKGROUND_EXECUTOR, metadataChanges) { snapshot, exception ->
             if (exception != null) {
                 cancel(message = "Error getting DocumentReference snapshot", cause = exception)
             } else if (snapshot != null) {
-                trySend(snapshot)
+                trySendBlocking(snapshot)
             }
         }
         awaitClose { registration.remove() }
-    }
-
-    return if (bufferCapacity != null) {
-        flow.buffer(bufferCapacity)
-    } else {
-        flow
     }
 }
 
@@ -213,31 +193,19 @@ fun DocumentReference.snapshots(
  * - When the returned flow starts being collected, an [EventListener] will be attached.
  * - When the flow completes, the listener will be removed.
  *
- * Backpressure: by default the returned flow is conflated. If the consumer isn't fast enough,
- * it might miss some values but is always guaranteed to get the latest value. Use the [bufferCapacity] parameter
- * to change that behaviour.
- *
  * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
- * @param bufferCapacity the buffer capacity as in [Flow.buffer] or null to not buffer at all
  */
 fun Query.snapshots(
     metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE,
-    bufferCapacity: Int? = Channel.CONFLATED
 ): Flow<QuerySnapshot> {
-    val flow = callbackFlow {
-        val registration = addSnapshotListener(metadataChanges) { snapshot, exception ->
+    return callbackFlow {
+        val registration = addSnapshotListener(BACKGROUND_EXECUTOR, metadataChanges) { snapshot, exception ->
             if (exception != null) {
                 cancel(message = "Error getting Query snapshot", cause = exception)
             } else if (snapshot != null) {
-                trySend(snapshot)
+                trySendBlocking(snapshot)
             }
         }
         awaitClose { registration.remove() }
-    }
-
-    return if (bufferCapacity != null) {
-        flow.buffer(bufferCapacity)
-    } else {
-        flow
     }
 }
