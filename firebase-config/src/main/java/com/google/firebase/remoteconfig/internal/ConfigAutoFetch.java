@@ -41,6 +41,8 @@ import org.json.JSONObject;
 public class ConfigAutoFetch {
 
   private static final int FETCH_RETRY = 3;
+  private static final String TEMPLATE_VERSION_KEY = "latestTemplateVersionNumber";
+  private static final String REALTIME_DISABLED_KEY = "featureDisabled";
 
   @GuardedBy("this")
   private final Set<ConfigUpdateListener> eventListeners;
@@ -137,11 +139,11 @@ public class ConfigAutoFetch {
           long targetTemplateVersion = configFetchHandler.getTemplateVersionNumber();
           try {
             JSONObject jsonObject = new JSONObject(fullMessage);
-            if (jsonObject.has("latestTemplateVersionNumber")) {
-              targetTemplateVersion = jsonObject.getLong("latestTemplateVersionNumber");
+            if (jsonObject.has(TEMPLATE_VERSION_KEY)) {
+              targetTemplateVersion = jsonObject.getLong(TEMPLATE_VERSION_KEY);
             }
-            if (jsonObject.has("featureDisabled")) {
-              boolean isFeatureDisabled = jsonObject.getBoolean("featureDisabled");
+            if (jsonObject.has(REALTIME_DISABLED_KEY)) {
+              boolean isFeatureDisabled = jsonObject.getBoolean(REALTIME_DISABLED_KEY);
               if (isFeatureDisabled) {
                 retryCallback.onError(
                     new FirebaseRemoteConfigRealtimeUpdateStreamException("Realtime is disabled."));

@@ -1142,10 +1142,10 @@ public final class FirebaseRemoteConfigTest {
             new ByteArrayInputStream(
                 "{ \"featureDisabled\": true }".getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
     verify(mockRetryListener).onError(any(FirebaseRemoteConfigRealtimeUpdateStreamException.class));
+    verify(mockFetchHandler, never()).fetch(0);
   }
 
   @Test
@@ -1160,6 +1160,7 @@ public final class FirebaseRemoteConfigTest {
     configAutoFetch.listenForNotifications();
 
     verify(mockRetryListener).onEvent();
+    verify(mockFetchHandler).fetch(0);
   }
 
   @Test

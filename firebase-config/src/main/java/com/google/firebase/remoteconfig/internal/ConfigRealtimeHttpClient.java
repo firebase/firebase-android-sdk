@@ -72,7 +72,7 @@ public class ConfigRealtimeHttpClient {
   private long httpRetrySeconds;
 
   @GuardedBy("this")
-  private boolean isBackoffEnabled;
+  private boolean isRealtimeDisabled;
 
   private final int ORIGINAL_RETRIES = 7;
 
@@ -105,7 +105,7 @@ public class ConfigRealtimeHttpClient {
     this.firebaseInstallations = firebaseInstallations;
     this.context = context;
     this.namespace = namespace;
-    this.isBackoffEnabled = false;
+    this.isRealtimeDisabled = false;
   }
 
   /**
@@ -201,7 +201,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized void enableBackoff() {
-    this.isBackoffEnabled = true;
+    this.isRealtimeDisabled = true;
   }
 
   private synchronized int getRetryMultiplier() {
@@ -215,7 +215,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized boolean canMakeHttpStreamConnection() {
-    return !listeners.isEmpty() && httpURLConnection == null && !isBackoffEnabled;
+    return !listeners.isEmpty() && httpURLConnection == null && !isRealtimeDisabled;
   }
 
   private String getRealtimeURL(String namespace) {
