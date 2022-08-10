@@ -41,7 +41,6 @@ import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
 import com.google.android.datatransport.runtime.util.PriorityMapping;
-import dagger.Lazy;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -53,6 +52,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 /** {@link EventStore} implementation backed by a SQLite database. */
@@ -72,7 +72,7 @@ public class SQLiteEventStore
   private final Clock wallClock;
   private final Clock monotonicClock;
   private final EventStoreConfig config;
-  private final Lazy<String> packageName;
+  private final Provider<String> packageName;
 
   @Inject
   SQLiteEventStore(
@@ -80,7 +80,7 @@ public class SQLiteEventStore
       @Monotonic Clock clock,
       EventStoreConfig config,
       SchemaManager schemaManager,
-      @Named("PACKAGE_NAME") Lazy<String> packageName) {
+      @Named("PACKAGE_NAME") Provider<String> packageName) {
 
     this.schemaManager = schemaManager;
     this.wallClock = wallClock;
