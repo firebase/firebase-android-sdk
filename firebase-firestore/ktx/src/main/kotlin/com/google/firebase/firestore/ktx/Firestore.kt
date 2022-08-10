@@ -173,11 +173,14 @@ class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
 }
 
 /**
- * Transforms a [DocumentReference] into a coroutine [Flow]
+ * Starts listening to the document referenced by this `DocumentReference` with the given options and emits its values via a [Flow].
  *
- * **Backpressure handling**: by default this method conflates items. If the consumer isn't fast enough,
- * it might miss some values but is always guaranteed to get the latest value. Use [bufferCapacity]
- * to change that behaviour
+ * - When the returned flow starts being collected, an [EventListener] will be attached.
+ * - When the flow completes, the listener will be removed.
+ *
+ * Backpressure: by default the returned flow is conflated. If the consumer isn't fast enough,
+ * it might miss some values but is always guaranteed to get the latest value. Use the [bufferCapacity] parameter
+ * to change that behaviour.
  *
  * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
  * @param bufferCapacity the buffer capacity as in [Flow.buffer] or null to not buffer at all
