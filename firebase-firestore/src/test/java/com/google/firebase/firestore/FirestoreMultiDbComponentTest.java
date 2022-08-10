@@ -31,6 +31,7 @@ import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.firestore.testutil.ImmediateDeferred;
 import com.google.firebase.inject.Deferred;
+import java.util.Collections;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -81,6 +82,7 @@ public class FirestoreMultiDbComponentTest {
         firebaseApp,
         deferredAuthProvider,
         deferredAppCheckTokenProvider,
+        Collections.emptySet(),
         metadataProvider);
   }
 }

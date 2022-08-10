@@ -34,6 +34,8 @@ import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.core.ViewSnapshot;
+import com.google.firebase.firestore.encoding.FirestoreNativeDataTypeSerializer;
+import com.google.firebase.firestore.encoding.MapEncoder;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -44,8 +46,10 @@ import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Util;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import kotlinx.serialization.Serializable;
 
 /**
  * A {@code DocumentReference} refers to a document location in a Cloud Firestore database and can
@@ -57,6 +61,7 @@ import java.util.concurrent.Executor;
  * in test mocks. Subclassing is not supported in production code and new SDK releases may break
  * code that does so.
  */
+@Serializable(with = FirestoreNativeDataTypeSerializer.DocumentReferenceSerializer.class)
 public class DocumentReference {
 
   private final DocumentKey key;
@@ -161,6 +166,17 @@ public class DocumentReference {
   public Task<Void> set(@NonNull Object data, @NonNull SetOptions options) {
     checkNotNull(data, "Provided data must not be null.");
     checkNotNull(options, "Provided options must not be null.");
+    Set<MapEncoder> availableEncoders = firestore.getMapEncoders();
+    for (MapEncoder encoder : availableEncoders) {
+      if (encoder.supports(data.getClass())) {
+        data = encoder.encode(data);
+        break;
+      }
+    }
+    return setParsedData(data, options);
+  }
+
+  private Task<Void> setParsedData(Object data, SetOptions options) {
     ParsedSetData parsed =
         options.isMerge()
             ? firestore.getUserDataReader().parseMergeData(data, options.getFieldMask())

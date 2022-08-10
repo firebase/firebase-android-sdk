@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore;
+package com.google.firebase.firestore.encoding;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import androidx.annotation.NonNull;
+import kotlinx.serialization.encoding.Encoder;
 
 /**
- * Properties that don't map to class fields are ignored when serializing to a class annotated with
- * this annotation.
+ * An abstract interface of {@code Encoder} that provides a method to encode Firestore supported
+ * non-primitive types ({@code DocumentReference}, {@code Timestamp}, {@code Date} and {@code
+ * GeoPoint}).
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE})
-public @interface IgnoreExtraProperties {}
+public interface FirestoreAbstractEncoder extends Encoder {
+  void encodeFirestoreNativeDataType(@NonNull Object value);
+}
