@@ -164,11 +164,16 @@ public class DeveloperListenerManager {
       FirebaseInAppMessagingDisplayErrorListener displayErrorListener) {
     registeredErrorListeners.remove(displayErrorListener);
   }
+  
+  public void removeDismissListener(FirebaseInAppMessagingDismissListener dismissListener) {
+    registeredDismissListeners.remove(dismissListener);
+  }
 
   public void removeAllListeners() {
     registeredClickListeners.clear();
     registeredImpressionListeners.clear();
     registeredErrorListeners.clear();
+    registeredDismissListeners.clear();
   }
 
   /** The thread factory for Storage threads. */
