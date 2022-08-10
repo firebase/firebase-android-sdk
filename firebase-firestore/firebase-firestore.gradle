@@ -144,7 +144,7 @@ dependencies {
     implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"
     implementation "io.grpc:grpc-okhttp:$grpcVersion"
     implementation "io.grpc:grpc-android:$grpcVersion"
-    api 'com.google.android.gms:play-services-basement:18.0.0'
+    implementation 'com.google.android.gms:play-services-basement:18.0.0'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation 'com.google.android.gms:play-services-base:18.0.1'
 
