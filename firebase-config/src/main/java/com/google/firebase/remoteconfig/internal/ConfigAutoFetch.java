@@ -136,12 +136,9 @@ public class ConfigAutoFetch {
       if (message.contains("}")) {
         fullMessage = parseMessage(fullMessage);
         if (!fullMessage.isEmpty()) {
-          long targetTemplateVersion = configFetchHandler.getTemplateVersionNumber();
           try {
             JSONObject jsonObject = new JSONObject(fullMessage);
-            if (jsonObject.has(TEMPLATE_VERSION_KEY)) {
-              targetTemplateVersion = jsonObject.getLong(TEMPLATE_VERSION_KEY);
-            }
+
             if (jsonObject.has(REALTIME_DISABLED_KEY)) {
               boolean isFeatureDisabled = jsonObject.getBoolean(REALTIME_DISABLED_KEY);
               if (isFeatureDisabled) {
@@ -150,12 +147,18 @@ public class ConfigAutoFetch {
                 break;
               }
             }
+            if (jsonObject.has(TEMPLATE_VERSION_KEY)) {
+              long oldTemplateVersion = configFetchHandler.getTemplateVersionNumber();
+              long targetTemplateVersion = jsonObject.getLong(TEMPLATE_VERSION_KEY);
+              if (targetTemplateVersion > oldTemplateVersion) {
+                autoFetch(FETCH_RETRY, targetTemplateVersion);
+              }
+            }
           } catch (JSONException ex) {
             Log.e(TAG, "Unable to parse latest config update message." + ex.toString());
           }
 
           fullMessage = "";
-          autoFetch(FETCH_RETRY, targetTemplateVersion);
         }
       }
     }

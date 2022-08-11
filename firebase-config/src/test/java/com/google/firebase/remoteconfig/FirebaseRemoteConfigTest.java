@@ -1154,7 +1154,8 @@ public final class FirebaseRemoteConfigTest {
     when(mockHttpURLConnection.getInputStream())
         .thenReturn(
             new ByteArrayInputStream(
-                "{ \"featureDisabled\": false }".getBytes(StandardCharsets.UTF_8)));
+                "{ \"featureDisabled\": false,  \"latestTemplateVersionNumber\": 2 }"
+                    .getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
