@@ -102,6 +102,6 @@ jobs:
                 title: 'FirePerf E2E Test Failures',
                 body: text,
                 labels: ['fireperf-e2e-tests'],
-                assignees: ['jeremyjiang-dev', 'leotianlizhan', 'visumickey']
+                assignees: ['jeremyjiang-dev', 'leotianlizhan', 'raymondlam', 'visumickey']
               });
             }
