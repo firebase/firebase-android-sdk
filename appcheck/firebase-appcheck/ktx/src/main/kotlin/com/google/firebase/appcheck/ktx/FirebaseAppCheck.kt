@@ -17,7 +17,10 @@ package com.google.firebase.appcheck.ktx
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.AppCheckToken
 import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.components.Component
+import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.platforminfo.LibraryVersionComponent
 
 /** Returns the [FirebaseAppCheck] instance of the default [FirebaseApp]. */
 val Firebase.appCheck: FirebaseAppCheck
@@ -39,3 +42,8 @@ operator fun AppCheckToken.component1() = token
  * @return the expireTimeMillis of the [AppCheckToken]
  */
 operator fun AppCheckToken.component2() = expireTimeMillis
+
+class FirebaseAppCheckKtxRegistrar : ComponentRegistrar {
+    override fun getComponents(): List<Component<*>> =
+        listOf(LibraryVersionComponent.create("fire-app-check-ktx", BuildConfig.VERSION_NAME))
+}

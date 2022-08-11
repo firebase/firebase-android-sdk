@@ -73,7 +73,10 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
 
     android.defaultConfig(
         cfg -> {
-          cfg.buildConfigField("String", "VERSION_NAME", "\"" + project.getVersion() + "\"");
+          project.afterEvaluate(
+              p ->
+                  cfg.buildConfigField(
+                      "String", "VERSION_NAME", "\"" + project.getVersion() + "\""));
         });
 
     // see https://github.com/robolectric/robolectric/issues/5456
