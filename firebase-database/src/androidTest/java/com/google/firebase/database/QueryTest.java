@@ -4549,45 +4549,53 @@ public class QueryTest {
   }
 
   @Test
-  public void testGetPropagatesEventsToListeners()
+  public void testGetPropagatesEventsToListeners() // TODO(mtewani): Convert into smoke test
       throws DatabaseException, InterruptedException, ExecutionException {
-    FirebaseApp writeApp =
-        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
-    // To ensure that we don't read the cached results, we need a separate app.
-    FirebaseApp readApp =
-        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
-    FirebaseDatabase readDb = FirebaseDatabase.getInstance(readApp);
-    FirebaseDatabase writeDb = FirebaseDatabase.getInstance(writeApp);
-    DatabaseReference writeNode = writeDb.getReference().push();
-    DatabaseReference readNode = IntegrationTestHelpers.translateReference(writeNode, readDb);
-    try {
-      Map<String, Object> toWrite =
-          new MapBuilder().put("foo1", "child1").put("foo2", "child2").build();
-      await(writeNode.setValue(toWrite));
-      Task<DataSnapshot> getTask = readNode.get();
-      AtomicBoolean receivedGetValue = new AtomicBoolean();
-      getTask.addOnCompleteListener(
-          new OnCompleteListener<DataSnapshot>() {
-            @Override
-            public void onComplete(@NonNull Task<DataSnapshot> task) {
-              DataSnapshot snapshot = task.getResult();
-              assertEquals(toWrite, snapshot.getValue());
-              receivedGetValue.set(true);
-            }
-          });
-      assertFalse(receivedGetValue.get());
-      DatabaseReference childRef = readNode.child("foo1");
-      new ReadFuture(
-              childRef,
-              events -> {
-                assertEquals(1, events.size());
-                assertEquals("child1", events.get(0).getSnapshot().getValue());
-                return true;
-              })
-          .timedGet();
-      await(getTask);
-    } catch (Exception e) {
-      fail("Exception occurred when attempting to test get event propagation" + e);
+    /**
+     * There's a situation where if you have a pending get() and then an onValue() at the same
+     * location and get resolves before onValue does, onValue gets no listeners
+     */
+    int counter = 0;
+    boolean pendingGet = false;
+    while (counter++ < 5 || !pendingGet) {
+      FirebaseApp writeApp =
+          appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
+      // To ensure that we don't read the cached results, we need a separate app.
+      FirebaseApp readApp =
+          appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
+      FirebaseDatabase readDb = FirebaseDatabase.getInstance(readApp);
+      FirebaseDatabase writeDb = FirebaseDatabase.getInstance(writeApp);
+      DatabaseReference writeNode = writeDb.getReference().push();
+      DatabaseReference readNode = IntegrationTestHelpers.translateReference(writeNode, readDb);
+      try {
+        Map<String, Object> toWrite =
+            new MapBuilder().put("foo1", "child1").put("foo2", "child2").build();
+        await(writeNode.setValue(toWrite));
+        Task<DataSnapshot> getTask = readNode.get();
+        AtomicBoolean receivedGetValue = new AtomicBoolean();
+        getTask.addOnCompleteListener(
+            new OnCompleteListener<DataSnapshot>() {
+              @Override
+              public void onComplete(@NonNull Task<DataSnapshot> task) {
+                DataSnapshot snapshot = task.getResult();
+                assertEquals(toWrite, snapshot.getValue());
+                receivedGetValue.set(true);
+              }
+            });
+        pendingGet = !receivedGetValue.get();
+        DatabaseReference childRef = readNode.child("foo1");
+        new ReadFuture(
+                childRef,
+                events -> {
+                  assertEquals(1, events.size());
+                  assertEquals("child1", events.get(0).getSnapshot().getValue());
+                  return true;
+                })
+            .timedGet();
+        await(getTask);
+      } catch (Exception e) {
+        fail("Exception occurred when attempting to test get event propagation" + e);
+      }
     }
   }
 
@@ -4629,7 +4637,7 @@ public class QueryTest {
   }
 
   @Test
-  public void testGetResolvesToPersistentCacheWhenOfflineAndNoListeners()
+  public void testGetResolvesToCacheWhenOfflineAndNoListeners()
       throws DatabaseException, InterruptedException {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
@@ -4641,18 +4649,16 @@ public class QueryTest {
     try {
       await(node.setValue(val));
       db.goOffline();
-      // Resolves to serverCache since persistence is turned off, and we are offline.
-      DataSnapshot snapshot =
-          await(node.get()); // This does not time out. We need to get it to do so.
+
+      DataSnapshot snapshot = await(node.get());
       assertEquals(val, snapshot.getValue());
-      db.goOnline();
     } catch (ExecutionException e) {
       fail("get threw an exception: " + e);
     }
   }
 
   @Test
-  public void testGetResolvesToCacheWhenOnlineAndParentListener()
+  public void testGetResolvesWhenOnlineAndParentListener()
       throws DatabaseException, InterruptedException {
     // TODO(mtewani): Extract out this logic to a helper function.
     FirebaseApp writeApp =
@@ -4688,7 +4694,7 @@ public class QueryTest {
   }
 
   @Test
-  public void testGetResolvesToCacheWhenOnlineAndSameLevelListener()
+  public void testGetResolvesWhenOnlineAndSameLevelListener()
       throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
           TimeoutException {
     FirebaseApp writeApp =
@@ -4758,7 +4764,7 @@ public class QueryTest {
   }
 
   @Test
-  public void testGetResolvesToCacheWhenOnlineAndChildLevelListener()
+  public void testGetResolvesWhenOnlineAndChildLevelListener()
       throws DatabaseException, InterruptedException {
     FirebaseApp readApp =
         appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
@@ -4873,7 +4879,7 @@ public class QueryTest {
     FirebaseDatabase writeDb = FirebaseDatabase.getInstance(writeApp);
     String refKey = UUID.randomUUID().toString();
     DatabaseReference writeRef = writeDb.getReference().child(refKey);
-    DatabaseReference defaultRef = readDb.getReference().child(refKey);
+    DatabaseReference defaultRef = IntegrationTestHelpers.translateReference(writeRef, readDb);
     Query readQuery = defaultRef.limitToFirst(1);
     Map<String, Object> expected =
         new MapBuilder().put("child1", "test1").put("child2", "test2").build();
@@ -4891,17 +4897,15 @@ public class QueryTest {
 
   @Test
   public void testStartWithGetWithListenerOnlyFiresOnce()
-      throws DatabaseException, InterruptedException, ExecutionException, TestFailure,
-          TimeoutException {
+      throws DatabaseException, InterruptedException, ExecutionException {
     FirebaseApp readApp =
         appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseApp writeApp =
         appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
     FirebaseDatabase readDb = FirebaseDatabase.getInstance(readApp);
     FirebaseDatabase writeDb = FirebaseDatabase.getInstance(writeApp);
-    String refKey = UUID.randomUUID().toString();
-    DatabaseReference writeRef = writeDb.getReference().child(refKey);
-    DatabaseReference readRef = readDb.getReference().child(refKey);
+    DatabaseReference writeRef = writeDb.getReference().child(UUID.randomUUID().toString());
+    DatabaseReference readRef = IntegrationTestHelpers.translateReference(writeRef, readDb);
     Map<String, Object> expected =
         new MapBuilder()
             .put("child1", "test1")
