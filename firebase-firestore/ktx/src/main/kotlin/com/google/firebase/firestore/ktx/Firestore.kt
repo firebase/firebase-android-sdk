@@ -18,15 +18,15 @@ import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.MetadataChanges
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.QuerySnapshot
-import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.util.Executors.BACKGROUND_EXECUTOR
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
@@ -181,7 +181,7 @@ class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
  * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
  */
 fun DocumentReference.snapshots(
-    metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE,
+    metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
 ): Flow<DocumentSnapshot> {
     return callbackFlow {
         val registration = addSnapshotListener(BACKGROUND_EXECUTOR, metadataChanges) { snapshot, exception ->
@@ -204,7 +204,7 @@ fun DocumentReference.snapshots(
  * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
  */
 fun Query.snapshots(
-    metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE,
+    metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
 ): Flow<QuerySnapshot> {
     return callbackFlow {
         val registration = addSnapshotListener(BACKGROUND_EXECUTOR, metadataChanges) { snapshot, exception ->
