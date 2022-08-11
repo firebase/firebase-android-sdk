@@ -51,6 +51,8 @@ import com.google.firebase.events.Publisher;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatController;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
+import com.google.firebase.monitoring.ComponentMonitor;
+import com.google.firebase.monitoring.FirebaseTrace;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -415,10 +417,15 @@ public class FirebaseApp {
     this.name = Preconditions.checkNotEmpty(name);
     this.options = Preconditions.checkNotNull(options);
 
+    FirebaseTrace.pushTrace("Firebase");
+
+    FirebaseTrace.pushTrace("ComponentDiscovery");
     List<Provider<ComponentRegistrar>> registrars =
         ComponentDiscovery.forContext(applicationContext, ComponentDiscoveryService.class)
             .discoverLazy();
+    FirebaseTrace.popTrace();
 
+    FirebaseTrace.pushTrace("Runtime");
     componentRuntime =
         ComponentRuntime.builder(UI_EXECUTOR)
             .addLazyComponentRegistrars(registrars)
@@ -426,7 +433,9 @@ public class FirebaseApp {
             .addComponent(Component.of(applicationContext, Context.class))
             .addComponent(Component.of(this, FirebaseApp.class))
             .addComponent(Component.of(options, FirebaseOptions.class))
+            .setProcessor(new ComponentMonitor())
             .build();
+    FirebaseTrace.popTrace();
 
     dataCollectionConfigStorage =
         new Lazy<>(
@@ -443,6 +452,8 @@ public class FirebaseApp {
             defaultHeartBeatController.get().registerHeartBeat();
           }
         });
+
+    FirebaseTrace.popTrace();
   }
 
   private void checkNotDeleted() {
