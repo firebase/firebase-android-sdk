@@ -1,7 +1,6 @@
 name: FirePerf E2E Tests
 
 on:
-  pull_request:
   schedule:
     - cron: 4 */4 * * *  # every 4 hours at 04 minutes past the hour
   workflow_dispatch:     # allow triggering the workflow manually
@@ -57,10 +56,9 @@ jobs:
         run: echo $PERF_E2E_GOOGLE_SERVICES | base64 -d > google-services.json
       - name: Run fireperf end-to-end tests
         run: |
-          # fireci fireperf_e2e_test \
-          #   --plugin_repo_dir=firebase-android-buildtools \
-          #   --target_environment=${{ matrix.environment }}
-          exit 1
+          fireci fireperf_e2e_test \
+            --plugin_repo_dir=firebase-android-buildtools \
+            --target_environment=${{ matrix.environment }}
       - name: Notify developers upon failures
         if: ${{ failure() }}
         uses: actions/github-script@v6
@@ -79,9 +77,7 @@ jobs:
             });
 
             const text =
-            `Notification testing. Please ignore.
-
-            Failed on commit ${commit} at ${datetime}.
+            `Failed on commit ${commit} at ${datetime}.
 
             ${url}`;
 
@@ -103,7 +99,7 @@ jobs:
               github.rest.issues.create({
                 owner: owner,
                 repo: repo,
-                title: 'Notification Testing: FirePerf E2E Test Failures',
+                title: 'FirePerf E2E Test Failures',
                 body: text,
                 labels: ['fireperf-e2e-tests'],
                 assignees: ['jeremyjiang-dev', 'leotianlizhan', 'visumickey']
