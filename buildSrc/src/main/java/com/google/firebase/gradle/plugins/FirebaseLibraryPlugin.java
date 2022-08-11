@@ -71,13 +71,13 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                 .getByName("release")
                 .setSigningConfig(types.getByName("debug").getSigningConfig()));
 
-    android.defaultConfig(
-        cfg -> {
-          project.afterEvaluate(
-              p ->
+    project.afterEvaluate(
+        p ->
+            android.defaultConfig(
+                cfg -> {
                   cfg.buildConfigField(
-                      "String", "VERSION_NAME", "\"" + project.getVersion() + "\""));
-        });
+                      "String", "VERSION_NAME", "\"" + project.getVersion() + "\"");
+                }));
 
     // see https://github.com/robolectric/robolectric/issues/5456
     android.testOptions(
