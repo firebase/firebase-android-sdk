@@ -16,9 +16,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
+          fetch-depth: 0
           submodules: true
           token: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
       - name: Force push HEAD to private repo main branch
         run: |
-          git remote add mirror git@github.com:FirebasePrivate/firebase-android-sdk.git
+          git remote add mirror https://github.com/FirebasePrivate/firebase-android-sdk.git
           git push mirror HEAD:main --force --verbose
