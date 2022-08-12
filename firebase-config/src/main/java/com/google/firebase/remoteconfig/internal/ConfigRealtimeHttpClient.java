@@ -282,6 +282,8 @@ public class ConfigRealtimeHttpClient {
             retryHTTPConnection();
           }
 
+          // This method will only be called when a realtimeDisabled message is sent down the
+          // stream.
           @Override
           public void onError(Exception error) {
             if (error != null) {
@@ -296,7 +298,9 @@ public class ConfigRealtimeHttpClient {
     return new ConfigAutoFetch(httpURLConnection, configFetchHandler, listeners, retryCallback);
   }
 
-  // Kicks off Http stream listening and autofetch
+  // Kicks off Http stream listening and AutoFetching. The AutoFetch method listenForNotifications
+  // will be a blocking call until the Http stream closes, at which point we will try and
+  // reestablish the stream.
   @SuppressLint("VisibleForTests")
   synchronized void beginRealtimeHttpStream() {
     if (canMakeHttpStreamConnection()) {

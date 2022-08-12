@@ -79,7 +79,7 @@ public class ConfigAutoFetch {
     }
   }
 
-  private String parseMessage(String message) {
+  private String parseAndValidateConfigUpdateMessage(String message) {
     int left = 0;
     while (left < message.length() && message.charAt(left) != '{') {
       left++;
@@ -128,24 +128,31 @@ public class ConfigAutoFetch {
   // Auto-fetch new config and execute callbacks on each new message
   private void handleNotifications(InputStream inputStream) throws IOException {
     BufferedReader reader = new BufferedReader((new InputStreamReader(inputStream, "utf-8")));
-    String message;
-    String fullMessage = "";
-    while ((message = reader.readLine()) != null) {
-      fullMessage += message;
+    String partialConfigUpdateMessage;
+    String currentConfigUpdateMessage = "";
 
-      if (message.contains("}")) {
-        fullMessage = parseMessage(fullMessage);
-        if (!fullMessage.isEmpty()) {
+    // Multiple config update messages can be sent through this loop. Each message comes in line by
+    // line as partialConfigUpdateMessage and are accumulated together into
+    // currentConfigUpdateMessage.
+    while ((partialConfigUpdateMessage = reader.readLine()) != null) {
+      // Accumulate all the partial parts of the message until we have a full message.
+      currentConfigUpdateMessage += partialConfigUpdateMessage;
+
+      // Closing bracket indicates a full message has just finished.
+      if (partialConfigUpdateMessage.contains("}")) {
+        // Strip beginning and ending of message. If there is not an open and closing bracket,
+        // parseMessage will return an empty message.
+        currentConfigUpdateMessage =
+            parseAndValidateConfigUpdateMessage(currentConfigUpdateMessage);
+        if (!currentConfigUpdateMessage.isEmpty()) {
           try {
-            JSONObject jsonObject = new JSONObject(fullMessage);
+            JSONObject jsonObject = new JSONObject(currentConfigUpdateMessage);
 
-            if (jsonObject.has(REALTIME_DISABLED_KEY)) {
-              boolean isFeatureDisabled = jsonObject.getBoolean(REALTIME_DISABLED_KEY);
-              if (isFeatureDisabled) {
-                retryCallback.onError(
-                    new FirebaseRemoteConfigRealtimeUpdateStreamException("Realtime is disabled."));
-                break;
-              }
+            if (jsonObject.has(REALTIME_DISABLED_KEY)
+                && jsonObject.getBoolean(REALTIME_DISABLED_KEY)) {
+              retryCallback.onError(
+                  new FirebaseRemoteConfigRealtimeUpdateStreamException("Realtime is disabled."));
+              break;
             }
             if (jsonObject.has(TEMPLATE_VERSION_KEY)) {
               long oldTemplateVersion = configFetchHandler.getTemplateVersionNumber();
@@ -158,7 +165,7 @@ public class ConfigAutoFetch {
             Log.e(TAG, "Unable to parse latest config update message." + ex.toString());
           }
 
-          fullMessage = "";
+          currentConfigUpdateMessage = "";
         }
       }
     }
