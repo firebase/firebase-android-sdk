@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.monitoring;
+package com.google.firebase.tracing;
 
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentFactory;
@@ -24,8 +24,8 @@ import java.util.List;
 /** Wraps components to trace their initialization time. */
 public class ComponentMonitor implements ComponentRegistrarProcessor {
   @Override
+  @SuppressWarnings({"rawtypes", "unchecked"})
   public List<Component<?>> processRegistrar(ComponentRegistrar registrar) {
-    FirebaseTrace.pushTrace("ProcessComponents");
     List<Component<?>> components = new ArrayList<>();
     for (Component comp : registrar.getComponents()) {
       final String name = comp.getName();
@@ -44,7 +44,6 @@ public class ComponentMonitor implements ComponentRegistrarProcessor {
       }
       components.add(comp);
     }
-    FirebaseTrace.popTrace();
     return components;
   }
 }

@@ -51,8 +51,8 @@ import com.google.firebase.events.Publisher;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatController;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
-import com.google.firebase.monitoring.ComponentMonitor;
-import com.google.firebase.monitoring.FirebaseTrace;
+import com.google.firebase.tracing.ComponentMonitor;
+import com.google.firebase.tracing.FirebaseTrace;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -423,7 +423,7 @@ public class FirebaseApp {
     List<Provider<ComponentRegistrar>> registrars =
         ComponentDiscovery.forContext(applicationContext, ComponentDiscoveryService.class)
             .discoverLazy();
-    FirebaseTrace.popTrace();
+    FirebaseTrace.popTrace(); // ComponentDiscovery
 
     FirebaseTrace.pushTrace("Runtime");
     componentRuntime =
@@ -435,7 +435,7 @@ public class FirebaseApp {
             .addComponent(Component.of(options, FirebaseOptions.class))
             .setProcessor(new ComponentMonitor())
             .build();
-    FirebaseTrace.popTrace();
+    FirebaseTrace.popTrace(); // Runtime
 
     dataCollectionConfigStorage =
         new Lazy<>(
@@ -453,7 +453,7 @@ public class FirebaseApp {
           }
         });
 
-    FirebaseTrace.popTrace();
+    FirebaseTrace.popTrace(); // Firebase
   }
 
   private void checkNotDeleted() {

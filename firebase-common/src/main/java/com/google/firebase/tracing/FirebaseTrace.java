@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.monitoring;
+package com.google.firebase.tracing;
 
 import android.os.Build;
 import android.os.Trace;
 
 /** Utility to consistently wrap trace calls with version checking. */
-public class FirebaseTrace {
+public final class FirebaseTrace {
+
+  private FirebaseTrace() {}
 
   public static void pushTrace(String name) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
