@@ -586,7 +586,7 @@ public class Repo implements PersistentConnection.Delegate {
                         }
                         repo.postEvents(
                             events); // to ensure that other listeners end up getting their cached
-                                     // events.
+                        // events.
                         source.setResult(
                             InternalHelpers.createDataSnapshot(
                                 query.getRef(),
