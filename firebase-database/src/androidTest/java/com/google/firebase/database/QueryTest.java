@@ -4541,9 +4541,9 @@ public class QueryTest {
       throws DatabaseException, InterruptedException, ExecutionException {
     /**
      * There's a situation where if you have a pending `get()` and then an `onValue()` at the same
-     * location and get resolves before onValue does, onValue gets no events.
-     * Note: This is a smoke test due to the fact that it is difficult to reproduce the scenario when
-     * the parent get() request resolves before a child onValue listener.
+     * location and get resolves before onValue does, onValue gets no events. Note: This is a smoke
+     * test due to the fact that it is difficult to reproduce the scenario when the parent get()
+     * request resolves before a child onValue listener.
      */
     // To ensure that we don't read the cached results, we need a separate app.
     AtomicBoolean successful = new AtomicBoolean();
@@ -4573,7 +4573,8 @@ public class QueryTest {
 
         DatabaseReference childRef = readNode.child("foo1");
         readDb.goOnline();
-        Thread.sleep(150); // An arbitrary value to help make sure `onValue` doesn't resolve before `get()`
+        Thread.sleep(
+            150); // An arbitrary value to help make sure `onValue` doesn't resolve before `get()`
         assertFalse(resolved.get());
         ReadFuture future =
             new ReadFuture(
