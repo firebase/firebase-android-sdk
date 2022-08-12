@@ -47,7 +47,10 @@ public interface EventStore extends Closeable {
   /** Returns true if the store contains any pending events for a give backend. */
   boolean hasPendingEventsFor(TransportContext transportContext);
 
-  /** Load all pending events for a given backend. */
+  /**
+   * Load all pending events for a given backend. Events with different priority may be added to a
+   * batch.
+   */
   Iterable<PersistedEvent> loadBatch(TransportContext transportContext);
 
   /** Load all {@link TransportContext}s that have pending events. */

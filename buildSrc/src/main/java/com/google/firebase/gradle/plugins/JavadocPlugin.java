@@ -191,7 +191,8 @@ public class JavadocPlugin implements Plugin<Project> {
                   .setValue(
                       ImmutableList.of(
                           ImmutableList.of("book.path", "/docs/reference/_book.yaml"),
-                          ImmutableList.of("project.path", "/_project.yaml")));
+                          ImmutableList.of(
+                              "project.path", "/docs/reference/android/_project.yaml")));
 
               // root path assumed by docs
               options.addStringOption("toroot", "/docs/reference/android/");

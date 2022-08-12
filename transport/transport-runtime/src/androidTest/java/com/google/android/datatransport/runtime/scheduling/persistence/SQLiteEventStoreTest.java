@@ -208,8 +208,8 @@ public class SQLiteEventStoreTest {
     PersistedEvent newEvent1 = store.persist(ctx1, event1);
     PersistedEvent newEvent2 = store.persist(ctx2, event2);
 
-    assertThat(store.loadBatch(ctx1)).containsExactly(newEvent1);
-    assertThat(store.loadBatch(ctx2)).containsExactly(newEvent2);
+    assertThat(store.loadBatch(ctx1)).containsExactly(newEvent1, newEvent2).inOrder();
+    assertThat(store.loadBatch(ctx2)).containsExactly(newEvent2, newEvent1).inOrder();
   }
 
   @Test
@@ -471,6 +471,27 @@ public class SQLiteEventStoreTest {
 
     store.recordSuccess(persistedEvents);
     assertThat(store.loadBatch(TRANSPORT_CONTEXT)).hasSize(1);
+  }
+
+  @Test
+  public void loadBatch_shouldLoadNoMoreThanBatchSizeItemsWithDifferentPriority() {
+    TransportContext ctx1 = TRANSPORT_CONTEXT;
+    TransportContext ctx2 = TRANSPORT_CONTEXT.withPriority(Priority.VERY_LOW);
+
+    for (int i = 0; i < CONFIG.getLoadBatchSize() - 1; i++) {
+      store.persist(ctx1, EVENT);
+    }
+
+    for (int i = 0; i < 3; i++) {
+      store.persist(ctx2, EVENT);
+    }
+
+    Iterable<PersistedEvent> persistedEvents = store.loadBatch(ctx1);
+    assertThat(store.loadBatch(ctx1)).hasSize(CONFIG.getLoadBatchSize());
+
+    store.recordSuccess(persistedEvents);
+
+    assertThat(store.loadBatch(ctx2)).hasSize(2);
   }
 
   @Test

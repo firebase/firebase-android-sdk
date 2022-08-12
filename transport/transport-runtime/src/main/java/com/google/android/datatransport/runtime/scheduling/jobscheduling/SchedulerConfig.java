@@ -86,7 +86,7 @@ public abstract class SchedulerConfig {
             ConfigValue.builder()
                 .setDelta(TWENTY_FOUR_HOURS)
                 .setMaxAllowedDelay(TWENTY_FOUR_HOURS)
-                .setFlags(immutableSetOf(Flag.NETWORK_UNMETERED, Flag.DEVICE_IDLE))
+                .setFlags(immutableSetOf(Flag.DEVICE_IDLE))
                 .build())
         .setClock(clock)
         .build();
