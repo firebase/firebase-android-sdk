@@ -11,11 +11,5 @@
         <category android:name="android.intent.category.LAUNCHER"/>
       </intent-filter>
     </activity>
-
-    <!-- TODO(b/242389964): init provider crashes the tests process for fiam(d). -->
-    <provider
-        android:name="com.google.firebase.provider.FirebaseInitProvider"
-        android:authorities="${applicationId}.firebaseinitprovider"
-        tools:node="remove" />
   </application>
 </manifest>
