@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.inappmessaging.display.internal.bindingwrappers;
+package com.google.firebase.inappmessaging.display.test;
 
 import android.app.Activity;
 

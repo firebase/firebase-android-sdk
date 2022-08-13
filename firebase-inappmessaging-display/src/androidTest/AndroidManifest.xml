@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.google.firebase.inappmessaging.display.internal.bindingwrappers">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.google.firebase.inappmessaging.display.test">
 
   <application>
     <uses-library android:name="android.test.runner"/>
@@ -10,10 +11,11 @@
         <category android:name="android.intent.category.LAUNCHER"/>
       </intent-filter>
     </activity>
-  </application>
 
-  <instrumentation
-      android:name="androidx.test.runner.AndroidJUnitRunner"
-      android:targetPackage="com.google.firebase.inappmessaging.display.internal.bindingwrappers">
-  </instrumentation>
+    <!-- TODO(b/242389964): init provider crashes the tests process for fiam(d). -->
+    <provider
+        android:name="com.google.firebase.provider.FirebaseInitProvider"
+        android:authorities="${applicationId}.firebaseinitprovider"
+        tools:node="remove" />
+  </application>
 </manifest>
