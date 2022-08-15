@@ -848,12 +848,17 @@ public class SyncTree {
   }
 
   public void keepSynced(final QuerySpec query, final boolean keep) {
+    keepSynced(query, keep, false);
+  }
+
+  public void keepSynced(final QuerySpec query, final boolean keep, final boolean skipDedup) {
     if (keep && !keepSyncedQueries.contains(query)) {
       // TODO[persistence]: Find better / more efficient way to do keep-synced listeners.
-      addEventRegistration(new KeepSyncedEventRegistration(query));
+      addEventRegistration(
+          new KeepSyncedEventRegistration(query), /*skipListenerSetup=*/ skipDedup);
       keepSyncedQueries.add(query);
     } else if (!keep && keepSyncedQueries.contains(query)) {
-      removeEventRegistration(new KeepSyncedEventRegistration(query));
+      removeEventRegistration(new KeepSyncedEventRegistration(query), /*skipDedup=*/ skipDedup);
       keepSyncedQueries.remove(query);
     }
   }

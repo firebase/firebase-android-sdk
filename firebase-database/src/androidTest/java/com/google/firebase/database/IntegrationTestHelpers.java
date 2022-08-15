@@ -356,9 +356,9 @@ public class IntegrationTestHelpers {
   }
 
   public static FirebaseDatabase getNewDatabase() {
-    FirebaseApp readApp =
+    FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
-    return FirebaseDatabase.getInstance(readApp);
+    return FirebaseDatabase.getInstance(app);
   }
 
   public static DataSnapshot getSnap(Query ref) throws InterruptedException {
