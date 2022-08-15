@@ -15,7 +15,6 @@
 package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.util.Executors;
@@ -30,8 +29,6 @@ import com.google.firebase.firestore.util.Preconditions;
  * code that does so.
  */
 public class AggregateQuery {
-  private static final int DEFAULT_ATTEMPTS = 2;
-
   // The base query.
   private final Query query;
 
@@ -56,17 +53,12 @@ public class AggregateQuery {
    */
   @NonNull
   public Task<AggregateQuerySnapshot> get(@NonNull AggregateSource source) {
-    return get(source, DEFAULT_ATTEMPTS);
-  }
-
-  @VisibleForTesting
-  Task<AggregateQuerySnapshot> get(@NonNull AggregateSource source, int maxAttempts) {
     Preconditions.checkNotNull(source, "AggregateSource must not be null");
     TaskCompletionSource<AggregateQuerySnapshot> tcs = new TaskCompletionSource<>();
     query
         .firestore
         .getClient()
-        .runCountQuery(query.query, maxAttempts)
+        .runCountQuery(query.query)
         .continueWith(
             Executors.DIRECT_EXECUTOR,
             (task) -> {

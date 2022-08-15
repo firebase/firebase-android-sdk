@@ -233,22 +233,4 @@ public class CountTest {
         waitFor(collection.count().get(AggregateSource.SERVER_DIRECT));
     assertEquals(Long.valueOf(3), snapshot.getCount());
   }
-
-  @Test
-  public void testExponentialBackoffWorks() {
-    CollectionReference collection =
-        testCollectionWithDocs(
-            map(
-                "a", map("k", "a"),
-                "b", map("k", "b"),
-                "c", map("k", "c")));
-    waitFor(collection.getFirestore().disableNetwork());
-
-    Exception e =
-        waitForException(
-            collection.count().get(AggregateSource.SERVER_DIRECT, /* maxAttempts */ 2));
-    assertThat(e, instanceOf(FirebaseFirestoreException.class));
-    assertEquals(
-        FirebaseFirestoreException.Code.UNAVAILABLE, ((FirebaseFirestoreException) e).getCode());
-  }
 }
