@@ -26,6 +26,7 @@ package com.google.firebase.firestore {
 
   public class AggregateQuerySnapshot {
     method @Nullable public Long getCount();
+    method @NonNull public com.google.firebase.firestore.AggregateQuery getQuery();
   }
 
   public enum AggregateSource {
