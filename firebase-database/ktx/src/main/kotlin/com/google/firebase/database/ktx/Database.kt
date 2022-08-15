@@ -67,20 +67,22 @@ inline fun <reified T> MutableData.getValue(): T? {
 
 /**
  * Run a transaction on the data at this location.
- * Returns the new data at the location.
  *
  * @param fireLocalEvents Defaults to true. If set to false, events will only be fired for the
  *     final result state of the transaction, and not for any intermediate states
- * @param handler An object to handle running the transaction
+ * @param handler A function to handle running the transaction
+ *
+ * Returns a [Pair]<Boolean, DataSnapshot> containing:
+ * Boolean: True if the transaction successfully completed, false if it was aborted or
+ *     an error occurred
+ * DataSnapshot: The current data at the location or null if an error occurred
  */
 suspend fun DatabaseReference.runTransaction(
     fireLocalEvents: Boolean = true,
     handler: (MutableData) -> Transaction.Result
-) = suspendCancellableCoroutine<DataSnapshot> { continuation ->
+) = suspendCancellableCoroutine<Pair<Boolean, DataSnapshot?>> { continuation ->
     runTransaction(object : Transaction.Handler {
-        override fun doTransaction(currentData: MutableData): Transaction.Result {
-            return handler(currentData)
-        }
+        override fun doTransaction(currentData: MutableData) = handler(currentData)
 
         override fun onComplete(
             error: DatabaseError?,
@@ -89,11 +91,9 @@ suspend fun DatabaseReference.runTransaction(
         ) {
             if (error != null) {
                 continuation.resumeWithException(error.toException())
-            } else {
-                if (currentData != null) {
-                    continuation.resume(currentData)
-                }
+                return
             }
+            continuation.resume(Pair(committed, currentData))
         }
     }, fireLocalEvents)
 }
