@@ -3,7 +3,7 @@ name: API Information
 on: [ pull_request ]
 
 jobs:
-  check:
+  api-information-check:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
