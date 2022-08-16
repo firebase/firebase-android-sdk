@@ -27,11 +27,11 @@ import com.google.internal.firebase.inappmessaging.v1.sdkserving.CampaignImpress
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.ClientAppInfo;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsRequest;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
-import dagger.Lazy;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
+import javax.inject.Provider;
 
 /**
  * Interface to speak to the fiam backend
@@ -43,14 +43,14 @@ public class ApiClient {
 
   private static final String FETCHING_CAMPAIGN_MESSAGE = "Fetching campaigns from service.";
 
-  private final Lazy<GrpcClient> grpcClient;
+  private final Provider<GrpcClient> grpcClient;
   private final FirebaseApp firebaseApp;
   private final Application application;
   private final Clock clock;
   private final ProviderInstaller providerInstaller;
 
   public ApiClient(
-      Lazy<GrpcClient> grpcClient,
+      Provider<GrpcClient> grpcClient,
       FirebaseApp firebaseApp,
       Application application,
       Clock clock,
