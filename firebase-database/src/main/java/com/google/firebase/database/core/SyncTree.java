@@ -858,7 +858,7 @@ public class SyncTree {
           new KeepSyncedEventRegistration(query), /*skipListenerSetup=*/ skipDedup);
       keepSyncedQueries.add(query);
     } else if (!keep && keepSyncedQueries.contains(query)) {
-      removeEventRegistration(new KeepSyncedEventRegistration(query), /*skipDedup=*/ skipDedup);
+      removeEventRegistration(new KeepSyncedEventRegistration(query), skipDedup);
       keepSyncedQueries.remove(query);
     }
   }

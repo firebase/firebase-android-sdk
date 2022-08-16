@@ -769,8 +769,7 @@ public class Repo implements PersistentConnection.Delegate {
 
   public void keepSynced(QuerySpec query, boolean keep, final boolean skipDedup) {
     hardAssert(query.getPath().isEmpty() || !query.getPath().getFront().equals(Constants.DOT_INFO));
-
-    serverSyncTree.keepSynced(query, keep, /*skipDedup=*/ skipDedup);
+    serverSyncTree.keepSynced(query, keep, skipDedup);
   }
 
   PersistentConnection getConnection() {
