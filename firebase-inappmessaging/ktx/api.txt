@@ -2,7 +2,6 @@
 package com.google.firebase.inappmessaging.ktx {
 
   public final class InAppMessagingKt {
-    ctor public InAppMessagingKt();
     method @NonNull public static com.google.firebase.inappmessaging.FirebaseInAppMessaging getInAppMessaging(@NonNull com.google.firebase.ktx.Firebase);
   }
 
