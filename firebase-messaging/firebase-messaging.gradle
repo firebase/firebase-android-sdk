@@ -94,7 +94,7 @@ dependencies {
 
     implementation 'androidx.annotation:annotation:1.2.0'
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
-    implementation "com.google.android.gms:play-services-basement:18.0.0"
+    implementation "com.google.android.gms:play-services-basement:18.1.0"
     implementation 'com.google.android.gms:play-services-base:18.0.1'
     implementation 'com.google.android.gms:play-services-stats:17.0.2'
     implementation 'com.google.firebase:firebase-measurement-connector:19.0.0'
