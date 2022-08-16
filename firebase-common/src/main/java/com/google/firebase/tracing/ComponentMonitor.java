@@ -15,7 +15,6 @@
 package com.google.firebase.tracing;
 
 import com.google.firebase.components.Component;
-import com.google.firebase.components.ComponentFactory;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRegistrarProcessor;
 import java.util.ArrayList;
@@ -24,19 +23,19 @@ import java.util.List;
 /** Wraps components to trace their initialization time. */
 public class ComponentMonitor implements ComponentRegistrarProcessor {
   @Override
-  @SuppressWarnings({"rawtypes", "unchecked"})
   public List<Component<?>> processRegistrar(ComponentRegistrar registrar) {
     List<Component<?>> components = new ArrayList<>();
     for (Component comp : registrar.getComponents()) {
-      final String name = comp.getName();
+      String name = comp.getName();
       if (name != null) {
-        ComponentFactory<?> old = comp.getFactory();
+        @SuppressWarnings("unchecked")
+        Component<Object> old = (Component<Object>) comp;
         comp =
-            comp.withFactory(
+            old.withFactory(
                 c -> {
                   try {
                     FirebaseTrace.pushTrace(name);
-                    return old.create(c);
+                    return old.getFactory().create(c);
                   } finally {
                     FirebaseTrace.popTrace();
                   }
