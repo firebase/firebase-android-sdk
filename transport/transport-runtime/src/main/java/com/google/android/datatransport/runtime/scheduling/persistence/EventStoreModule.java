@@ -20,6 +20,7 @@ import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 import javax.inject.Named;
+import javax.inject.Singleton;
 
 @Module
 public abstract class EventStoreModule {
@@ -51,6 +52,7 @@ public abstract class EventStoreModule {
   }
 
   @Provides
+  @Singleton
   @Named("PACKAGE_NAME")
   static String packageName(Context context) {
     return context.getPackageName();
