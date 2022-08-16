@@ -92,7 +92,6 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
   }
 
   private static void setupApiInformationAnalysis(Project project) {
-    File metalavaOutputJarFile = new File(project.getRootProject().getBuildDir(), "metalava.jar");
     SourceSet mainSourceSet =
         project
             .getConvention()

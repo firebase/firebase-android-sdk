@@ -9,23 +9,14 @@ package com.google.firebase.firestore.ktx {
     method public static inline <reified T> T getField(@NonNull com.google.firebase.firestore.DocumentSnapshot, @NonNull com.google.firebase.firestore.FieldPath fieldPath);
     method public static inline <reified T> T getField(@NonNull com.google.firebase.firestore.DocumentSnapshot, @NonNull com.google.firebase.firestore.FieldPath fieldPath, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
     method @NonNull public static com.google.firebase.firestore.FirebaseFirestore getFirestore(@NonNull com.google.firebase.ktx.Firebase);
-<<<<<<< HEAD
+    method @NonNull public static kotlinx.coroutines.flow.Flow<com.google.firebase.firestore.DocumentSnapshot> snapshots(@NonNull com.google.firebase.firestore.DocumentReference, @NonNull com.google.firebase.firestore.MetadataChanges metadataChanges = com.google.firebase.firestore.MetadataChanges.EXCLUDE);
+    method @NonNull public static kotlinx.coroutines.flow.Flow<com.google.firebase.firestore.QuerySnapshot> snapshots(@NonNull com.google.firebase.firestore.Query, @NonNull com.google.firebase.firestore.MetadataChanges metadataChanges = com.google.firebase.firestore.MetadataChanges.EXCLUDE);
     method public static inline <reified T> T toObject(@NonNull com.google.firebase.firestore.DocumentSnapshot);
     method public static inline <reified T> T toObject(@NonNull com.google.firebase.firestore.DocumentSnapshot, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
     method public static inline <reified T> T toObject(@NonNull com.google.firebase.firestore.QueryDocumentSnapshot);
     method public static inline <reified T> T toObject(@NonNull com.google.firebase.firestore.QueryDocumentSnapshot, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
     method public static inline <reified T> java.util.List<? extends T> toObjects(@NonNull com.google.firebase.firestore.QuerySnapshot);
     method public static inline <reified T> java.util.List<? extends T> toObjects(@NonNull com.google.firebase.firestore.QuerySnapshot, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
-=======
-    method @NonNull public static kotlinx.coroutines.flow.Flow<com.google.firebase.firestore.DocumentSnapshot> snapshots(@NonNull com.google.firebase.firestore.DocumentReference, @NonNull com.google.firebase.firestore.MetadataChanges metadataChanges = com.google.firebase.firestore.MetadataChanges.EXCLUDE);
-    method @NonNull public static kotlinx.coroutines.flow.Flow<com.google.firebase.firestore.QuerySnapshot> snapshots(@NonNull com.google.firebase.firestore.Query, @NonNull com.google.firebase.firestore.MetadataChanges metadataChanges = com.google.firebase.firestore.MetadataChanges.EXCLUDE);
-    method @Nullable public static inline <reified T> T toObject(@NonNull com.google.firebase.firestore.DocumentSnapshot);
-    method @Nullable public static inline <reified T> T toObject(@NonNull com.google.firebase.firestore.DocumentSnapshot, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
-    method @NonNull public static inline <reified T> T toObject(@NonNull com.google.firebase.firestore.QueryDocumentSnapshot);
-    method @NonNull public static inline <reified T> T toObject(@NonNull com.google.firebase.firestore.QueryDocumentSnapshot, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
-    method @NonNull public static inline <reified T> java.util.List<T> toObjects(@NonNull com.google.firebase.firestore.QuerySnapshot);
-    method @NonNull public static inline <reified T> java.util.List<T> toObjects(@NonNull com.google.firebase.firestore.QuerySnapshot, @NonNull com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
->>>>>>> master
   }
 
 }

@@ -31,9 +31,9 @@ repositories {
 // Refer go/fireperf-plugin-test-on-head for more details.
 val perfPluginVersion = System.getenv("FIREBASE_PERF_PLUGIN_VERSION") ?: "1.4.1"
 
-googleJavaFormat(Action {
+googleJavaFormat {
     toolVersion = "1.10.0"
-})
+}
 
 dependencies {
     // Firebase performance plugin, it should be added here because of how gradle dependency
@@ -43,8 +43,7 @@ dependencies {
 
     implementation("com.google.auto.value:auto-value-annotations:1.8.1")
     annotationProcessor("com.google.auto.value:auto-value:1.6.5")
-    // implementation("digital.wup:android-maven-publish:3.6.3")
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10")
+    implementation(kotlin("gradle-plugin", "1.7.10"))
     implementation("org.json:json:20210307")
 
     implementation("org.eclipse.aether:aether-api:1.0.0.v20140518")
@@ -67,42 +66,38 @@ dependencies {
     testImplementation("commons-io:commons-io:2.6")
 }
 
-gradlePlugin(Action {
+gradlePlugin {
     plugins {
-        create("licensePlugin") {
+        register("licensePlugin") {
             id = "LicenseResolverPlugin"
             implementationClass = "com.google.firebase.gradle.plugins.license.LicenseResolverPlugin"
         }
-        create("multiProjectReleasePlugin") {
+        register("multiProjectReleasePlugin") {
             id = "MultiProjectReleasePlugin"
             implementationClass = "com.google.firebase.gradle.MultiProjectReleasePlugin"
         }
-        create("publishingPlugin") {
+        register("publishingPlugin") {
             id = "PublishingPlugin"
             implementationClass = "com.google.firebase.gradle.plugins.publish.PublishingPlugin"
         }
-        create("firebaseLibraryPlugin") {
+        register("firebaseLibraryPlugin") {
             id = "firebase-library"
             implementationClass = "com.google.firebase.gradle.plugins.FirebaseLibraryPlugin"
         }
-
-        create("firebaseJavaLibraryPlugin") {
+        register("firebaseJavaLibraryPlugin") {
             id = "firebase-java-library"
             implementationClass = "com.google.firebase.gradle.plugins.FirebaseJavaLibraryPlugin"
         }
-
-        create("firebaseVendorPlugin") {
+        register("firebaseVendorPlugin") {
             id = "firebase-vendor"
             implementationClass = "com.google.firebase.gradle.plugins.VendorPlugin"
         }
     }
-})
+}
 
 tasks.withType<Test> {
     testLogging {
-        // Make sure output from
-        // standard out or error is shown
-        // in Gradle output.
+        // Make sure output from standard out or error is shown in Gradle output.
         showStandardStreams = true
     }
     val enablePluginTests: String? by rootProject
