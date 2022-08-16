@@ -99,9 +99,7 @@ gradlePlugin(Action {
 
 tasks.withType<Test> {
     testLogging {
-        // Make sure output from
-        // standard out or error is shown
-        // in Gradle output.
+        // Make sure output from standard out or error is shown in Gradle output.
         showStandardStreams = true
     }
     val enablePluginTests: String? by rootProject
