@@ -20,6 +20,7 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.REALTIME_RE
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
 import com.google.android.gms.common.util.AndroidUtilsLight;
@@ -70,6 +71,9 @@ public class ConfigRealtimeHttpClient {
   @GuardedBy("this")
   private long httpRetrySeconds;
 
+  @GuardedBy("this")
+  private boolean isRealtimeDisabled;
+
   private final int ORIGINAL_RETRIES = 7;
 
   private final ScheduledExecutorService scheduledExecutorService;
@@ -101,6 +105,7 @@ public class ConfigRealtimeHttpClient {
     this.firebaseInstallations = firebaseInstallations;
     this.context = context;
     this.namespace = namespace;
+    this.isRealtimeDisabled = false;
   }
 
   /**
@@ -174,6 +179,9 @@ public class ConfigRealtimeHttpClient {
     body.put("namespace", this.namespace);
     body.put(
         "lastKnownVersionNumber", Long.toString(configFetchHandler.getTemplateVersionNumber()));
+    body.put("appId", firebaseApp.getOptions().getApplicationId());
+    body.put("sdkVersion", Integer.toString(Build.VERSION.SDK_INT));
+
     return new JSONObject(body);
   }
 
@@ -192,6 +200,10 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
+  private synchronized void enableBackoff() {
+    this.isRealtimeDisabled = true;
+  }
+
   private synchronized int getRetryMultiplier() {
     // Return retry multiplier between range of 5 and 2.
     return random.nextInt(3) + 2;
@@ -203,7 +215,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized boolean canMakeHttpStreamConnection() {
-    return !listeners.isEmpty() && httpURLConnection == null;
+    return !listeners.isEmpty() && httpURLConnection == null && !isRealtimeDisabled;
   }
 
   private String getRealtimeURL(String namespace) {
@@ -218,7 +230,7 @@ public class ConfigRealtimeHttpClient {
     try {
       realtimeURL = new URL(getRealtimeURL(namespace));
     } catch (MalformedURLException ex) {
-      Log.i(TAG, "URL is malformed");
+      Log.e(TAG, "URL is malformed");
     }
 
     return realtimeURL;
@@ -232,7 +244,7 @@ public class ConfigRealtimeHttpClient {
       setCommonRequestHeaders(httpURLConnection);
       setRequestParams(httpURLConnection);
     } catch (IOException ex) {
-      Log.i(TAG, "Can't make connection, will retry after method returns.");
+      Log.d(TAG, "Can't make connection, will retry after method returns.");
     }
 
     return httpURLConnection;
@@ -270,16 +282,25 @@ public class ConfigRealtimeHttpClient {
             retryHTTPConnection();
           }
 
+          // This method will only be called when a realtimeDisabled message is sent down the
+          // stream.
           @Override
-          public void onError(Exception error) {}
+          public void onError(Exception error) {
+            if (error != null) {
+              enableBackoff();
+              propagateErrors(
+                  new FirebaseRemoteConfigRealtimeUpdateStreamException(
+                      "Back off is enabled, stopping Realtime until app restarts."));
+            }
+          }
         };
 
-    ConfigAutoFetch autoFetch =
-        new ConfigAutoFetch(httpURLConnection, configFetchHandler, listeners, retryCallback);
-    return autoFetch;
+    return new ConfigAutoFetch(httpURLConnection, configFetchHandler, listeners, retryCallback);
   }
 
-  // Kicks off Http stream listening and autofetch
+  // Kicks off Http stream listening and AutoFetching. The AutoFetch method listenForNotifications
+  // will be a blocking call until the Http stream closes, at which point we will try and
+  // reestablish the stream.
   @SuppressLint("VisibleForTests")
   synchronized void beginRealtimeHttpStream() {
     if (canMakeHttpStreamConnection()) {
@@ -288,9 +309,9 @@ public class ConfigRealtimeHttpClient {
         resetRetryParameters();
         ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
         configAutoFetch.listenForNotifications();
-      } else {
-        retryHTTPConnection();
+        closeRealtimeHttpStream();
       }
+      retryHTTPConnection();
     }
   }
 

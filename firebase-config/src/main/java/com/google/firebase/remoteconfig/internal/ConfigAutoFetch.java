@@ -41,6 +41,8 @@ import org.json.JSONObject;
 public class ConfigAutoFetch {
 
   private static final int FETCH_RETRY = 3;
+  private static final String TEMPLATE_VERSION_KEY = "latestTemplateVersionNumber";
+  private static final String REALTIME_DISABLED_KEY = "featureDisabled";
 
   @GuardedBy("this")
   private final Set<ConfigUpdateListener> eventListeners;
@@ -77,6 +79,19 @@ public class ConfigAutoFetch {
     }
   }
 
+  private String parseAndValidateConfigUpdateMessage(String message) {
+    int left = 0;
+    while (left < message.length() && message.charAt(left) != '{') {
+      left++;
+    }
+    int right = message.length() - 1;
+    while (right >= 0 && message.charAt(right) != '}') {
+      right--;
+    }
+
+    return left >= right ? "" : message.substring(left, right + 1);
+  }
+
   // Check connection and establish InputStream
   @VisibleForTesting
   public void listenForNotifications() {
@@ -106,32 +121,53 @@ public class ConfigAutoFetch {
     try {
       scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
     } catch (InterruptedException ex) {
-      Log.i(TAG, "Thread Interrupted.");
+      Log.d(TAG, "Thread Interrupted.");
     }
   }
 
   // Auto-fetch new config and execute callbacks on each new message
   private void handleNotifications(InputStream inputStream) throws IOException {
     BufferedReader reader = new BufferedReader((new InputStreamReader(inputStream, "utf-8")));
-    String message;
-    while ((message = reader.readLine()) != null) {
-      if (!message.contains("latestTemplateVersionNumber")) {
-        continue;
-      }
+    String partialConfigUpdateMessage;
+    String currentConfigUpdateMessage = "";
 
-      long targetTemplateVersion = configFetchHandler.getTemplateVersionNumber();
-      try {
-        JSONObject jsonObject =
-            new JSONObject("{" + message.substring(0, message.length() - 1) + " }");
-        if (jsonObject.has("latestTemplateVersionNumber")) {
-          targetTemplateVersion = jsonObject.getLong("latestTemplateVersionNumber");
+    // Multiple config update messages can be sent through this loop. Each message comes in line by
+    // line as partialConfigUpdateMessage and are accumulated together into
+    // currentConfigUpdateMessage.
+    while ((partialConfigUpdateMessage = reader.readLine()) != null) {
+      // Accumulate all the partial parts of the message until we have a full message.
+      currentConfigUpdateMessage += partialConfigUpdateMessage;
+
+      // Closing bracket indicates a full message has just finished.
+      if (partialConfigUpdateMessage.contains("}")) {
+        // Strip beginning and ending of message. If there is not an open and closing bracket,
+        // parseMessage will return an empty message.
+        currentConfigUpdateMessage =
+            parseAndValidateConfigUpdateMessage(currentConfigUpdateMessage);
+        if (!currentConfigUpdateMessage.isEmpty()) {
+          try {
+            JSONObject jsonObject = new JSONObject(currentConfigUpdateMessage);
+
+            if (jsonObject.has(REALTIME_DISABLED_KEY)
+                && jsonObject.getBoolean(REALTIME_DISABLED_KEY)) {
+              retryCallback.onError(
+                  new FirebaseRemoteConfigRealtimeUpdateStreamException("Realtime is disabled."));
+              break;
+            }
+            if (jsonObject.has(TEMPLATE_VERSION_KEY)) {
+              long oldTemplateVersion = configFetchHandler.getTemplateVersionNumber();
+              long targetTemplateVersion = jsonObject.getLong(TEMPLATE_VERSION_KEY);
+              if (targetTemplateVersion > oldTemplateVersion) {
+                autoFetch(FETCH_RETRY, targetTemplateVersion);
+              }
+            }
+          } catch (JSONException ex) {
+            Log.e(TAG, "Unable to parse latest config update message." + ex.toString());
+          }
+
+          currentConfigUpdateMessage = "";
         }
-
-      } catch (JSONException ex) {
-        Log.i(TAG, "Unable to parse latest config update message." + ex.toString());
       }
-
-      autoFetch(FETCH_RETRY, targetTemplateVersion);
     }
 
     reader.close();
@@ -174,7 +210,7 @@ public class ConfigAutoFetch {
           if (newTemplateVersion >= targetVersion) {
             executeAllListenerCallbacks();
           } else {
-            Log.i(
+            Log.d(
                 TAG,
                 "Fetched template version is the same as SDK's current version."
                     + " Retrying fetch.");
