@@ -4585,7 +4585,7 @@ public class QueryTest {
         readDb.goOnline();
         Thread.sleep(
             sleepTime); // An arbitrary value to help make sure `onValue` doesn't resolve before
-                        // `get()`
+        // `get()`
         if (resolved.get()) {
           sleepTime -= 5;
           continue;
