@@ -28,7 +28,7 @@ package com.google.firebase.messaging {
     method public final int onStartCommand(android.content.Intent, int, int);
   }
 
-  @com.google.android.gms.common.internal.safeparcel.SafeParcelable.Reserved({1}) @com.google.android.gms.common.internal.safeparcel.SafeParcelable.Class(creator="RemoteMessageCreator") public final class RemoteMessage extends com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable {
+  @com.google.android.gms.common.internal.safeparcel.SafeParcelable.Class(creator="RemoteMessageCreator") @com.google.android.gms.common.internal.safeparcel.SafeParcelable.Reserved({1}) public final class RemoteMessage extends com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable {
     method @Nullable public String getCollapseKey();
     method @NonNull public java.util.Map<java.lang.String,java.lang.String> getData();
     method @Nullable public String getFrom();

@@ -34,7 +34,7 @@ val Project.metalavaConfig: Configuration
     get() =
         configurations.findByName("metalavaArtifacts")
             ?: configurations.create("metalavaArtifacts") {
-                this.dependencies.add(this@metalavaConfig.dependencies.create("com.android:metalava:1.3.0"))
+                this.dependencies.add(this@metalavaConfig.dependencies.create("com.android.tools.metalava:metalava:1.0.0-alpha06"))
             }
 
 fun Project.runMetalavaWithArgs(
