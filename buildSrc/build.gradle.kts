@@ -31,9 +31,9 @@ repositories {
 // Refer go/fireperf-plugin-test-on-head for more details.
 val perfPluginVersion = System.getenv("FIREBASE_PERF_PLUGIN_VERSION") ?: "1.4.1"
 
-googleJavaFormat(Action {
+googleJavaFormat {
     toolVersion = "1.10.0"
-})
+}
 
 dependencies {
     // Firebase performance plugin, it should be added here because of how gradle dependency
@@ -66,7 +66,7 @@ dependencies {
     testImplementation("commons-io:commons-io:2.6")
 }
 
-gradlePlugin(Action {
+gradlePlugin {
     plugins {
         register("licensePlugin") {
             id = "LicenseResolverPlugin"
@@ -95,7 +95,7 @@ gradlePlugin(Action {
             implementationClass = "com.google.firebase.gradle.plugins.VendorPlugin"
         }
     }
-})
+}
 
 tasks.withType<Test> {
     testLogging {
