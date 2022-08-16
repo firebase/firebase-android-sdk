@@ -14,45 +14,55 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.android.build.gradle.api.AndroidSourceSet
 import java.io.File
+import java.io.FileOutputStream
+import java.io.OutputStream
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.FileCollection
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.SetProperty
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.SourceSet
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 val Project.metalavaConfig: Configuration
     get() =
         configurations.findByName("metalavaArtifacts")
-                ?: configurations.create("metalavaArtifacts") {
-                    this.dependencies.add(this@metalavaConfig.dependencies.create("com.android:metalava:1.3.0"))
-                }
+            ?: configurations.create("metalavaArtifacts") {
+                this.dependencies.add(this@metalavaConfig.dependencies.create("com.android:metalava:1.3.0"))
+            }
 
 fun Project.runMetalavaWithArgs(
-    arguments: List<String>
+    arguments: List<String>,
+    ignoreFailure: Boolean = false,
+    stdOut: OutputStream? = null
 ) {
     val allArgs = listOf(
-            "--no-banner",
-            "--hide",
-            "HiddenSuperclass" // We allow having a hidden parent class
+        "--no-banner",
+        "--hide",
+        "HiddenSuperclass", // We allow having a hidden parent class
+        "--hide",
+        "HiddenAbstractMethod"
     ) + arguments
 
     project.javaexec {
         main = "com.android.tools.metalava.Driver"
         classpath = project.metalavaConfig
         args = allArgs
+        isIgnoreExitValue = ignoreFailure
+        if (stdOut != null) errorOutput = stdOut
     }
 }
 
 abstract class GenerateStubsTask : DefaultTask() {
     /** Source files against which API signatures will be validated. */
-    @Nested
-    lateinit var sourceSet: Any
+    @get:InputFiles
+    abstract val sources: SetProperty<File>
 
     @get:InputFiles
     lateinit var classPath: FileCollection
@@ -60,37 +70,147 @@ abstract class GenerateStubsTask : DefaultTask() {
     @get:OutputDirectory
     val outputDir: File = File(project.buildDir, "doc-stubs")
 
-    private val sourceDirs: Set<File>
-        get() = with(sourceSet) {
-            when (this) {
-                is SourceSet -> java.srcDirs
-                is AndroidSourceSet -> java.srcDirs
-                else -> throw IllegalStateException("Unsupported sourceSet provided: $javaClass")
-            }
-        }
-
     @TaskAction
     fun run() {
-        val sourcePath = sourceDirs.asSequence()
-                .filter { it.exists() }
-                .map { it.absolutePath }
-                .joinToString(":")
+        val sourcePath = sources.get().asSequence()
+            .filter { it.exists() }
+            .map { it.absolutePath }
+            .joinToString(":")
 
         val classPath = classPath.files.asSequence()
-                .map { it.absolutePath }.toMutableList()
+            .map { it.absolutePath }.toMutableList()
         project.androidJar?.let {
             classPath += listOf(it.absolutePath)
         }
 
         project.runMetalavaWithArgs(
-                listOf(
-                        "--source-path",
-                        sourcePath,
-                        "--classpath",
-                        classPath.joinToString(":"),
-                        "--include-annotations",
-                        "--doc-stubs",
-                        outputDir.absolutePath
-                ))
+            listOf(
+                "--source-path",
+                sourcePath,
+                "--classpath",
+                classPath.joinToString(":"),
+                "--include-annotations",
+                "--doc-stubs",
+                outputDir.absolutePath
+            )
+        )
+    }
+}
+
+abstract class GenerateApiTxtTask : DefaultTask() {
+    /** Source files against which API signatures will be validated. */
+    @get:InputFiles
+    abstract val sources: SetProperty<File>
+
+    @get:InputFiles
+    lateinit var classPath: FileCollection
+
+    @get:OutputFile
+    abstract val apiTxtFile: Property<File>
+
+    @get:OutputFile
+    abstract val baselineFile: Property<File>
+
+    @get:Input
+    abstract val updateBaseline: Property<Boolean>
+
+    @TaskAction
+    fun run() {
+        val sourcePath = sources.get().asSequence()
+            .filter { it.exists() }
+            .map { it.absolutePath }
+            .joinToString(":")
+
+        val classPath = classPath.files.asSequence()
+            .map { it.absolutePath }.toMutableList()
+        project.androidJar?.let {
+            classPath += listOf(it.absolutePath)
+        }
+
+        project.runMetalavaWithArgs(
+            listOf(
+                "--source-path",
+                sourcePath,
+                "--classpath",
+                classPath.joinToString(":"),
+                "--api",
+                apiTxtFile.get().absolutePath,
+                "--format=v2"
+            ) + if (updateBaseline.get()) listOf("--update-baseline") else if (baselineFile.get()
+                    .exists()
+            ) listOf(
+                "--baseline",
+                baselineFile.get().absolutePath
+            ) else listOf(),
+            ignoreFailure = true
+        )
+    }
+}
+
+abstract class ApiInformationTask : DefaultTask() {
+    /** Source files against which API signatures will be validated. */
+    @get:InputFiles
+    abstract val sources: SetProperty<File>
+
+    @get:InputFiles
+    lateinit var classPath: FileCollection
+
+    @get:InputFile
+    abstract val apiTxtFile: Property<File>
+
+    @get:OutputFile
+    abstract val outputApiFile: Property<File>
+
+    @get:OutputFile
+    abstract val baselineFile: Property<File>
+
+    @get:OutputFile
+    abstract val outputFile: Property<File>
+
+    @get:Input
+    abstract val updateBaseline: Property<Boolean>
+
+    @TaskAction
+    fun run() {
+        val sourcePath = sources.get().asSequence()
+            .filter { it.exists() }
+            .map { it.absolutePath }
+            .joinToString(":")
+
+        val classPath = classPath.files.asSequence()
+            .map { it.absolutePath }.toMutableList()
+        project.androidJar?.let {
+            classPath += listOf(it.absolutePath)
+        }
+
+        project.runMetalavaWithArgs(
+            listOf(
+                "--source-path",
+                sourcePath,
+                "--classpath",
+                classPath.joinToString(":"),
+                "--api",
+                outputApiFile.get().absolutePath,
+                "--format=v2"
+            ),
+            ignoreFailure = true
+        )
+
+        project.runMetalavaWithArgs(
+            listOf(
+                "--source-files",
+                outputApiFile.get().absolutePath,
+                "--check-compatibility:api:current",
+                apiTxtFile.get().absolutePath,
+                "--format=v2",
+                "--no-color"
+            ) + if (updateBaseline.get()) listOf("--update-baseline") else if (baselineFile.get()
+                    .exists()
+            ) listOf(
+                "--baseline",
+                baselineFile.get().absolutePath
+            ) else listOf(),
+            ignoreFailure = true, stdOut = FileOutputStream(outputFile.get())
+        )
     }
 }
