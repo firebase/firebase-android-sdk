@@ -200,7 +200,7 @@ abstract class ApiInformationTask : DefaultTask() {
             listOf(
                 "--source-files",
                 outputApiFile.get().absolutePath,
-                "--check-compatibility:api:current",
+                "--check-compatibility:api:released",
                 apiTxtFile.get().absolutePath,
                 "--format=v2",
                 "--no-color"
