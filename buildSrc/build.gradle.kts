@@ -44,7 +44,7 @@ dependencies {
     implementation("com.google.auto.value:auto-value-annotations:1.8.1")
     annotationProcessor("com.google.auto.value:auto-value:1.6.5")
     implementation("digital.wup:android-maven-publish:3.6.3")
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.32")
+    implementation(kotlin("gradle-plugin", "1.4.32"))
     implementation("org.json:json:20210307")
 
     implementation("org.eclipse.aether:aether-api:1.0.0.v20140518")
@@ -68,29 +68,29 @@ dependencies {
 
 gradlePlugin(Action {
     plugins {
-        create("licensePlugin") {
+        register("licensePlugin") {
             id = "LicenseResolverPlugin"
             implementationClass = "com.google.firebase.gradle.plugins.license.LicenseResolverPlugin"
         }
-        create("multiProjectReleasePlugin") {
+        register("multiProjectReleasePlugin") {
             id = "MultiProjectReleasePlugin"
             implementationClass = "com.google.firebase.gradle.MultiProjectReleasePlugin"
         }
-        create("publishingPlugin") {
+        register("publishingPlugin") {
             id = "PublishingPlugin"
             implementationClass = "com.google.firebase.gradle.plugins.publish.PublishingPlugin"
         }
-        create("firebaseLibraryPlugin") {
+        register("firebaseLibraryPlugin") {
             id = "firebase-library"
             implementationClass = "com.google.firebase.gradle.plugins.FirebaseLibraryPlugin"
         }
 
-        create("firebaseJavaLibraryPlugin") {
+        register("firebaseJavaLibraryPlugin") {
             id = "firebase-java-library"
             implementationClass = "com.google.firebase.gradle.plugins.FirebaseJavaLibraryPlugin"
         }
 
-        create("firebaseVendorPlugin") {
+        register("firebaseVendorPlugin") {
             id = "firebase-vendor"
             implementationClass = "com.google.firebase.gradle.plugins.VendorPlugin"
         }
