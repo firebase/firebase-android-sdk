@@ -36,15 +36,9 @@ public class ComponentMonitorTest {
             .name("test")
             .build());
     list.add(
-        Component.builder(ComponentHolder.class)
-            .factory(ComponentHolder::new)
-            .name("foo")
-            .build());
+        Component.builder(ComponentHolder.class).factory(ComponentHolder::new).name("foo").build());
     list.add(
-        Component.builder(ComponentHolder.class)
-            .factory(ComponentHolder::new)
-            .name("bar")
-            .build());
+        Component.builder(ComponentHolder.class).factory(ComponentHolder::new).name("bar").build());
     ComponentMonitor monitor = new ComponentMonitor();
     List<Component<?>> transformed = monitor.processRegistrar(() -> list);
     assertThat(list.size()).isEqualTo(transformed.size());
