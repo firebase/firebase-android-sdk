@@ -17,6 +17,7 @@ package com.google.firebase.components;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
@@ -265,6 +266,7 @@ public final class Component<T> {
     }
 
     /** Add a {@link Dependency} to the {@link Component} being built. */
+    @CanIgnoreReturnValue
     public Builder<T> add(Dependency dependency) {
       Preconditions.checkNotNull(dependency, "Null dependency");
       validateInterface(dependency.getInterface());
@@ -273,21 +275,25 @@ public final class Component<T> {
     }
 
     /** Make the {@link Component} initialize upon startup. */
+    @CanIgnoreReturnValue
     public Builder<T> alwaysEager() {
       return setInstantiation(Instantiation.ALWAYS_EAGER);
     }
 
     /** Make the component initialize upon startup in default app. */
+    @CanIgnoreReturnValue
     public Builder<T> eagerInDefaultApp() {
       return setInstantiation(Instantiation.EAGER_IN_DEFAULT_APP);
     }
 
     /** Make the {@link Component} eligible to publish events of provided eventType. */
+    @CanIgnoreReturnValue
     public Builder<T> publishes(Class<?> eventType) {
       publishedEvents.add(eventType);
       return this;
     }
 
+    @CanIgnoreReturnValue
     private Builder<T> setInstantiation(@Instantiation int instantiation) {
       Preconditions.checkState(
           this.instantiation == Instantiation.LAZY, "Instantiation type has already been set.");
@@ -302,11 +308,13 @@ public final class Component<T> {
     }
 
     /** Set the factory that will be used to initialize the {@link Component}. */
+    @CanIgnoreReturnValue
     public Builder<T> factory(ComponentFactory<T> value) {
       factory = Preconditions.checkNotNull(value, "Null factory");
       return this;
     }
 
+    @CanIgnoreReturnValue
     private Builder<T> intoSet() {
       type = ComponentType.SET;
       return this;
