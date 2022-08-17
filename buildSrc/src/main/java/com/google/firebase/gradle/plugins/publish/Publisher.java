@@ -105,7 +105,7 @@ public class Publisher {
       }
 
       Element type = dep.getOwnerDocument().createElement("type");
-      type.setTextContent(deps.get(groupId + ":" + artifactId));
+      type.setTextContent(deps.getOrDefault(groupId + ":" + artifactId, "jar"));
       dep.appendChild(type);
 
       NodeList scopes = dep.getElementsByTagName("scope");

@@ -46,7 +46,7 @@ dependencies {
     implementation project(':firebase-common:ktx')
     implementation project(':firebase-components')
     implementation project(':firebase-messaging')
-    implementation "com.google.android.gms:play-services-basement:18.0.0"
+    implementation "com.google.android.gms:play-services-basement:18.1.0"
 
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'

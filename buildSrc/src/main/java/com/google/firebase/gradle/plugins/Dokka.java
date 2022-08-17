@@ -57,6 +57,10 @@ final class Dokka {
 
     Configuration javadocClasspath = project.getConfigurations().create("javadocClasspath");
     project.getDependencies().add("javadocClasspath", "com.google.code.findbugs:jsr305:3.0.2");
+    project
+        .getDependencies()
+        .add("javadocClasspath", "com.google.errorprone:error_prone_annotations:2.15.0");
+
     if (android != null) {
       javadocClasspath
           .getAttributes()
