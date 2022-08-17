@@ -14,10 +14,15 @@
 
 package com.google.firebase.appcheck.ktx
 
+import androidx.annotation.Keep
+import com.google.firebase.BuildConfig
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.AppCheckToken
 import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.components.Component
+import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.platforminfo.LibraryVersionComponent
 
 /** Returns the [FirebaseAppCheck] instance of the default [FirebaseApp]. */
 val Firebase.appCheck: FirebaseAppCheck
