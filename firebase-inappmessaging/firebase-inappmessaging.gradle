@@ -85,21 +85,10 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
-        // Neccesary for Dagger
-        incremental = false
     }
     testOptions {
         unitTests {
             includeAndroidResources = true
-        }
-    }
-}
-
-configurations.all {
-    if(it.name.contains('AndroidTestRuntimeClasspath')) {
-        it.resolutionStrategy {
-            force 'org.checkerframework:checker-compat-qual:2.5.5'
-            force 'com.google.guava:guava:30.1.1-android'
         }
     }
 }
