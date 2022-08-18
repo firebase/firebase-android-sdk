@@ -37,6 +37,7 @@ import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.publish.PublishingExtension;
 import org.gradle.api.publish.maven.MavenPublication;
+import org.gradle.api.publish.tasks.GenerateModuleMetadata;
 import org.gradle.api.tasks.TaskProvider;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
@@ -251,6 +252,13 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                 return Unit.INSTANCE;
               });
         });
+    project
+        .getTasks()
+        .withType(
+            GenerateModuleMetadata.class,
+            task -> {
+              task.setEnabled(false);
+            });
     project.afterEvaluate(
         p -> {
           project.apply(ImmutableMap.of("plugin", "maven-publish"));
