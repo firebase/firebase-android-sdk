@@ -19,11 +19,17 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.GenericTypeIndicator
 import com.google.firebase.database.MutableData
+import com.google.firebase.database.Query
+import com.google.firebase.database.ValueEventListener
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.callbackFlow
 
 /** Returns the [FirebaseDatabase] instance of the default [FirebaseApp]. */
 val Firebase.database: FirebaseDatabase
@@ -57,6 +63,25 @@ inline fun <reified T> DataSnapshot.getValue(): T? {
  */
 inline fun <reified T> MutableData.getValue(): T? {
     return getValue(object : GenericTypeIndicator<T>() {})
+}
+
+/**
+ * Starts listening to this query and emits its values via a [Flow].
+ *
+ * - When the returned flow starts being collected, an [ValueEventListener] will be attached.
+ * - When the flow completes, the listener will be removed.
+ */
+fun Query.snapshots() = callbackFlow {
+    val listener = addValueEventListener(object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) {
+            trySend(snapshot)
+        }
+
+        override fun onCancelled(error: DatabaseError) {
+            cancel(message = "Error getting Query snapshot", cause = error.toException())
+        }
+    })
+    awaitClose { removeEventListener(listener) }
 }
 
 internal const val LIBRARY_NAME: String = "fire-db-ktx"
