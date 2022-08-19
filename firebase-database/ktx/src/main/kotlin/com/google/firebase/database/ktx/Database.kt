@@ -72,7 +72,7 @@ inline fun <reified T> MutableData.getValue(): T? {
  * - When the returned flow starts being collected, a [ValueEventListener] will be attached.
  * - When the flow completes, the listener will be removed.
  */
-fun Query.snapshots() = callbackFlow {
+fun Query.snapshots() = callbackFlow<DataSnapshot> {
     val listener = addValueEventListener(object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
             trySend(snapshot)
@@ -91,7 +91,7 @@ fun Query.snapshots() = callbackFlow {
  * - When the returned flow starts being collected, a [ChildEventListener] will be attached.
  * - When the flow completes, the listener will be removed.
  */
-fun Query.childEvents() = callbackFlow {
+fun Query.childEvents() = callbackFlow<ChildEvent> {
     val listener = addChildEventListener(object : ChildEventListener {
         override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
             trySend(ChildEvent.Added(snapshot, previousChildName))
