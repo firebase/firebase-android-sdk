@@ -15,7 +15,7 @@
 package com.google.firebase.firestore;
 
 /** Configures the behavior of {@link AggregateQuery#get}. */
-public enum AggregateSource {
+enum AggregateSource {
   /**
    * Reach to the Firestore backend and surface the result verbatim, that is no local documents or
    * mutations in the SDK cache will be included in the surfaced result.

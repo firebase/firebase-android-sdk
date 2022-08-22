@@ -1230,7 +1230,7 @@ public class Query {
    *     the result set of this query.
    */
   @NonNull
-  public AggregateQuery count() {
+  AggregateQuery count() {
     return new AggregateQuery(this, AggregateField.count());
   }
 

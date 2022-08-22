@@ -28,7 +28,7 @@ import com.google.firebase.firestore.util.Preconditions;
  * in test mocks. Subclassing is not supported in production code and new SDK releases may break
  * code that does so.
  */
-public class AggregateQuery {
+class AggregateQuery {
   // The base query.
   private final Query query;
 
