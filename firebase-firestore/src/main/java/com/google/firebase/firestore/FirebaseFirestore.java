@@ -105,12 +105,17 @@ public class FirebaseFirestore {
   private final GrpcMetadataProvider metadataProvider;
 
   @NonNull
-  public static FirebaseFirestore getInstance() {
+  private static FirebaseApp getDefaultFirebaseApp() {
     FirebaseApp app = FirebaseApp.getInstance();
     if (app == null) {
       throw new IllegalStateException("You must call FirebaseApp.initializeApp first.");
     }
-    return getInstance(app, DatabaseId.DEFAULT_DATABASE_ID);
+    return app;
+  }
+
+  @NonNull
+  public static FirebaseFirestore getInstance() {
+    return getInstance(getDefaultFirebaseApp(), DatabaseId.DEFAULT_DATABASE_ID);
   }
 
   @NonNull
@@ -118,9 +123,13 @@ public class FirebaseFirestore {
     return getInstance(app, DatabaseId.DEFAULT_DATABASE_ID);
   }
 
-  // TODO: make this public
   @NonNull
-  private static FirebaseFirestore getInstance(@NonNull FirebaseApp app, @NonNull String database) {
+  public static FirebaseFirestore getInstance(@NonNull String database) {
+    return getInstance(getDefaultFirebaseApp(), database);
+  }
+
+  @NonNull
+  public static FirebaseFirestore getInstance(@NonNull FirebaseApp app, @NonNull String database) {
     checkNotNull(app, "Provided FirebaseApp must not be null.");
     FirestoreMultiDbComponent component = app.get(FirestoreMultiDbComponent.class);
     checkNotNull(component, "Firestore component is not present.");

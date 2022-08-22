@@ -36,6 +36,19 @@ val Firebase.firestore: FirebaseFirestore
 /** Returns the [FirebaseFirestore] instance of a given [FirebaseApp]. */
 fun Firebase.firestore(app: FirebaseApp): FirebaseFirestore = FirebaseFirestore.getInstance(app)
 
+/** Returns the [FirebaseFirestore] instance of a given [FirebaseApp] and database name. */
+fun Firebase.firestore(
+    app: FirebaseApp,
+    database: String
+): FirebaseFirestore = FirebaseFirestore.getInstance(app, database)
+
+/**
+ * Returns the [FirebaseFirestore] instance of the default [FirebaseApp], given the database name.
+ */
+fun Firebase.firestore(
+    database: String
+): FirebaseFirestore = FirebaseFirestore.getInstance(database)
+
 /**
  * Returns the contents of the document converted to a POJO or null if the document doesn't exist.
  *

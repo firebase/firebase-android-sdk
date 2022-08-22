@@ -15,6 +15,7 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.AccessHelper.getAsyncQueue;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.newTestSettings;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.provider;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testChangeUserTo;
@@ -47,6 +48,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
@@ -58,7 +60,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeoutException;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1130,6 +1134,87 @@ public class FirestoreTest {
     app.delete();
 
     assertTrue(instance.getClient().isTerminated());
+  }
+
+  @Test
+  public void testDefaultNamedDbIsSame() {
+    FirebaseApp app = FirebaseApp.getInstance();
+    FirebaseFirestore db1 = FirebaseFirestore.getInstance();
+    FirebaseFirestore db2 = FirebaseFirestore.getInstance(app);
+    FirebaseFirestore db3 = FirebaseFirestore.getInstance(app, "(default)");
+    FirebaseFirestore db4 = FirebaseFirestore.getInstance("(default)");
+
+    assertSame(db1, db2);
+    assertSame(db1, db3);
+    assertSame(db1, db4);
+  }
+
+  @Test
+  public void testSameNamedDbIsSame() {
+    FirebaseApp app = FirebaseApp.getInstance();
+    FirebaseFirestore db1 = FirebaseFirestore.getInstance(app, "myDb");
+    FirebaseFirestore db2 = FirebaseFirestore.getInstance("myDb");
+
+    assertSame(db1, db2);
+  }
+
+  @Test
+  public void testDifferentDbNamesAreDifferent() {
+    FirebaseFirestore db1 = FirebaseFirestore.getInstance();
+    FirebaseFirestore db2 = FirebaseFirestore.getInstance("db1");
+    FirebaseFirestore db3 = FirebaseFirestore.getInstance("db2");
+
+    assertNotSame(db1, db2);
+    assertNotSame(db1, db3);
+    assertNotSame(db2, db3);
+  }
+
+  @Test
+  public void testNamedDbHaveDifferentPersistence()
+      throws ExecutionException, InterruptedException, TimeoutException {
+    // TODO: Have backend with named databases created beforehand.
+    // Emulator doesn't care if database was created beforehand.
+    if (!isRunningAgainstEmulator()) {
+      return;
+    }
+    // FirebaseFirestore db1 = FirebaseFirestore.getInstance();
+    String projectId = provider().projectId();
+    FirebaseFirestore db1 =
+        testFirestore(
+            DatabaseId.forDatabase(projectId, "db1"),
+            Level.DEBUG,
+            newTestSettings(),
+            "dbPersistenceKey");
+    FirebaseFirestore db2 =
+        testFirestore(
+            DatabaseId.forDatabase(projectId, "db2"),
+            Level.DEBUG,
+            newTestSettings(),
+            "dbPersistenceKey");
+
+    DocumentReference docRef = db1.collection("col1").document("doc1");
+    waitFor(docRef.set(Collections.singletonMap("foo", "bar")));
+    assertEquals(waitFor(docRef.get(Source.SERVER)).get("foo"), "bar");
+
+    String path = docRef.getPath();
+    DocumentReference docRef2 = db2.document(path);
+
+    {
+      Exception e = waitForException(docRef2.get(Source.CACHE));
+      assertEquals(Code.UNAVAILABLE, ((FirebaseFirestoreException) e).getCode());
+    }
+
+    {
+      Task<DocumentSnapshot> task = docRef2.get(Source.SERVER);
+      DocumentSnapshot result = waitFor(task);
+      assertNull(result.getDocument());
+    }
+
+    {
+      Task<DocumentSnapshot> task = docRef2.get(Source.DEFAULT);
+      DocumentSnapshot result = waitFor(task);
+      assertNull(result.getDocument());
+    }
   }
 
   @Test
