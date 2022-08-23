@@ -43,8 +43,7 @@ sdk_changes = (git.modified_files +
                git.deleted_files).select do |line|
   line.end_with?(".java") ||
     line.end_with?(".kt") ||
-    line.end_with?(".xml") ||
-    line.end_with?(".yml")
+    line.end_with?(".xml")
 end
 
 tester_team = [
