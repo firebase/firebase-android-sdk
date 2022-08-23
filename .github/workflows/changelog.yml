@@ -10,14 +10,13 @@ concurrency:
 jobs:
   danger:
     runs-on: ubuntu-22.04
+    env:
+      BUNDLE_GEMFILE: ./ci/danger/Gemfile
     steps:
     - uses: actions/checkout@v2
     - uses: ruby/setup-ruby@v1
       with:
         ruby-version: '2.7'
-    - name: Copy Gemfiles to repo root
-      run:
-        cp ./ci/danger/Gemfile ./ci/danger/Gemfile.lock ./
     - name: Setup Bundler
       run: ./ci/danger/setup_bundler.sh
     - name: Danger CHANGELOG verifier
