@@ -14,7 +14,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: ruby/setup-ruby@v1
     - name: Setup Bundler
-      run: scripts/setup_bundler.sh
+      run: ci/danger/setup_bundler.sh
     - name: Danger
       env:
         DANGER_GITHUB_API_TOKEN: ${{ secrets.DangerGitHubAPIToken }}
