@@ -20,4 +20,6 @@ jobs:
     - name: Danger CHANGELOG verifier
       env:
         DANGER_GITHUB_API_TOKEN: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
-      run:  '[ ! -z $DANGER_GITHUB_API_TOKEN ] && bundle exec danger || echo "Skipping Danger for External Contributor"'
+      run:
+        workind-directory: ci/danger
+        '[ ! -z $DANGER_GITHUB_API_TOKEN ] && bundle exec danger || echo "Skipping Danger for External Contributor"'
