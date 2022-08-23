@@ -14,6 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-bundle update --bundler # ensure bundler version is high enough for Gemfile.lock
 bundle install
+bundle update --bundler # ensure bundler version is high enough for Gemfile.lock
 bundle --version

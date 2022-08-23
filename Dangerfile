@@ -47,14 +47,22 @@ sdk_changes = (git.modified_files +
     line.end_with?(".yml")
 end
 
+tester_team = [
+  "rlazo"
+]
+
+is_enabled = true if tester_team.include? github.pr_author
+
 # Whether or not the PR has modified SDK source files.
 has_sdk_changes = !sdk_changes.empty?
 
 ### Actions
 
 # Warn if a changelog is left out on a non-trivial PR that has modified
-# SDK source files (podspec, markdown, etc changes are excluded).
-if has_sdk_changes
+# SDK source files.
+#
+# TODO: remove the `is_enabled` after tests are complete
+if is_enabled && has_sdk_changes
   if !has_changelog_changes && !declared_trivial
     warning = "Did you forget to add a changelog entry? (Add the 'no-changelog'"\
       " label to the PR to silence this warning.)"
