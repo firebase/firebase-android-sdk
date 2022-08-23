@@ -21,5 +21,5 @@ jobs:
       env:
         DANGER_GITHUB_API_TOKEN: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
       run:
-        workind-directory: ci/danger
+        working-directory: ci/danger
         '[ ! -z $DANGER_GITHUB_API_TOKEN ] && bundle exec danger || echo "Skipping Danger for External Contributor"'
