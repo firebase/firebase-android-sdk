@@ -8,18 +8,18 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
-  default:
-    run:
-        working-directory: ci/danger
   danger:
     runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: ci/danger
     steps:
     - uses: actions/checkout@v2
     - uses: ruby/setup-ruby@v1
       with:
         ruby-version: '2.7'
     - name: Setup Bundler
-      run: ci/danger/setup_bundler.sh
+      run: setup_bundler.sh
     - name: Danger CHANGELOG verifier
       env:
         DANGER_GITHUB_API_TOKEN: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
