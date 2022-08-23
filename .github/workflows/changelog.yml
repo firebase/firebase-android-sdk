@@ -8,6 +8,9 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
+  default:
+    run:
+        working-directory: ci/danger
   danger:
     runs-on: ubuntu-22.04
     steps:
@@ -21,5 +24,4 @@ jobs:
       env:
         DANGER_GITHUB_API_TOKEN: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
       run:
-        working-directory: ci/danger
         '[ ! -z $DANGER_GITHUB_API_TOKEN ] && bundle exec danger || echo "Skipping Danger for External Contributor"'
