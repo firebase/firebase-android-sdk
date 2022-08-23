@@ -63,4 +63,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: smoke-tests-artifacts
-          path: ${{ runner.temp }}
+          path: |
+            ${{ runner.temp }}/**/*.apk
+            ${{ runner.temp }}/**/changed-artifacts.json
+            ${{ runner.temp }}/**/smoke-test-dependencies.log
