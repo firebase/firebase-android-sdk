@@ -57,3 +57,10 @@ jobs:
           BUILD_ID: ${{ github.run_id }}
           ARTIFACTS: ${{ runner.temp }}
         run: java -jar runner.jar smoke-tests/runner.config
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: smoke-tests-artifacts
+          path: ${{ runner.temp }}
