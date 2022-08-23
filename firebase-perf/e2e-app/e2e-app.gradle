@@ -15,7 +15,6 @@
 apply plugin: 'com.android.application'
 // Firebase performance plugin, the relevant dependency is specified in the "buildSrc/build-src.gradle"
 apply plugin: 'com.google.firebase.firebase-perf'
-apply plugin: 'com.google.gms.google-services'
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
 // Since Test Lab devices are wiped off immediately (for both Security and Privacy reasons) we have

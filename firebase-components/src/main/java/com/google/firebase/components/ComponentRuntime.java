@@ -18,6 +18,7 @@ import android.util.Log;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.RestrictTo.Scope;
 import androidx.annotation.VisibleForTesting;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.dynamicloading.ComponentLoader;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.events.Subscriber;
@@ -358,21 +359,25 @@ public class ComponentRuntime extends AbstractComponentContainer implements Comp
       this.defaultExecutor = defaultExecutor;
     }
 
+    @CanIgnoreReturnValue
     public Builder addLazyComponentRegistrars(Collection<Provider<ComponentRegistrar>> registrars) {
       this.lazyRegistrars.addAll(registrars);
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder addComponentRegistrar(ComponentRegistrar registrar) {
       this.lazyRegistrars.add(() -> registrar);
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder addComponent(Component<?> component) {
       this.additionalComponents.add(component);
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder setProcessor(ComponentRegistrarProcessor processor) {
       this.componentRegistrarProcessor = processor;
       return this;

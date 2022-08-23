@@ -139,6 +139,15 @@ class VendorTransform(
                             Format.DIRECTORY)
                     directoryInput.file.copyRecursively(directoryOutput, overwrite = true)
                 }
+                for (jarInput in input.jarInputs) {
+                    val jarOutput = transformInvocation.outputProvider.getContentLocation(
+                        jarInput.name,
+                        setOf(QualifiedContent.DefaultContentType.CLASSES),
+                        mutableSetOf(QualifiedContent.Scope.PROJECT),
+                        Format.JAR)
+
+                    jarInput.file.copyTo(jarOutput, overwrite = true)
+                }
             }
             return
         }
@@ -176,6 +185,9 @@ class VendorTransform(
         for (input in transformInvocation.inputs) {
             for (directoryInput in input.directoryInputs) {
                 directoryInput.file.copyRecursively(unzippedDir)
+            }
+            for (jarInput in input.jarInputs) {
+                unzipJar(jarInput.file, unzippedDir)
             }
         }
 

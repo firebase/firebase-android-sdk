@@ -33,13 +33,13 @@ import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
 import com.google.common.truth.Correspondence;
-import dagger.Lazy;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import javax.inject.Provider;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -115,12 +115,12 @@ public class SQLiteEventStoreTest {
   private static final String LOG_SOURCE_3 = "source3";
 
   private final TestClock clock = new TestClock(1);
-  private final Lazy<String> packageName =
+  private final Provider<String> packageName =
       () -> ApplicationProvider.getApplicationContext().getPackageName();
   private final SQLiteEventStore store = newStoreWithConfig(clock, CONFIG, packageName);
 
   private static SQLiteEventStore newStoreWithConfig(
-      Clock clock, EventStoreConfig config, Lazy<String> packageName) {
+      Clock clock, EventStoreConfig config, Provider<String> packageName) {
     return new SQLiteEventStore(
         clock,
         new UptimeClock(),

@@ -154,7 +154,7 @@ package com.google.firebase.firestore {
     method @NonNull public <TResult> com.google.android.gms.tasks.Task<TResult> runTransaction(@NonNull com.google.firebase.firestore.Transaction.Function<TResult>);
     method @NonNull public <TResult> com.google.android.gms.tasks.Task<TResult> runTransaction(@NonNull com.google.firebase.firestore.TransactionOptions, @NonNull com.google.firebase.firestore.Transaction.Function<TResult>);
     method public void setFirestoreSettings(@NonNull com.google.firebase.firestore.FirebaseFirestoreSettings);
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setIndexConfiguration(@NonNull String);
+    method @NonNull @com.google.firebase.annotations.PreviewApi public com.google.android.gms.tasks.Task<java.lang.Void> setIndexConfiguration(@NonNull String);
     method public static void setLoggingEnabled(boolean);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> terminate();
     method public void useEmulator(@NonNull String, int);

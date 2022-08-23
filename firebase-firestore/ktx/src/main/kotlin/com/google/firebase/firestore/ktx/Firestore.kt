@@ -18,14 +18,23 @@ import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.MetadataChanges
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.util.Executors.BACKGROUND_EXECUTOR
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 
 /** Returns the [FirebaseFirestore] instance of the default [FirebaseApp]. */
 val Firebase.firestore: FirebaseFirestore
@@ -161,4 +170,50 @@ internal const val LIBRARY_NAME: String = "fire-fst-ktx"
 class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> =
             listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+}
+
+/**
+ * Starts listening to the document referenced by this `DocumentReference` with the given options and emits its values via a [Flow].
+ *
+ * - When the returned flow starts being collected, an [EventListener] will be attached.
+ * - When the flow completes, the listener will be removed.
+ *
+ * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
+ */
+fun DocumentReference.snapshots(
+    metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
+): Flow<DocumentSnapshot> {
+    return callbackFlow {
+        val registration = addSnapshotListener(BACKGROUND_EXECUTOR, metadataChanges) { snapshot, exception ->
+            if (exception != null) {
+                cancel(message = "Error getting DocumentReference snapshot", cause = exception)
+            } else if (snapshot != null) {
+                trySendBlocking(snapshot)
+            }
+        }
+        awaitClose { registration.remove() }
+    }
+}
+
+/**
+ * Starts listening to this query with the given options and emits its values via a [Flow].
+ *
+ * - When the returned flow starts being collected, an [EventListener] will be attached.
+ * - When the flow completes, the listener will be removed.
+ *
+ * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
+ */
+fun Query.snapshots(
+    metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
+): Flow<QuerySnapshot> {
+    return callbackFlow {
+        val registration = addSnapshotListener(BACKGROUND_EXECUTOR, metadataChanges) { snapshot, exception ->
+            if (exception != null) {
+                cancel(message = "Error getting Query snapshot", cause = exception)
+            } else if (snapshot != null) {
+                trySendBlocking(snapshot)
+            }
+        }
+        awaitClose { registration.remove() }
+    }
 }
