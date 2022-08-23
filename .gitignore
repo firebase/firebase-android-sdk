@@ -5,7 +5,6 @@ build/
 captures/
 local.properties
 google-services.json
-Gemfile.lock
 _artifacts
 .DS_Store
 firebase-crashlytics-ndk/.externalNativeBuild/
