@@ -148,7 +148,8 @@ sdk_changes = (git.modified_files +
     line.end_with?(".kt") ||
     line.end_with?(".ktx") ||
     line.end_with?("METADATA") ||
-    line.end_with?(".xml")
+    line.end_with?(".xml") ||
+    line.end_with?(".yml")
 end
 
 # Whether or not the PR has modified SDK source files.
