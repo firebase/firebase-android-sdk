@@ -62,7 +62,7 @@ end
 # Label for any change that shouldn't have an accompanying CHANGELOG entry,
 # including all changes that do not affect the compiled binary (i.e. script
 # changes, test-only changes)
-declared_trivial = github.pr_body.include? "#no-changelog"
+declared_trivial = github.pr_labels.include? "no-changelog"
 
 # Whether or not there are pending changes to any changelog file.
 has_changelog_changes = hasChangesIn(["CHANGELOG"])
