@@ -117,6 +117,7 @@ public class JavadocPlugin implements Plugin<Project> {
                 // This comes with the risks of Timestamp's javadoc and binary releases having
                 // disconnected timelines.
                 // Given the repeated tedium in dealing with javadoc, this risk seems worth taking
+                // b/243534168
                 if ("firebase-common".equals(project.getName())) {
                   Project firestoreProject = project.findProject(":firebase-firestore");
                   javadoc.setSource(
