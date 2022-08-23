@@ -13,6 +13,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '2.7'
     - name: Setup Bundler
       run: ci/danger/setup_bundler.sh
     - name: Danger CHANGELOG verifier
