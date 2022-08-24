@@ -29,8 +29,9 @@ and moved to our own maven repo bucket. Since it's recommended from the AndroidX
 team to run Dackka on the command line, the fat jar allows us to ignore all the
 miscenalionous dependencies of dackka (in regards to Dokka especially).
 
-The general process of using Dackka is that you collection the dependencies and
-source sets of the project, create a [Dokka appropriate JSON file](https://kotlin.github.io/dokka/1.7.10/user_guide/cli/usage/#example-using-json), 
+The general process of using Dackka is that you collect the dependencies and
+source sets of the gradle project, create a 
+[Dokka appropriate JSON file](https://kotlin.github.io/dokka/1.7.10/user_guide/cli/usage/#example-using-json), 
 run the Dackka fat jar with the JSON file as an argument, and publish the 
 output folder.
 
@@ -46,7 +47,7 @@ tasks.
 
 This task is the meat of our Dackka implementation. It's what actually handles
 the running of Dackka itself. The task exposes a gradle extension called 
-`GenerateDocumentationTaskExtension` with various configurations points for
+`GenerateDocumentationTaskExtension` with various configuration points for
 Dackka. This will likely be expanded upon in the future, as configurations are
 needed.
 
@@ -56,7 +57,7 @@ the expected JSON file, and run Dackka with the JSON file as an argument.
 
 ### FiresiteTransformTask
 
-Dackka was design with Devsite in mind. The problem though, is that we use
+Dackka was designed with Devsite in mind. The problem though, is that we use
 Firesite. Firesite is very similar to Devsite, but there *are* minor differences.
 
 The job of this task is to transform the Dackka output from a Devsite purposed format,
@@ -64,11 +65,11 @@ to a Firesite purposed format. This includes removing unnecessary files, fixing
 links, removing unnecessary headers, and so forth.
 
 There are open bugs for each transformation, as in an ideal world- they are instead
-exposed as configurations for Dackka. Should these configurations be adopted by
+exposed as configurations from Dackka. Should these configurations be adopted by
 Dackka, this task could become unnecessary itself- as we could just configure the task
 during generation.
 
-## DackkaPlugin 
+### DackkaPlugin 
 
 This plugin is the mind of our Dackka implementation. It manages registering,
 and configuring all the tasks for Dackka (that is, the already established
@@ -80,13 +81,13 @@ The DackkaPlugin also provides two extra tasks:
 `cleanDackkaDocumentation` and
 `deleteDackkaGeneratedJavaReferences`.
 
-`cleanDackkaDocumentation` is exactly what it sounds like, a task to clean up
-the output of Dackka. This is useful when testing Dackka outputs itself- shouldn't
-be apart of the normal flow. The reasoning is that it would otherwise invalidate
-the gradle cache.
+`cleanDackkaDocumentation` is exactly what it sounds like, a task to clean up (delete)
+the output of Dackka. This is useful when testing Dackka outputs itself- and 
+shouldn't be apart of the normal flow. The reasoning is that it would otherwise 
+invalidate the gradle cache.
 
 `deleteDackkaGeneratedJavaReferences` is a temporary addition. Dackka generates
-two separate style of docs for every source set: Java & Kotlin. Regardless of
+two separate styles of docs for every source set: Java & Kotlin. Regardless of
 whether the source is in Java or Kotlin. The Java output is how the source looks
 from Java, and the Kotlin output is how the source looks from Kotlin. We publish
 these under two separate categories, which you can see here: 
