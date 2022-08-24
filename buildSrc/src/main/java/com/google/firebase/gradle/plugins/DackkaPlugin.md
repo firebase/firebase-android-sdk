@@ -35,7 +35,7 @@ run the Dackka fat jar with the JSON file as an argument, and publish the
 output folder.
 
 A diagram of the flow can be seen below:
-![Dackka Usage Flow](/docs/images/dackka_usage.svg)
+![Dackka Usage Flow](/docs/images/dackka_usage.png)
 
 ## Implementation
 
