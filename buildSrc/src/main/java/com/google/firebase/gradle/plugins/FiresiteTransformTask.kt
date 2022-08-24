@@ -58,6 +58,7 @@ abstract class FiresiteTransformTask : DefaultTask() {
 
     // We don't actually upload class or index files,
     // so these headers will throw not found errors if not removed.
+    // TODO(b/243674302): Remove when dackka supports this behavior
     private fun String.removeClassHeader() =
         remove(Regex("- title: \"Class Index\"\n {2}path: \".+\"\n\n"))
     private fun String.removeIndexHeader() =
