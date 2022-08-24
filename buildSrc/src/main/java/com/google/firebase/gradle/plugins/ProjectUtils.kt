@@ -59,15 +59,10 @@ val Project.dackkaConfig: Configuration
 
 /**
  * Fetches the jars of dependencies associated with this configuration through an artifact view.
- *
- * Excluding androidx.annotation:annotation artifacts.
  */
 fun Configuration.getJars() = incoming.artifactView {
     attributes {
         // replace value with android-class instead of jar after agp upgrade
         attribute(Attribute.of("artifactType", String::class.java), "jar")
-    }
-    componentFilter {
-        !it.displayName.startsWith("androidx.annotation:annotation:")
     }
 }.artifacts.artifactFiles
