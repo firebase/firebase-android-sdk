@@ -15,7 +15,7 @@ Devsite expects its files to be in a very specific format. Previously, we would
 use an internal variant of metalava called doclava- which allowed us to provide
 sensible defaults as to how the Javadoc should be rendered. Then, we would do
 some further transformations to get the Javadoc output in-line with what
-Devsite expects. This was a lengthy process, and definitely undesirable.
+Devsite expects. This was a lengthy process, and came with a lot of overhead.
 
 Dackka is an internal solution to that. Dackka provides a devsite plugin for
 Dokka that will handle the job of doclava. Not only does this mean we can cut
