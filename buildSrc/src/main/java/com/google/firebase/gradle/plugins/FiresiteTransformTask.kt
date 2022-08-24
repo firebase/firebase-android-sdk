@@ -70,6 +70,7 @@ abstract class FiresiteTransformTask : DefaultTask() {
         remove(Regex("(?<=setvar book_path ?%})(.+)(?=/_book.yaml\\{% ?endsetvar)"))
 
     // Our documentation lives under /docs/reference/ versus the expected /reference/
+    // TODO(b/243674305): Remove when dackka supports this behavior
     private fun String.fixHyperlinks() =
         replace(Regex("(?<=href=\")(/)(?=reference/.*\\.html)"), "/docs/")
 
