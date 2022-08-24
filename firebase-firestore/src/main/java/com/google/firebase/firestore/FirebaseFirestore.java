@@ -153,7 +153,7 @@ public class FirebaseFirestore {
    * @returns The {@link FirebaseFirestore} instance of the provided app.
    */
   @NonNull
-  static FirebaseFirestore getInstance(@NonNull String database) {
+  public static FirebaseFirestore getInstance(@NonNull String database) {
     return getInstance(getDefaultFirebaseApp(), database);
   }
 
@@ -167,7 +167,7 @@ public class FirebaseFirestore {
    * @returns The {@link FirebaseFirestore} instance of the provided app.
    */
   @NonNull
-  static FirebaseFirestore getInstance(@NonNull FirebaseApp app, @NonNull String database) {
+  public static FirebaseFirestore getInstance(@NonNull FirebaseApp app, @NonNull String database) {
     checkNotNull(app, "Provided FirebaseApp must not be null.");
     checkNotNull(database, "Provided database name must not be null.");
     FirestoreMultiDbComponent component = app.get(FirestoreMultiDbComponent.class);
