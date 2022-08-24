@@ -13,13 +13,9 @@
 // limitations under the License.
 package com.google.firebase.gradle.plugins
 
-import com.android.build.gradle.BaseExtension
-import java.io.File
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Attribute
-import org.gradle.api.plugins.ExtensionContainer
-import org.gradle.kotlin.dsl.getByType
 
 fun Project.isAndroid(): Boolean =
         listOf("com.android.application", "com.android.library", "com.android.test")
@@ -29,15 +25,6 @@ fun toBoolean(value: Any?): Boolean {
     val trimmed = value?.toString()?.trim()?.toLowerCase()
     return "true" == trimmed || "y" == trimmed || "1" == trimmed
 }
-
-/**
- * Shorthand for [BaseExtension.getBootClasspath]
- *
- * This method assumes your project has the [BaseExtension] extension,
- * as it uses [ExtensionContainer.getByType]
- */
-val Project.bootClasspath: List<File>
-    get() = extensions.getByType<BaseExtension>().bootClasspath
 
 /**
  * Finds or creates the javadocClasspath [Configuration].

@@ -70,29 +70,31 @@ abstract class DackkaPlugin : Plugin<Project> {
 
     private fun registerGenerateDackkaDocumentationTask(project: Project) =
         project.tasks.register<GenerateDocumentationTask>("generateDackkaDocumentation") {
-            project.extensions.getByType<LibraryExtension>().libraryVariants.all {
-                if (name == "release") {
-                    mustRunAfter("createFullJarRelease")
-                    dependsOn("createFullJarRelease")
+            with(project.extensions.getByType<LibraryExtension>()) {
+                libraryVariants.all {
+                    if (name == "release") {
+                        mustRunAfter("createFullJarRelease")
+                        dependsOn("createFullJarRelease")
 
-                    val classpath = project.provider {
-                        runtimeConfiguration.getJars() + project.javadocConfig.getJars() + project.bootClasspath
+                        val classpath = project.provider {
+                            runtimeConfiguration.getJars() + project.javadocConfig.getJars() + bootClasspath
+                        }
+
+                        val sourcesForJava = sourceSets.flatMap {
+                            it.javaDirectories.map { it.absoluteFile } + projectSpecificSources(project)
+                        }
+
+                        // this will become useful with the agp upgrade, as they're separate in 7.x+
+                        val sourcesForKotlin = emptyList<File>()
+                        val excludedFiles = emptyList<File>() + projectSpecificSuppressedFiles(project)
+
+                        dependencies.set(classpath)
+                        javaSources.set(sourcesForJava)
+                        kotlinSources.set(sourcesForKotlin)
+                        suppressedFiles.set(excludedFiles)
+
+                        applyCommonConfigurations()
                     }
-
-                    val sourcesForJava = sourceSets.flatMap {
-                        it.javaDirectories.map { it.absoluteFile } + projectSpecificSources(project)
-                    }
-
-                    // this will become useful with the agp upgrade, as they're separate in 7.x+
-                    val sourcesForKotlin = emptyList<File>()
-                    val excludedFiles = emptyList<File>() + projectSpecificSuppressedFiles(project)
-
-                    dependencies.set(classpath)
-                    javaSources.set(sourcesForJava)
-                    kotlinSources.set(sourcesForKotlin)
-                    suppressedFiles.set(excludedFiles)
-
-                    applyCommonConfigurations()
                 }
             }
         }
