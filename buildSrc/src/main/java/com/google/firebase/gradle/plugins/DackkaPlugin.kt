@@ -5,6 +5,7 @@ import com.android.build.gradle.LibraryExtension
 import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
 import org.gradle.kotlin.dsl.getByType
@@ -33,7 +34,7 @@ abstract class DackkaPlugin : Plugin<Project> {
         project.afterEvaluate {
             if (shouldWePublish(project)) {
                 val generateDocumentation = registerGenerateDackkaDocumentationTask(project)
-                val firesiteTransform = registerFiresiteTransformTask(project)
+                val firesiteTransform = registerFiresiteTransformTask(project, generateDocumentation)
                 val deleteJavaReferences = registerDeleteDackkaGeneratedJavaReferencesTask(project)
                 val copyOutputToCommonDirectory =
                     registerCopyDackkaOutputToCommonDirectoryTask(project)
@@ -125,12 +126,9 @@ abstract class DackkaPlugin : Plugin<Project> {
         outputDirectory.set(dackkaOutputDirectory)
     }
 
-    private fun registerFiresiteTransformTask(project: Project) =
+    private fun registerFiresiteTransformTask(project: Project, dackkaTask: Provider<GenerateDocumentationTask>) =
         project.tasks.register<FiresiteTransformTask>("firesiteTransform") {
-            mustRunAfter("generateDackkaDocumentation")
-
-            val dackkaDocumentation = project.file("${project.buildDir}/dackkaDocumentation")
-            dackkaFiles.set(project.provider { dackkaDocumentation })
+            dackkaFiles.set(dackkaTask.flatMap { it.outputDirectory })
         }
 
     // If we decide to publish java variants, we'll need to address the generated format as well
