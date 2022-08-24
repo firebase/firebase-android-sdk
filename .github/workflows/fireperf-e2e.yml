@@ -4,7 +4,6 @@ on:
   schedule:
     - cron: 4 */4 * * *  # every 4 hours at 04 minutes past the hour
   workflow_dispatch:     # allow triggering the workflow manually
-  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}
