@@ -52,7 +52,7 @@ abstract class GenerateDocumentationTaskExtension : DefaultTask() {
 /**
  * Task to run Dackka on a project.
  *
- * Since dackka needs to be ran on the command line, we have to organize the arguments for dackka into
+ * Since dackka needs to be run on the command line, we have to organize the arguments for dackka into
  * a json file. We then pass that json file to dackka as an argument.
  *
  * @see GenerateDocumentationTaskExtension
