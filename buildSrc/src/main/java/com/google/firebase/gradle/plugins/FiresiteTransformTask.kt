@@ -77,6 +77,7 @@ abstract class FiresiteTransformTask : DefaultTask() {
     // The documentation will work fine without this. This is primarily to make sure that links
     // resolve to their local counter part. Meaning when the docs are staged, they will resolve to
     // staged docs instead of prod docs- and vise versa.
+    // TODO(b/243673063): Remove when dackka supports this behavior
     private fun String.removeLeadingFirebaseDomainInLinks() =
         remove(Regex("(?<=\")(https://firebase\\.google\\.com)(?=/docs/reference)"))
 }
