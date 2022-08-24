@@ -38,7 +38,7 @@ abstract class DackkaPlugin : Plugin<Project> {
                 val firesiteTransform = registerFiresiteTransformTask(project, outputDirectory)
                 val deleteJavaReferences = registerDeleteDackkaGeneratedJavaReferencesTask(project, outputDirectory)
                 val copyOutputToCommonDirectory =
-                    registerCopyDackkaOutputToCommonDirectoryTask(project)
+                    registerCopyDackkaOutputToCommonDirectoryTask(project, outputDirectory)
 
                 project.tasks.register("kotlindoc") {
                     group = "documentation"
@@ -150,13 +150,16 @@ abstract class DackkaPlugin : Plugin<Project> {
             delete(filesToDelete)
         }
 
-    private fun registerCopyDackkaOutputToCommonDirectoryTask(project: Project) =
+    private fun registerCopyDackkaOutputToCommonDirectoryTask(project: Project, outputDirectory: Provider<File>) =
         project.tasks.register<Copy>("copyDackkaOutputToCommonDirectory") {
             mustRunAfter("deleteDackkaGeneratedJavaReferences")
             mustRunAfter("firesiteTransform")
 
-            from("${project.buildDir}/dackkaDocumentation/reference")
-            destinationDir = project.file("${project.rootProject.buildDir}/firebase-kotlindoc")
+            val referenceFolder = outputDirectory.map { project.file("${it.path}/reference") }
+            val outputFolder = project.file("${project.rootProject.buildDir}/firebase-kotlindoc")
+
+            from(referenceFolder)
+            destinationDir = outputFolder
         }
 
     // Useful for local testing, but may not be desired for standard use (that's why it's not depended on)
