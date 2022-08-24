@@ -65,6 +65,7 @@ abstract class FiresiteTransformTask : DefaultTask() {
         remove(Regex("- title: \"Package Index\"\n {2}path: \".+\"\n\n"))
 
     // We use a common book for all sdks, wheres dackka expects each sdk to have its own book.
+    // TODO(b/243674303): Remove when dackka supports this behavior
     private fun String.fixBookPath() =
         remove(Regex("(?<=setvar book_path ?%})(.+)(?=/_book.yaml\\{% ?endsetvar)"))
 
