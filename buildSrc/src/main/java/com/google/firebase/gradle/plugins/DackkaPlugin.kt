@@ -35,7 +35,7 @@ abstract class DackkaPlugin : Plugin<Project> {
             if (shouldWePublish(project)) {
                 val generateDocumentation = registerGenerateDackkaDocumentationTask(project)
                 val firesiteTransform = registerFiresiteTransformTask(project, generateDocumentation)
-                val deleteJavaReferences = registerDeleteDackkaGeneratedJavaReferencesTask(project)
+                val deleteJavaReferences = registerDeleteDackkaGeneratedJavaReferencesTask(project, generateDocumentation)
                 val copyOutputToCommonDirectory =
                     registerCopyDackkaOutputToCommonDirectoryTask(project)
 
@@ -132,13 +132,21 @@ abstract class DackkaPlugin : Plugin<Project> {
         }
 
     // If we decide to publish java variants, we'll need to address the generated format as well
-    private fun registerDeleteDackkaGeneratedJavaReferencesTask(project: Project) =
+    private fun registerDeleteDackkaGeneratedJavaReferencesTask(project: Project, dackkaTask: Provider<GenerateDocumentationTask>) =
         project.tasks.register<Delete>("deleteDackkaGeneratedJavaReferences") {
-            mustRunAfter("generateDackkaDocumentation")
+            mustRunAfter(dackkaTask)
 
-            val referenceFolder = "${project.buildDir}/dackkaDocumentation/reference"
-            delete(project.file("$referenceFolder/client"))
-            delete(project.file("$referenceFolder/com"))
+            val filesWeDoNotNeed = listOf(
+                "reference/client",
+                "reference/com"
+            )
+            val filesToDelete = dackkaTask.flatMap { it.outputDirectory }.map { outputDirectory ->
+                filesWeDoNotNeed.map {
+                    project.files("${outputDirectory.path}/$it")
+                }
+            }
+
+            delete(filesToDelete)
         }
 
     private fun registerCopyDackkaOutputToCommonDirectoryTask(project: Project) =
