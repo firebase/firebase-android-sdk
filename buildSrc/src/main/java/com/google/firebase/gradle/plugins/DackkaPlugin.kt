@@ -106,7 +106,7 @@ abstract class DackkaPlugin : Plugin<Project> {
             else -> emptyList()
         }
 
-    // Remove when fixed: b/243534168
+    // TODO(b/243534168): Remove when fixed
     private fun projectSpecificSuppressedFiles(project: Project): List<File> =
         when (project.name) {
             "firebase-common" -> {
