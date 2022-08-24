@@ -62,7 +62,7 @@ val Project.dackkaConfig: Configuration
  */
 fun Configuration.getJars() = incoming.artifactView {
     attributes {
-        // replace value with android-class instead of jar after agp upgrade
+        // TODO(b/241795594): replace value with android-class instead of jar after agp upgrade
         attribute(Attribute.of("artifactType", String::class.java), "jar")
     }
 }.artifacts.artifactFiles
