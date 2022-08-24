@@ -18,7 +18,9 @@ import android.app.Activity;
 import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Process;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -120,6 +122,13 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   @Keep
   public static void setLauncherActivityOnResumeTime(String activity) {
     // no-op, for backward compatibility with old version plugin.
+  }
+
+  public static Timer getProcessStartTimer() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      return Timer.of(TimeUnit.MILLISECONDS.toNanos(Process.getStartElapsedRealtime()));
+    }
+    return FirebasePerfProvider.getAppStartTime();
   }
 
   public static AppStartTrace getInstance() {

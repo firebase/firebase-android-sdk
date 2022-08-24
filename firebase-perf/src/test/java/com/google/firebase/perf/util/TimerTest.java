@@ -55,7 +55,7 @@ public class TimerTest {
 
   @Test
   public void testGetCurrentTimestampMicros() {
-    Timer timer = new Timer(0);
+    Timer timer = new Timer(0, 0);
     long currentTimeSmallest = timer.getCurrentTimestampMicros();
 
     assertThat(timer.getMicros()).isEqualTo(0);
@@ -76,7 +76,7 @@ public class TimerTest {
 
     Timer timer2 = Timer.CREATOR.createFromParcel(p2);
     Assert.assertEquals(timer1.getMicros(), timer2.getMicros());
-    Assert.assertEquals(timer1.getHighResTime(), timer2.getHighResTime());
+    Assert.assertEquals(timer1.getElapsedRealtimeMicros(), timer2.getElapsedRealtimeMicros());
 
     p1.recycle();
     p2.recycle();

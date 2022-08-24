@@ -16,68 +16,75 @@ package com.google.firebase.perf.util;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import com.google.android.gms.common.util.VisibleForTesting;
 import java.util.concurrent.TimeUnit;
 
-/** A Timer class provides both wall-clock (epoch) time and high resolution time (nano time). */
+/** A Timer class provides both wall-clock (epoch) time and monotonic time (elapsedRealtime). */
 public class Timer implements Parcelable {
 
-  /** Wall-clock time or epoch time in microseconds, */
-  private long timeInMicros;
   /**
-   * High resolution time in nanoseconds. High resolution time should only be used to calculate
-   * duration or latency. It is not wall-clock time.
+   * Wall-clock time or epoch time in microseconds. Do NOT use for duration because wall-clock is
+   * not guaranteed to be monotonic: it can be set by the user or the phone network, thus it may
+   * jump forwards or backwards unpredictably. {@see SystemClock}
    */
-  private long highResTime;
+  private long wallClockMicros;
+  /**
+   * Monotonic time measured in the {@link SystemClock#elapsedRealtime()} timebase. Only used to
+   * compute duration between 2 timestamps in the same timebase. It is NOT wall-clock time.
+   */
+  private long elapsedRealtimeNanos;
 
   /**
    * Construct Timer object using System clock. Make it package visible to be only accessible from
    * com.google.firebase.perf.util.Clock.
    */
   public Timer() {
-    timeInMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
-    highResTime = System.nanoTime();
+    wallClockMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
+    elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos();
   }
 
   /**
-   * Construct a Timer object with input wall-clock time, assume high resolution time is same as
-   * wall-clock time.
+   * Returns a new Timer object with input elapsedRealtime. Uses current wall-clock as a reference
+   * to extrapolate the wall-clock at the time of the input elapsedRealtime.
    *
-   * @param time wall-clock time in microseconds
+   * @param elapsedRealtimeNanos timestamp in the {@link SystemClock#elapsedRealtime()} timebase
    */
-  @VisibleForTesting
-  public Timer(long time) {
-    this.timeInMicros = time;
-    highResTime = TimeUnit.MICROSECONDS.toNanos(time);
+  public static Timer of(long elapsedRealtimeNanos) {
+    Timer now = new Timer();
+    long wallClock =
+        now.wallClockMicros
+            + TimeUnit.NANOSECONDS.toMicros(elapsedRealtimeNanos - now.elapsedRealtimeNanos);
+    return new Timer(wallClock, elapsedRealtimeNanos);
   }
 
   /**
    * Construct a Timer object with input wall-clock time and high resolution time.
    *
    * @param time wall-clock time in microseconds
-   * @param highResTime high resolution time in nanoseconds
+   * @param elapsedRealtimeNanos high resolution time in nanoseconds
    */
   @VisibleForTesting
-  public Timer(long time, long highResTime) {
-    this.timeInMicros = time;
-    this.highResTime = highResTime;
+  Timer(long time, long elapsedRealtimeNanos) {
+    this.wallClockMicros = time;
+    this.elapsedRealtimeNanos = elapsedRealtimeNanos;
   }
 
   private Timer(Parcel in) {
-    timeInMicros = in.readLong();
-    highResTime = in.readLong();
+    wallClockMicros = in.readLong();
+    elapsedRealtimeNanos = in.readLong();
   }
 
   /** resets the start time */
   public void reset() {
-    timeInMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
-    highResTime = System.nanoTime();
+    wallClockMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
+    elapsedRealtimeNanos = SystemClock.elapsedRealtimeNanos();
   }
 
   /** Return wall-clock time in microseconds. */
   public long getMicros() {
-    return timeInMicros;
+    return wallClockMicros;
   }
 
   /**
@@ -88,7 +95,8 @@ public class Timer implements Parcelable {
    * @return duration in microseconds.
    */
   public long getDurationMicros() {
-    return TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - this.highResTime);
+    return TimeUnit.NANOSECONDS.toMicros(
+        SystemClock.elapsedRealtimeNanos() - this.elapsedRealtimeNanos);
   }
 
   /**
@@ -99,7 +107,7 @@ public class Timer implements Parcelable {
    * @return duration in microseconds.
    */
   public long getDurationMicros(@NonNull final Timer end) {
-    return TimeUnit.NANOSECONDS.toMicros(end.highResTime - this.highResTime);
+    return TimeUnit.NANOSECONDS.toMicros(end.elapsedRealtimeNanos - this.elapsedRealtimeNanos);
   }
 
   /**
@@ -111,7 +119,7 @@ public class Timer implements Parcelable {
    *     was created.
    */
   public long getCurrentTimestampMicros() {
-    return timeInMicros + getDurationMicros();
+    return wallClockMicros + getDurationMicros();
   }
 
   /**
@@ -120,8 +128,8 @@ public class Timer implements Parcelable {
    * @return high resolution time in microseconds.
    */
   @VisibleForTesting
-  public long getHighResTime() {
-    return TimeUnit.NANOSECONDS.toMicros(highResTime);
+  public long getElapsedRealtimeMicros() {
+    return TimeUnit.NANOSECONDS.toMicros(elapsedRealtimeNanos);
   }
 
   /**
@@ -132,8 +140,8 @@ public class Timer implements Parcelable {
    * @param flags always will be the value 0.
    */
   public void writeToParcel(Parcel out, int flags) {
-    out.writeLong(timeInMicros);
-    out.writeLong(highResTime);
+    out.writeLong(wallClockMicros);
+    out.writeLong(elapsedRealtimeNanos);
   }
 
   /**
