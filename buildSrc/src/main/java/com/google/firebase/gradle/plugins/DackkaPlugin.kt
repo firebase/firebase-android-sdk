@@ -97,7 +97,7 @@ abstract class DackkaPlugin : Plugin<Project> {
             }
         }
 
-    // Remove when fixed: b/243534168
+    // TODO(b/243534168): Remove when fixed
     private fun projectSpecificSources(project: Project) =
         when (project.name) {
             "firebase-common" -> {
