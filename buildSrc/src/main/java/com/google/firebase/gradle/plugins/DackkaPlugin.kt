@@ -34,8 +34,9 @@ abstract class DackkaPlugin : Plugin<Project> {
         project.afterEvaluate {
             if (shouldWePublish(project)) {
                 val generateDocumentation = registerGenerateDackkaDocumentationTask(project)
-                val firesiteTransform = registerFiresiteTransformTask(project, generateDocumentation)
-                val deleteJavaReferences = registerDeleteDackkaGeneratedJavaReferencesTask(project, generateDocumentation)
+                val outputDirectory = generateDocumentation.flatMap { it.outputDirectory }
+                val firesiteTransform = registerFiresiteTransformTask(project, outputDirectory)
+                val deleteJavaReferences = registerDeleteDackkaGeneratedJavaReferencesTask(project, outputDirectory)
                 val copyOutputToCommonDirectory =
                     registerCopyDackkaOutputToCommonDirectoryTask(project)
 
@@ -126,23 +127,23 @@ abstract class DackkaPlugin : Plugin<Project> {
         outputDirectory.set(dackkaOutputDirectory)
     }
 
-    private fun registerFiresiteTransformTask(project: Project, dackkaTask: Provider<GenerateDocumentationTask>) =
+    private fun registerFiresiteTransformTask(project: Project, outputDirectory: Provider<File>) =
         project.tasks.register<FiresiteTransformTask>("firesiteTransform") {
-            dackkaFiles.set(dackkaTask.flatMap { it.outputDirectory })
+            dackkaFiles.set(outputDirectory)
         }
 
     // If we decide to publish java variants, we'll need to address the generated format as well
-    private fun registerDeleteDackkaGeneratedJavaReferencesTask(project: Project, dackkaTask: Provider<GenerateDocumentationTask>) =
+    private fun registerDeleteDackkaGeneratedJavaReferencesTask(project: Project, outputDirectory: Provider<File>) =
         project.tasks.register<Delete>("deleteDackkaGeneratedJavaReferences") {
-            mustRunAfter(dackkaTask)
+            mustRunAfter("generateDackkaDocumentation")
 
             val filesWeDoNotNeed = listOf(
                 "reference/client",
                 "reference/com"
             )
-            val filesToDelete = dackkaTask.flatMap { it.outputDirectory }.map { outputDirectory ->
+            val filesToDelete = outputDirectory.map { dir ->
                 filesWeDoNotNeed.map {
-                    project.files("${outputDirectory.path}/$it")
+                    project.files("${dir.path}/$it")
                 }
             }
 
