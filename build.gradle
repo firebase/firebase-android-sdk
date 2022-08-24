@@ -25,6 +25,9 @@ buildscript {
         }
         maven {
             url 'https://storage.googleapis.com/android-ci/mvn/'
+            metadataSources {
+                artifact()
+            }
         }
 
     }
