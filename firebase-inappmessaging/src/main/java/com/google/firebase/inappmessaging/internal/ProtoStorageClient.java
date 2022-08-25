@@ -61,15 +61,17 @@ public class ProtoStorageClient {
    * @param messageLite
    * @throws IOException
    */
-  public synchronized Completable write(AbstractMessageLite messageLite) {
-      return Completable.fromCallable(
-              () -> {
-                  // reads / writes are synchronized per client instance
-                  try (FileOutputStream output = application.openFileOutput(fileName, MODE_PRIVATE)) {
-                      output.write(messageLite.toByteArray());
-                      return messageLite;
-                  }
-              });
+  public Completable write(AbstractMessageLite messageLite) {
+    return Completable.fromCallable(
+        () -> {
+          // reads / writes are synchronized per client instance
+          synchronized (this) {
+            try (FileOutputStream output = application.openFileOutput(fileName, MODE_PRIVATE)) {
+              output.write(messageLite.toByteArray());
+              return messageLite;
+            }
+          }
+        });
   }
 
   /**
@@ -87,17 +89,18 @@ public class ProtoStorageClient {
    * @param parser
    * @param <T>
    */
-  public synchronized  <T extends AbstractMessageLite> Maybe<T> read(Parser<T> parser) {
-      return Maybe.fromCallable(
-              () -> {
-                  // reads / writes are synchronized per client instance
-                  try (FileInputStream inputStream = application.openFileInput(fileName)) {
-                      return parser.parseFrom(inputStream);
-                  } catch (InvalidProtocolBufferException | FileNotFoundException e) {
-                      Logging.logi("Recoverable exception while reading cache: " + e.getMessage());
-                      return null;
-                  }
-
-              });
+  public <T extends AbstractMessageLite> Maybe<T> read(Parser<T> parser) {
+    return Maybe.fromCallable(
+        () -> {
+          // reads / writes are synchronized per client instance
+          synchronized (this) {
+            try (FileInputStream inputStream = application.openFileInput(fileName)) {
+              return parser.parseFrom(inputStream);
+            } catch (InvalidProtocolBufferException | FileNotFoundException e) {
+              Logging.logi("Recoverable exception while reading cache: " + e.getMessage());
+              return null;
+            }
+          }
+        });
   }
 }
