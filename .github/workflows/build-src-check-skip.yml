@@ -1,11 +1,14 @@
-name: build-src-check
+name: buildSrc (skipped)
 
 on:
   pull_request:
     paths-ignore:
       - 'buildSrc/**'
+      - '.github/workflows/build-src-check.yml'
+      - '.github/workflows/build-src-check-skip.yml'
+
 jobs:
   build-src-check:
     runs-on: ubuntu-22.04
     steps:
-      - run: 'echo "No build required" '
+      - run: echo "No build required"

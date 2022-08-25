@@ -1,9 +1,11 @@
-name: build-src-check
+name: buildSrc
 
 on:
   pull_request:
     paths:
       - 'buildSrc/**'
+      - '.github/workflows/build-src-check.yml'
+      - '.github/workflows/build-src-check-skip.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

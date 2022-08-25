@@ -5,6 +5,7 @@ on:
     paths:
       - 'ci/**'
       - '.github/workflows/fireci.yml'
+      - '.github/workflows/fireci-skip.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
