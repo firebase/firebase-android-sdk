@@ -21,6 +21,13 @@ inputs:
 outputs:
   changed:
     description: Whether given path pathers are changed
+    value: ${{ steps.detect-changed-paths.outputs.changed }}
 runs:
-  using: node16
-  main: dist/index.js
+  using: composite
+  steps:
+    - id: detect-changed-paths
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const run = require('${{ github.action_path }}/index.js')
+          await run(core, exec, glob, `${{ inputs.path }}`)

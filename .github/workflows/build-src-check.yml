@@ -28,20 +28,20 @@ jobs:
           distribution: temurin
           cache: gradle
       - name: Detect whether buildSrc has changed
-        uses: ./.github/actions/detect-changed-file
-        id: detect-changed-path
+        uses: ./.github/actions/detect-changed-paths
+        id: detect-changed-paths
         with:
           path: |
             buildSrc/**
             .github/workflows/build-src-check.yml
       - name: buildSrc Tests
-        if: ${{ steps.detect-changed-path.outputs.changed == 'true' }}
+        if: steps.detect-changed-paths.outputs.changed == 'true'
         env:
           FIREBASE_CI: 1
         run: |
           ./gradlew -b buildSrc/build.gradle.kts -PenablePluginTests=true check
       - name: Publish Test Results
-        if: ${{ steps.detect-changed-path.outputs.changed == 'true' }}
+        if: steps.detect-changed-paths.outputs.changed == 'true'
         uses: EnricoMi/publish-unit-test-result-action@v1
         with:
           files: "**/build/test-results/**/*.xml"

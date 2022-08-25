@@ -14,17 +14,22 @@
  * limitations under the License.
  */
 
-import * as core from '@actions/core';
-import * as exec from '@actions/exec';
-import * as glob from '@actions/glob';
+const relative = require('path').relative;
 
-import { relative } from 'path';
+async function listChangedFiles(exec) {
+  const command = 'git diff --name-only --submodule=diff HEAD^1 HEAD';
+  const process = await exec.getExecOutput(command);
+  return process.stdout.trim().split('\n');
+}
 
-check().catch(core.setFailed);
+async function listGlobbedPaths(glob, pattern) {
+  const globber = await glob.create(pattern);
+  return globber.glob();
+}
 
-async function check(): Promise<void> {
-  const files = await listChangedFiles();
-  const paths = await listGlobbedPaths();
+module.exports = async function run(core, exec, glob, pattern) {
+  const files = await listChangedFiles(exec);
+  const paths = await listGlobbedPaths(glob, pattern);
 
   core.info(['', 'Globbed paths:', ...paths].join('\n'));
 
@@ -35,16 +40,4 @@ async function check(): Promise<void> {
   core.info(['', 'Matched paths:', ...matched].join('\n'));
 
   core.setOutput('changed', matched.length !== 0);
-}
-
-async function listChangedFiles(): Promise<string[]> {
-  const command = 'git diff --name-only --submodule=diff HEAD^1 HEAD';
-  const process = await exec.getExecOutput(command);
-  return process.stdout.trim().split('\n');
-}
-
-async function listGlobbedPaths(): Promise<string[]> {
-  const path = core.getInput('path', { required: true });
-  const globber = await glob.create(path);
-  return globber.glob();
 }
