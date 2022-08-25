@@ -96,10 +96,11 @@ class AabUpdater {
       // On a background thread, fetch the redirect URL and open it in the Play app
       runAsyncInTask(executor, () -> fetchDownloadRedirectUrl(newRelease.getDownloadUrl()))
           .onSuccessTask(
+              executor,
               redirectUrl ->
                   lifecycleNotifier.consumeForegroundActivity(
                       activity -> openRedirectUrlInPlay(redirectUrl, activity)))
-          .addOnFailureListener(this::setUpdateTaskCompletionError);
+          .addOnFailureListener(executor, this::setUpdateTaskCompletionError);
 
       return cachedUpdateTask;
     }

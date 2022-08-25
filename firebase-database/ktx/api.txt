@@ -2,13 +2,12 @@
 package com.google.firebase.database.ktx {
 
   public final class DatabaseKt {
-    ctor public DatabaseKt();
     method @NonNull public static com.google.firebase.database.FirebaseDatabase database(@NonNull com.google.firebase.ktx.Firebase, @NonNull String url);
     method @NonNull public static com.google.firebase.database.FirebaseDatabase database(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
     method @NonNull public static com.google.firebase.database.FirebaseDatabase database(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app, @NonNull String url);
     method @NonNull public static com.google.firebase.database.FirebaseDatabase getDatabase(@NonNull com.google.firebase.ktx.Firebase);
-    method @Nullable public static inline <reified T> T getValue(@NonNull com.google.firebase.database.DataSnapshot);
-    method @Nullable public static inline <reified T> T getValue(@NonNull com.google.firebase.database.MutableData);
+    method public static inline <reified T> T getValue(@NonNull com.google.firebase.database.DataSnapshot);
+    method public static inline <reified T> T getValue(@NonNull com.google.firebase.database.MutableData);
   }
 
 }

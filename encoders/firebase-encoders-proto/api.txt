@@ -5,7 +5,7 @@ package com.google.firebase.encoders.proto {
     method public int getNumber();
   }
 
-  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface Protobuf {
+  @com.google.firebase.encoders.annotations.ExtraProperty @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface Protobuf {
     method public abstract com.google.firebase.encoders.proto.Protobuf.IntEncoding intEncoding() default com.google.firebase.encoders.proto.Protobuf.IntEncoding.DEFAULT;
     method public abstract int tag();
   }

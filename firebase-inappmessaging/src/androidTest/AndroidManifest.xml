@@ -14,8 +14,4 @@
               android:value="com.google.firebase.components.ComponentRegistrar" />
     </service>
   </application>
-
-  <instrumentation
-      android:name="androidx.test.runner.AndroidJUnitRunner"
-      android:targetPackage="com.google.firebase.inappmessaging"/>
 </manifest>

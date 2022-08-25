@@ -14,11 +14,15 @@
 package com.google.firebase.messaging;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import android.app.Application;
 import android.content.Intent;
 import android.os.PowerManager.WakeLock;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -49,6 +53,31 @@ public class WakeLockHolderRoboTest {
     WakeLockHolder.startWakefulService(context, intent);
 
     assertThat(ShadowPowerManager.getLatestWakeLock().isHeld()).isTrue();
+  }
+
+  @Test
+  public void testSendWakefulServiceIntent_AcquiresWakeLock() {
+    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
+    WithinAppServiceConnection mockConnection = mock(WithinAppServiceConnection.class);
+    when(mockConnection.sendIntent(any(Intent.class))).thenReturn(taskCompletionSource.getTask());
+    WakeLockHolder.sendWakefulServiceIntent(context, mockConnection, new Intent());
+
+    assertThat(ShadowPowerManager.getLatestWakeLock()).isNotNull();
+    assertThat(ShadowPowerManager.getLatestWakeLock().isHeld()).isTrue();
+  }
+
+  @Test
+  public void testSendWakefulServiceIntent_ReleasesWakeLock() {
+    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
+    WithinAppServiceConnection mockConnection = mock(WithinAppServiceConnection.class);
+    when(mockConnection.sendIntent(any(Intent.class))).thenReturn(taskCompletionSource.getTask());
+    WakeLockHolder.sendWakefulServiceIntent(context, mockConnection, new Intent());
+
+    // Verify that the WakeLock is released once the Intent has been handled by the Service.
+    WakeLock wakeLock = ShadowPowerManager.getLatestWakeLock();
+    taskCompletionSource.setResult(null);
+
+    assertThat(wakeLock.isHeld()).isFalse();
   }
 
   @Test

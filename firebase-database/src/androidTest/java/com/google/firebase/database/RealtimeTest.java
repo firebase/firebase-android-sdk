@@ -900,7 +900,7 @@ public class RealtimeTest {
       throws InterruptedException, ExecutionException, TestFailure, TimeoutException {
     DatabaseConfig config = IntegrationTestHelpers.newTestConfig();
     config.setLogLevel(Logger.Level.DEBUG);
-    DatabaseReference ref = new DatabaseReference(IntegrationTestValues.getNamespace(), config);
+    DatabaseReference ref = new DatabaseReference(IntegrationTestValues.getDatabaseUrl(), config);
 
     // Shut it down right away
     DatabaseReference.goOffline(config);

@@ -1,7 +1,7 @@
 // Signature format: 2.0
 package com.google.firebase.perf {
 
-  public class FirebasePerformance {
+  @javax.inject.Singleton public class FirebasePerformance {
     method @NonNull public static com.google.firebase.perf.FirebasePerformance getInstance();
     method public boolean isPerformanceCollectionEnabled();
     method @NonNull public com.google.firebase.perf.metrics.HttpMetric newHttpMetric(@NonNull String, @NonNull @com.google.firebase.perf.FirebasePerformance.HttpMethod String);

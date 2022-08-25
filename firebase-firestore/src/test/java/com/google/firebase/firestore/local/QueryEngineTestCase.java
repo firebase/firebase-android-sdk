@@ -47,6 +47,7 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -585,5 +586,58 @@ public abstract class QueryEngineTestCase {
     DocumentSet result5 =
         expectFullCollectionScan(() -> runQuery(query5, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query5.comparator(), doc1, doc2, doc4, doc5), result5);
+  }
+
+  @Test
+  public void orQueryWithInAndNotIn() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 1, "b", 0));
+    MutableDocument doc2 = doc("coll/2", 1, map("b", 1));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 3, "b", 2));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 1, "b", 3));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 1));
+    MutableDocument doc6 = doc("coll/6", 1, map("a", 2));
+    addDocument(doc1, doc2, doc3, doc4, doc5, doc6);
+
+    Query query1 =
+        query("coll")
+            .filter(orFilters(filter("a", "==", 2), filter("b", "in", Arrays.asList(2, 3))));
+    DocumentSet result1 =
+        expectFullCollectionScan(() -> runQuery(query1, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query1.comparator(), doc3, doc4, doc6), result1);
+
+    // a==2 || (b != 2 && b != 3)
+    // Has implicit "orderBy b"
+    Query query2 =
+        query("coll")
+            .filter(orFilters(filter("a", "==", 2), filter("b", "not-in", Arrays.asList(2, 3))));
+    DocumentSet result2 =
+        expectFullCollectionScan(() -> runQuery(query2, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query2.comparator(), doc1, doc2), result2);
+  }
+
+  @Test
+  public void orQueryWithArrayMembership() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 1, "b", Arrays.asList(0)));
+    MutableDocument doc2 = doc("coll/2", 1, map("b", Arrays.asList(1)));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 3, "b", Arrays.asList(2, 7)));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 1, "b", Arrays.asList(3, 7)));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 1));
+    MutableDocument doc6 = doc("coll/6", 1, map("a", 2));
+    addDocument(doc1, doc2, doc3, doc4, doc5, doc6);
+
+    Query query1 =
+        query("coll").filter(orFilters(filter("a", "==", 2), filter("b", "array-contains", 7)));
+    DocumentSet result1 =
+        expectFullCollectionScan(() -> runQuery(query1, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query1.comparator(), doc3, doc4, doc6), result1);
+
+    Query query2 =
+        query("coll")
+            .filter(
+                orFilters(
+                    filter("a", "==", 2), filter("b", "array-contains-any", Arrays.asList(0, 3))));
+    DocumentSet result2 =
+        expectFullCollectionScan(() -> runQuery(query2, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query2.comparator(), doc1, doc4, doc6), result2);
   }
 }

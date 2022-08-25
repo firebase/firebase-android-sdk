@@ -14,6 +14,8 @@
 
 package com.google.firebase.components;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+
 public final class Preconditions {
 
   public static void checkArgument(boolean expression, String errorMessage) {
@@ -22,6 +24,7 @@ public final class Preconditions {
     }
   }
 
+  @CanIgnoreReturnValue
   public static <T> T checkNotNull(T reference) {
     if (reference == null) {
       throw new NullPointerException();
@@ -29,6 +32,7 @@ public final class Preconditions {
     return reference;
   }
 
+  @CanIgnoreReturnValue
   public static <T> T checkNotNull(T reference, String errorMessage) {
     if (reference == null) {
       throw new NullPointerException(errorMessage);

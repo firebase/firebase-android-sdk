@@ -15,11 +15,10 @@ This directory contains tooling used to run Continuous Integration tasks.
   ```
 - At the root of the firebase sdk repo, run
   ```
-  ./ci/fireci/setup.py develop
+  pip3 install -e ./ci/fireci/
   ```
 
 - For usage help, see:
   ```
   fireci --help
   ```
-
