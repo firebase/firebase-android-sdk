@@ -72,10 +72,6 @@ gradlePlugin {
             id = "LicenseResolverPlugin"
             implementationClass = "com.google.firebase.gradle.plugins.license.LicenseResolverPlugin"
         }
-        register("dackkaPlugin") {
-            id = "DackkaPlugin"
-            implementationClass = "com.google.firebase.gradle.plugins.DackkaPlugin"
-        }
         register("multiProjectReleasePlugin") {
             id = "MultiProjectReleasePlugin"
             implementationClass = "com.google.firebase.gradle.MultiProjectReleasePlugin"
@@ -88,12 +84,10 @@ gradlePlugin {
             id = "firebase-library"
             implementationClass = "com.google.firebase.gradle.plugins.FirebaseLibraryPlugin"
         }
-
         register("firebaseJavaLibraryPlugin") {
             id = "firebase-java-library"
             implementationClass = "com.google.firebase.gradle.plugins.FirebaseJavaLibraryPlugin"
         }
-
         register("firebaseVendorPlugin") {
             id = "firebase-vendor"
             implementationClass = "com.google.firebase.gradle.plugins.VendorPlugin"
