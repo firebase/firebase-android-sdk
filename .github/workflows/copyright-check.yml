@@ -1,4 +1,4 @@
-name: Copyright check
+name: Copyright Check
 
 on: pull_request
 

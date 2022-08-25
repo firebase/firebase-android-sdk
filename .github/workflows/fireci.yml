@@ -2,9 +2,6 @@ name: fireci
 
 on:
   pull_request:
-    paths:
-      - 'ci/**'
-      - '.github/workflows/fireci.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -16,10 +13,20 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3.0.2
+        with:
+          fetch-depth: 2
+          submodules: true
       - uses: actions/setup-python@v2
         with:
           python-version: '3.9'
+      - name: Detect whether fireci has changed
+        uses: ./.github/actions/detect-changed-file
+        id: detect-changed-path
+        with:
+          path: |
+            ci/**
+            .github/workflows/fireci.yml
       - run: |
           pip install -e "ci/fireci[test]"
-      - run: |
           pytest ci/fireci
+        if: ${{ steps.detect-changed-path.outputs.changed == 'true' }}
