@@ -84,6 +84,8 @@ abstract class DackkaPlugin : Plugin<Project> {
                             it.javaDirectories.map { it.absoluteFile } + projectSpecificSources(project)
                         }
 
+                        val packageLists = fetchPackageLists(project)
+
                         // this will become useful with the agp upgrade, as they're separate in 7.x+
                         val sourcesForKotlin = emptyList<File>()
                         val excludedFiles = emptyList<File>() + projectSpecificSuppressedFiles(project)
@@ -92,12 +94,18 @@ abstract class DackkaPlugin : Plugin<Project> {
                         javaSources.set(sourcesForJava)
                         kotlinSources.set(sourcesForKotlin)
                         suppressedFiles.set(excludedFiles)
+                        packageListFiles.set(packageLists)
 
                         applyCommonConfigurations()
                     }
                 }
             }
         }
+
+    private fun fetchPackageLists(project: Project) =
+        project.rootProject.fileTree("kotlindoc/package-lists").matching {
+            include("**/package-list")
+        }.toList()
 
     // TODO(b/243534168): Remove when fixed
     private fun projectSpecificSources(project: Project) =
@@ -129,12 +137,14 @@ abstract class DackkaPlugin : Plugin<Project> {
         outputDirectory.set(dackkaOutputDirectory)
     }
 
+    // TODO(b/243833009): Make task cacheable
     private fun registerFiresiteTransformTask(project: Project, outputDirectory: Provider<File>) =
         project.tasks.register<FiresiteTransformTask>("firesiteTransform") {
             dackkaFiles.set(outputDirectory)
         }
 
     // If we decide to publish java variants, we'll need to address the generated format as well
+    // TODO(b/243833009): Make task cacheable
     private fun registerDeleteDackkaGeneratedJavaReferencesTask(project: Project, outputDirectory: Provider<File>) =
         project.tasks.register<Delete>("deleteDackkaGeneratedJavaReferences") {
             mustRunAfter("generateDackkaDocumentation")
