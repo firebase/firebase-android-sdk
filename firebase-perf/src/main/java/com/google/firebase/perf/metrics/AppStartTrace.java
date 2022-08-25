@@ -126,7 +126,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
 
   public static Timer getProcessStartTimer() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-      return Timer.of(TimeUnit.MILLISECONDS.toNanos(Process.getStartElapsedRealtime()));
+      return Timer.ofElapsedRealtime(Process.getStartElapsedRealtime());
     }
     return FirebasePerfProvider.getAppStartTime();
   }
