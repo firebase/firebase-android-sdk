@@ -25,6 +25,9 @@ buildscript {
         }
         maven {
             url 'https://storage.googleapis.com/android-ci/mvn/'
+            metadataSources {
+                artifact()
+            }
         }
 
     }
@@ -77,6 +80,9 @@ configure(subprojects) {
         mavenCentral()
         maven {
             url 'https://storage.googleapis.com/android-ci/mvn/'
+            metadataSources {
+                artifact()
+            }
         }
     }
 

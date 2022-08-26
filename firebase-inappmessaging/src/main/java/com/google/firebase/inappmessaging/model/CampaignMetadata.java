@@ -17,10 +17,13 @@ package com.google.firebase.inappmessaging.model;
 import androidx.annotation.NonNull;
 
 /**
- * Provides the following about any message,
- * <li>Campaign ID
- * <li>Campaign Name
- * <li>Campaign Test Message State
+ * Provides the following about any message:
+ *
+ * <ul>
+ *   <li>Campaign ID
+ *   <li>Campaign Name
+ *   <li>Campaign Test Message State
+ * </ul>
  */
 public class CampaignMetadata {
   private final String campaignId;

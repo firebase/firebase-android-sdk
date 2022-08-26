@@ -46,6 +46,7 @@ operator fun AppCheckToken.component2() = expireTimeMillis
 
 internal const val LIBRARY_NAME: String = "fire-app-check-ktx"
 
+/** @suppress */
 class FirebaseAppCheckKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> =
             listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
