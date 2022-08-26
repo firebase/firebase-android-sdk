@@ -49,8 +49,9 @@ public class Timer implements Parcelable {
    * @param elapsedRealtime timestamp in the {@link SystemClock#elapsedRealtime()} timebase
    */
   public static Timer ofElapsedRealtime(long elapsedRealtime) {
-    Timer now = new Timer();
-    long wallClock = now.wallClock + elapsedRealtime - now.elapsedRealtime;
+    long wallClockNow = System.currentTimeMillis();
+    long elapsedRealtimeNow = SystemClock.elapsedRealtime();
+    long wallClock = wallClockNow + elapsedRealtime - elapsedRealtimeNow;
     return new Timer(wallClock, elapsedRealtime);
   }
 
@@ -71,6 +72,17 @@ public class Timer implements Parcelable {
   Timer(long epochTime, long elapsedRealtime) {
     this.wallClock = epochTime;
     this.elapsedRealtime = elapsedRealtime;
+  }
+
+  /**
+   * TEST-ONLY constructor that sets both wall-clock time and elapsedRealtime to the same input
+   * value. Do NOT use this for any real logic because this is mixing 2 different time-bases.
+   *
+   * @param testTime value to set both wall-clock and elapsedRealtime to for testing purposes
+   */
+  @VisibleForTesting
+  public Timer(long testTime) {
+    this(testTime, testTime);
   }
 
   private Timer(Parcel in) {
