@@ -55,7 +55,7 @@ public class TimerTest {
 
   @Test
   public void testGetCurrentTimestampMicros() {
-    Timer timer = new Timer(0);
+    Timer timer = new Timer(0, 0);
     long currentTimeSmallest = timer.getCurrentTimestampMicros();
 
     assertThat(timer.getMicros()).isEqualTo(0);
