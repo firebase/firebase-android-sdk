@@ -32,11 +32,8 @@ class AggregateQuery {
   // The base query.
   private final Query query;
 
-  AggregateQuery(@NonNull Query query, @NonNull AggregateField aggregateField) {
+  AggregateQuery(@NonNull Query query) {
     this.query = query;
-    if (!(aggregateField instanceof AggregateField.CountAggregateField)) {
-      throw new IllegalArgumentException("unsupported aggregateField: " + aggregateField);
-    }
   }
 
   /** Returns the base {@link Query} for this aggregate query. */
@@ -76,7 +73,7 @@ class AggregateQuery {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || !(o instanceof AggregateQuery)) return false;
+    if (!(o instanceof AggregateQuery)) return false;
     AggregateQuery that = (AggregateQuery) o;
     return query.equals(that.query);
   }

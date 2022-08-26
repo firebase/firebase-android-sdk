@@ -108,6 +108,35 @@ public class CountTest {
   }
 
   @Test
+  public void testCanRunCountWithOrderBy() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "a", map("k", "a"),
+                "b", map("k", "b"),
+                "c", map("k", "c"),
+                "d", map("absent", "d")));
+
+    AggregateQuerySnapshot snapshot =
+        waitFor(collection.orderBy("k").count().get(AggregateSource.SERVER_DIRECT));
+    // "d" is filtered out because it is ordered by "k".
+    assertEquals(Long.valueOf(3), snapshot.getCount());
+  }
+
+  @Test
+  public void testTerminateDoesNotCrashWithFlyingCountQuery() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "a", map("k", "a"),
+                "b", map("k", "b"),
+                "c", map("k", "c")));
+
+    collection.orderBy("k").count().get(AggregateSource.SERVER_DIRECT);
+    waitFor(collection.firestore.terminate());
+  }
+
+  @Test
   public void testSnapshotEquals() {
     CollectionReference collection =
         testCollectionWithDocs(

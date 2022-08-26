@@ -240,7 +240,12 @@ public final class FirestoreClient {
   public Task<Long> runCountQuery(Query query) {
     this.verifyNotTerminated();
     final TaskCompletionSource<Long> result = new TaskCompletionSource<>();
-    asyncQueue.enqueueAndForget(() -> syncEngine.runCountQuery(query, result));
+    asyncQueue.enqueueAndForget(
+        () ->
+            syncEngine
+                .runCountQuery(query)
+                .addOnSuccessListener(count -> result.setResult(count))
+                .addOnFailureListener(e -> result.setException(e)));
     return result.getTask();
   }
 

@@ -56,7 +56,7 @@ class AggregateQuerySnapshot {
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
-    if (o == null || !(o instanceof AggregateQuerySnapshot)) return false;
+    if (!(o instanceof AggregateQuerySnapshot)) return false;
     AggregateQuerySnapshot snapshot = (AggregateQuerySnapshot) o;
     return count == snapshot.count && query.equals(snapshot.query);
   }

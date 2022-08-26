@@ -1231,7 +1231,7 @@ public class Query {
    */
   @NonNull
   AggregateQuery count() {
-    return new AggregateQuery(this, AggregateField.count());
+    return new AggregateQuery(this);
   }
 
   @Override

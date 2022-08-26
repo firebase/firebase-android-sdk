@@ -222,7 +222,7 @@ public class Datastore {
     return completionSource.getTask();
   }
 
-  public void runCountQuery(Query query, TaskCompletionSource<Long> result) {
+  public Task<Long> runCountQuery(Query query) {
     com.google.firestore.v1.Target.QueryTarget encodedQueryTarget =
         serializer.encodeQueryTarget(query.toTarget());
 
@@ -240,7 +240,7 @@ public class Datastore {
     request.setParent(encodedQueryTarget.getParent());
     request.setStructuredAggregationQuery(structuredAggregationQuery);
 
-    channel
+    return channel
         .runRpc(FirestoreGrpc.getRunAggregationQueryMethod(), request.build())
         .continueWith(
             workerQueue.getExecutor(),
@@ -251,7 +251,7 @@ public class Datastore {
                         == FirebaseFirestoreException.Code.UNAUTHENTICATED) {
                   channel.invalidateToken();
                 }
-                result.setException(task.getException());
+                throw task.getException();
               }
 
               RunAggregationQueryResponse response = task.getResult();
@@ -266,8 +266,7 @@ public class Datastore {
               hardAssert(
                   countValue.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE,
                   "countValue.getValueTypeCase() == " + countValue.getValueTypeCase());
-              result.setResult(countValue.getIntegerValue());
-              return null;
+              return countValue.getIntegerValue();
             });
   }
 

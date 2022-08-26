@@ -22,7 +22,6 @@ import com.google.cloud.datastore.core.number.NumberComparisonHelper;
 import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
-import com.google.firebase.firestore.remote.Datastore;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.StatusException;
@@ -136,18 +135,6 @@ public class Util {
     } else {
       return new Exception(t);
     }
-  }
-
-  public static boolean isRetryableBackendError(Exception e) {
-    if (e instanceof FirebaseFirestoreException) {
-      // In transactions, the backend will fail outdated reads with FAILED_PRECONDITION and
-      // non-matching document versions with ABORTED. These errors should be retried.
-      FirebaseFirestoreException.Code code = ((FirebaseFirestoreException) e).getCode();
-      return code == FirebaseFirestoreException.Code.ABORTED
-          || code == FirebaseFirestoreException.Code.FAILED_PRECONDITION
-          || !Datastore.isPermanentError(((FirebaseFirestoreException) e).getCode());
-    }
-    return false;
   }
 
   private static final Continuation<Void, Void> VOID_ERROR_TRANSFORMER =
