@@ -1,6 +1,8 @@
 package com.google.firebase.perf.util;
 
 import android.os.Build.VERSION_CODES;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.view.ViewTreeObserver;
 
@@ -13,20 +15,24 @@ import java.util.concurrent.atomic.AtomicReference;
 @RequiresApi(VERSION_CODES.JELLY_BEAN)
 public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
   private final AtomicReference<@Nullable View> viewReference;
+  private final Runnable callback;
+  private final Handler mainThreadHandler = new Handler(Looper.getMainLooper());;
 
-  private FirstOnDrawListener(View view) {
+  private FirstDrawDoneListener(View view, Runnable callback) {
     this.viewReference = new AtomicReference<>(view);
+    this.callback = callback;
   }
 
   @Override
   public void onDraw() {
     View view = viewReference.getAndSet(null);
+    if (view == null) {
+      return;
+    }
     // OnDrawListeners cannot be removed within onDraw, so we remove it with a
     // GlobalLayoutListener
     view.getViewTreeObserver().addOnGlobalLayoutListener(new LayoutChangeListener(view, this));
-    ThreadUtil.getMainThreadHandler()
-            .postAtFrontOfQueue(
-                    () -> StartupFlowCollectorImpl.this.collectAndLogActivityFirstDrawDone(successCode));
+    mainThreadHandler.postAtFrontOfQueue(callback);
   }
 
   @RequiresApi(VERSION_CODES.JELLY_BEAN)
