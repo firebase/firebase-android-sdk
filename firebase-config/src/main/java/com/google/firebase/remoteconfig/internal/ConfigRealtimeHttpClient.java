@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -236,16 +237,11 @@ public class ConfigRealtimeHttpClient {
     return realtimeURL;
   }
 
-  private HttpURLConnection makeHttpConnection() {
+  private HttpURLConnection createRealtimeConnection() throws IOException {
     URL realtimeUrl = getUrl();
-    HttpURLConnection httpURLConnection = null;
-    try {
-      httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
-      setCommonRequestHeaders(httpURLConnection);
-      setRequestParams(httpURLConnection);
-    } catch (IOException ex) {
-      Log.d(TAG, "Can't make connection, will retry after method returns.");
-    }
+    HttpURLConnection httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
+    setCommonRequestHeaders(httpURLConnection);
+    setRequestParams(httpURLConnection);
 
     return httpURLConnection;
   }
@@ -298,19 +294,37 @@ public class ConfigRealtimeHttpClient {
     return new ConfigAutoFetch(httpURLConnection, configFetchHandler, listeners, retryCallback);
   }
 
-  // Kicks off Http stream listening and AutoFetching. The AutoFetch method listenForNotifications
-  // will be a blocking call until the Http stream closes, at which point we will try and
-  // reestablish the stream.
+  /**
+   * Open the realtime connection, begin listening for updates, and auto-fetch when an update is
+   * received.
+   *
+   * <p>If the connection is successful, this method will block on its thread while it
+   * reads the chunk-encoded HTTP body. When the connection closes, it attempts to reestablish
+   * the stream.</p>
+   */
   @SuppressLint("VisibleForTests")
   synchronized void beginRealtimeHttpStream() {
-    if (canMakeHttpStreamConnection()) {
-      this.httpURLConnection = makeHttpConnection();
-      if (httpURLConnection != null) {
-        resetRetryParameters();
-        ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
-        configAutoFetch.listenForNotifications();
-        closeRealtimeHttpStream();
-      }
+    if (!canMakeHttpStreamConnection()) {
+      return;
+    }
+
+    try {
+      // Create the open the connection.
+      httpURLConnection = createRealtimeConnection();
+      httpURLConnection.connect();
+
+      // Reset the retries remaining if we opened the connection without an exception.
+      resetRetryParameters();
+
+      // Start listening for realtime notifications.
+      ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
+      configAutoFetch.listenForNotifications();
+    } catch (IOException e) {
+      propagateErrors(
+              new FirebaseRemoteConfigRealtimeUpdateStreamException(
+                      "Exception connecting to realtime stream. Retrying..."));
+    } finally {
+      closeRealtimeHttpStream();
       retryHTTPConnection();
     }
   }
