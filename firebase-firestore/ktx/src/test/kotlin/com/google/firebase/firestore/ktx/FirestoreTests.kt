@@ -18,11 +18,8 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldPath
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreSettings
-import com.google.firebase.firestore.TestUtil
+import com.google.firebase.firestore.*
+import com.google.firebase.firestore.AggregateSource.SERVER_DIRECT
 import com.google.firebase.firestore.model.ObjectValue
 import com.google.firebase.firestore.testutil.TestUtil.wrap
 import com.google.firebase.ktx.Firebase
@@ -40,6 +37,37 @@ const val APP_ID = "APP_ID"
 const val API_KEY = "API_KEY"
 
 const val EXISTING_APP = "existing"
+
+class AggregateDemo {
+
+  fun Demo0_NormalQuery(db: FirebaseFirestore) {
+    val query = db.collection("games/halo/players")
+    val snapshot = query.get().result
+    assertThat(snapshot.size()).isEqualTo(5_000_000)
+  }
+
+  fun Demo1_CountOfDocumentsInACollection(db: FirebaseFirestore) {
+    val countQuery = db.collection("games/halo/players").count()
+    val snapshot = countQuery.get(SERVER_DIRECT).result
+    assertThat(snapshot.count).isEqualTo(5_000_000)
+  }
+
+  fun Demo2_CountOfDocumentsInACollectionWithFilter(db: FirebaseFirestore) {
+    val query = db.collection("games/halo/players").whereEqualTo("online", true)
+    val countQuery = query.count()
+    val snapshot = countQuery.get(SERVER_DIRECT).result
+    assertThat(snapshot.count).isEqualTo(2000)
+  }
+
+  fun Demo3_CountOfDocumentsInACollectionWithLimit(db: FirebaseFirestore) {
+    val query = db.collection("games/halo/players").limit(9000)
+    val countQuery = query.count()
+    val snapshot = countQuery.get(SERVER_DIRECT).result
+    assertThat(snapshot.count).isEqualTo(9000)
+  }
+
+}
+
 
 abstract class BaseTestCase {
     @Before
