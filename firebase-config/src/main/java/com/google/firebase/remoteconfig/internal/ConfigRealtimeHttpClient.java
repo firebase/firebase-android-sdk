@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -298,9 +297,8 @@ public class ConfigRealtimeHttpClient {
    * Open the realtime connection, begin listening for updates, and auto-fetch when an update is
    * received.
    *
-   * <p>If the connection is successful, this method will block on its thread while it
-   * reads the chunk-encoded HTTP body. When the connection closes, it attempts to reestablish
-   * the stream.</p>
+   * <p>If the connection is successful, this method will block on its thread while it reads the
+   * chunk-encoded HTTP body. When the connection closes, it attempts to reestablish the stream.
    */
   @SuppressLint("VisibleForTests")
   synchronized void beginRealtimeHttpStream() {
@@ -321,8 +319,8 @@ public class ConfigRealtimeHttpClient {
       configAutoFetch.listenForNotifications();
     } catch (IOException e) {
       propagateErrors(
-              new FirebaseRemoteConfigRealtimeUpdateStreamException(
-                      "Exception connecting to realtime stream. Retrying..."));
+          new FirebaseRemoteConfigRealtimeUpdateStreamException(
+              "Exception connecting to realtime stream. Retrying..."));
     } finally {
       closeRealtimeHttpStream();
       retryHTTPConnection();
