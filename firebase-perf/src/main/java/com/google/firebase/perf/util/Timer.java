@@ -31,7 +31,7 @@ import com.google.android.gms.common.util.VisibleForTesting;
 public class Timer implements Parcelable {
 
   /**
-   * Wall-clock time or epoch time in milliseconds. Do NOT use for duration because wall-clock is
+   * Wall-clock time or epoch time in microseconds. Do NOT use for duration because wall-clock is
    * not guaranteed to be monotonic: it can be set by the user or the phone network, thus it may
    * jump forwards or backwards unpredictably. {@see SystemClock}
    */
