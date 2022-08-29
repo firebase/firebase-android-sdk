@@ -72,6 +72,11 @@ public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallba
     wasImpressed = false;
   }
 
+  @VisibleForTesting
+  boolean hasImpressed(){
+    return wasImpressed;
+  }
+
   @Override
   public Task<Void> impressionDetected() {
 
