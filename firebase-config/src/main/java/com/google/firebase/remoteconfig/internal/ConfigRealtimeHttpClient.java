@@ -318,9 +318,7 @@ public class ConfigRealtimeHttpClient {
       ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
       configAutoFetch.listenForNotifications();
     } catch (IOException e) {
-      propagateErrors(
-          new FirebaseRemoteConfigRealtimeUpdateStreamException(
-              "Exception connecting to realtime stream. Retrying..."));
+      Log.d(TAG, "Exception connecting to realtime stream. Retrying the connection...");
     } finally {
       closeRealtimeHttpStream();
       retryHTTPConnection();
