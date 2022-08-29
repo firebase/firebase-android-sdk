@@ -13,9 +13,10 @@ jobs:
     env:
       BUNDLE_GEMFILE: ./ci/danger/Gemfile
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
-        fetch-depth: '10'
+        fetch-depth: 2
+        submodules: true
     - uses: ruby/setup-ruby@v1
       with:
         ruby-version: '2.7'
