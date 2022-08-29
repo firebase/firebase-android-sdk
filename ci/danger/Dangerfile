@@ -16,6 +16,12 @@
 
 # Determine if there are changes in files matching any of the
 # path patterns provided.
+def shouldFileBeExcluded(file, exclude_paths)
+  return exclude_paths.any? { |dir| file.include? dir }
+end
+
+# Determine if there are changes in files matching any of the
+# path patterns provided.
 def hasChangesIn(paths)
   path_array = Array(paths)
   path_array.each do |dir|
@@ -36,18 +42,42 @@ declared_trivial = github.pr_labels.include? "no-changelog"
 # Whether or not there are pending changes to any changelog file.
 has_changelog_changes = hasChangesIn(["CHANGELOG"])
 
+# Ignore changes in these directories
+exclude_directories = [
+  '/buildSrc/',
+  '/ci/',
+  '/encoders/',
+  '/firebase-annotations/',
+  '/firebase-components/',
+  '/firebase-datatransport/',
+  '/gradle/',
+  '/health-metrics/',
+  '/integ-testing/',
+  '/protolite-well-known-types/',
+  '/smoke-tests/',
+  '/third_party/',
+  '/tools/'
+]
+
 # A FileList containing Java, Kotlin, or XML changes.
 # This is a proxy for knowing whether the change has user visible SDK changes.
 sdk_changes = (git.modified_files +
                git.added_files +
                git.deleted_files).select do |line|
-  line.end_with?(".java") ||
-    line.end_with?(".kt") ||
-    line.end_with?(".xml")
+  !shouldFileBeExcluded(line, exclude_directories) &&
+    (line.end_with?(".java") ||
+     line.end_with?(".kt") ||
+     line.end_with?(".xml"))
 end
 
 tester_team = [
-  "rlazo"
+  'rlazo',
+  'vkryachko',
+  'yifanyang',
+  'VinayGuthal',
+  'davidmotson',
+  'daymxn',
+  'emilypgoogle'
 ]
 
 is_enabled = true if tester_team.include? github.pr_author
