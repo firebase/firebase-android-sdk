@@ -43,7 +43,7 @@ declared_trivial = github.pr_labels.include? "no-changelog"
 has_changelog_changes = hasChangesIn(["CHANGELOG"])
 
 # Ignore changes in these directories
-exclude_directories = [
+$exclude_directories = [
   '/buildSrc/',
   '/ci/',
   '/encoders/',
@@ -64,11 +64,11 @@ def has_sdk_changes()
   files = (git.modified_files +
            git.added_files +
            git.deleted_files)
-  return files.any? |file|
-         !shouldFileBeExcluded(file, exclude_directories) &&
+  return files.any? { |file|
+         !shouldFileBeExcluded(file, $exclude_directories) &&
          (file.end_with?(".java") ||
           file.end_with?(".kt") ||
-          file.end_with?(".xml"))
+          file.end_with?(".xml")) }
 end
 
 tester_team = [
