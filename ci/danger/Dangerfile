@@ -59,15 +59,16 @@ exclude_directories = [
   '/tools/'
 ]
 
-# A FileList containing Java, Kotlin, or XML changes.
-# This is a proxy for knowing whether the change has user visible SDK changes.
-sdk_changes = (git.modified_files +
-               git.added_files +
-               git.deleted_files).select do |line|
-  !shouldFileBeExcluded(line, exclude_directories) &&
-    (line.end_with?(".java") ||
-     line.end_with?(".kt") ||
-     line.end_with?(".xml"))
+# Whether or not the PR has modified SDK source files.
+def has_sdk_changes()
+  files = (git.modified_files +
+           git.added_files +
+           git.deleted_files)
+  return files.any? |file|
+         !shouldFileBeExcluded(file, exclude_directories) &&
+         (file.end_with?(".java") ||
+          file.end_with?(".kt") ||
+          file.end_with?(".xml"))
 end
 
 tester_team = [
@@ -82,16 +83,13 @@ tester_team = [
 
 is_enabled = true if tester_team.include? github.pr_author
 
-# Whether or not the PR has modified SDK source files.
-has_sdk_changes = !sdk_changes.empty?
-
 ### Actions
 
 # Warn if a changelog is left out on a non-trivial PR that has modified
 # SDK source files.
 #
 # TODO: remove the `is_enabled` after tests are complete
-if is_enabled && has_sdk_changes
+if is_enabled && has_sdk_changes()
   if !has_changelog_changes && !declared_trivial
     warning = "Did you forget to add a changelog entry? (Add the 'no-changelog'"\
       " label to the PR to silence this warning.)"
