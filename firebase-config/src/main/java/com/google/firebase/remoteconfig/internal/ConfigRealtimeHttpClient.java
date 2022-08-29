@@ -331,6 +331,13 @@ public class ConfigRealtimeHttpClient {
   synchronized void closeRealtimeHttpStream() {
     if (httpURLConnection != null) {
       this.httpURLConnection.disconnect();
+
+      // Explicitly close the input stream due to a bug in the Android okhttp implementation.
+      // See github.com/firebase/firebase-android-sdk/pull/808.
+      try {
+        this.httpURLConnection.getInputStream().close();
+      } catch (IOException e) {
+      }
       this.httpURLConnection = null;
     }
   }
