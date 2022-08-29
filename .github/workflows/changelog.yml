@@ -15,7 +15,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        fetch-depth: 2
+        fetch-depth: 100
         submodules: true
     - uses: ruby/setup-ruby@v1
       with:
