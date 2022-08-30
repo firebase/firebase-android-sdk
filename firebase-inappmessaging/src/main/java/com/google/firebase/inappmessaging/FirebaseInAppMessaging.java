@@ -92,9 +92,6 @@ public class FirebaseInAppMessaging {
   /**
    * Gets FirebaseInAppMessaging instance using the firebase app returned by {@link
    * FirebaseApp#getInstance()}
-   *
-   * @param
-   * @return
    */
   @NonNull
   public static FirebaseInAppMessaging getInstance() {
