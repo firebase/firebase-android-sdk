@@ -15,11 +15,13 @@ package com.google.firebase.ktx
 
 import android.content.Context
 import androidx.annotation.Keep
+import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import kotlinx.coroutines.tasks.await
 
 /**
  * Single access point to all firebase SDKs from Kotlin.
@@ -49,6 +51,15 @@ fun Firebase.initialize(context: Context, options: FirebaseOptions, name: String
 /** Returns options of default FirebaseApp */
 val Firebase.options: FirebaseOptions
     get() = Firebase.app.options
+
+/**
+ * Awaits the completion of the task without blocking a thread.
+ *
+ * This suspending function is cancellable.
+ * If the [Job] of the current coroutine is cancelled or completed while this suspending function is waiting, this function
+ * stops waiting for the completion stage and immediately resumes with [CancellationException].
+ */
+suspend fun <T> Task<T>.await(): T = await()
 
 internal const val LIBRARY_NAME: String = "fire-core-ktx"
 
