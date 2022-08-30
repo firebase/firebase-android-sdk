@@ -28,6 +28,12 @@ import org.robolectric.RobolectricTestRunner;
 /** Unit tests for {@link Timer}. */
 @RunWith(RobolectricTestRunner.class)
 public class TimerTest {
+  /**
+   * Margin of error for time comparisons, because time is sensitive, wall-clock especially. 100
+   * milliseconds is chosen because 1000 is the difference between metric units, and we want tests
+   * to catch errors like extra or forgotten unit conversion.
+   */
+  private static final long epsilon = TimeUnit.MILLISECONDS.toMicros(100);
 
   @Before
   public void setUp() {}
@@ -37,8 +43,12 @@ public class TimerTest {
     Timer processStart = Timer.ofElapsedRealtime(Process.getStartElapsedRealtime());
     Timer reference = new Timer();
 
-    assertThat(processStart.getDurationMicros(reference))
-        .isEqualTo(reference.getMicros() - processStart.getMicros());
+    assertThat(
+            approximatelyEqual(
+                processStart.getDurationMicros(reference),
+                reference.getMicros() - processStart.getMicros(),
+                epsilon))
+        .isTrue();
   }
 
   @Test
@@ -100,5 +110,14 @@ public class TimerTest {
 
     p1.recycle();
     p2.recycle();
+  }
+
+  /**
+   * Allow comparisons between wall-clock time to be approximate to allow some margin of error for
+   * de-flaking purposes, due to time being sensitive. Especially since wall-clock is non-monotonic
+   * and inaccurate.
+   */
+  private static boolean approximatelyEqual(long a, long b, long epsilon) {
+    return Math.abs(a - b) < epsilon;
   }
 }
