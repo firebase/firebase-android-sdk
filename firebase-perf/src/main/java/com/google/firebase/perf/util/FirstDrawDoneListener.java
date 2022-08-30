@@ -36,12 +36,13 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
   private final Runnable callback;
   private final Handler mainThreadHandler;
 
+  /** Registers a post-draw callback for the next draw of a view. */
   public static void registerForNextDraw(View view, Runnable drawDoneCallback) {
     // Handle bug prior to API 26 where OnDrawListener from the floating ViewTreeObserver is not
     // merged into the real ViewTreeObserver.
     // https://android.googlesource.com/platform/frameworks/base/+/9f8ec54244a5e0343b9748db3329733f259604f3
     if (Build.VERSION.SDK_INT < 26
-        && (!view.getViewTreeObserver().isAlive() || view.getWindowToken() == null)) {
+        && !(view.getViewTreeObserver().isAlive() && isAttachedToWindow(view))) {
       view.addOnAttachStateChangeListener(
           new View.OnAttachStateChangeListener() {
             @Override
@@ -75,7 +76,7 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
 
   @Override
   public void onDraw() {
-    // Prevent 2nd draw and on from triggering
+    // Prevent 2nd draw and on from triggering onDraw
     View view = viewReference.getAndSet(null);
     if (view == null) {
       return;
@@ -86,15 +87,23 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
     mainThreadHandler.postAtFrontOfQueue(callback);
   }
 
+  /** Backport {@link View#isAttachedToWindow()} which is API 19+ only. */
+  private static boolean isAttachedToWindow(View view) {
+    if (Build.VERSION.SDK_INT >= 19) {
+      return view.isAttachedToWindow();
+    }
+    return view.getWindowToken() != null;
+  }
+
   @RequiresApi(Build.VERSION_CODES.JELLY_BEAN)
   private static final class LayoutChangeListener
       implements ViewTreeObserver.OnGlobalLayoutListener {
     private final View view;
-    private final FirstDrawDoneListener listener;
+    private final ViewTreeObserver.OnDrawListener listener;
 
-    private LayoutChangeListener(View view, FirstDrawDoneListener firstDrawDoneListener) {
+    private LayoutChangeListener(View view, ViewTreeObserver.OnDrawListener listener) {
       this.view = view;
-      this.listener = firstDrawDoneListener;
+      this.listener = listener;
     }
 
     @Override

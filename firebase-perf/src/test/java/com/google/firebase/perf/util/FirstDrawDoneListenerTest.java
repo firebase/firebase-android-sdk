@@ -104,10 +104,10 @@ public class FirstDrawDoneListenerTest {
   }
 
   /**
-   * Returns mOnDrawListeners field from a ViewTreeObserver through reflection. Since reflections
-   * are employed, prefer to be used in tests with fixed API level using @Config(sdk = X).
+   * Returns ViewTreeObserver.mOnDrawListeners field through reflection. Since reflections are
+   * employed, prefer to be used in tests with fixed API level using @Config(sdk = X).
    *
-   * @param vto ViewTreeObserver instance to initialize the mOnDrawListeners
+   * @param vto ViewTreeObserver instance to initialize and return the mOnDrawListeners from
    */
   private static ArrayList<OnDrawListener> initViewTreeObserverWithListener(ViewTreeObserver vto)
       throws NoSuchFieldException, IllegalAccessException {
