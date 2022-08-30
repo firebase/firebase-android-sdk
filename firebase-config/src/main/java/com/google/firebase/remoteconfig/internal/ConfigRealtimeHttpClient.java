@@ -37,7 +37,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateStreamException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
@@ -373,7 +372,9 @@ public class ConfigRealtimeHttpClient {
           || statusCode == 0) {
         retryHTTPConnection();
       } else {
-        propagateErrors(createExceptionWithGenericMessage(statusCode));
+        propagateErrors(
+            new FirebaseRemoteConfigRealtimeUpdateStreamException(
+                "The backend has issued a status code that does not allow for retry."));
       }
     }
   }
