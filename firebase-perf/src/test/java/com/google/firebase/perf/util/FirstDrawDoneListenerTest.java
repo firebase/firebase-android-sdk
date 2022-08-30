@@ -35,8 +35,8 @@ import org.robolectric.annotation.Config;
 /** Unit tests for {@link Timer}. */
 @RunWith(RobolectricTestRunner.class)
 public class FirstDrawDoneListenerTest {
-  @Mock Handler handler;
-  @Captor ArgumentCaptor<Runnable> callbackCaptor;
+  @Mock private Handler handler;
+  @Captor private ArgumentCaptor<Runnable> callbackCaptor;
 
   private View testView;
 
@@ -50,6 +50,7 @@ public class FirstDrawDoneListenerTest {
   @Config(sdk = 25)
   public void registerForNextDraw_delaysAddingListenerForAPIsBelow26()
       throws NoSuchFieldException, IllegalAccessException {
+    // Add a listener first so ViewTreeObserver.mOnDrawListeners is initialized and non-null
     testView.getViewTreeObserver().addOnDrawListener(() -> {});
     Field mOnDrawListeners =
         android.view.ViewTreeObserver.class.getDeclaredField("mOnDrawListeners");
@@ -60,6 +61,7 @@ public class FirstDrawDoneListenerTest {
     assertThat(listOfListeners).isNotNull();
     assertThat(listOfListeners.size()).isEqualTo(1);
 
+    // OnDrawListener is not registered, it is delayed for later
     FirstDrawDoneListener.registerForNextDraw(testView, () -> {});
     assertThat(listOfListeners.size()).isEqualTo(1);
   }
@@ -68,6 +70,7 @@ public class FirstDrawDoneListenerTest {
   @Config(sdk = 26)
   public void registerForNextDraw_directlyAddsListenerForApi26AndAbove()
       throws NoSuchFieldException, IllegalAccessException {
+    // Add a listener first so ViewTreeObserver.mOnDrawListeners is initialized and non-null
     testView.getViewTreeObserver().addOnDrawListener(() -> {});
     Field mOnDrawListeners =
         android.view.ViewTreeObserver.class.getDeclaredField("mOnDrawListeners");
@@ -78,6 +81,7 @@ public class FirstDrawDoneListenerTest {
     assertThat(listOfListeners).isNotNull();
     assertThat(listOfListeners.size()).isEqualTo(1);
 
+    // Immediately register an OnDrawListener to ViewTreeObserver
     FirstDrawDoneListener.registerForNextDraw(testView, () -> {});
     assertThat(listOfListeners.size()).isEqualTo(2);
   }
@@ -94,6 +98,7 @@ public class FirstDrawDoneListenerTest {
   }
 
   @Test
+  @Config(sdk = 26)
   public void onDraw_unregistersItself_inLayoutChangeListener()
       throws NoSuchFieldException, IllegalAccessException {
     FirstDrawDoneListener.registerForNextDraw(testView, () -> {});
@@ -106,9 +111,11 @@ public class FirstDrawDoneListenerTest {
     assertThat(listOfListeners).isNotNull();
     assertThat(listOfListeners.size()).isEqualTo(1);
 
+    // Does not remove itself before onDraw, even if OnGlobalLayout is triggered
     testView.getViewTreeObserver().dispatchOnGlobalLayout();
     assertThat(listOfListeners.size()).isEqualTo(1);
 
+    // Removes itself after onDraw, in the next OnGlobalLayout
     testView.getViewTreeObserver().dispatchOnDraw();
     testView.getViewTreeObserver().dispatchOnGlobalLayout();
     assertThat(listOfListeners.size()).isEqualTo(0);
