@@ -32,7 +32,7 @@ import org.mockito.Mock;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
-/** Unit tests for {@link Timer}. */
+/** Unit tests for {@link FirstDrawDoneListener}. */
 @RunWith(RobolectricTestRunner.class)
 public class FirstDrawDoneListenerTest {
   @Mock private Handler handler;
