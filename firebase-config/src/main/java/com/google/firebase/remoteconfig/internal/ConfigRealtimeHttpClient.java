@@ -16,6 +16,12 @@ package com.google.firebase.remoteconfig.internal;
 
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.REALTIME_REGEX_URL;
+import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
+import static java.net.HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
+import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
+import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -23,6 +29,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.tasks.Task;
@@ -31,8 +38,10 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateStreamException;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -59,6 +68,13 @@ public class ConfigRealtimeHttpClient {
       "X-Goog-Firebase-Installations-Auth";
   private static final String X_ACCEPT_RESPONSE_STREAMING = "X-Accept-Response-Streaming";
 
+  /**
+   * HTTP status code for a throttled request.
+   *
+   * <p>Defined here since {@link HttpURLConnection} does not provide this code.
+   */
+  @VisibleForTesting static final int HTTP_TOO_MANY_REQUESTS = 429;
+
   @GuardedBy("this")
   private final Set<ConfigUpdateListener> listeners;
 
@@ -83,6 +99,7 @@ public class ConfigRealtimeHttpClient {
   private final Context context;
   private final String namespace;
   private final Random random;
+  private final long lastTemplateVersion;
 
   public ConfigRealtimeHttpClient(
       FirebaseApp firebaseApp,
@@ -90,7 +107,8 @@ public class ConfigRealtimeHttpClient {
       ConfigFetchHandler configFetchHandler,
       Context context,
       String namespace,
-      Set<ConfigUpdateListener> listeners) {
+      Set<ConfigUpdateListener> listeners,
+      long lastTemplateVersion) {
 
     this.listeners = listeners;
     this.httpURLConnection = null;
@@ -106,6 +124,7 @@ public class ConfigRealtimeHttpClient {
     this.context = context;
     this.namespace = namespace;
     this.isRealtimeDisabled = false;
+    this.lastTemplateVersion = lastTemplateVersion;
   }
 
   /**
@@ -164,12 +183,10 @@ public class ConfigRealtimeHttpClient {
     // Header to denote request is retryable on the server.
     httpURLConnection.setRequestProperty(X_GOOGLE_GFE_CAN_RETRY, "yes");
 
-    // Header to tell server that client expects stream response
-    httpURLConnection.setRequestProperty(X_ACCEPT_RESPONSE_STREAMING, "true");
-
     // Headers to denote that the request body is a JSONObject.
     httpURLConnection.setRequestProperty("Content-Type", "application/json");
     httpURLConnection.setRequestProperty("Accept", "application/json");
+    httpURLConnection.setRequestProperty("Content-Encoding", "gzip");
   }
 
   private JSONObject createRequestBody() {
@@ -178,7 +195,9 @@ public class ConfigRealtimeHttpClient {
         "project", extractProjectNumberFromAppId(this.firebaseApp.getOptions().getApplicationId()));
     body.put("namespace", this.namespace);
     body.put(
-        "lastKnownVersionNumber", Long.toString(configFetchHandler.getTemplateVersionNumber()));
+        "lastKnownVersionNumber",
+        Long.toString(
+            Math.max(lastTemplateVersion, configFetchHandler.getTemplateVersionNumber())));
     body.put("appId", firebaseApp.getOptions().getApplicationId());
     body.put("sdkVersion", Integer.toString(Build.VERSION.SDK_INT));
 
@@ -290,7 +309,53 @@ public class ConfigRealtimeHttpClient {
           }
         };
 
-    return new ConfigAutoFetch(httpURLConnection, configFetchHandler, listeners, retryCallback);
+    return new ConfigAutoFetch(
+        httpURLConnection, configFetchHandler, listeners, retryCallback, lastTemplateVersion);
+  }
+
+  /**
+   * Returns a {@link FirebaseRemoteConfigServerException} with a generic message based on the
+   * {@code statusCode}.
+   *
+   * @throws FirebaseRemoteConfigClientException if {@code statusCode} is {@link
+   *     #HTTP_TOO_MANY_REQUESTS}. Throttled responses should be handled before calls to this
+   *     method.
+   */
+  private FirebaseRemoteConfigServerException createExceptionWithGenericMessage(int statusCode) {
+    String errorMessage;
+    switch (statusCode) {
+      case HTTP_UNAUTHORIZED:
+        // The 401 HTTP Code is mapped from UNAUTHENTICATED in the gRPC world.
+        errorMessage =
+            "The request did not have the required credentials. "
+                + "Please make sure your google-services.json is valid.";
+        break;
+      case HTTP_FORBIDDEN:
+        errorMessage =
+            "The user is not authorized to access the project. Please make sure "
+                + "you are using the API key that corresponds to your Firebase project.";
+        break;
+      case HTTP_INTERNAL_ERROR:
+        errorMessage = "There was an internal server error.";
+        break;
+      case HTTP_BAD_GATEWAY:
+      case HTTP_UNAVAILABLE:
+      case HTTP_GATEWAY_TIMEOUT:
+        // The 504 HTTP Code is mapped from DEADLINE_EXCEEDED in the gRPC world.
+        errorMessage = "The server is unavailable. Please try again later.";
+        break;
+      case HTTP_TOO_MANY_REQUESTS:
+        // Should never happen.
+        // The throttled response should be handled before the call to this method.
+        errorMessage =
+            "The throttled response from the server was not handled correctly by the FRC SDK.";
+        break;
+      default:
+        errorMessage = "The server returned an unexpected error.";
+        break;
+    }
+
+    return new FirebaseRemoteConfigServerException(statusCode, "Fetch failed: " + errorMessage);
   }
 
   /**
@@ -306,22 +371,30 @@ public class ConfigRealtimeHttpClient {
       return;
     }
 
+    int statusCode = 0;
     try {
       // Create the open the connection.
       httpURLConnection = createRealtimeConnection();
-      httpURLConnection.connect();
+      statusCode = httpURLConnection.getResponseCode();
+      Log.i(TAG, httpURLConnection.getHeaderFields().toString());
 
-      // Reset the retries remaining if we opened the connection without an exception.
-      resetRetryParameters();
+      if (statusCode == 200) {
+        // Reset the retries remaining if we opened the connection without an exception.
+        resetRetryParameters();
 
-      // Start listening for realtime notifications.
-      ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
-      configAutoFetch.listenForNotifications();
+        // Start listening for realtime notifications.
+        ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
+        configAutoFetch.listenForNotifications();
+      }
     } catch (IOException e) {
       Log.d(TAG, "Exception connecting to realtime stream. Retrying the connection...");
     } finally {
       closeRealtimeHttpStream();
-      retryHTTPConnection();
+      if (statusCode == 200 || statusCode == 0) {
+        retryHTTPConnection();
+      } else {
+        propagateErrors(createExceptionWithGenericMessage(statusCode));
+      }
     }
   }
 

@@ -206,7 +206,13 @@ public class RemoteConfigComponent {
               fetchHandler,
               getHandler,
               metadataClient,
-              getRealtime(firebaseApp, firebaseInstallations, fetchHandler, context, namespace));
+              getRealtime(
+                  firebaseApp,
+                  firebaseInstallations,
+                  fetchHandler,
+                  context,
+                  namespace,
+                  activatedClient));
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
     }
@@ -260,14 +266,20 @@ public class RemoteConfigComponent {
       FirebaseInstallationsApi firebaseInstallations,
       ConfigFetchHandler configFetchHandler,
       Context context,
-      String namespace) {
+      String namespace,
+      ConfigCacheClient activatedCacheClient) {
+    long lastTemplateVersion = 1;
+    if (activatedCacheClient.get() != null && activatedCacheClient.get().getResult() != null) {
+      lastTemplateVersion = activatedCacheClient.get().getResult().getTemplateVersionNumber();
+    }
     return new ConfigRealtimeHandler(
         firebaseApp,
         firebaseInstallations,
         configFetchHandler,
         context,
         namespace,
-        executorService);
+        executorService,
+        lastTemplateVersion);
   }
 
   private ConfigGetParameterHandler getGetHandler(
