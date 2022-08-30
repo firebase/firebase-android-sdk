@@ -311,28 +311,6 @@ public class ConfigRealtimeHttpClient {
         httpURLConnection, configFetchHandler, listeners, retryCallback, lastTemplateVersion);
   }
 
-  private FirebaseRemoteConfigServerException createExceptionWithGenericMessage(int statusCode) {
-    String errorMessage;
-    switch (statusCode) {
-      case HTTP_UNAUTHORIZED:
-        // The 401 HTTP Code is mapped from UNAUTHENTICATED in the gRPC world.
-        errorMessage =
-            "The request did not have the required credentials. "
-                + "Please make sure your google-services.json is valid.";
-        break;
-      case HTTP_FORBIDDEN:
-        errorMessage =
-            "The user is not authorized to access the project. Please make sure "
-                + "you are using the API key that corresponds to your Firebase project.";
-        break;
-      default:
-        errorMessage = "The server returned an unexpected error.";
-        break;
-    }
-
-    return new FirebaseRemoteConfigServerException(statusCode, "Fetch failed: " + errorMessage);
-  }
-
   /**
    * Open the realtime connection, begin listening for updates, and auto-fetch when an update is
    * received.
