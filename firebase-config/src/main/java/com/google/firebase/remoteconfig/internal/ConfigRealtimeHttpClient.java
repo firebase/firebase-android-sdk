@@ -16,7 +16,6 @@ package com.google.firebase.remoteconfig.internal;
 
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.REALTIME_REGEX_URL;
-import static java.net.HttpURLConnection.HTTP_BAD_GATEWAY;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
@@ -335,15 +334,6 @@ public class ConfigRealtimeHttpClient {
             "The user is not authorized to access the project. Please make sure "
                 + "you are using the API key that corresponds to your Firebase project.";
         break;
-      case HTTP_INTERNAL_ERROR:
-        errorMessage = "There was an internal server error.";
-        break;
-      case HTTP_BAD_GATEWAY:
-      case HTTP_UNAVAILABLE:
-      case HTTP_GATEWAY_TIMEOUT:
-        // The 504 HTTP Code is mapped from DEADLINE_EXCEEDED in the gRPC world.
-        errorMessage = "The server is unavailable. Please try again later.";
-        break;
       case HTTP_TOO_MANY_REQUESTS:
         // Should never happen.
         // The throttled response should be handled before the call to this method.
@@ -390,7 +380,12 @@ public class ConfigRealtimeHttpClient {
       Log.d(TAG, "Exception connecting to realtime stream. Retrying the connection...");
     } finally {
       closeRealtimeHttpStream();
-      if (statusCode == 200 || statusCode == 0) {
+      if (statusCode == 200
+          || statusCode == HTTP_TOO_MANY_REQUESTS
+          || statusCode == HTTP_INTERNAL_ERROR
+          || statusCode == HTTP_UNAVAILABLE
+          || statusCode == HTTP_GATEWAY_TIMEOUT
+          || statusCode == 0) {
         retryHTTPConnection();
       } else {
         propagateErrors(createExceptionWithGenericMessage(statusCode));
