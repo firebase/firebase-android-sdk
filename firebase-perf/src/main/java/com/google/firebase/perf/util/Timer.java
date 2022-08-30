@@ -153,9 +153,9 @@ public class Timer implements Parcelable {
   }
 
   /**
-   * Return elapsedRealtime in microseconds, only useful for testing..
+   * Return this Timer's timestamp in the {@link SystemClock#elapsedRealtime()} timebase.
    *
-   * @return elapsedRealtime in microseconds.
+   * @return elapsedRealtime timestamp in microseconds.
    */
   @VisibleForTesting
   public long getElapsedRealtimeMicros() {

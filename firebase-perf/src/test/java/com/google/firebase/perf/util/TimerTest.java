@@ -17,6 +17,7 @@ package com.google.firebase.perf.util;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.os.Parcel;
+import android.os.Process;
 import java.util.concurrent.TimeUnit;
 import org.junit.Assert;
 import org.junit.Before;
@@ -30,6 +31,25 @@ public class TimerTest {
 
   @Before
   public void setUp() {}
+
+  @Test
+  public void ofElapsedRealtime_extrapolatesWallClock() {
+    Timer processStart = Timer.ofElapsedRealtime(Process.getStartElapsedRealtime());
+    Timer reference = new Timer();
+
+    assertThat(processStart.getDurationMicros(reference))
+        .isEqualTo(reference.getMicros() - processStart.getMicros());
+  }
+
+  @Test
+  public void ofElapsedRealtime_createsNewTimerWithArgumentElapsedRealtime() {
+    Timer processStart = Timer.ofElapsedRealtime(Process.getStartElapsedRealtime());
+    Timer reference = new Timer();
+    long processStartERT = TimeUnit.MILLISECONDS.toMicros(Process.getStartElapsedRealtime());
+    long referenceERT = reference.getElapsedRealtimeMicros();
+
+    assertThat(processStart.getDurationMicros(reference)).isEqualTo(referenceERT - processStartERT);
+  }
 
   @Test
   public void testCreate() throws InterruptedException {
