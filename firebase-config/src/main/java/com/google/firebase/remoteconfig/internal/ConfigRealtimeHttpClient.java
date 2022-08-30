@@ -312,14 +312,6 @@ public class ConfigRealtimeHttpClient {
         httpURLConnection, configFetchHandler, listeners, retryCallback, lastTemplateVersion);
   }
 
-  /**
-   * Returns a {@link FirebaseRemoteConfigServerException} with a generic message based on the
-   * {@code statusCode}.
-   *
-   * @throws FirebaseRemoteConfigClientException if {@code statusCode} is {@link
-   *     #HTTP_TOO_MANY_REQUESTS}. Throttled responses should be handled before calls to this
-   *     method.
-   */
   private FirebaseRemoteConfigServerException createExceptionWithGenericMessage(int statusCode) {
     String errorMessage;
     switch (statusCode) {
@@ -360,7 +352,6 @@ public class ConfigRealtimeHttpClient {
       // Create the open the connection.
       httpURLConnection = createRealtimeConnection();
       statusCode = httpURLConnection.getResponseCode();
-      Log.i(TAG, httpURLConnection.getHeaderFields().toString());
 
       if (statusCode == 200) {
         // Reset the retries remaining if we opened the connection without an exception.
