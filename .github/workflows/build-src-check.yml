@@ -31,7 +31,7 @@ jobs:
         env:
           FIREBASE_CI: 1
         run: |
-          ./gradlew -b buildSrc/build.gradle -PenablePluginTests=true check
+          ./gradlew -b buildSrc/build.gradle.kts -PenablePluginTests=true check
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v1
         with:

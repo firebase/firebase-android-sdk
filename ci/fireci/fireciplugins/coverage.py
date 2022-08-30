@@ -19,8 +19,8 @@ import re
 import xml.etree.ElementTree as ElementTree
 
 from fireci import ci_command
+from fireci import ci_utils
 from fireci import gradle
-from fireci import prow_utils
 from fireci import uploader
 
 _logger = logging.getLogger('fireci.coverage')
@@ -33,17 +33,17 @@ _logger = logging.getLogger('fireci.coverage')
 )
 @click.option(
   '--log',
-  default=prow_utils.prow_job_log_link,
-  help='The link to the log of the prow job, which runs this coverage check.'
+  default=ci_utils.ci_log_link,
+  help='The link to the log of the current job, which runs this coverage check.'
 )
 @click.option(
   '--metrics-service-url',
-  envvar='METRICS_SERVICE_URL',
+  default='https://api.firebase-sdk-health-metrics.com',
   help='The URL to the metrics service, which persists data and calculates diff.'
 )
 @click.option(
   '--access-token',
-  default=prow_utils.gcloud_identity_token,
+  default=ci_utils.gcloud_identity_token,
   help='The access token, used to authorize http requests to the metrics service.'
 )
 @ci_command()
@@ -51,17 +51,17 @@ def coverage(pull_request, log, metrics_service_url, access_token):
   """Produces and uploads code coverage reports."""
 
   coverage_task = 'checkCoverageChanged' if pull_request else 'checkCoverage'
-  gradle.run(coverage_task, '--continue', check=False)
+  process = gradle.run(coverage_task, '--continue', check=False)
 
   test_results = _parse_xml_reports()
-  test_report = {'metric': 'Coverage', 'results': test_results, 'log': log}
+  test_report = {'coverages': test_results, 'log': log}
 
-  note = '''
-HTML coverage reports can be produced locally with `./gradlew <product>:checkCoverage`.
-Report files are located at `<product-build-dir>/reports/jacoco/`.
-'''
+  access_token = ci_utils.gcloud_identity_token()
+  uploader.post_report(test_report, metrics_service_url, access_token, 'coverage')
 
-  uploader.post_report(test_report, metrics_service_url, access_token, note=note)
+  if process.returncode != 0:
+    _logger.error(f'{process.args} failed with error code: {process.returncode}.')
+    raise click.ClickException('Coverage test failed with above errors.')
 
 
 def _parse_xml_reports():
@@ -74,12 +74,12 @@ def _parse_xml_reports():
     sdk = re.search(r'([^/]*)\.xml', xml_report).group(1)
     report = ElementTree.parse(xml_report).getroot()
     sdk_coverage = _calculate_coverage(report)
-    test_results.append({'sdk': sdk, 'type': '', 'value': sdk_coverage})
+    test_results.append({'sdk': sdk, 'filename': '', 'coverage': sdk_coverage})
 
     for source_file in report.findall('.//sourcefile'):
       file_name = source_file.attrib['name']
       file_coverage = _calculate_coverage(source_file)
-      test_results.append({'sdk': sdk, 'type': file_name, 'value': file_coverage})
+      test_results.append({'sdk': sdk, 'filename': file_name, 'coverage': file_coverage})
 
   return test_results
 

@@ -33,13 +33,13 @@ import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
 import com.google.common.truth.Correspondence;
-import dagger.Lazy;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import javax.inject.Provider;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -115,12 +115,12 @@ public class SQLiteEventStoreTest {
   private static final String LOG_SOURCE_3 = "source3";
 
   private final TestClock clock = new TestClock(1);
-  private final Lazy<String> packageName =
+  private final Provider<String> packageName =
       () -> ApplicationProvider.getApplicationContext().getPackageName();
   private final SQLiteEventStore store = newStoreWithConfig(clock, CONFIG, packageName);
 
   private static SQLiteEventStore newStoreWithConfig(
-      Clock clock, EventStoreConfig config, Lazy<String> packageName) {
+      Clock clock, EventStoreConfig config, Provider<String> packageName) {
     return new SQLiteEventStore(
         clock,
         new UptimeClock(),
@@ -208,8 +208,8 @@ public class SQLiteEventStoreTest {
     PersistedEvent newEvent1 = store.persist(ctx1, event1);
     PersistedEvent newEvent2 = store.persist(ctx2, event2);
 
-    assertThat(store.loadBatch(ctx1)).containsExactly(newEvent1);
-    assertThat(store.loadBatch(ctx2)).containsExactly(newEvent2);
+    assertThat(store.loadBatch(ctx1)).containsExactly(newEvent1, newEvent2).inOrder();
+    assertThat(store.loadBatch(ctx2)).containsExactly(newEvent2, newEvent1).inOrder();
   }
 
   @Test
@@ -471,6 +471,27 @@ public class SQLiteEventStoreTest {
 
     store.recordSuccess(persistedEvents);
     assertThat(store.loadBatch(TRANSPORT_CONTEXT)).hasSize(1);
+  }
+
+  @Test
+  public void loadBatch_shouldLoadNoMoreThanBatchSizeItemsWithDifferentPriority() {
+    TransportContext ctx1 = TRANSPORT_CONTEXT;
+    TransportContext ctx2 = TRANSPORT_CONTEXT.withPriority(Priority.VERY_LOW);
+
+    for (int i = 0; i < CONFIG.getLoadBatchSize() - 1; i++) {
+      store.persist(ctx1, EVENT);
+    }
+
+    for (int i = 0; i < 3; i++) {
+      store.persist(ctx2, EVENT);
+    }
+
+    Iterable<PersistedEvent> persistedEvents = store.loadBatch(ctx1);
+    assertThat(store.loadBatch(ctx1)).hasSize(CONFIG.getLoadBatchSize());
+
+    store.recordSuccess(persistedEvents);
+
+    assertThat(store.loadBatch(ctx2)).hasSize(2);
   }
 
   @Test

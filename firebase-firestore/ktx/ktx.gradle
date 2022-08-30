@@ -49,12 +49,14 @@ tasks.withType(Test) {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation project(':firebase-common')
     implementation project(':firebase-components')
     implementation project(':firebase-common:ktx')
     implementation project(':firebase-firestore')
     implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2'
+    implementation 'com.google.android.gms:play-services-basement:18.1.0'
     testImplementation project(':firebase-database-collection')
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'

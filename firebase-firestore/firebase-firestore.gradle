@@ -144,11 +144,10 @@ dependencies {
     implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"
     implementation "io.grpc:grpc-okhttp:$grpcVersion"
     implementation "io.grpc:grpc-android:$grpcVersion"
-    implementation 'com.google.android.gms:play-services-basement:18.0.0'
+    implementation 'com.google.android.gms:play-services-basement:18.1.0'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation 'com.google.android.gms:play-services-base:18.0.1'
 
-    implementation 'com.squareup.okhttp:okhttp:2.7.5'
     implementation('com.google.firebase:firebase-auth-interop:19.0.2') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
@@ -161,7 +160,7 @@ dependencies {
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation "org.hamcrest:hamcrest-junit:2.0.0.0"
     testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation ("org.robolectric:robolectric:4.8.1") {
+    testImplementation ("org.robolectric:robolectric:4.8.2") {
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
     }
     testImplementation "com.google.truth:truth:$googleTruthVersion"

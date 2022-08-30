@@ -195,4 +195,30 @@ public class ComponentTest {
         Component.builder(TestClass.class).factory(nullFactory).build();
     assertThat(component.getFactory()).isSameInstanceAs(nullFactory);
   }
+
+  @Test
+  public void withFactory_shouldReplaceTheFactorySetInBuilder() {
+    Component<TestClass> component =
+        Component.builder(TestClass.class).factory(nullFactory).build();
+
+    ComponentFactory<TestClass> newFactory = c -> null;
+    assertThat(component.withFactory(newFactory).getFactory()).isSameInstanceAs(newFactory);
+  }
+
+  @Test
+  public void name_shouldDefaultToNull() {
+    Component<TestClass> component =
+        Component.builder(TestClass.class).factory(nullFactory).build();
+
+    assertThat(component.getName()).isNull();
+  }
+
+  @Test
+  public void name_shouldReturnNameSetInBuilder() {
+    String name = "myName";
+    Component<TestClass> component =
+        Component.builder(TestClass.class).name(name).factory(nullFactory).build();
+
+    assertThat(component.getName()).isEqualTo(name);
+  }
 }
