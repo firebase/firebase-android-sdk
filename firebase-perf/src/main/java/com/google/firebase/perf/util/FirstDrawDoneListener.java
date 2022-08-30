@@ -75,6 +75,7 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
 
   @Override
   public void onDraw() {
+    // Prevent 2nd draw and on from triggering
     View view = viewReference.getAndSet(null);
     if (view == null) {
       return;
