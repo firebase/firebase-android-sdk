@@ -15,10 +15,14 @@
 package com.google.firebase.ktx
 
 import androidx.test.core.app.ApplicationProvider
+import com.google.android.gms.tasks.Tasks
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.platforminfo.UserAgentPublisher
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.tasks.await
+import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -35,6 +39,8 @@ fun withApp(name: String, block: FirebaseApp.() -> Unit) {
         app.delete()
     }
 }
+
+class TestException(message: String) : Exception(message)
 
 @RunWith(RobolectricTestRunner::class)
 class VersionTests {
@@ -100,4 +106,37 @@ class KtxTests {
             app.delete()
         }
     }
+}
+
+// TODO(thatfiredev): replace runBlocking() with runTest() once we update kotlin to version >= 1.6
+class CoroutinesPlayServicesTests {
+    // We are only interested in the await() function offered by kotlinx-coroutines-play-services
+    // So we're not testing the other functions provided by that library.
+
+    @Test
+    fun `Task#await() resolves to the same result as Task#getResult()`() = runBlocking {
+        val task = Tasks.forResult(21)
+
+        val expected = task.result
+        val actual = task.await()
+
+        assertThat(actual).isEqualTo(expected)
+        assertThat(task.isSuccessful).isTrue()
+        assertThat(task.exception).isNull()
+    }
+
+    @Test
+    fun `Task#await() throws an Exception for failing Tasks`() = runBlocking {
+        val task = Tasks.forException<TestException>(TestException("some error happened"))
+
+        try {
+            task.await()
+            fail("Task#await should throw an Exception")
+        } catch (e: Exception) {
+            assertThat(e).isInstanceOf(TestException::class.java)
+            assertThat(task.isSuccessful).isFalse()
+        }
+    }
+
+    // TODO(thatfiredev): add a test for CancellationToken once we support Coroutines >= 1.6
 }
