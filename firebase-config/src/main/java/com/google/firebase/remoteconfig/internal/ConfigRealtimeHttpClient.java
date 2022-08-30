@@ -16,10 +16,8 @@ package com.google.firebase.remoteconfig.internal;
 
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.REALTIME_REGEX_URL;
-import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
-import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 
 import android.annotation.SuppressLint;
@@ -39,7 +37,6 @@ import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateStreamException;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
