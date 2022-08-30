@@ -73,7 +73,7 @@ public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallba
   }
 
   @VisibleForTesting
-  boolean hasImpressed(){
+  boolean hasImpressed() {
     return wasImpressed;
   }
 

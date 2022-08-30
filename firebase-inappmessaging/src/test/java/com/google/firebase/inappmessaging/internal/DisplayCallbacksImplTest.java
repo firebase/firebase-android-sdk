@@ -261,22 +261,22 @@ public class DisplayCallbacksImplTest {
   @Test
   public void logImpression_forOneMessageShouldNotAffectOtherMessages() {
     FirebaseInAppMessagingDisplayCallbacks displayCallbacksImplOne =
-            displayCallbacksFactory.generateDisplayCallback(
-                    BANNER_TEST_MESSAGE_MODEL, ANALYTICS_EVENT_NAME);
+        displayCallbacksFactory.generateDisplayCallback(
+            BANNER_TEST_MESSAGE_MODEL, ANALYTICS_EVENT_NAME);
 
     FirebaseInAppMessagingDisplayCallbacks displayCallbacksImplTwo =
-            displayCallbacksFactory.generateDisplayCallback(
-                    BANNER_TEST_MESSAGE_MODEL, ANALYTICS_EVENT_NAME);
+        displayCallbacksFactory.generateDisplayCallback(
+            BANNER_TEST_MESSAGE_MODEL, ANALYTICS_EVENT_NAME);
 
     displayCallbacksImplOne.impressionDetected();
 
-    assertThat(((DisplayCallbacksImpl)displayCallbacksImplOne).hasImpressed()).isTrue();
-    assertThat(((DisplayCallbacksImpl)displayCallbacksImplTwo).hasImpressed()).isFalse();
+    assertThat(((DisplayCallbacksImpl) displayCallbacksImplOne).hasImpressed()).isTrue();
+    assertThat(((DisplayCallbacksImpl) displayCallbacksImplTwo).hasImpressed()).isFalse();
 
     displayCallbacksImplTwo.impressionDetected();
 
-    assertThat(((DisplayCallbacksImpl)displayCallbacksImplOne).hasImpressed()).isTrue();
-    assertThat(((DisplayCallbacksImpl)displayCallbacksImplTwo).hasImpressed()).isTrue();
+    assertThat(((DisplayCallbacksImpl) displayCallbacksImplOne).hasImpressed()).isTrue();
+    assertThat(((DisplayCallbacksImpl) displayCallbacksImplTwo).hasImpressed()).isTrue();
   }
 
   @Test
