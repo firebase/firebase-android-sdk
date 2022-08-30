@@ -334,12 +334,6 @@ public class ConfigRealtimeHttpClient {
             "The user is not authorized to access the project. Please make sure "
                 + "you are using the API key that corresponds to your Firebase project.";
         break;
-      case HTTP_TOO_MANY_REQUESTS:
-        // Should never happen.
-        // The throttled response should be handled before the call to this method.
-        errorMessage =
-            "The throttled response from the server was not handled correctly by the FRC SDK.";
-        break;
       default:
         errorMessage = "The server returned an unexpected error.";
         break;
