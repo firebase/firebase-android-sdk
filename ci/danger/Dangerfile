@@ -44,19 +44,21 @@ has_changelog_changes = hasChangesIn(["CHANGELOG"])
 
 # Ignore changes in these directories
 $exclude_directories = [
-  '/buildSrc/',
-  '/ci/',
-  '/encoders/',
-  '/firebase-annotations/',
-  '/firebase-components/',
-  '/firebase-datatransport/',
-  '/gradle/',
-  '/health-metrics/',
-  '/integ-testing/',
-  '/protolite-well-known-types/',
-  '/smoke-tests/',
-  '/third_party/',
-  '/tools/'
+  '.github/',
+  'buildSrc/',
+  'ci/',
+  'encoders/',
+  'firebase-annotations/',
+  'firebase-components/',
+  'firebase-datatransport/',
+  'gradle/',
+  'health-metrics/',
+  'integ-testing/',
+  'protolite-well-known-types/',
+  'smoke-tests/',
+  'third_party/',
+  'tools/',
+  'transport/'
 ]
 
 # Whether or not the PR has modified SDK source files.
@@ -65,10 +67,8 @@ def has_sdk_changes()
            git.added_files +
            git.deleted_files)
   return files.any? { |file|
-         !shouldFileBeExcluded(file, $exclude_directories) &&
-         (file.end_with?(".java") ||
-          file.end_with?(".kt") ||
-          file.end_with?(".xml")) }
+    !shouldFileBeExcluded(file, $exclude_directories)
+  }
 end
 
 tester_team = [
