@@ -35,6 +35,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.messaging.FcmBroadcastProcessor;
 import com.google.firebase.messaging.ServiceStarter;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -87,11 +89,36 @@ public class FirebaseInstanceIdWithFcmReceiverRoboTest {
   private void setFinalStatic(Field field, Object newValue) throws Exception {
     field.setAccessible(true);
 
-    Field modifiersField = Field.class.getDeclaredField("modifiers");
+    Field modifiersField = getDeclaredField(Field.class, "modifiers");
     modifiersField.setAccessible(true);
     modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
 
     field.set(null, newValue);
+  }
+
+  private static Field getDeclaredField(Class<?> clazz, String name) throws NoSuchFieldException {
+    try {
+      return clazz.getDeclaredField(name);
+    } catch (NoSuchFieldException e1) {
+      try {
+        Method getDeclaredFields0 =
+            Class.class.getDeclaredMethod("getDeclaredFields0", boolean.class);
+        getDeclaredFields0.setAccessible(true);
+        Field[] fields = (Field[]) getDeclaredFields0.invoke(clazz, false);
+        for (Field f : fields) {
+          if (f.getName().equals(name)) {
+            return f;
+          }
+        }
+        throw new NoSuchFieldException(name);
+      } catch (NoSuchMethodException e2) {
+        throw new NoSuchFieldException(name);
+      } catch (IllegalAccessException e2) {
+        throw new NoSuchFieldException(name);
+      } catch (InvocationTargetException e2) {
+        throw new NoSuchFieldException(name);
+      }
+    }
   }
 
   @Test
