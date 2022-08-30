@@ -270,13 +270,13 @@ public class DisplayCallbacksImplTest {
 
     displayCallbacksImplOne.impressionDetected();
 
-    assertThat(((DisplayCallbacksImpl) displayCallbacksImplOne).hasImpressed()).isTrue();
-    assertThat(((DisplayCallbacksImpl) displayCallbacksImplTwo).hasImpressed()).isFalse();
+    assertThat(((DisplayCallbacksImpl) displayCallbacksImplOne).wasImpressed()).isTrue();
+    assertThat(((DisplayCallbacksImpl) displayCallbacksImplTwo).wasImpressed()).isFalse();
 
     displayCallbacksImplTwo.impressionDetected();
 
-    assertThat(((DisplayCallbacksImpl) displayCallbacksImplOne).hasImpressed()).isTrue();
-    assertThat(((DisplayCallbacksImpl) displayCallbacksImplTwo).hasImpressed()).isTrue();
+    assertThat(((DisplayCallbacksImpl) displayCallbacksImplOne).wasImpressed()).isTrue();
+    assertThat(((DisplayCallbacksImpl) displayCallbacksImplTwo).wasImpressed()).isTrue();
   }
 
   @Test
