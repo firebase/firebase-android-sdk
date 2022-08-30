@@ -14,7 +14,6 @@
 package com.google.firebase.perf.util;
 
 import android.os.Build;
-import android.os.Build.VERSION_CODES;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
@@ -31,7 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * accurate initial display time, but it was bugged before API 30, hence we use this backported
  * implementation.
  */
-@RequiresApi(VERSION_CODES.JELLY_BEAN)
+@RequiresApi(Build.VERSION_CODES.JELLY_BEAN)
 public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
   private final AtomicReference<View> viewReference;
   private final Runnable callback;
@@ -41,11 +40,8 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
     // Handle bug prior to API 26 where OnDrawListener from the floating ViewTreeObserver is not
     // merged into the real ViewTreeObserver.
     // https://android.googlesource.com/platform/frameworks/base/+/9f8ec54244a5e0343b9748db3329733f259604f3
-    if (Build.VERSION.SDK_INT >= 26
-        || (view.getViewTreeObserver().isAlive() && view.getWindowToken() != null)) {
-      view.getViewTreeObserver()
-          .addOnDrawListener(new FirstDrawDoneListener(view, drawDoneCallback));
-    } else {
+    if (Build.VERSION.SDK_INT < 26
+        && (!view.getViewTreeObserver().isAlive() || view.getWindowToken() == null)) {
       view.addOnAttachStateChangeListener(
           new View.OnAttachStateChangeListener() {
             @Override
@@ -60,6 +56,9 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
               view.removeOnAttachStateChangeListener(this);
             }
           });
+    } else {
+      view.getViewTreeObserver()
+          .addOnDrawListener(new FirstDrawDoneListener(view, drawDoneCallback));
     }
   }
 
@@ -86,7 +85,7 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
     mainThreadHandler.postAtFrontOfQueue(callback);
   }
 
-  @RequiresApi(VERSION_CODES.JELLY_BEAN)
+  @RequiresApi(Build.VERSION_CODES.JELLY_BEAN)
   private static final class LayoutChangeListener
       implements ViewTreeObserver.OnGlobalLayoutListener {
     private final View view;
