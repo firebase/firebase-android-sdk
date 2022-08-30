@@ -21,13 +21,21 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import com.google.android.gms.common.util.VisibleForTesting;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * OnDrawListener that unregisters itself and invokes callback when the next draw is done. This API
+ * 16+ implementation is an approximation of the initial display time. {@link
+ * android.view.Choreographer#postFrameCallback} is an Android API that provides a simpler and more
+ * accurate initial display time, but it was bugged before API 30, hence we use this backported
+ * implementation.
+ */
 @RequiresApi(VERSION_CODES.JELLY_BEAN)
 public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
   private final AtomicReference<View> viewReference;
   private final Runnable callback;
-  private final Handler mainThreadHandler = new Handler(Looper.getMainLooper());
+  private final Handler mainThreadHandler;
 
   public static void registerForNextDraw(View view, Runnable drawDoneCallback) {
     // Handle bug prior to API 26 where OnDrawListener from the floating ViewTreeObserver is not
@@ -56,8 +64,14 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
   }
 
   private FirstDrawDoneListener(@Nullable View view, Runnable callback) {
+    this(view, callback, new Handler(Looper.getMainLooper()));
+  }
+
+  @VisibleForTesting
+  FirstDrawDoneListener(@Nullable View view, Runnable callback, Handler mainThreadHandler) {
     this.viewReference = new AtomicReference<>(view);
     this.callback = callback;
+    this.mainThreadHandler = mainThreadHandler;
   }
 
   @Override
