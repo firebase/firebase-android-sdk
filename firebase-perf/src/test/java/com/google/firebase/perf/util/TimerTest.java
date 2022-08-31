@@ -40,7 +40,7 @@ public class TimerTest {
   public void setUp() {}
 
   @Test
-  public void getDurationMicros_returnDifferenceBetweenElapsedRealtime() {
+  public void getDurationMicros_returnsDifferenceBetweenElapsedRealtime() {
     // Robolectric shadows SystemClock, which is paused and can only change via specific methods.
     Timer start = new Timer();
     ShadowSystemClock.advanceBy(Duration.ofMillis(100000));
