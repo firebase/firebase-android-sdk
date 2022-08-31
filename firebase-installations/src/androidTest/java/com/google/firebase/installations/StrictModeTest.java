@@ -19,7 +19,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions.Builder;
 import com.google.firebase.testing.integ.StrictModeRule;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,7 +29,6 @@ public class StrictModeTest {
   @Rule public StrictModeRule strictMode = new StrictModeRule();
 
   @Test
-  @Ignore("enable once strict mode violations are addressed")
   public void initializingFirebaseInstallations_shouldNotViolateStrictMode() {
     strictMode.runOnMainThread(
         () -> {
