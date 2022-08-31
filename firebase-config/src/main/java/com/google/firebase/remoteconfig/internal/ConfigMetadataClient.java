@@ -66,6 +66,7 @@ public class ConfigMetadataClient {
   private static final String LAST_FETCH_ETAG_KEY = "last_fetch_etag";
   private static final String BACKOFF_END_TIME_IN_MILLIS_KEY = "backoff_end_time_in_millis";
   private static final String NUM_FAILED_FETCHES_KEY = "num_failed_fetches";
+  private static final String LAST_TEMPLATE_VERSION = "last_template_version";
 
   private final SharedPreferences frcMetadata;
 
@@ -101,6 +102,10 @@ public class ConfigMetadataClient {
   @Nullable
   String getLastFetchETag() {
     return frcMetadata.getString(LAST_FETCH_ETAG_KEY, null);
+  }
+
+  public long getLastTemplateVersion() {
+    return frcMetadata.getLong(LAST_TEMPLATE_VERSION, 1);
   }
 
   public FirebaseRemoteConfigInfo getInfo() {
@@ -204,6 +209,12 @@ public class ConfigMetadataClient {
   void setLastFetchETag(String eTag) {
     synchronized (frcInfoLock) {
       frcMetadata.edit().putString(LAST_FETCH_ETAG_KEY, eTag).apply();
+    }
+  }
+
+  void setLastTemplateVersion(long templateVersion) {
+    synchronized (frcInfoLock) {
+      frcMetadata.edit().putLong(LAST_TEMPLATE_VERSION, templateVersion).apply();
     }
   }
 

@@ -53,21 +53,18 @@ public class ConfigAutoFetch {
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
-  private final long lastTemplateVersion;
 
   public ConfigAutoFetch(
       HttpURLConnection httpURLConnection,
       ConfigFetchHandler configFetchHandler,
       Set<ConfigUpdateListener> eventListeners,
-      ConfigUpdateListener retryCallback,
-      long lastTemplateVersion) {
+      ConfigUpdateListener retryCallback) {
     this.httpURLConnection = httpURLConnection;
     this.configFetchHandler = configFetchHandler;
     this.eventListeners = eventListeners;
     this.retryCallback = retryCallback;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     this.random = new Random();
-    this.lastTemplateVersion = lastTemplateVersion;
   }
 
   private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
@@ -158,8 +155,7 @@ public class ConfigAutoFetch {
               break;
             }
             if (jsonObject.has(TEMPLATE_VERSION_KEY)) {
-              long oldTemplateVersion =
-                  Math.max(lastTemplateVersion, configFetchHandler.getTemplateVersionNumber());
+              long oldTemplateVersion = configFetchHandler.getTemplateVersionNumber();
               long targetTemplateVersion = jsonObject.getLong(TEMPLATE_VERSION_KEY);
               if (targetTemplateVersion > oldTemplateVersion) {
                 autoFetch(FETCH_RETRY, targetTemplateVersion);

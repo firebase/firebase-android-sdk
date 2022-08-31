@@ -268,8 +268,7 @@ public final class FirebaseRemoteConfigTest {
     HashSet<ConfigUpdateListener> listeners = new HashSet();
     listeners.add(mockListener);
     configAutoFetch =
-        new ConfigAutoFetch(
-            mockHttpURLConnection, mockFetchHandler, listeners, mockRetryListener, 1);
+        new ConfigAutoFetch(mockHttpURLConnection, mockFetchHandler, listeners, mockRetryListener);
   }
 
   @Test

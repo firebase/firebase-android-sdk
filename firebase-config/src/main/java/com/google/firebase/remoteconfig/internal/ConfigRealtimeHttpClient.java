@@ -94,7 +94,6 @@ public class ConfigRealtimeHttpClient {
   private final Context context;
   private final String namespace;
   private final Random random;
-  private final long lastTemplateVersion;
 
   public ConfigRealtimeHttpClient(
       FirebaseApp firebaseApp,
@@ -102,8 +101,7 @@ public class ConfigRealtimeHttpClient {
       ConfigFetchHandler configFetchHandler,
       Context context,
       String namespace,
-      Set<ConfigUpdateListener> listeners,
-      long lastTemplateVersion) {
+      Set<ConfigUpdateListener> listeners) {
 
     this.listeners = listeners;
     this.httpURLConnection = null;
@@ -119,7 +117,6 @@ public class ConfigRealtimeHttpClient {
     this.context = context;
     this.namespace = namespace;
     this.isRealtimeDisabled = false;
-    this.lastTemplateVersion = lastTemplateVersion;
   }
 
   /**
@@ -190,9 +187,7 @@ public class ConfigRealtimeHttpClient {
         "project", extractProjectNumberFromAppId(this.firebaseApp.getOptions().getApplicationId()));
     body.put("namespace", this.namespace);
     body.put(
-        "lastKnownVersionNumber",
-        Long.toString(
-            Math.max(lastTemplateVersion, configFetchHandler.getTemplateVersionNumber())));
+        "lastKnownVersionNumber", Long.toString(configFetchHandler.getTemplateVersionNumber()));
     body.put("appId", firebaseApp.getOptions().getApplicationId());
     body.put("sdkVersion", Integer.toString(Build.VERSION.SDK_INT));
 
@@ -304,8 +299,7 @@ public class ConfigRealtimeHttpClient {
           }
         };
 
-    return new ConfigAutoFetch(
-        httpURLConnection, configFetchHandler, listeners, retryCallback, lastTemplateVersion);
+    return new ConfigAutoFetch(httpURLConnection, configFetchHandler, listeners, retryCallback);
   }
 
   /**
