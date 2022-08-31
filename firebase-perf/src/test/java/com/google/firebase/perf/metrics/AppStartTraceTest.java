@@ -14,6 +14,7 @@
 
 package com.google.firebase.perf.metrics;
 
+import static com.google.firebase.perf.util.TimerTest.getElapsedRealtimeMicros;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -63,11 +64,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   // a mocked current wall-clock time in microseconds.
   private long currentTime = 0;
 
-  // wall-clock time in microseconds
-  private long appStartTime;
-
-  // high resolution time in microseconds
-  private long appStartHRT;
+  // Timer at the beginning of app startup
+  private Timer appStart;
 
   @Before
   public void setUp() {
@@ -83,8 +81,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
         .getTime();
     transportManager = mock(TransportManager.class);
     traceArgumentCaptor = ArgumentCaptor.forClass(TraceMetric.class);
-    appStartTime = FirebasePerfProvider.getAppStartTime().getMicros();
-    appStartHRT = FirebasePerfProvider.getAppStartTime().getElapsedRealtimeMicros();
+    appStart = FirebasePerfProvider.getAppStartTime();
   }
 
   @After
@@ -144,14 +141,15 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     TraceMetric metric = traceArgumentCaptor.getValue();
 
     Assert.assertEquals(Constants.TraceNames.APP_START_TRACE_NAME.toString(), metric.getName());
-    Assert.assertEquals(appStartTime, metric.getClientStartTimeUs());
-    Assert.assertEquals(resumeTime - appStartHRT, metric.getDurationUs());
+    Assert.assertEquals(appStart.getMicros(), metric.getClientStartTimeUs());
+    Assert.assertEquals(resumeTime - getElapsedRealtimeMicros(appStart), metric.getDurationUs());
 
     Assert.assertEquals(3, metric.getSubtracesCount());
     Assert.assertEquals(
         Constants.TraceNames.ON_CREATE_TRACE_NAME.toString(), metric.getSubtraces(0).getName());
-    Assert.assertEquals(appStartTime, metric.getSubtraces(0).getClientStartTimeUs());
-    Assert.assertEquals(createTime - appStartHRT, metric.getSubtraces(0).getDurationUs());
+    Assert.assertEquals(appStart.getMicros(), metric.getSubtraces(0).getClientStartTimeUs());
+    Assert.assertEquals(
+        createTime - getElapsedRealtimeMicros(appStart), metric.getSubtraces(0).getDurationUs());
 
     Assert.assertEquals(
         Constants.TraceNames.ON_START_TRACE_NAME.toString(), metric.getSubtraces(1).getName());
@@ -210,7 +208,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService);
     // Delays activity creation after 1 minute from app start time.
-    currentTime = appStartTime + TimeUnit.MINUTES.toMicros(1) + 1;
+    currentTime = appStart.getMicros() + TimeUnit.MINUTES.toMicros(1) + 1;
     trace.onActivityCreated(activity1, bundle);
     Assert.assertEquals(currentTime, trace.getOnCreateTime().getMicros());
     ++currentTime;

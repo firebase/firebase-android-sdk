@@ -46,13 +46,12 @@ public class Timer implements Parcelable {
    * Returns a new Timer object as if it was stamped at the given elapsedRealtime. Uses current
    * wall-clock as a reference to extrapolate the wall-clock at the given elapsedRealtime.
    *
-   * @param elapsedRealtime milliseconds timestamp in the {@link SystemClock#elapsedRealtime()}
-   *     timebase
+   * @param elapsedRealtimeMillis timestamp in the {@link SystemClock#elapsedRealtime()} timebase
    */
-  public static Timer ofElapsedRealtime(long elapsedRealtime) {
-    elapsedRealtime = MILLISECONDS.toMicros(elapsedRealtime);
-    long wallClock = wallClockMicros() + elapsedRealtime - elapsedRealtimeMicros();
-    return new Timer(wallClock, elapsedRealtime);
+  public static Timer ofElapsedRealtime(final long elapsedRealtimeMillis) {
+    long elapsedRealtimeMicros = MILLISECONDS.toMicros(elapsedRealtimeMillis);
+    long wallClockMicros = wallClockMicros() + (elapsedRealtimeMicros - elapsedRealtimeMicros());
+    return new Timer(wallClockMicros, elapsedRealtimeMicros);
   }
 
   /**
@@ -150,16 +149,6 @@ public class Timer implements Parcelable {
    */
   public long getCurrentTimestampMicros() {
     return wallClockMicros + getDurationMicros();
-  }
-
-  /**
-   * Return this Timer's timestamp in the {@link SystemClock#elapsedRealtime()} timebase.
-   *
-   * @return elapsedRealtime timestamp in microseconds.
-   */
-  @VisibleForTesting
-  public long getElapsedRealtimeMicros() {
-    return elapsedRealtimeMicros;
   }
 
   /**

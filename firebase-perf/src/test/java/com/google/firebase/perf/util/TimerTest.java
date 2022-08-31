@@ -15,57 +15,73 @@
 package com.google.firebase.perf.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import android.os.Parcel;
-import android.os.Process;
-import java.util.concurrent.TimeUnit;
+import android.os.SystemClock;
+import java.time.Duration;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.shadows.ShadowSystemClock;
 
-/** Unit tests for {@link Timer}. */
+/**
+ * Unit tests for {@link Timer}.
+ *
+ * <p>IMPORTANT: {@link SystemClock} is paused in tests, and can only be advanced through specific
+ * methods such as {@link ShadowSystemClock#advanceBy(Duration)} which are shadowed by Robolectic.
+ */
 @RunWith(RobolectricTestRunner.class)
 public class TimerTest {
-  /**
-   * Margin of error for time comparisons, because time is sensitive, wall-clock especially. 100
-   * milliseconds is chosen because 1000 is the difference between metric units, and we want tests
-   * to catch errors like extra or forgotten unit conversion.
-   */
-  private static final long epsilon = TimeUnit.MILLISECONDS.toMicros(100);
 
   @Before
   public void setUp() {}
 
   @Test
-  public void ofElapsedRealtime_extrapolatesWallClock() {
-    Timer processStart = Timer.ofElapsedRealtime(Process.getStartElapsedRealtime());
-    Timer reference = new Timer();
-
-    assertThat(
-            approximatelyEqual(
-                processStart.getDurationMicros(reference),
-                reference.getMicros() - processStart.getMicros(),
-                epsilon))
-        .isTrue();
+  public void getDurationMicros_returnDifferenceBetweenElapsedRealtime() {
+    // Robolectric shadows SystemClock, which is paused and can only change via specific methods.
+    Timer start = new Timer();
+    ShadowSystemClock.advanceBy(Duration.ofMillis(100000));
+    Timer end = new Timer();
+    assertThat(start.getDurationMicros(end)).isEqualTo(MILLISECONDS.toMicros(100000));
   }
 
   @Test
   public void ofElapsedRealtime_createsNewTimerWithArgumentElapsedRealtime() {
-    Timer processStart = Timer.ofElapsedRealtime(Process.getStartElapsedRealtime());
-    Timer reference = new Timer();
-    long processStartERT = TimeUnit.MILLISECONDS.toMicros(Process.getStartElapsedRealtime());
-    long referenceERT = reference.getElapsedRealtimeMicros();
+    // Robolectric shadows SystemClock, which is paused and can only change via specific methods.
+    long refElapsedRealtime = SystemClock.elapsedRealtime();
+    Timer ref = new Timer();
+    Timer past = Timer.ofElapsedRealtime(refElapsedRealtime - 100);
+    Timer future = Timer.ofElapsedRealtime(refElapsedRealtime + 100);
 
-    assertThat(processStart.getDurationMicros(reference)).isEqualTo(referenceERT - processStartERT);
+    assertThat(past.getDurationMicros(ref)).isEqualTo(MILLISECONDS.toMicros(100));
+    assertThat(ref.getDurationMicros(future)).isEqualTo(MILLISECONDS.toMicros(100));
+  }
+
+  @Test
+  public void ofElapsedRealtime_extrapolatesWallTime() {
+    // Robolectric shadows SystemClock, which is paused and can only change via specific methods.
+    ShadowSystemClock.advanceBy(Duration.ofMillis(10000000));
+    long refElapsedRealtime = SystemClock.elapsedRealtime();
+    Timer ref = new Timer();
+    Timer past = Timer.ofElapsedRealtime(refElapsedRealtime - 500);
+    Timer morePast = Timer.ofElapsedRealtime(refElapsedRealtime - 500000);
+    Timer future = Timer.ofElapsedRealtime(refElapsedRealtime + 500);
+    Timer moreFuture = Timer.ofElapsedRealtime(refElapsedRealtime + 500000);
+
+    assertThat(past.getMicros()).isLessThan(ref.getMicros());
+    assertThat(morePast.getMicros()).isLessThan(past.getMicros());
+    assertThat(future.getMicros()).isGreaterThan(ref.getMicros());
+    assertThat(moreFuture.getMicros()).isGreaterThan(future.getMicros());
   }
 
   @Test
   public void testCreate() throws InterruptedException {
     Timer timer = new Timer();
     Thread.sleep(10);
-    long currentTimeMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
+    long currentTimeMicros = MILLISECONDS.toMicros(System.currentTimeMillis());
 
     assertThat(timer.getMicros()).isNotEqualTo(currentTimeMicros);
     assertThat(timer.getMicros()).isLessThan(currentTimeMicros);
@@ -75,7 +91,7 @@ public class TimerTest {
   public void testReset() throws InterruptedException {
     Timer timer = new Timer();
     Thread.sleep(10);
-    long currentTimeMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
+    long currentTimeMicros = MILLISECONDS.toMicros(System.currentTimeMillis());
 
     assertThat(timer.getMicros()).isNotEqualTo(currentTimeMicros);
     timer.reset();
@@ -106,18 +122,14 @@ public class TimerTest {
 
     Timer timer2 = Timer.CREATOR.createFromParcel(p2);
     Assert.assertEquals(timer1.getMicros(), timer2.getMicros());
-    Assert.assertEquals(timer1.getElapsedRealtimeMicros(), timer2.getElapsedRealtimeMicros());
+    Assert.assertEquals(timer1.getDurationMicros(timer2), 0);
 
     p1.recycle();
     p2.recycle();
   }
 
-  /**
-   * Allow comparisons between wall-clock time to be approximate to allow some margin of error for
-   * de-flaking purposes, due to time being sensitive. Especially since wall-clock is non-monotonic
-   * and inaccurate.
-   */
-  private static boolean approximatelyEqual(long a, long b, long epsilon) {
-    return Math.abs(a - b) < epsilon;
+  /** Helper for other tests that returns elapsedRealtimeMicros from a Timer object */
+  public static long getElapsedRealtimeMicros(Timer timer) {
+    return new Timer(0, 0).getDurationMicros(timer);
   }
 }
