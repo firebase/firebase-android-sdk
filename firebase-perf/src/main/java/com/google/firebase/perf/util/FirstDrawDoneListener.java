@@ -41,8 +41,7 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
     // Handle bug prior to API 26 where OnDrawListener from the floating ViewTreeObserver is not
     // merged into the real ViewTreeObserver.
     // https://android.googlesource.com/platform/frameworks/base/+/9f8ec54244a5e0343b9748db3329733f259604f3
-    if (Build.VERSION.SDK_INT < 26
-        && !(view.getViewTreeObserver().isAlive() && isAttachedToWindow(view))) {
+    if (Build.VERSION.SDK_INT < 26 && !isAliveAndAttached(view)) {
       view.addOnAttachStateChangeListener(
           new View.OnAttachStateChangeListener() {
             @Override
@@ -84,6 +83,19 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
     view.getViewTreeObserver()
         .addOnGlobalLayoutListener(() -> view.getViewTreeObserver().removeOnDrawListener(this));
     mainThreadHandler.postAtFrontOfQueue(callback);
+  }
+
+  /**
+   * Helper to avoid <a
+   * href="https://android.googlesource.com/platform/frameworks/base/+/9f8ec54244a5e0343b9748db3329733f259604f3">bug
+   * prior to API 26</a>, where the floating ViewTreeObserver's OnDrawListeners are not merged into
+   * the real ViewTreeObserver during attach.
+   *
+   * @return true if the View is already attached and the ViewTreeObserver is not a floating
+   *     placeholder.
+   */
+  private static boolean isAliveAndAttached(View view) {
+    return view.getViewTreeObserver().isAlive() && isAttachedToWindow(view);
   }
 
   /** Backport {@link View#isAttachedToWindow()} which is API 19+ only. */
