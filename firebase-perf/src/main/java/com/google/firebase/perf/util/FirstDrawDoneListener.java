@@ -81,7 +81,8 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
     }
     // OnDrawListeners cannot be removed within onDraw, so we remove it with a
     // GlobalLayoutListener
-    view.getViewTreeObserver().addOnGlobalLayoutListener(new LayoutChangeListener(view, this));
+    view.getViewTreeObserver()
+        .addOnGlobalLayoutListener(() -> view.getViewTreeObserver().removeOnDrawListener(this));
     mainThreadHandler.postAtFrontOfQueue(callback);
   }
 
@@ -91,23 +92,5 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
       return view.isAttachedToWindow();
     }
     return view.getWindowToken() != null;
-  }
-
-  @RequiresApi(Build.VERSION_CODES.JELLY_BEAN)
-  private static final class LayoutChangeListener
-      implements ViewTreeObserver.OnGlobalLayoutListener {
-    private final View view;
-    private final ViewTreeObserver.OnDrawListener listener;
-
-    private LayoutChangeListener(View view, ViewTreeObserver.OnDrawListener listener) {
-      this.view = view;
-      this.listener = listener;
-    }
-
-    @Override
-    public void onGlobalLayout() {
-      view.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-      view.getViewTreeObserver().removeOnDrawListener(listener);
-    }
   }
 }
