@@ -319,6 +319,9 @@ public class ConfigFetchHandler {
               getFirstOpenTime(),
               currentTime);
 
+      if (response.getFetchedConfigs() != null) {
+        frcMetadata.setLastTemplateVersion(response.getFetchedConfigs().getTemplateVersionNumber());
+      }
       if (response.getLastFetchETag() != null) {
         frcMetadata.setLastFetchETag(response.getLastFetchETag());
       }
@@ -534,7 +537,7 @@ public class ConfigFetchHandler {
     if (fetchedConfigsCache.get() != null && fetchedConfigsCache.get().getResult() != null) {
       return fetchedConfigsCache.get().getResult().getTemplateVersionNumber();
     }
-    return 1L;
+    return frcMetadata.getLastTemplateVersion();
   }
 
   /** Used to verify that the fetch handler is getting Analytics as expected. */
@@ -574,11 +577,12 @@ public class ConfigFetchHandler {
           lastFetchETag);
     }
 
-    public static FetchResponse forBackendHasNoUpdates(Date fetchTime) {
+    public static FetchResponse forBackendHasNoUpdates(
+        Date fetchTime, ConfigContainer fetchedConfigs) {
       return new FetchResponse(
           fetchTime,
           Status.BACKEND_HAS_NO_UPDATES,
-          /*fetchedConfigs=*/ null,
+          /*fetchedConfigs=*/ fetchedConfigs,
           /*lastFetchETag=*/ null);
     }
 

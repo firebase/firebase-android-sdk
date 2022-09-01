@@ -792,7 +792,7 @@ public class ConfigFetchHandlerTest {
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
             /* currentTime= */ any()))
-        .thenReturn(FetchResponse.forBackendHasNoUpdates(date));
+        .thenReturn(FetchResponse.forBackendHasNoUpdates(date, null));
   }
 
   private void fetchCallToBackendThrowsException(int httpErrorCode) throws Exception {
