@@ -18,7 +18,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
 import android.view.ViewTreeObserver;
-import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import com.google.android.gms.common.util.VisibleForTesting;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,6 +37,7 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
 
   /** Registers a post-draw callback for the next draw of a view. */
   public static void registerForNextDraw(View view, Runnable drawDoneCallback) {
+    final FirstDrawDoneListener listener = new FirstDrawDoneListener(view, drawDoneCallback);
     // Handle bug prior to API 26 where OnDrawListener from the floating ViewTreeObserver is not
     // merged into the real ViewTreeObserver.
     // https://android.googlesource.com/platform/frameworks/base/+/9f8ec54244a5e0343b9748db3329733f259604f3
@@ -47,8 +47,7 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
           new View.OnAttachStateChangeListener() {
             @Override
             public void onViewAttachedToWindow(View view) {
-              view.getViewTreeObserver()
-                  .addOnDrawListener(new FirstDrawDoneListener(view, drawDoneCallback));
+              view.getViewTreeObserver().addOnDrawListener(listener);
               view.removeOnAttachStateChangeListener(this);
             }
 
@@ -58,17 +57,16 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
             }
           });
     } else {
-      view.getViewTreeObserver()
-          .addOnDrawListener(new FirstDrawDoneListener(view, drawDoneCallback));
+      view.getViewTreeObserver().addOnDrawListener(listener);
     }
   }
 
-  private FirstDrawDoneListener(@Nullable View view, Runnable callback) {
+  private FirstDrawDoneListener(View view, Runnable callback) {
     this(view, callback, new Handler(Looper.getMainLooper()));
   }
 
   @VisibleForTesting
-  FirstDrawDoneListener(@Nullable View view, Runnable callback, Handler mainThreadHandler) {
+  FirstDrawDoneListener(View view, Runnable callback, Handler mainThreadHandler) {
     this.viewReference = new AtomicReference<>(view);
     this.callback = callback;
     this.mainThreadHandler = mainThreadHandler;
@@ -76,7 +74,7 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
 
   @Override
   public void onDraw() {
-    // Prevent 2nd draw and on from triggering onDraw
+    // Set viewReference to null so any onDraw past the first is a no-op
     View view = viewReference.getAndSet(null);
     if (view == null) {
       return;

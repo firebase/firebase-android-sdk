@@ -17,6 +17,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import android.os.Build;
 import android.os.Handler;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -24,6 +25,7 @@ import android.view.ViewTreeObserver.OnDrawListener;
 import androidx.test.core.app.ApplicationProvider;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,7 +52,7 @@ public class FirstDrawDoneListenerTest {
   @Test
   @Config(sdk = 25)
   public void registerForNextDraw_delaysAddingListenerForAPIsBelow26()
-      throws NoSuchFieldException, IllegalAccessException {
+      throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException {
     ArrayList<OnDrawListener> mOnDrawListeners =
         initViewTreeObserverWithListener(testView.getViewTreeObserver());
     assertThat(mOnDrawListeners.size()).isEqualTo(0);
@@ -58,6 +60,11 @@ public class FirstDrawDoneListenerTest {
     // OnDrawListener is not registered, it is delayed for later
     FirstDrawDoneListener.registerForNextDraw(testView, () -> {});
     assertThat(mOnDrawListeners.size()).isEqualTo(0);
+
+    // Register listener after the view is attached to a window
+    dispatchAttachedToWindow(testView);
+    assertThat(mOnDrawListeners.size()).isEqualTo(1);
+    assertThat(mOnDrawListeners.get(0)).isInstanceOf(FirstDrawDoneListener.class);
   }
 
   @Test
@@ -71,6 +78,7 @@ public class FirstDrawDoneListenerTest {
     // Immediately register an OnDrawListener to ViewTreeObserver
     FirstDrawDoneListener.registerForNextDraw(testView, () -> {});
     assertThat(mOnDrawListeners.size()).isEqualTo(1);
+    assertThat(mOnDrawListeners.get(0)).isInstanceOf(FirstDrawDoneListener.class);
   }
 
   @Test
@@ -116,14 +124,42 @@ public class FirstDrawDoneListenerTest {
     vto.addOnDrawListener(placeHolder);
     vto.removeOnDrawListener(placeHolder);
 
-    // Obtain mOnDrawListeners field through reflections
+    // Obtain mOnDrawListeners field through reflection
     Field mOnDrawListeners =
         android.view.ViewTreeObserver.class.getDeclaredField("mOnDrawListeners");
     mOnDrawListeners.setAccessible(true);
-    ArrayList<OnDrawListener> listOfListeners =
-        (ArrayList<OnDrawListener>) mOnDrawListeners.get(vto);
-    assertThat(listOfListeners).isNotNull();
-    assertThat(listOfListeners.size()).isEqualTo(0);
-    return listOfListeners;
+    ArrayList<OnDrawListener> listeners = (ArrayList<OnDrawListener>) mOnDrawListeners.get(vto);
+    assertThat(listeners).isNotNull();
+    assertThat(listeners.size()).isEqualTo(0);
+    return listeners;
+  }
+
+  /**
+   * Simulates {@link View}'s dispatchAttachedToWindow() on API 25 using reflection.
+   *
+   * <p>This only simulates the part where dispatchAttachedToWindow() notifies the list of {@link
+   * View.OnAttachStateChangeListener}.
+   *
+   * @param view the view in which we are simulating dispatchAttachedToWindow().
+   */
+  private static void dispatchAttachedToWindow(View view)
+      throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
+    assert Build.VERSION.SDK_INT == 25;
+    Class<?> listenerInfo = Class.forName("android.view.View$ListenerInfo");
+    Field mListenerInfo = View.class.getDeclaredField("mListenerInfo");
+    mListenerInfo.setAccessible(true);
+    Object li = mListenerInfo.get(view);
+    assertThat(li).isNotNull();
+    Field mOnAttachStateChangeListeners =
+        listenerInfo.getDeclaredField("mOnAttachStateChangeListeners");
+    mOnAttachStateChangeListeners.setAccessible(true);
+    CopyOnWriteArrayList<View.OnAttachStateChangeListener> listeners =
+        (CopyOnWriteArrayList<View.OnAttachStateChangeListener>)
+            mOnAttachStateChangeListeners.get(li);
+    assertThat(listeners).isNotNull();
+    assertThat(listeners).isNotEmpty();
+    for (View.OnAttachStateChangeListener listener : listeners) {
+      listener.onViewAttachedToWindow(view);
+    }
   }
 }
