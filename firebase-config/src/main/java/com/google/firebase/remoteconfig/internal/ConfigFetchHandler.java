@@ -27,6 +27,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.text.format.DateUtils;
+import android.util.Log;
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -281,9 +282,7 @@ public class ConfigFetchHandler {
       String installationId, String installationToken, Date fetchTime) {
     try {
       FetchResponse fetchResponse = fetchFromBackend(installationId, installationToken, fetchTime);
-      if (fetchResponse.getStatus() != Status.BACKEND_UPDATES_FETCHED) {
-        return Tasks.forResult(fetchResponse);
-      }
+
       return fetchedConfigsCache
           .put(fetchResponse.getFetchedConfigs())
           .onSuccessTask(executor, (putContainer) -> Tasks.forResult(fetchResponse));
@@ -319,6 +318,9 @@ public class ConfigFetchHandler {
               getFirstOpenTime(),
               currentTime);
 
+      if (response.getFetchedConfigs() != null) {
+        frcMetadata.setLastTemplateVersion(response.getFetchedConfigs().getTemplateVersionNumber());
+      }
       if (response.getLastFetchETag() != null) {
         frcMetadata.setLastFetchETag(response.getLastFetchETag());
       }
@@ -532,9 +534,11 @@ public class ConfigFetchHandler {
 
   public long getTemplateVersionNumber() {
     if (fetchedConfigsCache.get() != null && fetchedConfigsCache.get().getResult() != null) {
+      Log.i("RC", "Fix" + fetchedConfigsCache.get().getResult().getTemplateVersionNumber());
       return fetchedConfigsCache.get().getResult().getTemplateVersionNumber();
     }
-    return 1L;
+
+    return frcMetadata.getLastTemplateVersion();
   }
 
   /** Used to verify that the fetch handler is getting Analytics as expected. */
@@ -574,11 +578,12 @@ public class ConfigFetchHandler {
           lastFetchETag);
     }
 
-    public static FetchResponse forBackendHasNoUpdates(Date fetchTime) {
+    public static FetchResponse forBackendHasNoUpdates(
+        Date fetchTime, ConfigContainer fetchedConfigs) {
       return new FetchResponse(
           fetchTime,
           Status.BACKEND_HAS_NO_UPDATES,
-          /*fetchedConfigs=*/ null,
+          /*fetchedConfigs=*/ fetchedConfigs,
           /*lastFetchETag=*/ null);
     }
 
