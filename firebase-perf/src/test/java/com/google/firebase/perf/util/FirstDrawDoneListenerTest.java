@@ -25,6 +25,7 @@ import android.view.ViewTreeObserver.OnDrawListener;
 import androidx.test.core.app.ApplicationProvider;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,9 +63,10 @@ public class FirstDrawDoneListenerTest {
     assertThat(mOnDrawListeners.size()).isEqualTo(0);
 
     // Register listener after the view is attached to a window
-    dispatchAttachedToWindow(testView);
+    List<View.OnAttachStateChangeListener> attachListeners = dispatchAttachedToWindow(testView);
     assertThat(mOnDrawListeners.size()).isEqualTo(1);
     assertThat(mOnDrawListeners.get(0)).isInstanceOf(FirstDrawDoneListener.class);
+    assertThat(attachListeners).isEmpty();
   }
 
   @Test
@@ -141,8 +143,9 @@ public class FirstDrawDoneListenerTest {
    * View.OnAttachStateChangeListener}.
    *
    * @param view the view in which we are simulating dispatchAttachedToWindow().
+   * @return list of {@link View.OnAttachStateChangeListener} from the input {@link View}
    */
-  private static void dispatchAttachedToWindow(View view)
+  private static List<View.OnAttachStateChangeListener> dispatchAttachedToWindow(View view)
       throws ClassNotFoundException, NoSuchFieldException, IllegalAccessException {
     assert Build.VERSION.SDK_INT == 25;
     Class<?> listenerInfo = Class.forName("android.view.View$ListenerInfo");
@@ -161,5 +164,6 @@ public class FirstDrawDoneListenerTest {
     for (View.OnAttachStateChangeListener listener : listeners) {
       listener.onViewAttachedToWindow(view);
     }
+    return listeners;
   }
 }
