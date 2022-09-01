@@ -42,7 +42,7 @@ public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallba
   private final InAppMessage inAppMessage;
   private final String triggeringEvent;
 
-  private static boolean wasImpressed;
+  private boolean wasImpressed;
   private static final String MESSAGE_CLICK = "message click to metrics logger";
 
   @VisibleForTesting
@@ -70,6 +70,11 @@ public class DisplayCallbacksImpl implements FirebaseInAppMessagingDisplayCallba
 
     // just to be explicit
     wasImpressed = false;
+  }
+
+  @VisibleForTesting
+  boolean wasImpressed() {
+    return wasImpressed;
   }
 
   @Override
