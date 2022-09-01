@@ -63,18 +63,20 @@ public class TimerTest {
   @Test
   public void ofElapsedRealtime_extrapolatesWallTime() {
     // Robolectric shadows SystemClock, which is paused and can only change via specific methods.
+    // Advance SystemClock by a large amount to avoid negative time
     ShadowSystemClock.advanceBy(Duration.ofMillis(10000000));
-    long refElapsedRealtime = SystemClock.elapsedRealtime();
-    Timer ref = new Timer();
-    Timer past = Timer.ofElapsedRealtime(refElapsedRealtime - 500);
-    Timer morePast = Timer.ofElapsedRealtime(refElapsedRealtime - 500000);
-    Timer future = Timer.ofElapsedRealtime(refElapsedRealtime + 500);
-    Timer moreFuture = Timer.ofElapsedRealtime(refElapsedRealtime + 500000);
+    long nowElapsedRealtime = SystemClock.elapsedRealtime();
+    Timer now = new Timer();
+    Timer morePast = Timer.ofElapsedRealtime(nowElapsedRealtime - 2000);
+    Timer past = Timer.ofElapsedRealtime(nowElapsedRealtime - 1000);
+    Timer future = Timer.ofElapsedRealtime(nowElapsedRealtime + 1000);
+    Timer moreFuture = Timer.ofElapsedRealtime(nowElapsedRealtime + 2000);
 
-    assertThat(past.getMicros()).isLessThan(ref.getMicros());
+    // We cannot manipulate System.currentTimeMillis() so multiple comparisons are used to test
     assertThat(morePast.getMicros()).isLessThan(past.getMicros());
-    assertThat(future.getMicros()).isGreaterThan(ref.getMicros());
-    assertThat(moreFuture.getMicros()).isGreaterThan(future.getMicros());
+    assertThat(past.getMicros()).isLessThan(now.getMicros());
+    assertThat(now.getMicros()).isLessThan(future.getMicros());
+    assertThat(future.getMicros()).isLessThan(moreFuture.getMicros());
   }
 
   @Test
