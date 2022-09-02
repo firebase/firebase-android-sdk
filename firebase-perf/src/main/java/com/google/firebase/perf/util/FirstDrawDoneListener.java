@@ -19,7 +19,6 @@ import android.os.Looper;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import androidx.annotation.RequiresApi;
-import com.google.android.gms.common.util.VisibleForTesting;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -31,9 +30,9 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @RequiresApi(Build.VERSION_CODES.JELLY_BEAN)
 public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
+  private final Handler mainThreadHandler = new Handler(Looper.getMainLooper());
   private final AtomicReference<View> viewReference;
   private final Runnable callback;
-  private final Handler mainThreadHandler;
 
   /** Registers a post-draw callback for the next draw of a view. */
   public static void registerForNextDraw(View view, Runnable drawDoneCallback) {
@@ -61,14 +60,8 @@ public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
   }
 
   private FirstDrawDoneListener(View view, Runnable callback) {
-    this(view, callback, new Handler(Looper.getMainLooper()));
-  }
-
-  @VisibleForTesting
-  FirstDrawDoneListener(View view, Runnable callback, Handler mainThreadHandler) {
     this.viewReference = new AtomicReference<>(view);
     this.callback = callback;
-    this.mainThreadHandler = mainThreadHandler;
   }
 
   @Override

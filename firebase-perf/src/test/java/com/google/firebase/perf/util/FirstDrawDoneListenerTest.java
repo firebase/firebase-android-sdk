@@ -14,11 +14,16 @@
 package com.google.firebase.perf.util;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.robolectric.Shadows.shadowOf;
 
 import android.os.Build;
 import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.ViewTreeObserver.OnDrawListener;
@@ -30,23 +35,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
+import org.mockito.InOrder;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 
 /** Unit tests for {@link FirstDrawDoneListener}. */
 @RunWith(RobolectricTestRunner.class)
+@LooperMode(LooperMode.Mode.PAUSED)
 public class FirstDrawDoneListenerTest {
-  @Mock private Handler handler;
-  @Captor private ArgumentCaptor<Runnable> callbackCaptor;
-
   private View testView;
 
   @Before
   public void setUp() {
-    initMocks(this);
     testView = new View(ApplicationProvider.getApplicationContext());
   }
 
@@ -84,14 +85,25 @@ public class FirstDrawDoneListenerTest {
   }
 
   @Test
+  @Config(sdk = 26)
   public void onDraw_postsCallbackToFrontOfQueue() {
-    Runnable callback = () -> {};
-    testView
-        .getViewTreeObserver()
-        .addOnDrawListener(new FirstDrawDoneListener(testView, callback, handler));
-    testView.getViewTreeObserver().dispatchOnDraw();
-    verify(handler).postAtFrontOfQueue(callbackCaptor.capture());
-    assertThat(callbackCaptor.getValue()).isSameInstanceAs(callback);
+    Handler handler = new Handler(Looper.getMainLooper());
+    Runnable drawDoneCallback = mock(Runnable.class);
+    Runnable otherCallback = mock(Runnable.class);
+    InOrder inOrder = inOrder(drawDoneCallback, otherCallback);
+
+    FirstDrawDoneListener.registerForNextDraw(testView, drawDoneCallback);
+    handler.post(otherCallback); // 3rd in queue
+    handler.postAtFrontOfQueue(otherCallback); // 2nd in queue
+    testView.getViewTreeObserver().dispatchOnDraw(); // 1st in queue
+    verify(drawDoneCallback, never()).run();
+    verify(otherCallback, never()).run();
+
+    // Execute all posted tasks
+    shadowOf(Looper.getMainLooper()).idle();
+    inOrder.verify(drawDoneCallback, times(1)).run();
+    inOrder.verify(otherCallback, times(2)).run();
+    inOrder.verifyNoMoreInteractions();
   }
 
   @Test
