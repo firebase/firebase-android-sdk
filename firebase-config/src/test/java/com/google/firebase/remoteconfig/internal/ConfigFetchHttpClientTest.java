@@ -345,7 +345,8 @@ public class ConfigFetchHttpClientTest {
         eTag,
         /* customHeaders= */ ImmutableMap.of(),
         /* firstOpenTime= */ null,
-        /* currentTime= */ new Date(mockClock.currentTimeMillis()));
+        /* currentTime= */ new Date(mockClock.currentTimeMillis()),
+        /* addEtagToHeader= */ true);
   }
 
   private FetchResponse fetch(String eTag, Map<String, String> userProperties, Long firstOpenTime)
@@ -358,7 +359,8 @@ public class ConfigFetchHttpClientTest {
         eTag,
         /* customHeaders= */ ImmutableMap.of(),
         firstOpenTime,
-        new Date(mockClock.currentTimeMillis()));
+        new Date(mockClock.currentTimeMillis()),
+        true);
   }
 
   private FetchResponse fetch(String eTag, Map<String, String> customHeaders) throws Exception {
@@ -370,7 +372,8 @@ public class ConfigFetchHttpClientTest {
         eTag,
         customHeaders,
         /* firstOpenTime= */ null,
-        new Date(mockClock.currentTimeMillis()));
+        new Date(mockClock.currentTimeMillis()),
+        true);
   }
 
   private FetchResponse fetchWithoutInstallationId() throws Exception {
@@ -382,7 +385,8 @@ public class ConfigFetchHttpClientTest {
         /* lastFetchETag= */ "bogus-etag",
         /* customHeaders= */ ImmutableMap.of(),
         /* firstOpenTime= */ null,
-        new Date(mockClock.currentTimeMillis()));
+        new Date(mockClock.currentTimeMillis()),
+        true);
   }
 
   private FetchResponse fetchWithoutInstallationAuthToken() throws Exception {
@@ -394,7 +398,8 @@ public class ConfigFetchHttpClientTest {
         /* lastFetchETag= */ "bogus-etag",
         /* customHeaders= */ ImmutableMap.of(),
         /* firstOpenTime= */ null,
-        new Date(mockClock.currentTimeMillis()));
+        new Date(mockClock.currentTimeMillis()),
+        true);
   }
 
   private void setServerResponseTo(JSONObject requestBody, String eTag) {

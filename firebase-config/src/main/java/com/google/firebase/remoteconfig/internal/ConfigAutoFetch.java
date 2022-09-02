@@ -53,6 +53,7 @@ public class ConfigAutoFetch {
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
+  private boolean firstFetch;
 
   public ConfigAutoFetch(
       HttpURLConnection httpURLConnection,
@@ -65,6 +66,7 @@ public class ConfigAutoFetch {
     this.retryCallback = retryCallback;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     this.random = new Random();
+    this.firstFetch = true;
   }
 
   private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
@@ -196,7 +198,12 @@ public class ConfigAutoFetch {
 
   @VisibleForTesting
   public synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
-    Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
+    boolean addEtagHeader = targetVersion > 0 && !firstFetch;
+    if (firstFetch) {
+      firstFetch = false;
+    }
+
+    Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L, addEtagHeader);
     fetchTask.onSuccessTask(
         (fetchResponse) -> {
           long newTemplateVersion = 0;

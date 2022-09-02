@@ -198,7 +198,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any());
+            /* currentTime= */ any(),
+            /* addEtagToHeader= */ any());
   }
 
   @Test
@@ -314,7 +315,7 @@ public class ConfigFetchHandlerTest {
     fetchCallToHttpClientReturnsConfigWithCurrentTime(secondFetchedContainer);
 
     assertWithMessage("Fetch() failed for first fetch!")
-        .that(fetchHandler.fetch(HOURS.toSeconds(cacheExpirationInHours)).isSuccessful())
+        .that(fetchHandler.fetch(HOURS.toSeconds(cacheExpirationInHours), true).isSuccessful())
         .isTrue();
 
     verifyBackendIsCalled();
@@ -329,7 +330,7 @@ public class ConfigFetchHandlerTest {
     mockClock.advance(HOURS.toMillis(cacheExpirationInHours) - 1);
 
     assertWithMessage("Fetch() failed even though cache has not expired!")
-        .that(fetchHandler.fetch(HOURS.toSeconds(cacheExpirationInHours)).isSuccessful())
+        .that(fetchHandler.fetch(HOURS.toSeconds(cacheExpirationInHours), true).isSuccessful())
         .isTrue();
 
     verifyBackendIsNeverCalled();
@@ -345,7 +346,7 @@ public class ConfigFetchHandlerTest {
     mockClock.advance(HOURS.toMillis(cacheExpirationInHours) - 1);
 
     assertWithMessage("Fetch() failed even though cache has not expired!")
-        .that(fetchHandler.fetch(HOURS.toSeconds(cacheExpirationInHours)).isSuccessful())
+        .that(fetchHandler.fetch(HOURS.toSeconds(cacheExpirationInHours), true).isSuccessful())
         .isTrue();
     verifyBackendIsNeverCalled();
   }
@@ -360,7 +361,7 @@ public class ConfigFetchHandlerTest {
     fetchCallToHttpClientReturnsConfigWithCurrentTime(secondFetchedContainer);
 
     assertWithMessage("Fetch() failed after cache expired!")
-        .that(fetchHandler.fetch(HOURS.toSeconds(cacheExpirationInHours)).isSuccessful())
+        .that(fetchHandler.fetch(HOURS.toSeconds(cacheExpirationInHours), true).isSuccessful())
         .isTrue();
 
     verifyBackendIsCalled();
@@ -377,7 +378,7 @@ public class ConfigFetchHandlerTest {
     fetchCallToHttpClientReturnsConfigWithCurrentTime(secondFetchedContainer);
 
     assertWithMessage("Fetch() failed after cache expired!")
-        .that(fetchHandler.fetch(HOURS.toSeconds(cacheExpirationInHours)).isSuccessful())
+        .that(fetchHandler.fetch(HOURS.toSeconds(cacheExpirationInHours), true).isSuccessful())
         .isTrue();
 
     verifyBackendIsCalled();
@@ -397,7 +398,8 @@ public class ConfigFetchHandlerTest {
 
   @Test
   public void fetch_fetchBackendCallFails_taskThrowsException() throws Exception {
-    when(mockBackendFetchApiClient.fetch(any(), any(), any(), any(), any(), any(), any(), any()))
+    when(mockBackendFetchApiClient.fetch(
+            any(), any(), any(), any(), any(), any(), any(), any(), any()))
         .thenThrow(
             new FirebaseRemoteConfigClientException("Fetch failed due to an unexpected error."));
 
@@ -485,7 +487,8 @@ public class ConfigFetchHandlerTest {
     long backoffDurationInMillis = loadAndGetNextBackoffDuration(/*numFailedFetches=*/ 1);
 
     FirebaseRemoteConfigFetchThrottledException actualException =
-        getThrottledException(fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0L));
+        getThrottledException(
+            fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0L, /* addEtagToHeader= */ true));
 
     assertThat(actualException.getThrottleEndTimeMillis())
         .isEqualTo(mockClock.currentTimeMillis() + backoffDurationInMillis);
@@ -499,7 +502,7 @@ public class ConfigFetchHandlerTest {
       long backoffDurationInMillis = loadAndGetNextBackoffDuration(numFetch);
 
       assertThrowsThrottledException(
-          fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0L),
+          fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0L, /* addEtagToHeader= */ true),
           mockClock.currentTimeMillis() + backoffDurationInMillis);
 
       // Wait long enough for throttling to clear.
@@ -517,7 +520,8 @@ public class ConfigFetchHandlerTest {
 
     fetchCallToHttpClientReturnsConfigWithCurrentTime(firstFetchedContainer);
 
-    Task<FetchResponse> fetchTask = fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0L);
+    Task<FetchResponse> fetchTask =
+        fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0L, /* addEtagToHeader= */ true);
 
     assertWithMessage("Fetch() failed!").that(fetchTask.isSuccessful()).isTrue();
 
@@ -540,7 +544,9 @@ public class ConfigFetchHandlerTest {
           .thenReturn(new Random().nextInt((int) backoffDurationInterval));
 
       FirebaseRemoteConfigFetchThrottledException actualException =
-          getThrottledException(fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0L));
+          getThrottledException(
+              fetchHandler.fetch(
+                  /*minimumFetchIntervalInSeconds=*/ 0L, /* addEtagToHeader= */ true));
 
       long actualBackoffDuration =
           actualException.getThrottleEndTimeMillis() - mockClock.currentTimeMillis();
@@ -701,7 +707,7 @@ public class ConfigFetchHandlerTest {
 
     fetchCallToBackendThrowsException(HTTP_NOT_FOUND);
 
-    fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0);
+    fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0, /* addEtagToHeader= */ true);
 
     assertThat(metadataClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_FAILURE);
     assertThat(metadataClient.getLastSuccessfulFetchTime())
@@ -715,7 +721,7 @@ public class ConfigFetchHandlerTest {
 
     fetchCallToHttpClientUpdatesClockAndReturnsConfig(secondFetchedContainer);
 
-    fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0);
+    fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0, /* addEtagToHeader= */ true);
 
     assertThat(metadataClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_SUCCESS);
     assertThat(metadataClient.getLastSuccessfulFetchTime())
@@ -729,7 +735,7 @@ public class ConfigFetchHandlerTest {
 
     fetchCallToBackendThrowsException(HTTP_TOO_MANY_REQUESTS);
 
-    fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0);
+    fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0, /* addEtagToHeader= */ true);
 
     assertThat(metadataClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_THROTTLED);
     assertThat(metadataClient.getLastSuccessfulFetchTime())
@@ -779,7 +785,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any());
+            /* currentTime= */ any(),
+            /* addEtagToHeader= */ any());
   }
 
   private void setBackendResponseToNoChange(Date date) throws Exception {
@@ -791,7 +798,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any()))
+            /* currentTime= */ any(),
+            /* addEtagToHeader= */ any()))
         .thenReturn(FetchResponse.forBackendHasNoUpdates(date));
   }
 
@@ -806,7 +814,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any());
+            /* currentTime= */ any(),
+            /* addEtagToHeader= */ any());
   }
 
   /**
@@ -847,7 +856,8 @@ public class ConfigFetchHandlerTest {
         loadAndGetNextBackoffDuration(
             /*numFailedFetches=*/ metadataClient.getBackoffMetadata().getNumFailedFetches() + 1);
 
-    assertThrowsThrottledException(fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0L));
+    assertThrowsThrottledException(
+        fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0L, /* addEtagToHeader= */ true));
 
     // Wait long enough for throttling to clear.
     mockClock.advance(backoffDurationInMillis);
@@ -886,7 +896,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any());
+            /* currentTime= */ any(),
+            /* addEtagToHeader= */ any());
   }
 
   private void verifyBackendIsCalled(Map<String, String> userProperties, Long firstOpenTime)
@@ -900,7 +911,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ eq(firstOpenTime),
-            /* currentTime= */ any());
+            /* currentTime= */ any(),
+            /* addEtagToHeader= */ any());
   }
 
   private void verifyBackendIsNeverCalled() throws Exception {
@@ -913,7 +925,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any());
+            /* currentTime= */ any(),
+            /* addEtagToHeader= */ any());
   }
 
   private void verifyETags(@Nullable String requestETag, String responseETag) throws Exception {
@@ -926,7 +939,8 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ eq(requestETag),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any());
+            /* currentTime= */ any(),
+            /* addEtagToHeader= */ any());
     assertThat(metadataClient.getLastFetchETag()).isEqualTo(responseETag);
   }
 
