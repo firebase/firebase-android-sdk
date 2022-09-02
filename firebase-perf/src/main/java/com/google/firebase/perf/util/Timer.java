@@ -43,11 +43,14 @@ public class Timer implements Parcelable {
    * compute duration between 2 timestamps in the same timebase. It is NOT wall-clock time.
    */
   private long elapsedRealtimeMicros;
+<<<<<<< HEAD
   /**
    * Monotonic time measured in the {@link SystemClock#uptimeMillis()} timebase. Only used to
    * compute duration between 2 timestamps in the same timebase. It is NOT wall-clock time.
    */
   private long uptimeMicros;
+=======
+>>>>>>> 832c30612 ([Fireperf][AASA] change timebase to `elapsedRealtime` (#4024))
 
   /**
    * Returns a new Timer object as if it was stamped at the given elapsedRealtime. Uses current
@@ -55,11 +58,18 @@ public class Timer implements Parcelable {
    *
    * @param elapsedRealtimeMillis timestamp in the {@link SystemClock#elapsedRealtime()} timebase
    */
+<<<<<<< HEAD
   public static Timer ofElapsedRealtime(final long elapsedRealtimeMillis, final long uptimeMillis) {
     long uptimeMicros = MILLISECONDS.toMicros(uptimeMillis);
     long elapsedRealtimeMicros = MILLISECONDS.toMicros(elapsedRealtimeMillis);
     long wallClockMicros = wallClockMicros() + (elapsedRealtimeMicros - elapsedRealtimeMicros());
     return new Timer(wallClockMicros, elapsedRealtimeMicros, uptimeMicros);
+=======
+  public static Timer ofElapsedRealtime(final long elapsedRealtimeMillis) {
+    long elapsedRealtimeMicros = MILLISECONDS.toMicros(elapsedRealtimeMillis);
+    long wallClockMicros = wallClockMicros() + (elapsedRealtimeMicros - elapsedRealtimeMicros());
+    return new Timer(wallClockMicros, elapsedRealtimeMicros);
+>>>>>>> 832c30612 ([Fireperf][AASA] change timebase to `elapsedRealtime` (#4024))
   }
 
   /**
