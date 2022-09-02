@@ -21,6 +21,7 @@ import random
 import re
 import shutil
 import sys
+import tempfile
 import uuid
 
 import click
@@ -46,17 +47,18 @@ def macrobenchmark():
 async def _launch_macrobenchmark_test():
   _logger.info('Starting macrobenchmark test...')
 
-  artifact_versions, config, _, _ = await asyncio.gather(
+  artifact_versions, config, test_dir, _ = await asyncio.gather(
     _parse_artifact_versions(),
     _parse_config_yaml(),
-    _create_gradle_wrapper(),
+    _prepare_test_directory(),
     _copy_google_services(),
   )
 
   _logger.info(f'Artifact versions: {artifact_versions}')
 
-  with chdir('health-metrics/macrobenchmark'):
-    runners = [MacrobenchmarkTest(k, v, artifact_versions) for k, v in config.items()]
+  repo_root_dir = os.getcwd()
+  with chdir(test_dir):
+    runners = [MacrobenchmarkTest(k, v, artifact_versions, repo_root_dir, test_dir) for k, v in config.items()]
     results = await asyncio.gather(*[x.run() for x in runners], return_exceptions=True)
 
   await _post_processing(results)
@@ -65,8 +67,7 @@ async def _launch_macrobenchmark_test():
 
 
 async def _parse_artifact_versions():
-  proc = await asyncio.subprocess.create_subprocess_exec('./gradlew', 'assembleAllForSmokeTests')
-  await proc.wait()
+  await (await asyncio.create_subprocess_exec('./gradlew', 'assembleAllForSmokeTests')).wait()
 
   with open('build/m2repository/changed-artifacts.json') as json_file:
     artifacts = json.load(json_file)
@@ -83,19 +84,16 @@ async def _parse_config_yaml():
     return yaml.safe_load(yaml_file)
 
 
-async def _create_gradle_wrapper():
-  with open('health-metrics/macrobenchmark/settings.gradle', 'w'):
-    pass
+async def _prepare_test_directory():
+  test_dir = tempfile.mkdtemp(prefix='test-run-')
 
-  proc = await asyncio.subprocess.create_subprocess_exec(
-    './gradlew',
-    'wrapper',
-    '--gradle-version',
-    '6.9',
-    '--project-dir',
-    'health-metrics/macrobenchmark'
-  )
-  await proc.wait()
+  # Required as the dir is not defined in the root settings.gradle
+  open(os.path.join(test_dir, 'settings.gradle'), 'w').close()
+
+  command = ['./gradlew', 'wrapper', '--gradle-version', '7.5.1', '--project-dir', test_dir]
+  await (await asyncio.create_subprocess_exec(*command)).wait()
+
+  return test_dir
 
 
 async def _copy_google_services():
@@ -133,13 +131,17 @@ class MacrobenchmarkTest:
       sdk_name,
       test_app_config,
       artifact_versions,
+      repo_root_dir,
+      test_dir,
       logger=_logger
   ):
     self.sdk_name = sdk_name
     self.test_app_config = test_app_config
     self.artifact_versions = artifact_versions
+    self.repo_root_dir = repo_root_dir
+    self.test_dir = test_dir
     self.logger = MacrobenchmarkLoggerAdapter(logger, sdk_name)
-    self.test_app_dir = os.path.join('test-apps', test_app_config['name'])
+    self.test_app_dir = os.path.join(test_dir, test_app_config['name'])
     self.test_results_bucket = 'fireescape-benchmark-results'
     self.test_results_dir = str(uuid.uuid4())
     self.gcs_client = storage.Client()
@@ -157,13 +159,14 @@ class MacrobenchmarkTest:
 
     mustache_context = await self._prepare_mustache_context()
 
-    shutil.copytree('template', self.test_app_dir)
+    template_dir = os.path.join(self.repo_root_dir, 'health-metrics/macrobenchmark/template')
+    shutil.copytree(template_dir, self.test_app_dir)
     with chdir(self.test_app_dir):
       renderer = pystache.Renderer()
       mustaches = glob.glob('**/*.mustache', recursive=True)
       for mustache in mustaches:
         result = renderer.render_path(mustache, mustache_context)
-        original_name = mustache[:-9]  # TODO(yifany): mustache.removesuffix('.mustache')
+        original_name = mustache.removesuffix('.mustache')
         with open(original_name, 'w') as file:
           file.write(result)
 
@@ -203,6 +206,7 @@ class MacrobenchmarkTest:
     app_name = self.test_app_config['name']
 
     mustache_context = {
+      'm2repository': os.path.join(self.repo_root_dir, 'build/m2repository'),
       'plugins': [],
       'dependencies': [],
     }

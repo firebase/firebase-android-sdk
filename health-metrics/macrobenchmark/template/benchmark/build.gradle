@@ -13,29 +13,12 @@
 // limitations under the License.
 
 plugins {
-    id 'com.android.library'
-    id 'kotlin-android'
+    id 'com.android.test'
+    id 'org.jetbrains.kotlin.android'
 }
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion '30.0.3'
-
-    defaultConfig {
-        minSdkVersion 29
-        targetSdkVersion 30
-        versionCode 1
-        versionName '1.0'
-
-        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-    }
-
-    buildTypes {
-        release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
+    compileSdkVersion 32
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -45,16 +28,35 @@ android {
     kotlinOptions {
         jvmTarget = '1.8'
     }
+
+    defaultConfig {
+        minSdk 29
+        targetSdk 32
+
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+
+    buildTypes {
+        benchmark {
+            debuggable = true
+            signingConfig = debug.signingConfig
+            matchingFallbacks = ["release"]
+        }
+    }
+
+    targetProjectPath = ":app"
+    experimentalProperties["android.experimental.self-instrumenting"] = true
 }
 
 dependencies {
-    androidTestImplementation 'androidx.benchmark:benchmark-macro-junit4:1.1.0-alpha02'
+    implementation 'androidx.test.ext:junit:1.1.3'
+    implementation 'androidx.test.espresso:espresso-core:3.4.0'
+    implementation 'androidx.test.uiautomator:uiautomator:2.2.0'
+    implementation 'androidx.benchmark:benchmark-macro-junit4:1.1.0'
+}
 
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation 'androidx.core:core-ktx:1.5.0'
-    implementation 'androidx.appcompat:appcompat:1.3.0'
-    implementation 'com.google.android.material:material:1.3.0'
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+androidComponents {
+    beforeVariants(selector().all()) {
+        enabled = buildType == "benchmark"
+    }
 }
