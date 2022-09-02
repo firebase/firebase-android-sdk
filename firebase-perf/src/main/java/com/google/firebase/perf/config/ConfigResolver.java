@@ -24,6 +24,7 @@ import com.google.firebase.perf.BuildConfig;
 import com.google.firebase.perf.config.ConfigurationConstants.CollectionDeactivated;
 import com.google.firebase.perf.config.ConfigurationConstants.CollectionEnabled;
 import com.google.firebase.perf.config.ConfigurationConstants.FragmentSamplingRate;
+import com.google.firebase.perf.config.ConfigurationConstants.ExperimentTTID;
 import com.google.firebase.perf.config.ConfigurationConstants.LogSourceName;
 import com.google.firebase.perf.config.ConfigurationConstants.NetworkEventCountBackground;
 import com.google.firebase.perf.config.ConfigurationConstants.NetworkEventCountForeground;
@@ -760,6 +761,38 @@ public class ConfigResolver {
     // 3. Reads value from cache layer.
     Optional<Float> deviceCacheValue = getDeviceCacheFloat(config);
     if (deviceCacheValue.isAvailable() && isSamplingRateValid(deviceCacheValue.get())) {
+      return deviceCacheValue.get();
+    }
+
+    // 4. Returns default value if there is no valid value from above approaches.
+    return config.getDefault();
+  }
+
+  /** Returns if _experiment_as_ttid should be captured. */
+  public boolean getIsExperimentTTIDEnabled() {
+    // Order of precedence is:
+    // 1. If the value exists in Android Manifest, return this value.
+    // 2. If the value exists through Firebase Remote Config, cache and return this value.
+    // 3. If the value exists in device cache, return this value.
+    // 4. Otherwise, return default value.
+    ExperimentTTID config = ExperimentTTID.getInstance();
+
+    // 1. Reads value in Android Manifest (it is set by developers during build time).
+    Optional<Boolean> metadataValue = getMetadataBoolean(config);
+    if (metadataValue.isAvailable()) {
+      return metadataValue.get();
+    }
+
+    // 2. Reads value from Firebase Remote Config, saves this value in cache layer if valid.
+    Optional<Boolean> rcValue = getRemoteConfigBoolean(config);
+    if (rcValue.isAvailable()) {
+      deviceCacheManager.setValue(config.getDeviceCacheFlag(), rcValue.get());
+      return rcValue.get();
+    }
+
+    // 3. Reads value from cache layer.
+    Optional<Boolean> deviceCacheValue = getDeviceCacheBoolean(config);
+    if (deviceCacheValue.isAvailable()) {
       return deviceCacheValue.get();
     }
 

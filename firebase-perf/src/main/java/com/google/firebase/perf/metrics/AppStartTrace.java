@@ -18,11 +18,16 @@ import android.app.Activity;
 import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Process;
+import android.view.View;
+
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
+import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.provider.FirebasePerfProvider;
 import com.google.firebase.perf.session.PerfSession;
@@ -30,11 +35,14 @@ import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
+import com.google.firebase.perf.util.FirstDrawDoneListener;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -89,6 +97,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   private Timer onCreateTime = null;
   private Timer onStartTime = null;
   private Timer onResumeTime = null;
+  private Timer firstDrawDone = null;
 
   private PerfSession startSession;
   private boolean isStartedFromBackground = false;
@@ -139,7 +148,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
                       MAX_POOL_SIZE,
                       /* keepAliveTime= */ MAX_LATENCY_BEFORE_UI_INIT + 10,
                       TimeUnit.SECONDS,
-                      new LinkedBlockingQueue<>(1)));
+                      new LinkedBlockingQueue<>()));
         }
       }
     }
@@ -178,6 +187,32 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     isRegisteredForLifecycleCallbacks = false;
   }
 
+  /**
+   * Gets the timetamp that marks the beginning of app start, currently defined as the beginning of
+   * BIND_APPLICATION. Fallback to class-load time of {@link FirebasePerfProvider} when API < 24.
+   *
+   * @return {@link Timer} at the beginning of app start by Fireperf definition.
+   */
+  private static Timer getStartTimer() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+      return Timer.ofElapsedRealtime(Process.getStartElapsedRealtime());
+    }
+    return FirebasePerfProvider.getAppStartTime();
+  }
+
+  private void recordFirstDrawDone() {
+    if (firstDrawDone != null) {
+      return;
+    }
+    this.firstDrawDone = clock.getTime();
+    executorService.execute(() -> this.logColdStart(getStartTimer(), this.firstDrawDone, this.startSession));
+
+    if (isRegisteredForLifecycleCallbacks) {
+      // After AppStart trace is queued to be logged, we can unregister this callback.
+      unregisterActivityLifecycleCallbacks();
+    }
+  }
+
   @Override
   public synchronized void onActivityCreated(Activity activity, Bundle savedInstanceState) {
     if (isStartedFromBackground || onCreateTime != null // An activity already called onCreate()
@@ -207,8 +242,17 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   @Override
   public synchronized void onActivityResumed(Activity activity) {
     if (isStartedFromBackground
-        || onResumeTime != null // An activity already called onResume()
         || isTooLateToInitUI) {
+      return;
+    }
+
+    // Shadow-launch experiment of new app start time
+    if (ConfigResolver.getInstance().getIsExperimentTTIDEnabled()) {
+      View rootView = activity.findViewById(android.R.id.content);
+      FirstDrawDoneListener.registerForNextDraw(rootView, this::recordFirstDrawDone);
+    }
+
+    if (onResumeTime != null) { // An activity already called onResume()
       return;
     }
 
@@ -227,11 +271,24 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
 
     // Log the app start trace in a non-main thread.
     executorService.execute(this::logAppStartTrace);
+  }
 
-    if (isRegisteredForLifecycleCallbacks) {
-      // After AppStart trace is logged, we can unregister this callback.
-      unregisterActivityLifecycleCallbacks();
-    }
+  private void logColdStart(Timer start, Timer end, PerfSession session) {
+    TraceMetric.Builder metric =
+        TraceMetric.newBuilder()
+            .setName("_experiment_as_ttid")
+            .setClientStartTimeUs(start.getMicros())
+            .setDurationUs(start.getDurationMicros(end));
+
+    TraceMetric.Builder subtrace =
+            TraceMetric.newBuilder()
+                    .setName("_experiment_classLoadTime")
+                    .setClientStartTimeUs(FirebasePerfProvider.getAppStartTime().getMicros())
+                    .setDurationUs(FirebasePerfProvider.getAppStartTime().getDurationMicros(end));
+
+    metric.addSubtraces(subtrace).addPerfSessions(this.startSession.build());
+
+    transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
   }
 
   private void logAppStartTrace() {
