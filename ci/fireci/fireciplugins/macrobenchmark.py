@@ -114,9 +114,9 @@ async def _post_processing(results):
   log = ci_utils.ci_log_link()
   test_report = {'benchmarks': measurements, 'log': log}
 
-  metrics_service_url = 'https://api.firebase-sdk-health-metrics.com'
-  access_token = ci_utils.gcloud_identity_token()
-  uploader.post_report(test_report, metrics_service_url, access_token, 'macrobenchmark')
+  # metrics_service_url = 'https://api.firebase-sdk-health-metrics.com'
+  # access_token = ci_utils.gcloud_identity_token()
+  # uploader.post_report(test_report, metrics_service_url, access_token, 'macrobenchmark')
 
   # Raise exceptions for failed measurements
   if any(map(lambda x: isinstance(x, Exception), results)):
