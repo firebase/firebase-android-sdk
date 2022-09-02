@@ -105,7 +105,7 @@ public class ConfigMetadataClient {
   }
 
   long getLastTemplateVersion() {
-    return frcMetadata.getLong(LAST_TEMPLATE_VERSION, 1);
+    return frcMetadata.getLong(LAST_TEMPLATE_VERSION, 0);
   }
 
   public FirebaseRemoteConfigInfo getInfo() {

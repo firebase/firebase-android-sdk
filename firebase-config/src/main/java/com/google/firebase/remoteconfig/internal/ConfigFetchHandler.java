@@ -319,9 +319,6 @@ public class ConfigFetchHandler {
               getFirstOpenTime(),
               currentTime);
 
-      if (response.getFetchedConfigs() != null) {
-        frcMetadata.setLastTemplateVersion(response.getFetchedConfigs().getTemplateVersionNumber());
-      }
       if (response.getLastFetchETag() != null) {
         frcMetadata.setLastFetchETag(response.getLastFetchETag());
       }
@@ -577,12 +574,11 @@ public class ConfigFetchHandler {
           lastFetchETag);
     }
 
-    public static FetchResponse forBackendHasNoUpdates(
-        Date fetchTime, ConfigContainer fetchedConfigs) {
+    public static FetchResponse forBackendHasNoUpdates(Date fetchTime) {
       return new FetchResponse(
           fetchTime,
           Status.BACKEND_HAS_NO_UPDATES,
-          /*fetchedConfigs=*/ fetchedConfigs,
+          /*fetchedConfigs=*/ null,
           /*lastFetchETag=*/ null);
     }
 

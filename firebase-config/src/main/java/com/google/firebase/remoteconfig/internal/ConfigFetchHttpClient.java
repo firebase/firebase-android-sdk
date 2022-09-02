@@ -218,8 +218,7 @@ public class ConfigFetchHttpClient {
     }
 
     if (!backendHasUpdates(fetchResponse)) {
-      return FetchResponse.forBackendHasNoUpdates(
-          currentTime, extractConfigs(fetchResponse, currentTime));
+      return FetchResponse.forBackendHasNoUpdates(currentTime);
     }
 
     ConfigContainer fetchedConfigs = extractConfigs(fetchResponse, currentTime);
