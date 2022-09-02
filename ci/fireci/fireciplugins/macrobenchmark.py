@@ -172,12 +172,17 @@ class MacrobenchmarkTest:
 
   async def _assemble_benchmark_apks(self):
     executable = './gradlew'
-    args = ['assemble', 'assembleAndroidTest', '--project-dir', self.test_app_dir]
+    args = ['assemble', '--project-dir', self.test_app_dir]
     await self._exec_subprocess(executable, args)
 
   async def _execute_benchmark_tests(self):
-    app_apk_path = glob.glob(f'{self.test_app_dir}/app/**/*.apk', recursive=True)[0]
-    test_apk_path = glob.glob(f'{self.test_app_dir}/benchmark/**/*.apk', recursive=True)[0]
+    self.logger.debug(glob.glob(f'{self.test_app_dir}/**/*.apk', recursive=True))
+    app_apk_paths = glob.glob(f'{self.test_app_dir}/**/app-benchmark.apk', recursive=True)
+    self.logger.debug(app_apk_paths)
+    app_apk_path = app_apk_paths[0]
+    test_apk_paths = glob.glob(f'{self.test_app_dir}/**/macrobenchmark-benchmark.apk', recursive=True)
+    self.logger.debug(test_apk_paths)
+    test_apk_path = test_apk_paths[0]
 
     self.logger.info(f'App apk: {app_apk_path}')
     self.logger.info(f'Test apk: {test_apk_path}')
@@ -192,7 +197,7 @@ class MacrobenchmarkTest:
     args += ['--type', 'instrumentation']
     args += ['--app', app_apk_path]
     args += ['--test', test_apk_path]
-    args += ['--device', 'model=redfin,version=30,locale=en,orientation=portrait']
+    args += ['--device', 'model=oriole,version=32,locale=en,orientation=portrait']
     args += ['--directories-to-pull', '/sdcard/Download']
     args += ['--results-bucket', f'gs://{self.test_results_bucket}']
     args += ['--results-dir', self.test_results_dir]
