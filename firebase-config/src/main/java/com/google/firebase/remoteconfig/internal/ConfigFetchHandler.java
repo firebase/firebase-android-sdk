@@ -96,6 +96,7 @@ public class ConfigFetchHandler {
   private final ConfigMetadataClient frcMetadata;
 
   private final Map<String, String> customHttpHeaders;
+  private long lastTemplateVersion;
 
   /** FRC Fetch Handler constructor. */
   public ConfigFetchHandler(
@@ -117,6 +118,7 @@ public class ConfigFetchHandler {
     this.frcBackendApiClient = frcBackendApiClient;
     this.frcMetadata = frcMetadata;
     this.customHttpHeaders = customHttpHeaders;
+    this.lastTemplateVersion = getTemplateVersionFromDisk();
   }
 
   /**
@@ -319,6 +321,12 @@ public class ConfigFetchHandler {
               getFirstOpenTime(),
               currentTime);
 
+      if (response.getFetchedConfigs() != null) {
+        // Set template version in memory.
+        lastTemplateVersion = response.getFetchedConfigs().getTemplateVersionNumber();
+        // Set template version in metadata to be saved on disk.
+        frcMetadata.setLastTemplateVersion(lastTemplateVersion);
+      }
       if (response.getLastFetchETag() != null) {
         frcMetadata.setLastFetchETag(response.getLastFetchETag());
       }
@@ -530,11 +538,14 @@ public class ConfigFetchHandler {
     return (Long) connector.getUserProperties(/*includeInternal=*/ true).get(FIRST_OPEN_TIME_KEY);
   }
 
-  public long getTemplateVersionNumber() {
-    if (fetchedConfigsCache.get() != null && fetchedConfigsCache.get().getResult() != null) {
-      return fetchedConfigsCache.get().getResult().getTemplateVersionNumber();
-    }
+  // Used to initialize templateVersion.
+  private long getTemplateVersionFromDisk() {
+    // Get templateVersion on disk from metadata.
     return frcMetadata.getLastTemplateVersion();
+  }
+
+  public long getTemplateVersionNumber() {
+    return lastTemplateVersion;
   }
 
   /** Used to verify that the fetch handler is getting Analytics as expected. */
