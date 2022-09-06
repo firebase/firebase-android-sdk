@@ -59,3 +59,13 @@ test-apps:
   - sdk: firebase-storage
     name: stroage
     dependencies: [com.google.firebase:firebase-storage-ktx]
+
+
+# TODO(yifany): google3 sdks, customizing FTL devices
+# auth
+# analytics
+# combined
+#   - crashlytics + analytics
+#   - crashlytics + fireperf
+#   - auth + firestore
+#   - ...
