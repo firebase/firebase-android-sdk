@@ -37,8 +37,7 @@ abstract class DackkaPlugin : Plugin<Project> {
                 val outputDirectory = generateDocumentation.flatMap { it.outputDirectory }
                 val firesiteTransform = registerFiresiteTransformTask(project, outputDirectory)
                 val deleteJavaReferences = registerDeleteDackkaGeneratedJavaReferencesTask(project, outputDirectory)
-                val copyOutputToCommonDirectory =
-                    registerCopyDackkaOutputToCommonDirectoryTask(project, outputDirectory)
+                val copyOutputToCommonDirectory = registerCopyDackkaOutputToCommonDirectoryTask(project, outputDirectory)
 
                 project.tasks.register("kotlindoc") {
                     group = "documentation"
@@ -68,60 +67,61 @@ abstract class DackkaPlugin : Plugin<Project> {
         )
     }
 
-    private fun registerGenerateDackkaDocumentationTask(project: Project) =
-        project.tasks.register<GenerateDocumentationTask>("generateDackkaDocumentation") {
-            with(project.extensions.getByType<LibraryExtension>()) {
-                libraryVariants.all {
-                    if (name == "release") {
-                        mustRunAfter("createFullJarRelease")
-                        dependsOn("createFullJarRelease")
+    // TODO(b/243534168): Refactor when fixed, so we no longer need stubs
+    private fun registerGenerateDackkaDocumentationTask(project: Project): Provider<GenerateDocumentationTask> {
+        val docStubs = project.tasks.register<GenerateStubsTask>("docStubsForDackkaInput")
+        val docsTask = project.tasks.register<GenerateDocumentationTask>("generateDackkaDocumentation")
+        with(project.extensions.getByType<LibraryExtension>()) {
+            libraryVariants.all {
+                if (name == "release") {
+                    val isKotlin = project.plugins.hasPlugin("kotlin-android")
 
-                        val classpath = project.provider {
-                            runtimeConfiguration.getJars() + project.javadocConfig.getJars() + bootClasspath
-                        }
+                    val classpath = runtimeConfiguration.getJars() + project.javadocConfig.getJars() + bootClasspath
 
-                        val sourcesForJava = sourceSets.flatMap {
-                            it.javaDirectories.map { it.absoluteFile } + projectSpecificSources(project)
-                        }
+                    val sourcesForJava = sourceSets.flatMap {
+                        it.javaDirectories.map { it.absoluteFile }
+                    }
 
-                        // this will become useful with the agp upgrade, as they're separate in 7.x+
+                    docStubs.configure {
+                        classPath = project.files(classpath)
+                        sources.set(project.provider { sourcesForJava })
+                    }
+
+                    docsTask.configure {
                         val sourcesForKotlin = emptyList<File>()
-                        val excludedFiles = emptyList<File>() + projectSpecificSuppressedFiles(project)
 
-                        dependencies.set(classpath)
-                        javaSources.set(sourcesForJava)
-                        kotlinSources.set(sourcesForKotlin)
+                        val excludedFiles = if (!isKotlin) projectSpecificSuppressedFiles(project) else emptyList()
+                        val fixedJavaSources = if (!isKotlin) listOf(project.docStubs) else sourcesForJava
+
+                        javaSources.set(fixedJavaSources)
                         suppressedFiles.set(excludedFiles)
+
+                        kotlinSources.set(sourcesForKotlin)
+                        dependencies.set(classpath)
 
                         applyCommonConfigurations()
                     }
                 }
             }
         }
-
-    // TODO(b/243534168): Remove when fixed
-    private fun projectSpecificSources(project: Project) =
-        when (project.name) {
-            "firebase-common" -> {
-                project.project(":firebase-firestore").files("src/main/java/com/google/firebase").toList()
-            }
-            else -> emptyList()
-        }
+        return docsTask
+    }
 
     // TODO(b/243534168): Remove when fixed
     private fun projectSpecificSuppressedFiles(project: Project): List<File> =
         when (project.name) {
             "firebase-common" -> {
-                val firestoreProject = project.project(":firebase-firestore")
-                firestoreProject.files("src/main/java/com/google/firebase/firestore").toList()
+                project.files("${project.docStubs}/com/google/firebase/firestore").toList()
             }
             "firebase-firestore" -> {
-                project.files("src/main/java/com/google/firebase/Timestamp.java").toList()
+                project.files("${project.docStubs}/com/google/firebase/Timestamp.java").toList()
             }
             else -> emptyList()
         }
 
     private fun GenerateDocumentationTask.applyCommonConfigurations() {
+        dependsOnAndMustRunAfter("createFullJarRelease")
+
         val dackkaFile = project.provider { project.dackkaConfig.singleFile }
         val dackkaOutputDirectory = File(project.buildDir, "dackkaDocumentation")
 

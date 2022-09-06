@@ -37,6 +37,10 @@ val Project.metalavaConfig: Configuration
                 this.dependencies.add(this@metalavaConfig.dependencies.create("com.android.tools.metalava:metalava:1.0.0-alpha06"))
             }
 
+val Project.docStubs: File?
+    get() =
+        project.file("${buildDir.path}/doc-stubs")
+
 fun Project.runMetalavaWithArgs(
     arguments: List<String>,
     ignoreFailure: Boolean = false,
