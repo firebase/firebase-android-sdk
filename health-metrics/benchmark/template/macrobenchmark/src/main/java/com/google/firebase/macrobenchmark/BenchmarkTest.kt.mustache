@@ -35,11 +35,11 @@ class StartupBenchmark {
     packageName = "com.google.firebase.benchmark",
     metrics = listOf(
       StartupTimingMetric(),
-      TraceSectionMetric("Firebase"),
-      TraceSectionMetric("ComponentDiscovery"),
-      TraceSectionMetric("Runtime"),
+      {{#traces}}
+      TraceSectionMetric("{{.}}"),
+      {{/traces}}
     ),
-    iterations = 3,
+    iterations = 5,
     startupMode = StartupMode.COLD
   ) {
     pressHome()

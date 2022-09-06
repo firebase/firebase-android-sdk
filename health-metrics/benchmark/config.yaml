@@ -1,74 +1,61 @@
-#baseline:
-#  name: baseline
+# Configurations for tracing test apps construction.
 #
-#firebase-config:
-#  name: config
-#  dependencies:
-#    - com.google.firebase:firebase-config-ktx
+# Note:
+#   - One SDK may contain multiple test apps
+#   - Common plugins and traces are applied to all test apps during runtime
+#   - Test apps can also define their additional gradle plugins and custom traces, e.g.
 #
-#firebase-common:
-#  name: common
-#  dependencies:
-#    - com.google.firebase:firebase-common
-
-firebase-crashlytics:
-  name: crash
-  dependencies:
-    - com.google.firebase:firebase-crashlytics-ktx
-  plugins:
-    - com.google.firebase.crashlytics
-
-#firebase-database:
-#  name: database
-#  dependencies:
-#    - com.google.firebase:firebase-database-ktx
+#     test-apps:
+#       - sdk: firebase-crashlytics
+#         name: crashlytics-1
+#         plugins: [com.google.firebase.<crashlytics-custom-plugin>]
+#         traces: [crashlytics-custom-trace]
 #
-#firebase-dynamic-links:
-#  name: dynamiclinks
-#  dependencies:
-#    - com.google.firebase:firebase-dynamic-links-ktx
-#
-#firebase-firestore:
-#  name: firestore
-#  dependencies:
-#    - com.google.firebase:firebase-firestore-ktx
-#
-#firebase-functions:
-#  name: functions
-#  dependencies:
-#    - com.google.firebase:firebase-functions-ktx
-#
-#firebase-inappmessaging-display:
-#  name: inappmessaging
-#  dependencies:
-#    - com.google.firebase:firebase-analytics-ktx@18.0.3
-#    - com.google.firebase:firebase-inappmessaging-ktx
-#    - com.google.firebase:firebase-inappmessaging-display-ktx
-#
-#firebase-messaging:
-#  name: messaging
-#  dependencies:
-#    - com.google.firebase:firebase-messaging-ktx
-#
-#firebase-perf:
-#  name: perf
-#  dependencies:
-#    - com.google.firebase:firebase-perf-ktx
-#  plugins:
-#    - com.google.firebase.firebase-perf
-#
-#firebase-storage:
-#  name: storage
-#  dependencies:
-#    - com.google.firebase:firebase-storage-ktx
+#       - sdk: firebase-crashlytics
+#         name: crashlytics-2
+#         ......
 #
 
+common-plugins: [com.google.gms.google-services]
 
-# TODO(yifany): google3 sdks, customizing FTL devices
-# auth
-# analytics
-# combined
-#   - crashlytics + analytics
-#   - crashlytics + fireperf
-#   - auth + firestore
-#   - ...
+common-traces: [Firebase, ComponentDiscovery, Runtime]
+
+test-apps:
+  - sdk: firebase-config
+    name: config
+    dependencies: [com.google.firebase:firebase-config-ktx]
+  - sdk: firebase-common
+    name: common
+    dependencies: [com.google.firebase:firebase-common]
+  - sdk: firebase-crashlytics
+    name: crash
+    dependencies: [com.google.firebase:firebase-crashlytics-ktx]
+    plugins: [com.google.firebase.crashlytics]
+  - sdk: firebase-database
+    name: database
+    dependencies: [com.google.firebase:firebase-database-ktx]
+  - sdk: firebase-dynamic-links
+    name: fdl
+    dependencies: [com.google.firebase:firebase-dynamic-links-ktx]
+  - sdk: firebase-firestore
+    name: firestore
+    dependencies: [com.google.firebase:firebase-firestore-ktx]
+  - sdk: firebase-functions
+    name: functions
+    dependencies: [com.google.firebase:firebase-functions-ktx]
+  - sdk: firebase-inappmessaging-display
+    name: fiam
+    dependencies:
+      - com.google.firebase:firebase-analytics-ktx@21.1.1
+      - com.google.firebase:firebase-inappmessaging-ktx
+      - com.google.firebase:firebase-inappmessaging-display-ktx
+  - sdk: firebase-messaging
+    name: message
+    dependencies: [com.google.firebase:firebase-messaging-ktx]
+  - sdk: firebase-perf
+    name: perf
+    dependencies: [com.google.firebase:firebase-perf-ktx]
+    plugins: [com.google.firebase.firebase-perf]
+  - sdk: firebase-storage
+    name: stroage
+    dependencies: [com.google.firebase:firebase-storage-ktx]

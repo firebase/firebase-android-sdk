@@ -41,7 +41,7 @@ _logger = logging.getLogger('fireci.macrobenchmark')
 @click.option(
   '--build-only/--no-build-only',
   default=False,
-  help='Whether to build tracing test apps only or to submit to FTL as well'
+  help='Whether to build tracing test apps only or to also submit to FTL afterwards'
 )
 @ci_command()
 def macrobenchmark(build_only):
@@ -59,22 +59,23 @@ async def _launch_macrobenchmark_test(build_only):
   )
 
   _logger.info(f'Artifact versions: {artifact_versions}')
+  _logger.info(f'Test app directory: {test_dir}')
 
   repo_root_dir = os.getcwd()
   with chdir(test_dir):
-    runners = [
+    benchmark_tests = [
       MacrobenchmarkTest(
-        sdk_name,
         test_app_config,
         artifact_versions,
         repo_root_dir,
         test_dir,
-      ) for sdk_name, test_app_config in config.items()]
+      ) for test_app_config in config['test-apps']
+    ]
 
     if build_only:
-      await asyncio.gather(*[x.run_build_only() for x in runners])
+      await asyncio.gather(*[x.run_build_only() for x in benchmark_tests])
     else:
-      results = await asyncio.gather(*[x.run() for x in runners], return_exceptions=True)
+      results = await asyncio.gather(*[x.run() for x in benchmark_tests], return_exceptions=True)
       await _post_processing(results)
 
   _logger.info('Macrobenchmark test finished.')
@@ -134,20 +135,18 @@ class MacrobenchmarkTest:
   """Builds the test based on configurations and runs the test on FTL."""
   def __init__(
       self,
-      sdk_name,
       test_app_config,
       artifact_versions,
       repo_root_dir,
       test_dir,
       logger=_logger
   ):
-    self.sdk_name = sdk_name
     self.test_app_config = test_app_config
     self.artifact_versions = artifact_versions
     self.repo_root_dir = repo_root_dir
     self.test_dir = test_dir
-    self.logger = MacrobenchmarkLoggerAdapter(logger, sdk_name)
-    self.test_app_dir = os.path.join(test_dir, test_app_config['name'])
+    self.logger = MacrobenchmarkLoggerAdapter(logger, test_app_config.sdk)
+    self.test_app_dir = os.path.join(test_dir, test_app_config.name)
     self.test_results_bucket = 'fireescape-benchmark-results'
     self.test_results_dir = str(uuid.uuid4())
     self.gcs_client = storage.Client()
@@ -156,12 +155,11 @@ class MacrobenchmarkTest:
     """Starts the workflow of src creation, apks assembly, FTL testing and results upload."""
     await self._create_benchmark_projects()
     await self._assemble_benchmark_apks()
-
     await self._execute_benchmark_tests()
     return await self._aggregate_benchmark_results()
 
   async def run_build_only(self):
-    """Starts the workflow of src creation and apks assembly."""
+    """Populate test app src and assemble apks."""
     await self._create_benchmark_projects()
     await self._assemble_benchmark_apks()
 
@@ -257,7 +255,7 @@ class MacrobenchmarkTest:
         clazz = benchmark['className'].split('.')[-1]
         runs = benchmark['metrics']['startupMs']['runs']
         results.append({
-          'sdk': self.sdk_name,
+          'sdk': self.test_app_config.sdk,
           'device': device,
           'name': f'{clazz}.{method}',
           'min': min(runs),
