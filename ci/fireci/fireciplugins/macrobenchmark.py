@@ -32,36 +32,50 @@ from google.cloud import storage
 
 from fireci import ci_command
 from fireci import ci_utils
-from fireci.dir_utils import chdir
 from fireci import uploader
+from fireci.dir_utils import chdir
 
 _logger = logging.getLogger('fireci.macrobenchmark')
 
 
+@click.option(
+  '--build-only/--no-build-only',
+  default=False,
+  help='Whether to build tracing test apps only or to submit to FTL as well'
+)
 @ci_command()
-def macrobenchmark():
+def macrobenchmark(build_only):
   """Measures app startup times for Firebase SDKs."""
-  asyncio.run(_launch_macrobenchmark_test())
+  asyncio.run(_launch_macrobenchmark_test(build_only))
 
 
-async def _launch_macrobenchmark_test():
+async def _launch_macrobenchmark_test(build_only):
   _logger.info('Starting macrobenchmark test...')
 
-  artifact_versions, config, test_dir, _ = await asyncio.gather(
+  artifact_versions, config, test_dir = await asyncio.gather(
     _parse_artifact_versions(),
     _parse_config_yaml(),
     _prepare_test_directory(),
-    _copy_google_services(),
   )
 
   _logger.info(f'Artifact versions: {artifact_versions}')
 
   repo_root_dir = os.getcwd()
   with chdir(test_dir):
-    runners = [MacrobenchmarkTest(k, v, artifact_versions, repo_root_dir, test_dir) for k, v in config.items()]
-    results = await asyncio.gather(*[x.run() for x in runners], return_exceptions=True)
+    runners = [
+      MacrobenchmarkTest(
+        sdk_name,
+        test_app_config,
+        artifact_versions,
+        repo_root_dir,
+        test_dir,
+      ) for sdk_name, test_app_config in config.items()]
 
-  await _post_processing(results)
+    if build_only:
+      await asyncio.gather(*[x.run_build_only() for x in runners])
+    else:
+      results = await asyncio.gather(*[x.run() for x in runners], return_exceptions=True)
+      await _post_processing(results)
 
   _logger.info('Macrobenchmark test finished.')
 
@@ -80,7 +94,7 @@ def _artifact_key_version(artifact):
 
 
 async def _parse_config_yaml():
-  with open('health-metrics/macrobenchmark/config.yaml') as yaml_file:
+  with open('health-metrics/benchmark/config.yaml') as yaml_file:
     return yaml.safe_load(yaml_file)
 
 
@@ -96,14 +110,6 @@ async def _prepare_test_directory():
   return test_dir
 
 
-async def _copy_google_services():
-  if 'FIREBASE_CI' in os.environ:
-    src = os.environ['FIREBASE_GOOGLE_SERVICES_PATH']
-    dst = 'health-metrics/macrobenchmark/template/app/google-services.json'
-    _logger.info(f'Running on CI. Copying "{src}" to "{dst}"...')
-    shutil.copyfile(src, dst)
-
-
 async def _post_processing(results):
   # Upload successful measurements to the metric service
   measurements = []
@@ -114,9 +120,9 @@ async def _post_processing(results):
   log = ci_utils.ci_log_link()
   test_report = {'benchmarks': measurements, 'log': log}
 
-  # metrics_service_url = 'https://api.firebase-sdk-health-metrics.com'
-  # access_token = ci_utils.gcloud_identity_token()
-  # uploader.post_report(test_report, metrics_service_url, access_token, 'macrobenchmark')
+  metrics_service_url = 'https://api.firebase-sdk-health-metrics.com'
+  access_token = ci_utils.gcloud_identity_token()
+  uploader.post_report(test_report, metrics_service_url, access_token, 'macrobenchmark')
 
   # Raise exceptions for failed measurements
   if any(map(lambda x: isinstance(x, Exception), results)):
@@ -150,8 +156,14 @@ class MacrobenchmarkTest:
     """Starts the workflow of src creation, apks assembly, FTL testing and results upload."""
     await self._create_benchmark_projects()
     await self._assemble_benchmark_apks()
+
     await self._execute_benchmark_tests()
     return await self._aggregate_benchmark_results()
+
+  async def run_build_only(self):
+    """Starts the workflow of src creation and apks assembly."""
+    await self._create_benchmark_projects()
+    await self._assemble_benchmark_apks()
 
   async def _create_benchmark_projects(self):
     app_name = self.test_app_config['name']
@@ -159,7 +171,7 @@ class MacrobenchmarkTest:
 
     mustache_context = await self._prepare_mustache_context()
 
-    template_dir = os.path.join(self.repo_root_dir, 'health-metrics/macrobenchmark/template')
+    template_dir = os.path.join(self.repo_root_dir, 'health-metrics/benchmark/template')
     shutil.copytree(template_dir, self.test_app_dir)
     with chdir(self.test_app_dir):
       renderer = pystache.Renderer()
