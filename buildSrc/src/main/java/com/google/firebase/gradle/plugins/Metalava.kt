@@ -45,6 +45,10 @@ val Project.metalavaConfig: Configuration
 val Project.docStubs: File?
   get() = project.file("${buildDir.path}/doc-stubs")
 
+val Project.docStubs: File?
+    get() =
+        project.file("${buildDir.path}/doc-stubs")
+
 fun Project.runMetalavaWithArgs(
   arguments: List<String>,
   ignoreFailure: Boolean = false,
