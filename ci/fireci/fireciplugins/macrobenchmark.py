@@ -53,35 +53,27 @@ async def _launch_macrobenchmark_test(build_only):
   _logger.info('Starting macrobenchmark test...')
 
   artifact_versions, config, test_dir = await asyncio.gather(
-    _parse_artifact_versions(),
-    _parse_config_yaml(),
+    _assemble_all_artifacts(),
+    _process_config_yaml(),
     _prepare_test_directory(),
   )
 
   _logger.info(f'Artifact versions: {artifact_versions}')
   _logger.info(f'Test app directory: {test_dir}')
 
-  repo_root_dir = os.getcwd()
   with chdir(test_dir):
-    benchmark_tests = [
-      MacrobenchmarkTest(
-        test_app_config,
-        artifact_versions,
-        repo_root_dir,
-        test_dir,
-      ) for test_app_config in config['test-apps']
-    ]
+    tests = [MacrobenchmarkTest(app, artifact_versions, os.getcwd(), test_dir) for app in config['test-apps']]
 
     if build_only:
-      await asyncio.gather(*[x.run_build_only() for x in benchmark_tests])
+      await asyncio.gather(*[x.run_build_only() for x in tests])
     else:
-      results = await asyncio.gather(*[x.run() for x in benchmark_tests], return_exceptions=True)
+      results = await asyncio.gather(*[x.run() for x in tests], return_exceptions=True)
       await _post_processing(results)
 
   _logger.info('Macrobenchmark test finished.')
 
 
-async def _parse_artifact_versions():
+async def _assemble_all_artifacts():
   await (await asyncio.create_subprocess_exec('./gradlew', 'assembleAllForSmokeTests')).wait()
 
   with open('build/m2repository/changed-artifacts.json') as json_file:
@@ -94,9 +86,14 @@ def _artifact_key_version(artifact):
   return f'{group_id}:{artifact_id}', version
 
 
-async def _parse_config_yaml():
+async def _process_config_yaml():
   with open('health-metrics/benchmark/config.yaml') as yaml_file:
-    return yaml.safe_load(yaml_file)
+    config = yaml.safe_load(yaml_file)
+    for app in config['test-apps']:
+      app['plugins'].extend(config['common-plugins'])
+      app['traces'].extend(config['common-traces'])
+    config['test-apps'].append({'sdk': 'baseline', 'name': 'baseline'})
+    return config
 
 
 async def _prepare_test_directory():
@@ -218,19 +215,11 @@ class MacrobenchmarkTest:
     await self._exec_subprocess(executable, args)
 
   async def _prepare_mustache_context(self):
-    app_name = self.test_app_config['name']
-
     mustache_context = {
       'm2repository': os.path.join(self.repo_root_dir, 'build/m2repository'),
-      'plugins': [],
+      'plugins': self.test_app_config['plugins'],
       'dependencies': [],
     }
-
-    if app_name != 'baseline':
-      mustache_context['plugins'].append('com.google.gms.google-services')
-
-    if 'plugins' in self.test_app_config:
-      mustache_context['plugins'].extend(self.test_app_config['plugins'])
 
     if 'dependencies' in self.test_app_config:
       for dep in self.test_app_config['dependencies']:
