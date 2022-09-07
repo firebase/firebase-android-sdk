@@ -241,8 +241,8 @@ public class ConfigFetchHttpClient {
     urlConnection.setConnectTimeout((int) SECONDS.toMillis(connectTimeoutInSeconds));
     urlConnection.setReadTimeout((int) SECONDS.toMillis(readTimeoutInSeconds));
 
-    // Flag to block indicate whether or not to add Etag header.
-    // Should only be false for Realtime Fetch's when the stored templateVersion is 0.
+    // Flag to indicate whether or not to add Etag header.
+    // Should only be false for Realtime Fetchs' when the stored templateVersion is 0.
     if (!excludeEtagHeaderForRealtime) {
       // Send the last successful Fetch ETag to the FRC Server to calculate if there has been any
       // change in the Fetch Response since the last fetch call.
