@@ -1171,13 +1171,13 @@ public final class FirebaseRemoteConfigTest {
   public void realtime_fetch_exclude_Etag() throws Exception {
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpURLConnection.getInputStream())
-            .thenReturn(
-                    new ByteArrayInputStream(
-                            "{ \"featureDisabled\": false,  \"latestTemplateVersionNumber\": 2 }"
-                                    .getBytes(StandardCharsets.UTF_8)));
+        .thenReturn(
+            new ByteArrayInputStream(
+                "{ \"featureDisabled\": false,  \"latestTemplateVersionNumber\": 2 }"
+                    .getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(0);
     when(mockFetchHandler.fetch(0, true))
-            .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+        .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
     verify(mockRetryListener).onEvent();
