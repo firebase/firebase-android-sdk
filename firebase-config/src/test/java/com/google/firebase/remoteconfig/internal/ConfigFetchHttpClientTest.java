@@ -336,6 +336,32 @@ public class ConfigFetchHttpClientTest {
     assertThat(exception).hasMessageThat().isEqualTo("Bad Request");
   }
 
+  @Test
+  public void realtimeFetch_NoTemplateVersion_noEtag() throws Exception {
+    configFetchHttpClient =
+        new ConfigFetchHttpClient(
+            context,
+            APP_ID,
+            API_KEY,
+            DEFAULT_NAMESPACE,
+            /* connectTimeoutInSeconds= */ 15L,
+            /* readTimeoutInSeconds= */ 20L);
+    setServerResponseTo(hasChangeResponseBody, FIRST_ETAG);
+
+    FetchResponse response =
+        configFetchHttpClient.fetch(
+            fakeHttpURLConnection,
+            INSTALLATION_ID_STRING,
+            INSTALLATION_AUTH_TOKEN_STRING,
+            /* analyticsUserProperties= */ ImmutableMap.of(),
+            FIRST_ETAG,
+            /* customHeaders= */ ImmutableMap.of(),
+            /* firstOpenTime= */ null,
+            /* currentTime= */ new Date(mockClock.currentTimeMillis()),
+            /* addEtagToHeader= */ true);
+    assertThat(fakeHttpURLConnection.getRequestProperty("If-None-Match")).isNull();
+  }
+
   private FetchResponse fetch(String eTag) throws Exception {
     return configFetchHttpClient.fetch(
         fakeHttpURLConnection,
@@ -346,7 +372,7 @@ public class ConfigFetchHttpClientTest {
         /* customHeaders= */ ImmutableMap.of(),
         /* firstOpenTime= */ null,
         /* currentTime= */ new Date(mockClock.currentTimeMillis()),
-        /* addEtagToHeader= */ true);
+        /* excludeEtagHeaderForRealtime= */ false);
   }
 
   private FetchResponse fetch(String eTag, Map<String, String> userProperties, Long firstOpenTime)
@@ -360,7 +386,7 @@ public class ConfigFetchHttpClientTest {
         /* customHeaders= */ ImmutableMap.of(),
         firstOpenTime,
         new Date(mockClock.currentTimeMillis()),
-        true);
+        false);
   }
 
   private FetchResponse fetch(String eTag, Map<String, String> customHeaders) throws Exception {
@@ -373,7 +399,7 @@ public class ConfigFetchHttpClientTest {
         customHeaders,
         /* firstOpenTime= */ null,
         new Date(mockClock.currentTimeMillis()),
-        true);
+        false);
   }
 
   private FetchResponse fetchWithoutInstallationId() throws Exception {
@@ -386,7 +412,7 @@ public class ConfigFetchHttpClientTest {
         /* customHeaders= */ ImmutableMap.of(),
         /* firstOpenTime= */ null,
         new Date(mockClock.currentTimeMillis()),
-        true);
+        false);
   }
 
   private FetchResponse fetchWithoutInstallationAuthToken() throws Exception {
@@ -399,7 +425,7 @@ public class ConfigFetchHttpClientTest {
         /* customHeaders= */ ImmutableMap.of(),
         /* firstOpenTime= */ null,
         new Date(mockClock.currentTimeMillis()),
-        true);
+        false);
   }
 
   private void setServerResponseTo(JSONObject requestBody, String eTag) {

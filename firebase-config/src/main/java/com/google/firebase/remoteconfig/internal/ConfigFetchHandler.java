@@ -124,7 +124,7 @@ public class ConfigFetchHandler {
    * ConfigMetadataClient#getMinimumFetchIntervalInSeconds()}.
    */
   public Task<FetchResponse> fetch() {
-    return fetch(frcMetadata.getMinimumFetchIntervalInSeconds(), true);
+    return fetch(frcMetadata.getMinimumFetchIntervalInSeconds(), false);
   }
 
   /**

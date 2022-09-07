@@ -312,7 +312,7 @@ public class FirebaseRemoteConfig {
    */
   @NonNull
   public Task<Void> fetch(long minimumFetchIntervalInSeconds) {
-    Task<FetchResponse> fetchTask = fetchHandler.fetch(minimumFetchIntervalInSeconds, true);
+    Task<FetchResponse> fetchTask = fetchHandler.fetch(minimumFetchIntervalInSeconds, false);
 
     // Convert Task type to Void.
     return fetchTask.onSuccessTask((unusedFetchResponse) -> Tasks.forResult(null));
