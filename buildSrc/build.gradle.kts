@@ -57,7 +57,6 @@ dependencies {
     implementation("org.apache.maven:maven-aether-provider:3.1.0")
 
     implementation("com.google.code.gson:gson:2.8.9")
-    implementation("org.jetbrains.dokka:dokka-android-gradle-plugin:0.9.17-g013-9b8280a")
     implementation("com.android.tools.build:gradle:3.4.3")
     implementation("gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9")
 
