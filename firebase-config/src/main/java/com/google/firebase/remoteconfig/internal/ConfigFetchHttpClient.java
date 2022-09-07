@@ -183,7 +183,8 @@ public class ConfigFetchHttpClient {
       Map<String, String> customHeaders,
       Long firstOpenTime,
       Date currentTime,
-      boolean excludeEtagHeaderForRealtime)
+
+      Boolean excludeEtagHeaderForRealtime)
       throws FirebaseRemoteConfigException {
     setUpUrlConnection(
         urlConnection,
