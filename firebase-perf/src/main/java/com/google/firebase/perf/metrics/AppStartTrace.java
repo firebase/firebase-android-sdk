@@ -22,7 +22,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 import android.view.View;
-
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -41,8 +40,6 @@ import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -205,7 +202,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
       return;
     }
     this.firstDrawDone = clock.getTime();
-    executorService.execute(() -> this.logColdStart(getStartTimer(), this.firstDrawDone, this.startSession));
+    executorService.execute(
+        () -> this.logColdStart(getStartTimer(), this.firstDrawDone, this.startSession));
 
     if (isRegisteredForLifecycleCallbacks) {
       // After AppStart trace is queued to be logged, we can unregister this callback.
@@ -241,8 +239,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
 
   @Override
   public synchronized void onActivityResumed(Activity activity) {
-    if (isStartedFromBackground
-        || isTooLateToInitUI) {
+    if (isStartedFromBackground || isTooLateToInitUI) {
       return;
     }
 
@@ -281,10 +278,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
             .setDurationUs(start.getDurationMicros(end));
 
     TraceMetric.Builder subtrace =
-            TraceMetric.newBuilder()
-                    .setName("_experiment_classLoadTime")
-                    .setClientStartTimeUs(FirebasePerfProvider.getAppStartTime().getMicros())
-                    .setDurationUs(FirebasePerfProvider.getAppStartTime().getDurationMicros(end));
+        TraceMetric.newBuilder()
+            .setName("_experiment_classLoadTime")
+            .setClientStartTimeUs(FirebasePerfProvider.getAppStartTime().getMicros())
+            .setDurationUs(FirebasePerfProvider.getAppStartTime().getDurationMicros(end));
 
     metric.addSubtraces(subtrace).addPerfSessions(this.startSession.build());
 

@@ -23,8 +23,8 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.BuildConfig;
 import com.google.firebase.perf.config.ConfigurationConstants.CollectionDeactivated;
 import com.google.firebase.perf.config.ConfigurationConstants.CollectionEnabled;
-import com.google.firebase.perf.config.ConfigurationConstants.FragmentSamplingRate;
 import com.google.firebase.perf.config.ConfigurationConstants.ExperimentTTID;
+import com.google.firebase.perf.config.ConfigurationConstants.FragmentSamplingRate;
 import com.google.firebase.perf.config.ConfigurationConstants.LogSourceName;
 import com.google.firebase.perf.config.ConfigurationConstants.NetworkEventCountBackground;
 import com.google.firebase.perf.config.ConfigurationConstants.NetworkEventCountForeground;
@@ -115,9 +115,19 @@ public class ConfigResolver {
 
   /** Default API to call for whether performance monitoring is currently silent. */
   public boolean isPerformanceMonitoringEnabled() {
+    saveExperimentFlagToDeviceCache();
     Boolean isPerformanceCollectionEnabled = getIsPerformanceCollectionEnabled();
     return (isPerformanceCollectionEnabled == null || isPerformanceCollectionEnabled == true)
         && getIsServiceCollectionEnabled();
+  }
+
+  // TODO: remove after _experiment_as_ttid is finished
+  private void saveExperimentFlagToDeviceCache() {
+    ExperimentTTID config = ExperimentTTID.getInstance();
+    Optional<Boolean> rcValue = getRemoteConfigBoolean(config);
+    if (rcValue.isAvailable()) {
+      deviceCacheManager.setValue(config.getDeviceCacheFlag(), rcValue.get());
+    }
   }
 
   /** Returns whether developers have enabled Firebase Performance event collection. */
@@ -772,7 +782,7 @@ public class ConfigResolver {
   public boolean getIsExperimentTTIDEnabled() {
     // Order of precedence is:
     // 1. If the value exists in Android Manifest, return this value.
-    // 2. If the value exists through Firebase Remote Config, cache and return this value.
+    // 2. Cannot read value from RC because it's not initalized yet
     // 3. If the value exists in device cache, return this value.
     // 4. Otherwise, return default value.
     ExperimentTTID config = ExperimentTTID.getInstance();
@@ -783,13 +793,7 @@ public class ConfigResolver {
       return metadataValue.get();
     }
 
-    // 2. Reads value from Firebase Remote Config, saves this value in cache layer if valid.
-    Optional<Boolean> rcValue = getRemoteConfigBoolean(config);
-    if (rcValue.isAvailable()) {
-      deviceCacheManager.setValue(config.getDeviceCacheFlag(), rcValue.get());
-      return rcValue.get();
-    }
-
+    // 2. Cannot read value from RC because it's not initialized yet.
     // 3. Reads value from cache layer.
     Optional<Boolean> deviceCacheValue = getDeviceCacheBoolean(config);
     if (deviceCacheValue.isAvailable()) {
