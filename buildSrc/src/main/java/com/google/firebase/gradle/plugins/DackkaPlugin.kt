@@ -76,7 +76,8 @@ abstract class DackkaPlugin : Plugin<Project> {
                 if (name == "release") {
                     val isKotlin = project.plugins.hasPlugin("kotlin-android")
 
-                    val classpath = runtimeConfiguration.getJars() + project.javadocConfig.getJars() + bootClasspath
+                    val classpath =
+                        runtimeConfiguration.getJars() + project.javadocConfig.getJars() + bootClasspath
 
                     val sourcesForJava = sourceSets.flatMap {
                         it.javaDirectories.map { it.absoluteFile }
@@ -87,18 +88,22 @@ abstract class DackkaPlugin : Plugin<Project> {
                         sources.set(project.provider { sourcesForJava })
                     }
 
-                    val packageLists = fetchPackageLists(project)
-
                     docsTask.configure {
                         // this will become useful with the agp upgrade, as they're separate in 7.x+
                         val sourcesForKotlin = emptyList<File>()
+                        val packageLists = fetchPackageLists(project)
 
-                        val excludedFiles = if (!isKotlin) projectSpecificSuppressedFiles(project) else emptyList()
-                        val fixedJavaSources = if (!isKotlin) listOf(project.docStubs) else sourcesForJava
+                        val excludedFiles =
+                            if (!isKotlin) projectSpecificSuppressedFiles(project) else emptyList()
+                        val fixedJavaSources =
+                            if (!isKotlin) listOf(project.docStubs) else sourcesForJava
 
                         javaSources.set(fixedJavaSources)
                         suppressedFiles.set(excludedFiles)
                         packageListFiles.set(packageLists)
+
+                        kotlinSources.set(sourcesForKotlin)
+                        dependencies.set(classpath)
 
                         kotlinSources.set(sourcesForKotlin)
                         dependencies.set(classpath)

@@ -1,4 +1,6 @@
-# Copyright 2018 Google LLC
+#!/bin/bash
+
+# Copyright 2022 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,6 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-version=20.0.3
-latestReleasedVersion=20.0.2
-android.enableUnitTestBinaryResources=true
+bundle install
+bundle update --bundler # ensure bundler version is high enough for Gemfile.lock
+bundle --version

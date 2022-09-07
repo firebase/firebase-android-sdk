@@ -14,6 +14,7 @@
 package com.google.firebase.gradle.plugins
 
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Attribute
 
@@ -53,3 +54,19 @@ fun Configuration.getJars() = incoming.artifactView {
         attribute(Attribute.of("artifactType", String::class.java), "jar")
     }
 }.artifacts.artifactFiles
+
+/**
+ * Utility method to call [Task.mustRunAfter] and [Task.dependsOn] on the specified task
+ */
+fun <T : Task, R : Task> T.dependsOnAndMustRunAfter(otherTask: R) {
+    mustRunAfter(otherTask)
+    dependsOn(otherTask)
+}
+
+/**
+ * Utility method to call [Task.mustRunAfter] and [Task.dependsOn] on the specified task name
+ */
+fun <T : Task> T.dependsOnAndMustRunAfter(otherTask: String) {
+    mustRunAfter(otherTask)
+    dependsOn(otherTask)
+}
