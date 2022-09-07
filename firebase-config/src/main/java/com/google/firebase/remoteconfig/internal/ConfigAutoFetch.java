@@ -196,7 +196,7 @@ public class ConfigAutoFetch {
 
   @VisibleForTesting
   public synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
-    boolean excludeEtagHeaderForRealtime = configFetchHandler.getTemplateVersionNumber() != 0;
+    boolean excludeEtagHeaderForRealtime = configFetchHandler.getTemplateVersionNumber() == 0;
 
     Task<ConfigFetchHandler.FetchResponse> fetchTask =
         configFetchHandler.fetch(0L, excludeEtagHeaderForRealtime);
