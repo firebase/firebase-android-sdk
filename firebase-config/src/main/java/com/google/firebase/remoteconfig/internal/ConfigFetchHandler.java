@@ -118,7 +118,6 @@ public class ConfigFetchHandler {
     this.frcBackendApiClient = frcBackendApiClient;
     this.frcMetadata = frcMetadata;
     this.customHttpHeaders = customHttpHeaders;
-    this.lastTemplateVersion = getTemplateVersionFromDisk();
   }
 
   /**
@@ -322,7 +321,6 @@ public class ConfigFetchHandler {
               currentTime);
 
       if (response.getFetchedConfigs() != null) {
-        // Set template version in memory.
         lastTemplateVersion = response.getFetchedConfigs().getTemplateVersionNumber();
         // Set template version in metadata to be saved on disk.
         frcMetadata.setLastTemplateVersion(lastTemplateVersion);
@@ -538,13 +536,11 @@ public class ConfigFetchHandler {
     return (Long) connector.getUserProperties(/*includeInternal=*/ true).get(FIRST_OPEN_TIME_KEY);
   }
 
-  // Used to initialize templateVersion.
-  private long getTemplateVersionFromDisk() {
-    // Get templateVersion on disk from metadata.
-    return frcMetadata.getLastTemplateVersion();
-  }
-
   public long getTemplateVersionNumber() {
+    if (lastTemplateVersion == 0) {
+      // If lastTemplateVersion is the default value, try and retrieve it from disk.
+      lastTemplateVersion = frcMetadata.getLastTemplateVersion();
+    }
     return lastTemplateVersion;
   }
 
