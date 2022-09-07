@@ -6,10 +6,13 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
-import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.CacheableTask
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 import org.gradle.process.ExecOperations
 import org.gradle.workers.WorkAction
@@ -29,25 +32,47 @@ import org.json.JSONObject
  * @property suppressedFiles a list of files to exclude from documentation
  * @property outputDirectory where to store the generated files
  */
+@CacheableTask
 abstract class GenerateDocumentationTaskExtension : DefaultTask() {
-    @get:InputFile
+    @get:[InputFile Classpath]
     abstract val dackkaJarFile: Property<File>
 
-    @get:Input
+    @get:[InputFiles Classpath]
     abstract val dependencies: ListProperty<File>
 
     @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val kotlinSources: ListProperty<File>
 
     @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val javaSources: ListProperty<File>
 
     @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val suppressedFiles: ListProperty<File>
+
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val packageListFiles: ListProperty<File>
 
     @get:OutputDirectory
     abstract val outputDirectory: Property<File>
 }
+
+/**
+ * Wrapper data class for External package-lists in Dokka
+ *
+ * This class allows us to map package-lists in a type-safe way, versus inline straight to
+ * a map. This extra step could be removed- but it could also catch bugs in the future.
+ *
+ * @property packageList the prepared package-list file to map against
+ * @property externalLink the url to map with when generating the docs
+ */
+data class ExternalDocumentationLink(
+    val packageList: File,
+    val externalLink: String
+)
 
 /**
  * Task to run Dackka on a project.
@@ -68,14 +93,6 @@ abstract class GenerateDocumentationTask @Inject constructor(
     }
 
     private fun constructArguments(): JSONObject {
-        // TODO(b/243675474): Move these to a task input for caching purposes
-        val linksMap = mapOf(
-            "android" to "https://developer.android.com/reference/kotlin/",
-            "google" to "https://developer.android.com/reference/",
-            "firebase" to "https://firebase.google.com/docs/reference/kotlin/",
-            "coroutines" to "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/"
-        )
-
         val jsonMap = mapOf(
             "moduleName" to "",
             "outputDir" to outputDirectory.get().path,
@@ -90,9 +107,9 @@ abstract class GenerateDocumentationTask @Inject constructor(
                 "documentedVisibilities" to listOf("PUBLIC", "PROTECTED"),
                 "skipEmptyPackages" to "true",
                 "suppressedFiles" to suppressedFiles.get().map { it.path },
-                "externalDocumentationLinks" to linksMap.map { (name, url) -> mapOf(
-                    "url" to url,
-                    "packageListUrl" to "file://${project.rootDir.absolutePath}/kotlindoc/package-lists/$name/package-list"
+                "externalDocumentationLinks" to createExternalLinks(packageListFiles).map { mapOf(
+                    "url" to it.externalLink,
+                    "packageListUrl" to it.packageList.toURI()
                 ) }
             )),
             "offlineMode" to "true",
@@ -100,6 +117,20 @@ abstract class GenerateDocumentationTask @Inject constructor(
         )
 
         return JSONObject(jsonMap)
+    }
+
+    private fun createExternalLinks(packageLists: ListProperty<File>): List<ExternalDocumentationLink> {
+        val linksMap = mapOf(
+            "android" to "https://developer.android.com/reference/kotlin/",
+            "google" to "https://developer.android.com/reference/",
+            "firebase" to "https://firebase.google.com/docs/reference/kotlin/",
+            "coroutines" to "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/"
+        )
+
+        return packageLists.get().map {
+            val externalLink = linksMap[it.parentFile.nameWithoutExtension] ?: throw RuntimeException("Unexpected package-list found: ${it.name}")
+            ExternalDocumentationLink(it, externalLink)
+        }
     }
 
     private fun saveToJsonFile(jsonObject: JSONObject): File {
