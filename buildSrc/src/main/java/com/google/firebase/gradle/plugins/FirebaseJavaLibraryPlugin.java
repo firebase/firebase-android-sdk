@@ -55,6 +55,7 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
                         ImmutableList.of("-module-name", kotlinModuleName(project))));
 
     setupStaticAnalysis(project, firebaseLibrary);
+    project.getTasks().register("kotlindoc");
   }
 
   private static void setupStaticAnalysis(Project project, FirebaseLibraryExtension library) {
