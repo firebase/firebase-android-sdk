@@ -155,14 +155,17 @@ public class ConfigFetchHandler {
    *     the configs fetched from the backend. If the backend was not called or the backend had no
    *     updates, the {@link FetchResponse}'s configs will be {@code null}.
    */
-  public Task<FetchResponse> fetch(long minimumFetchIntervalInSeconds, boolean addEtagToHeader) {
+  public Task<FetchResponse> fetch(
+      long minimumFetchIntervalInSeconds, boolean excludeEtagHeaderForRealtime) {
     return fetchedConfigsCache
         .get()
         .continueWithTask(
             executor,
             (cachedFetchConfigsTask) ->
                 fetchIfCacheExpiredAndNotThrottled(
-                    cachedFetchConfigsTask, minimumFetchIntervalInSeconds, addEtagToHeader));
+                    cachedFetchConfigsTask,
+                    minimumFetchIntervalInSeconds,
+                    excludeEtagHeaderForRealtime));
   }
 
   /**
@@ -175,7 +178,7 @@ public class ConfigFetchHandler {
   private Task<FetchResponse> fetchIfCacheExpiredAndNotThrottled(
       Task<ConfigContainer> cachedFetchConfigsTask,
       long minimumFetchIntervalInSeconds,
-      boolean addEtagToHeader) {
+      boolean excludeEtagHeaderForRealtime) {
     Date currentTime = new Date(clock.currentTimeMillis());
     if (cachedFetchConfigsTask.isSuccessful()
         && areCachedFetchConfigsValid(minimumFetchIntervalInSeconds, currentTime)) {
@@ -220,7 +223,10 @@ public class ConfigFetchHandler {
                     String installationId = installationIdTask.getResult();
                     String installationToken = installationAuthTokenTask.getResult().getToken();
                     return fetchFromBackendAndCacheResponse(
-                        installationId, installationToken, currentTime, addEtagToHeader);
+                        installationId,
+                        installationToken,
+                        currentTime,
+                        excludeEtagHeaderForRealtime);
                   });
     }
 
@@ -280,10 +286,14 @@ public class ConfigFetchHandler {
    * {@code fetchedConfigsCache}.
    */
   private Task<FetchResponse> fetchFromBackendAndCacheResponse(
-      String installationId, String installationToken, Date fetchTime, boolean addEtagToHeader) {
+      String installationId,
+      String installationToken,
+      Date fetchTime,
+      boolean excludeEtagHeaderForRealtime) {
     try {
       FetchResponse fetchResponse =
-          fetchFromBackend(installationId, installationToken, fetchTime, addEtagToHeader);
+          fetchFromBackend(
+              installationId, installationToken, fetchTime, excludeEtagHeaderForRealtime);
       if (fetchResponse.getStatus() != Status.BACKEND_UPDATES_FETCHED) {
         return Tasks.forResult(fetchResponse);
       }
@@ -306,7 +316,10 @@ public class ConfigFetchHandler {
    */
   @WorkerThread
   private FetchResponse fetchFromBackend(
-      String installationId, String installationToken, Date currentTime, boolean addEtagToHeader)
+      String installationId,
+      String installationToken,
+      Date currentTime,
+      boolean excludeEtagHeaderForRealtime)
       throws FirebaseRemoteConfigException {
     try {
       HttpURLConnection urlConnection = frcBackendApiClient.createHttpURLConnection();
@@ -321,7 +334,7 @@ public class ConfigFetchHandler {
               customHttpHeaders,
               getFirstOpenTime(),
               currentTime,
-              addEtagToHeader);
+              excludeEtagHeaderForRealtime);
 
       if (response.getLastFetchETag() != null) {
         frcMetadata.setLastFetchETag(response.getLastFetchETag());
