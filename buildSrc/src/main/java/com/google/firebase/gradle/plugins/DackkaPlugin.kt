@@ -102,15 +102,11 @@ abstract class DackkaPlugin : Plugin<Project> {
                         kotlinSources.set(sourcesForKotlin)
                         dependencies.set(classpath)
 
-                        kotlinSources.set(sourcesForKotlin)
-                        dependencies.set(classpath)
-
                         applyCommonConfigurations()
                     }
                 }
             }
         }
-
         return docsTask
     }
 
