@@ -88,13 +88,16 @@ abstract class DackkaPlugin : Plugin<Project> {
                     }
 
                     docsTask.configure {
+                        // this will become useful with the agp upgrade, as they're separate in 7.x+
                         val sourcesForKotlin = emptyList<File>()
+                        val packageLists = fetchPackageLists(project)
 
                         val excludedFiles = if (!isKotlin) projectSpecificSuppressedFiles(project) else emptyList()
                         val fixedJavaSources = if (!isKotlin) listOf(project.docStubs) else sourcesForJava
 
                         javaSources.set(fixedJavaSources)
                         suppressedFiles.set(excludedFiles)
+                        packageListFiles.set(packageLists)
 
                         kotlinSources.set(sourcesForKotlin)
                         dependencies.set(classpath)
@@ -106,6 +109,11 @@ abstract class DackkaPlugin : Plugin<Project> {
         }
         return docsTask
     }
+
+    private fun fetchPackageLists(project: Project) =
+        project.rootProject.fileTree("kotlindoc/package-lists").matching {
+            include("**/package-list")
+        }.toList()
 
     // TODO(b/243534168): Remove when fixed
     private fun projectSpecificSuppressedFiles(project: Project): List<File> =
@@ -129,12 +137,14 @@ abstract class DackkaPlugin : Plugin<Project> {
         outputDirectory.set(dackkaOutputDirectory)
     }
 
+    // TODO(b/243833009): Make task cacheable
     private fun registerFiresiteTransformTask(project: Project, outputDirectory: Provider<File>) =
         project.tasks.register<FiresiteTransformTask>("firesiteTransform") {
             dackkaFiles.set(outputDirectory)
         }
 
     // If we decide to publish java variants, we'll need to address the generated format as well
+    // TODO(b/243833009): Make task cacheable
     private fun registerDeleteDackkaGeneratedJavaReferencesTask(project: Project, outputDirectory: Provider<File>) =
         project.tasks.register<Delete>("deleteDackkaGeneratedJavaReferences") {
             mustRunAfter("generateDackkaDocumentation")
