@@ -12,20 +12,109 @@ import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 
 /**
- * Facilitates the creation of Firesite compliant reference documentation.
- *
- * This plugin handles a procedure of processes, all registered under the "kotlindoc" task.
- *
- * Those tasks are:
- *  - Collect the arguments needed to run Dackka
- *  - Run Dackka with [GenerateDocumentationTask] to create the initial reference docs
- *  - Clean up the output with [FiresiteTransformTask] to fix minor inconsistencies
- *  - Remove the java references generated from the task (we do not currently support them)
- *  - Copies the output files to a common directory under the root project's build directory
- *
- *  @see GenerateDocumentationTask
- *  @see FiresiteTransformTask
- *  @see JavadocPlugin
+# Dackka Plugin
+
+The Dackka Plugin is a wrapper around internal tooling at Google called Dackka, which generates
+documentation for [Firesite](https://firebase.google.com/docs/reference)
+
+## Dackka
+
+Dackka is an internal-purposed Dokka plugin. Google hosts its documentation on
+an internal service called **Devsite**. Firebase hosts their documentation on a
+variant of Devsite called **Firesite**. You can click [here](https://firebase.google.com/docs/reference)
+to see how that looks. Essentially, it's just Google's way of decorating (and organizing)
+documentation.
+
+Devsite expects its files to be in a very specific format. Previously, we would
+use an internal Javadoc doclet called [Doclava](https://code.google.com/archive/p/doclava/) - which
+allowed us to provide sensible defaults as to how the Javadoc should be
+rendered. Then, we would do some further transformations to get the Javadoc
+output in-line with what Devsite expects. This was a lengthy process, and came
+with a lot of overhead. Furthermore, Doclava does not support kotlindoc and has
+been unmaintained for many years.
+
+Dackka is an internal solution to that. Dackka provides a devsite plugin for
+Dokka that will handle the job of doclava. Not only does this mean we can cut
+out a huge portion of our transformation systems- but the overhead for maintaining
+such systems is deferred away to the AndroidX team (the maintainers of Dackka).
+
+## Dackka Usage
+
+The Dackka we use is a fat jar pulled periodically from Dackka nightly builds,
+and moved to our own maven repo bucket. Since it's recommended from the AndroidX
+team to run Dackka on the command line, the fat jar allows us to ignore all the
+miscenalionous dependencies of Dackka (in regards to Dokka especially).
+
+The general process of using Dackka is that you collect the dependencies and
+source sets of the gradle project, create a
+[Dokka appropriate JSON file](https://kotlin.github.io/dokka/1.7.10/user_guide/cli/usage/#example-using-json),
+run the Dackka fat jar with the JSON file as an argument, and publish the
+output folder.
+
+## Implementation
+
+Our implementation of Dackka falls into three separate files, and four separate
+tasks.
+
+### [GenerateDocumentationTask]
+
+This task is the meat of our Dackka implementation. It's what actually handles
+the running of Dackka itself. The task exposes a gradle extension called
+[GenerateDocumentationTaskExtension] with various configuration points for
+Dackka. This will likely be expanded upon in the future, as configurations are
+needed.
+
+The job of this task is to **just** run Dackka. What happens after-the-fact does
+not matter to this task. It will take the provided inputs, organize them into
+the expected JSON file, and run Dackka with the JSON file as an argument.
+
+### [FiresiteTransformTask]
+
+Dackka was designed with Devsite in mind. The problem though, is that we use
+Firesite. Firesite is very similar to Devsite, but there *are* minor differences.
+
+The job of this task is to transform the Dackka output from a Devsite purposed format,
+to a Firesite purposed format. This includes removing unnecessary files, fixing
+links, removing unnecessary headers, and so forth.
+
+There are open bugs for each transformation, as in an ideal world- they are instead
+exposed as configurations from Dackka. Should these configurations be adopted by
+Dackka, this task could become unnecessary itself- as we could just configure the task
+during generation.
+
+### DackkaPlugin
+
+This plugin is the mind of our Dackka implementation. It manages registering,
+and configuring all the tasks for Dackka (that is, the already established
+tasks above). While we do not currently offer any configuration for the Dackka
+plugin, this could change in the future as needed. Currently, the DackkaPlugin
+provides sensible defaults to output directories, package lists, and so forth.
+
+The DackkaPlugin also provides two extra tasks:
+[cleanDackkaDocumentation][registerCleanDackkaDocumentation] and
+[deleteDackkaGeneratedJavaReferences][registerDeleteDackkaGeneratedJavaReferencesTask].
+
+_cleanDackkaDocumentation_ is exactly what it sounds like, a task to clean up (delete)
+the output of Dackka. This is useful when testing Dackka outputs itself- and
+shouldn't be apart of the normal flow. The reasoning is that it would otherwise
+invalidate the gradle cache.
+
+_deleteDackkaGeneratedJavaReferences_ is a temporary addition. Dackka generates
+two separate styles of docs for every source set: Java & Kotlin. Regardless of
+whether the source is in Java or Kotlin. The Java output is how the source looks
+from Java, and the Kotlin output is how the source looks from Kotlin. We publish
+these under two separate categories, which you can see here:
+[Java](https://firebase.google.com/docs/reference/android/packages)
+or
+[Kotlin](https://firebase.google.com/docs/reference/kotlin/packages).
+Although, we do not currently publish Java packages with Dackka- and will wait
+until we are more comfortable with the output of Dackka to do so. So until then,
+this task will remove all generate Java references from the Dackka output.
+
+Currently, the DackkaPlugin builds Java sources separate from Kotlin Sources. There is an open bug
+for Dackka in which hidden parent classes and annotations do not hide themselves from children classes.
+To work around this, we are currently generating stubs for Java sources via metalava, and feeding the stubs
+to Dackka. This will be removed when the bug is fixed, per b/243954517
  */
 abstract class DackkaPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -67,7 +156,7 @@ abstract class DackkaPlugin : Plugin<Project> {
         )
     }
 
-    // TODO(b/243534168): Refactor when fixed, so we no longer need stubs
+    // TODO(b/243954517): Refactor when fixed, so we no longer need stubs
     private fun registerGenerateDackkaDocumentationTask(project: Project): Provider<GenerateDocumentationTask> {
         val docStubs = project.tasks.register<GenerateStubsTask>("docStubsForDackkaInput")
         val docsTask = project.tasks.register<GenerateDocumentationTask>("generateDackkaDocumentation")
