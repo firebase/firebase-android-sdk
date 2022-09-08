@@ -1,6 +1,8 @@
+# Unreleased
 # 24.0.5
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -11,6 +13,7 @@ additional updates.
   models were concurrently downloaded using this SDK and the Model Downloader from
   the `com.google.firebase:firebase-ml-common` SDK.
   (#3321)
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -23,6 +26,7 @@ additional updates.
   [note](#basement18-0-0_base18-0-1_tasks18-0-1) at the top of this release
   entry.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-ml-modeldownloader` library. The Kotlin extensions library has no
@@ -34,6 +38,7 @@ additional updates.
 * [changed] Updated to the latest version of the `firebase-datatransport`
   library.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-ml-modeldownloader` library. The Kotlin extensions library has no
@@ -44,6 +49,7 @@ additional updates.
 # 24.0.0
 - [changed] Internal infrastructure improvements.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-ml-modeldownloader` library. The Kotlin extensions library has no
@@ -52,6 +58,7 @@ additional updates.
 # 23.0.1
 * [unchanged] Updated to accommodate the release of the [firebase_ml]
   Kotlin extensions library.
+
 
 ## Kotlin
 * [feature] The beta release of a [firebase_ml] Android library with

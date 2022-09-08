@@ -1,6 +1,8 @@
+# Unreleased
 # 20.0.2
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -13,6 +15,7 @@ updates.
   (v18.0.0, v18.0.1, and v18.0.1, respectively). For more information, see the
   [note](#basement18-0-0_base18-0-1_tasks18-0-1) at the top of this release
   entry.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -28,6 +31,7 @@ updates.
 
 * [changed] Internal infrastructure improvements.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-storage` library. The Kotlin extensions library has no additional
@@ -38,6 +42,7 @@ updates.
 [`getTotalByteCount()`](docs/reference/android/com/google/firebase/storage/FileDownloadTask.TaskSnapshot#getTotalByteCount())
 after a download was paused and resumed.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-storage` library. The Kotlin extensions library has no additional
@@ -46,6 +51,7 @@ updates.
 # 19.2.1
 - [fixed] Fixed an issue that caused the SDK to crash if the download location
  was deleted before the download completed. Instead, the download now fails.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -59,6 +65,7 @@ updates.
 # 19.2.0
 - [changed] Updated to support improvements in the KTX library (see below).
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-storage` library and has the following additional updates:
@@ -70,6 +77,7 @@ The Kotlin extensions library transitively includes the updated
 
 # 19.1.1
 - [changed] Internal changes to ensure functionality alignment with other SDK releases.
+
 
 
 ## Kotlin
@@ -87,6 +95,7 @@ updates.
   [`StorageReference.list()`](/docs/reference/android/com/google/firebase/storage/StorageReference.html#list(int))
   that caused the API to miss entries for prefixes that contained special
   characters.
+
 
 ## Kotlin
 * [feature] The beta release of a [firebase_storage_full] Android library

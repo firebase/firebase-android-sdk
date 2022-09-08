@@ -1,6 +1,8 @@
+# Unreleased
 # 20.1.1
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -17,6 +19,7 @@ updates.
   multi-Activity apps.
 
 * [fixed] Excluded custom attributes that have key/value lengths of 0.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -37,6 +40,7 @@ updates.
   [note](#basement18-0-0_base18-0-1_tasks18-0-1) at the top of this release
   entry.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-performance` library. The Kotlin extensions library has no additional
@@ -47,6 +51,7 @@ updates.
 * [fixed] Updated log statement to differentiate an event being dropped due to
   rate limiting and sampling.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-performance` library. The Kotlin extensions library has no additional
@@ -55,6 +60,7 @@ updates.
 # 20.0.4
 * [changed] Improved [perfmon] start up time by 25%. This improvement was
   achieved by moving some component initialization to background threads.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -66,6 +72,7 @@ updates.
     fetching [remote_config] upon app startup.
 *   [fixed] Added a validation to stop screen traces with 0 total frames from
     being sent to the backend.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -83,6 +90,7 @@ updates.
 *   [fixed] Fixed issue where screen traces were not being tracked for Android
     API levels 23 and below.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-performance` library. The Kotlin extensions library has no additional
@@ -92,6 +100,7 @@ updates.
 *   [feature] Logs for [firebase_perfmon] now contain URLs to view
     performance data in the [name_appmanager].
 *   [fixed] Fixed `RateLimiter` replenishment logic and unit alignment.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -105,6 +114,7 @@ updates.
     code conventions, remove unncessary annotations).
 *   [changed] Improve the launch time of the SDK.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-performance` library. The Kotlin extensions library has no additional
@@ -115,6 +125,7 @@ updates.
     [open sourced](//github.com/firebase/firebase-android-sdk/tree/master/firebase-perf){: .external}.
 *   [fixed] Fixed issue on the console logger to avoid throwing
     `UnknownFormatConversionException`.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -128,6 +139,7 @@ updates.
 *   [changed] Improved performance event dispatch wait time from 2 hours to
     30 seconds.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-performance` library. The Kotlin extensions library has no additional
@@ -136,6 +148,7 @@ updates.
 # 19.0.11
 *   [fixed] Upgraded protobuf dependency to the latest released version
     (#2158)
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -152,6 +165,7 @@ the [perfmon] SDK and above.
 *   [fixed] Synchronized the access to fix a race condition that was causing a
     `NullPointerException` when making network requests.
     (#2096)
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -174,6 +188,7 @@ updates.
 
 *   [changed] Improved build configurations and dependencies to reduce SDK
     size.
+
 
 ## Kotlin
 * [feature] The [firebase_perfmon] Android library with Kotlin
