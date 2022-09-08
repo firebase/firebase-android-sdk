@@ -319,6 +319,10 @@ public class ConfigFetchHandler {
               getFirstOpenTime(),
               currentTime);
 
+      if (response.getFetchedConfigs() != null) {
+        // Set template version in metadata to be saved on disk.
+        frcMetadata.setLastTemplateVersion(response.getFetchedConfigs().getTemplateVersionNumber());
+      }
       if (response.getLastFetchETag() != null) {
         frcMetadata.setLastFetchETag(response.getLastFetchETag());
       }
@@ -531,10 +535,7 @@ public class ConfigFetchHandler {
   }
 
   public long getTemplateVersionNumber() {
-    if (fetchedConfigsCache.get() != null && fetchedConfigsCache.get().getResult() != null) {
-      return fetchedConfigsCache.get().getResult().getTemplateVersionNumber();
-    }
-    return 1L;
+    return frcMetadata.getLastTemplateVersion();
   }
 
   /** Used to verify that the fetch handler is getting Analytics as expected. */
