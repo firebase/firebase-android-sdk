@@ -57,7 +57,6 @@ dependencies {
     implementation("org.apache.maven:maven-aether-provider:3.1.0")
 
     implementation("com.google.code.gson:gson:2.8.9")
-    implementation("org.jetbrains.dokka:dokka-android-gradle-plugin:0.9.17-g013-9b8280a")
     implementation("com.android.tools.build:gradle:3.4.3")
     implementation("gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9")
 
@@ -72,10 +71,6 @@ gradlePlugin {
             id = "LicenseResolverPlugin"
             implementationClass = "com.google.firebase.gradle.plugins.license.LicenseResolverPlugin"
         }
-        register("dackkaPlugin") {
-            id = "DackkaPlugin"
-            implementationClass = "com.google.firebase.gradle.plugins.DackkaPlugin"
-        }
         register("multiProjectReleasePlugin") {
             id = "MultiProjectReleasePlugin"
             implementationClass = "com.google.firebase.gradle.MultiProjectReleasePlugin"
@@ -88,12 +83,10 @@ gradlePlugin {
             id = "firebase-library"
             implementationClass = "com.google.firebase.gradle.plugins.FirebaseLibraryPlugin"
         }
-
         register("firebaseJavaLibraryPlugin") {
             id = "firebase-java-library"
             implementationClass = "com.google.firebase.gradle.plugins.FirebaseJavaLibraryPlugin"
         }
-
         register("firebaseVendorPlugin") {
             id = "firebase-vendor"
             implementationClass = "com.google.firebase.gradle.plugins.VendorPlugin"
