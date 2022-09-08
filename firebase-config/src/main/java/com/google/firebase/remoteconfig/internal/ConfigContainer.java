@@ -172,7 +172,7 @@ public class ConfigContainer {
       builderFetchTime = DEFAULTS_FETCH_TIME;
       builderAbtExperiments = new JSONArray();
       builderPersonalizationMetadata = new JSONObject();
-      builderTemplateVersionNumber = 1L;
+      builderTemplateVersionNumber = 0L;
     }
 
     public Builder(ConfigContainer otherContainer) {
