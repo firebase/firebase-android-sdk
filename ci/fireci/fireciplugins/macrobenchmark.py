@@ -56,7 +56,7 @@ async def _launch_macrobenchmark_test(build_only):
   _logger.info(f'Artifact versions: {artifact_versions}')
 
   test_dir = await _prepare_test_directory()
-  _logger.info(f'Test app directory: {test_dir}')
+  _logger.info(f'Directory for test apps: {test_dir}')
 
   config = await _process_config_yaml()
   _logger.info(f'Processed yaml configurations: {config}')
@@ -64,9 +64,9 @@ async def _launch_macrobenchmark_test(build_only):
   tests = [MacrobenchmarkTest(app, artifact_versions, os.getcwd(), test_dir) for app in config['test-apps']]
 
   _logger.info(f'Building {len(tests)} macrobenchmark test apps...')
-  # TODO(yifany): investigate why it runs significantly slower
-  #   - on corp workstations than M1 macbook pro
-  #   - with gradle 7.5.1 than gradle 6.9.2
+  # TODO(yifany): investigate why it is much slower with asyncio.gather
+  #   - on corp workstations (10 min) than M1 macbook pro (3 min)
+  #   - with gradle 7.5.1 (10 min) than gradle 6.9.2 (5 min)
   # await asyncio.gather(*[x.build() for x in tests])
   for test in tests:
     await test.build()
@@ -102,12 +102,12 @@ async def _process_config_yaml():
       app['traces'].extend(config['common-traces'])
 
     # Adding an empty android app for baseline comparison
-    config['test-apps'].append({'sdk': 'baseline', 'name': 'baseline'})
+    config['test-apps'].insert(0, {'sdk': 'baseline', 'name': 'baseline'})
     return config
 
 
 async def _prepare_test_directory():
-  test_dir = tempfile.mkdtemp(prefix='test-run-')
+  test_dir = tempfile.mkdtemp(prefix='benchmark-test-')
 
   # Required as the dir is not defined in the root settings.gradle
   open(os.path.join(test_dir, 'settings.gradle'), 'w').close()
@@ -172,25 +172,29 @@ class MacrobenchmarkTest:
     app_name = self.test_app_config['name']
     self.logger.info(f'Creating test app "{app_name}"...')
 
-    mustache_context = await self._prepare_mustache_context()
-
+    self.logger.info(f'Copying project template files into "{self.test_app_dir}"...')
     template_dir = os.path.join(self.repo_root_dir, 'health-metrics/benchmark/template')
     shutil.copytree(template_dir, self.test_app_dir)
+
+    self.logger.info(f'Copying gradle wrapper binary into "{self.test_app_dir}"...')
+    shutil.copy(os.path.join(self.test_dir, 'gradlew'), self.test_app_dir)
+    shutil.copy(os.path.join(self.test_dir, 'gradlew.bat'), self.test_app_dir)
+    shutil.copytree(os.path.join(self.test_dir, 'gradle'), os.path.join(self.test_app_dir, 'gradle'))
+
     with chdir(self.test_app_dir):
+      mustache_context = await self._prepare_mustache_context()
       renderer = pystache.Renderer()
       mustaches = glob.glob('**/*.mustache', recursive=True)
       for mustache in mustaches:
-        self.logger.info(f'Processing mustache template: {mustache}...')
+        self.logger.info(f'Processing template file: {mustache}')
         result = renderer.render_path(mustache, mustache_context)
         original_name = mustache.removesuffix('.mustache')
         with open(original_name, 'w') as file:
           file.write(result)
 
   async def _assemble_benchmark_apks(self):
-    executable = './gradlew'
-    args = ['assemble', '--project-dir', self.test_app_dir]
-    with chdir(self.test_dir):
-      await self._exec_subprocess(executable, args)
+    with chdir(self.test_app_dir):
+      await self._exec_subprocess('./gradlew', ['assemble'])
 
   async def _execute_benchmark_tests(self):
     self.logger.debug(glob.glob(f'{self.test_app_dir}/**/*.apk', recursive=True))
