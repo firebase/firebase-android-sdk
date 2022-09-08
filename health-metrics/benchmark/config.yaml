@@ -43,12 +43,13 @@ test-apps:
   - sdk: firebase-functions
     name: functions
     dependencies: [com.google.firebase:firebase-functions-ktx]
-  - sdk: firebase-inappmessaging-display
-    name: fiam
-    dependencies:
-      - com.google.firebase:firebase-analytics-ktx@21.1.1
-      - com.google.firebase:firebase-inappmessaging-ktx
-      - com.google.firebase:firebase-inappmessaging-display-ktx
+  # TODO(yifany): disable temporarily due to errors of duplicate class and gradle crash
+  #  - sdk: firebase-inappmessaging-display
+  #    name: fiam
+  #    dependencies:
+  #      - com.google.firebase:firebase-analytics-ktx@18.0.3
+  #      - com.google.firebase:firebase-inappmessaging-ktx
+  #      - com.google.firebase:firebase-inappmessaging-display-ktx
   - sdk: firebase-messaging
     name: message
     dependencies: [com.google.firebase:firebase-messaging-ktx]

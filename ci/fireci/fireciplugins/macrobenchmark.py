@@ -52,23 +52,23 @@ def macrobenchmark(build_only):
 async def _launch_macrobenchmark_test(build_only):
   _logger.info('Starting macrobenchmark test...')
 
-  artifact_versions, config, test_dir = await asyncio.gather(
-    _assemble_all_artifacts(),
-    _process_config_yaml(),
-    _prepare_test_directory(),
-  )
-
+  artifact_versions = await _assemble_all_artifacts()
   _logger.info(f'Artifact versions: {artifact_versions}')
+
+  test_dir = await _prepare_test_directory()
   _logger.info(f'Test app directory: {test_dir}')
 
-  with chdir(test_dir):
-    tests = [MacrobenchmarkTest(app, artifact_versions, os.getcwd(), test_dir) for app in config['test-apps']]
+  config = await _process_config_yaml()
+  _logger.info(f'Processed yaml configurations: {config}')
 
-    if build_only:
-      await asyncio.gather(*[x.run_build_only() for x in tests])
-    else:
-      results = await asyncio.gather(*[x.run() for x in tests], return_exceptions=True)
-      await _post_processing(results)
+  tests = [MacrobenchmarkTest(app, artifact_versions, os.getcwd(), test_dir) for app in config['test-apps']]
+  _logger.info(f'Building {len(tests)} macrobenchmark tests...')
+
+  if build_only:
+    await asyncio.gather(*[x.run_build_only() for x in tests])
+  else:
+    results = await asyncio.gather(*[x.run() for x in tests], return_exceptions=True)
+    await _post_processing(results)
 
   _logger.info('Macrobenchmark test finished.')
 
@@ -90,8 +90,12 @@ async def _process_config_yaml():
   with open('health-metrics/benchmark/config.yaml') as yaml_file:
     config = yaml.safe_load(yaml_file)
     for app in config['test-apps']:
+      app['plugins'] = app.get('plugins', [])
+      app['traces'] = app.get('traces', [])
       app['plugins'].extend(config['common-plugins'])
       app['traces'].extend(config['common-traces'])
+
+    # Adding an empty android app for baseline comparison
     config['test-apps'].append({'sdk': 'baseline', 'name': 'baseline'})
     return config
 
@@ -142,8 +146,8 @@ class MacrobenchmarkTest:
     self.artifact_versions = artifact_versions
     self.repo_root_dir = repo_root_dir
     self.test_dir = test_dir
-    self.logger = MacrobenchmarkLoggerAdapter(logger, test_app_config.sdk)
-    self.test_app_dir = os.path.join(test_dir, test_app_config.name)
+    self.logger = MacrobenchmarkLoggerAdapter(logger, test_app_config['sdk'])
+    self.test_app_dir = os.path.join(test_dir, test_app_config['name'])
     self.test_results_bucket = 'fireescape-benchmark-results'
     self.test_results_dir = str(uuid.uuid4())
     self.gcs_client = storage.Client()
@@ -180,7 +184,8 @@ class MacrobenchmarkTest:
   async def _assemble_benchmark_apks(self):
     executable = './gradlew'
     args = ['assemble', '--project-dir', self.test_app_dir]
-    await self._exec_subprocess(executable, args)
+    with chdir(self.test_dir):
+      await self._exec_subprocess(executable, args)
 
   async def _execute_benchmark_tests(self):
     self.logger.debug(glob.glob(f'{self.test_app_dir}/**/*.apk', recursive=True))
@@ -217,7 +222,7 @@ class MacrobenchmarkTest:
   async def _prepare_mustache_context(self):
     mustache_context = {
       'm2repository': os.path.join(self.repo_root_dir, 'build/m2repository'),
-      'plugins': self.test_app_config['plugins'],
+      'plugins': self.test_app_config.get('plugins', []),
       'dependencies': [],
     }
 
