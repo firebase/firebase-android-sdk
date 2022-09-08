@@ -41,7 +41,7 @@ _logger = logging.getLogger('fireci.macrobenchmark')
 @click.option(
   '--build-only/--no-build-only',
   default=False,
-  help='Whether to build tracing test apps only or to also submit to FTL afterwards'
+  help='Whether to only build tracing test apps or to also run them on FTL afterwards'
 )
 @ci_command()
 def macrobenchmark(build_only):
@@ -62,12 +62,18 @@ async def _launch_macrobenchmark_test(build_only):
   _logger.info(f'Processed yaml configurations: {config}')
 
   tests = [MacrobenchmarkTest(app, artifact_versions, os.getcwd(), test_dir) for app in config['test-apps']]
-  _logger.info(f'Building {len(tests)} macrobenchmark tests...')
 
-  if build_only:
-    await asyncio.gather(*[x.run_build_only() for x in tests])
-  else:
-    results = await asyncio.gather(*[x.run() for x in tests], return_exceptions=True)
+  _logger.info(f'Building {len(tests)} macrobenchmark test apps...')
+  # TODO(yifany): investigate why it runs significantly slower
+  #   - on corp workstations than M1 macbook pro
+  #   - with gradle 7.5.1 than gradle 6.9.2
+  # await asyncio.gather(*[x.build() for x in tests])
+  for test in tests:
+    await test.build()
+
+  if not build_only:
+    _logger.info(f'Submitting {len(tests)} tests to Firebase Test Lab...')
+    results = await asyncio.gather(*[x.test() for x in tests], return_exceptions=True)
     await _post_processing(results)
 
   _logger.info('Macrobenchmark test finished.')
@@ -152,17 +158,15 @@ class MacrobenchmarkTest:
     self.test_results_dir = str(uuid.uuid4())
     self.gcs_client = storage.Client()
 
-  async def run(self):
-    """Starts the workflow of src creation, apks assembly, FTL testing and results upload."""
+  async def build(self):
+    """Creates test app project and assembles app and test apks."""
     await self._create_benchmark_projects()
     await self._assemble_benchmark_apks()
+
+  async def test(self):
+    """Runs benchmark tests on FTL and fetches FTL results from GCS."""
     await self._execute_benchmark_tests()
     return await self._aggregate_benchmark_results()
-
-  async def run_build_only(self):
-    """Populate test app src and assemble apks."""
-    await self._create_benchmark_projects()
-    await self._assemble_benchmark_apks()
 
   async def _create_benchmark_projects(self):
     app_name = self.test_app_config['name']
@@ -176,6 +180,7 @@ class MacrobenchmarkTest:
       renderer = pystache.Renderer()
       mustaches = glob.glob('**/*.mustache', recursive=True)
       for mustache in mustaches:
+        self.logger.info(f'Processing mustache template: {mustache}...')
         result = renderer.render_path(mustache, mustache_context)
         original_name = mustache.removesuffix('.mustache')
         with open(original_name, 'w') as file:
