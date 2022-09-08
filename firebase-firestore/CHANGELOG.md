@@ -1,8 +1,8 @@
 # Unreleased
+
 # 24.3.0
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -19,14 +19,13 @@ following additional updates:
 - [fixed] Fixed an issue in `waitForPendingWrites()` that could lead to a
   `NullPointerException`.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
 updates.
+
 # 24.2.1
 - [changed] Internal refactor and test improvements.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -37,7 +36,6 @@ updates.
 - [feature] Added customization support for
   [`FirebaseFirestore.runTransaction`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestore#runTransaction(com.google.firebase.firestore.Transaction.Function%3CTResult%3E)).
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -46,7 +44,6 @@ updates.
 # 24.1.2
 - [fixed] Fixed an issue where patching multiple fields shadows each other.
   (#3528).
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -59,7 +56,6 @@ updates.
   modifications.
 
 - [changed] [firestore] can now serialize objects with `android.net.Uri`s.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -75,8 +71,6 @@ updates.
 
 - [fixed] Fixed missing document fields issue with offline overlays.
   (#3528).
-
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -105,7 +99,6 @@ updates.
   [note](#basement18-0-0_base18-0-1_tasks18-0-1) at the top of this release
   entry.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -116,7 +109,6 @@ updates.
 
 - [changed] Optimized performance for queries with collections that contain
   subcollections.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -131,7 +123,6 @@ updates.
 
 - [feature] Added support for [firebase_app_check].
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -140,7 +131,6 @@ updates.
 # 23.0.4
 - [fixed] Fixed an issue where some fields were missed when copying in the
   `FirebaseFirestoreSettings.Builder` copy constructor.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -151,7 +141,6 @@ updates.
 - [fixed] Fixed an issue that was causing failures when a data bundle with
   multi-byte Unicode characters was loaded.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -159,7 +148,6 @@ updates.
 
 # 23.0.2
 - [changed] Improved Firestore's network condition detection.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -169,7 +157,6 @@ updates.
 # 23.0.1
 - [changed] The SDK now tries to immediately establish a connection to the
   backend when the app enters the foreground.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -181,7 +168,6 @@ updates.
 
 - [changed] Internal changes to support dynamic feature modules.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -190,7 +176,6 @@ updates.
 # 22.1.2
 * [changed] Internal changes in preparation for future support of
   dynamic feature modules.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -204,7 +189,6 @@ updates.
   being resolved, causing the `Task` objects returned from `get()`
   invocations to never complete.
   #2404
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -220,7 +204,6 @@ updates.
   and can be used to populate the cache for [firestore] without the need to
   read documents from the backend.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -232,7 +215,6 @@ updates.
   that the backend performs and allows each `WriteBatch` to hold 500 writes
   regardless of how many `FieldValue` transformations are attached.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -242,7 +224,6 @@ updates.
 * [changed] Removed excess validation of null and NaN values in query filters.
   This more closely aligns the SDK with the [firestore] backend, which has
   always accepted null and NaN for all operators.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -255,7 +236,6 @@ updates.
   convert `Timestamp` classes to `java.util.Date`, use
   [`Timestamp.toDate()`](/docs/reference/android/com/google/firebase/Timestamp#toDate()).
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -263,7 +243,6 @@ updates.
 
 # 21.7.1
 * [changed] Added new internal HTTP headers to the gRPC connection.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -288,7 +267,6 @@ updates.
 * [fixed] Fixed an issue that caused poor performance for queries that
   filtered results using nested array values.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -306,7 +284,6 @@ updates.
   a new method,
   [`FirebaseFirestore#useEmulator()`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestore#useEmulator(java.lang.String,%20int)).
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -318,7 +295,6 @@ updates.
   one, so this library needed to be upgraded to avoid conflicts.
   No developer action is necessary.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -327,7 +303,6 @@ updates.
 # 21.4.3
 - [changed] [firestore] now limits the number of concurrent document lookups
   it will perform when resolving inconsistencies in the local cache.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -338,7 +313,6 @@ updates.
 - [changed] Removed Guava dependency from the SDK. This change is the first
   step in eliminating crashes caused by apps that depend on the wrong flavor of
   Guava. ([Issue #1125](//github.com/firebase/firebase-android-sdk/issues/1125))
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -353,7 +327,6 @@ updates.
   `DocumentSnapshot.getData()` and `DocumentSnapshot.toObject()` will see
   the biggest improvement.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -366,7 +339,6 @@ updates.
 - [changed] Cloud Firestore now recovers more quickly when connections
   suffering packet loss return to normal.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -375,7 +347,6 @@ updates.
 # 21.3.1
 - [feature] Added `Query.limitToLast(n: long)`, which returns the last `n`
   documents as the result.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -394,7 +365,6 @@ updates.
   if changes accumulate while the query is inactive. Queries that use the
   `limit()` API may not always benefit, depending on the accumulated changes.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -411,7 +381,6 @@ updates.
 - [fixed] Fixed a race condition that could cause a `NullPointerException`
   during client initialization.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -422,7 +391,6 @@ updates.
   `FirebaseFirestore` that notifies you when all your snapshot listeners are
   in sync with each other.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -431,7 +399,6 @@ updates.
 # 21.1.1
 - [fixed] Addressed a regression in v21.1.0 that caused the crash: "Cannot add
   document to the RemoteDocumentCache with a read time of zero".
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -458,7 +425,6 @@ update to the next version of the Cloud Firestore SDK to get the fix.
   This means transactions on highly contended documents are more likely to
   succeed.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -478,7 +444,6 @@ updates.
 
 * [changed] Added nullability annotations to improve the Kotlin developer
   experience.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -507,7 +472,6 @@ updates.
   earlier (for more information, refer to
   [TLS on Android](https://github.com/grpc/grpc-java/blob/master/SECURITY.md#tls-on-android)).
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -522,7 +486,6 @@ updates.
   [GitHub issue](https://github.com/firebase/firebase-js-sdk/issues/449) for
   more details.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -535,7 +498,6 @@ updates.
   [GitHub issue #428](https://github.com/firebase/firebase-android-sdk/issues/428)
   for more details.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -546,7 +508,6 @@ updates.
   large offline datasets. Refer to this
   [GitHub issue](https://github.com/firebase/firebase-android-sdk/issues/370)
   for more details.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -568,7 +529,6 @@ updates.
   authentication credentials. If you use [firebase_auth], update to
   `firebase-auth` v17.0.0 or later to ensure functionality alignment.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
@@ -576,7 +536,6 @@ updates.
 
 # 18.2.0
 - [unchanged] No changes to the base `firebase-firestore` library.
-
 
 ## Kotlin
 * [feature] The beta release of a [firestore] Android library with Kotlin
@@ -652,7 +611,6 @@ updates.
 * [fixed] Fixed a race condition that caused a `SQLiteDatabaseLockedException`
   when an app attempted to access the SQLite database from multiple threads.
 
-
 # 17.1.2
 * [changed] Changed how the SDK handles locally-updated documents while syncing those updates with Cloud Firestore servers. This can lead to slight behavior changes and may affect the [`SnapshotMetadata.hasPendingWrites()`](/docs/reference/android/com/google/firebase/firestore/SnapshotMetadata.html#hasPendingWrites()) metadata flag.
 * [changed] Eliminated superfluous update events for locally cached documents that are known to lag behind the server version. Instead, the SDK buffers these events until the client has caught up with the server.
@@ -679,6 +637,7 @@ updates.
   [improper caching](https://github.com/firebase/firebase-ios-sdk/issues/1548),
   so clients may use extra bandwidth the first time they launch with this
   version of the SDK, as they re-download cleared cached data.
+
 # 17.0.3
 * [changed] The [`Timestamp`](/docs/reference/android/com/google/firebase/Timestamp) class now implements [`Parcelable`](//developer.android.com/reference/android/os/Parcelable) in addition to [`Comparable`](//developer.android.com/reference/java/lang/Comparable).
 

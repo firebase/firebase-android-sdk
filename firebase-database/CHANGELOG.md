@@ -1,8 +1,8 @@
 # Unreleased
+
 # 20.0.6
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -12,7 +12,6 @@ updates.
 # 20.0.5
 * [ fixed ] `Query.get` no longer throws "Client is offline" exception when local
   value is not available. Instead, it waits for a backend connection.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -26,7 +25,6 @@ updates.
   [note](#basement18-0-0_base18-0-1_tasks18-0-1) at the top of this release
   entry.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-database` library. The Kotlin extensions library has no additional
@@ -35,7 +33,6 @@ updates.
 # 20.0.3
 * [fixed] Fixed a crash that prevented the SDK from connecting to the
 backend if a credential refresh was unsuccesful.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -46,7 +43,6 @@ updates.
 * [fixed] The SDK can now continue to issue writes for apps that send
   invalid [app_check] tokens if [app_check] enforcement is not enabled.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-database` library. The Kotlin extensions library has no additional
@@ -55,7 +51,6 @@ updates.
 # 20.0.1
 * [fixed] Fixed an issue that prevented clients from connecting to the
   backend when the app used [app_check] without [auth].
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -69,7 +64,6 @@ updates.
 
 * [changed] Internal infrastructure improvements.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-database` library. The Kotlin extensions library has no additional
@@ -79,7 +73,6 @@ updates.
 - [feature] Added [`Query#startAfter()`](/docs/reference/android/com/google/firebase/database/Query#startAfter(java.lang.String,%20java.lang.String))
   and [`Query#endBefore()`](/docs/reference/android/com/google/firebase/database/Query#endBefore(java.lang.String,%20java.lang.String))
   filters to help with paginated queries.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -94,7 +87,6 @@ updates.
 - [fixed] Fixed a crash that occured on some Pixel devices when closing the
   network connection.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-database` library. The Kotlin extensions library has no additional
@@ -104,7 +96,6 @@ updates.
 - [fixed] Fixed a regression introduced in v19.3.0 that may cause assertion
   failures, especially when persistence is enabled.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-database` library. The Kotlin extensions library has no additional
@@ -113,7 +104,6 @@ updates.
 # 19.5.0
 - [feature] The SDK can now infer a default database URL even if it is omitted
 in the project's configuration.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -125,7 +115,6 @@ updates.
   a new method,
   [`FirebaseDatabase#useEmulator()`](/docs/reference/android/com/google/firebase/database/FirebaseDatabase#useEmulator(java.lang.String,%20int)).
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-database` library. The Kotlin extensions library has no additional
@@ -133,7 +122,6 @@ updates.
 
 # 19.3.1
 - [changed] Added internal HTTP header to the WebChannel connection.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -144,7 +132,6 @@ updates.
 - [feature] Added [`ServerValue.increment()`](/docs/reference/android/com/google/firebase/database/ServerValue#increment(double))
   to support atomic field value increments without transactions.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-database` library. The Kotlin extensions library has no additional
@@ -152,7 +139,6 @@ updates.
 
 # 19.2.1
 - [changed] Internal changes to ensure functionality alignment with other SDK releases.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -164,7 +150,6 @@ updates.
   [`GenericTypeIndicator`](/docs/reference/android/com/google/firebase/database/GenericTypeIndicator),
   expanding our custom class serialization to include classes with wildcard
   generics.
-
 
 ## Kotlin
 * [feature] The beta release of a [database] Android library with

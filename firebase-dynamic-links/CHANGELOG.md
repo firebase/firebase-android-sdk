@@ -1,8 +1,8 @@
 # Unreleased
+
 # 21.0.2
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -15,7 +15,6 @@ additional updates.
   (v18.0.0, v18.0.1, and v18.0.1, respectively). For more information, see the
   [note](#basement18-0-0_base18-0-1_tasks18-0-1) at the top of this release
   entry.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -31,7 +30,6 @@ additional updates.
 - [fixed] Fixed non-null annotation.
   #2336
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-dynamic-links` library. The Kotlin extensions library has no
@@ -39,7 +37,6 @@ additional updates.
 
 # 20.1.1
 - [changed] Internal infrastructure improvements.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -49,7 +46,6 @@ additional updates.
 # 20.1.0
 - [feature] Added `getUtmParameters` method to `PendingDynamicLinkData`.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-dynamic-links` library. The Kotlin extensions library has no
@@ -58,7 +54,6 @@ additional updates.
 # 20.0.0
 - [changed] Internal infrastructure improvements.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-dynamic-links` library. The Kotlin extensions library has no
@@ -66,7 +61,6 @@ additional updates.
 
 # 19.1.1
 - [changed] Updated to support improvements in the KTX library (see below).
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -81,7 +75,6 @@ The Kotlin extensions library transitively includes the updated
 * [feature] Added new getter methods to
   [`DynamicLink.Builder`](//firebase.google.com/docs/reference/android/com/google/firebase/dynamiclinks/DynamicLink.Builder)
   to improve Kotlin interop.
-
 
 ## Kotlin
 * [feature] The beta release of a [ddls] Android library with
@@ -102,7 +95,6 @@ The Kotlin extensions library transitively includes the updated
 # 16.1.7
 * Internal refactor.
 
-
 # 16.1.3
 * [fixed] Fixed an issue that caused short link creation to fail when creating
 links through `FirebaseDynamicLinks.getInstance().createDynamicLink().buildShortDynamicLink()`
@@ -110,5 +102,4 @@ using Google Play Services 13.2.80 and FDL SDK 16.1.0. The issue only occurred
 when creating shortening links from parameters, links created using
 preconstructed long links from `setLongLink()` were unaffected. This fix also
 addresses issues in newer versions of Google Play Services.
-
 

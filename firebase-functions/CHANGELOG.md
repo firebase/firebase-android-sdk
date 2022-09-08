@@ -1,8 +1,8 @@
 # Unreleased
+
 # 20.1.1
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -13,7 +13,6 @@ updates.
 - [feature] Added a new method
   [`getHttpsCallableFromUrl(java.net.URL)`](/docs/reference/android/com/google/firebase/functions/FirebaseFunctions#public-httpscallablereference-gethttpscallablefromurl-url-url)
   to create callables with URLs.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -27,7 +26,6 @@ updates.
   [note](#basement18-0-0_base18-0-1_tasks18-0-1) at the top of this release
   entry.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-functions` library. The Kotlin extensions library has no additional
@@ -36,7 +34,6 @@ updates.
 # 20.0.1
 - [fixed] Fixed an issue that prevented functions from proceeding after
   [app_check] failures.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -47,7 +44,6 @@ updates.
 - [feature] Added abuse reduction features.
 - [changed] Internal changes to support dynamic feature modules.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-functions` library. The Kotlin extensions library has no additional
@@ -55,7 +51,6 @@ updates.
 
 # 19.2.0
 * [feature] Added support for custom domains, [`FirebaseFunctions#getInstance()`](/docs/reference/android/com/google/firebase/functions/FirebaseFunctions#getInstance(java.lang.String)).
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -69,7 +64,6 @@ updates.
 
 * [deprecated] Deprecated the `useFunctionsEmulator(String)` method.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-functions` library. The Kotlin extensions library has no additional
@@ -77,8 +71,6 @@ updates.
 
 # 19.0.2
 - [changed] Internal changes to ensure functionality alignment with other SDK releases.
-
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -88,7 +80,6 @@ updates.
 # 19.0.1
 * [unchanged] Updated to accommodate the release of the [functions_client]
   Kotlin extensions library.
-
 
 ## Kotlin
 * [feature] The beta release of a [functions_client] Android library with

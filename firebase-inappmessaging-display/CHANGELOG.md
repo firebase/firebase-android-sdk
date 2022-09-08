@@ -1,8 +1,8 @@
 # Unreleased
+
 # 20.1.3
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -16,7 +16,6 @@ additional updates.
   [note](#basement18-0-0_base18-0-1_tasks18-0-1) at the top of this release
   entry.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-inappmessaging-display` library. The Kotlin extensions library has no
@@ -24,7 +23,6 @@ additional updates.
 
 # 20.1.1
 - [changed] Updated the gRPC dependency version.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -34,7 +32,6 @@ additional updates.
 # 20.1.0
 * [changed] Migrated to Glide library for image downloading.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-inappmessaging-display` library. The Kotlin extensions library has no
@@ -42,7 +39,6 @@ additional updates.
 
 # 20.0.0
 * [changed] Internal infrastructure improvements.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -53,7 +49,6 @@ additional updates.
 * [fixed] Fixed `WindowManager$BadTokenException` when showing an in-app
   message.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-inappmessaging-display` library. The Kotlin extensions library has no
@@ -62,7 +57,6 @@ additional updates.
 # 19.1.4
 * [fixed] Fixed in-app message button click not working in Android 11
   because of package visibility changes.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -73,7 +67,6 @@ additional updates.
 * [changed] Internal changes to maintain compatibility with other Firebase
   SDKs.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-inappmessaging-display` library. The Kotlin extensions library has no
@@ -82,7 +75,6 @@ additional updates.
 # 19.1.2
 * [changed] Internal changes to maintain compatibility with other Firebase
   SDKs.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -96,7 +88,6 @@ additional updates.
 * [feature] Added the ability to register a dismiss listener that reacts to
   message dismissal.
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-inappmessaging-display` library. The Kotlin extensions library has no
@@ -107,8 +98,6 @@ additional updates.
   `protobuf-javalite` artifact. The new artifact is incompatible with the old
   one, so this library needed to be upgraded to avoid conflicts.
   No developer action is necessary.
-
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -125,8 +114,6 @@ additional updates.
 
   {% include "docs/reference/android/client/_includes/_iid-indirect-dependency-solutions.html" %}
 
-
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-inappmessaging-display` library. The Kotlin extensions library has no
@@ -136,7 +123,6 @@ additional updates.
 * [fixed] Fixed issue causing apps to become unresponsive in limited network
   conditions. [GitHub Issue #1430](//github.com/firebase/firebase-android-sdk/issues/1430)
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-inappmessaging-display` library. The Kotlin extensions library has no
@@ -145,7 +131,6 @@ additional updates.
 # 19.0.5
 * [fixed] Fixed issue where campaigns with frequency limits were not properly
   displaying multiple times.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -157,8 +142,6 @@ additional updates.
 
 * [fixed] Fixed issue with first foreground trigger not being picked up.
 
-
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-inappmessaging-display` library. The Kotlin extensions library has no
@@ -166,8 +149,6 @@ additional updates.
 
 # 19.0.3
 * [changed] Internal changes to enable future SDK improvements.
-
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -178,7 +159,6 @@ additional updates.
 * [changed] Updated version of Dagger to 2.24.
 * [fixed] Bug fixes to improve SDK stability.
 * [fixed] Fixed memory leak.
-
 
 ## Kotlin
 * [feature] The beta release of a [inappmessaging] Display Android library
