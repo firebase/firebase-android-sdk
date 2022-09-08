@@ -96,7 +96,6 @@ public class ConfigFetchHandler {
   private final ConfigMetadataClient frcMetadata;
 
   private final Map<String, String> customHttpHeaders;
-  private long lastTemplateVersion;
 
   /** FRC Fetch Handler constructor. */
   public ConfigFetchHandler(
@@ -321,9 +320,8 @@ public class ConfigFetchHandler {
               currentTime);
 
       if (response.getFetchedConfigs() != null) {
-        lastTemplateVersion = response.getFetchedConfigs().getTemplateVersionNumber();
         // Set template version in metadata to be saved on disk.
-        frcMetadata.setLastTemplateVersion(lastTemplateVersion);
+        frcMetadata.setLastTemplateVersion(response.getFetchedConfigs().getTemplateVersionNumber());
       }
       if (response.getLastFetchETag() != null) {
         frcMetadata.setLastFetchETag(response.getLastFetchETag());
@@ -537,11 +535,7 @@ public class ConfigFetchHandler {
   }
 
   public long getTemplateVersionNumber() {
-    if (lastTemplateVersion == 0) {
-      // If lastTemplateVersion is the default value, try and retrieve it from disk.
-      lastTemplateVersion = frcMetadata.getLastTemplateVersion();
-    }
-    return lastTemplateVersion;
+    return frcMetadata.getLastTemplateVersion();
   }
 
   /** Used to verify that the fetch handler is getting Analytics as expected. */
