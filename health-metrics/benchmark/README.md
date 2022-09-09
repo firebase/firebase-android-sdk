@@ -1,26 +1,38 @@
 # Benchmark
 
 This directory contains the benchmark test apps used for measuring latency for
-different Firebase Android SDKs during app startup.
+initializing Firebase Android SDKs during app startup.
 
-## Usage
+## Test app configurations
+
+[config.yaml](config.yaml) contains a list of configuration blocks for
+building a macrobenchmark test app for each of the Firebase Android SDKs.
+If not all of them are required, comment out irrelevant ones for faster build
+and test time.
+
+**Note**: An empty Android app (named `baseline`) will be created during runtime
+for baseline comparison, even though it is not listed in
+[config.yaml](config.yaml). This app can also be used as a skeleton for
+setting up a more complex benchmark testing app.
+
+## Run benchmark tests
 
 ### Prerequisite
 
 1. `fireci` CLI tool
 
-   Refer to the [readme](../../ci/fireci/README.md) for how to install it.
+   Refer to its [readme](../../ci/fireci/README.md) for how to install it.
 
 1. `google-services.json`
 
-   Download it from Firebase project
+   Download it from the Firebase project
    [`fireescape-integ-tests`](https://firebase.corp.google.com/u/0/project/fireescape-integ-tests)
-   to the directory `firebase-android-sdk/health-metrics/benchmark/template/app`.
+   to the directory `./template/app`.
 
 1. Authentication to Google Cloud
 
-   Authentication is required by Google Cloud SDK and Cloud Storage client
-   library used in the benchmark tests.
+   Authentication is required by Google Cloud SDK and Google Cloud Storage
+   client library used in the benchmark tests.
 
    One simple way is to configure it is to set an environment variable
    `GOOGLE_APPLICATION_CREDENTIALS` to a service account key file. However,
@@ -28,7 +40,7 @@ different Firebase Android SDKs during app startup.
    [doc](https://cloud.google.com/docs/authentication) for full guidance on
    authentication.
 
-### Running benchmark tests locally
+### Run benchmark tests locally
 
 1. Build all test apps by running below command in the root
    directory `firebase-android-sdk`:
@@ -41,25 +53,48 @@ different Firebase Android SDKs during app startup.
 
 1. Locate the temporary test apps directory from the log, for example:
 
-   - on linux: `/tmp/benchmark-test-run-*/`
-   - on macos: `/var/folders/**/benchmark-test-run-*/`
+   - on linux: `/tmp/benchmark-test-*/`
+   - on macos: `/var/folders/**/benchmark-test-*/`
 
-1. Start the benchmark tests from Android Studio or CLI:
-
-   - Android Studio
-
-     1. Import the project (e.g. `**/benchmark-test-run-*/firestore`) into Android Studio
-     1. Start the benchmark test by clicking gutter icon in the file `BenchmarkTest.kt`
+1. Start the benchmark tests from CLI or Android Studio:
 
    - CLI
 
-     1. Run below command in the test app project directory
+     Run below command in the above test app project directory
 
-        ```
-        ../gradlew :macrobenchmark:connectedCheck
-        ```
+     ```
+     ./gradlew :macrobenchmark:connectedCheck
+     ```
 
-### Running benchmark tests on Firebase Test Lab
+   - Android Studio
+
+     1. Import the project (e.g. `**/benchmark-test-*/firestore`) into Android Studio
+     1. Start the benchmark test by clicking gutter icons in the file `BenchmarkTest.kt`
+
+1. Inspect the benchmark test results:
+
+   - CLI
+
+     Result files are created in `<test-app-dir>/macrobenchmark/build/outputs/`:
+
+     - `*-benchmarkData.json` contains metric aggregates
+     - `*.perfetto-trace` are the raw trace files
+
+     Additionally, upload `.perfetto-trace` files to
+     [Perfetto Trace Viewer](https://ui.perfetto.dev/) to visualize all traces.
+
+   - Android Studio
+
+     Test results are displayed directly in the "Run" tool window, including
+
+     - macrobenchmark built-in metrics
+     - duration of custom traces
+     - links to trace files that can be visualized within the IDE
+
+     Alternatively, same set of result files are produced at the same output
+     location as invoking tests from CLI, which can be used for inspection.
+
+### Run benchmark tests on Firebase Test Lab
 
 Build and run all tests on FTL by running below command in the root
 directory `firebase-android-sdk`:
@@ -68,4 +103,15 @@ directory `firebase-android-sdk`:
 fireci macrobenchmark
 ```
 
-### Examining benchmark test results
+Alternatively, it is possible to build all test apps via steps described in
+[Running benchmark tests locally](#running-benchmark-tests-locally)
+and manually
+[run tests on FTL with `gcloud` CLI ](https://firebase.google.com/docs/test-lab/android/command-line#running_your_instrumentation_tests).
+
+Aggregated benchmark results are displayed in the log. The log also
+contains links to FTL result pages and result files on Google Cloud Storage.
+
+## Toolchains
+
+- Gradle 7.5.1
+- Android Gradle Plugin 7.2.2

@@ -65,8 +65,8 @@ async def _launch_macrobenchmark_test(build_only):
 
   _logger.info(f'Building {len(tests)} macrobenchmark test apps...')
   # TODO(yifany): investigate why it is much slower with asyncio.gather
-  #   - on corp workstations (10 min) than M1 macbook pro (3 min)
-  #   - with gradle 7.5.1 (10 min) than gradle 6.9.2 (5 min)
+  #   - on corp workstations (9 min) than M1 macbook pro (3 min)
+  #   - with gradle 7.5.1 (9 min) than gradle 6.9.2 (5 min)
   # await asyncio.gather(*[x.build() for x in tests])
   for test in tests:
     await test.build()
@@ -119,6 +119,12 @@ async def _prepare_test_directory():
 
 
 async def _post_processing(results):
+  _logger.info(f'Macrobenchmark results: {results}')
+
+  if os.getenv('CI') is None:
+    _logger.info('Running locally. Results upload skipped.')
+    return
+
   # Upload successful measurements to the metric service
   measurements = []
   for result in results:
@@ -197,13 +203,8 @@ class MacrobenchmarkTest:
       await self._exec_subprocess('./gradlew', ['assemble'])
 
   async def _execute_benchmark_tests(self):
-    self.logger.debug(glob.glob(f'{self.test_app_dir}/**/*.apk', recursive=True))
-    app_apk_paths = glob.glob(f'{self.test_app_dir}/**/app-benchmark.apk', recursive=True)
-    self.logger.debug(app_apk_paths)
-    app_apk_path = app_apk_paths[0]
-    test_apk_paths = glob.glob(f'{self.test_app_dir}/**/macrobenchmark-benchmark.apk', recursive=True)
-    self.logger.debug(test_apk_paths)
-    test_apk_path = test_apk_paths[0]
+    app_apk_path = glob.glob(f'{self.test_app_dir}/**/app-benchmark.apk', recursive=True)[0]
+    test_apk_path = glob.glob(f'{self.test_app_dir}/**/macrobenchmark-benchmark.apk', recursive=True)[0]
 
     self.logger.info(f'App apk: {app_apk_path}')
     self.logger.info(f'Test apk: {test_apk_path}')
@@ -232,6 +233,7 @@ class MacrobenchmarkTest:
     mustache_context = {
       'm2repository': os.path.join(self.repo_root_dir, 'build/m2repository'),
       'plugins': self.test_app_config.get('plugins', []),
+      'traces': self.test_app_config.get('traces', []),
       'dependencies': [],
     }
 
@@ -256,9 +258,9 @@ class MacrobenchmarkTest:
       for benchmark in benchmarks:
         method = benchmark['name']
         clazz = benchmark['className'].split('.')[-1]
-        runs = benchmark['metrics']['startupMs']['runs']
+        runs = benchmark['metrics']['timeToInitialDisplayMs']['runs']
         results.append({
-          'sdk': self.test_app_config.sdk,
+          'sdk': self.test_app_config['sdk'],
           'device': device,
           'name': f'{clazz}.{method}',
           'min': min(runs),
