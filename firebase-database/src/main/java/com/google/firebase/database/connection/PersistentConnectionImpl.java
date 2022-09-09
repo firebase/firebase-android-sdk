@@ -419,7 +419,6 @@ public class PersistentConnectionImpl implements Connection.Delegate, Persistent
               String status = (String) response.get(REQUEST_STATUS);
               if (status.equals("ok")) {
                 Object body = response.get(SERVER_DATA_UPDATE_BODY);
-                delegate.onDataUpdate(query.path, body, /*isMerge=*/ false, /*tagNumber=*/ null);
                 source.setResult(body);
               } else {
                 source.setException(new Exception((String) response.get(SERVER_DATA_UPDATE_BODY)));

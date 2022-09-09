@@ -15,6 +15,9 @@
 package com.google.firebase.components;
 
 import androidx.annotation.IntDef;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Arrays;
@@ -76,6 +79,7 @@ public final class Component<T> {
     int SET = 1;
   }
 
+  private final String name;
   private final Set<Class<? super T>> providedInterfaces;
   private final Set<Dependency> dependencies;
   private final @Instantiation int instantiation;
@@ -84,18 +88,30 @@ public final class Component<T> {
   private final Set<Class<?>> publishedEvents;
 
   private Component(
+      @Nullable String name,
       Set<Class<? super T>> providedInterfaces,
       Set<Dependency> dependencies,
       @Instantiation int instantiation,
       @ComponentType int type,
       ComponentFactory<T> factory,
       Set<Class<?>> publishedEvents) {
+    this.name = name;
     this.providedInterfaces = Collections.unmodifiableSet(providedInterfaces);
     this.dependencies = Collections.unmodifiableSet(dependencies);
     this.instantiation = instantiation;
     this.type = type;
     this.factory = factory;
     this.publishedEvents = Collections.unmodifiableSet(publishedEvents);
+  }
+
+  /**
+   * Optional name of the component.
+   *
+   * <p>Used for debug purposes only.
+   */
+  @Nullable
+  public String getName() {
+    return name;
   }
 
   /**
@@ -151,6 +167,12 @@ public final class Component<T> {
   /** Returns whether a component is a Value Component or a Set Component. */
   public boolean isValue() {
     return type == ComponentType.VALUE;
+  }
+
+  /** Creates a copy of the component with {@link ComponentFactory} replaced. */
+  public Component<T> withFactory(ComponentFactory<T> factory) {
+    return new Component<>(
+        name, providedInterfaces, dependencies, instantiation, type, factory, publishedEvents);
   }
 
   @Override
@@ -219,6 +241,7 @@ public final class Component<T> {
 
   /** FirebaseComponent builder. */
   public static class Builder<T> {
+    private String name = null;
     private final Set<Class<? super T>> providedInterfaces = new HashSet<>();
     private final Set<Dependency> dependencies = new HashSet<>();
     private @Instantiation int instantiation = Instantiation.LAZY;
@@ -236,7 +259,14 @@ public final class Component<T> {
       Collections.addAll(providedInterfaces, additionalInterfaces);
     }
 
+    /** Set a name for the {@link Component} being built. */
+    public Builder<T> name(@NonNull String name) {
+      this.name = name;
+      return this;
+    }
+
     /** Add a {@link Dependency} to the {@link Component} being built. */
+    @CanIgnoreReturnValue
     public Builder<T> add(Dependency dependency) {
       Preconditions.checkNotNull(dependency, "Null dependency");
       validateInterface(dependency.getInterface());
@@ -245,21 +275,25 @@ public final class Component<T> {
     }
 
     /** Make the {@link Component} initialize upon startup. */
+    @CanIgnoreReturnValue
     public Builder<T> alwaysEager() {
       return setInstantiation(Instantiation.ALWAYS_EAGER);
     }
 
     /** Make the component initialize upon startup in default app. */
+    @CanIgnoreReturnValue
     public Builder<T> eagerInDefaultApp() {
       return setInstantiation(Instantiation.EAGER_IN_DEFAULT_APP);
     }
 
     /** Make the {@link Component} eligible to publish events of provided eventType. */
+    @CanIgnoreReturnValue
     public Builder<T> publishes(Class<?> eventType) {
       publishedEvents.add(eventType);
       return this;
     }
 
+    @CanIgnoreReturnValue
     private Builder<T> setInstantiation(@Instantiation int instantiation) {
       Preconditions.checkState(
           this.instantiation == Instantiation.LAZY, "Instantiation type has already been set.");
@@ -274,11 +308,13 @@ public final class Component<T> {
     }
 
     /** Set the factory that will be used to initialize the {@link Component}. */
+    @CanIgnoreReturnValue
     public Builder<T> factory(ComponentFactory<T> value) {
       factory = Preconditions.checkNotNull(value, "Null factory");
       return this;
     }
 
+    @CanIgnoreReturnValue
     private Builder<T> intoSet() {
       type = ComponentType.SET;
       return this;
@@ -288,6 +324,7 @@ public final class Component<T> {
     public Component<T> build() {
       Preconditions.checkState(factory != null, "Missing required property: factory.");
       return new Component<>(
+          name,
           new HashSet<>(providedInterfaces),
           new HashSet<>(dependencies),
           instantiation,

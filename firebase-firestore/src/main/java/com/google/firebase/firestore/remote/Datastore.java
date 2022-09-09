@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.remote;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.exceptionFromStatus;
 
 import android.content.Context;
@@ -25,17 +26,23 @@ import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
+import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firestore.v1.AggregationResult;
 import com.google.firestore.v1.BatchGetDocumentsRequest;
 import com.google.firestore.v1.BatchGetDocumentsResponse;
 import com.google.firestore.v1.CommitRequest;
 import com.google.firestore.v1.CommitResponse;
 import com.google.firestore.v1.FirestoreGrpc;
+import com.google.firestore.v1.RunAggregationQueryRequest;
+import com.google.firestore.v1.RunAggregationQueryResponse;
+import com.google.firestore.v1.StructuredAggregationQuery;
+import com.google.firestore.v1.Value;
 import io.grpc.Status;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -213,6 +220,54 @@ public class Datastore {
         });
 
     return completionSource.getTask();
+  }
+
+  public Task<Long> runCountQuery(Query query) {
+    com.google.firestore.v1.Target.QueryTarget encodedQueryTarget =
+        serializer.encodeQueryTarget(query.toTarget());
+
+    StructuredAggregationQuery.Builder structuredAggregationQuery =
+        StructuredAggregationQuery.newBuilder();
+    structuredAggregationQuery.setStructuredQuery(encodedQueryTarget.getStructuredQuery());
+
+    StructuredAggregationQuery.Aggregation.Builder aggregation =
+        StructuredAggregationQuery.Aggregation.newBuilder();
+    aggregation.setCount(StructuredAggregationQuery.Aggregation.Count.getDefaultInstance());
+    aggregation.setAlias("count_alias");
+    structuredAggregationQuery.addAggregations(aggregation);
+
+    RunAggregationQueryRequest.Builder request = RunAggregationQueryRequest.newBuilder();
+    request.setParent(encodedQueryTarget.getParent());
+    request.setStructuredAggregationQuery(structuredAggregationQuery);
+
+    return channel
+        .runRpc(FirestoreGrpc.getRunAggregationQueryMethod(), request.build())
+        .continueWith(
+            workerQueue.getExecutor(),
+            task -> {
+              if (!task.isSuccessful()) {
+                if (task.getException() instanceof FirebaseFirestoreException
+                    && ((FirebaseFirestoreException) task.getException()).getCode()
+                        == FirebaseFirestoreException.Code.UNAUTHENTICATED) {
+                  channel.invalidateToken();
+                }
+                throw task.getException();
+              }
+
+              RunAggregationQueryResponse response = task.getResult();
+
+              AggregationResult aggregationResult = response.getResult();
+              Map<String, Value> aggregateFieldsByAlias = aggregationResult.getAggregateFieldsMap();
+              hardAssert(
+                  aggregateFieldsByAlias.size() == 1,
+                  "aggregateFieldsByAlias.size()==" + aggregateFieldsByAlias.size());
+              Value countValue = aggregateFieldsByAlias.get("count_alias");
+              hardAssert(countValue != null, "countValue == null");
+              hardAssert(
+                  countValue.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE,
+                  "countValue.getValueTypeCase() == " + countValue.getValueTypeCase());
+              return countValue.getIntegerValue();
+            });
   }
 
   /**

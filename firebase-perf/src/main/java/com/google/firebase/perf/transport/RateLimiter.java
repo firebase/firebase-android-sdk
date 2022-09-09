@@ -264,7 +264,7 @@ final class RateLimiter {
     // Token bucket capacity, also the initial number of tokens in the bucket.
     private long capacity;
     // Number of tokens in the bucket.
-    private long tokenCount;
+    private double tokenCount;
 
     private Rate foregroundRate;
     private Rate backgroundRate;
@@ -298,22 +298,16 @@ final class RateLimiter {
      */
     synchronized boolean check(@NonNull PerfMetric metric) {
       Timer now = clock.getTime();
-      long newTokens =
-          Math.max(
-              0,
-              (long)
-                  (lastTimeTokenReplenished.getDurationMicros(now)
-                      * rate.getTokensPerSeconds()
-                      / MICROS_IN_A_SECOND));
-      tokenCount = Math.min(tokenCount + newTokens, capacity);
-      if (newTokens > 0) {
-        lastTimeTokenReplenished =
-            new Timer(
-                lastTimeTokenReplenished.getMicros()
-                    + (long) (newTokens * MICROS_IN_A_SECOND / rate.getTokensPerSeconds()));
+      double newTokens =
+          (lastTimeTokenReplenished.getDurationMicros(now)
+              * rate.getTokensPerSeconds()
+              / MICROS_IN_A_SECOND);
+      if (newTokens > 0.0) {
+        tokenCount = Math.min(tokenCount + newTokens, capacity);
+        lastTimeTokenReplenished = now;
       }
-      if (tokenCount > 0) {
-        tokenCount--;
+      if (tokenCount >= 1.0) {
+        tokenCount -= 1.0;
         return true;
       }
       if (isLogcatEnabled) {

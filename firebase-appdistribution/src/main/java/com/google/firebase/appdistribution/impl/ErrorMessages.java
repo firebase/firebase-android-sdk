@@ -53,7 +53,7 @@ class ErrorMessages {
       "The APK failed to install or installation was canceled by the tester.";
 
   static final String API_DISABLED =
-      "The App Distribution Tester API is disabled. It must be enabled in the Google Cloud Console. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.";
+      "The App Distribution Tester API is disabled; you must enable it in the Google Cloud console. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.";
 
   private ErrorMessages() {}
 }

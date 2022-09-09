@@ -122,7 +122,7 @@ public class ZombieEventManager implements EventRegistrationZombieListener {
       if (registrationList != null && !registrationList.isEmpty()) {
         if (registration.getQuerySpec().isDefault()) {
           // The behavior here has to match the behavior of SyncPoint.removeEventRegistration.
-          // If the query is default, it remove a single instance of the registration
+          // If the query is default, it removes a single instance of the registration
           // from each unique query.  So for example, if you had 3 copies registered under default,
           // you would end up with 2 still registered.
           // If you had 1 registration in default and 2 in query a', you'd end up with just

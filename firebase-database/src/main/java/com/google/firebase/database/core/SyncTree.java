@@ -538,9 +538,14 @@ public class SyncTree {
         });
   }
 
-  /** Add an event callback for the specified query. */
   public List<? extends Event> addEventRegistration(
       @NotNull final EventRegistration eventRegistration) {
+    return addEventRegistration(eventRegistration, false);
+  }
+
+  /** Add an event callback for the specified query. */
+  public List<? extends Event> addEventRegistration(
+      @NotNull final EventRegistration eventRegistration, final boolean skipListenerSetup) {
     return persistenceManager.runInTransaction(
         new Callable<List<? extends Event>>() {
           @Override
@@ -635,7 +640,7 @@ public class SyncTree {
             WriteTreeRef writesCache = pendingWriteTree.childWrites(path);
             List<? extends Event> events =
                 syncPoint.addEventRegistration(eventRegistration, writesCache, serverCache);
-            if (!viewAlreadyExists && !foundAncestorDefaultView) {
+            if (!viewAlreadyExists && !foundAncestorDefaultView && !skipListenerSetup) {
               View view = syncPoint.viewForQuery(query);
               setupListener(query, view);
             }
@@ -650,7 +655,14 @@ public class SyncTree {
    * <p>If query is the default query, we'll check all queries for the specified eventRegistration.
    */
   public List<Event> removeEventRegistration(@NotNull EventRegistration eventRegistration) {
-    return this.removeEventRegistration(eventRegistration.getQuerySpec(), eventRegistration, null);
+    return this.removeEventRegistration(
+        eventRegistration.getQuerySpec(), eventRegistration, null, false);
+  }
+
+  public List<Event> removeEventRegistration(
+      @NotNull EventRegistration eventRegistration, boolean skipDedup) {
+    return this.removeEventRegistration(
+        eventRegistration.getQuerySpec(), eventRegistration, null, skipDedup);
   }
 
   /**
@@ -660,13 +672,14 @@ public class SyncTree {
    */
   public List<Event> removeAllEventRegistrations(
       @NotNull QuerySpec query, @NotNull DatabaseError error) {
-    return this.removeEventRegistration(query, null, error);
+    return this.removeEventRegistration(query, null, error, false);
   }
 
   private List<Event> removeEventRegistration(
       final @NotNull QuerySpec query,
       final @Nullable EventRegistration eventRegistration,
-      final @Nullable DatabaseError cancelError) {
+      final @Nullable DatabaseError cancelError,
+      final boolean skipDedup) {
     return persistenceManager.runInTransaction(
         new Callable<List<Event>>() {
           @Override
@@ -688,6 +701,7 @@ public class SyncTree {
               if (maybeSyncPoint.isEmpty()) {
                 syncPointTree = syncPointTree.remove(path);
               }
+
               List<QuerySpec> removed = removedAndEvents.getFirst();
               cancelEvents = removedAndEvents.getSecond();
               // We may have just removed one of many listeners and can short-circuit this whole
@@ -700,6 +714,25 @@ public class SyncTree {
               for (QuerySpec queryRemoved : removed) {
                 persistenceManager.setQueryInactive(query);
                 removingDefault = removingDefault || queryRemoved.loadsAllData();
+              }
+
+              /**
+               * This is to handle removeRegistration by {@link Repo#getValue(Query)}. Specifically
+               * to avoid the scenario where: A listener is attached at a child path, and {@link
+               * Repo#getValue(Query)} is called on the parent path. Normally, when a listener is
+               * attached on a child path and then a parent path has a listener attached to it, to
+               * reduce the number of listeners, the listen() function will unlisten to the child
+               * path and listen instead on the parent path. And then, when removeRegistration is
+               * called on the parent path, the child path will get listened to, since it doesn't
+               * have anything covering its path. However, for {@link Repo#getValue(Query)}, we do
+               * not call listen on the parent path, and the child path is still listened to and so
+               * when the deduping happens below, the SyncTree assumes that the child listener has
+               * been removed and attempts to call listen again, but since we are still listening on
+               * that location, listen would be called twice on the same query. skipDedup allows us
+               * to skip this deduping process altogether.
+               */
+              if (skipDedup) {
+                return null;
               }
               ImmutableTree<SyncPoint> currentTree = syncPointTree;
               boolean covered =
@@ -815,12 +848,17 @@ public class SyncTree {
   }
 
   public void keepSynced(final QuerySpec query, final boolean keep) {
+    keepSynced(query, keep, false);
+  }
+
+  public void keepSynced(final QuerySpec query, final boolean keep, final boolean skipDedup) {
     if (keep && !keepSyncedQueries.contains(query)) {
       // TODO[persistence]: Find better / more efficient way to do keep-synced listeners.
-      addEventRegistration(new KeepSyncedEventRegistration(query));
+      addEventRegistration(
+          new KeepSyncedEventRegistration(query), /*skipListenerSetup=*/ skipDedup);
       keepSyncedQueries.add(query);
     } else if (!keep && keepSyncedQueries.contains(query)) {
-      removeEventRegistration(new KeepSyncedEventRegistration(query));
+      removeEventRegistration(new KeepSyncedEventRegistration(query), skipDedup);
       keepSyncedQueries.remove(query);
     }
   }
@@ -915,7 +953,7 @@ public class SyncTree {
   }
 
   /** Return the tag associated with the given query. */
-  private Tag tagForQuery(QuerySpec query) {
+  public Tag tagForQuery(QuerySpec query) {
     return this.queryToTagMap.get(query);
   }
 
