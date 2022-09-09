@@ -109,7 +109,7 @@ async def _process_config_yaml():
 async def _prepare_test_directory():
   test_dir = tempfile.mkdtemp(prefix='benchmark-test-')
 
-  # Required as the dir is not defined in the root settings.gradle
+  # Required for creating gradle wrapper, as the dir is not defined in the root settings.gradle
   open(os.path.join(test_dir, 'settings.gradle'), 'w').close()
 
   command = ['./gradlew', 'wrapper', '--gradle-version', '7.5.1', '--project-dir', test_dir]
