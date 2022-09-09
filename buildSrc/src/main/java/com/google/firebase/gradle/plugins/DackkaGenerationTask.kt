@@ -125,7 +125,7 @@ abstract class GenerateDocumentationTask @Inject constructor(
     private fun createExternalLinks(packageLists: ListProperty<File>): List<ExternalDocumentationLink> {
         val linksMap = mapOf(
             "android" to "https://developer.android.com/reference/kotlin/",
-            "google" to "https://developer.android.com/reference/",
+            "google" to "https://developers.google.com/android/reference/",
             "firebase" to "https://firebase.google.com/docs/reference/kotlin/",
             "coroutines" to "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/"
         )

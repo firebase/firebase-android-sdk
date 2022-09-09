@@ -79,14 +79,14 @@ abstract class DackkaPlugin : Plugin<Project> {
                 if (name == "release") {
                     val isKotlin = project.plugins.hasPlugin("kotlin-android")
 
-                    val classpath = runtimeConfiguration.getJars() + project.javadocConfig.getJars() + bootClasspath
+                    val classpath = compileConfiguration.getJars() + project.javadocConfig.getJars() + project.files(bootClasspath)
 
                     val sourcesForJava = sourceSets.flatMap {
                         it.javaDirectories.map { it.absoluteFile }
                     }
 
                     docStubs.configure {
-                        classPath = project.files(classpath)
+                        classPath = classpath
                         sources.set(project.provider { sourcesForJava })
                     }
 
