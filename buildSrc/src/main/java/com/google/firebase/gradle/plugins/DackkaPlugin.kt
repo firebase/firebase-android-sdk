@@ -286,28 +286,15 @@ abstract class DackkaPlugin : Plugin<Project> {
     val outputJavadocFolder = project.childFile(outputDirectory, "android")
     val outputKotlindocFolder = project.childFile(outputDirectory, "kotlin")
 
-<<<<<<< HEAD
     val separateJavadoc =
       project.tasks.register<Copy>("separateJavadoc") {
         dependsOn("generateDackkaDocumentation")
-=======
-                    docsTask.configure {
-                        // this will become useful with the agp upgrade, as they're separate in 7.x+
-                        val sourcesForKotlin = emptyList<File>()
-                        val packageLists = fetchPackageLists(project)
->>>>>>> b159f2703 (Move external documentation links to a task input in Dackka (#4033))
 
         val javadocClientFolder = project.childFile(dackkaOutputDirectory, "reference/client")
         val javadocComFolder = project.childFile(dackkaOutputDirectory, "reference/com")
 
-<<<<<<< HEAD
         fromDirectory(javadocClientFolder)
         fromDirectory(javadocComFolder)
-=======
-                        javaSources.set(fixedJavaSources)
-                        suppressedFiles.set(excludedFiles)
-                        packageListFiles.set(packageLists)
->>>>>>> b159f2703 (Move external documentation links to a task input in Dackka (#4033))
 
         into(outputJavadocFolder)
       }

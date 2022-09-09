@@ -35,7 +35,6 @@ import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkerExecutor
 import org.json.JSONObject
-
 /**
  * Extension class for [GenerateDocumentationTask].
  *
