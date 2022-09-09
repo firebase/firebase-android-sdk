@@ -54,8 +54,11 @@ abstract class DackkaPlugin : Plugin<Project> {
         }
     }
 
+    fun <T> Project.firebaseConfigValue(getter: FirebaseLibraryExtension.() -> T): T =
+        project.extensions.getByType<FirebaseLibraryExtension>().getter()
+
     private fun shouldWePublish(project: Project) =
-        project.extensions.getByType<FirebaseLibraryExtension>().publishJavadoc
+        project.firebaseConfigValue { publishJavadoc }
 
     private fun prepareJavadocConfiguration(project: Project) {
         val javadocConfig = project.javadocConfig
@@ -76,22 +79,24 @@ abstract class DackkaPlugin : Plugin<Project> {
                 if (name == "release") {
                     val isKotlin = project.plugins.hasPlugin("kotlin-android")
 
-                    val classpath = runtimeConfiguration.getJars() + project.javadocConfig.getJars() + bootClasspath
+                    val classpath = compileConfiguration.getJars() + project.javadocConfig.getJars() + project.files(bootClasspath)
 
                     val sourcesForJava = sourceSets.flatMap {
                         it.javaDirectories.map { it.absoluteFile }
                     }
 
                     docStubs.configure {
-                        classPath = project.files(classpath)
+                        classPath = classpath
                         sources.set(project.provider { sourcesForJava })
                     }
 
                     docsTask.configure {
+                        clientName.set(project.firebaseConfigValue { artifactId })
                         // this will become useful with the agp upgrade, as they're separate in 7.x+
                         val sourcesForKotlin = emptyList<File>()
                         val packageLists = fetchPackageLists(project)
 
+                        if (!isKotlin) dependsOn(docStubs)
                         val excludedFiles = if (!isKotlin) projectSpecificSuppressedFiles(project) else emptyList()
                         val fixedJavaSources = if (!isKotlin) listOf(project.docStubs) else sourcesForJava
 
