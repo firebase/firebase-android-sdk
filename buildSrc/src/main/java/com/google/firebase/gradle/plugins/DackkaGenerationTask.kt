@@ -8,6 +8,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
@@ -19,7 +20,6 @@ import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkerExecutor
 import org.json.JSONObject
-
 /**
  * Extension class for [GenerateDocumentationTask].
  *
@@ -56,6 +56,9 @@ abstract class GenerateDocumentationTaskExtension : DefaultTask() {
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val packageListFiles: ListProperty<File>
 
+    @get:Input
+    abstract val clientName: Property<String>
+
     @get:OutputDirectory
     abstract val outputDirectory: Property<File>
 }
@@ -89,7 +92,7 @@ abstract class GenerateDocumentationTask @Inject constructor(
     @TaskAction
     fun build() {
         val configFile = saveToJsonFile(constructArguments())
-        launchDackka(configFile, workerExecutor)
+        launchDackka(clientName, configFile, workerExecutor)
     }
 
     private fun constructArguments(): JSONObject {
@@ -142,13 +145,13 @@ abstract class GenerateDocumentationTask @Inject constructor(
         return outputFile
     }
 
-    private fun launchDackka(argsFile: File, workerExecutor: WorkerExecutor) {
+    private fun launchDackka(clientName: Property<String>, argsFile: File, workerExecutor: WorkerExecutor) {
         val workQueue = workerExecutor.noIsolation()
 
         workQueue.submit(DackkaWorkAction::class.java) {
             args.set(listOf(argsFile.path, "-loggingLevel", "WARN"))
             classpath.set(setOf(dackkaJarFile.get()))
-            projectName.set(project.name)
+            projectName.set(clientName)
         }
     }
 }
