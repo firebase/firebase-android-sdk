@@ -92,6 +92,7 @@ abstract class DackkaPlugin : Plugin<Project> {
                         val sourcesForKotlin = emptyList<File>()
                         val packageLists = fetchPackageLists(project)
 
+                        if (!isKotlin) dependsOn(docStubs)
                         val excludedFiles = if (!isKotlin) projectSpecificSuppressedFiles(project) else emptyList()
                         val fixedJavaSources = if (!isKotlin) listOf(project.docStubs) else sourcesForJava
 
