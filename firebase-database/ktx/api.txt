@@ -2,14 +2,13 @@
 package com.google.firebase.database.ktx {
 
   public final class DatabaseKt {
-    ctor public DatabaseKt();
     method @NonNull public static com.google.firebase.database.FirebaseDatabase database(@NonNull com.google.firebase.ktx.Firebase, @NonNull String url);
     method @NonNull public static com.google.firebase.database.FirebaseDatabase database(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
     method @NonNull public static com.google.firebase.database.FirebaseDatabase database(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app, @NonNull String url);
     method @NonNull public static com.google.firebase.database.FirebaseDatabase getDatabase(@NonNull com.google.firebase.ktx.Firebase);
-    method @Nullable public static inline <reified T> T getValue(@NonNull com.google.firebase.database.DataSnapshot);
-    method @Nullable public static inline <reified T> T getValue(@NonNull com.google.firebase.database.MutableData);
-    method public static suspend Object runTransaction(@NonNull com.google.firebase.database.DatabaseReference, boolean fireLocalEvents = true, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.database.MutableData,? extends com.google.firebase.database.Transaction.Result> handler, @NonNull kotlin.coroutines.Continuation<? super error.NonExistentClass> p);
+    method public static inline <reified T> T getValue(@NonNull com.google.firebase.database.DataSnapshot);
+    method public static inline <reified T> T getValue(@NonNull com.google.firebase.database.MutableData);
+    method @Nullable public static suspend Object runTransaction(@NonNull com.google.firebase.database.DatabaseReference, boolean fireLocalEvents = true, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.database.MutableData,? extends com.google.firebase.database.Transaction.Result> handler, @NonNull kotlin.coroutines.Continuation<? super kotlin.Pair<? extends java.lang.Boolean,? extends com.google.firebase.database.DataSnapshot>>);
   }
 
 }
