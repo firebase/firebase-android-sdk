@@ -93,7 +93,7 @@ public class FirebaseApp {
 
   private static final String LOG_TAG = "FirebaseApp";
 
-  public static final @NonNull String DEFAULT_APP_NAME = "[DEFAULT]";
+  public static final @NonNull String DEFAULT_APP_NAME = "[DEFAULT - TEST]";
 
   private static final Object LOCK = new Object();
 
