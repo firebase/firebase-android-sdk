@@ -198,8 +198,12 @@ public class ConfigAutoFetch {
   public synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
     boolean excludeEtagHeaderForRealtime = configFetchHandler.getTemplateVersionNumber() == 0;
 
-    Task<ConfigFetchHandler.FetchResponse> fetchTask =
-        configFetchHandler.fetch(0L, excludeEtagHeaderForRealtime);
+    Task<ConfigFetchHandler.FetchResponse> fetchTask;
+    if (excludeEtagHeaderForRealtime) {
+      fetchTask = configFetchHandler.fetchWithoutEtag(0L);
+    } else {
+      fetchTask = configFetchHandler.fetch(0L);
+    }
     fetchTask.onSuccessTask(
         (fetchResponse) -> {
           long newTemplateVersion = 0;

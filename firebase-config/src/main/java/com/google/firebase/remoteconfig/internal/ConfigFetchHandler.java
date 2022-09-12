@@ -120,11 +120,11 @@ public class ConfigFetchHandler {
   }
 
   /**
-   * Calls {@link #fetch(long, boolean)} with the {@link
+   * Calls {@link #fetch(long)} with the {@link
    * ConfigMetadataClient#getMinimumFetchIntervalInSeconds()}.
    */
   public Task<FetchResponse> fetch() {
-    return fetch(frcMetadata.getMinimumFetchIntervalInSeconds(), false);
+    return fetch(frcMetadata.getMinimumFetchIntervalInSeconds());
   }
 
   /**
@@ -155,17 +155,55 @@ public class ConfigFetchHandler {
    *     the configs fetched from the backend. If the backend was not called or the backend had no
    *     updates, the {@link FetchResponse}'s configs will be {@code null}.
    */
-  public Task<FetchResponse> fetch(
-      long minimumFetchIntervalInSeconds, boolean excludeEtagHeaderForRealtime) {
+  public Task<FetchResponse> fetch(long minimumFetchIntervalInSeconds) {
     return fetchedConfigsCache
         .get()
         .continueWithTask(
             executor,
             (cachedFetchConfigsTask) ->
                 fetchIfCacheExpiredAndNotThrottled(
-                    cachedFetchConfigsTask,
-                    minimumFetchIntervalInSeconds,
-                    excludeEtagHeaderForRealtime));
+                    cachedFetchConfigsTask, minimumFetchIntervalInSeconds, false));
+  }
+
+  /**
+   * Starts fetching configs from the Firebase Remote Config server.
+   *
+   * <p>Guarantees consistency between memory and disk; fetched configs are saved to memory only
+   * after they have been written to disk.
+   *
+   * <p>Fetches even if the read of the fetch cache fails (assumes there are no cached fetched
+   * configs in that case).
+   *
+   * <p>Fetch request does not include Etag in the header. This is to force a fetch response with an
+   * UPDATE status.
+   *
+   * <p>If the fetch request could not be created or there was error connecting to the server, the
+   * returned Task throws a {@link FirebaseRemoteConfigClientException}.
+   *
+   * <p>If the server responds with an error, the returned Task throws a {@link
+   * FirebaseRemoteConfigServerException}.
+   *
+   * <p>If any of the following is true, then the returned Task throws a {@link
+   * FirebaseRemoteConfigFetchThrottledException}:
+   *
+   * <ul>
+   *   <li>The backoff duration from a previous throttled exception has not expired,
+   *   <li>The backend responded with a throttled error, or
+   *   <li>The backend responded with unavailable errors for the last two fetch requests.
+   * </ul>
+   *
+   * @return A {@link Task} representing the fetch call that returns a {@link FetchResponse} with
+   *     the configs fetched from the backend. If the backend was not called or the backend had no
+   *     updates, the {@link FetchResponse}'s configs will be {@code null}.
+   */
+  public Task<FetchResponse> fetchWithoutEtag(long minimumFetchIntervalInSeconds) {
+    return fetchedConfigsCache
+        .get()
+        .continueWithTask(
+            executor,
+            (cachedFetchConfigsTask) ->
+                fetchIfCacheExpiredAndNotThrottled(
+                    cachedFetchConfigsTask, minimumFetchIntervalInSeconds, true));
   }
 
   /**
