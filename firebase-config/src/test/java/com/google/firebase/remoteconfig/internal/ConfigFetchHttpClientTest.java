@@ -358,7 +358,7 @@ public class ConfigFetchHttpClientTest {
             /* customHeaders= */ ImmutableMap.of(),
             /* firstOpenTime= */ null,
             /* currentTime= */ new Date(mockClock.currentTimeMillis()),
-            /* addEtagToHeader= */ true);
+            /* excludeEtagHeader= */ true);
     assertThat(fakeHttpURLConnection.getRequestProperty("If-None-Match")).isNull();
   }
 
@@ -372,7 +372,7 @@ public class ConfigFetchHttpClientTest {
         /* customHeaders= */ ImmutableMap.of(),
         /* firstOpenTime= */ null,
         /* currentTime= */ new Date(mockClock.currentTimeMillis()),
-        /* excludeEtagHeaderForRealtime= */ false);
+        /* excludeEtagHeader= */ false);
   }
 
   private FetchResponse fetch(String eTag, Map<String, String> userProperties, Long firstOpenTime)

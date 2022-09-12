@@ -793,7 +793,7 @@ public class ConfigFetchHandlerTest {
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
             /* currentTime= */ any(),
-            /* excludeEtagHeaderForRealtime */ any());
+            /* excludeEtagHeader */ any());
   }
 
   private void setBackendResponseToNoChange(Date date) throws Exception {
@@ -806,7 +806,7 @@ public class ConfigFetchHandlerTest {
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
             /* currentTime= */ any(),
-            /* excludeEtagHeaderForRealtime */ any()))
+            /* excludeEtagHeader */ any()))
         .thenReturn(FetchResponse.forBackendHasNoUpdates(date));
   }
 
@@ -822,7 +822,7 @@ public class ConfigFetchHandlerTest {
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
             /* currentTime= */ any(),
-            /* excludeEtagHeaderForRealtime */ any());
+            /* excludeEtagHeader */ any());
   }
 
   /**
@@ -903,7 +903,7 @@ public class ConfigFetchHandlerTest {
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
             /* currentTime= */ any(),
-            /* excludeEtagHeaderForRealtime */ any());
+            /* excludeEtagHeader */ any());
   }
 
   private void verifyBackendIsCalled(Map<String, String> userProperties, Long firstOpenTime)
@@ -918,7 +918,7 @@ public class ConfigFetchHandlerTest {
             /* customHeaders= */ any(),
             /* firstOpenTime= */ eq(firstOpenTime),
             /* currentTime= */ any(),
-            /* excludeEtagHeaderForRealtime */ any());
+            /* excludeEtagHeader */ any());
   }
 
   private void verifyBackendIsNeverCalled() throws Exception {
@@ -932,7 +932,7 @@ public class ConfigFetchHandlerTest {
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
             /* currentTime= */ any(),
-            /* excludeEtagHeaderForRealtime */ any());
+            /* excludeEtagHeader */ any());
   }
 
   private void verifyETags(@Nullable String requestETag, String responseETag) throws Exception {
@@ -946,7 +946,7 @@ public class ConfigFetchHandlerTest {
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
             /* currentTime= */ any(),
-            /* excludeEtagHeaderForRealtime */ any());
+            /* excludeEtagHeader */ any());
     assertThat(metadataClient.getLastFetchETag()).isEqualTo(responseETag);
   }
 
