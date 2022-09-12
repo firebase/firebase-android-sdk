@@ -166,7 +166,8 @@ public class ConfigFetchHandler {
   }
 
   /**
-   * Starts fetching configs from the Firebase Remote Config server.
+   * Starts fetching configs from the Firebase Remote Config server without the Etag header in the
+   * request.
    *
    * <p>Guarantees consistency between memory and disk; fetched configs are saved to memory only
    * after they have been written to disk.
@@ -203,7 +204,9 @@ public class ConfigFetchHandler {
             executor,
             (cachedFetchConfigsTask) ->
                 fetchIfCacheExpiredAndNotThrottled(
-                    cachedFetchConfigsTask, minimumFetchIntervalInSeconds, true));
+                    cachedFetchConfigsTask,
+                    minimumFetchIntervalInSeconds, /*excludeEtagHeader */
+                    true));
   }
 
   /**
@@ -216,7 +219,7 @@ public class ConfigFetchHandler {
   private Task<FetchResponse> fetchIfCacheExpiredAndNotThrottled(
       Task<ConfigContainer> cachedFetchConfigsTask,
       long minimumFetchIntervalInSeconds,
-      boolean excludeEtagHeaderForRealtime) {
+      boolean excludeEtagHeader) {
     Date currentTime = new Date(clock.currentTimeMillis());
     if (cachedFetchConfigsTask.isSuccessful()
         && areCachedFetchConfigsValid(minimumFetchIntervalInSeconds, currentTime)) {
@@ -261,10 +264,7 @@ public class ConfigFetchHandler {
                     String installationId = installationIdTask.getResult();
                     String installationToken = installationAuthTokenTask.getResult().getToken();
                     return fetchFromBackendAndCacheResponse(
-                        installationId,
-                        installationToken,
-                        currentTime,
-                        excludeEtagHeaderForRealtime);
+                        installationId, installationToken, currentTime, excludeEtagHeader);
                   });
     }
 
@@ -324,14 +324,10 @@ public class ConfigFetchHandler {
    * {@code fetchedConfigsCache}.
    */
   private Task<FetchResponse> fetchFromBackendAndCacheResponse(
-      String installationId,
-      String installationToken,
-      Date fetchTime,
-      boolean excludeEtagHeaderForRealtime) {
+      String installationId, String installationToken, Date fetchTime, boolean excludeEtagHeader) {
     try {
       FetchResponse fetchResponse =
-          fetchFromBackend(
-              installationId, installationToken, fetchTime, excludeEtagHeaderForRealtime);
+          fetchFromBackend(installationId, installationToken, fetchTime, excludeEtagHeader);
       if (fetchResponse.getStatus() != Status.BACKEND_UPDATES_FETCHED) {
         return Tasks.forResult(fetchResponse);
       }
@@ -354,10 +350,7 @@ public class ConfigFetchHandler {
    */
   @WorkerThread
   private FetchResponse fetchFromBackend(
-      String installationId,
-      String installationToken,
-      Date currentTime,
-      boolean excludeEtagHeaderForRealtime)
+      String installationId, String installationToken, Date currentTime, boolean excludeEtagHeader)
       throws FirebaseRemoteConfigException {
     try {
       HttpURLConnection urlConnection = frcBackendApiClient.createHttpURLConnection();
@@ -372,7 +365,7 @@ public class ConfigFetchHandler {
               customHttpHeaders,
               getFirstOpenTime(),
               currentTime,
-              excludeEtagHeaderForRealtime);
+              excludeEtagHeader);
 
       if (response.getFetchedConfigs() != null) {
         // Set template version in metadata to be saved on disk.

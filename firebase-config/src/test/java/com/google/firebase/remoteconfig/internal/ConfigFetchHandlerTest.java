@@ -739,7 +739,7 @@ public class ConfigFetchHandlerTest {
   }
 
   @Test
-  public void realtimeFetch_excludeEtag_andSuccess() throws Exception {
+  public void fetchWithoutEtag_andSuccess() throws Exception {
     fetchCallToHttpClientUpdatesClockAndReturnsConfig(secondFetchedContainer);
 
     fetchHandler.fetchWithoutEtag(0L);
