@@ -60,7 +60,7 @@ firestore.collection("cities")
 ```kotlin
 firestore.collection("cities")
     .whereEqualTo("capital", true)
-    .addSnapshotListener { documents, error ->
+    .addSnapshotListener { documents: QuerySnapshot?, error ->
         if (error != null) {
             // Handle error
             return@addSnapshotListener
