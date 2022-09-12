@@ -156,7 +156,7 @@ abstract class DackkaPlugin : Plugin<Project> {
         )
     }
 
-    // TODO(b/243954517): Refactor when fixed, so we no longer need stubs
+    // TODO(b/243324828): Refactor when fixed, so we no longer need stubs
     private fun registerGenerateDackkaDocumentationTask(project: Project): Provider<GenerateDocumentationTask> {
         val docStubs = project.tasks.register<GenerateStubsTask>("docStubsForDackkaInput")
         val docsTask = project.tasks.register<GenerateDocumentationTask>("generateDackkaDocumentation")
