@@ -199,7 +199,7 @@ public class ConfigFetchHandlerTest {
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
             /* currentTime= */ any(),
-            /* excludeEtagHeaderForRealtime */ any());
+            /* excludeEtagHeader */ any());
   }
 
   @Test
