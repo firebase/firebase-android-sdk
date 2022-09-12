@@ -32,10 +32,17 @@ import io.grpc.CallCredentials;
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
 import io.grpc.ConnectivityState;
+import io.grpc.HttpConnectProxiedSocketAddress;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.MethodDescriptor;
+import io.grpc.ProxiedSocketAddress;
+import io.grpc.ProxyDetector;
 import io.grpc.android.AndroidChannelBuilder;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.URI;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -101,6 +108,27 @@ public class GrpcCallProvider {
         // Note that the boolean flag does *NOT* switch the wire format from Protobuf to Plaintext.
         // It merely turns off SSL encryption.
         channelBuilder.usePlaintext();
+      }
+    }
+
+    if (databaseInfo.getProxy() != null) {
+      try {
+        URI proxy = new URI("http://" + databaseInfo.getProxy());
+        String host = proxy.getHost();
+        int port = proxy.getPort();
+        channelBuilder.proxyDetector(
+            new ProxyDetector() {
+              @Override
+              public ProxiedSocketAddress proxyFor(SocketAddress targetServerAddress)
+                  throws IOException {
+                return HttpConnectProxiedSocketAddress.newBuilder()
+                    .setTargetAddress((InetSocketAddress) targetServerAddress)
+                    .setProxyAddress(new InetSocketAddress(host, port))
+                    .build();
+              }
+            });
+      } catch (Exception e) {
+        Logger.warn(LOG_TAG, "Ignoring invalid proxy with error: %s", e);
       }
     }
 

@@ -251,7 +251,12 @@ public class FirebaseFirestore {
         return;
       }
       DatabaseInfo databaseInfo =
-          new DatabaseInfo(databaseId, persistenceKey, settings.getHost(), settings.isSslEnabled());
+          new DatabaseInfo(
+              databaseId,
+              persistenceKey,
+              settings.getHost(),
+              settings.isSslEnabled(),
+              settings.getProxy());
 
       client =
           new FirestoreClient(

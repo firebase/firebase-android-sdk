@@ -41,7 +41,6 @@ import static org.junit.Assert.fail;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
@@ -1250,7 +1249,7 @@ public class FirestoreTest {
     documentReference.set(map("foo", "bar"));
     FirebaseFirestore firestore = documentReference.getFirestore();
 
-    for(int i = 0; i < 6000; i++) {
+    for (int i = 0; i < 6000; i++) {
       /*TaskCompletionSource<String> tcs = new TaskCompletionSource();
       final String[] v = {null};
       ListenerRegistration reg = documentReference.addSnapshotListener(MetadataChanges.INCLUDE, (value, error) -> {

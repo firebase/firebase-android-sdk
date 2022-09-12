@@ -161,9 +161,9 @@ public class FirestoreChannel {
                   // without needing to "excessively" buffer them internally. We currently
                   // ignore this notification in our client.
                   Logger.debug(
-                    getClass().getSimpleName(),
-                    "(%x) Bidi stream ready",
-                    System.identityHashCode(this));
+                      getClass().getSimpleName(),
+                      "(%x) Bidi stream ready",
+                      System.identityHashCode(this));
                 }
               },
               requestHeaders());
