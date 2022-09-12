@@ -162,7 +162,9 @@ public class ConfigFetchHandler {
             executor,
             (cachedFetchConfigsTask) ->
                 fetchIfCacheExpiredAndNotThrottled(
-                    cachedFetchConfigsTask, minimumFetchIntervalInSeconds, false));
+                    cachedFetchConfigsTask,
+                    minimumFetchIntervalInSeconds, /*excludeEtagHeader */
+                    false));
   }
 
   /**

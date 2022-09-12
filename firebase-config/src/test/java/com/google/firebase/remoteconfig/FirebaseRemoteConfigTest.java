@@ -1165,7 +1165,7 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void realtime_fetch_exclude_Etag() throws Exception {
+  public void realtimeFetch_defaultTemplateVersion_excludeFetchEtag() throws Exception {
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpURLConnection.getInputStream())
         .thenReturn(
