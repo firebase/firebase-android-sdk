@@ -336,7 +336,6 @@ public class ConfigRealtimeHttpClient {
         this.httpURLConnection.getInputStream().close();
       } catch (IOException e) {
       }
-
       this.httpURLConnection = null;
     }
   }
