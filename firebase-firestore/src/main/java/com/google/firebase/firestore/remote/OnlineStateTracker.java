@@ -163,6 +163,7 @@ class OnlineStateTracker {
    * it must not be used in place of handleWatchStreamStart() and handleWatchStreamFailure().
    */
   void updateState(OnlineState newState) {
+    Logger.debug(LOG_TAG, "Updating online state to %s", newState.toString());
     clearOnlineStateTimer();
     watchStreamFailures = 0;
 
