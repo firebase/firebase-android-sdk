@@ -283,6 +283,10 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
         finalState == State.Error || status.isOk(),
         "Can't provide an error when not in an error state.");
     workerQueue.verifyIsCurrentThread();
+    Logger.debug(
+      getClass().getSimpleName(),
+      "(%x) Closing with final state " + finalState.name(),
+      System.identityHashCode(this));
 
     if (Datastore.isMissingSslCiphers(status)) {
       // The Android device is missing required SSL Ciphers. This error is non-recoverable and must
@@ -303,6 +307,10 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     Code code = status.getCode();
     if (code == Code.OK) {
       // If this is an intentional close ensure we don't delay our next connection attempt.
+      Logger.debug(
+        getClass().getSimpleName(),
+        "(%x) Resetting backoff",
+        System.identityHashCode(this));
       backoff.reset();
     } else if (code == Code.RESOURCE_EXHAUSTED) {
       Logger.debug(

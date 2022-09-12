@@ -41,6 +41,7 @@ import static org.junit.Assert.fail;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
@@ -1240,5 +1241,28 @@ public class FirestoreTest {
     waitFor(awaitsPendingWrites);
 
     assertTrue(awaitsPendingWrites.isComplete() && awaitsPendingWrites.isSuccessful());
+  }
+
+  @Test
+  public void testUserRefreshALOT() {
+    FirebaseFirestore.setLoggingEnabled(true);
+    DocumentReference documentReference = testCollection("abc").document("123");
+    documentReference.set(map("foo", "bar"));
+    FirebaseFirestore firestore = documentReference.getFirestore();
+
+    for(int i = 0; i < 6000; i++) {
+      /*TaskCompletionSource<String> tcs = new TaskCompletionSource();
+      final String[] v = {null};
+      ListenerRegistration reg = documentReference.addSnapshotListener(MetadataChanges.INCLUDE, (value, error) -> {
+        v[0] = value.getString("foo");
+        if(!value.getMetadata().isFromCache()) {
+          tcs.trySetResult(v[0]);
+        }
+      });
+      waitFor(tcs.getTask());
+       */
+      waitFor(documentReference.get(Source.SERVER));
+      testChangeUserTo(User.UNAUTHENTICATED);
+    }
   }
 }

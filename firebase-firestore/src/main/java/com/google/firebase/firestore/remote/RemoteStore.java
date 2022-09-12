@@ -493,10 +493,17 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
           !shouldStartWatchStream(), "Watch stream was stopped gracefully while still needed.");
     }
 
+    Logger.debug(
+      LOG_TAG,
+      "RemoteStore handling watch close");
+
     cleanUpWatchStreamState();
 
     // If we still need the watch stream, retry the connection.
     if (shouldStartWatchStream()) {
+      Logger.debug(
+        LOG_TAG,
+        "RemoteStore trying restart watch stream with status: " + status.getDescription());
       onlineStateTracker.handleWatchStreamFailure(status);
 
       startWatchStream();

@@ -27,6 +27,7 @@ import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.ClientCall;
 import io.grpc.ForwardingClientCall;
@@ -159,6 +160,10 @@ public class FirestoreChannel {
                   // `onReady` indicates that the channel can transmit accepted messages directly,
                   // without needing to "excessively" buffer them internally. We currently
                   // ignore this notification in our client.
+                  Logger.debug(
+                    getClass().getSimpleName(),
+                    "(%x) Bidi stream ready",
+                    System.identityHashCode(this));
                 }
               },
               requestHeaders());
