@@ -239,6 +239,11 @@ abstract class DackkaPlugin : Plugin<Project> {
     // TODO(b/246593212): Migrate doc files to single directory
     private fun registerCopyJavaDocToCommonDirectoryTask(project: Project, outputDirectory: Provider<File>) =
         project.tasks.register<Copy>("copyJavaDocToCommonDirectory") {
+            /**
+             * This is not currently cache compliant. The need for this property is
+             * temporary while we test it alongside the current javaDoc task. Since it's such a
+             * temporary behavior, losing cache compliance is fine for now.
+             */
             if (project.rootProject.findProperty("dackkaJavadoc") == "true") {
                 mustRunAfter("firesiteTransform")
 
