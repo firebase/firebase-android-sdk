@@ -6,5 +6,5 @@ import org.gradle.api.tasks.Copy
 
 fun Copy.fromDirectory(directory: Provider<File>) =
     from(directory) {
-        into(directory.map { it.nameWithoutExtension })
+        into(directory.map { it.name })
     }
