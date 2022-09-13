@@ -94,7 +94,7 @@ public class ConfigRealtimeHandler {
   }
 
   // Pauses Http stream listening
-  private synchronized void pauseRealtime() {
+  public synchronized void pauseRealtime() {
     if (realtimeHttpClientTask != null && !realtimeHttpClientTask.isCancelled()) {
       realtimeHttpClientTask.cancel(true);
       realtimeHttpClientTask = null;
@@ -130,7 +130,7 @@ public class ConfigRealtimeHandler {
 
     @Override
     protected void done() {
-      this.configRealtimeHttpClient.closeRealtimeHttpStream();
+      this.configRealtimeHttpClient.stopRealtime();
     }
   }
 

@@ -117,7 +117,7 @@ public class ConfigAutoFetch {
     }
 
     retryCallback.onEvent();
-    scheduledExecutorService.shutdown();
+    scheduledExecutorService.shutdownNow();
     try {
       scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
     } catch (InterruptedException ex) {

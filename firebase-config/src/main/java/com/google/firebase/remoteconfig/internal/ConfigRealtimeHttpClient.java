@@ -268,6 +268,11 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
+  synchronized void stopRealtime() {
+    closeRealtimeHttpStream();
+    scheduledExecutorService.shutdownNow();
+  }
+
   private synchronized ConfigAutoFetch startAutoFetch(HttpURLConnection httpURLConnection) {
     ConfigUpdateListener retryCallback =
         new ConfigUpdateListener() {

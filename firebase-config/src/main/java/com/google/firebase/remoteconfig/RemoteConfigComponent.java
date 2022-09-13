@@ -75,10 +75,13 @@ public class RemoteConfigComponent {
   private static final Clock DEFAULT_CLOCK = DefaultClock.getInstance();
   private static final Random DEFAULT_RANDOM = new Random();
 
-  private final ConfigUpdateListener EMPTY_CONFIG_LISTENER = createEmptyConfigListener();
+  private static final ConfigUpdateListener EMPTY_CONFIG_LISTENER = createEmptyConfigListener();
 
   @GuardedBy("this")
   private final Map<String, FirebaseRemoteConfig> frcNamespaceInstances = new HashMap<>();
+
+  private static final Map<String, FirebaseRemoteConfig> frcNamespaceInstancesStatic =
+      new HashMap<>();
 
   private final Context context;
   private final ExecutorService executorService;
@@ -127,6 +130,7 @@ public class RemoteConfigComponent {
     this.analyticsConnector = analyticsConnector;
 
     this.appId = firebaseApp.getOptions().getApplicationId();
+    GlobalBackgroundListener.ensureBackgroundListenerIsRegistered(context);
 
     // When the component is first loaded, it will use a cached executor.
     // The getDefault call creates race conditions in tests, where the getDefault might be executing
@@ -209,6 +213,7 @@ public class RemoteConfigComponent {
               getRealtime(firebaseApp, firebaseInstallations, fetchHandler, context, namespace));
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
+      frcNamespaceInstancesStatic.put(namespace, in);
     }
     return frcNamespaceInstances.get(namespace);
   }
@@ -322,26 +327,29 @@ public class RemoteConfigComponent {
     return firebaseApp.getName().equals(FirebaseApp.DEFAULT_APP_NAME);
   }
 
-  private ConfigUpdateListener createEmptyConfigListener() {
+  private static ConfigUpdateListener createEmptyConfigListener() {
     return new ConfigRealtimeHandler.EmptyConfigUpdateListener();
   }
 
-  private synchronized void notifyRCInstances(boolean isInBackground) {
-    for (FirebaseRemoteConfig frc : frcNamespaceInstances.values()) {
+  private static synchronized void notifyRCInstances(boolean isInBackground) {
+    for (FirebaseRemoteConfig frc : frcNamespaceInstancesStatic.values()) {
       if (!isInBackground) {
         // Add dummy listener and remove to trigger http stream flow.
         ConfigUpdateListenerRegistration registration =
             frc.addOnConfigUpdateListener(EMPTY_CONFIG_LISTENER);
         registration.remove();
+      } else {
+        frc.pauseAllConfigUpdateListeners();
       }
     }
   }
 
-  private class GlobalBackgroundListener
+  private static class GlobalBackgroundListener
       implements BackgroundDetector.BackgroundStateChangeListener {
-    private final AtomicReference<GlobalBackgroundListener> INSTANCE = new AtomicReference<>();
+    private static final AtomicReference<GlobalBackgroundListener> INSTANCE =
+        new AtomicReference<>();
 
-    private void ensureBackgroundListenerIsRegistered(Context context) {
+    private static void ensureBackgroundListenerIsRegistered(Context context) {
       Application application = (Application) context.getApplicationContext();
       if (INSTANCE.get() == null) {
         GlobalBackgroundListener globalBackgroundListener = new GlobalBackgroundListener();
