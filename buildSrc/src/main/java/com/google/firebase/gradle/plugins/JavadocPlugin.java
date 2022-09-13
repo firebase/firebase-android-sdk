@@ -302,7 +302,9 @@ public class JavadocPlugin implements Plugin<Project> {
         .artifactView(
             view ->
                 view.attributes(
-                    attrs -> attrs.attribute(Attribute.of("artifactType", String.class), "jar")))
+                    attrs ->
+                        attrs.attribute(
+                            Attribute.of("artifactType", String.class), "android-classes")))
         .getArtifacts()
         .getArtifactFiles();
   }
