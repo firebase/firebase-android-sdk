@@ -110,30 +110,6 @@ public final class CommonNotificationBuilder {
   }
 
   /**
-   * Legacy method that creates a DisplayNotificationInfo from NotificationParams that allows
-   * specifying components so the calling Context can be different from the Context used for the
-   * notification (resources, etc.).
-   */
-  public static DisplayNotificationInfo createNotificationInfo(
-      Context context,
-      String pkgName,
-      NotificationParams params,
-      String channelId,
-      Resources appResources,
-      PackageManager appPackageManager,
-      Bundle manifestMetadata) {
-    return createNotificationInfo(
-        context,
-        context,
-        params,
-        channelId,
-        manifestMetadata,
-        pkgName,
-        appResources,
-        appPackageManager);
-  }
-
-  /**
    * Creates a DisplayNotificationInfo from NotificationParams that allows specifying a calling
    * Context to be used for creating PendingIntents and one Context that the notification is
    * intended for (resources, package name, manifest data, etc.)
@@ -147,27 +123,6 @@ public final class CommonNotificationBuilder {
     String pkgName = appContext.getPackageName();
     Resources appResources = appContext.getResources();
     PackageManager appPackageManager = appContext.getPackageManager();
-    return createNotificationInfo(
-        callingContext,
-        appContext,
-        params,
-        channelId,
-        manifestMetadata,
-        pkgName,
-        appResources,
-        appPackageManager);
-  }
-
-  public static DisplayNotificationInfo createNotificationInfo(
-      Context callingContext,
-      Context appContext,
-      NotificationParams params,
-      String channelId,
-      Bundle manifestMetadata,
-      String pkgName,
-      Resources appResources,
-      PackageManager appPackageManager) {
-
     NotificationCompat.Builder builder = new NotificationCompat.Builder(appContext, channelId);
 
     String title =

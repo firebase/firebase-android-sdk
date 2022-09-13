@@ -25,6 +25,8 @@ import org.gradle.api.Project;
 import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.publish.PublishingExtension;
+import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
@@ -55,7 +57,8 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
                         ImmutableList.of("-module-name", kotlinModuleName(project))));
 
     setupStaticAnalysis(project, firebaseLibrary);
-    project.afterEvaluate(p -> Dokka.configure(project, null, firebaseLibrary));
+    configurePublishing(project, firebaseLibrary);
+    project.getTasks().register("kotlindoc");
   }
 
   private static void setupStaticAnalysis(Project project, FirebaseLibraryExtension library) {
@@ -177,5 +180,35 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
     String fullyQualifiedProjectPath = project.getPath().replaceAll(":", "-");
 
     return project.getRootProject().getName() + fullyQualifiedProjectPath;
+  }
+
+  private static void configurePublishing(
+      Project project, FirebaseLibraryExtension firebaseLibrary) {
+    project.apply(ImmutableMap.of("plugin", "maven-publish"));
+    PublishingExtension publishing = project.getExtensions().getByType(PublishingExtension.class);
+    publishing.repositories(
+        repos ->
+            repos.maven(
+                repo -> {
+                  String s = project.getRootProject().getBuildDir() + "/m2repository";
+                  File file = new File(s);
+                  repo.setUrl(file.toURI());
+                  repo.setName("BuildDir");
+                }));
+    publishing.publications(
+        publications ->
+            publications.create(
+                "mavenAar",
+                MavenPublication.class,
+                publication -> {
+                  publication.from(
+                      project.getComponents().findByName(firebaseLibrary.type.getComponentName()));
+                  project.afterEvaluate(
+                      p -> {
+                        publication.setArtifactId(firebaseLibrary.artifactId.get());
+                        publication.setGroupId(firebaseLibrary.groupId.get());
+                        firebaseLibrary.applyPomCustomization(publication.getPom());
+                      });
+                }));
   }
 }

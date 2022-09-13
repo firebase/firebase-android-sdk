@@ -35,7 +35,7 @@ public enum LibraryType {
     // https://github.com/wupdigital/android-maven-publish ?).
     // So we explicitly choose the "Release" variant for android libraries.
     if (this == ANDROID) {
-      return name().toLowerCase() + "Release";
+      return "release";
     }
     return name().toLowerCase();
   }

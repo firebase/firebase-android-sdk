@@ -38,6 +38,7 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.components.Lazy;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.internal.FidListenerHandle;
 import com.google.firebase.installations.local.IidStore;
@@ -162,7 +163,7 @@ public class FirebaseInstallationsTest {
             mockBackend,
             persistedInstallation,
             utils,
-            mockIidStore,
+            new Lazy(() -> mockIidStore),
             mockFidGenerator);
 
     when(mockFidGenerator.createRandomFid()).thenReturn(TEST_FID_1);
