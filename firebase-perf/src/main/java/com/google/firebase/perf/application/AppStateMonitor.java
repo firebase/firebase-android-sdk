@@ -290,7 +290,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
    * @param subscriber the {@link AppColdStartCallback} instance.
    */
   public void registerForAppColdStart(AppColdStartCallback subscriber) {
-    synchronized (appStateSubscribers) {
+    synchronized (appColdStartSubscribers) {
       appColdStartSubscribers.add(subscriber);
     }
   }
@@ -315,7 +315,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
 
   /** Send cold start update to registered subscribers. */
   private void sendAppColdStartUpdate() {
-    synchronized (appStateSubscribers) {
+    synchronized (appColdStartSubscribers) {
       for (Iterator<AppColdStartCallback> i = appColdStartSubscribers.iterator(); i.hasNext(); ) {
         AppColdStartCallback callback = i.next();
         if (callback != null) {

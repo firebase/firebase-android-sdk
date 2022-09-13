@@ -122,7 +122,9 @@ public class FcmBroadcastProcessor {
       WakeLockHolder.sendWakefulServiceIntent(
           context, getServiceConnection(context, ServiceStarter.ACTION_MESSAGING_EVENT), intent);
     } else {
-      getServiceConnection(context, ServiceStarter.ACTION_MESSAGING_EVENT).sendIntent(intent);
+      // Ignore result since we're no longer blocking on the service handling the intent.
+      Task<Void> unused =
+          getServiceConnection(context, ServiceStarter.ACTION_MESSAGING_EVENT).sendIntent(intent);
     }
 
     return Tasks.forResult(ServiceStarter.SUCCESS);

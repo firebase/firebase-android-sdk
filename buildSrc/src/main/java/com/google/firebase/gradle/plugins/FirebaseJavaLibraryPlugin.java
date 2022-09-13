@@ -58,7 +58,7 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
 
     setupStaticAnalysis(project, firebaseLibrary);
     configurePublishing(project, firebaseLibrary);
-    project.afterEvaluate(p -> Dokka.configure(project, null, firebaseLibrary));
+    project.getTasks().register("kotlindoc");
   }
 
   private static void setupStaticAnalysis(Project project, FirebaseLibraryExtension library) {

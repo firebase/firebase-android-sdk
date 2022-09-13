@@ -237,6 +237,18 @@ public final class FirestoreClient {
         () -> syncEngine.transaction(asyncQueue, options, updateFunction));
   }
 
+  public Task<Long> runCountQuery(Query query) {
+    this.verifyNotTerminated();
+    final TaskCompletionSource<Long> result = new TaskCompletionSource<>();
+    asyncQueue.enqueueAndForget(
+        () ->
+            syncEngine
+                .runCountQuery(query)
+                .addOnSuccessListener(count -> result.setResult(count))
+                .addOnFailureListener(e -> result.setException(e)));
+    return result.getTask();
+  }
+
   /**
    * Returns a task resolves when all the pending writes at the time when this method is called
    * received server acknowledgement. An acknowledgement can be either acceptance or rejections.
