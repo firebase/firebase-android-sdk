@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
@@ -35,6 +36,8 @@ import com.google.firebase.heartbeatinfo.HeartBeatController;
 import com.google.firebase.inject.Provider;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
 
@@ -46,6 +49,8 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   private final List<AppCheckListener> appCheckListenerList;
   private final StorageHelper storageHelper;
   private final TokenRefreshManager tokenRefreshManager;
+  private final ExecutorService backgroundExecutor;
+  private final Task<Void> retrieveStoredTokenTask;
   private final Clock clock;
 
   private AppCheckProviderFactory appCheckProviderFactory;
@@ -65,8 +70,23 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
         new StorageHelper(firebaseApp.getApplicationContext(), firebaseApp.getPersistenceKey());
     this.tokenRefreshManager =
         new TokenRefreshManager(firebaseApp.getApplicationContext(), /* firebaseAppCheck= */ this);
+    this.backgroundExecutor = Executors.newCachedThreadPool();
+    this.retrieveStoredTokenTask = retrieveStoredAppCheckTokenInBackground(this.backgroundExecutor);
     this.clock = new Clock.DefaultClock();
-    setCachedToken(storageHelper.retrieveAppCheckToken());
+  }
+
+  @VisibleForTesting
+  @NonNull
+  Task<Void> retrieveStoredAppCheckTokenInBackground(@NonNull ExecutorService executor) {
+    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
+    executor.execute(
+        () -> {
+          AppCheckToken token = storageHelper.retrieveAppCheckToken();
+          if (token != null) {
+            setCachedToken(token);
+          }
+        });
+    return taskCompletionSource.getTask();
   }
 
   @Override
@@ -146,44 +166,59 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   @NonNull
   @Override
   public Task<AppCheckTokenResult> getToken(boolean forceRefresh) {
-    if (!forceRefresh && hasValidToken()) {
-      return Tasks.forResult(DefaultAppCheckTokenResult.constructFromAppCheckToken(cachedToken));
-    }
-    if (appCheckProvider == null) {
-      return Tasks.forResult(
-          DefaultAppCheckTokenResult.constructFromError(
-              new FirebaseException("No AppCheckProvider installed.")));
-    }
-    // TODO: Cache the in-flight task.
-    return fetchTokenFromProvider()
-        .continueWithTask(
-            new Continuation<AppCheckToken, Task<AppCheckTokenResult>>() {
-              @Override
-              public Task<AppCheckTokenResult> then(@NonNull Task<AppCheckToken> task) {
-                if (task.isSuccessful()) {
-                  return Tasks.forResult(
-                      DefaultAppCheckTokenResult.constructFromAppCheckToken(task.getResult()));
-                }
-                // If the token exchange failed, return a dummy token for integrators to attach in
-                // their headers.
-                return Tasks.forResult(
-                    DefaultAppCheckTokenResult.constructFromError(
-                        new FirebaseException(
-                            task.getException().getMessage(), task.getException())));
-              }
-            });
+    return retrieveStoredTokenTask.continueWithTask(
+        new Continuation<Void, Task<AppCheckTokenResult>>() {
+          @Override
+          public Task<AppCheckTokenResult> then(@NonNull Task<Void> task) {
+            if (!forceRefresh && hasValidToken()) {
+              return Tasks.forResult(
+                  DefaultAppCheckTokenResult.constructFromAppCheckToken(cachedToken));
+            }
+            if (appCheckProvider == null) {
+              return Tasks.forResult(
+                  DefaultAppCheckTokenResult.constructFromError(
+                      new FirebaseException("No AppCheckProvider installed.")));
+            }
+            // TODO: Cache the in-flight task.
+            return fetchTokenFromProvider()
+                .continueWithTask(
+                    new Continuation<AppCheckToken, Task<AppCheckTokenResult>>() {
+                      @Override
+                      public Task<AppCheckTokenResult> then(@NonNull Task<AppCheckToken> task) {
+                        if (task.isSuccessful()) {
+                          return Tasks.forResult(
+                              DefaultAppCheckTokenResult.constructFromAppCheckToken(
+                                  task.getResult()));
+                        }
+                        // If the token exchange failed, return a dummy token for integrators to
+                        // attach in
+                        // their headers.
+                        return Tasks.forResult(
+                            DefaultAppCheckTokenResult.constructFromError(
+                                new FirebaseException(
+                                    task.getException().getMessage(), task.getException())));
+                      }
+                    });
+          }
+        });
   }
 
   @NonNull
   @Override
   public Task<AppCheckToken> getAppCheckToken(boolean forceRefresh) {
-    if (!forceRefresh && hasValidToken()) {
-      return Tasks.forResult(cachedToken);
-    }
-    if (appCheckProvider == null) {
-      return Tasks.forException(new FirebaseException("No AppCheckProvider installed."));
-    }
-    return fetchTokenFromProvider();
+    return retrieveStoredTokenTask.continueWithTask(
+        new Continuation<Void, Task<AppCheckToken>>() {
+          @Override
+          public Task<AppCheckToken> then(@NonNull Task<Void> task) {
+            if (!forceRefresh && hasValidToken()) {
+              return Tasks.forResult(cachedToken);
+            }
+            if (appCheckProvider == null) {
+              return Tasks.forException(new FirebaseException("No AppCheckProvider installed."));
+            }
+            return fetchTokenFromProvider();
+          }
+        });
   }
 
   /** Fetches an {@link AppCheckToken} via the installed {@link AppCheckProvider}. */
