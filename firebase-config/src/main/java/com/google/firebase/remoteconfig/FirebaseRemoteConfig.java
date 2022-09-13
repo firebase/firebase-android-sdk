@@ -559,6 +559,15 @@ public class FirebaseRemoteConfig {
   }
 
   /**
+   * Immediately stops all ConfigUpdateListeners from receiving update messages.
+   *
+   * @hide
+   */
+  void pauseAllConfigUpdateListeners() {
+    configRealtimeHandler.pauseRealtime();
+  }
+
+  /**
    * Loads all the configs from disk by calling {@link ConfigCacheClient#get} on each cache client.
    *
    * @hide

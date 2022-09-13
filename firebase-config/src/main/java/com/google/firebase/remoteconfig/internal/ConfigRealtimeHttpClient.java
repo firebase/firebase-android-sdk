@@ -339,4 +339,8 @@ public class ConfigRealtimeHttpClient {
       this.httpURLConnection = null;
     }
   }
+
+  synchronized void closeRealtime() {
+    this.scheduledExecutorService.shutdownNow();
+  }
 }
