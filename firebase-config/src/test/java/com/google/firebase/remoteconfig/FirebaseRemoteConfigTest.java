@@ -1167,6 +1167,23 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void realtimeFetch_defaultTemplateVersion_excludeFetchEtag() throws Exception {
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+    when(mockHttpURLConnection.getInputStream())
+        .thenReturn(
+            new ByteArrayInputStream(
+                "{ \"featureDisabled\": false,  \"latestTemplateVersionNumber\": 2 }"
+                    .getBytes(StandardCharsets.UTF_8)));
+    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(0L);
+    when(mockFetchHandler.fetchWithoutEtag(0L))
+        .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+    configAutoFetch.listenForNotifications();
+
+    verify(mockRetryListener).onEvent();
+    verify(mockFetchHandler).fetchWithoutEtag(0L);
+  }
+
+  @Test
   public void realtime_stream_listen_get_inputstream_fail() throws Exception {
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
