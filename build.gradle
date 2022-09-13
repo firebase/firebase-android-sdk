@@ -17,9 +17,7 @@ import com.google.firebase.gradle.MultiProjectReleasePlugin
 
 buildscript {
     ext.kotlinVersion = '1.7.10'
-    // Please update $coroutinesVersion alongside $kotlinVersion
-    // A map of versions can be found here: https://kotlinlang.org/docs/releases.html
-    ext.coroutinesVersion = '1.5.2'
+    ext.coroutinesVersion = '1.6.4'
 
     repositories {
         google()
