@@ -80,7 +80,6 @@ public class RemoteConfigComponent {
   @GuardedBy("this")
   private final Map<String, FirebaseRemoteConfig> frcNamespaceInstances = new HashMap<>();
 
-  @GuardedBy("this")
   private static final Map<String, FirebaseRemoteConfig> frcNamespaceInstancesBackGround =
       new HashMap<>();
 
