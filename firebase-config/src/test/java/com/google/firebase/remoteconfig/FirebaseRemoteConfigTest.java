@@ -1160,8 +1160,9 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(mockRetryListener).onEvent();
-    verify(mockFetchHandler).fetch(0);
+    verify(mockListener, never())
+        .onError(any(FirebaseRemoteConfigRealtimeUpdateStreamException.class));
+    verify(mockFetchHandler).getTemplateVersionNumber();
   }
 
   @Test
@@ -1175,9 +1176,9 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(0L);
     when(mockFetchHandler.fetchWithoutEtag(0L))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
-    configAutoFetch.listenForNotifications();
+    configAutoFetch.fetchLatestConfig(0, 1);
 
-    verify(mockRetryListener).onEvent();
+    verify(mockListener).onEvent();
     verify(mockFetchHandler).fetchWithoutEtag(0L);
   }
 
