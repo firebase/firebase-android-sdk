@@ -298,6 +298,14 @@ public class ConfigRealtimeHttpClient {
     return new ConfigAutoFetch(httpURLConnection, configFetchHandler, listeners, retryCallback);
   }
 
+  private boolean isStatusCodeRetryable(int statusCode) {
+    return statusCode == HttpURLConnection.HTTP_CLIENT_TIMEOUT
+        || statusCode == HttpURLConnection.HTTP_BAD_GATEWAY
+        || statusCode == HttpURLConnection.HTTP_UNAVAILABLE
+        || statusCode == HttpURLConnection.HTTP_GATEWAY_TIMEOUT
+        || statusCode == HttpURLConnection.HTTP_OK;
+  }
+
   /**
    * Open the realtime connection, begin listening for updates, and auto-fetch when an update is
    * received.
@@ -311,22 +319,31 @@ public class ConfigRealtimeHttpClient {
       return;
     }
 
+    int responseCode = 200;
     try {
       // Create the open the connection.
       httpURLConnection = createRealtimeConnection();
-      httpURLConnection.connect();
+      responseCode = httpURLConnection.getResponseCode();
 
-      // Reset the retries remaining if we opened the connection without an exception.
-      resetRetryParameters();
+      if (responseCode == HttpURLConnection.HTTP_OK) {
+        // Reset the retries remaining if we opened the connection without an exception.
+        resetRetryParameters();
 
-      // Start listening for realtime notifications.
-      ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
-      configAutoFetch.listenForNotifications();
+        // Start listening for realtime notifications.
+        ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
+        configAutoFetch.listenForNotifications();
+      }
     } catch (IOException e) {
       Log.d(TAG, "Exception connecting to realtime stream. Retrying the connection...");
     } finally {
       closeRealtimeHttpStream();
-      retryHTTPConnection();
+      if (isStatusCodeRetryable(responseCode)) {
+        retryHTTPConnection();
+      } else {
+        propagateErrors(
+            new FirebaseRemoteConfigRealtimeUpdateStreamException(
+                "The server returned a status code that is not retryable. Realtime is shutting down."));
+      }
     }
   }
 
