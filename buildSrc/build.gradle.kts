@@ -43,8 +43,7 @@ dependencies {
 
     implementation("com.google.auto.value:auto-value-annotations:1.8.1")
     annotationProcessor("com.google.auto.value:auto-value:1.6.5")
-    implementation("digital.wup:android-maven-publish:3.6.3")
-    implementation(kotlin("gradle-plugin", "1.4.32"))
+    implementation(kotlin("gradle-plugin", "1.7.10"))
     implementation("org.json:json:20210307")
 
     implementation("org.eclipse.aether:aether-api:1.0.0.v20140518")
@@ -57,8 +56,8 @@ dependencies {
     implementation("org.apache.maven:maven-aether-provider:3.1.0")
 
     implementation("com.google.code.gson:gson:2.8.9")
-    implementation("org.jetbrains.dokka:dokka-android-gradle-plugin:0.9.17-g013-9b8280a")
-    implementation("com.android.tools.build:gradle:3.4.3")
+    implementation("com.android.tools.build:gradle:7.2.2")
+    implementation("com.android.tools.build:builder-test-api:7.2.2")
     implementation("gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9")
 
     testImplementation("junit:junit:4.13.2")
@@ -72,10 +71,6 @@ gradlePlugin {
             id = "LicenseResolverPlugin"
             implementationClass = "com.google.firebase.gradle.plugins.license.LicenseResolverPlugin"
         }
-        register("dackkaPlugin") {
-            id = "DackkaPlugin"
-            implementationClass = "com.google.firebase.gradle.plugins.DackkaPlugin"
-        }
         register("multiProjectReleasePlugin") {
             id = "MultiProjectReleasePlugin"
             implementationClass = "com.google.firebase.gradle.MultiProjectReleasePlugin"
@@ -88,12 +83,10 @@ gradlePlugin {
             id = "firebase-library"
             implementationClass = "com.google.firebase.gradle.plugins.FirebaseLibraryPlugin"
         }
-
         register("firebaseJavaLibraryPlugin") {
             id = "firebase-java-library"
             implementationClass = "com.google.firebase.gradle.plugins.FirebaseJavaLibraryPlugin"
         }
-
         register("firebaseVendorPlugin") {
             id = "firebase-vendor"
             implementationClass = "com.google.firebase.gradle.plugins.VendorPlugin"
