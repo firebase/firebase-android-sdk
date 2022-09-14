@@ -18,12 +18,12 @@ plugins {
 }
 
 android {
-    compileSdkVersion 30
+    compileSdkVersion 31
 
     defaultConfig {
         applicationId "com.googletest.firebase.appdistribution.testapp"
         minSdkVersion 19
-        targetSdkVersion 30
+        targetSdkVersion 31
         versionName "1.0"
         versionCode 1
 
@@ -31,12 +31,13 @@ android {
     }
 
     buildTypes {
-        // This is so we can build the "release" variant for the "dev-app" (and the SDK) without
+        // This is so we can build the "release" variant for the "test-app" (and the SDK) without
         // needing to have the app signed.
         release {
             initWith debug
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -50,15 +51,18 @@ dependencies {
     // TODO(rachelprince): Add flag to build with public version of SDK
     println("Building with HEAD version ':firebase-appdistribution' of SDK")
 
-    // Debug variant uses full SDK
-    debugImplementation project(':firebase-appdistribution-api') // TODO(lkellogg): why doesn't this get picked up transitively?
-    debugImplementation project(':firebase-appdistribution')
+    // All variants use the API
+    implementation project(':firebase-appdistribution-api:ktx')
 
-    // Release variant just uses the API, as if publishing to Play
-    releaseImplementation project(':firebase-appdistribution-api')
-
+    // In this test project we also need to explicitly declare these dependencies
+    implementation project(':firebase-appdistribution-api')
+    implementation project(':firebase-common:ktx')
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
 
+    // Debug uses the full implementation
+    debugImplementation project(':firebase-appdistribution')
+
+    // Other dependencies
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation 'androidx.core:core-ktx:1.5.0'
     implementation "androidx.core:core:1.6.0"
