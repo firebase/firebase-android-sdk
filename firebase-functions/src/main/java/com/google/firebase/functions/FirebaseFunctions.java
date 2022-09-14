@@ -178,7 +178,7 @@ public class FirebaseFunctions {
    */
   @NonNull
   public static FirebaseFunctions getInstance(@NonNull FirebaseApp app) {
-    return getInstance(app, "us-central1");
+    return getInstance(app, "us-west1");
   }
 
   /**
