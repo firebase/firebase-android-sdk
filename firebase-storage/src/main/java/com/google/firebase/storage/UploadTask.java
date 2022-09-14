@@ -14,6 +14,8 @@
 
 package com.google.firebase.storage;
 
+import static com.google.firebase.storage.internal.ExponentialBackoffSender.RND_MAX;
+
 import android.content.ContentResolver;
 import android.content.Context;
 import android.net.Uri;
@@ -25,10 +27,14 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.internal.Preconditions;
+import com.google.android.gms.common.util.Clock;
+import com.google.android.gms.common.util.DefaultClock;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.storage.internal.AdaptiveStreamBuffer;
 import com.google.firebase.storage.internal.ExponentialBackoffSender;
+import com.google.firebase.storage.internal.Sleeper;
+import com.google.firebase.storage.internal.SleeperImpl;
 import com.google.firebase.storage.internal.Util;
 import com.google.firebase.storage.network.NetworkRequest;
 import com.google.firebase.storage.network.ResumableUploadByteRequest;
@@ -40,6 +46,7 @@ import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import org.json.JSONException;
 
@@ -286,6 +293,8 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
    * If this method returns false, it is also responsible for ensuring the state has changed to a
    * valid final state (Canceled, Paused, Failure, Final)
    */
+  int sleepTime = 1000;
+  int maxSleepTime = 20000;
   private boolean shouldContinue() {
     if (getInternalState() == INTERNAL_STATE_SUCCESS) {
       return false; // already final/complete
@@ -322,7 +331,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
 
     boolean inErrorState = mServerException != null || mResultCode < 200 || mResultCode >= 300;
     // we attempt to recover by calling recoverStatus(true)
-    if (inErrorState && !recoverStatus(true)) {
+    if (inErrorState && (sleepTime >= maxSleepTime || !recoverStatus(true))) {
       // we failed to recover.
       if (serverStateValid()) {
         tryChangeState(INTERNAL_STATE_FAILURE, false);
@@ -350,10 +359,23 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
    * server. If withRetry = true, it indicates we are in a failback mode and a return of false at
    * this point will cause the upload process to kick out back to the developer.
    */
+  private static final Random random = new Random();
+  /*package*/ static Sleeper sleeper = new SleeperImpl();
+  /*package*/ static Clock clock = DefaultClock.getInstance();
   private boolean recoverStatus(boolean withRetry) {
     NetworkRequest queryRequest =
         new ResumableUploadQueryRequest(
             mStorageRef.getStorageReferenceUri(), mStorageRef.getApp(), mUploadUri);
+    try {
+      Log.d(TAG, "Waiting " + sleepTime + " milliseconds");
+      sleeper.sleep(sleepTime + random.nextInt(RND_MAX));
+    } catch (InterruptedException e) {
+      Log.w(TAG, "thread interrupted during exponential backoff.");
+
+      Thread.currentThread().interrupt();
+      return false;
+    }
+    sleepTime *= 2;
 
     if (RESUMABLE_FINAL_STATUS.equals(mServerStatus)) {
       return false;
