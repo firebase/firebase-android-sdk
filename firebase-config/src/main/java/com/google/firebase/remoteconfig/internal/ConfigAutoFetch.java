@@ -97,16 +97,9 @@ public class ConfigAutoFetch {
   public void listenForNotifications() {
     if (httpURLConnection != null) {
       try {
-        int responseCode = httpURLConnection.getResponseCode();
-        if (responseCode == 200) {
-          InputStream inputStream = httpURLConnection.getInputStream();
-          handleNotifications(inputStream);
-          inputStream.close();
-        } else {
-          propagateErrors(
-              new FirebaseRemoteConfigRealtimeUpdateStreamException(
-                  "Http connection responded with error: " + responseCode));
-        }
+        InputStream inputStream = httpURLConnection.getInputStream();
+        handleNotifications(inputStream);
+        inputStream.close();
       } catch (IOException ex) {
         propagateErrors(
             new FirebaseRemoteConfigRealtimeUpdateFetchException(
