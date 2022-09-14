@@ -14,18 +14,17 @@
 
 package com.google.firebase.appcheck.internal;
 
-import static android.os.Looper.getMainLooper;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.robolectric.Shadows.shadowOf;
 
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
@@ -76,8 +75,10 @@ public class DefaultFirebaseAppCheckTest {
     when(mockAppCheckProvider.getToken()).thenReturn(Tasks.forResult(validDefaultAppCheckToken));
 
     defaultFirebaseAppCheck =
-        new DefaultFirebaseAppCheck(mockFirebaseApp, () -> mockHeartBeatController);
-    shadowOf(getMainLooper()).idle();
+        new DefaultFirebaseAppCheck(
+            mockFirebaseApp,
+            () -> mockHeartBeatController,
+            MoreExecutors.newDirectExecutorService());
   }
 
   @Test

@@ -60,6 +60,17 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   public DefaultFirebaseAppCheck(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<HeartBeatController> heartBeatController) {
+    this(
+        checkNotNull(firebaseApp),
+        checkNotNull(heartBeatController),
+        Executors.newCachedThreadPool());
+  }
+
+  @VisibleForTesting
+  DefaultFirebaseAppCheck(
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull Provider<HeartBeatController> heartBeatController,
+      @NonNull ExecutorService backgroundExecutor) {
     checkNotNull(firebaseApp);
     checkNotNull(heartBeatController);
     this.firebaseApp = firebaseApp;
@@ -70,8 +81,8 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
         new StorageHelper(firebaseApp.getApplicationContext(), firebaseApp.getPersistenceKey());
     this.tokenRefreshManager =
         new TokenRefreshManager(firebaseApp.getApplicationContext(), /* firebaseAppCheck= */ this);
-    this.backgroundExecutor = Executors.newCachedThreadPool();
-    this.retrieveStoredTokenTask = retrieveStoredAppCheckTokenInBackground(this.backgroundExecutor);
+    this.backgroundExecutor = backgroundExecutor;
+    this.retrieveStoredTokenTask = retrieveStoredAppCheckTokenInBackground(backgroundExecutor);
     this.clock = new Clock.DefaultClock();
   }
 
@@ -226,6 +237,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
     return appCheckProvider
         .getToken()
         .continueWithTask(
+            backgroundExecutor,
             new Continuation<AppCheckToken, Task<AppCheckToken>>() {
               @Override
               public Task<AppCheckToken> then(@NonNull Task<AppCheckToken> task) {
@@ -260,6 +272,8 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   /**
    * Updates the {@link AppCheckToken} persisted in {@link android.content.SharedPreferences} as
    * well as the in-memory cached {@link AppCheckToken}.
+   *
+   * <p>This method performs a disk write, and should therefore be called on a background thread.
    */
   private void updateStoredToken(@NonNull AppCheckToken token) {
     storageHelper.saveAppCheckToken(token);
