@@ -85,6 +85,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
           if (token != null) {
             setCachedToken(token);
           }
+          taskCompletionSource.setResult(null);
         });
     return taskCompletionSource.getTask();
   }
@@ -191,8 +192,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
                                   task.getResult()));
                         }
                         // If the token exchange failed, return a dummy token for integrators to
-                        // attach in
-                        // their headers.
+                        // attach in their headers.
                         return Tasks.forResult(
                             DefaultAppCheckTokenResult.constructFromError(
                                 new FirebaseException(
