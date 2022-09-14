@@ -33,7 +33,7 @@ android {
 
     buildTypes {
         release {
-            // This is so we can build the "release" variant for the "dev-app" (and the SDK) without
+            // This is so we can build the "release" variant for the "test-app" (and the SDK) without
             // needing to have the app signed.
             initWith debug
         }
