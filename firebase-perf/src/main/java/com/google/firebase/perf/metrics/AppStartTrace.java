@@ -74,6 +74,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   private boolean isRegisteredForLifecycleCallbacks = false;
   private final TransportManager transportManager;
   private final Clock clock;
+  private final ConfigResolver configResolver;
   private Context appContext;
   /**
    * The first time onCreate() of any activity is called, the activity is saved as launchActivity.
@@ -140,6 +141,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
               new AppStartTrace(
                   transportManager,
                   clock,
+                  ConfigResolver.getInstance(),
                   new ThreadPoolExecutor(
                       CORE_POOL_SIZE,
                       MAX_POOL_SIZE,
@@ -155,9 +157,11 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   AppStartTrace(
       @NonNull TransportManager transportManager,
       @NonNull Clock clock,
+      @NonNull ConfigResolver configResolver,
       @NonNull ExecutorService executorService) {
     this.transportManager = transportManager;
     this.clock = clock;
+    this.configResolver = configResolver;
     this.executorService = executorService;
   }
 
@@ -244,7 +248,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     }
 
     // Shadow-launch experiment of new app start time
-    if (ConfigResolver.getInstance().getIsExperimentTTIDEnabled()) {
+    if (configResolver.getIsExperimentTTIDEnabled()) {
       View rootView = activity.findViewById(android.R.id.content);
       FirstDrawDoneListener.registerForNextDraw(rootView, this::recordFirstDrawDone);
     }
