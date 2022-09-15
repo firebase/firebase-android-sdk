@@ -111,16 +111,6 @@ android.libraryVariants.all { variant ->
     }
 }
 
-configurations.all {
-    if(it.name.contains('AndroidTestRuntimeClasspath')) {
-        it.resolutionStrategy {
-            force 'org.checkerframework:checker-compat-qual:2.5.5'
-            force 'com.google.guava:guava:30.1.1-android'
-        }
-    }
-    exclude group: "com.google.protobuf", module: "protobuf-java"
-}
-
 googleJavaFormat {
     exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
     exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
@@ -148,7 +138,6 @@ dependencies {
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation 'com.google.android.gms:play-services-base:18.0.1'
 
-    implementation 'com.squareup.okhttp:okhttp:2.7.5'
     implementation('com.google.firebase:firebase-auth-interop:19.0.2') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
@@ -161,7 +150,7 @@ dependencies {
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation "org.hamcrest:hamcrest-junit:2.0.0.0"
     testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation ("org.robolectric:robolectric:4.8.1") {
+    testImplementation ("org.robolectric:robolectric:4.8.2") {
         exclude group: 'com.google.protobuf', module: 'protobuf-java'
     }
     testImplementation "com.google.truth:truth:$googleTruthVersion"

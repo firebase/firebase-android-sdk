@@ -13,14 +13,18 @@
 # limitations under the License.
 
 import logging
+import os
 
 from . import commands
 from . import plugins
 from .internal import main
 
+# Unnecessary on CI as GitHub Actions provides them already.
+asctime_place_holder = '' if os.getenv('CI') else '%(asctime)s '
+log_format = f'[%(levelname).1s] {asctime_place_holder}%(name)s: %(message)s'
 logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S %z %Z',
-    format='[%(levelname).1s] %(asctime)s %(name)s: %(message)s',
+    format=log_format,
     level=logging.INFO,
 )
 logging.getLogger('fireci').setLevel(logging.DEBUG)

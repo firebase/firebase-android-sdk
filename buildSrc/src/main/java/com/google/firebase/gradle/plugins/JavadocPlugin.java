@@ -18,7 +18,6 @@ import static com.google.firebase.gradle.plugins.ProjectUtilsKt.toBoolean;
 
 import com.android.build.gradle.LibraryExtension;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -34,8 +33,6 @@ import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.tasks.javadoc.Javadoc;
 import org.gradle.external.javadoc.CoreJavadocOptions;
 import org.gradle.external.javadoc.StandardJavadocDocletOptions;
-import org.jetbrains.dokka.gradle.DokkaAndroidPlugin;
-import org.jetbrains.dokka.gradle.DokkaTask;
 
 /**
  * This plugin modifies the java plugin's javadoc task to be firebase friendly. It does the
@@ -73,10 +70,10 @@ public class JavadocPlugin implements Plugin<Project> {
               toBoolean(
                   ((Map<String, Object>) project.getProperties())
                       .getOrDefault("includeFireEscapeArtifacts", "false"));
-          if (!ext.publishJavadoc || !includeFireEscapeArtifacts) {
+          boolean isKotlinAndroid = project.getPlugins().hasPlugin("kotlin-android");
+
+          if (!ext.publishJavadoc || !includeFireEscapeArtifacts || isKotlinAndroid) {
             applyDummyJavadoc(project);
-          } else if (project.getPlugins().hasPlugin("kotlin-android")) {
-            applyDokka(project);
           } else {
             applyDoclava(project);
           }
@@ -117,6 +114,7 @@ public class JavadocPlugin implements Plugin<Project> {
                 // This comes with the risks of Timestamp's javadoc and binary releases having
                 // disconnected timelines.
                 // Given the repeated tedium in dealing with javadoc, this risk seems worth taking
+                // TODO(b/243534168): Move Timestamp class to firebase-common
                 if ("firebase-common".equals(project.getName())) {
                   Project firestoreProject = project.findProject(":firebase-firestore");
                   javadoc.setSource(
@@ -190,8 +188,7 @@ public class JavadocPlugin implements Plugin<Project> {
                   .setValue(
                       ImmutableList.of(
                           ImmutableList.of("book.path", "/docs/reference/_book.yaml"),
-                          ImmutableList.of(
-                              "project.path", "/docs/reference/android/_project.yaml")));
+                          ImmutableList.of("project.path", "/_project.yaml")));
 
               // root path assumed by docs
               options.addStringOption("toroot", "/docs/reference/android/");
@@ -275,13 +272,6 @@ public class JavadocPlugin implements Plugin<Project> {
             });
   }
 
-  private static void applyDokka(Project project) {
-    project.apply(ImmutableMap.of("plugin", DokkaAndroidPlugin.class));
-    DokkaTask dokka = (DokkaTask) project.getTasks().getByName("dokka");
-    dokka.setOutputDirectory(project.getBuildDir() + "/docs/javadoc/reference");
-    applyDummyJavadoc(project).dependsOn(dokka);
-  }
-
   private static Task applyDummyJavadoc(Project project) {
     return project
         .getTasks()
@@ -312,7 +302,9 @@ public class JavadocPlugin implements Plugin<Project> {
         .artifactView(
             view ->
                 view.attributes(
-                    attrs -> attrs.attribute(Attribute.of("artifactType", String.class), "jar")))
+                    attrs ->
+                        attrs.attribute(
+                            Attribute.of("artifactType", String.class), "android-classes")))
         .getArtifacts()
         .getArtifactFiles();
   }

@@ -1,0 +1,98 @@
+## Copyright 2022 Google LLC
+##
+## Licensed under the Apache License, Version 2.0 (the "License");
+## you may not use this file except in compliance with the License.
+## You may obtain a copy of the License at
+##
+##      http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+## See the License for the specific language governing permissions and
+## limitations under the License.
+
+### Helper functions
+
+# Determine if there are changes in files matching any of the
+# path patterns provided.
+def shouldFileBeExcluded(file, exclude_paths)
+  return exclude_paths.any? { |dir| file.include? dir }
+end
+
+# Determine if there are changes in files matching any of the
+# path patterns provided.
+def hasChangesIn(paths)
+  path_array = Array(paths)
+  path_array.each do |dir|
+    if !git.modified_files.grep(/#{dir}/).empty?
+      return true
+    end
+  end
+  return false
+end
+
+### Definitions
+
+# Label for any change that shouldn't have an accompanying CHANGELOG entry,
+# including all changes that do not affect the compiled binary (i.e. script
+# changes, test-only changes)
+declared_trivial = github.pr_labels.include? "no-changelog"
+
+# Whether or not there are pending changes to any changelog file.
+has_changelog_changes = hasChangesIn(["CHANGELOG"])
+
+# Ignore changes in these directories
+$exclude_directories = [
+  '.github/',
+  'buildSrc/',
+  'ci/',
+  'encoders/',
+  'firebase-annotations/',
+  'firebase-components/',
+  'firebase-datatransport/',
+  'gradle/',
+  'health-metrics/',
+  'integ-testing/',
+  'protolite-well-known-types/',
+  'smoke-tests/',
+  'third_party/',
+  'tools/',
+  'transport/'
+]
+
+# Whether or not the PR has modified SDK source files.
+def has_sdk_changes()
+  files = (git.modified_files +
+           git.added_files +
+           git.deleted_files)
+  return files.any? { |file|
+    !shouldFileBeExcluded(file, $exclude_directories)
+  }
+end
+
+tester_team = [
+  'rlazo',
+  'vkryachko',
+  'yifanyang',
+  'VinayGuthal',
+  'davidmotson',
+  'daymxn',
+  'emilypgoogle'
+]
+
+is_enabled = true if tester_team.include? github.pr_author
+
+### Actions
+
+# Warn if a changelog is left out on a non-trivial PR that has modified
+# SDK source files.
+#
+# TODO: remove the `is_enabled` after tests are complete
+if is_enabled && has_sdk_changes()
+  if !has_changelog_changes && !declared_trivial
+    warning = "Did you forget to add a changelog entry? (Add the 'no-changelog'"\
+      " label to the PR to silence this warning.)"
+    warn(warning)
+  end
+end

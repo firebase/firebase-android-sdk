@@ -14,92 +14,134 @@
 
 package com.google.firebase.perf.util;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import com.google.android.gms.common.util.VisibleForTesting;
-import java.util.concurrent.TimeUnit;
 
-/** A Timer class provides both wall-clock (epoch) time and high resolution time (nano time). */
+/**
+ * A Timer class provides both wall-clock (epoch) time and monotonic time (elapsedRealtime).
+ * Timestamps are captured with millisecond-precision, because that's the time unit most widely
+ * available in Android APIs. However, private fields and public method returns are in microseconds
+ * due to Fireperf proto requirements.
+ */
 public class Timer implements Parcelable {
 
-  /** Wall-clock time or epoch time in microseconds, */
-  private long timeInMicros;
   /**
-   * High resolution time in nanoseconds. High resolution time should only be used to calculate
-   * duration or latency. It is not wall-clock time.
+   * Wall-clock time or epoch time in microseconds. Do NOT use for duration because wall-clock is
+   * not guaranteed to be monotonic: it can be set by the user or the phone network, thus it may
+   * jump forwards or backwards unpredictably. {@see SystemClock}
    */
-  private long highResTime;
+  private long wallClockMicros;
+  /**
+   * Monotonic time measured in the {@link SystemClock#elapsedRealtime()} timebase. Only used to
+   * compute duration between 2 timestamps in the same timebase. It is NOT wall-clock time.
+   */
+  private long elapsedRealtimeMicros;
 
   /**
-   * Construct Timer object using System clock. Make it package visible to be only accessible from
-   * com.google.firebase.perf.util.Clock.
+   * Returns a new Timer object as if it was stamped at the given elapsedRealtime. Uses current
+   * wall-clock as a reference to extrapolate the wall-clock at the given elapsedRealtime.
+   *
+   * @param elapsedRealtimeMillis timestamp in the {@link SystemClock#elapsedRealtime()} timebase
    */
+  public static Timer ofElapsedRealtime(final long elapsedRealtimeMillis) {
+    long elapsedRealtimeMicros = MILLISECONDS.toMicros(elapsedRealtimeMillis);
+    long wallClockMicros = wallClockMicros() + (elapsedRealtimeMicros - elapsedRealtimeMicros());
+    return new Timer(wallClockMicros, elapsedRealtimeMicros);
+  }
+
+  /**
+   * Helper to get current wall-clock time from system API.
+   *
+   * @return wall-clock time in microseconds.
+   */
+  private static long wallClockMicros() {
+    return MILLISECONDS.toMicros(System.currentTimeMillis());
+  }
+
+  /**
+   * Helper to get current {@link SystemClock#elapsedRealtime()} from system API.
+   *
+   * @return wall-clock time in microseconds.
+   */
+  private static long elapsedRealtimeMicros() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+      return NANOSECONDS.toMicros(SystemClock.elapsedRealtimeNanos());
+    }
+    return MILLISECONDS.toMicros(SystemClock.elapsedRealtime());
+  }
+
+  // TODO: make all constructors private, use public static factory methods, per Effective Java
+  /** Construct Timer object using System clock. */
   public Timer() {
-    timeInMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
-    highResTime = System.nanoTime();
+    this(wallClockMicros(), elapsedRealtimeMicros());
   }
 
   /**
-   * Construct a Timer object with input wall-clock time, assume high resolution time is same as
-   * wall-clock time.
+   * Construct a Timer object with input wall-clock time and elapsedRealtime.
    *
-   * @param time wall-clock time in microseconds
+   * @param epochMicros wall-clock time in milliseconds since epoch
+   * @param elapsedRealtimeMicros monotonic time in microseconds in the {@link
+   *     SystemClock#elapsedRealtime()} timebase
    */
   @VisibleForTesting
-  public Timer(long time) {
-    this.timeInMicros = time;
-    highResTime = TimeUnit.MICROSECONDS.toNanos(time);
+  Timer(long epochMicros, long elapsedRealtimeMicros) {
+    this.wallClockMicros = epochMicros;
+    this.elapsedRealtimeMicros = elapsedRealtimeMicros;
   }
 
   /**
-   * Construct a Timer object with input wall-clock time and high resolution time.
+   * TEST-ONLY constructor that sets both wall-clock time and elapsedRealtime to the same input
+   * value. Do NOT use this for any real logic because this is mixing 2 different time-bases.
    *
-   * @param time wall-clock time in microseconds
-   * @param highResTime high resolution time in nanoseconds
+   * @param testTime value to set both wall-clock and elapsedRealtime to for testing purposes
    */
   @VisibleForTesting
-  public Timer(long time, long highResTime) {
-    this.timeInMicros = time;
-    this.highResTime = highResTime;
+  public Timer(long testTime) {
+    this(testTime, testTime);
   }
 
   private Timer(Parcel in) {
-    timeInMicros = in.readLong();
-    highResTime = in.readLong();
+    this(in.readLong(), in.readLong());
   }
 
   /** resets the start time */
   public void reset() {
-    timeInMicros = TimeUnit.MILLISECONDS.toMicros(System.currentTimeMillis());
-    highResTime = System.nanoTime();
+    // TODO: consider removing this method and make Timer immutable thus fully thread-safe
+    wallClockMicros = wallClockMicros();
+    elapsedRealtimeMicros = elapsedRealtimeMicros();
   }
 
   /** Return wall-clock time in microseconds. */
   public long getMicros() {
-    return timeInMicros;
+    return wallClockMicros;
   }
 
   /**
-   * Calculate duration in microseconds using the the high resolution time.
+   * Calculate duration in microseconds using elapsedRealtime.
    *
    * <p>The start time is this Timer object, end time is current time.
    *
    * @return duration in microseconds.
    */
   public long getDurationMicros() {
-    return TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - this.highResTime);
+    return getDurationMicros(new Timer());
   }
 
   /**
-   * Calculate duration in microseconds using the the high resolution time. The start time is this
-   * Timer object.
+   * Calculate duration in microseconds using elapsedRealtime. The start time is this Timer object.
    *
    * @param end end Timer object
    * @return duration in microseconds.
    */
   public long getDurationMicros(@NonNull final Timer end) {
-    return TimeUnit.NANOSECONDS.toMicros(end.highResTime - this.highResTime);
+    return end.elapsedRealtimeMicros - this.elapsedRealtimeMicros;
   }
 
   /**
@@ -111,17 +153,7 @@ public class Timer implements Parcelable {
    *     was created.
    */
   public long getCurrentTimestampMicros() {
-    return timeInMicros + getDurationMicros();
-  }
-
-  /**
-   * Return high resolution time in microseconds, only useful for testing..
-   *
-   * @return high resolution time in microseconds.
-   */
-  @VisibleForTesting
-  public long getHighResTime() {
-    return TimeUnit.NANOSECONDS.toMicros(highResTime);
+    return wallClockMicros + getDurationMicros();
   }
 
   /**
@@ -132,8 +164,8 @@ public class Timer implements Parcelable {
    * @param flags always will be the value 0.
    */
   public void writeToParcel(Parcel out, int flags) {
-    out.writeLong(timeInMicros);
-    out.writeLong(highResTime);
+    out.writeLong(wallClockMicros);
+    out.writeLong(elapsedRealtimeMicros);
   }
 
   /**

@@ -105,3 +105,12 @@ jobs:
                 assignees: ['jeremyjiang-dev', 'leotianlizhan', 'raymondlam', 'visumickey']
               });
             }
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-artifacts (${{ matrix.environment }})
+          path: |
+            ~/.m2/repository/com/google/firebase/perf-plugin
+            **/build/reports
+            **/build/test-results
