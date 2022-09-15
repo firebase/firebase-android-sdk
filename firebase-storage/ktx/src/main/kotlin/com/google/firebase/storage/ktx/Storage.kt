@@ -23,10 +23,17 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 import com.google.firebase.storage.FileDownloadTask
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ListResult
+import com.google.firebase.storage.OnPausedListener
+import com.google.firebase.storage.OnProgressListener
 import com.google.firebase.storage.StorageMetadata
 import com.google.firebase.storage.StorageReference
+import com.google.firebase.storage.StorageTaskScheduler
 import com.google.firebase.storage.StreamDownloadTask
 import com.google.firebase.storage.UploadTask
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 
 /** Returns the [FirebaseStorage] instance of the default [FirebaseApp]. */
 val Firebase.storage: FirebaseStorage
@@ -132,6 +139,93 @@ operator fun ListResult.component2(): List<StorageReference> = prefixes
  * @return the pageToken of the [ListResult]
  */
 operator fun ListResult.component3(): String? = pageToken
+
+/**
+ * Starts listening to this task's stream download progress and emits its values via a [Flow].
+ *
+ * - When the returned flow starts being collected, it attaches the following listeners:
+ * [OnPausedListener], [OnProgressListener].
+ * - When the flow completes the listeners will be removed.
+ */
+val StreamDownloadTask.progress: Flow<StorageProgress<StreamDownloadTask.TaskSnapshot>>
+    get() = callbackFlow {
+        val progressListener = OnProgressListener<StreamDownloadTask.TaskSnapshot> { snapshot ->
+            StorageTaskScheduler.getInstance().scheduleCallback {
+                trySendBlocking(StorageProgress.InProgress(snapshot))
+            }
+        }
+        val pauseListener = OnPausedListener<StreamDownloadTask.TaskSnapshot> { snapshot ->
+            StorageTaskScheduler.getInstance().scheduleCallback {
+                trySendBlocking(StorageProgress.Paused(snapshot))
+            }
+        }
+
+        addOnProgressListener(progressListener)
+        addOnPausedListener(pauseListener)
+
+        awaitClose {
+            removeOnProgressListener(progressListener)
+            removeOnPausedListener(pauseListener)
+        }
+    }
+
+/**
+ * Starts listening to this task's file download progress and emits its values via a [Flow].
+ *
+ * - When the returned flow starts being collected, it attaches the following listeners:
+ * [OnPausedListener], [OnProgressListener].
+ * - When the flow completes the listeners will be removed.
+ */
+val FileDownloadTask.progress: Flow<StorageProgress<FileDownloadTask.TaskSnapshot>>
+    get() = callbackFlow {
+        val progressListener = OnProgressListener<FileDownloadTask.TaskSnapshot> { snapshot ->
+            StorageTaskScheduler.getInstance().scheduleCallback {
+                trySendBlocking(StorageProgress.InProgress(snapshot))
+            }
+        }
+        val pauseListener = OnPausedListener<FileDownloadTask.TaskSnapshot> { snapshot ->
+            StorageTaskScheduler.getInstance().scheduleCallback {
+                trySendBlocking(StorageProgress.Paused(snapshot))
+            }
+        }
+
+        addOnProgressListener(progressListener)
+        addOnPausedListener(pauseListener)
+
+        awaitClose {
+            removeOnProgressListener(progressListener)
+            removeOnPausedListener(pauseListener)
+        }
+    }
+
+/**
+ * Starts listening to this task's upload progress and emits its values via a [Flow].
+ *
+ * - When the returned flow starts being collected, it attaches the following listeners:
+ * [OnPausedListener], [OnProgressListener].
+ * - When the flow completes the listeners will be removed.
+ */
+val UploadTask.progress: Flow<StorageProgress<UploadTask.TaskSnapshot>>
+    get() = callbackFlow {
+        val progressListener = OnProgressListener<UploadTask.TaskSnapshot> { snapshot ->
+            StorageTaskScheduler.getInstance().scheduleCallback {
+                trySendBlocking(StorageProgress.InProgress(snapshot))
+            }
+        }
+        val pauseListener = OnPausedListener<UploadTask.TaskSnapshot> { snapshot ->
+            StorageTaskScheduler.getInstance().scheduleCallback {
+                trySendBlocking(StorageProgress.Paused(snapshot))
+            }
+        }
+
+        addOnProgressListener(progressListener)
+        addOnPausedListener(pauseListener)
+
+        awaitClose {
+            removeOnProgressListener(progressListener)
+            removeOnPausedListener(pauseListener)
+        }
+    }
 
 internal const val LIBRARY_NAME: String = "fire-stg-ktx"
 
