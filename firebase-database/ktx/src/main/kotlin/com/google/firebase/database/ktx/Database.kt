@@ -30,6 +30,7 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.callbackFlow
 
 /** Returns the [FirebaseDatabase] instance of the default [FirebaseApp]. */
@@ -94,19 +95,19 @@ fun Query.snapshots() = callbackFlow<DataSnapshot> {
 fun Query.childEvents() = callbackFlow<ChildEvent> {
     val listener = addChildEventListener(object : ChildEventListener {
         override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-            trySend(ChildEvent.Added(snapshot, previousChildName))
+            trySendBlocking(ChildEvent.Added(snapshot, previousChildName))
         }
 
         override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-            trySend(ChildEvent.Changed(snapshot, previousChildName))
+            trySendBlocking(ChildEvent.Changed(snapshot, previousChildName))
         }
 
         override fun onChildRemoved(snapshot: DataSnapshot) {
-            trySend(ChildEvent.Removed(snapshot))
+            trySendBlocking(ChildEvent.Removed(snapshot))
         }
 
         override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
-            trySend(ChildEvent.Moved(snapshot, previousChildName))
+            trySendBlocking(ChildEvent.Moved(snapshot, previousChildName))
         }
 
         override fun onCancelled(error: DatabaseError) {
