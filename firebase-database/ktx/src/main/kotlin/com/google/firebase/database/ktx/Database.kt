@@ -18,12 +18,18 @@ import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.GenericTypeIndicator
 import com.google.firebase.database.MutableData
+import com.google.firebase.database.Transaction
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /** Returns the [FirebaseDatabase] instance of the default [FirebaseApp]. */
 val Firebase.database: FirebaseDatabase
@@ -57,6 +63,39 @@ inline fun <reified T> DataSnapshot.getValue(): T? {
  */
 inline fun <reified T> MutableData.getValue(): T? {
     return getValue(object : GenericTypeIndicator<T>() {})
+}
+
+/**
+ * Run a transaction on the data at this location.
+ *
+ * @param fireLocalEvents Defaults to true. If set to false, events will only be fired for the
+ *     final result state of the transaction, and not for any intermediate states
+ * @param handler A function to handle running the transaction
+ *
+ * Returns a [Pair]<Boolean, DataSnapshot> containing:
+ * Boolean: True if the transaction successfully completed, false if it was aborted or
+ *     an error occurred
+ * DataSnapshot: The current data at the location or null if an error occurred
+ */
+suspend fun DatabaseReference.runTransaction(
+    fireLocalEvents: Boolean = true,
+    handler: (MutableData) -> Transaction.Result
+) = suspendCancellableCoroutine<Pair<Boolean, DataSnapshot?>> { continuation ->
+    runTransaction(object : Transaction.Handler {
+        override fun doTransaction(currentData: MutableData) = handler(currentData)
+
+        override fun onComplete(
+            error: DatabaseError?,
+            committed: Boolean,
+            currentData: DataSnapshot?
+        ) {
+            if (error != null) {
+                continuation.resumeWithException(error.toException())
+                return
+            }
+            continuation.resume(Pair(committed, currentData))
+        }
+    }, fireLocalEvents)
 }
 
 internal const val LIBRARY_NAME: String = "fire-db-ktx"
