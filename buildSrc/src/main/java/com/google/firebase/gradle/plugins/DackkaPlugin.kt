@@ -168,6 +168,7 @@ abstract class DackkaPlugin : Plugin<Project> {
                     val classpath = compileConfiguration.getJars() + project.javadocConfig.getJars() + project.files(bootClasspath)
 
                     val sourcesForJava = sourceSets.flatMap {
+                        // TODO(b/246984444): Investigate why kotlinDirectories includes javaDirectories
                         it.javaDirectories.map { it.absoluteFile }
                     }
 
@@ -177,13 +178,12 @@ abstract class DackkaPlugin : Plugin<Project> {
                     }
 
                     docsTask.configure {
-                        clientName.set(project.firebaseConfigValue { artifactId })
-                        // this will become useful with the agp upgrade, as they're separate in 7.x+
-                        val sourcesForKotlin = emptyList<File>()
+                        if (!isKotlin) dependsOnAndMustRunAfter(docStubs)
+
+                        val sourcesForKotlin = emptyList<File>() + projectSpecificSources(project)
                         val packageLists = fetchPackageLists(project)
 
-                        if (!isKotlin) dependsOn(docStubs)
-                        val excludedFiles = if (!isKotlin) projectSpecificSuppressedFiles(project) else emptyList()
+                        val excludedFiles = projectSpecificSuppressedFiles(project)
                         val fixedJavaSources = if (!isKotlin) listOf(project.docStubs) else sourcesForJava
 
                         javaSources.set(fixedJavaSources)
@@ -207,10 +207,19 @@ abstract class DackkaPlugin : Plugin<Project> {
         }.toList()
 
     // TODO(b/243534168): Remove when fixed
+    private fun projectSpecificSources(project: Project) =
+        when (project.name) {
+            "firebase-common" -> {
+                project.project(":firebase-firestore").files("src/main/java/com/google/firebase").toList()
+            }
+            else -> emptyList()
+        }
+
+    // TODO(b/243534168): Remove when fixed
     private fun projectSpecificSuppressedFiles(project: Project): List<File> =
         when (project.name) {
             "firebase-common" -> {
-                project.files("${project.docStubs}/com/google/firebase/firestore").toList()
+                project.project(":firebase-firestore").files("src/main/java/com/google/firebase/firestore").toList()
             }
             "firebase-firestore" -> {
                 project.files("${project.docStubs}/com/google/firebase/Timestamp.java").toList()
@@ -226,6 +235,7 @@ abstract class DackkaPlugin : Plugin<Project> {
 
         dackkaJarFile.set(dackkaFile)
         outputDirectory.set(dackkaOutputDirectory)
+        clientName.set(project.firebaseConfigValue { artifactId })
     }
 
     // TODO(b/243833009): Make task cacheable
