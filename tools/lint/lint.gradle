@@ -16,7 +16,7 @@ plugins {
   id 'org.jetbrains.kotlin.jvm'
 }
 
-def lintVersion = '30.2.2'
+def lintVersion = '30.3.0-rc01'
 
 dependencies {
   compileOnly "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
