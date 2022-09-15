@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution.impl;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import com.google.firebase.components.Lazy;
 
 /** Class that handles storage for App Distribution SignIn persistence. */
 class SignInStorage {
@@ -23,18 +24,21 @@ class SignInStorage {
   private static final String SIGNIN_PREFERENCES_NAME = "FirebaseAppDistributionSignInStorage";
   private static final String SIGNIN_TAG = "firebase_app_distribution_signin";
 
-  private final SharedPreferences signInSharedPreferences;
+  private final Lazy<SharedPreferences> signInSharedPreferences;
 
   SignInStorage(Context applicationContext) {
     this.signInSharedPreferences =
-        applicationContext.getSharedPreferences(SIGNIN_PREFERENCES_NAME, Context.MODE_PRIVATE);
+        new Lazy(
+            () ->
+                applicationContext.getSharedPreferences(
+                    SIGNIN_PREFERENCES_NAME, Context.MODE_PRIVATE));
   }
 
   void setSignInStatus(boolean testerSignedIn) {
-    this.signInSharedPreferences.edit().putBoolean(SIGNIN_TAG, testerSignedIn).apply();
+    this.signInSharedPreferences.get().edit().putBoolean(SIGNIN_TAG, testerSignedIn).apply();
   }
 
   boolean getSignInStatus() {
-    return signInSharedPreferences.getBoolean(SIGNIN_TAG, false);
+    return signInSharedPreferences.get().getBoolean(SIGNIN_TAG, false);
   }
 }
