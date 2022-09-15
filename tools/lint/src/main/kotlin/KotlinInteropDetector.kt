@@ -493,7 +493,7 @@ class KotlinInteropDetector : Detector(), SourceCodeScanner {
                     node.modifierList?.hasModifierProperty(PsiModifier.FINAL) == true) {
                 return
             }
-            for (annotation in node.annotations) {
+            for (annotation in node.uAnnotations) {
                 val name = annotation.qualifiedName ?: continue
 
                 if (isNullableAnnotation(name)) {
