@@ -76,7 +76,9 @@ inline fun <reified T> MutableData.getValue(): T? {
 fun Query.snapshots() = callbackFlow<DataSnapshot> {
     val listener = addValueEventListener(object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
-            trySend(snapshot)
+            repo.scheduleNow {
+                trySendBlocking(snapshot)
+            }
         }
 
         override fun onCancelled(error: DatabaseError) {
@@ -95,19 +97,27 @@ fun Query.snapshots() = callbackFlow<DataSnapshot> {
 fun Query.childEvents() = callbackFlow<ChildEvent> {
     val listener = addChildEventListener(object : ChildEventListener {
         override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-            trySendBlocking(ChildEvent.Added(snapshot, previousChildName))
+            repo.scheduleNow {
+                trySendBlocking(ChildEvent.Added(snapshot, previousChildName))
+            }
         }
 
         override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-            trySendBlocking(ChildEvent.Changed(snapshot, previousChildName))
+            repo.scheduleNow {
+                trySendBlocking(ChildEvent.Changed(snapshot, previousChildName))
+            }
         }
 
         override fun onChildRemoved(snapshot: DataSnapshot) {
-            trySendBlocking(ChildEvent.Removed(snapshot))
+            repo.scheduleNow {
+                trySendBlocking(ChildEvent.Removed(snapshot))
+            }
         }
 
         override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
-            trySendBlocking(ChildEvent.Moved(snapshot, previousChildName))
+            repo.scheduleNow {
+                trySendBlocking(ChildEvent.Moved(snapshot, previousChildName))
+            }
         }
 
         override fun onCancelled(error: DatabaseError) {
