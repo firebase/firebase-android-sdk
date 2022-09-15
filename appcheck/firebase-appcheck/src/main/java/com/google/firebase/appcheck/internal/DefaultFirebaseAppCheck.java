@@ -235,7 +235,6 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
     return appCheckProvider
         .getToken()
         .continueWithTask(
-            backgroundExecutor,
             new Continuation<AppCheckToken, Task<AppCheckToken>>() {
               @Override
               public Task<AppCheckToken> then(@NonNull Task<AppCheckToken> task) {
@@ -270,11 +269,9 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   /**
    * Updates the {@link AppCheckToken} persisted in {@link android.content.SharedPreferences} as
    * well as the in-memory cached {@link AppCheckToken}.
-   *
-   * <p>This method performs a disk write, and should therefore be called on a background thread.
    */
   private void updateStoredToken(@NonNull AppCheckToken token) {
-    storageHelper.saveAppCheckToken(token);
+    backgroundExecutor.execute(() -> storageHelper.saveAppCheckToken(token));
     setCachedToken(token);
 
     tokenRefreshManager.maybeScheduleTokenRefresh(token);
