@@ -86,9 +86,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
     this.clock = new Clock.DefaultClock();
   }
 
-  @VisibleForTesting
-  @NonNull
-  Task<Void> retrieveStoredAppCheckTokenInBackground(@NonNull ExecutorService executor) {
+  private Task<Void> retrieveStoredAppCheckTokenInBackground(@NonNull ExecutorService executor) {
     TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
     executor.execute(
         () -> {
