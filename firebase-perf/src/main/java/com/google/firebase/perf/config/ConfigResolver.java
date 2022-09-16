@@ -115,19 +115,9 @@ public class ConfigResolver {
 
   /** Default API to call for whether performance monitoring is currently silent. */
   public boolean isPerformanceMonitoringEnabled() {
-    saveExperimentFlagToDeviceCache();
     Boolean isPerformanceCollectionEnabled = getIsPerformanceCollectionEnabled();
     return (isPerformanceCollectionEnabled == null || isPerformanceCollectionEnabled == true)
         && getIsServiceCollectionEnabled();
-  }
-
-  // TODO: remove after _experiment_as_ttid is finished
-  private void saveExperimentFlagToDeviceCache() {
-    ExperimentTTID config = ExperimentTTID.getInstance();
-    Optional<Boolean> rcValue = getRemoteConfigBoolean(config);
-    if (rcValue.isAvailable()) {
-      deviceCacheManager.setValue(config.getDeviceCacheFlag(), rcValue.get());
-    }
   }
 
   /** Returns whether developers have enabled Firebase Performance event collection. */

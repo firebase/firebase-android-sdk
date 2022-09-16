@@ -52,6 +52,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
   @Mock private FirebaseRemoteConfig mockFirebaseRemoteConfig;
   @Mock private RemoteConfigComponent mockFirebaseRemoteConfigComponent;
   @Mock private Provider<RemoteConfigComponent> mockFirebaseRemoteConfigProvider;
+  @Mock private DeviceCacheManager mockCacheManager;
 
   private FakeScheduledExecutorService fakeExecutor;
 
@@ -889,10 +890,13 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     when(mockFirebaseRemoteConfig.getAll()).thenReturn(configs);
     if (initializeFrc) {
       return new RemoteConfigManager(
-          fakeExecutor, mockFirebaseRemoteConfig, appStartConfigFetchDelayInMs);
+          mockCacheManager, fakeExecutor, mockFirebaseRemoteConfig, appStartConfigFetchDelayInMs);
     } else {
       return new RemoteConfigManager(
-          fakeExecutor, /* firebaseRemoteConfig= */ null, appStartConfigFetchDelayInMs);
+          mockCacheManager,
+          fakeExecutor,
+          /* firebaseRemoteConfig= */ null,
+          appStartConfigFetchDelayInMs);
     }
   }
 
