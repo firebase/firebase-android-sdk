@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics.internal.send;
 
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transport;
+import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
@@ -25,6 +26,7 @@ import com.google.firebase.crashlytics.internal.settings.Settings;
 import java.util.Locale;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -115,6 +117,24 @@ final class ReportQueue {
     }
   }
 
+  public void flushScheduledReportsIfAble() {
+    CountDownLatch latch = new CountDownLatch(1);
+    new Thread(
+            () -> {
+              TransportRuntime.getInstance()
+                  .getUploader()
+                  .upload(DataTransportCrashlyticsReportSender.transportContext, 1, () -> {});
+              latch.countDown();
+            })
+        .start();
+    try {
+      //noinspection ResultOfMethodCallIgnored best effort only
+      latch.await(2, TimeUnit.SECONDS);
+    } catch (InterruptedException unused) {
+
+    }
+  }
+
   /** Send the report to Crashlytics through Google DataTransport. */
   private void sendReport(
       CrashlyticsReportWithSessionId reportWithSessionId,
@@ -128,6 +148,7 @@ final class ReportQueue {
             tcs.trySetException(error);
             return;
           }
+          flushScheduledReportsIfAble();
           tcs.trySetResult(reportWithSessionId);
         });
   }

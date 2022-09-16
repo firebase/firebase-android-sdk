@@ -20,10 +20,8 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import androidx.test.runner.AndroidJUnit4;
-import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportScheduleCallback;
 import com.google.android.gms.tasks.Task;
@@ -44,17 +42,15 @@ import org.mockito.stubbing.Answer;
 public class DataTransportCrashlyticsReportSenderTest {
 
   @Mock private Transport<CrashlyticsReport> mockTransport;
-  @Mock private Transformer<CrashlyticsReport, byte[]> mockTransform;
 
   private DataTransportCrashlyticsReportSender reportSender;
 
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
-    when(mockTransform.apply(any())).thenReturn(new byte[0]);
     reportSender =
         new DataTransportCrashlyticsReportSender(
-            new ReportQueue(60, 1.2, 3_000, mockTransport, new OnDemandCounter()), mockTransform);
+            new ReportQueue(60, 1.2, 3_000, mockTransport, new OnDemandCounter()));
   }
 
   @Test
