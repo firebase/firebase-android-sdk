@@ -35,6 +35,10 @@ import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -389,42 +393,45 @@ public class FirebaseAppDistributionTesterApiClientTest {
   @Test
   public void attachScreenshot_whenResponseSuccessful_makesPostRequestAndReturnsFeedbackName()
       throws Exception {
-    File testScreenshotFile =
-        ApplicationProvider.getApplicationContext().getFileStreamPath("test.png");
+    InputStream inputStream =
+        new FileInputStream(
+                ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
 
     Task<String> task =
-        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, testScreenshotFile);
+        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, inputStream);
     String result = awaitTask(task);
 
     assertThat(result).isEqualTo(FEEDBACK_NAME);
     verify(mockTesterApiHttpClient)
         .makeUploadRequest(
-            any(), eq(ATTACH_SCREENSHOT_PATH), eq(TEST_AUTH_TOKEN), eq(testScreenshotFile));
+            any(), eq(ATTACH_SCREENSHOT_PATH), eq(TEST_AUTH_TOKEN), eq(inputStream));
   }
 
   @Test
-  public void attachScreenshot_getFidError_throwsError() {
+  public void attachScreenshot_getFidError_throwsError() throws FileNotFoundException {
     Exception expectedException = new Exception("test ex");
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(expectedException));
-    File testScreenshotFile =
-        ApplicationProvider.getApplicationContext().getFileStreamPath("test.png");
+    InputStream inputStream =
+            new FileInputStream(
+                    ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
 
     Task<String> task =
-        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, testScreenshotFile);
+        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, inputStream);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
 
   @Test
-  public void attachScreenshot_getFisAuthTokenError_throwsError() {
+  public void attachScreenshot_getFisAuthTokenError_throwsError() throws FileNotFoundException {
     Exception expectedException = new Exception("test ex");
     when(mockFirebaseInstallations.getToken(false))
         .thenReturn(Tasks.forException(expectedException));
-    File testScreenshotFile =
-        ApplicationProvider.getApplicationContext().getFileStreamPath("test.png");
+    InputStream inputStream =
+            new FileInputStream(
+                    ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
 
     Task<String> task =
-        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, testScreenshotFile);
+        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, inputStream);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
@@ -434,11 +441,12 @@ public class FirebaseAppDistributionTesterApiClientTest {
     when(mockTesterApiHttpClient.makeUploadRequest(
             any(), eq(ATTACH_SCREENSHOT_PATH), eq(TEST_AUTH_TOKEN), any()))
         .thenThrow(new FirebaseAppDistributionException("test ex", Status.UNKNOWN));
-    File testScreenshotFile =
-        ApplicationProvider.getApplicationContext().getFileStreamPath("test.png");
+    InputStream inputStream =
+            new FileInputStream(
+                    ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
 
     Task<String> task =
-        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, testScreenshotFile);
+        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, inputStream);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex");
   }

@@ -4,6 +4,8 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.HandlerThread
 import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
@@ -58,6 +60,11 @@ class MainActivity : AppCompatActivity() {
         signInStatus = findViewById<TextView>(R.id.sign_in_status)
         progressPercent = findViewById<TextView>(R.id.progress_percentage)
         progressBar = findViewById<ProgressBar>(R.id.progress_bar)
+
+        val thread = HandlerThread("AppDistroFeedbackTrigger")
+        thread.start()
+        FeedbackTriggers(this, "Here's some terms and conditions", Handler(thread.looper))
+            .registerScreenshotObserver()
     }
 
     override fun onResume() {

@@ -20,7 +20,7 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.INFO_TEXT_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_EXTRA_KEY;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_FILENAME_EXTRA_KEY;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_URI_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskResult;
 
@@ -28,6 +28,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
+
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -321,7 +323,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         .takeScreenshot()
         .onSuccessTask(
             taskExecutor,
-            screenshotFilename ->
+            screenshotUri ->
                 testerSignInManager
                     .signInTester()
                     .addOnFailureListener(
@@ -333,19 +335,19 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                     .onSuccessTask(
                         taskExecutor,
                         releaseName ->
-                            launchFeedbackActivity(releaseName, infoText, screenshotFilename)))
+                            launchFeedbackActivity(releaseName, infoText, screenshotUri)))
         .addOnFailureListener(
             taskExecutor, e -> LogWrapper.getInstance().e("Failed to launch feedback flow", e));
   }
 
   private Task<Void> launchFeedbackActivity(
-      String releaseName, CharSequence infoText, String screenshotFilename) {
+      String releaseName, CharSequence infoText, Uri screenshotFilename) {
     return lifecycleNotifier.consumeForegroundActivity(
         activity -> {
           Intent intent = new Intent(activity, FeedbackActivity.class);
           intent.putExtra(RELEASE_NAME_EXTRA_KEY, releaseName);
           intent.putExtra(INFO_TEXT_EXTRA_KEY, infoText);
-          intent.putExtra(SCREENSHOT_FILENAME_EXTRA_KEY, screenshotFilename);
+          intent.putExtra(SCREENSHOT_URI_EXTRA_KEY, screenshotFilename);
           activity.startActivity(intent);
         });
   }

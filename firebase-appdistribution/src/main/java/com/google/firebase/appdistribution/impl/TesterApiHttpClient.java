@@ -16,6 +16,8 @@ package com.google.firebase.appdistribution.impl;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.net.Uri;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.util.AndroidUtilsLight;
@@ -119,20 +121,19 @@ class TesterApiHttpClient {
   }
 
   /**
-   * Make a raw file upload request to the tester API at the given path using a FIS token for auth.
+   * Make an upload request to the tester API at the given path using a FIS token for auth.
    *
-   * <p>Uploads the file with gzip encoding.
+   * <p>Uploads the content with gzip encoding.
    *
    * @return the response body
    */
-  JSONObject makeUploadRequest(String tag, String path, String token, File file)
+  JSONObject makeUploadRequest(String tag, String path, String token, InputStream inputStream)
       throws FirebaseAppDistributionException {
     Map<String, String> extraHeaders = new HashMap<>();
     extraHeaders.put(X_GOOG_UPLOAD_PROTOCOL_HEADER, X_GOOG_UPLOAD_PROTOCOL_RAW);
     extraHeaders.put(X_GOOG_UPLOAD_FILE_NAME_HEADER, X_GOOG_UPLOAD_FILE_NAME);
     RequestBodyWriter requestBodyWriter =
         outputStream -> {
-          FileInputStream inputStream = new FileInputStream(file);
           writeInputStreamToOutputStream(inputStream, outputStream);
         };
     return makePostRequest(tag, path, token, extraHeaders, requestBodyWriter);

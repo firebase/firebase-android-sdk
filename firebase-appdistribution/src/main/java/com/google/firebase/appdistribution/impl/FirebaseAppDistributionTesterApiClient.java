@@ -27,6 +27,7 @@ import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.File;
+import java.io.InputStream;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.json.JSONArray;
@@ -150,13 +151,13 @@ class FirebaseAppDistributionTesterApiClient {
    * @return a {@link Task} containing the feedback name, for convenience when chaining subsequent
    *     requests off of this task
    */
-  Task<String> attachScreenshot(String feedbackName, File screenshotFile) {
+  Task<String> attachScreenshot(String feedbackName, InputStream screenshotInputStream) {
     return runWithFidAndToken(
         (unused, token) -> {
           LogWrapper.getInstance().i("Uploading screenshot for feedback: " + feedbackName);
           String path =
               String.format("upload/v1alpha/%s:uploadArtifact?type=SCREENSHOT", feedbackName);
-          testerApiHttpClient.makeUploadRequest(UPLOAD_SCREENSHOT_TAG, path, token, screenshotFile);
+          testerApiHttpClient.makeUploadRequest(UPLOAD_SCREENSHOT_TAG, path, token, screenshotInputStream);
           return feedbackName;
         });
   }

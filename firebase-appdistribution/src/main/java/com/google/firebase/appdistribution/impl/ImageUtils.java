@@ -14,11 +14,15 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 
 public class ImageUtils {
 
@@ -28,16 +32,16 @@ public class ImageUtils {
 
     abstract int height();
 
-    static ImageSize read(File file) {
+    static ImageSize read(InputStream inputStream) {
       final BitmapFactory.Options options = new BitmapFactory.Options();
       options.inJustDecodeBounds = true;
-      BitmapFactory.decodeFile(file.getAbsolutePath(), options);
+      BitmapFactory.decodeStream(inputStream, /* outPadding= */ null, options);
       return new AutoValue_ImageUtils_ImageSize(options.outWidth, options.outHeight);
     }
   }
 
   /**
-   * Read an image from a file, scaled as small as possible according to the target size.
+   * Read an image, scaled as small as possible according to the target size.
    *
    * <p>The returned bitmap will be scaled down, preserving the aspect ratio, by the largest power
    * of 2 that results in the width and height still being larger than the target.
@@ -48,17 +52,17 @@ public class ImageUtils {
    * @throws IllegalArgumentException if target height or width are less than or equal to zero
    */
   @Nullable
-  public static Bitmap readScaledImage(File file, int targetWidth, int targetHeight) {
+  public static Bitmap readScaledImage(InputStream inputStream, int targetWidth, int targetHeight) {
     if (targetWidth <= 0 || targetHeight <= 0) {
       throw new IllegalArgumentException(
           String.format(
               "Tried to read image with bad dimensions: %dx%d", targetWidth, targetHeight));
     }
-    ImageSize imageSize = ImageSize.read(file);
+    ImageSize imageSize = ImageSize.read(inputStream);
     final BitmapFactory.Options options = new BitmapFactory.Options();
     options.inSampleSize =
         calculateInSampleSize(imageSize.width(), imageSize.height(), targetWidth, targetHeight);
-    return BitmapFactory.decodeFile(file.getAbsolutePath(), options);
+    return BitmapFactory.decodeStream(inputStream, /* outPadding= */ null, options);
   }
 
   private static int calculateInSampleSize(

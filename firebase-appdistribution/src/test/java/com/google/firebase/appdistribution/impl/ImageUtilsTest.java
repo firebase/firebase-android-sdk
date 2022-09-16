@@ -23,8 +23,11 @@ import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Bitmap.Config;
 import androidx.test.core.app.ApplicationProvider;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,11 +51,11 @@ public class ImageUtilsTest {
 
   @Test
   public void readScaledImage_targetIsLessThanHalf_scalesDown() throws IOException {
-    File file = writeBitmapToTmpFile();
+    InputStream inputStream = writeBitmapToTmpFile();
 
     Bitmap result =
         ImageUtils.readScaledImage(
-            file, TEST_SCREENSHOT_WIDTH / 2 - 100, TEST_SCREENSHOT_HEIGHT / 2 - 100);
+                inputStream, TEST_SCREENSHOT_WIDTH / 2 - 100, TEST_SCREENSHOT_HEIGHT / 2 - 100);
 
     assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH / 2);
     assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT / 2);
@@ -60,10 +63,10 @@ public class ImageUtilsTest {
 
   @Test
   public void readScaledImage_targetExactlyPowerOfTwoSmaller_scalesDown() throws IOException {
-    File file = writeBitmapToTmpFile();
+    InputStream inputStream = writeBitmapToTmpFile();
 
     Bitmap result =
-        ImageUtils.readScaledImage(file, TEST_SCREENSHOT_WIDTH / 4, TEST_SCREENSHOT_HEIGHT / 4);
+        ImageUtils.readScaledImage(inputStream, TEST_SCREENSHOT_WIDTH / 4, TEST_SCREENSHOT_HEIGHT / 4);
 
     assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH / 4);
     assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT / 4);
@@ -71,11 +74,11 @@ public class ImageUtilsTest {
 
   @Test
   public void readScaledImage_targetWidthIsSmaller_scalesDownToFitHeight() throws IOException {
-    File file = writeBitmapToTmpFile();
+    InputStream inputStream = writeBitmapToTmpFile();
 
     Bitmap result =
         ImageUtils.readScaledImage(
-            file, TEST_SCREENSHOT_WIDTH / 4 - 100, TEST_SCREENSHOT_HEIGHT / 2 - 100);
+            inputStream, TEST_SCREENSHOT_WIDTH / 4 - 100, TEST_SCREENSHOT_HEIGHT / 2 - 100);
 
     assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH / 2);
     assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT / 2);
@@ -83,11 +86,11 @@ public class ImageUtilsTest {
 
   @Test
   public void readScaledImage_targetHeightIsSmaller_scalesDownToFitWidth() throws IOException {
-    File file = writeBitmapToTmpFile();
+    InputStream inputStream = writeBitmapToTmpFile();
 
     Bitmap result =
         ImageUtils.readScaledImage(
-            file, TEST_SCREENSHOT_WIDTH / 2 - 100, TEST_SCREENSHOT_HEIGHT / 4 - 100);
+                inputStream, TEST_SCREENSHOT_WIDTH / 2 - 100, TEST_SCREENSHOT_HEIGHT / 4 - 100);
 
     assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH / 2);
     assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT / 2);
@@ -95,9 +98,9 @@ public class ImageUtilsTest {
 
   @Test
   public void readScaledImage_targetIsGreaterThanHalf_returnsOriginal() throws IOException {
-    File file = writeBitmapToTmpFile();
+    InputStream inputStream = writeBitmapToTmpFile();
     Bitmap result =
-        ImageUtils.readScaledImage(file, TEST_SCREENSHOT_WIDTH - 100, TEST_SCREENSHOT_HEIGHT - 100);
+        ImageUtils.readScaledImage(inputStream, TEST_SCREENSHOT_WIDTH - 100, TEST_SCREENSHOT_HEIGHT - 100);
 
     assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH);
     assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT);
@@ -105,9 +108,9 @@ public class ImageUtilsTest {
 
   @Test
   public void readScaledImage_targetIsGreater_returnsOriginal() throws IOException {
-    File file = writeBitmapToTmpFile();
+    InputStream inputStream = writeBitmapToTmpFile();
     Bitmap result =
-        ImageUtils.readScaledImage(file, TEST_SCREENSHOT_WIDTH * 2, TEST_SCREENSHOT_HEIGHT * 2);
+        ImageUtils.readScaledImage(inputStream, TEST_SCREENSHOT_WIDTH * 2, TEST_SCREENSHOT_HEIGHT * 2);
 
     assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH);
     assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT);
@@ -115,24 +118,25 @@ public class ImageUtilsTest {
 
   @Test
   public void readScaledImage_zeroDimension_throws() throws IOException {
-    File file = writeBitmapToTmpFile();
-    assertThrows(IllegalArgumentException.class, () -> ImageUtils.readScaledImage(file, 500, 0));
+    InputStream inputStream = writeBitmapToTmpFile();
+    assertThrows(IllegalArgumentException.class, () -> ImageUtils.readScaledImage(inputStream, 500, 0));
   }
 
   @Test
   public void readScaledImage_doesntExist_throws() throws IOException {
     assertThrows(
         IllegalArgumentException.class,
-        () -> ImageUtils.readScaledImage(new File("nonexistent.png"), 500, 0));
+        () -> ImageUtils.readScaledImage(Files.newInputStream(new File("nonexistent.png").toPath()), 500, 0));
   }
 
-  private static File writeBitmapToTmpFile() throws IOException {
+  private static InputStream writeBitmapToTmpFile() throws IOException {
     // Write bitmap to file
     try (FileOutputStream outputStream =
         ApplicationProvider.getApplicationContext()
             .openFileOutput(TEST_FILENAME, Context.MODE_PRIVATE)) {
       TEST_SCREENSHOT.compress(CompressFormat.PNG, 100, outputStream);
     }
-    return ApplicationProvider.getApplicationContext().getFileStreamPath(TEST_FILENAME);
+    File file = ApplicationProvider.getApplicationContext().getFileStreamPath(TEST_FILENAME);
+    return new FileInputStream(file);
   }
 }
