@@ -46,6 +46,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebasePerformance.class)
+            .name("fire-perf")
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(RemoteConfigComponent.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))

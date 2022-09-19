@@ -37,6 +37,7 @@ public class FirebaseAppDistributionApiRegistrar implements ComponentRegistrar {
   public @NonNull List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseAppDistributionProxy.class)
+            .name("fire-appdistribution-api")
             .add(Dependency.optionalProvider(FirebaseAppDistribution.class))
             .factory(this::buildFirebaseAppDistributionProxy)
             // construct FirebaseAppDistribution instance on startup so we can register for

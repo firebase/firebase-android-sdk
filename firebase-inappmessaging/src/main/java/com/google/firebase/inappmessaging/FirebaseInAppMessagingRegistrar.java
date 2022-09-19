@@ -57,6 +57,7 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseInAppMessaging.class)
+            .name("fire-fiam")
             .add(Dependency.required(Context.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.required(FirebaseApp.class))

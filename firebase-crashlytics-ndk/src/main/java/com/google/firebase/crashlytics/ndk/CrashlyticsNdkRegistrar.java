@@ -30,6 +30,7 @@ public class CrashlyticsNdkRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(CrashlyticsNativeComponent.class)
+            .name("fire-cls-ndk")
             .add(Dependency.required(Context.class))
             .factory(this::buildCrashlyticsNdk)
             .eagerInDefaultApp()

@@ -44,6 +44,7 @@ public class FirestoreRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirestoreMultiDbComponent.class)
+            .name("fire-fst")
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(Context.class))
             .add(Dependency.optionalProvider(HeartBeatInfo.class))

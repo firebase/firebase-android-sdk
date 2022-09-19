@@ -49,6 +49,7 @@ public class FunctionsRegistrar implements ComponentRegistrar {
                         c.getDeferred(InternalAppCheckTokenProvider.class)))
             .build(),
         Component.builder(FunctionsMultiResourceComponent.class)
+            .name("fire-fn")
             .add(Dependency.required(Context.class))
             .add(Dependency.required(ContextProvider.class))
             .add(Dependency.required(FirebaseApp.class))

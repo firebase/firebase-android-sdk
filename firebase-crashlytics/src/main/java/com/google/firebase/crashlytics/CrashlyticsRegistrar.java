@@ -33,6 +33,7 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseCrashlytics.class)
+            .name("fire-cls")
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.deferred(CrashlyticsNativeComponent.class))

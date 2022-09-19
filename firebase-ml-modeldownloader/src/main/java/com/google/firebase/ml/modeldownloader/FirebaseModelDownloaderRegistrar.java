@@ -46,6 +46,7 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseModelDownloader.class)
+            .name("firebase-ml-modeldownloader")
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .factory(

@@ -32,6 +32,7 @@ public class FirebaseSegmentationRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseSegmentation.class)
+            .name("fire-segmentation")
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .factory(

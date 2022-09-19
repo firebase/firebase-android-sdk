@@ -43,6 +43,7 @@ public class FirebaseMessagingRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseMessaging.class)
+            .name("fire-fcm")
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.optional(FirebaseInstanceIdInternal.class))
             .add(Dependency.optionalProvider(UserAgentPublisher.class))

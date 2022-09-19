@@ -33,6 +33,7 @@ public class FirebaseInstallationsRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseInstallationsApi.class)
+            .name("fire-installations")
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.optionalProvider(HeartBeatController.class))
             .factory(

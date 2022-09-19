@@ -43,6 +43,7 @@ public final class FirebaseDynamicLinkRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     Component<FirebaseDynamicLinks> firebaseDynamicLinks =
         Component.builder(FirebaseDynamicLinks.class)
+            .name("fire-dl")
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.optionalProvider(AnalyticsConnector.class))
             .factory(

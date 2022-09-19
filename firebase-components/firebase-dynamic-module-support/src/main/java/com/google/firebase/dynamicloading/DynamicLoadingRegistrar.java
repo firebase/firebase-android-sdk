@@ -28,6 +28,7 @@ public class DynamicLoadingRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(DynamicLoadingSupport.class)
+            .name("fire-dyn-mod")
             .add(Dependency.required(Context.class))
             .add(Dependency.required(ComponentLoader.class))
             .alwaysEager()

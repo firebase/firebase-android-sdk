@@ -44,6 +44,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
   public @NonNull List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseAppDistribution.class)
+            .name("fire-appdistribution")
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
             .factory(this::buildFirebaseAppDistribution)

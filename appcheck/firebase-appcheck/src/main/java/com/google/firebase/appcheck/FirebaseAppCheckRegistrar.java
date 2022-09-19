@@ -40,6 +40,7 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseAppCheck.class, (InternalAppCheckTokenProvider.class))
+            .name("fire-app-check")
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.optionalProvider(HeartBeatController.class))
             .factory(

@@ -32,6 +32,7 @@ public class TransportRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(TransportFactory.class)
+            .name("fire-transport")
             .add(Dependency.required(Context.class))
             .factory(
                 c -> {

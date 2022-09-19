@@ -37,6 +37,7 @@ public class AbtRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(AbtComponent.class)
+            .name("fire-abt")
             .add(Dependency.required(Context.class))
             .add(Dependency.optionalProvider(AnalyticsConnector.class))
             .factory(

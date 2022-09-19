@@ -34,6 +34,7 @@ public class DatabaseRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseDatabaseComponent.class)
+            .name("fire-rtdb")
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.deferred(InternalAuthProvider.class))
             .add(Dependency.deferred(InternalAppCheckTokenProvider.class))

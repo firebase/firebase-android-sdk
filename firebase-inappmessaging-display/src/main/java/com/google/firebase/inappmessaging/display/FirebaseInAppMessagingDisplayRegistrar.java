@@ -44,6 +44,7 @@ public class FirebaseInAppMessagingDisplayRegistrar implements ComponentRegistra
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseInAppMessagingDisplay.class)
+            .name("fire-fiamd")
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInAppMessaging.class))
             .factory(this::buildFirebaseInAppMessagingUI)
