@@ -14,6 +14,8 @@
 
 package com.google.firebase.appdistribution;
 
+import android.net.Uri;
+
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
@@ -140,6 +142,9 @@ public interface FirebaseAppDistribution {
    *     Conditions)
    */
   void startFeedback(@NonNull CharSequence infoText);
+
+
+  void startFeedback(@NonNull CharSequence infoText, @NonNull Uri screenshotUri);
 
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */
   @NonNull

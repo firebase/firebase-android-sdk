@@ -317,27 +317,36 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     startFeedback(firebaseApp.getApplicationContext().getText(infoTextResourceId));
   }
 
-  @VisibleForTesting
+  @Override
   public void startFeedback(@NonNull CharSequence infoText) {
+    // TODO: prevent feedback from starting when another is already in progress. That would allow us
+    //  to remove the de-duping code in the example trigger.
     screenshotTaker
         .takeScreenshot()
-        .onSuccessTask(
+        .addOnFailureListener(
+            taskExecutor, e -> LogWrapper.getInstance().e("Failed to take screenshot", e))
+        .addOnSuccessListener(
             taskExecutor,
             screenshotUri ->
-                testerSignInManager
-                    .signInTester()
-                    .addOnFailureListener(
-                        taskExecutor,
-                        e ->
-                            LogWrapper.getInstance()
-                                .e("Failed to sign in tester. Could not collect feedback.", e))
-                    .onSuccessTask(taskExecutor, unused -> releaseIdentifier.identifyRelease())
-                    .onSuccessTask(
-                        taskExecutor,
-                        releaseName ->
-                            launchFeedbackActivity(releaseName, infoText, screenshotUri)))
+                    startFeedback(infoText, screenshotUri));
+  }
+
+  @Override
+  public void startFeedback(@NonNull CharSequence infoText, @NonNull Uri screenshotUri) {
+    testerSignInManager
+        .signInTester()
         .addOnFailureListener(
-            taskExecutor, e -> LogWrapper.getInstance().e("Failed to launch feedback flow", e));
+                taskExecutor,
+                e ->
+                        LogWrapper.getInstance()
+                                .e("Failed to sign in tester. Could not collect feedback.", e))
+        .onSuccessTask(taskExecutor, unused -> releaseIdentifier.identifyRelease())
+        .onSuccessTask(
+                taskExecutor,
+                releaseName ->
+                        launchFeedbackActivity(releaseName, infoText, screenshotUri))
+        .addOnFailureListener(
+                taskExecutor, e -> LogWrapper.getInstance().e("Failed to launch feedback flow", e));
   }
 
   private Task<Void> launchFeedbackActivity(
@@ -347,7 +356,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
           Intent intent = new Intent(activity, FeedbackActivity.class);
           intent.putExtra(RELEASE_NAME_EXTRA_KEY, releaseName);
           intent.putExtra(INFO_TEXT_EXTRA_KEY, infoText);
-          intent.putExtra(SCREENSHOT_URI_EXTRA_KEY, screenshotFilename);
+          intent.putExtra(SCREENSHOT_URI_EXTRA_KEY, screenshotFilename.toString());
           activity.startActivity(intent);
         });
   }

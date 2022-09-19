@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -25,6 +26,8 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 public class ImageUtils {
+
+  private static final String TAG = "ImageUtils";
 
   @AutoValue
   abstract static class ImageSize {
@@ -52,17 +55,32 @@ public class ImageUtils {
    * @throws IllegalArgumentException if target height or width are less than or equal to zero
    */
   @Nullable
-  public static Bitmap readScaledImage(InputStream inputStream, int targetWidth, int targetHeight) {
+  public static Bitmap readScaledImage(ContentResolver contentResolver, Uri uri, int targetWidth, int targetHeight) {
     if (targetWidth <= 0 || targetHeight <= 0) {
       throw new IllegalArgumentException(
           String.format(
               "Tried to read image with bad dimensions: %dx%d", targetWidth, targetHeight));
     }
-    ImageSize imageSize = ImageSize.read(inputStream);
+    ImageSize imageSize = ImageSize.read(getInputStream(contentResolver, uri));
+    LogWrapper.getInstance().i("Read image size: " + imageSize);
     final BitmapFactory.Options options = new BitmapFactory.Options();
     options.inSampleSize =
         calculateInSampleSize(imageSize.width(), imageSize.height(), targetWidth, targetHeight);
-    return BitmapFactory.decodeStream(inputStream, /* outPadding= */ null, options);
+    return BitmapFactory.decodeStream(getInputStream(contentResolver, uri), /* outPadding= */ null, options);
+  }
+
+  private static @Nullable InputStream getInputStream(ContentResolver contentResolver, Uri uri) {
+    if (uri == null) {
+      LogWrapper.getInstance().i(TAG, "No screenshot URI provided.");
+      return null;
+    }
+    LogWrapper.getInstance().i(TAG, "Trying to read screenshot from URI: " + uri);
+    try {
+      return contentResolver.openInputStream(uri);
+    } catch (FileNotFoundException e) {
+      LogWrapper.getInstance().e(TAG, String.format("Could not read screenshot from URI %s", uri), e);
+      return null;
+    }
   }
 
   private static int calculateInSampleSize(

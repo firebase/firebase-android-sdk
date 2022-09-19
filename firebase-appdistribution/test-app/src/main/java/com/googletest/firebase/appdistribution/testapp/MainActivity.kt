@@ -1,7 +1,9 @@
 package com.googletest.firebase.appdistribution.testapp
 
+import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.app.AlertDialog
 import android.content.Intent
+import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -10,8 +12,11 @@ import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
+import androidx.core.content.ContextCompat
 import com.google.android.gms.tasks.Task
 import com.google.firebase.appdistribution.AppDistributionRelease
 import com.google.firebase.appdistribution.UpdateProgress
@@ -21,6 +26,8 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
+    val TAG = "MainActivity"
+
     var firebaseAppDistribution = Firebase.appDistribution
     var updateTask: Task<Void>? = null
     var release: AppDistributionRelease? = null
@@ -40,6 +47,8 @@ class MainActivity : AppCompatActivity() {
     lateinit var signInStatus: TextView
     lateinit var progressPercent: TextView
     lateinit var progressBar: ProgressBar
+    private lateinit var feedbackTriggers: FeedbackTriggers
+    private lateinit var requestPermissionLauncher: ActivityResultLauncher<String>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,10 +70,28 @@ class MainActivity : AppCompatActivity() {
         progressPercent = findViewById<TextView>(R.id.progress_percentage)
         progressBar = findViewById<ProgressBar>(R.id.progress_bar)
 
+
         val thread = HandlerThread("AppDistroFeedbackTrigger")
         thread.start()
-        FeedbackTriggers(this, "Here's some terms and conditions", Handler(thread.looper))
-            .registerScreenshotObserver()
+        feedbackTriggers = FeedbackTriggers(this, "Here's some terms and conditions", Handler(thread.looper))
+
+        requestPermissionLauncher = registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted: Boolean ->
+            if (isGranted) {
+                Log.i(TAG, "Permission granted")
+                // Permission is granted. Continue the action or workflow in your
+                // app.
+                feedbackTriggers.registerScreenshotObserver()
+            } else {
+                Log.i(TAG, "Permission not granted")
+                // Explain to the user that the feature is unavailable because the
+                // features requires a permission that the user has denied. At the
+                // same time, respect the user's decision. Don't link to system
+                // settings in an effort to convince the user to change their
+                // decision.
+            }
+        }
     }
 
     override fun onResume() {
@@ -178,6 +205,20 @@ class MainActivity : AppCompatActivity() {
         feedbackButton.setOnClickListener {
             firebaseAppDistribution.startFeedback(R.string.terms_and_conditions)
         }
+
+        if (ContextCompat.checkSelfPermission(this, WRITE_EXTERNAL_STORAGE) == PERMISSION_GRANTED) {
+            Log.i(TAG, "Registering screenshot trigger")
+            feedbackTriggers.registerScreenshotObserver()
+        } else {
+            Log.i(TAG, "Permission needs to be granted")
+            // TODO: explain to tester why we want this permission
+            requestPermissionLauncher.launch(WRITE_EXTERNAL_STORAGE)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        feedbackTriggers.unRegisterScreenshotObserver()
     }
 
     fun startSecondActivity() {

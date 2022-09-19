@@ -74,6 +74,7 @@ public class FeedbackActivity extends AppCompatActivity {
       ImageView screenshotImageView = this.findViewById(R.id.thumbnail);
       screenshotImageView.setImageBitmap(thumbnail);
     } else {
+      LogWrapper.getInstance().i(TAG, "Rendering missing screenshot error");
       View screenshotErrorLabel = this.findViewById(R.id.screenshotErrorLabel);
       screenshotErrorLabel.setVisibility(View.VISIBLE);
     }
@@ -81,11 +82,12 @@ public class FeedbackActivity extends AppCompatActivity {
 
   @Nullable
   private Bitmap readThumbnail() {
-    InputStream inputStream = getScreenshotInputStream();
-    if (inputStream == null) {
+    Bitmap image = ImageUtils.readScaledImage(getContentResolver(), screenshotUri, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+    if (image == null) {
+      LogWrapper.getInstance().e(TAG, "Could not decode image.");
       return null;
     }
-    return ImageUtils.readScaledImage(inputStream, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+    return image;
   }
 
   public void submitFeedback(View view) {
@@ -109,8 +111,10 @@ public class FeedbackActivity extends AppCompatActivity {
 
   private @Nullable InputStream getScreenshotInputStream() {
     if (screenshotUri == null) {
+      LogWrapper.getInstance().i(TAG, "No screenshot URI provided.");
       return null;
     }
+    LogWrapper.getInstance().i(TAG, "Trying to read screenshot from URI: " + screenshotUri);
     try {
       return this.getContentResolver().openInputStream(screenshotUri);
     } catch (FileNotFoundException e) {

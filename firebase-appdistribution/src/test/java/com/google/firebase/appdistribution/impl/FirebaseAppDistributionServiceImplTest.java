@@ -645,7 +645,7 @@ public class FirebaseAppDistributionServiceImplTest {
     assertThat(argument.getValue().getStringExtra(RELEASE_NAME_EXTRA_KEY))
         .isEqualTo("release-name");
     assertThat(argument.getValue().getStringExtra(SCREENSHOT_URI_EXTRA_KEY))
-        .isEqualTo(TEST_SCREENSHOT_URI);
+        .isEqualTo(TEST_SCREENSHOT_URI.toString());
     assertThat(argument.getValue().getStringExtra(INFO_TEXT_EXTRA_KEY))
         .isEqualTo("Some terms and conditions");
   }
