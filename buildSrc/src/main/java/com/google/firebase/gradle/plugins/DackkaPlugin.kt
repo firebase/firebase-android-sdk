@@ -178,7 +178,7 @@ abstract class DackkaPlugin : Plugin<Project> {
                     }
 
                     docsTask.configure {
-                        if (!isKotlin) dependsOnAndMustRunAfter(docStubs)
+                        if (!isKotlin) dependsOn(docStubs)
 
                         val sourcesForKotlin = emptyList<File>() + projectSpecificSources(project)
                         val packageLists = fetchPackageLists(project)
