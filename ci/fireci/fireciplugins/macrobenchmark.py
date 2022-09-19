@@ -100,9 +100,6 @@ async def _process_config_yaml():
       app['traces'] = app.get('traces', [])
       app['plugins'].extend(config['common-plugins'])
       app['traces'].extend(config['common-traces'])
-
-    # Adding an empty android app for baseline comparison
-    config['test-apps'].insert(0, {'sdk': 'baseline', 'name': 'baseline'})
     return config
 
 

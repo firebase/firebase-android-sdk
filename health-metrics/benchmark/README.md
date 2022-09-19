@@ -10,11 +10,6 @@ building a macrobenchmark test app for each of the Firebase Android SDKs.
 If not all of them are required, comment out irrelevant ones for faster build
 and test time.
 
-**Note**: An empty Android app (named `baseline`) will be created during runtime
-for baseline comparison, even though it is not listed in
-[config.yaml](config.yaml). This app can also be used as a skeleton for
-setting up a more complex benchmark testing app.
-
 ## Run benchmark tests
 
 ### Prerequisite
