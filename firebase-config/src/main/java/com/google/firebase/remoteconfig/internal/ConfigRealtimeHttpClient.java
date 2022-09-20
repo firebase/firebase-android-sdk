@@ -16,6 +16,7 @@ package com.google.firebase.remoteconfig.internal;
 
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.REALTIME_REGEX_URL;
+import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.HTTP_TOO_MANY_REQUESTS;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -236,7 +237,9 @@ public class ConfigRealtimeHttpClient {
     return realtimeURL;
   }
 
-  private HttpURLConnection createRealtimeConnection() throws IOException {
+  /** Create HTTP connection and set headers. */
+  @SuppressLint("VisibleForTests")
+  public HttpURLConnection createRealtimeConnection() throws IOException {
     URL realtimeUrl = getUrl();
     HttpURLConnection httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
     setCommonRequestHeaders(httpURLConnection);
@@ -245,8 +248,9 @@ public class ConfigRealtimeHttpClient {
     return httpURLConnection;
   }
 
-  // Try to reopen HTTP connection after a random amount of time
-  private synchronized void retryHTTPConnection() {
+  /** Retries HTTP stream connection asyncly in random time intervals. */
+  @SuppressLint("VisibleForTests")
+  public synchronized void retryHTTPConnection() {
     if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
       if (httpRetriesRemaining < ORIGINAL_RETRIES) {
         httpRetrySeconds *= getRetryMultiplier();
@@ -273,7 +277,12 @@ public class ConfigRealtimeHttpClient {
     scheduledExecutorService.shutdownNow();
   }
 
-  private synchronized ConfigAutoFetch startAutoFetch(HttpURLConnection httpURLConnection) {
+  /**
+   * Create Autofetch class that listens on HTTP stream for ConfigUpdate messages and calls Fetch
+   * accordingly.
+   */
+  @SuppressLint("VisibleForTests")
+  public synchronized ConfigAutoFetch startAutoFetch(HttpURLConnection httpURLConnection) {
     ConfigUpdateListener retryCallback =
         new ConfigUpdateListener() {
           @Override
@@ -298,6 +307,16 @@ public class ConfigRealtimeHttpClient {
     return new ConfigAutoFetch(httpURLConnection, configFetchHandler, listeners, retryCallback);
   }
 
+  // HTTP status code that the Realtime client should retry on.
+  private boolean isStatusCodeRetryable(int statusCode) {
+    return statusCode == HttpURLConnection.HTTP_CLIENT_TIMEOUT
+            || statusCode == HTTP_TOO_MANY_REQUESTS
+            || statusCode == HttpURLConnection.HTTP_BAD_GATEWAY
+            || statusCode == HttpURLConnection.HTTP_UNAVAILABLE
+            || statusCode == HttpURLConnection.HTTP_GATEWAY_TIMEOUT
+            || statusCode == HttpURLConnection.HTTP_OK;
+  }
+
   /**
    * Open the realtime connection, begin listening for updates, and auto-fetch when an update is
    * received.
@@ -306,32 +325,42 @@ public class ConfigRealtimeHttpClient {
    * chunk-encoded HTTP body. When the connection closes, it attempts to reestablish the stream.
    */
   @SuppressLint("VisibleForTests")
-  synchronized void beginRealtimeHttpStream() {
+  public synchronized void beginRealtimeHttpStream() {
     if (!canMakeHttpStreamConnection()) {
       return;
     }
 
+    int responseCode = 200;
     try {
       // Create the open the connection.
       httpURLConnection = createRealtimeConnection();
-      httpURLConnection.connect();
+      responseCode = httpURLConnection.getResponseCode();
 
-      // Reset the retries remaining if we opened the connection without an exception.
-      resetRetryParameters();
+      // If the connection returned a 200 response code, start listening for messages.
+      if (responseCode == HttpURLConnection.HTTP_OK) {
+        // Reset the retries remaining if we opened the connection without an exception.
+        resetRetryParameters();
 
-      // Start listening for realtime notifications.
-      ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
-      configAutoFetch.listenForNotifications();
+        // Start listening for realtime notifications.
+        ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
+        configAutoFetch.listenForNotifications();
+      }
     } catch (IOException e) {
       Log.d(TAG, "Exception connecting to realtime stream. Retrying the connection...");
     } finally {
       closeRealtimeHttpStream();
-      retryHTTPConnection();
+      if (isStatusCodeRetryable(responseCode)) {
+        retryHTTPConnection();
+      } else {
+        propagateErrors(
+                new FirebaseRemoteConfigRealtimeUpdateStreamException(
+                        "The server returned a status code that is not retryable. Realtime is shutting down."));
+      }
     }
   }
 
   // Pauses Http stream listening
-  synchronized void closeRealtimeHttpStream() {
+  public synchronized void closeRealtimeHttpStream() {
     if (httpURLConnection != null) {
       this.httpURLConnection.disconnect();
 
