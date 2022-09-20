@@ -310,11 +310,11 @@ public class ConfigRealtimeHttpClient {
   // HTTP status code that the Realtime client should retry on.
   private boolean isStatusCodeRetryable(int statusCode) {
     return statusCode == HttpURLConnection.HTTP_CLIENT_TIMEOUT
-            || statusCode == HTTP_TOO_MANY_REQUESTS
-            || statusCode == HttpURLConnection.HTTP_BAD_GATEWAY
-            || statusCode == HttpURLConnection.HTTP_UNAVAILABLE
-            || statusCode == HttpURLConnection.HTTP_GATEWAY_TIMEOUT
-            || statusCode == HttpURLConnection.HTTP_OK;
+        || statusCode == HTTP_TOO_MANY_REQUESTS
+        || statusCode == HttpURLConnection.HTTP_BAD_GATEWAY
+        || statusCode == HttpURLConnection.HTTP_UNAVAILABLE
+        || statusCode == HttpURLConnection.HTTP_GATEWAY_TIMEOUT
+        || statusCode == HttpURLConnection.HTTP_OK;
   }
 
   /**
@@ -353,8 +353,8 @@ public class ConfigRealtimeHttpClient {
         retryHTTPConnection();
       } else {
         propagateErrors(
-                new FirebaseRemoteConfigRealtimeUpdateStreamException(
-                        "The server returned a status code that is not retryable. Realtime is shutting down."));
+            new FirebaseRemoteConfigRealtimeUpdateStreamException(
+                "The server returned a status code that is not retryable. Realtime is shutting down."));
       }
     }
   }

@@ -276,13 +276,13 @@ public final class FirebaseRemoteConfigTest {
     configAutoFetch =
         new ConfigAutoFetch(mockHttpURLConnection, mockFetchHandler, listeners, mockRetryListener);
     configRealtimeHttpClient =
-            new ConfigRealtimeHttpClient(
-                    firebaseApp,
-                    mockFirebaseInstallations,
-                    mockFetchHandler,
-                    context,
-                    "firebase",
-                    listeners);
+        new ConfigRealtimeHttpClient(
+            firebaseApp,
+            mockFirebaseInstallations,
+            mockFetchHandler,
+            context,
+            "firebase",
+            listeners);
   }
 
   @Test
