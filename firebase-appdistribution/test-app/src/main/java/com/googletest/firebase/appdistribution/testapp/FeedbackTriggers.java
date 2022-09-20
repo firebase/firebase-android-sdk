@@ -1,5 +1,9 @@
 package com.googletest.firebase.appdistribution.testapp;
 
+import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
+import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+
+import android.app.AlertDialog;
 import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
@@ -9,10 +13,13 @@ import android.provider.MediaStore;
 import android.provider.MediaStore.Images.Media;
 import android.util.Log;
 
+import androidx.activity.ComponentActivity;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.content.ContextCompat;
+
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,48 +36,64 @@ class FeedbackTriggers extends ContentObserver {
     private final Context context;
     private final CharSequence infoText;
 
+    private final ActivityResultLauncher<String> requestPermissionLauncher;
+
+    private Uri currentUri;
+
     /**
-     * Creates a FeedbackTriggers instance.
+     * Creates a FeedbackTriggers instance for an activity.
      *
+     * This must be called during activity initialization.
+     *
+     * @param activity The host activity
      * @param handler The handler to run {@link #onChange} on, or null if none.
      */
-    public FeedbackTriggers(Context context, CharSequence infoText, Handler handler) {
+    public FeedbackTriggers(ComponentActivity activity, CharSequence infoText, Handler handler) {
         super(handler);
-        this.context = context;
+        this.context = activity;
         this.infoText = infoText;
+
+        // Register the permissions launcher
+        requestPermissionLauncher = activity.registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(), isGranted -> {
+            if (isGranted) {
+                maybeStartFeedbackForScreenshot(currentUri);
+            } else {
+                new AlertDialog.Builder(context)
+                    .setMessage("Without storage access, screenshots taken while in the app will not be able to automatically start the feedback flow. To enable this feature, grant the app storage access in Settings.")
+                    .setPositiveButton("OK", (a, b) -> { /* do nothing */ })
+                    .show();
+            }
+        });
     }
 
     void registerScreenshotObserver() {
-        context.getContentResolver()
-                .registerContentObserver(
-                        Media.EXTERNAL_CONTENT_URI, true /*notifyForDescendants*/, this);
-        Log.i(TAG, "Screenshot observer successfully registered.");
+        context.getContentResolver().registerContentObserver(
+                Media.EXTERNAL_CONTENT_URI, true /*notifyForDescendants*/, this);
     }
 
     void unRegisterScreenshotObserver() {
-        context.getContentResolver()
-                .unregisterContentObserver(this);
-        Log.i(TAG, "Screenshot observer successfully unregistered.");
-    }
-
-    @Override
-    public void onChange(boolean selfChange) {
-        Log.i(TAG, "Detected content written to external media but no URI present");
+        context.getContentResolver().unregisterContentObserver(this);
     }
 
     @Override
     public void onChange(boolean selfChange, Uri uri) {
-        Log.i(TAG, "Detected content written to external media: " + uri);
-        if (!uri.toString().matches(String.format("%s/[0-9]+", Media.EXTERNAL_CONTENT_URI))) {
-            Log.i(TAG, "Detected non-screenshot content written to external media");
+        if (!uri.toString().matches(String.format("%s/[0-9]+", Media.EXTERNAL_CONTENT_URI)) || !seenImages.add(uri.toString())) {
             return;
         }
 
-        if (!seenImages.add(uri.toString())) {
-            Log.i(TAG, "Ignoring redundant URI");
-            return;
+        if (ContextCompat.checkSelfPermission(context, WRITE_EXTERNAL_STORAGE) == PERMISSION_GRANTED) {
+            maybeStartFeedbackForScreenshot(uri);
+        } else {
+            // Ideally we'd give the user some context here, but we have no way of knowing if they
+            // have previously "Deny & don't ask again" in which case we wouldn't want to show them
+            // anything here.
+            currentUri = uri;
+            requestPermissionLauncher.launch(WRITE_EXTERNAL_STORAGE);
         }
+    }
 
+    private void maybeStartFeedbackForScreenshot(Uri uri) {
         Cursor cursor = null;
         try {
             cursor = context.getContentResolver().query(uri, PROJECTION, null, null, null);
@@ -78,41 +101,15 @@ class FeedbackTriggers extends ContentObserver {
                 String path = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA));
                 Long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID));
                 Log.i(TAG, "Path: " + path);
-                if (!path.toLowerCase().contains("screenshot")) {
-                    return;
+                if (path.toLowerCase().contains("screenshot")) {
+                    // TODO: since we have a file path here, should we just use File or path everywhere instead of content URI?
+                    FirebaseAppDistribution.getInstance().startFeedback(infoText, uri);
                 }
-                Log.i(TAG, "Detected screenshot.");
-                // TODO: since we have a file path here, should we just use File or path everywhere instead of content URI?
-                try {
-                    waitUntilImageIsAvailable(uri);
-                } catch (InterruptedException e) {
-                    Log.e(TAG, "Interrupted while waiting for screenshot to be readable.", e);
-                } catch (IOException e) {
-                    Log.e(TAG, "Failed to read screenshot.", e);
-                }
-                FirebaseAppDistribution.getInstance().startFeedback(infoText, uri);
             }
         } catch (Exception e) {
             Log.e(TAG, "Could not determine if media change was due to taking a screenshot", e);
         } finally {
-            if (cursor != null) {
-                cursor.close();
-            }
-        }
-    }
-
-    // TODO: wait until image is available in the FeedbackActivity instead of here
-    private void waitUntilImageIsAvailable(Uri uri) throws InterruptedException, IOException {
-        for (int i = 0; i < 10; i++) {
-            try {
-                InputStream is = context.getContentResolver().openInputStream(uri);
-                Log.i(TAG, "Screenshot is readable. Starting feedback flow.");
-                is.close();
-                return;
-            } catch (IllegalStateException e) {
-                Log.e(TAG, "Screenshot in URI is still pending. Sleeping.", e);
-                Thread.sleep(300);
-            }
+            if (cursor != null) cursor.close();
         }
     }
 }

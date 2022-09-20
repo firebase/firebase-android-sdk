@@ -15,19 +15,23 @@
 package com.google.firebase.appdistribution.impl;
 
 import android.content.ContentResolver;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import androidx.annotation.Nullable;
+import android.util.Log;
+
 import com.google.auto.value.AutoValue;
-import java.io.File;
+import com.google.firebase.appdistribution.FirebaseAppDistributionException;
+import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 public class ImageUtils {
 
   private static final String TAG = "ImageUtils";
+  public static final int MAX_IMAGE_READ_RETRIES = 10;
+  public static final int IMAGE_READ_RETRY_SLEEP_MS = 300;
 
   @AutoValue
   abstract static class ImageSize {
@@ -51,35 +55,48 @@ public class ImageUtils {
    *
    * <p>Based on https://developer.android.com/topic/performance/graphics/load-bitmap#load-bitmap.
    *
-   * @return the image, or null if it could not be decoded
-   * @throws IllegalArgumentException if target height or width are less than or equal to zero
+   * @return the image
+   * @throws FirebaseAppDistributionException if the image could not be read
    */
-  @Nullable
-  public static Bitmap readScaledImage(ContentResolver contentResolver, Uri uri, int targetWidth, int targetHeight) {
+  public static Bitmap readScaledImage(ContentResolver contentResolver, Uri uri, int targetWidth, int targetHeight) throws FirebaseAppDistributionException {
     if (targetWidth <= 0 || targetHeight <= 0) {
-      throw new IllegalArgumentException(
+      throw new FirebaseAppDistributionException(
           String.format(
-              "Tried to read image with bad dimensions: %dx%d", targetWidth, targetHeight));
+              "Tried to read image with bad dimensions: %dx%d", targetWidth, targetHeight),
+          Status.UNKNOWN);
     }
-    ImageSize imageSize = ImageSize.read(getInputStream(contentResolver, uri));
-    LogWrapper.getInstance().i("Read image size: " + imageSize);
+    ImageSize imageSize = ImageSize.read(waitForInputStream(contentResolver, uri));
+    LogWrapper.getInstance().d("Read screenshot image size: " + imageSize);
+
     final BitmapFactory.Options options = new BitmapFactory.Options();
     options.inSampleSize =
         calculateInSampleSize(imageSize.width(), imageSize.height(), targetWidth, targetHeight);
-    return BitmapFactory.decodeStream(getInputStream(contentResolver, uri), /* outPadding= */ null, options);
+    // Get a fresh input stream because we've exhausted the last one
+    return BitmapFactory.decodeStream(waitForInputStream(contentResolver, uri), /* outPadding= */ null, options);
   }
 
-  private static @Nullable InputStream getInputStream(ContentResolver contentResolver, Uri uri) {
-    if (uri == null) {
-      LogWrapper.getInstance().i(TAG, "No screenshot URI provided.");
-      return null;
+  private static InputStream waitForInputStream(ContentResolver contentResolver, Uri uri) throws FirebaseAppDistributionException {
+    LogWrapper.getInstance().d(TAG, "Trying to read screenshot from URI: " + uri);
+    for (int i = 0; i < MAX_IMAGE_READ_RETRIES; i++) {
+      try {
+        return getInputStream(contentResolver, uri);
+      } catch (IllegalStateException e) {
+        Log.d(TAG, "Screenshot at URI is still pending. Sleeping.", e);
+        try {
+          Thread.sleep(IMAGE_READ_RETRY_SLEEP_MS);
+        } catch (InterruptedException ex) {
+          throw new FirebaseAppDistributionException("Interrupted while waiting for screenshot to become available", Status.UNKNOWN);
+        }
+      }
     }
-    LogWrapper.getInstance().i(TAG, "Trying to read screenshot from URI: " + uri);
+    throw new FirebaseAppDistributionException("Timed out waiting for screenshot to be readable.", Status.UNKNOWN);
+  }
+
+  private static InputStream getInputStream(ContentResolver contentResolver, Uri uri) throws FirebaseAppDistributionException {
     try {
       return contentResolver.openInputStream(uri);
     } catch (FileNotFoundException e) {
-      LogWrapper.getInstance().e(TAG, String.format("Could not read screenshot from URI %s", uri), e);
-      return null;
+      throw new FirebaseAppDistributionException(String.format("Could not read screenshot from URI %s", uri), Status.UNKNOWN, e);
     }
   }
 

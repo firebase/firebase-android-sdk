@@ -14,10 +14,12 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.method.LinkMovementMethod;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -26,7 +28,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.firebase.appdistribution.FirebaseAppDistributionException;
+import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 
 /** Activity for tester to compose and submit feedback. */
@@ -69,25 +76,23 @@ public class FeedbackActivity extends AppCompatActivity {
     Button submitButton = this.findViewById(R.id.submitButton);
     submitButton.setOnClickListener(this::submitFeedback);
 
-    Bitmap thumbnail = readThumbnail();
-    if (thumbnail != null) {
+    try {
+      // TODO: set up loading state and wait for screenshot in the background
+      Bitmap thumbnail = readThumbnail();
       ImageView screenshotImageView = this.findViewById(R.id.thumbnail);
       screenshotImageView.setImageBitmap(thumbnail);
-    } else {
-      LogWrapper.getInstance().i(TAG, "Rendering missing screenshot error");
+    } catch (FirebaseAppDistributionException e) {
+      LogWrapper.getInstance().e(TAG, "No screenshot available.", e);
       View screenshotErrorLabel = this.findViewById(R.id.screenshotErrorLabel);
       screenshotErrorLabel.setVisibility(View.VISIBLE);
     }
   }
 
-  @Nullable
-  private Bitmap readThumbnail() {
-    Bitmap image = ImageUtils.readScaledImage(getContentResolver(), screenshotUri, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
-    if (image == null) {
-      LogWrapper.getInstance().e(TAG, "Could not decode image.");
-      return null;
+  private Bitmap readThumbnail() throws FirebaseAppDistributionException {
+    if (screenshotUri == null) {
+      throw new FirebaseAppDistributionException("No screenshot provided.", Status.UNKNOWN);
     }
-    return image;
+    return ImageUtils.readScaledImage(getContentResolver(), screenshotUri, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
   }
 
   public void submitFeedback(View view) {

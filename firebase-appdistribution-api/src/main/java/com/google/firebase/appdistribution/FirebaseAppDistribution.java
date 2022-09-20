@@ -144,6 +144,7 @@ public interface FirebaseAppDistribution {
   void startFeedback(@NonNull CharSequence infoText);
 
 
+  // TODO: javadoc and infoTextResourceId version
   void startFeedback(@NonNull CharSequence infoText, @NonNull Uri screenshotUri);
 
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */
