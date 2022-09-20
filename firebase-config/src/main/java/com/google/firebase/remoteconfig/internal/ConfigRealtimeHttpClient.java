@@ -236,7 +236,8 @@ public class ConfigRealtimeHttpClient {
     return realtimeURL;
   }
 
-  private HttpURLConnection createRealtimeConnection() throws IOException {
+  @SuppressLint("VisibleForTests")
+  public HttpURLConnection createRealtimeConnection() throws IOException {
     URL realtimeUrl = getUrl();
     HttpURLConnection httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
     setCommonRequestHeaders(httpURLConnection);
@@ -246,7 +247,8 @@ public class ConfigRealtimeHttpClient {
   }
 
   // Try to reopen HTTP connection after a random amount of time
-  private synchronized void retryHTTPConnection() {
+  @SuppressLint("VisibleForTests")
+  public synchronized void retryHTTPConnection() {
     if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
       if (httpRetriesRemaining < ORIGINAL_RETRIES) {
         httpRetrySeconds *= getRetryMultiplier();
@@ -314,7 +316,7 @@ public class ConfigRealtimeHttpClient {
    * chunk-encoded HTTP body. When the connection closes, it attempts to reestablish the stream.
    */
   @SuppressLint("VisibleForTests")
-  synchronized void beginRealtimeHttpStream() {
+  public synchronized void beginRealtimeHttpStream() {
     if (!canMakeHttpStreamConnection()) {
       return;
     }

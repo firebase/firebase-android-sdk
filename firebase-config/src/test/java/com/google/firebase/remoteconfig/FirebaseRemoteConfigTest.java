@@ -65,6 +65,7 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchRespons
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
+import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -140,6 +141,7 @@ public final class FirebaseRemoteConfigTest {
   @Mock private ConfigMetadataClient metadataClient;
 
   @Mock private ConfigRealtimeHandler mockConfigRealtimeHandler;
+  @Mock private ConfigRealtimeHttpClient mockConfigRealtimeHttpClient;
   @Mock private ConfigUpdateListenerRegistration mockRealtimeRegistration;
   @Mock private HttpURLConnection mockHttpURLConnection;
   @Mock private ConfigUpdateListener mockListener;
@@ -1201,6 +1203,14 @@ public final class FirebaseRemoteConfigTest {
     configAutoFetch.fetchLatestConfig(1, 1000);
 
     verify(mockListener).onError(any(FirebaseRemoteConfigRealtimeUpdateFetchException.class));
+  }
+
+  @Test
+  public void realtime_checkStatusCode_beforeRetryStream() throws Exception {
+    when(mockConfigRealtimeHttpClient.createRealtimeConnection()).thenReturn(mockHttpURLConnection);
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
+    mockConfigRealtimeHttpClient.beginRealtimeHttpStream();
+    verify(mockConfigRealtimeHttpClient, never()).retryHTTPConnection();
   }
 
   private static void loadCacheWithConfig(
