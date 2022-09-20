@@ -236,6 +236,7 @@ public class ConfigRealtimeHttpClient {
     return realtimeURL;
   }
 
+  /** Create HTTP connection and set headers. */
   @SuppressLint("VisibleForTests")
   public HttpURLConnection createRealtimeConnection() throws IOException {
     URL realtimeUrl = getUrl();
@@ -246,7 +247,7 @@ public class ConfigRealtimeHttpClient {
     return httpURLConnection;
   }
 
-  // Try to reopen HTTP connection after a random amount of time
+  /** Retries HTTP stream connection asyncly in random time intervals. */
   @SuppressLint("VisibleForTests")
   public synchronized void retryHTTPConnection() {
     if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
@@ -275,7 +276,12 @@ public class ConfigRealtimeHttpClient {
     scheduledExecutorService.shutdownNow();
   }
 
-  private synchronized ConfigAutoFetch startAutoFetch(HttpURLConnection httpURLConnection) {
+  /**
+   * Create Autofetch class that listens on HTTP stream for ConfigUpdate messages and calls Fetch
+   * accordingly.
+   */
+  @SuppressLint("VisibleForTests")
+  public synchronized ConfigAutoFetch startAutoFetch(HttpURLConnection httpURLConnection) {
     ConfigUpdateListener retryCallback =
         new ConfigUpdateListener() {
           @Override
@@ -300,6 +306,7 @@ public class ConfigRealtimeHttpClient {
     return new ConfigAutoFetch(httpURLConnection, configFetchHandler, listeners, retryCallback);
   }
 
+  // HTTP status code that the Realtime client should retry on.
   private boolean isStatusCodeRetryable(int statusCode) {
     return statusCode == HttpURLConnection.HTTP_CLIENT_TIMEOUT
         || statusCode == HttpURLConnection.HTTP_BAD_GATEWAY
@@ -323,10 +330,12 @@ public class ConfigRealtimeHttpClient {
 
     int responseCode = 200;
     try {
-      // Create the open the connection.
+      // Create the connection.
       httpURLConnection = createRealtimeConnection();
+      // Open the connection and get response code.
       responseCode = httpURLConnection.getResponseCode();
 
+      // If the connection returned a 200 response code state Autofetch.
       if (responseCode == HttpURLConnection.HTTP_OK) {
         // Reset the retries remaining if we opened the connection without an exception.
         resetRetryParameters();
@@ -349,8 +358,9 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  // Pauses Http stream listening
-  synchronized void closeRealtimeHttpStream() {
+  /** Closes HTTP stream. */
+  @SuppressLint("VisibleForTests")
+  public synchronized void closeRealtimeHttpStream() {
     if (httpURLConnection != null) {
       this.httpURLConnection.disconnect();
 
