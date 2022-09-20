@@ -335,7 +335,7 @@ public class ConfigRealtimeHttpClient {
       // Open the connection and get response code.
       responseCode = httpURLConnection.getResponseCode();
 
-      // If the connection returned a 200 response code state Autofetch.
+      // If the connection returned a 200 response code, start listening for messages.
       if (responseCode == HttpURLConnection.HTTP_OK) {
         // Reset the retries remaining if we opened the connection without an exception.
         resetRetryParameters();
