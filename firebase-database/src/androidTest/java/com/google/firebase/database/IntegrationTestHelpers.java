@@ -19,9 +19,11 @@ import static com.google.firebase.database.snapshot.NodeUtilities.NodeFromJSON;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import androidx.test.platform.app.InstrumentationRegistry;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.database.android.AndroidAppCheckTokenProvider;
 import com.google.firebase.database.android.AndroidAuthTokenProvider;
 import com.google.firebase.database.core.CompoundWrite;
@@ -340,6 +342,23 @@ public class IntegrationTestHelpers {
 
   public static DataSnapshot referenceAtPath(DatabaseReference node, EventRecord record) {
     return record.getSnapshot().child(node.getPath().toString());
+  }
+
+  public static FirebaseApp appForDatabaseUrl(String url, String name) {
+    return FirebaseApp.initializeApp(
+        InstrumentationRegistry.getInstrumentation().getTargetContext(),
+        new FirebaseOptions.Builder()
+            .setApplicationId("appid")
+            .setApiKey("apikey")
+            .setDatabaseUrl(url)
+            .build(),
+        name);
+  }
+
+  public static FirebaseDatabase getNewDatabase() {
+    FirebaseApp app =
+        appForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), UUID.randomUUID().toString());
+    return FirebaseDatabase.getInstance(app);
   }
 
   public static DataSnapshot getSnap(Query ref) throws InterruptedException {

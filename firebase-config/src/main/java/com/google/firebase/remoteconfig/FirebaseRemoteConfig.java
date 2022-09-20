@@ -644,6 +644,15 @@ public class FirebaseRemoteConfig {
   }
 
   /**
+   * Immediately stops all ConfigUpdateListeners from receiving update messages.
+   *
+   * @hide
+   */
+  void pauseAllConfigUpdateListeners() {
+    configRealtimeHandler.pauseRealtime();
+  }
+
+  /**
    * Converts a JSON array of Firebase A/B Testing experiments into a Java list of String maps.
    *
    * @param abtExperimentsJson A {@link JSONArray} of {@link JSONObject}s, where each object

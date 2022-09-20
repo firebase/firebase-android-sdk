@@ -182,9 +182,11 @@ public class ConfigFetchHttpClient {
       String lastFetchETag,
       Map<String, String> customHeaders,
       Long firstOpenTime,
-      Date currentTime)
+      Date currentTime,
+      Boolean excludeEtagHeader)
       throws FirebaseRemoteConfigException {
-    setUpUrlConnection(urlConnection, lastFetchETag, installationAuthToken, customHeaders);
+    setUpUrlConnection(
+        urlConnection, lastFetchETag, installationAuthToken, customHeaders, excludeEtagHeader);
 
     String fetchResponseETag;
     JSONObject fetchResponse;
@@ -229,14 +231,19 @@ public class ConfigFetchHttpClient {
       HttpURLConnection urlConnection,
       String lastFetchEtag,
       String installationAuthToken,
-      Map<String, String> customHeaders) {
+      Map<String, String> customHeaders,
+      boolean excludeEtagHeader) {
     urlConnection.setDoOutput(true);
     urlConnection.setConnectTimeout((int) SECONDS.toMillis(connectTimeoutInSeconds));
     urlConnection.setReadTimeout((int) SECONDS.toMillis(readTimeoutInSeconds));
 
-    // Send the last successful Fetch ETag to the FRC Server to calculate if there has been any
-    // change in the Fetch Response since the last fetch call.
-    urlConnection.setRequestProperty(IF_NONE_MATCH_HEADER, lastFetchEtag);
+    // Flag to indicate whether or not to add Etag header.
+    // Should only be false for Realtime Fetchs' when the stored templateVersion is 0.
+    if (!excludeEtagHeader) {
+      // Send the last successful Fetch ETag to the FRC Server to calculate if there has been any
+      // change in the Fetch Response since the last fetch call.
+      urlConnection.setRequestProperty(IF_NONE_MATCH_HEADER, lastFetchEtag);
+    }
 
     setCommonRequestHeaders(urlConnection, installationAuthToken);
     setCustomRequestHeaders(urlConnection, customHeaders);

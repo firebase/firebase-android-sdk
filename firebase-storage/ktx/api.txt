@@ -2,7 +2,6 @@
 package com.google.firebase.storage.ktx {
 
   public final class StorageKt {
-    ctor public StorageKt();
     method public static operator long component1(@NonNull com.google.firebase.storage.UploadTask.TaskSnapshot);
     method public static operator long component1(@NonNull com.google.firebase.storage.StreamDownloadTask.TaskSnapshot);
     method public static operator long component1(@NonNull com.google.firebase.storage.FileDownloadTask.TaskSnapshot);

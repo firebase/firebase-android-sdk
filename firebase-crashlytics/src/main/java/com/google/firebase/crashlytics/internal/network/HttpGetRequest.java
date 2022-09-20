@@ -19,7 +19,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -95,7 +97,8 @@ public class HttpGetRequest {
     return new HttpResponse(responseCode, body);
   }
 
-  private String createUrlWithParams(String url, Map<String, String> queryParams) {
+  private String createUrlWithParams(String url, Map<String, String> queryParams)
+      throws UnsupportedEncodingException {
     String queryParamsString = createParamsString(queryParams);
 
     if (queryParamsString.isEmpty()) {
@@ -112,16 +115,22 @@ public class HttpGetRequest {
     }
   }
 
-  private String createParamsString(Map<String, String> queryParams) {
+  private String createParamsString(Map<String, String> queryParams)
+      throws UnsupportedEncodingException {
     StringBuilder paramsString = new StringBuilder();
     Iterator<Map.Entry<String, String>> iterator = queryParams.entrySet().iterator();
-    Map.Entry<String, String> entry = (Map.Entry<String, String>) iterator.next();
-
-    paramsString.append(entry.getKey() + "=" + (entry.getValue() != null ? entry.getValue() : ""));
+    Map.Entry<String, String> entry = iterator.next();
+    paramsString
+        .append(entry.getKey())
+        .append("=")
+        .append(entry.getValue() != null ? URLEncoder.encode(entry.getValue(), "UTF-8") : "");
     while (iterator.hasNext()) {
-      entry = (Map.Entry<String, String>) iterator.next();
-      paramsString.append(
-          "&" + entry.getKey() + "=" + (entry.getValue() != null ? entry.getValue() : ""));
+      entry = iterator.next();
+      paramsString
+          .append("&")
+          .append(entry.getKey())
+          .append("=")
+          .append(entry.getValue() != null ? URLEncoder.encode(entry.getValue(), "UTF-8") : "");
     }
     return paramsString.toString();
   }

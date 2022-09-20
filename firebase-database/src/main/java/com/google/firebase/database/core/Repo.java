@@ -558,34 +558,25 @@ public class Repo implements PersistentConnection.Delegate {
                         QuerySpec spec = query.getSpec();
                         // EventRegistrations require a listener to be attached, so a dummy
                         // ValueEventListener was created.
-                        ValueEventListener listener =
-                            new ValueEventListener() {
-                              @Override
-                              public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                // noOp
-                              }
-
-                              @Override
-                              public void onCancelled(@NonNull DatabaseError error) {
-                                // noOp
-                              }
-                            };
-                        ValueEventRegistration eventRegistration =
-                            new ValueEventRegistration(repo, listener, spec);
-                        serverSyncTree.addEventRegistration(
-                            eventRegistration, /*skipListenerSetup=*/ true);
+                        keepSynced(spec, /*keep=*/ true, /*skipDedup=*/ true);
+                        List<? extends Event> events;
                         if (spec.loadsAllData()) {
-                          serverSyncTree.applyServerOverwrite(spec.getPath(), serverNode);
+                          events = serverSyncTree.applyServerOverwrite(spec.getPath(), serverNode);
                         } else {
-                          serverSyncTree.applyTaggedQueryOverwrite(
-                              spec.getPath(), serverNode, getServerSyncTree().tagForQuery(spec));
+                          events =
+                              serverSyncTree.applyTaggedQueryOverwrite(
+                                  spec.getPath(),
+                                  serverNode,
+                                  getServerSyncTree().tagForQuery(spec));
                         }
+                        repo.postEvents(
+                            events); // to ensure that other listeners end up getting their cached
+                        // events.
                         source.setResult(
                             InternalHelpers.createDataSnapshot(
                                 query.getRef(),
                                 IndexedNode.from(serverNode, query.getSpec().getIndex())));
-                        serverSyncTree.removeEventRegistration(
-                            eventRegistration, /*skipDedup=*/ true);
+                        keepSynced(spec, /*keep=*/ false, /*skipDedup=*/ true);
                       }
                     });
           }
@@ -773,9 +764,12 @@ public class Repo implements PersistentConnection.Delegate {
   }
 
   public void keepSynced(QuerySpec query, boolean keep) {
-    hardAssert(query.getPath().isEmpty() || !query.getPath().getFront().equals(Constants.DOT_INFO));
+    keepSynced(query, keep, /*skipDedup=*/ false);
+  }
 
-    serverSyncTree.keepSynced(query, keep);
+  public void keepSynced(QuerySpec query, boolean keep, final boolean skipDedup) {
+    hardAssert(query.getPath().isEmpty() || !query.getPath().getFront().equals(Constants.DOT_INFO));
+    serverSyncTree.keepSynced(query, keep, skipDedup);
   }
 
   PersistentConnection getConnection() {

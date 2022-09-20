@@ -64,7 +64,7 @@ android {
 dependencies {
     // TODO(vkryachko): have sdks depend on components directly once components are released.
     implementation project(':firebase-components')
-    implementation 'com.google.android.gms:play-services-basement:18.0.0'
+    implementation 'com.google.android.gms:play-services-basement:18.1.0'
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
 
     // FirebaseApp references storage, so storage needs to be on classpath when dokka runs.
@@ -75,7 +75,7 @@ dependencies {
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
 
     // needed for Kotlin detection to compile, but not necessarily present at runtime.
-    compileOnly "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
+    compileOnly "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 
     testImplementation 'androidx.test:runner:1.2.0'
     testImplementation 'androidx.test.ext:junit:1.1.1'

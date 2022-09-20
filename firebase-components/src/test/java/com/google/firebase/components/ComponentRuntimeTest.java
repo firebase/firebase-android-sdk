@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -582,5 +583,33 @@ public final class ComponentRuntimeTest {
     assertThat(dependsOnDeferredString.value).isNull();
     componentLoader.discoverComponents();
     assertThat(dependsOnDeferredString.value).isEqualTo("hello");
+  }
+
+  @Test
+  public void container_withComponentProcessor_shouldDelegateToItForEachComponentRegistrar() {
+    InitTracker initTracker = new InitTracker();
+
+    ComponentFactory<Object> replacedFactory = c -> null;
+    ComponentRegistrarProcessor processor =
+        r ->
+            r.getComponents().stream()
+                .map(c -> ((Component<Object>) c).withFactory(replacedFactory))
+                .collect(Collectors.toList());
+
+    ComponentRuntime runtime =
+        ComponentRuntime.builder(EXECUTOR)
+            .addComponentRegistrar(new ComponentRegistrarImpl(Eagerness.ALWAYS))
+            .addComponent(Component.of(initTracker, InitTracker.class))
+            .setProcessor(processor)
+            .build();
+
+    assertThat(
+            runtime.getAllComponentsForTest().stream()
+                .filter(
+                    c ->
+                        (c.getProvidedInterfaces().contains(ComponentOne.class)
+                            || c.getProvidedInterfaces().contains(ComponentTwo.class)))
+                .allMatch(c -> c.getFactory() == replacedFactory))
+        .isTrue();
   }
 }

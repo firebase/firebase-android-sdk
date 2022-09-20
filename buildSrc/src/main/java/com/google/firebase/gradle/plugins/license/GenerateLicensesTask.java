@@ -43,9 +43,9 @@ abstract class GenerateLicensesTask extends DefaultTask {
   public abstract void setAdditionalLicenses(
       List<ThirdPartyLicensesExtension.CustomLicense> additionalLicenses);
 
-  @OutputDirectory
   public abstract void setOutputDir(File outputDir);
 
+  @OutputDirectory
   public abstract File getOutputDir();
 
   @Inject

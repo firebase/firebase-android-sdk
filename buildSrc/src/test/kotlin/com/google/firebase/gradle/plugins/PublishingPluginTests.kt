@@ -338,6 +338,9 @@ licenses {
                 jcenter()
                 maven {
                     url 'https://storage.googleapis.com/android-ci/mvn/'
+                    metadataSources {
+                        artifact()
+                    }
                 }
             }
         }
@@ -346,13 +349,16 @@ licenses {
         }
 
         configure(subprojects) {
-          repositories {
-              google()
-              jcenter()
-              maven {
-                  url 'https://storage.googleapis.com/android-ci/mvn/'
-              }
-          }
+            repositories {
+                google()
+                jcenter()
+                maven {
+                    url 'https://storage.googleapis.com/android-ci/mvn/'
+                    metadataSources {
+                          artifact()
+                    }
+                }
+            }
         }
         """
         private const val MANIFEST = """<?xml version="1.0" encoding="utf-8"?>

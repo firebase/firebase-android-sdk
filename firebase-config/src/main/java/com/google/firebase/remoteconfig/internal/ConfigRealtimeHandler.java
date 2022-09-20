@@ -71,6 +71,12 @@ public class ConfigRealtimeHandler {
       @Override
       public void run() {
         configRealtimeHttpClient.beginRealtimeHttpStream();
+        boolean isRealtimeClientRunning = true;
+        while (isRealtimeClientRunning) {
+          if (Thread.currentThread().isInterrupted()) {
+            isRealtimeClientRunning = false;
+          }
+        }
       }
     };
   }
@@ -94,7 +100,7 @@ public class ConfigRealtimeHandler {
   }
 
   // Pauses Http stream listening
-  private synchronized void pauseRealtime() {
+  public synchronized void pauseRealtime() {
     if (realtimeHttpClientTask != null && !realtimeHttpClientTask.isCancelled()) {
       realtimeHttpClientTask.cancel(true);
       realtimeHttpClientTask = null;
@@ -130,7 +136,7 @@ public class ConfigRealtimeHandler {
 
     @Override
     protected void done() {
-      this.configRealtimeHttpClient.closeRealtimeHttpStream();
+      this.configRealtimeHttpClient.stopRealtime();
     }
   }
 

@@ -97,16 +97,9 @@ public class ConfigAutoFetch {
   public void listenForNotifications() {
     if (httpURLConnection != null) {
       try {
-        int responseCode = httpURLConnection.getResponseCode();
-        if (responseCode == 200) {
-          InputStream inputStream = httpURLConnection.getInputStream();
-          handleNotifications(inputStream);
-          inputStream.close();
-        } else {
-          propagateErrors(
-              new FirebaseRemoteConfigRealtimeUpdateStreamException(
-                  "Http connection responded with error: " + responseCode));
-        }
+        InputStream inputStream = httpURLConnection.getInputStream();
+        handleNotifications(inputStream);
+        inputStream.close();
       } catch (IOException ex) {
         propagateErrors(
             new FirebaseRemoteConfigRealtimeUpdateFetchException(
@@ -117,7 +110,7 @@ public class ConfigAutoFetch {
     }
 
     retryCallback.onEvent();
-    scheduledExecutorService.shutdown();
+    scheduledExecutorService.shutdownNow();
     try {
       scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
     } catch (InterruptedException ex) {
@@ -196,7 +189,14 @@ public class ConfigAutoFetch {
 
   @VisibleForTesting
   public synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
-    Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
+    boolean excludeEtagHeaderForRealtime = configFetchHandler.getTemplateVersionNumber() == 0;
+
+    Task<ConfigFetchHandler.FetchResponse> fetchTask;
+    if (excludeEtagHeaderForRealtime) {
+      fetchTask = configFetchHandler.fetchWithoutEtag(0L);
+    } else {
+      fetchTask = configFetchHandler.fetch(0L);
+    }
     fetchTask.onSuccessTask(
         (fetchResponse) -> {
           long newTemplateVersion = 0;

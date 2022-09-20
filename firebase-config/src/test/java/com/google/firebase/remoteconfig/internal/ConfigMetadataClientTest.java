@@ -143,6 +143,17 @@ public class ConfigMetadataClientTest {
   }
 
   @Test
+  public void getLastTemplateVersion_isNotSet_returnsDefault() {
+    assertThat(metadataClient.getLastTemplateVersion()).isEqualTo(0);
+  }
+
+  @Test
+  public void getLastTemplateVersion_isSet_returnsTemplateVersion() {
+    metadataClient.setLastTemplateVersion(1);
+    assertThat(metadataClient.getLastTemplateVersion()).isEqualTo(1);
+  }
+
+  @Test
   public void getBackoffMetadata_isNotSet_returnsNoFailedFetchesAndNotThrottled() {
     BackoffMetadata defaultBackoffMetadata = metadataClient.getBackoffMetadata();
 

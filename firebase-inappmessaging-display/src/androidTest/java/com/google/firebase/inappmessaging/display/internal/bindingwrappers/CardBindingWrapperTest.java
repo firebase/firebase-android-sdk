@@ -35,6 +35,7 @@ import androidx.test.rule.ActivityTestRule;
 import androidx.test.runner.AndroidJUnit4;
 import com.google.firebase.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.google.firebase.inappmessaging.display.internal.injection.modules.InflaterConfigModule;
+import com.google.firebase.inappmessaging.display.test.TestActivity;
 import com.google.firebase.inappmessaging.model.Action;
 import com.google.firebase.inappmessaging.model.CardMessage;
 import java.util.HashMap;
