@@ -14,12 +14,10 @@
 
 package com.google.firebase.appdistribution.impl;
 
-import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.method.LinkMovementMethod;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -28,12 +26,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 
 /** Activity for tester to compose and submit feedback. */
@@ -48,7 +43,7 @@ public class FeedbackActivity extends AppCompatActivity {
   public static final String INFO_TEXT_EXTRA_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.INFO_TEXT";
   public static final String SCREENSHOT_URI_EXTRA_KEY =
-          "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT_URI";
+      "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT_URI";
 
   private FeedbackSender feedbackSender;
   private String releaseName;
@@ -92,7 +87,8 @@ public class FeedbackActivity extends AppCompatActivity {
     if (screenshotUri == null) {
       throw new FirebaseAppDistributionException("No screenshot provided.", Status.UNKNOWN);
     }
-    return ImageUtils.readScaledImage(getContentResolver(), screenshotUri, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+    return ImageUtils.readScaledImage(
+        getContentResolver(), screenshotUri, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
   }
 
   public void submitFeedback(View view) {
@@ -123,7 +119,8 @@ public class FeedbackActivity extends AppCompatActivity {
     try {
       return this.getContentResolver().openInputStream(screenshotUri);
     } catch (FileNotFoundException e) {
-      LogWrapper.getInstance().e(TAG, String.format("Could not read screenshot from URI %s", screenshotUri), e);
+      LogWrapper.getInstance()
+          .e(TAG, String.format("Could not read screenshot from URI %s", screenshotUri), e);
       return null;
     }
   }

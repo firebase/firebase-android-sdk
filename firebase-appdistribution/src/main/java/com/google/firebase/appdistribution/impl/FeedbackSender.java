@@ -35,14 +35,16 @@ class FeedbackSender {
   }
 
   /** Send feedback text and optionally a screenshot to the Tester API for the given release. */
-  Task<Void> sendFeedback(String releaseName, String feedbackText, @Nullable InputStream screenshotInputStream) {
+  Task<Void> sendFeedback(
+      String releaseName, String feedbackText, @Nullable InputStream screenshotInputStream) {
     return testerApiClient
         .createFeedback(releaseName, feedbackText)
         .onSuccessTask(feedbackName -> attachScreenshot(feedbackName, screenshotInputStream))
         .onSuccessTask(testerApiClient::commitFeedback);
   }
 
-  private Task<String> attachScreenshot(String feedbackName, @Nullable InputStream screenshotInputStream) {
+  private Task<String> attachScreenshot(
+      String feedbackName, @Nullable InputStream screenshotInputStream) {
     if (screenshotInputStream == null) {
       return Tasks.forResult(feedbackName);
     }

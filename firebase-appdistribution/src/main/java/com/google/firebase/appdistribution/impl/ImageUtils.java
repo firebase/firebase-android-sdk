@@ -19,11 +19,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.util.Log;
-
 import com.google.auto.value.AutoValue;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 
@@ -58,7 +56,9 @@ public class ImageUtils {
    * @return the image
    * @throws FirebaseAppDistributionException if the image could not be read
    */
-  public static Bitmap readScaledImage(ContentResolver contentResolver, Uri uri, int targetWidth, int targetHeight) throws FirebaseAppDistributionException {
+  public static Bitmap readScaledImage(
+      ContentResolver contentResolver, Uri uri, int targetWidth, int targetHeight)
+      throws FirebaseAppDistributionException {
     if (targetWidth <= 0 || targetHeight <= 0) {
       throw new FirebaseAppDistributionException(
           String.format(
@@ -72,10 +72,12 @@ public class ImageUtils {
     options.inSampleSize =
         calculateInSampleSize(imageSize.width(), imageSize.height(), targetWidth, targetHeight);
     // Get a fresh input stream because we've exhausted the last one
-    return BitmapFactory.decodeStream(waitForInputStream(contentResolver, uri), /* outPadding= */ null, options);
+    return BitmapFactory.decodeStream(
+        waitForInputStream(contentResolver, uri), /* outPadding= */ null, options);
   }
 
-  private static InputStream waitForInputStream(ContentResolver contentResolver, Uri uri) throws FirebaseAppDistributionException {
+  private static InputStream waitForInputStream(ContentResolver contentResolver, Uri uri)
+      throws FirebaseAppDistributionException {
     LogWrapper.getInstance().d(TAG, "Trying to read screenshot from URI: " + uri);
     for (int i = 0; i < MAX_IMAGE_READ_RETRIES; i++) {
       try {
@@ -85,18 +87,22 @@ public class ImageUtils {
         try {
           Thread.sleep(IMAGE_READ_RETRY_SLEEP_MS);
         } catch (InterruptedException ex) {
-          throw new FirebaseAppDistributionException("Interrupted while waiting for screenshot to become available", Status.UNKNOWN);
+          throw new FirebaseAppDistributionException(
+              "Interrupted while waiting for screenshot to become available", Status.UNKNOWN);
         }
       }
     }
-    throw new FirebaseAppDistributionException("Timed out waiting for screenshot to be readable.", Status.UNKNOWN);
+    throw new FirebaseAppDistributionException(
+        "Timed out waiting for screenshot to be readable.", Status.UNKNOWN);
   }
 
-  private static InputStream getInputStream(ContentResolver contentResolver, Uri uri) throws FirebaseAppDistributionException {
+  private static InputStream getInputStream(ContentResolver contentResolver, Uri uri)
+      throws FirebaseAppDistributionException {
     try {
       return contentResolver.openInputStream(uri);
     } catch (FileNotFoundException e) {
-      throw new FirebaseAppDistributionException(String.format("Could not read screenshot from URI %s", uri), Status.UNKNOWN, e);
+      throw new FirebaseAppDistributionException(
+          String.format("Could not read screenshot from URI %s", uri), Status.UNKNOWN, e);
     }
   }
 

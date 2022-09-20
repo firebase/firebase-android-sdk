@@ -34,11 +34,9 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -395,7 +393,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
       throws Exception {
     InputStream inputStream =
         new FileInputStream(
-                ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
+            ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
 
     Task<String> task =
         firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, inputStream);
@@ -403,8 +401,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     assertThat(result).isEqualTo(FEEDBACK_NAME);
     verify(mockTesterApiHttpClient)
-        .makeUploadRequest(
-            any(), eq(ATTACH_SCREENSHOT_PATH), eq(TEST_AUTH_TOKEN), eq(inputStream));
+        .makeUploadRequest(any(), eq(ATTACH_SCREENSHOT_PATH), eq(TEST_AUTH_TOKEN), eq(inputStream));
   }
 
   @Test
@@ -412,8 +409,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
     Exception expectedException = new Exception("test ex");
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(expectedException));
     InputStream inputStream =
-            new FileInputStream(
-                    ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
+        new FileInputStream(
+            ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
 
     Task<String> task =
         firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, inputStream);
@@ -427,8 +424,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
     when(mockFirebaseInstallations.getToken(false))
         .thenReturn(Tasks.forException(expectedException));
     InputStream inputStream =
-            new FileInputStream(
-                    ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
+        new FileInputStream(
+            ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
 
     Task<String> task =
         firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, inputStream);
@@ -442,8 +439,8 @@ public class FirebaseAppDistributionTesterApiClientTest {
             any(), eq(ATTACH_SCREENSHOT_PATH), eq(TEST_AUTH_TOKEN), any()))
         .thenThrow(new FirebaseAppDistributionException("test ex", Status.UNKNOWN));
     InputStream inputStream =
-            new FileInputStream(
-                    ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
+        new FileInputStream(
+            ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
 
     Task<String> task =
         firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, inputStream);

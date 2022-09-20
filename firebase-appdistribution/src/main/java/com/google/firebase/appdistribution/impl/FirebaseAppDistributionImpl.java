@@ -29,7 +29,6 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -326,9 +325,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         .addOnFailureListener(
             taskExecutor, e -> LogWrapper.getInstance().e("Failed to take screenshot", e))
         .addOnSuccessListener(
-            taskExecutor,
-            screenshotUri ->
-                    startFeedback(infoText, screenshotUri));
+            taskExecutor, screenshotUri -> startFeedback(infoText, screenshotUri));
   }
 
   @Override
@@ -336,17 +333,16 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     testerSignInManager
         .signInTester()
         .addOnFailureListener(
-                taskExecutor,
-                e ->
-                        LogWrapper.getInstance()
-                                .e("Failed to sign in tester. Could not collect feedback.", e))
+            taskExecutor,
+            e ->
+                LogWrapper.getInstance()
+                    .e("Failed to sign in tester. Could not collect feedback.", e))
         .onSuccessTask(taskExecutor, unused -> releaseIdentifier.identifyRelease())
         .onSuccessTask(
-                taskExecutor,
-                releaseName ->
-                        launchFeedbackActivity(releaseName, infoText, screenshotUri))
+            taskExecutor,
+            releaseName -> launchFeedbackActivity(releaseName, infoText, screenshotUri))
         .addOnFailureListener(
-                taskExecutor, e -> LogWrapper.getInstance().e("Failed to launch feedback flow", e));
+            taskExecutor, e -> LogWrapper.getInstance().e("Failed to launch feedback flow", e));
   }
 
   private Task<Void> launchFeedbackActivity(

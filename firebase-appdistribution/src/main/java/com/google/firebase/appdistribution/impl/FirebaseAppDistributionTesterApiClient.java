@@ -26,7 +26,6 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import java.io.File;
 import java.io.InputStream;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -157,7 +156,8 @@ class FirebaseAppDistributionTesterApiClient {
           LogWrapper.getInstance().i("Uploading screenshot for feedback: " + feedbackName);
           String path =
               String.format("upload/v1alpha/%s:uploadArtifact?type=SCREENSHOT", feedbackName);
-          testerApiHttpClient.makeUploadRequest(UPLOAD_SCREENSHOT_TAG, path, token, screenshotInputStream);
+          testerApiHttpClient.makeUploadRequest(
+              UPLOAD_SCREENSHOT_TAG, path, token, screenshotInputStream);
           return feedbackName;
         });
   }

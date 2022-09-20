@@ -23,16 +23,11 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Bitmap.Config;
 import android.net.Uri;
-
 import androidx.test.core.app.ApplicationProvider;
-
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -59,66 +54,81 @@ public class ImageUtilsTest {
   }
 
   @Test
-  public void readScaledImage_targetIsLessThanHalf_scalesDown() throws IOException, FirebaseAppDistributionException {
+  public void readScaledImage_targetIsLessThanHalf_scalesDown()
+      throws IOException, FirebaseAppDistributionException {
     Uri uri = writeBitmapToTmpFile();
     Bitmap result =
         ImageUtils.readScaledImage(
-                contentResolver, uri, TEST_SCREENSHOT_WIDTH / 2 - 100, TEST_SCREENSHOT_HEIGHT / 2 - 100);
+            contentResolver,
+            uri,
+            TEST_SCREENSHOT_WIDTH / 2 - 100,
+            TEST_SCREENSHOT_HEIGHT / 2 - 100);
 
     assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH / 2);
     assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT / 2);
   }
 
   @Test
-  public void readScaledImage_targetExactlyPowerOfTwoSmaller_scalesDown() throws IOException, FirebaseAppDistributionException {
+  public void readScaledImage_targetExactlyPowerOfTwoSmaller_scalesDown()
+      throws IOException, FirebaseAppDistributionException {
     Uri uri = writeBitmapToTmpFile();
     Bitmap result =
-            ImageUtils.readScaledImage(
-                    contentResolver, uri, TEST_SCREENSHOT_WIDTH / 4, TEST_SCREENSHOT_HEIGHT / 4);
+        ImageUtils.readScaledImage(
+            contentResolver, uri, TEST_SCREENSHOT_WIDTH / 4, TEST_SCREENSHOT_HEIGHT / 4);
 
     assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH / 4);
     assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT / 4);
   }
 
   @Test
-  public void readScaledImage_targetWidthIsSmaller_scalesDownToFitHeight() throws IOException, FirebaseAppDistributionException {
+  public void readScaledImage_targetWidthIsSmaller_scalesDownToFitHeight()
+      throws IOException, FirebaseAppDistributionException {
     Uri uri = writeBitmapToTmpFile();
     Bitmap result =
-            ImageUtils.readScaledImage(
-                    contentResolver, uri, TEST_SCREENSHOT_WIDTH / 4 - 100, TEST_SCREENSHOT_HEIGHT / 2 - 100);
+        ImageUtils.readScaledImage(
+            contentResolver,
+            uri,
+            TEST_SCREENSHOT_WIDTH / 4 - 100,
+            TEST_SCREENSHOT_HEIGHT / 2 - 100);
 
     assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH / 2);
     assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT / 2);
   }
 
   @Test
-  public void readScaledImage_targetHeightIsSmaller_scalesDownToFitWidth() throws IOException, FirebaseAppDistributionException {
+  public void readScaledImage_targetHeightIsSmaller_scalesDownToFitWidth()
+      throws IOException, FirebaseAppDistributionException {
     Uri uri = writeBitmapToTmpFile();
     Bitmap result =
-            ImageUtils.readScaledImage(
-                    contentResolver, uri, TEST_SCREENSHOT_WIDTH / 2 - 100, TEST_SCREENSHOT_HEIGHT / 4 - 100);
+        ImageUtils.readScaledImage(
+            contentResolver,
+            uri,
+            TEST_SCREENSHOT_WIDTH / 2 - 100,
+            TEST_SCREENSHOT_HEIGHT / 4 - 100);
 
     assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH / 2);
     assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT / 2);
   }
 
   @Test
-  public void readScaledImage_targetIsGreaterThanHalf_returnsOriginal() throws IOException, FirebaseAppDistributionException {
+  public void readScaledImage_targetIsGreaterThanHalf_returnsOriginal()
+      throws IOException, FirebaseAppDistributionException {
     Uri uri = writeBitmapToTmpFile();
     Bitmap result =
-            ImageUtils.readScaledImage(
-                    contentResolver, uri, TEST_SCREENSHOT_WIDTH - 100, TEST_SCREENSHOT_HEIGHT - 100);
+        ImageUtils.readScaledImage(
+            contentResolver, uri, TEST_SCREENSHOT_WIDTH - 100, TEST_SCREENSHOT_HEIGHT - 100);
 
     assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH);
     assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT);
   }
 
   @Test
-  public void readScaledImage_targetIsGreater_returnsOriginal() throws IOException, FirebaseAppDistributionException {
+  public void readScaledImage_targetIsGreater_returnsOriginal()
+      throws IOException, FirebaseAppDistributionException {
     Uri uri = writeBitmapToTmpFile();
     Bitmap result =
-            ImageUtils.readScaledImage(
-                    contentResolver, uri, TEST_SCREENSHOT_WIDTH * 2, TEST_SCREENSHOT_HEIGHT * 2);
+        ImageUtils.readScaledImage(
+            contentResolver, uri, TEST_SCREENSHOT_WIDTH * 2, TEST_SCREENSHOT_HEIGHT * 2);
 
     assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH);
     assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT);
@@ -127,14 +137,18 @@ public class ImageUtilsTest {
   @Test
   public void readScaledImage_zeroDimension_throws() throws IOException {
     Uri uri = writeBitmapToTmpFile();
-    assertThrows(IllegalArgumentException.class, () -> ImageUtils.readScaledImage(contentResolver, uri, 500, 0));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> ImageUtils.readScaledImage(contentResolver, uri, 500, 0));
   }
 
   @Test
   public void readScaledImage_doesntExist_throws() throws IOException {
     assertThrows(
         IllegalArgumentException.class,
-        () -> ImageUtils.readScaledImage(contentResolver, Uri.fromFile(new File("nonexistent.png")), 500, 0));
+        () ->
+            ImageUtils.readScaledImage(
+                contentResolver, Uri.fromFile(new File("nonexistent.png")), 500, 0));
   }
 
   private static Uri writeBitmapToTmpFile() throws IOException {

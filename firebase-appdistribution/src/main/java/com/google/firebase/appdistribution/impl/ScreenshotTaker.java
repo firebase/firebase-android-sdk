@@ -109,8 +109,8 @@ class ScreenshotTaker {
             throw new FirebaseAppDistributionException(
                 "Failed to write screenshot to storage", Status.UNKNOWN, e);
           }
-          return Uri.fromFile(firebaseApp.getApplicationContext()
-                  .getFileStreamPath(SCREENSHOT_FILE_NAME));
+          return Uri.fromFile(
+              firebaseApp.getApplicationContext().getFileStreamPath(SCREENSHOT_FILE_NAME));
         });
   }
 

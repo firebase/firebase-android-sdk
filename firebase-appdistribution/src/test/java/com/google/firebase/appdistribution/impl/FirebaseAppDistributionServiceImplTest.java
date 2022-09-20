@@ -192,8 +192,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     activity = spy(Robolectric.buildActivity(TestActivity.class).create().get());
     TestUtils.mockForegroundActivity(mockLifecycleNotifier, activity);
-    when(mockScreenshotTaker.takeScreenshot())
-        .thenReturn(Tasks.forResult(TEST_SCREENSHOT_URI));
+    when(mockScreenshotTaker.takeScreenshot()).thenReturn(Tasks.forResult(TEST_SCREENSHOT_URI));
   }
 
   @Test
