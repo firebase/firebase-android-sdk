@@ -3,6 +3,7 @@ package com.google.firebase.gradle.plugins
 import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
@@ -38,7 +39,7 @@ abstract class GenerateDocumentationTaskExtension : DefaultTask() {
     abstract val dackkaJarFile: Property<File>
 
     @get:[InputFiles Classpath]
-    abstract val dependencies: ListProperty<File>
+    abstract val dependencies: Property<FileCollection>
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -127,7 +128,8 @@ abstract class GenerateDocumentationTask @Inject constructor(
             "android" to "https://developer.android.com/reference/kotlin/",
             "google" to "https://developers.google.com/android/reference/",
             "firebase" to "https://firebase.google.com/docs/reference/kotlin/",
-            "coroutines" to "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/"
+            "coroutines" to "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/",
+            "kotlin" to "https://kotlinlang.org/api/latest/jvm/stdlib/"
         )
 
         return packageLists.get().map {

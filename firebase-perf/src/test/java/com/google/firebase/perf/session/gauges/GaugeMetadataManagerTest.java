@@ -16,13 +16,10 @@ package com.google.firebase.perf.session.gauges;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.ActivityManager;
-import android.app.ActivityManager.RunningAppProcessInfo;
 import android.content.Context;
 import android.os.Environment;
 import androidx.test.core.app.ApplicationProvider;
@@ -32,8 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -79,38 +74,6 @@ public class GaugeMetadataManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testInitialization_getProcessNameReturnsNull_doesNotCrash() {
-    ActivityManager activityManagerPartialMock = spy(activityManager);
-    when(activityManagerPartialMock.getRunningAppProcesses()).thenReturn(null);
-
-    assertThat(new GaugeMetadataManager(runtime, appContext)).isNotNull();
-  }
-
-  @Test
-  public void testGetProcessName_noProcessInfoList_returnsPackageName() {
-    shadowOf(activityManager).setProcesses(new ArrayList<>());
-    assertThat(new GaugeMetadataManager(runtime, appContext).getProcessName())
-        .isEqualTo(appContext.getPackageName());
-  }
-
-  @Test
-  public void testGetProcessName_processListWithoutCurrentPid_returnsPackageName() {
-    shadowOf(activityManager)
-        .setProcesses(
-            generateFakeAppProcessInfoListThatContainsPid(android.os.Process.myPid() + 100));
-    assertThat(new GaugeMetadataManager(runtime, appContext).getProcessName())
-        .isEqualTo(appContext.getPackageName());
-  }
-
-  @Test
-  public void testGetProcessName_processListWithCurrentPid_returnsProcessName() {
-    shadowOf(activityManager)
-        .setProcesses(generateFakeAppProcessInfoListThatContainsPid(android.os.Process.myPid()));
-    assertThat(new GaugeMetadataManager(runtime, appContext).getProcessName())
-        .isEqualTo("fakeProcessName");
-  }
-
-  @Test
   public void testGetMaxAppJavaHeapMemory_returnsExpectedValue() {
     assertThat(testGaugeMetadataManager.getMaxAppJavaHeapMemoryKb()).isGreaterThan(0);
     //        .isEqualTo(StorageUnit.BYTES.toKilobytes(RUNTIME_MAX_MEMORY_BYTES));
@@ -144,17 +107,6 @@ public class GaugeMetadataManagerTest extends FirebasePerformanceTestBase {
     fileWriter.close();
 
     return file.getAbsolutePath();
-  }
-
-  private List<RunningAppProcessInfo> generateFakeAppProcessInfoListThatContainsPid(int pid) {
-    ActivityManager.RunningAppProcessInfo fakeProcessInfoList = new RunningAppProcessInfo();
-    fakeProcessInfoList.pid = pid;
-    fakeProcessInfoList.processName = "fakeProcessName";
-
-    List<RunningAppProcessInfo> processInfoList = new ArrayList<>();
-    processInfoList.add(fakeProcessInfoList);
-
-    return processInfoList;
   }
 
   private static final String MEM_INFO_CONTENTS =
