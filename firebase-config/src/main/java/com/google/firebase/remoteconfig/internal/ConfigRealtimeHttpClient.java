@@ -16,6 +16,7 @@ package com.google.firebase.remoteconfig.internal;
 
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.REALTIME_REGEX_URL;
+import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.HTTP_TOO_MANY_REQUESTS;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -309,6 +310,7 @@ public class ConfigRealtimeHttpClient {
   // HTTP status code that the Realtime client should retry on.
   private boolean isStatusCodeRetryable(int statusCode) {
     return statusCode == HttpURLConnection.HTTP_CLIENT_TIMEOUT
+        || statusCode == HTTP_TOO_MANY_REQUESTS
         || statusCode == HttpURLConnection.HTTP_BAD_GATEWAY
         || statusCode == HttpURLConnection.HTTP_UNAVAILABLE
         || statusCode == HttpURLConnection.HTTP_GATEWAY_TIMEOUT
