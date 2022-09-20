@@ -71,6 +71,12 @@ public class ConfigRealtimeHandler {
       @Override
       public void run() {
         configRealtimeHttpClient.beginRealtimeHttpStream();
+        boolean isRealtimeClientRunning = true;
+        while (isRealtimeClientRunning) {
+          if (Thread.currentThread().isInterrupted()) {
+            isRealtimeClientRunning = false;
+          }
+        }
       }
     };
   }
