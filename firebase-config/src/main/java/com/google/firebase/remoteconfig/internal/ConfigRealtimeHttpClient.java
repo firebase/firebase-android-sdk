@@ -329,7 +329,7 @@ public class ConfigRealtimeHttpClient {
       return;
     }
 
-    int responseCode = 0;
+    Integer responseCode = null;
     try {
       // Create the open the connection.
       httpURLConnection = createRealtimeConnection();
@@ -349,8 +349,9 @@ public class ConfigRealtimeHttpClient {
     } finally {
       closeRealtimeHttpStream();
 
-      // If responseCode is 0 then no connection was made to server and the SDK should still retry.
-      if (responseCode == 0
+      // If responseCode is null then no connection was made to server and the SDK should still
+      // retry.
+      if (responseCode == null
           || responseCode == HttpURLConnection.HTTP_OK
           || isStatusCodeRetryable(responseCode)) {
         retryHTTPConnection();
