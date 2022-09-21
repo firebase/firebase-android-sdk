@@ -512,7 +512,6 @@ public abstract class NetworkRequest {
    *     code indicating an error.
    */
   public boolean isResultSuccess() {
-    System.out.println(resultCode);
     return resultCode >= 200 && resultCode < 300;
   }
 

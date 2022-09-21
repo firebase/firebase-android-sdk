@@ -79,6 +79,8 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   private volatile Exception mServerException = null;
   private volatile int mResultCode = 0;
   private volatile String mServerStatus;
+  private volatile long maxSleepTime;
+  private int sleepTime = 1000;
 
   UploadTask(StorageReference targetRef, StorageMetadata metadata, byte[] bytes) {
     Preconditions.checkNotNull(targetRef);
@@ -96,6 +98,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
         new AdaptiveStreamBuffer(new ByteArrayInputStream(bytes), PREFERRED_CHUNK_SIZE);
     this.mIsStreamOwned = true;
 
+    this.maxSleepTime = storage.getMaxChunkUploadRetry();
     mSender =
         new ExponentialBackoffSender(
             storage.getApp().getApplicationContext(),
@@ -117,6 +120,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     this.mAppCheckProvider = storage.getAppCheckProvider();
     this.mUri = file;
     InputStream inputStream = null;
+    this.maxSleepTime = storage.getMaxChunkUploadRetry();
     mSender =
         new ExponentialBackoffSender(
             mStorageRef.getApp().getApplicationContext(),
@@ -180,12 +184,13 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     this.mStreamBuffer = new AdaptiveStreamBuffer(stream, PREFERRED_CHUNK_SIZE);
     this.mIsStreamOwned = false;
     this.mUri = null;
+    this.maxSleepTime = storage.getMaxChunkUploadRetry();
     mSender =
         new ExponentialBackoffSender(
             mStorageRef.getApp().getApplicationContext(),
             mAuthProvider,
             mAppCheckProvider,
-            mStorageRef.getStorage().getMaxUploadRetryTimeMillis());
+            storage.getMaxUploadRetryTimeMillis());
   }
 
   /** @return the target of the upload. */
@@ -293,10 +298,6 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
    * If this method returns false, it is also responsible for ensuring the state has changed to a
    * valid final state (Canceled, Paused, Failure, Final)
    */
-  int sleepTime = 1000;
-
-  int maxSleepTime = 20000;
-
   private boolean shouldContinue() {
     if (getInternalState() == INTERNAL_STATE_SUCCESS) {
       return false; // already final/complete
@@ -332,15 +333,18 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     }
 
     boolean inErrorState = mServerException != null || mResultCode < 200 || mResultCode >= 300;
+    long deadLine = clock.elapsedRealtime() + this.maxSleepTime;
+    long currentTime = clock.elapsedRealtime() + this.sleepTime;
     // we attempt to recover by calling recoverStatus(true)
-    if (inErrorState && (sleepTime >= maxSleepTime || !recoverStatus(true))) {
-      // we failed to recover.
-      if (serverStateValid()) {
-        tryChangeState(INTERNAL_STATE_FAILURE, false);
+    if (inErrorState) {
+      if (currentTime > deadLine || !recoverStatus(true)) {
+        if (serverStateValid()) {
+          tryChangeState(INTERNAL_STATE_FAILURE, false);
+        }
+        return false;
       }
-      return false;
+      sleepTime *= 2;
     }
-
     return true;
   }
 
@@ -369,16 +373,6 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     NetworkRequest queryRequest =
         new ResumableUploadQueryRequest(
             mStorageRef.getStorageReferenceUri(), mStorageRef.getApp(), mUploadUri);
-    try {
-      Log.d(TAG, "Waiting " + sleepTime + " milliseconds");
-      sleeper.sleep(sleepTime + random.nextInt(RND_MAX));
-    } catch (InterruptedException e) {
-      Log.w(TAG, "thread interrupted during exponential backoff.");
-
-      Thread.currentThread().interrupt();
-      return false;
-    }
-    sleepTime *= 2;
 
     if (RESUMABLE_FINAL_STATUS.equals(mServerStatus)) {
       return false;
@@ -435,6 +429,20 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     return true;
   }
 
+  public boolean delaySend(NetworkRequest request) {
+    try {
+      Log.d(TAG, "Waiting " + sleepTime + " milliseconds");
+      sleeper.sleep(sleepTime + random.nextInt(RND_MAX));
+    } catch (InterruptedException e) {
+      Log.w(TAG, "thread interrupted during exponential backoff.");
+
+      Thread.currentThread().interrupt();
+      mServerException = e;
+      return false;
+    }
+    return send(request);
+  }
+
   private void uploadChunk() {
     try {
       mStreamBuffer.fill(mCurrentChunkSize);
@@ -450,7 +458,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
               bytesToUpload,
               mStreamBuffer.isFinished());
 
-      if (!send(uploadRequest)) {
+      if (!delaySend(uploadRequest)) {
         mCurrentChunkSize = PREFERRED_CHUNK_SIZE;
         Log.d(TAG, "Resetting chunk size to " + mCurrentChunkSize);
         return;

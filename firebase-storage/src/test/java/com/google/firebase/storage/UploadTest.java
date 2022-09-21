@@ -67,7 +67,7 @@ public class UploadTest {
 
   private static final String TEST_ASSET_ROOT = "assets/";
 
-  @Rule public RetryRule retryRule = new RetryRule(3);
+  @Rule public RetryRule retryRule = new RetryRule(1);
   @Rule public final FirebaseAppRule firebaseAppRule = new FirebaseAppRule();
 
   @Rule public TemporaryFolder folder = new TemporaryFolder();
@@ -107,7 +107,7 @@ public class UploadTest {
     MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("fileUploadWith500", true);
     Task<StringBuilder> task = TestUploadHelper.fileUploadWith500();
 
-    TestUtil.await(task, 1, TimeUnit.MINUTES);
+    TestUtil.await(task, 150, TimeUnit.SECONDS);
 
     factory.verifyOldMock();
     TestUtil.verifyTaskStateChanges("fileUploadWith500", task.getResult().toString());

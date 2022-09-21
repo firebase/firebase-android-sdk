@@ -101,7 +101,6 @@ public class TestUploadHelper {
                 result -> {
                   ControllableSchedulerHelper.getInstance().verifyCallbackThread();
                   String statusMessage = "\nonPaused:\n" + uploadTaskStatetoString(result);
-                  System.out.println(statusMessage);
                   Log.i(TAG, statusMessage);
                   builder.append(statusMessage);
                 });
@@ -111,10 +110,9 @@ public class TestUploadHelper {
             ? onProgress
             : (OnProgressListener<TaskSnapshot>)
                 result -> {
-                  String statusMessage = "\nonProgress:\n" + uploadTaskStatetoString(result);
-                  System.out.println(statusMessage);
-                  Log.i(TAG, statusMessage);
                   ControllableSchedulerHelper.getInstance().verifyCallbackThread();
+                  String statusMessage = "\nonProgress:\n" + uploadTaskStatetoString(result);
+                  Log.i(TAG, statusMessage);
                   builder.append(statusMessage);
                 });
 
