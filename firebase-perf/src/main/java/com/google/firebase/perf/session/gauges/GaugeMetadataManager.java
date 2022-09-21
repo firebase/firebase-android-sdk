@@ -19,7 +19,6 @@ import android.app.ActivityManager.MemoryInfo;
 import android.content.Context;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.StorageUnit;
@@ -28,7 +27,6 @@ import com.google.firebase.perf.v1.GaugeMetadata;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,7 +41,6 @@ class GaugeMetadataManager {
   private final Runtime runtime;
   private final ActivityManager activityManager;
   private final MemoryInfo memoryInfo;
-  private final String currentProcessName;
   private final Context appContext;
 
   GaugeMetadataManager(Context appContext) {
@@ -57,15 +54,6 @@ class GaugeMetadataManager {
     this.activityManager = (ActivityManager) appContext.getSystemService(Context.ACTIVITY_SERVICE);
     memoryInfo = new ActivityManager.MemoryInfo();
     activityManager.getMemoryInfo(memoryInfo);
-
-    // Assign the current process name here to avoid iterating through all the running processes
-    // each time getCurrentProcessName() is called.
-    currentProcessName = getCurrentProcessName();
-  }
-
-  /** Returns the name of the process FirebaseApp is associated with. */
-  public String getProcessName() {
-    return currentProcessName;
   }
 
   /**
@@ -111,24 +99,5 @@ class GaugeMetadataManager {
     }
 
     return 0;
-  }
-
-  /** Returns the name of the process the Application is associated with. */
-  private String getCurrentProcessName() {
-    int myProcessPid = android.os.Process.myPid();
-
-    @Nullable
-    List<ActivityManager.RunningAppProcessInfo> runningAppProcessInfos =
-        activityManager.getRunningAppProcesses();
-
-    if (runningAppProcessInfos != null) {
-      for (ActivityManager.RunningAppProcessInfo processInfo : runningAppProcessInfos) {
-        if (processInfo.pid == myProcessPid) {
-          return processInfo.processName;
-        }
-      }
-    }
-
-    return appContext.getPackageName();
   }
 }

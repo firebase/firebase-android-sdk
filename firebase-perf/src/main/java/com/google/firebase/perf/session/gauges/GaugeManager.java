@@ -267,7 +267,6 @@ public class GaugeManager {
 
   private GaugeMetadata getGaugeMetadata() {
     return GaugeMetadata.newBuilder()
-        .setProcessName(gaugeMetadataManager.getProcessName())
         .setDeviceRamSizeKb(gaugeMetadataManager.getDeviceRamSizeKb())
         .setMaxAppJavaHeapMemoryKb(gaugeMetadataManager.getMaxAppJavaHeapMemoryKb())
         .setMaxEncouragedAppJavaHeapMemoryKb(
