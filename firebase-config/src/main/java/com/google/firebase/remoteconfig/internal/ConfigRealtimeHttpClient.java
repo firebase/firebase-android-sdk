@@ -313,8 +313,7 @@ public class ConfigRealtimeHttpClient {
         || statusCode == HTTP_TOO_MANY_REQUESTS
         || statusCode == HttpURLConnection.HTTP_BAD_GATEWAY
         || statusCode == HttpURLConnection.HTTP_UNAVAILABLE
-        || statusCode == HttpURLConnection.HTTP_GATEWAY_TIMEOUT
-        || statusCode == HttpURLConnection.HTTP_OK;
+        || statusCode == HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
   }
 
   /**
@@ -330,7 +329,7 @@ public class ConfigRealtimeHttpClient {
       return;
     }
 
-    int responseCode = 200;
+    int responseCode = 0;
     try {
       // Create the open the connection.
       httpURLConnection = createRealtimeConnection();
@@ -349,7 +348,11 @@ public class ConfigRealtimeHttpClient {
       Log.d(TAG, "Exception connecting to realtime stream. Retrying the connection...");
     } finally {
       closeRealtimeHttpStream();
-      if (isStatusCodeRetryable(responseCode)) {
+
+      // If responseCode is 0 then no connection was made to server and the SDK should still retry.
+      if (responseCode == 0
+          || responseCode == HttpURLConnection.HTTP_OK
+          || isStatusCodeRetryable(responseCode)) {
         retryHTTPConnection();
       } else {
         propagateErrors(
