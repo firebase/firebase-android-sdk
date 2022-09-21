@@ -368,6 +368,7 @@ public class ConfigRealtimeHttpClient {
       // See github.com/firebase/firebase-android-sdk/pull/808.
       try {
         this.httpURLConnection.getInputStream().close();
+        this.httpURLConnection.getErrorStream().close();
       } catch (IOException e) {
       }
       this.httpURLConnection = null;
