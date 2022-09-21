@@ -428,7 +428,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     return true;
   }
 
-  public boolean delaySend(NetworkRequest request) {
+  private boolean delaySend(NetworkRequest request) {
     try {
       Log.d(TAG, "Waiting " + sleepTime + " milliseconds");
       sleeper.sleep(sleepTime + random.nextInt(RND_MAX));
