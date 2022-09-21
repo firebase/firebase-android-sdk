@@ -37,11 +37,13 @@ import java.util.List;
  */
 @Keep
 public class RemoteConfigRegistrar implements ComponentRegistrar {
+  public static final String LIBRARY_NAME = "fire-rc";
+
   @Override
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(RemoteConfigComponent.class)
-            .name("fire-rc")
+            .name(LIBRARY_NAME)
             .add(Dependency.required(Context.class))
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
@@ -57,6 +59,6 @@ public class RemoteConfigRegistrar implements ComponentRegistrar {
                         container.getProvider(AnalyticsConnector.class)))
             .eagerInDefaultApp()
             .build(),
-        LibraryVersionComponent.create("fire-rc", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }

@@ -37,6 +37,7 @@ import java.util.List;
  */
 @Keep
 public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
+  public static final String LIBRARY_NAME = "fire-appdistribution";
 
   private static String TAG = "Registrar:";
 
@@ -44,7 +45,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
   public @NonNull List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseAppDistribution.class)
-            .name("fire-appdistribution")
+            .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
             .factory(this::buildFirebaseAppDistribution)
@@ -52,7 +53,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
             .build(),
-        LibraryVersionComponent.create("fire-appdistribution", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 
   private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {

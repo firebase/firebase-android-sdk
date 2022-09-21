@@ -40,13 +40,14 @@ import java.util.List;
  */
 @Keep
 public class FirebasePerfRegistrar implements ComponentRegistrar {
+  public static final String LIBRARY_NAME = "fire-perf";
 
   @Override
   @Keep
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebasePerformance.class)
-            .name("fire-perf")
+            .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(RemoteConfigComponent.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
@@ -60,7 +61,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
          * not to force initialize them at app startup (refer
          * https://github.com/google/guice/wiki/InjectingProviders#providers-for-lazy-loading)*
          */
-        LibraryVersionComponent.create("fire-perf", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 
   private static FirebasePerformance providesFirebasePerformance(ComponentContainer container) {

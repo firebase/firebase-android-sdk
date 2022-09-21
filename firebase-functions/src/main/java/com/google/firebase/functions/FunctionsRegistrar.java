@@ -34,6 +34,8 @@ import java.util.List;
  */
 @Keep
 public class FunctionsRegistrar implements ComponentRegistrar {
+  public static final String LIBRARY_NAME = "fire-fn";
+
   @Override
   public List<Component<?>> getComponents() {
     return Arrays.asList(
@@ -49,7 +51,7 @@ public class FunctionsRegistrar implements ComponentRegistrar {
                         c.getDeferred(InternalAppCheckTokenProvider.class)))
             .build(),
         Component.builder(FunctionsMultiResourceComponent.class)
-            .name("fire-fn")
+            .name(LIBRARY_NAME)
             .add(Dependency.required(Context.class))
             .add(Dependency.required(ContextProvider.class))
             .add(Dependency.required(FirebaseApp.class))
@@ -60,6 +62,6 @@ public class FunctionsRegistrar implements ComponentRegistrar {
                         c.get(ContextProvider.class),
                         c.get(FirebaseApp.class)))
             .build(),
-        LibraryVersionComponent.create("fire-fn", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }

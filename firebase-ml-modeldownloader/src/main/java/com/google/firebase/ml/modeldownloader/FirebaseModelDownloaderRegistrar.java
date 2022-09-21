@@ -39,6 +39,7 @@ import java.util.List;
  * @hide
  */
 public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
+  public static final String LIBRARY_NAME = "firebase-ml-modeldownloader";
 
   @Override
   @NonNull
@@ -46,7 +47,7 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseModelDownloader.class)
-            .name("firebase-ml-modeldownloader")
+            .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .factory(
@@ -85,6 +86,6 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
                     new CustomModelDownloadService(
                         c.get(FirebaseApp.class), c.get(FirebaseInstallationsApi.class)))
             .build(),
-        LibraryVersionComponent.create("firebase-ml-modeldownloader", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }

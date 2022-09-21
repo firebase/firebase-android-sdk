@@ -52,12 +52,14 @@ import java.util.List;
  */
 @Keep
 public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
+  public static final String LIBRARY_NAME = "fire-fiam";
+
   @Override
   @Keep
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseInAppMessaging.class)
-            .name("fire-fiam")
+            .name(LIBRARY_NAME)
             .add(Dependency.required(Context.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.required(FirebaseApp.class))
@@ -68,7 +70,7 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
             .factory(this::providesFirebaseInAppMessaging)
             .eagerInDefaultApp()
             .build(),
-        LibraryVersionComponent.create("fire-fiam", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 
   private FirebaseInAppMessaging providesFirebaseInAppMessaging(ComponentContainer container) {

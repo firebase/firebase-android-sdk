@@ -30,11 +30,13 @@ import java.util.List;
 @Keep
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class DatabaseRegistrar implements ComponentRegistrar {
+  public static final String LIBRARY_NAME = "fire-rtdb";
+
   @Override
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseDatabaseComponent.class)
-            .name("fire-rtdb")
+            .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.deferred(InternalAuthProvider.class))
             .add(Dependency.deferred(InternalAppCheckTokenProvider.class))
@@ -45,6 +47,6 @@ public class DatabaseRegistrar implements ComponentRegistrar {
                         c.getDeferred(InternalAuthProvider.class),
                         c.getDeferred(InternalAppCheckTokenProvider.class)))
             .build(),
-        LibraryVersionComponent.create("fire-rtdb", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }
