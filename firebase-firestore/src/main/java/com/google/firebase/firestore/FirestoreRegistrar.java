@@ -39,7 +39,7 @@ import java.util.List;
 @Keep
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FirestoreRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-fst";
+  private static final String LIBRARY_NAME = "fire-fst";
 
   @Override
   @Keep

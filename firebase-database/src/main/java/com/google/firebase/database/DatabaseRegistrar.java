@@ -30,7 +30,7 @@ import java.util.List;
 @Keep
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class DatabaseRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-rtdb";
+  private static final String LIBRARY_NAME = "fire-rtdb";
 
   @Override
   public List<Component<?>> getComponents() {

@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class CrashlyticsNdkRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-cls-ndk";
+  private static final String LIBRARY_NAME = "fire-cls-ndk";
 
   @Override
   public List<Component<?>> getComponents() {

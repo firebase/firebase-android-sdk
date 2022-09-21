@@ -39,7 +39,7 @@ import java.util.List;
  * @hide
  */
 public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "firebase-ml-modeldownloader";
+  private static final String LIBRARY_NAME = "firebase-ml-modeldownloader";
 
   @Override
   @NonNull

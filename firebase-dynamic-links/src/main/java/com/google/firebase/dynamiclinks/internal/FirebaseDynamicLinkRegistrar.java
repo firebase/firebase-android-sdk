@@ -37,7 +37,7 @@ import java.util.List;
 @KeepForSdk
 @Keep
 public final class FirebaseDynamicLinkRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-dl";
+  private static final String LIBRARY_NAME = "fire-dl";
 
   @Override
   @Keep

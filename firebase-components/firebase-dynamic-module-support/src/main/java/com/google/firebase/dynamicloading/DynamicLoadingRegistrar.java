@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class DynamicLoadingRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-dyn-mod";
+  private static final String LIBRARY_NAME = "fire-dyn-mod";
 
   @Override
   public List<Component<?>> getComponents() {

@@ -37,7 +37,7 @@ import java.util.List;
  */
 @Keep
 public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-appdistribution";
+  private static final String LIBRARY_NAME = "fire-appdistribution";
 
   private static String TAG = "Registrar:";
 

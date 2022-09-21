@@ -32,7 +32,7 @@ import java.util.List;
  */
 @Keep
 public class FirebaseAppDistributionApiRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-appdistribution-api";
+  private static final String LIBRARY_NAME = "fire-appdistribution-api";
 
   @Override
   public @NonNull List<Component<?>> getComponents() {

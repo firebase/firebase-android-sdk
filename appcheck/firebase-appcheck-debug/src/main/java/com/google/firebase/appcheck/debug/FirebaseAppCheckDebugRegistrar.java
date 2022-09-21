@@ -29,7 +29,7 @@ import java.util.List;
  */
 @KeepForSdk
 public class FirebaseAppCheckDebugRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-app-check-debug";
+  private static final String LIBRARY_NAME = "fire-app-check-debug";
 
   @Override
   public List<Component<?>> getComponents() {

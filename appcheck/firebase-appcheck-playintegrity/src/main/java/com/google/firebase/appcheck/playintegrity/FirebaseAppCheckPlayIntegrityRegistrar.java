@@ -29,7 +29,7 @@ import java.util.List;
  */
 @KeepForSdk
 public class FirebaseAppCheckPlayIntegrityRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-app-check-play-integrity";
+  private static final String LIBRARY_NAME = "fire-app-check-play-integrity";
 
   @Override
   public List<Component<?>> getComponents() {

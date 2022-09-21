@@ -28,7 +28,7 @@ import java.util.List;
 /** @hide */
 @Keep
 public class FirebaseInstallationsRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-installations";
+  private static final String LIBRARY_NAME = "fire-installations";
 
   @Override
   public List<Component<?>> getComponents() {

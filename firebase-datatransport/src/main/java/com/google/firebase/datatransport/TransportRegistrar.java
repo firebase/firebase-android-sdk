@@ -28,7 +28,7 @@ import java.util.List;
 
 @Keep
 public class TransportRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-transport";
+  private static final String LIBRARY_NAME = "fire-transport";
 
   @Override
   public List<Component<?>> getComponents() {

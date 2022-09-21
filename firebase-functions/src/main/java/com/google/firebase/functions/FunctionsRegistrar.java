@@ -34,7 +34,7 @@ import java.util.List;
  */
 @Keep
 public class FunctionsRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-fn";
+  private static final String LIBRARY_NAME = "fire-fn";
 
   @Override
   public List<Component<?>> getComponents() {

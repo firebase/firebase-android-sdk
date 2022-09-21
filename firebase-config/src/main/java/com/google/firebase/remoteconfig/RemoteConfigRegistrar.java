@@ -37,7 +37,7 @@ import java.util.List;
  */
 @Keep
 public class RemoteConfigRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-rc";
+  private static final String LIBRARY_NAME = "fire-rc";
 
   @Override
   public List<Component<?>> getComponents() {

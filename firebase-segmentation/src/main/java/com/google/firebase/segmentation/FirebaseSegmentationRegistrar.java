@@ -26,7 +26,7 @@ import java.util.List;
 
 /** @hide */
 public class FirebaseSegmentationRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-segmentation";
+  private static final String LIBRARY_NAME = "fire-segmentation";
 
   @Override
   @NonNull

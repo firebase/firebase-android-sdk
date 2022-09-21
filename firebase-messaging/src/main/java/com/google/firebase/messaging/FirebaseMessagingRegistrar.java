@@ -38,7 +38,7 @@ import java.util.List;
 @KeepForSdk
 @Keep
 public class FirebaseMessagingRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-fcm";
+  private static final String LIBRARY_NAME = "fire-fcm";
 
   @Override
   @Keep

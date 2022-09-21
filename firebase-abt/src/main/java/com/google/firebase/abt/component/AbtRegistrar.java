@@ -32,7 +32,7 @@ import java.util.List;
  */
 @Keep
 public class AbtRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-abt";
+  private static final String LIBRARY_NAME = "fire-abt";
 
   @Override
   public List<Component<?>> getComponents() {

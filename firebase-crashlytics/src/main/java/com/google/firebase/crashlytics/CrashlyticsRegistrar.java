@@ -29,7 +29,7 @@ import java.util.List;
 
 /** @hide */
 public class CrashlyticsRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-cls";
+  private static final String LIBRARY_NAME = "fire-cls";
 
   @Override
   public List<Component<?>> getComponents() {

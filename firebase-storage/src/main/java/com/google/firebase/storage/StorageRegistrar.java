@@ -30,7 +30,7 @@ import java.util.List;
 @Keep
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StorageRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-gcs";
+  private static final String LIBRARY_NAME = "fire-gcs";
 
   @Override
   public List<Component<?>> getComponents() {

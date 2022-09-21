@@ -40,7 +40,7 @@ import java.util.List;
  */
 @Keep
 public class FirebasePerfRegistrar implements ComponentRegistrar {
-  public static final String LIBRARY_NAME = "fire-perf";
+  private static final String LIBRARY_NAME = "fire-perf";
 
   @Override
   @Keep
