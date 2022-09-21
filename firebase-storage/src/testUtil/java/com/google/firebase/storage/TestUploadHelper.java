@@ -19,6 +19,7 @@ import android.content.ContentResolver;
 import android.net.Uri;
 import android.util.Log;
 import androidx.annotation.Nullable;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -35,259 +36,255 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Semaphore;
-import org.robolectric.Shadows;
-import androidx.test.core.app.ApplicationProvider;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.robolectric.Shadows;
 
 /** tests for uploads. */
 @SuppressWarnings("unused")
 public class TestUploadHelper {
-    private static final String TAG = "TestDownloadHelper";
+  private static final String TAG = "TestDownloadHelper";
 
-    static int progressCount = 0;
-    static boolean hitPause;
-    static UploadTask inProgressTask;
+  static int progressCount = 0;
+  static boolean hitPause;
+  static UploadTask inProgressTask;
 
-    /**
-     * Attach the provided listeners or default ones if null.
-     */
-    private static void attachListeners(
-            final StringBuilder builder,
-            final UploadTask task,
-            @Nullable OnSuccessListener<TaskSnapshot> onSuccess,
-            @Nullable OnFailureListener onFailure,
-            @Nullable OnCanceledListener onCanceled,
-            @Nullable OnPausedListener<TaskSnapshot> onPaused,
-            @Nullable OnProgressListener<TaskSnapshot> onProgress,
-            @Nullable OnCompleteListener<TaskSnapshot> onComplete) {
-        task.addOnSuccessListener(
-                onSuccess != null
-                        ? onSuccess
-                        : new OnSuccessListener<TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(TaskSnapshot state) {
-                        ControllableSchedulerHelper.getInstance().verifyCallbackThread();
-                        String statusMessage = "\nonSuccess:\n" + uploadTaskStatetoString(state);
-                        Log.i(TAG, statusMessage);
-                        builder.append(statusMessage);
-                        task.removeOnSuccessListener(this);
-                    }
+  /** Attach the provided listeners or default ones if null. */
+  private static void attachListeners(
+      final StringBuilder builder,
+      final UploadTask task,
+      @Nullable OnSuccessListener<TaskSnapshot> onSuccess,
+      @Nullable OnFailureListener onFailure,
+      @Nullable OnCanceledListener onCanceled,
+      @Nullable OnPausedListener<TaskSnapshot> onPaused,
+      @Nullable OnProgressListener<TaskSnapshot> onProgress,
+      @Nullable OnCompleteListener<TaskSnapshot> onComplete) {
+    task.addOnSuccessListener(
+        onSuccess != null
+            ? onSuccess
+            : new OnSuccessListener<TaskSnapshot>() {
+              @Override
+              public void onSuccess(TaskSnapshot state) {
+                ControllableSchedulerHelper.getInstance().verifyCallbackThread();
+                String statusMessage = "\nonSuccess:\n" + uploadTaskStatetoString(state);
+                Log.i(TAG, statusMessage);
+                builder.append(statusMessage);
+                task.removeOnSuccessListener(this);
+              }
+            });
+
+    task.addOnFailureListener(
+        onFailure != null
+            ? onFailure
+            : (OnFailureListener)
+                e -> {
+                  ControllableSchedulerHelper.getInstance().verifyCallbackThread();
+                  String statusMessage = "\nonFailure:\n" + e;
+                  Log.i(TAG, statusMessage);
+                  builder.append(statusMessage);
                 });
 
-        task.addOnFailureListener(
-                onFailure != null
-                        ? onFailure
-                        : (OnFailureListener)
-                        e -> {
-                            ControllableSchedulerHelper.getInstance().verifyCallbackThread();
-                            String statusMessage = "\nonFailure:\n" + e;
-                            Log.i(TAG, statusMessage);
-                            builder.append(statusMessage);
-                        });
+    task.addOnCanceledListener(
+        onCanceled != null
+            ? onCanceled
+            : (OnCanceledListener)
+                () -> {
+                  ControllableSchedulerHelper.getInstance().verifyCallbackThread();
+                  String statusMessage = "\nonCanceled:";
+                  Log.i(TAG, statusMessage);
+                  builder.append(statusMessage);
+                });
 
-        task.addOnCanceledListener(
-                onCanceled != null
-                        ? onCanceled
-                        : (OnCanceledListener)
-                        () -> {
-                            ControllableSchedulerHelper.getInstance().verifyCallbackThread();
-                            String statusMessage = "\nonCanceled:";
-                            Log.i(TAG, statusMessage);
-                            builder.append(statusMessage);
-                        });
-
-        task.addOnPausedListener(
-                onPaused != null
-                        ? onPaused
-                        : (OnPausedListener<TaskSnapshot>)
-                        result -> {
-                            ControllableSchedulerHelper.getInstance().verifyCallbackThread();
-                            String statusMessage = "\nonPaused:\n" + uploadTaskStatetoString(result);
-                            System.out.println(statusMessage);
-                            Log.i(TAG, statusMessage);
-                            builder.append(statusMessage);
-                        });
-
-        task.addOnProgressListener(
-                onProgress != null
-                        ? onProgress
-                        : (OnProgressListener<TaskSnapshot>)
-                        result -> {
-                            String statusMessage = "\nonProgress:\n" + uploadTaskStatetoString(result);
-                            System.out.println(statusMessage);
-                            Log.i(TAG, statusMessage);
-                            ControllableSchedulerHelper.getInstance().verifyCallbackThread();
-                            builder.append(statusMessage);
-                        });
-
-        task.addOnCompleteListener(
-                onComplete != null
-                        ? onComplete
-                        : (OnCompleteListener<TaskSnapshot>)
-                        completedTask -> {
-                            ControllableSchedulerHelper.getInstance().verifyCallbackThread();
-                            String statusMessage = "\nonComplete:Success=\n" + completedTask.isSuccessful();
-                            Log.i(TAG, statusMessage);
-                            builder.append(statusMessage);
-                        });
-
-        task.onSuccessTask(
+    task.addOnPausedListener(
+        onPaused != null
+            ? onPaused
+            : (OnPausedListener<TaskSnapshot>)
                 result -> {
-                    ControllableSchedulerHelper.getInstance().verifyCallbackThread();
-                    String statusMessage = "\nonSuccessTask:\n" + uploadTaskStatetoString(result);
-                    Log.i(TAG, statusMessage);
-                    builder.append(statusMessage);
-                    return Tasks.forResult(null);
-                });
-    }
-
-    public static Task<StringBuilder> byteUpload(StorageReference storage) {
-        final StringBuilder builder = new StringBuilder();
-        String foo = "This is a test!!!";
-        byte[] bytes = foo.getBytes(Charset.forName("UTF-8"));
-        StorageMetadata metadata = new StorageMetadata.Builder().setContentType("text/plain").build();
-
-        ControllableSchedulerHelper.getInstance().pause();
-
-        final UploadTask task = storage.putBytes(bytes, metadata);
-        attachListeners(
-                builder,
-                task,
-                new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot state) {
-                        ControllableSchedulerHelper.getInstance().verifyCallbackThread();
-                        String statusMessage = "\nonSuccess:\n" + uploadTaskStatetoString(state) + "\n";
-                        Log.i(TAG, statusMessage);
-                        builder.append(statusMessage);
-                        TestCommandHelper.dumpMetadata(builder, state.getMetadata());
-                        task.removeOnSuccessListener(this);
-                    }
-                },
-                null,
-                null,
-                null,
-                null,
-                null);
-
-        ControllableSchedulerHelper.getInstance().resume();
-        return task.continueWithTask(
-                continuedTask -> {
-                    TaskCompletionSource<StringBuilder> downloadResult = new TaskCompletionSource<>();
-                    storage
-                            .getDownloadUrl()
-                            .addOnSuccessListener(
-                                    uri ->
-                                            FirebaseStorage.getInstance()
-                                                    .getReferenceFromUrl(uri.toString())
-                                                    .getBytes(Integer.MAX_VALUE)
-                                                    .addOnSuccessListener(
-                                                            bytes1 -> {
-                                                                Preconditions.checkState(
-                                                                        new String(bytes1).equals(foo),
-                                                                        "Downloaded bytes do not match uploaded bytes");
-                                                                downloadResult.setResult(builder);
-                                                            }));
-
-                    return downloadResult.getTask();
-                });
-    }
-
-    public static Task<StringBuilder> smallTextUpload() {
-        final StringBuilder builder = new StringBuilder();
-        StorageReference storage = FirebaseStorage.getInstance().getReference("flubbertest.txt");
-        String foo = "This is a test!!!";
-        byte[] bytes = foo.getBytes(Charset.forName("UTF-8"));
-        StorageMetadata metadata = new StorageMetadata.Builder().setContentType("text/plain").build();
-
-        ControllableSchedulerHelper.getInstance().pause();
-
-        verifyTaskCount(storage, 0);
-        final UploadTask task = storage.putBytes(bytes, metadata);
-        verifyTaskCount(storage, 1);
-
-        attachListeners(
-                builder,
-                task,
-                new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot state) {
-                        ControllableSchedulerHelper.getInstance().verifyCallbackThread();
-                        String statusMessage = "\nonSuccess:\n" + uploadTaskStatetoString(state) + "\n";
-                        Log.i(TAG, statusMessage);
-                        builder.append(statusMessage);
-                        TestCommandHelper.dumpMetadata(builder, state.getMetadata());
-                        task.removeOnSuccessListener(this);
-                    }
-                },
-                null,
-                null,
-                null,
-                null,
-                null);
-
-        ControllableSchedulerHelper.getInstance().resume();
-        return task.continueWithTask(
-                continuedTask -> {
-                    TaskCompletionSource<StringBuilder> source = new TaskCompletionSource<>();
-                    source.setResult(builder);
-                    return source.getTask();
-                });
-    }
-
-    private static final String TEST_ASSET_ROOT = "assets/";
-
-    public static Task<StringBuilder> fileUploadWith500() {
-        final StringBuilder builder = new StringBuilder();
-        StorageReference storage = FirebaseStorage.getInstance().getReference("image.jpg");
-        String foo = "This is a test!!!";
-        byte[] bytes = foo.getBytes(Charset.forName("UTF-8"));
-        StorageMetadata metadata =
-                new StorageMetadata.Builder()
-                        .setContentType("image/jpeg")
-                        .setCustomMetadata("myData", "myFoo")
-                        .build();
-        ControllableSchedulerHelper.getInstance().pause();
-
-        verifyTaskCount(storage, 0);
-        String filename = TEST_ASSET_ROOT + "image.jpg";
-        ClassLoader classLoader = UploadTest.class.getClassLoader();
-        InputStream imageStream = classLoader.getResourceAsStream(filename);
-        Uri sourceFile = Uri.parse("file://" + filename);
-
-        ContentResolver resolver = ApplicationProvider.getApplicationContext().getContentResolver();
-        Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
-        final UploadTask task = storage.putFile(sourceFile, metadata);
-        verifyTaskCount(storage, 1);
-
-        attachListeners(
-                builder,
-                task,
-                new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot state) {
-                        ControllableSchedulerHelper.getInstance().verifyCallbackThread();
-                        String statusMessage = "\nonSuccess:\n" + uploadTaskStatetoString(state) + "\n";
-                        Log.i(TAG, statusMessage);
-                        builder.append(statusMessage);
-                        TestCommandHelper.dumpMetadata(builder, state.getMetadata());
-                        task.removeOnSuccessListener(this);
-                    }
-                },
-                null,
-                null,
-                null,
-                null,
-                null);
-        ControllableSchedulerHelper.getInstance().resume();
-        return task.continueWithTask(
-                continuedTask -> {
-                    TaskCompletionSource<StringBuilder> source = new TaskCompletionSource<>();
-                    source.setResult(builder);
-                    return source.getTask();
+                  ControllableSchedulerHelper.getInstance().verifyCallbackThread();
+                  String statusMessage = "\nonPaused:\n" + uploadTaskStatetoString(result);
+                  System.out.println(statusMessage);
+                  Log.i(TAG, statusMessage);
+                  builder.append(statusMessage);
                 });
 
-    }
+    task.addOnProgressListener(
+        onProgress != null
+            ? onProgress
+            : (OnProgressListener<TaskSnapshot>)
+                result -> {
+                  String statusMessage = "\nonProgress:\n" + uploadTaskStatetoString(result);
+                  System.out.println(statusMessage);
+                  Log.i(TAG, statusMessage);
+                  ControllableSchedulerHelper.getInstance().verifyCallbackThread();
+                  builder.append(statusMessage);
+                });
+
+    task.addOnCompleteListener(
+        onComplete != null
+            ? onComplete
+            : (OnCompleteListener<TaskSnapshot>)
+                completedTask -> {
+                  ControllableSchedulerHelper.getInstance().verifyCallbackThread();
+                  String statusMessage = "\nonComplete:Success=\n" + completedTask.isSuccessful();
+                  Log.i(TAG, statusMessage);
+                  builder.append(statusMessage);
+                });
+
+    task.onSuccessTask(
+        result -> {
+          ControllableSchedulerHelper.getInstance().verifyCallbackThread();
+          String statusMessage = "\nonSuccessTask:\n" + uploadTaskStatetoString(result);
+          Log.i(TAG, statusMessage);
+          builder.append(statusMessage);
+          return Tasks.forResult(null);
+        });
+  }
+
+  public static Task<StringBuilder> byteUpload(StorageReference storage) {
+    final StringBuilder builder = new StringBuilder();
+    String foo = "This is a test!!!";
+    byte[] bytes = foo.getBytes(Charset.forName("UTF-8"));
+    StorageMetadata metadata = new StorageMetadata.Builder().setContentType("text/plain").build();
+
+    ControllableSchedulerHelper.getInstance().pause();
+
+    final UploadTask task = storage.putBytes(bytes, metadata);
+    attachListeners(
+        builder,
+        task,
+        new OnSuccessListener<UploadTask.TaskSnapshot>() {
+          @Override
+          public void onSuccess(UploadTask.TaskSnapshot state) {
+            ControllableSchedulerHelper.getInstance().verifyCallbackThread();
+            String statusMessage = "\nonSuccess:\n" + uploadTaskStatetoString(state) + "\n";
+            Log.i(TAG, statusMessage);
+            builder.append(statusMessage);
+            TestCommandHelper.dumpMetadata(builder, state.getMetadata());
+            task.removeOnSuccessListener(this);
+          }
+        },
+        null,
+        null,
+        null,
+        null,
+        null);
+
+    ControllableSchedulerHelper.getInstance().resume();
+    return task.continueWithTask(
+        continuedTask -> {
+          TaskCompletionSource<StringBuilder> downloadResult = new TaskCompletionSource<>();
+          storage
+              .getDownloadUrl()
+              .addOnSuccessListener(
+                  uri ->
+                      FirebaseStorage.getInstance()
+                          .getReferenceFromUrl(uri.toString())
+                          .getBytes(Integer.MAX_VALUE)
+                          .addOnSuccessListener(
+                              bytes1 -> {
+                                Preconditions.checkState(
+                                    new String(bytes1).equals(foo),
+                                    "Downloaded bytes do not match uploaded bytes");
+                                downloadResult.setResult(builder);
+                              }));
+
+          return downloadResult.getTask();
+        });
+  }
+
+  public static Task<StringBuilder> smallTextUpload() {
+    final StringBuilder builder = new StringBuilder();
+    StorageReference storage = FirebaseStorage.getInstance().getReference("flubbertest.txt");
+    String foo = "This is a test!!!";
+    byte[] bytes = foo.getBytes(Charset.forName("UTF-8"));
+    StorageMetadata metadata = new StorageMetadata.Builder().setContentType("text/plain").build();
+
+    ControllableSchedulerHelper.getInstance().pause();
+
+    verifyTaskCount(storage, 0);
+    final UploadTask task = storage.putBytes(bytes, metadata);
+    verifyTaskCount(storage, 1);
+
+    attachListeners(
+        builder,
+        task,
+        new OnSuccessListener<UploadTask.TaskSnapshot>() {
+          @Override
+          public void onSuccess(UploadTask.TaskSnapshot state) {
+            ControllableSchedulerHelper.getInstance().verifyCallbackThread();
+            String statusMessage = "\nonSuccess:\n" + uploadTaskStatetoString(state) + "\n";
+            Log.i(TAG, statusMessage);
+            builder.append(statusMessage);
+            TestCommandHelper.dumpMetadata(builder, state.getMetadata());
+            task.removeOnSuccessListener(this);
+          }
+        },
+        null,
+        null,
+        null,
+        null,
+        null);
+
+    ControllableSchedulerHelper.getInstance().resume();
+    return task.continueWithTask(
+        continuedTask -> {
+          TaskCompletionSource<StringBuilder> source = new TaskCompletionSource<>();
+          source.setResult(builder);
+          return source.getTask();
+        });
+  }
+
+  private static final String TEST_ASSET_ROOT = "assets/";
+
+  public static Task<StringBuilder> fileUploadWith500() {
+    final StringBuilder builder = new StringBuilder();
+    StorageReference storage = FirebaseStorage.getInstance().getReference("image.jpg");
+    String foo = "This is a test!!!";
+    byte[] bytes = foo.getBytes(Charset.forName("UTF-8"));
+    StorageMetadata metadata =
+        new StorageMetadata.Builder()
+            .setContentType("image/jpeg")
+            .setCustomMetadata("myData", "myFoo")
+            .build();
+    ControllableSchedulerHelper.getInstance().pause();
+
+    verifyTaskCount(storage, 0);
+    String filename = TEST_ASSET_ROOT + "image.jpg";
+    ClassLoader classLoader = UploadTest.class.getClassLoader();
+    InputStream imageStream = classLoader.getResourceAsStream(filename);
+    Uri sourceFile = Uri.parse("file://" + filename);
+
+    ContentResolver resolver = ApplicationProvider.getApplicationContext().getContentResolver();
+    Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
+    final UploadTask task = storage.putFile(sourceFile, metadata);
+    verifyTaskCount(storage, 1);
+
+    attachListeners(
+        builder,
+        task,
+        new OnSuccessListener<UploadTask.TaskSnapshot>() {
+          @Override
+          public void onSuccess(UploadTask.TaskSnapshot state) {
+            ControllableSchedulerHelper.getInstance().verifyCallbackThread();
+            String statusMessage = "\nonSuccess:\n" + uploadTaskStatetoString(state) + "\n";
+            Log.i(TAG, statusMessage);
+            builder.append(statusMessage);
+            TestCommandHelper.dumpMetadata(builder, state.getMetadata());
+            task.removeOnSuccessListener(this);
+          }
+        },
+        null,
+        null,
+        null,
+        null,
+        null);
+    ControllableSchedulerHelper.getInstance().resume();
+    return task.continueWithTask(
+        continuedTask -> {
+          TaskCompletionSource<StringBuilder> source = new TaskCompletionSource<>();
+          source.setResult(builder);
+          return source.getTask();
+        });
+  }
 
   public static Task<StringBuilder> smallTextUpload2() {
     final StringBuilder builder = new StringBuilder();

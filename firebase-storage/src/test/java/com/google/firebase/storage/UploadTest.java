@@ -99,6 +99,7 @@ public class UploadTest {
     factory.verifyOldMock();
     TestUtil.verifyTaskStateChanges("smallTextUpload", task.getResult().toString());
   }
+
   @Test
   public void fileUploadWith500() throws Exception {
     System.out.println("Starting test fileUploadWith500.");

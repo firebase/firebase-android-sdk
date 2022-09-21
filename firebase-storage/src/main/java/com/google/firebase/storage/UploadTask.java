@@ -294,7 +294,9 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
    * valid final state (Canceled, Paused, Failure, Final)
    */
   int sleepTime = 1000;
+
   int maxSleepTime = 20000;
+
   private boolean shouldContinue() {
     if (getInternalState() == INTERNAL_STATE_SUCCESS) {
       return false; // already final/complete
@@ -362,6 +364,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   private static final Random random = new Random();
   /*package*/ static Sleeper sleeper = new SleeperImpl();
   /*package*/ static Clock clock = DefaultClock.getInstance();
+
   private boolean recoverStatus(boolean withRetry) {
     NetworkRequest queryRequest =
         new ResumableUploadQueryRequest(
