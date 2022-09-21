@@ -80,6 +80,9 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   private volatile int mResultCode = 0;
   private volatile String mServerStatus;
   private volatile long maxSleepTime;
+  private static final Random random = new Random();
+  /*package*/ static Sleeper sleeper = new SleeperImpl();
+  /*package*/ static Clock clock = DefaultClock.getInstance();
   private int sleepTime = 1000;
 
   UploadTask(StorageReference targetRef, StorageMetadata metadata, byte[] bytes) {
@@ -365,10 +368,6 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
    * server. If withRetry = true, it indicates we are in a failback mode and a return of false at
    * this point will cause the upload process to kick out back to the developer.
    */
-  private static final Random random = new Random();
-  /*package*/ static Sleeper sleeper = new SleeperImpl();
-  /*package*/ static Clock clock = DefaultClock.getInstance();
-
   private boolean recoverStatus(boolean withRetry) {
     NetworkRequest queryRequest =
         new ResumableUploadQueryRequest(

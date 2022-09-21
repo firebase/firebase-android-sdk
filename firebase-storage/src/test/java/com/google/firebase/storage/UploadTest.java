@@ -100,6 +100,13 @@ public class UploadTest {
     TestUtil.verifyTaskStateChanges("smallTextUpload", task.getResult().toString());
   }
 
+  /**
+   * This test will replicate uploadChunk() returning 500's and test to make sure the retries are
+   * limited and using exponential backoff. If the maxretry limit is not checked, then the await
+   * task will time out.
+   *
+   * @throws Exception
+   */
   @Test
   public void fileUploadWith500() throws Exception {
     System.out.println("Starting test fileUploadWith500.");
@@ -110,7 +117,9 @@ public class UploadTest {
     TestUtil.await(task, 150, TimeUnit.SECONDS);
 
     factory.verifyOldMock();
-    TestUtil.verifyTaskStateChanges("fileUploadWith500", task.getResult().toString());
+    TestUtil.verifyTaskStateChanges(
+        "fileUploadWith500",
+        task.getResult().toString()); // Ensures the proper state changes are used by tryStateChange
   }
 
   @Test
