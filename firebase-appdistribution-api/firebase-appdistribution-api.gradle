@@ -17,11 +17,11 @@ plugins {
 }
 
 android {
-    compileSdkVersion project.targetSdkVersion
+    compileSdk 32
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion project.targetSdkVersion
+        targetSdkVersion 32
         multiDexEnabled true
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
