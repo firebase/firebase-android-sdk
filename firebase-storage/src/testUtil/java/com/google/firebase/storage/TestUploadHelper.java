@@ -15,11 +15,9 @@
 package com.google.firebase.storage;
 
 import android.app.Activity;
-import android.content.ContentResolver;
 import android.net.Uri;
 import android.util.Log;
 import androidx.annotation.Nullable;
-import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -37,7 +35,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.robolectric.Shadows;
 
 /** tests for uploads. */
 @SuppressWarnings("unused")
@@ -232,57 +229,6 @@ public class TestUploadHelper {
   }
 
   private static final String TEST_ASSET_ROOT = "assets/";
-
-  public static Task<StringBuilder> fileUploadWith500() {
-    final StringBuilder builder = new StringBuilder();
-    StorageReference storage = FirebaseStorage.getInstance().getReference("image.jpg");
-    String foo = "This is a test!!!";
-    byte[] bytes = foo.getBytes(Charset.forName("UTF-8"));
-    StorageMetadata metadata =
-        new StorageMetadata.Builder()
-            .setContentType("image/jpeg")
-            .setCustomMetadata("myData", "myFoo")
-            .build();
-    ControllableSchedulerHelper.getInstance().pause();
-
-    verifyTaskCount(storage, 0);
-    String filename = TEST_ASSET_ROOT + "image.jpg";
-    ClassLoader classLoader = UploadTest.class.getClassLoader();
-    InputStream imageStream = classLoader.getResourceAsStream(filename);
-    Uri sourceFile = Uri.parse("file://" + filename);
-
-    ContentResolver resolver = ApplicationProvider.getApplicationContext().getContentResolver();
-    Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
-    final UploadTask task = storage.putFile(sourceFile, metadata);
-    verifyTaskCount(storage, 1);
-
-    attachListeners(
-        builder,
-        task,
-        new OnSuccessListener<UploadTask.TaskSnapshot>() {
-          @Override
-          public void onSuccess(UploadTask.TaskSnapshot state) {
-            ControllableSchedulerHelper.getInstance().verifyCallbackThread();
-            String statusMessage = "\nonSuccess:\n" + uploadTaskStatetoString(state) + "\n";
-            Log.i(TAG, statusMessage);
-            builder.append(statusMessage);
-            TestCommandHelper.dumpMetadata(builder, state.getMetadata());
-            task.removeOnSuccessListener(this);
-          }
-        },
-        null,
-        null,
-        null,
-        null,
-        null);
-    ControllableSchedulerHelper.getInstance().resume();
-    return task.continueWithTask(
-        continuedTask -> {
-          TaskCompletionSource<StringBuilder> source = new TaskCompletionSource<>();
-          source.setResult(builder);
-          return source.getTask();
-        });
-  }
 
   public static Task<StringBuilder> smallTextUpload2() {
     final StringBuilder builder = new StringBuilder();

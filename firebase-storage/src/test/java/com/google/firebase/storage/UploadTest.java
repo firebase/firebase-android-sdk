@@ -67,7 +67,7 @@ public class UploadTest {
 
   private static final String TEST_ASSET_ROOT = "assets/";
 
-  @Rule public RetryRule retryRule = new RetryRule(1);
+  @Rule public RetryRule retryRule = new RetryRule(3);
   @Rule public final FirebaseAppRule firebaseAppRule = new FirebaseAppRule();
 
   @Rule public TemporaryFolder folder = new TemporaryFolder();
@@ -109,17 +109,25 @@ public class UploadTest {
    */
   @Test
   public void fileUploadWith500() throws Exception {
+
     System.out.println("Starting test fileUploadWith500.");
 
     MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("fileUploadWith500", true);
-    Task<StringBuilder> task = TestUploadHelper.fileUploadWith500();
 
-    TestUtil.await(task, 150, TimeUnit.SECONDS);
+    String filename = TEST_ASSET_ROOT + "image.jpg";
+    ClassLoader classLoader = UploadTest.class.getClassLoader();
+    InputStream imageStream = classLoader.getResourceAsStream(filename);
+    Uri sourceFile = Uri.parse("file://" + filename);
+
+    ContentResolver resolver = ApplicationProvider.getApplicationContext().getContentResolver();
+    Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
+
+    Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "image.jpg");
+
+    TestUtil.await(task, 2, TimeUnit.MINUTES);
 
     factory.verifyOldMock();
-    TestUtil.verifyTaskStateChanges(
-        "fileUploadWith500",
-        task.getResult().toString()); // Ensures the proper state changes are used by tryStateChange
+    TestUtil.verifyTaskStateChanges("fileUploadWith500", task.getResult().toString());
   }
 
   @Test
