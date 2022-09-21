@@ -3,7 +3,11 @@ package com.google.firebase.gradle.plugins
 import java.io.File
 import org.gradle.api.DefaultTask
 import org.gradle.api.provider.Property
+import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.PathSensitive
+import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 
 /**
@@ -21,9 +25,14 @@ import org.gradle.api.tasks.TaskAction
  *  **Please note:**
  *  This task is idempotent- meaning it can safely be ran multiple times on the same set of files.
  */
+@CacheableTask
 abstract class FiresiteTransformTask : DefaultTask() {
     @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val dackkaFiles: Property<File>
+
+    @get:OutputDirectory
+    abstract val outputDirectory: Property<File>
 
     @TaskAction
     fun build() {
@@ -33,14 +42,18 @@ abstract class FiresiteTransformTask : DefaultTask() {
             "packages.html",
             "package-list"
         )
+        val rootDirectory = dackkaFiles.get()
+        val targetDirectory = outputDirectory.get()
+        targetDirectory.deleteRecursively()
 
-        dackkaFiles.get().walkTopDown().forEach {
-            if (it.name in namesOfFilesWeDoNotNeed) {
-                it.delete()
-            } else {
+        rootDirectory.walkTopDown().forEach {
+            if (it.name !in namesOfFilesWeDoNotNeed) {
+                val relativePath = it.toRelativeString(rootDirectory)
+                val newFile = it.copyTo(File("${targetDirectory.path}/$relativePath"), true)
+
                 when (it.extension) {
-                    "html" -> it.fixHTMLFile()
-                    "yaml" -> it.fixYamlFile()
+                    "html" -> newFile.fixHTMLFile()
+                    "yaml" -> newFile.fixYamlFile()
                 }
             }
         }
