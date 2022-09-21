@@ -61,10 +61,8 @@ public class StorageTaskScheduler {
     DOWNLOAD_QUEUE_EXECUTOR.allowCoreThreadTimeOut(true);
     CALLBACK_QUEUE_EXECUTOR.allowCoreThreadTimeOut(true);
     CALLBACK_QUEUE_EXECUTOR.setKeepAliveTime(
-        90,
-        TimeUnit
-            .SECONDS); // TODO(mtewani): This needs to be fetched from storage's
-                       // getMaxChunkUploadRetry to ensure consistency
+        90, TimeUnit.SECONDS); // TODO(mtewani): This needs to be fetched from storage's
+    // getMaxChunkUploadRetry to ensure consistency
   }
 
   public static StorageTaskScheduler getInstance() {
