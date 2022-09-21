@@ -99,6 +99,18 @@ public class UploadTest {
     factory.verifyOldMock();
     TestUtil.verifyTaskStateChanges("smallTextUpload", task.getResult().toString());
   }
+  @Test
+  public void fileUploadWith500() throws Exception {
+    System.out.println("Starting test fileUploadWith500.");
+
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("fileUploadWith500", true);
+    Task<StringBuilder> task = TestUploadHelper.fileUploadWith500();
+
+    TestUtil.await(task, 1, TimeUnit.MINUTES);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("fileUploadWith500", task.getResult().toString());
+  }
 
   @Test
   public void cantUploadToRoot() throws Exception {

@@ -60,6 +60,7 @@ public class StorageTaskScheduler {
     UPLOAD_QUEUE_EXECUTOR.allowCoreThreadTimeOut(true);
     DOWNLOAD_QUEUE_EXECUTOR.allowCoreThreadTimeOut(true);
     CALLBACK_QUEUE_EXECUTOR.allowCoreThreadTimeOut(true);
+    CALLBACK_QUEUE_EXECUTOR.setKeepAliveTime(60, TimeUnit.SECONDS); // TODO(mtewani): Updated this with proper value
   }
 
   public static StorageTaskScheduler getInstance() {

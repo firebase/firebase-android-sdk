@@ -106,7 +106,7 @@ public abstract class NetworkRequest {
       return Uri.parse(
           "http://" + emulatorSettings.getHost() + ":" + emulatorSettings.getPort() + "/v0");
     } else {
-      return Uri.parse("https://firebasestorage.googleapis.com/v0");
+      return PROD_BASE_URL;
     }
   }
 
@@ -512,6 +512,7 @@ public abstract class NetworkRequest {
    *     code indicating an error.
    */
   public boolean isResultSuccess() {
+    System.out.println(resultCode);
     return resultCode >= 200 && resultCode < 300;
   }
 
