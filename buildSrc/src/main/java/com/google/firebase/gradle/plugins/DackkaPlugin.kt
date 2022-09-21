@@ -120,10 +120,11 @@ abstract class DackkaPlugin : Plugin<Project> {
         project.afterEvaluate {
             if (shouldWePublish(project)) {
                 val generateDocumentation = registerGenerateDackkaDocumentationTask(project)
-                val outputDirectory = generateDocumentation.flatMap { it.outputDirectory }
-                val firesiteTransform = registerFiresiteTransformTask(project, outputDirectory)
-                val copyJavaDocToCommonDirectory = registerCopyJavaDocToCommonDirectoryTask(project, outputDirectory)
-                val copyKotlinDocToCommonDirectory = registerCopyKotlinDocToCommonDirectoryTask(project, outputDirectory)
+                val dackkaFilesDirectory = generateDocumentation.flatMap { it.outputDirectory }
+                val firesiteTransform = registerFiresiteTransformTask(project, dackkaFilesDirectory)
+                val transformedFilesDirectory = firesiteTransform.flatMap { it.outputDirectory }
+                val copyJavaDocToCommonDirectory = registerCopyJavaDocToCommonDirectoryTask(project, transformedFilesDirectory)
+                val copyKotlinDocToCommonDirectory = registerCopyKotlinDocToCommonDirectoryTask(project, transformedFilesDirectory)
 
                 project.tasks.register("kotlindoc") {
                     group = "documentation"
@@ -238,12 +239,12 @@ abstract class DackkaPlugin : Plugin<Project> {
         clientName.set(project.firebaseConfigValue { artifactId })
     }
 
-    // TODO(b/243833009): Make task cacheable
-    private fun registerFiresiteTransformTask(project: Project, outputDirectory: Provider<File>) =
+    private fun registerFiresiteTransformTask(project: Project, dackkaFilesDirectory: Provider<File>) =
         project.tasks.register<FiresiteTransformTask>("firesiteTransform") {
             mustRunAfter("generateDackkaDocumentation")
 
-            dackkaFiles.set(outputDirectory)
+            dackkaFiles.set(dackkaFilesDirectory)
+            outputDirectory.set(project.file("${project.buildDir}/dackkaTransformedFiles"))
         }
 
     // TODO(b/246593212): Migrate doc files to single directory
@@ -287,5 +288,7 @@ abstract class DackkaPlugin : Plugin<Project> {
             group = "cleanup"
 
             delete("${project.buildDir}/dackkaDocumentation")
+            delete("${project.buildDir}/dackkaTransformedFiles")
+            delete("${project.rootProject.buildDir}/firebase-kotlindoc")
         }
 }
