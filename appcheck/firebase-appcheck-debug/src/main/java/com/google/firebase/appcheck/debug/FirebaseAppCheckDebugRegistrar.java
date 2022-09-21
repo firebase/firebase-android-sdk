@@ -33,7 +33,6 @@ public class FirebaseAppCheckDebugRegistrar implements ComponentRegistrar {
 
   @Override
   public List<Component<?>> getComponents() {
-    return Arrays.asList(
-        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
+    return Arrays.asList(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }

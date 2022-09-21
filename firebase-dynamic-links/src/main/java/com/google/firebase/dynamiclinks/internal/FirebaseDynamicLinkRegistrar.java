@@ -55,6 +55,7 @@ public final class FirebaseDynamicLinkRegistrar implements ComponentRegistrar {
             .build(); // no need for eager init for the Internal component.
 
     return Arrays.asList(
-        firebaseDynamicLinks, LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
+        firebaseDynamicLinks,
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }
