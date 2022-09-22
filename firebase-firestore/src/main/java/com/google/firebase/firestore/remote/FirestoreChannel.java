@@ -109,6 +109,10 @@ public class FirestoreChannel {
     callProvider.shutdown();
   }
 
+  public Task<Void> resetChannel() {
+    return callProvider.resetChannel();
+  }
+
   /**
    * Creates and starts a new bi-directional streaming RPC. The stream cannot accept message before
    * the observer's `onOpen()` callback is invoked.

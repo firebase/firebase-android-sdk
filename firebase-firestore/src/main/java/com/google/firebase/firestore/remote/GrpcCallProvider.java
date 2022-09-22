@@ -144,6 +144,15 @@ public class GrpcCallProvider {
     return androidChannelBuilder.build();
   }
 
+  public Task<Void> resetChannel() {
+    return channelTask.continueWithTask(
+        asyncQueue.getExecutor(),
+        task -> {
+          task.getResult().enterIdle();
+          return null;
+        });
+  }
+
   /** Creates a new ClientCall. */
   <ReqT, RespT> Task<ClientCall<ReqT, RespT>> createClientCall(
       MethodDescriptor<ReqT, RespT> methodDescriptor) {

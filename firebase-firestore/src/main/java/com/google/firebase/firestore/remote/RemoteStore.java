@@ -49,6 +49,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 
 /**
  * RemoteStore handles all interaction with the backend through a simple, clean interface. This
@@ -277,13 +278,23 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   /** Temporarily disables the network. The network can be re-enabled using enableNetwork(). */
   public void disableNetwork() {
     networkEnabled = false;
-    disableNetworkInternal();
+    disableNetworkInternal(false);
 
     // Set the OnlineState to OFFLINE so get()s return from cache, etc.
     onlineStateTracker.updateState(OnlineState.OFFLINE);
   }
 
-  private void disableNetworkInternal() {
+  private void disableNetworkInternal(boolean resetChannel) {
+    if (resetChannel) {
+      try {
+        Tasks.await(watchStream.resetChannel());
+      } catch (ExecutionException e) {
+        e.printStackTrace();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
+    }
+
     watchStream.stop();
     writeStream.stop();
 
@@ -297,7 +308,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   private void restartNetwork() {
     networkEnabled = false;
-    disableNetworkInternal();
+    disableNetworkInternal(true);
     onlineStateTracker.updateState(OnlineState.UNKNOWN);
     writeStream.inhibitBackoff();
     watchStream.inhibitBackoff();
@@ -321,7 +332,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     Logger.debug(LOG_TAG, "Shutting down");
     connectivityMonitor.shutdown();
     networkEnabled = false;
-    this.disableNetworkInternal();
+    this.disableNetworkInternal(false);
     datastore.shutdown();
     // Set the OnlineState to UNKNOWN (rather than OFFLINE) to avoid potentially triggering
     // spurious listener events with cached data, etc.

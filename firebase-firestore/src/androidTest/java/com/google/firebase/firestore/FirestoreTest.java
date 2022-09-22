@@ -1249,7 +1249,7 @@ public class FirestoreTest {
     documentReference.set(map("foo", "bar"));
     FirebaseFirestore firestore = documentReference.getFirestore();
 
-    for (int i = 0; i < 6000; i++) {
+    for (int i = 0; i < 20; i++) {
       /*TaskCompletionSource<String> tcs = new TaskCompletionSource();
       final String[] v = {null};
       ListenerRegistration reg = documentReference.addSnapshotListener(MetadataChanges.INCLUDE, (value, error) -> {
