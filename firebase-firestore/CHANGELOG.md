@@ -4,7 +4,7 @@ by opting into a release at
 
 # Unreleased
 - [feature] Added `Query.count()`, which fetches the number of documents in the
-  result set without actually downloading the documents.
+  result set without actually downloading the documents (#4130).
 
 # 24.3.1
 - [changed] Updated dependency of `io.grpc.*` to its latest version (v1.48.1).
