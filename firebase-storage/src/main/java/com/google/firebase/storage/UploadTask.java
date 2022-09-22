@@ -84,7 +84,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   /*package*/ static Sleeper sleeper = new SleeperImpl();
   /*package*/ static Clock clock = DefaultClock.getInstance();
   private int sleepTime = 0;
-  private final int sleepInterval = 1000;
+  private final int minimumSleepInterval = 1000;
 
   UploadTask(StorageReference targetRef, StorageMetadata metadata, byte[] bytes) {
     Preconditions.checkNotNull(targetRef);
@@ -347,7 +347,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
         }
         return false;
       }
-      sleepTime = Math.max(sleepTime * 2, sleepTime + (sleepInterval * 2));
+      sleepTime = Math.max(sleepTime * 2, sleepTime + (minimumSleepInterval * 2));
     }
     return true;
   }
