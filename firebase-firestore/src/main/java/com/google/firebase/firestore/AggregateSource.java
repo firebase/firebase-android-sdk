@@ -22,5 +22,5 @@ public enum AggregateSource {
    *
    * <p>Requires client to be online.
    */
-  SERVER_DIRECT,
+  SERVER,
 }

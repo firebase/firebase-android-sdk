@@ -17,7 +17,6 @@ package com.google.firebase.firestore;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -44,12 +43,8 @@ public class AggregateQuerySnapshot {
     return query;
   }
 
-  /**
-   * @return The result of a document count aggregation. Returns null if no count aggregation is
-   *     available in the result.
-   */
-  @Nullable
-  public Long getCount() {
+  /** @return The result of a document count aggregation. */
+  public long getCount() {
     return count;
   }
 
