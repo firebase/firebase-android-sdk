@@ -4,6 +4,8 @@ by opting into a release at
 
 # Unreleased
 - [fixed] Fixed an issue `waitForPendingWrites()` could lead to NullPointerException.
+- [feature] Added Query.count(), which fetches the number of documents in the
+  result set without actually downloading the documents (#NNNN).
 
 # 24.2.0
 - [feature] Added `TransactionOptions` to control how many times a transaction
