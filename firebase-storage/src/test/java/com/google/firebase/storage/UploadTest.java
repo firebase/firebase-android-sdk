@@ -160,7 +160,7 @@ public class UploadTest {
         });
 
     // TODO(mrschmidt): Lower the timeout
-    TestUtil.await(task, 10, TimeUnit.MINUTES);
+    TestUtil.await(task, 7, TimeUnit.MINUTES);
 
     try {
       task.getResult();
@@ -496,7 +496,7 @@ public class UploadTest {
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "flubbertest.jpg");
 
-    TestUtil.await(task, 2, TimeUnit.MINUTES);
+    TestUtil.await(task, 30, TimeUnit.SECONDS);
 
     factory.verifyOldMock();
     TestUtil.verifyTaskStateChanges("fileUploadRecovery", task.getResult().toString());
@@ -519,7 +519,7 @@ public class UploadTest {
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "flubbertest.jpg");
 
-    TestUtil.await(task, 50, TimeUnit.SECONDS);
+    TestUtil.await(task);
 
     factory.verifyOldMock();
     TestUtil.verifyTaskStateChanges("fileUploadNoRecovery", task.getResult().toString());

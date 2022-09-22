@@ -16,7 +16,6 @@ package com.google.firebase.storage;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
-import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -61,9 +60,10 @@ public class StorageTaskScheduler {
     UPLOAD_QUEUE_EXECUTOR.allowCoreThreadTimeOut(true);
     DOWNLOAD_QUEUE_EXECUTOR.allowCoreThreadTimeOut(true);
     CALLBACK_QUEUE_EXECUTOR.allowCoreThreadTimeOut(true);
-    CALLBACK_QUEUE_EXECUTOR.setKeepAliveTime(
-        90, TimeUnit.SECONDS); // TODO(mtewani): This needs to be fetched from storage's
-    //     getMaxChunkUploadRetry to ensure consistency
+  }
+
+  public static void setCallbackQueueKeepAlive(long keepAliveTime, TimeUnit timeUnit) {
+    CALLBACK_QUEUE_EXECUTOR.setKeepAliveTime(keepAliveTime, timeUnit);
   }
 
   public static StorageTaskScheduler getInstance() {
@@ -103,7 +103,6 @@ public class StorageTaskScheduler {
     @SuppressWarnings("ThreadPriorityCheck")
     public Thread newThread(@NonNull Runnable r) {
       Thread t = new Thread(r, "FirebaseStorage-" + mNameSuffix + threadNumber.getAndIncrement());
-      System.out.println(Arrays.toString(Thread.currentThread().getStackTrace()));
       t.setDaemon(false);
       t.setPriority(
           android.os.Process.THREAD_PRIORITY_BACKGROUND

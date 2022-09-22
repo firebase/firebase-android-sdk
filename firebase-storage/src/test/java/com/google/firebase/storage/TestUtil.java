@@ -32,6 +32,12 @@ import org.robolectric.Robolectric;
 public class TestUtil {
 
   static FirebaseApp createApp() {
+    // Many tests require you to call the callback on the same thread that was initially
+    // instantiated.
+    // With the 5 second keepalive, after 5 seconds, the thread will get killed and eventually a new
+    // one will be created.
+    // Therefore causing many of the tests to fail
+    StorageTaskScheduler.setCallbackQueueKeepAlive(90, TimeUnit.SECONDS);
     return FirebaseApp.initializeApp(
         ApplicationProvider.getApplicationContext(),
         new FirebaseOptions.Builder()
@@ -148,6 +154,6 @@ public class TestUtil {
    * Tasks to be executed.
    */
   static void await(Task<?> task) throws InterruptedException {
-    await(task, 30, TimeUnit.SECONDS);
+    await(task, 10, TimeUnit.SECONDS);
   }
 }
