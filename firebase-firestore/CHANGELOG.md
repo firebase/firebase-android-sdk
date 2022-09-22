@@ -3,7 +3,20 @@ by opting into a release at
 [go/firebase-android-release](http:go/firebase-android-release) (Googlers only).
 
 # Unreleased
+- [feature] Added `Query.count()`, which fetches the number of documents in the
+  result set without actually downloading the documents.
+
+# 24.3.1
+- [changed] Updated dependency of `io.grpc.*` to its latest version (v1.48.1).
+
+# 24.3.0
+- [changed] Updated dependency of `play-services-basement` to its latest version (v18.1.0).
+
+# 24.2.2
 - [fixed] Fixed an issue `waitForPendingWrites()` could lead to NullPointerException.
+
+# 24.2.1
+- [changed] Internal refactor and test improvements.
 
 # 24.2.0
 - [feature] Added `TransactionOptions` to control how many times a transaction
