@@ -17,6 +17,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.attributes.Attribute
+import org.gradle.api.provider.Provider
 
 fun Project.isAndroid(): Boolean =
         listOf("com.android.application", "com.android.library", "com.android.test")
@@ -50,8 +51,7 @@ val Project.dackkaConfig: Configuration
  */
 fun Configuration.getJars() = incoming.artifactView {
     attributes {
-        // TODO(b/241795594): replace value with android-class instead of jar after agp upgrade
-        attribute(Attribute.of("artifactType", String::class.java), "jar")
+        attribute(Attribute.of("artifactType", String::class.java), "android-classes")
     }
 }.artifacts.artifactFiles
 
@@ -59,6 +59,14 @@ fun Configuration.getJars() = incoming.artifactView {
  * Utility method to call [Task.mustRunAfter] and [Task.dependsOn] on the specified task
  */
 fun <T : Task, R : Task> T.dependsOnAndMustRunAfter(otherTask: R) {
+    mustRunAfter(otherTask)
+    dependsOn(otherTask)
+}
+
+/**
+ * Utility method to call [Task.mustRunAfter] and [Task.dependsOn] on the specified task
+ */
+fun <T : Task, R : Task> T.dependsOnAndMustRunAfter(otherTask: Provider<R>) {
     mustRunAfter(otherTask)
     dependsOn(otherTask)
 }

@@ -90,26 +90,23 @@ tasks above). While we do not currently offer any configuration for the Dackka
 plugin, this could change in the future as needed. Currently, the DackkaPlugin
 provides sensible defaults to output directories, package lists, and so forth.
 
-The DackkaPlugin also provides two extra tasks:
-[cleanDackkaDocumentation][registerCleanDackkaDocumentation] and
-[deleteDackkaGeneratedJavaReferences][registerDeleteDackkaGeneratedJavaReferencesTask].
+The DackkaPlugin also provides three extra tasks:
+[cleanDackkaDocumentation][registerCleanDackkaDocumentation],
+[copyJavaDocToCommonDirectory][registerCopyJavaDocToCommonDirectoryTask] and
+[copyKotlinDocToCommonDirectory][registerCopyKotlinDocToCommonDirectoryTask].
 
 _cleanDackkaDocumentation_ is exactly what it sounds like, a task to clean up (delete)
 the output of Dackka. This is useful when testing Dackka outputs itself- and
 shouldn't be apart of the normal flow. The reasoning is that it would otherwise
 invalidate the gradle cache.
 
-_deleteDackkaGeneratedJavaReferences_ is a temporary addition. Dackka generates
-two separate styles of docs for every source set: Java & Kotlin. Regardless of
-whether the source is in Java or Kotlin. The Java output is how the source looks
-from Java, and the Kotlin output is how the source looks from Kotlin. We publish
-these under two separate categories, which you can see here:
-[Java](https://firebase.google.com/docs/reference/android/packages)
-or
-[Kotlin](https://firebase.google.com/docs/reference/kotlin/packages).
-Although, we do not currently publish Java packages with Dackka- and will wait
-until we are more comfortable with the output of Dackka to do so. So until then,
-this task will remove all generate Java references from the Dackka output.
+_copyJavaDocToCommonDirectory_ copies the JavaDoc variant of the Dackka output for each sdk,
+and pastes it in a common directory under the root project's build directory. This makes it easier
+to zip the doc files for staging.
+
+_copyKotlinDocToCommonDirectory_ copies the KotlinDoc variant of the Dackka output for each sdk,
+and pastes it in a common directory under the root project's build directory. This makes it easier
+to zip the doc files for staging.
 
 Currently, the DackkaPlugin builds Java sources separate from Kotlin Sources. There is an open bug
 for Dackka in which hidden parent classes and annotations do not hide themselves from children classes.
@@ -123,18 +120,19 @@ abstract class DackkaPlugin : Plugin<Project> {
         project.afterEvaluate {
             if (shouldWePublish(project)) {
                 val generateDocumentation = registerGenerateDackkaDocumentationTask(project)
-                val outputDirectory = generateDocumentation.flatMap { it.outputDirectory }
-                val firesiteTransform = registerFiresiteTransformTask(project, outputDirectory)
-                val deleteJavaReferences = registerDeleteDackkaGeneratedJavaReferencesTask(project, outputDirectory)
-                val copyOutputToCommonDirectory = registerCopyDackkaOutputToCommonDirectoryTask(project, outputDirectory)
+                val dackkaFilesDirectory = generateDocumentation.flatMap { it.outputDirectory }
+                val firesiteTransform = registerFiresiteTransformTask(project, dackkaFilesDirectory)
+                val transformedFilesDirectory = firesiteTransform.flatMap { it.outputDirectory }
+                val copyJavaDocToCommonDirectory = registerCopyJavaDocToCommonDirectoryTask(project, transformedFilesDirectory)
+                val copyKotlinDocToCommonDirectory = registerCopyKotlinDocToCommonDirectoryTask(project, transformedFilesDirectory)
 
                 project.tasks.register("kotlindoc") {
                     group = "documentation"
                     dependsOn(
                         generateDocumentation,
                         firesiteTransform,
-                        deleteJavaReferences,
-                        copyOutputToCommonDirectory
+                        copyJavaDocToCommonDirectory,
+                        copyKotlinDocToCommonDirectory
                     )
                 }
             } else {
@@ -171,6 +169,7 @@ abstract class DackkaPlugin : Plugin<Project> {
                     val classpath = compileConfiguration.getJars() + project.javadocConfig.getJars() + project.files(bootClasspath)
 
                     val sourcesForJava = sourceSets.flatMap {
+                        // TODO(b/246984444): Investigate why kotlinDirectories includes javaDirectories
                         it.javaDirectories.map { it.absoluteFile }
                     }
 
@@ -180,13 +179,12 @@ abstract class DackkaPlugin : Plugin<Project> {
                     }
 
                     docsTask.configure {
-                        clientName.set(project.firebaseConfigValue { artifactId })
-                        // this will become useful with the agp upgrade, as they're separate in 7.x+
-                        val sourcesForKotlin = emptyList<File>()
+                        if (!isKotlin) dependsOn(docStubs)
+
+                        val sourcesForKotlin = emptyList<File>() + projectSpecificSources(project)
                         val packageLists = fetchPackageLists(project)
 
-                        if (!isKotlin) dependsOn(docStubs)
-                        val excludedFiles = if (!isKotlin) projectSpecificSuppressedFiles(project) else emptyList()
+                        val excludedFiles = projectSpecificSuppressedFiles(project)
                         val fixedJavaSources = if (!isKotlin) listOf(project.docStubs) else sourcesForJava
 
                         javaSources.set(fixedJavaSources)
@@ -210,10 +208,19 @@ abstract class DackkaPlugin : Plugin<Project> {
         }.toList()
 
     // TODO(b/243534168): Remove when fixed
+    private fun projectSpecificSources(project: Project) =
+        when (project.name) {
+            "firebase-common" -> {
+                project.project(":firebase-firestore").files("src/main/java/com/google/firebase").toList()
+            }
+            else -> emptyList()
+        }
+
+    // TODO(b/243534168): Remove when fixed
     private fun projectSpecificSuppressedFiles(project: Project): List<File> =
         when (project.name) {
             "firebase-common" -> {
-                project.files("${project.docStubs}/com/google/firebase/firestore").toList()
+                project.project(":firebase-firestore").files("src/main/java/com/google/firebase/firestore").toList()
             }
             "firebase-firestore" -> {
                 project.files("${project.docStubs}/com/google/firebase/Timestamp.java").toList()
@@ -229,43 +236,50 @@ abstract class DackkaPlugin : Plugin<Project> {
 
         dackkaJarFile.set(dackkaFile)
         outputDirectory.set(dackkaOutputDirectory)
+        clientName.set(project.firebaseConfigValue { artifactId })
     }
 
-    // TODO(b/243833009): Make task cacheable
-    private fun registerFiresiteTransformTask(project: Project, outputDirectory: Provider<File>) =
+    private fun registerFiresiteTransformTask(project: Project, dackkaFilesDirectory: Provider<File>) =
         project.tasks.register<FiresiteTransformTask>("firesiteTransform") {
-            dackkaFiles.set(outputDirectory)
-        }
-
-    // If we decide to publish java variants, we'll need to address the generated format as well
-    // TODO(b/243833009): Make task cacheable
-    private fun registerDeleteDackkaGeneratedJavaReferencesTask(project: Project, outputDirectory: Provider<File>) =
-        project.tasks.register<Delete>("deleteDackkaGeneratedJavaReferences") {
             mustRunAfter("generateDackkaDocumentation")
 
-            val filesWeDoNotNeed = listOf(
-                "reference/client",
-                "reference/com"
-            )
-            val filesToDelete = outputDirectory.map { dir ->
-                filesWeDoNotNeed.map {
-                    project.files("${dir.path}/$it")
-                }
-            }
-
-            delete(filesToDelete)
+            dackkaFiles.set(dackkaFilesDirectory)
+            outputDirectory.set(project.file("${project.buildDir}/dackkaTransformedFiles"))
         }
 
-    private fun registerCopyDackkaOutputToCommonDirectoryTask(project: Project, outputDirectory: Provider<File>) =
-        project.tasks.register<Copy>("copyDackkaOutputToCommonDirectory") {
-            mustRunAfter("deleteDackkaGeneratedJavaReferences")
+    // TODO(b/246593212): Migrate doc files to single directory
+    private fun registerCopyJavaDocToCommonDirectoryTask(project: Project, outputDirectory: Provider<File>) =
+        project.tasks.register<Copy>("copyJavaDocToCommonDirectory") {
+            /**
+             * This is not currently cache compliant. The need for this property is
+             * temporary while we test it alongside the current javaDoc task. Since it's such a
+             * temporary behavior, losing cache compliance is fine for now.
+             */
+            if (project.rootProject.findProperty("dackkaJavadoc") == "true") {
+                mustRunAfter("firesiteTransform")
+
+                val outputFolder = project.file("${project.rootProject.buildDir}/firebase-kotlindoc/android")
+                val clientFolder = outputDirectory.map { project.file("${it.path}/reference/client") }
+                val comFolder = outputDirectory.map { project.file("${it.path}/reference/com") }
+
+                fromDirectory(clientFolder)
+                fromDirectory(comFolder)
+
+                into(outputFolder)
+            }
+        }
+
+    // TODO(b/246593212): Migrate doc files to single directory
+    private fun registerCopyKotlinDocToCommonDirectoryTask(project: Project, outputDirectory: Provider<File>) =
+        project.tasks.register<Copy>("copyKotlinDocToCommonDirectory") {
             mustRunAfter("firesiteTransform")
 
-            val referenceFolder = outputDirectory.map { project.file("${it.path}/reference") }
             val outputFolder = project.file("${project.rootProject.buildDir}/firebase-kotlindoc")
+            val kotlinFolder = outputDirectory.map { project.file("${it.path}/reference/kotlin") }
 
-            from(referenceFolder)
-            destinationDir = outputFolder
+            fromDirectory(kotlinFolder)
+
+            into(outputFolder)
         }
 
     // Useful for local testing, but may not be desired for standard use (that's why it's not depended on)
@@ -274,5 +288,7 @@ abstract class DackkaPlugin : Plugin<Project> {
             group = "cleanup"
 
             delete("${project.buildDir}/dackkaDocumentation")
+            delete("${project.buildDir}/dackkaTransformedFiles")
+            delete("${project.rootProject.buildDir}/firebase-kotlindoc")
         }
 }
