@@ -18,6 +18,7 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.text.method.LinkMovementMethod;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -63,6 +64,8 @@ public class FeedbackActivity extends AppCompatActivity {
     TextView infoTextView = this.findViewById(R.id.infoText);
     infoTextView.setText(infoText);
     infoTextView.setMovementMethod(LinkMovementMethod.getInstance());
+    Button submitButton = this.findViewById(R.id.submitButton);
+    submitButton.setOnClickListener(this::submitFeedback);
 
     Bitmap thumbnail = readThumbnail();
     if (thumbnail != null) {
