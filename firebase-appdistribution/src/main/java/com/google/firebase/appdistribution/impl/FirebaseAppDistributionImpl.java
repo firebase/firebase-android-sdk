@@ -310,7 +310,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void startFeedback(int infoTextResourceId) {
-    startFeedback(firebaseApp.getApplicationContext().getString(infoTextResourceId));
+    startFeedback(firebaseApp.getApplicationContext().getText(infoTextResourceId));
   }
 
   @VisibleForTesting
