@@ -496,7 +496,7 @@ public class UploadTest {
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "flubbertest.jpg");
 
-    TestUtil.await(task, 30, TimeUnit.SECONDS);
+    TestUtil.await(task, 60, TimeUnit.SECONDS);
 
     factory.verifyOldMock();
     TestUtil.verifyTaskStateChanges("fileUploadRecovery", task.getResult().toString());
