@@ -310,6 +310,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void startFeedback(int infoTextResourceId) {
+    // TODO(lkellogg): Once we have the real FeedbackActivity view implemented, we should write a
+    // test that checks that <a> tags are preserved
     startFeedback(firebaseApp.getApplicationContext().getText(infoTextResourceId));
   }
 
