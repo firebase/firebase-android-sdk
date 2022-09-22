@@ -37,7 +37,6 @@ import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.testing.timing.FakeScheduledExecutorService;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,7 +59,6 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
   @Mock private Provider<RemoteConfigComponent> mockFirebaseRemoteConfigProvider;
 
   private DeviceCacheManager cacheManager;
-  private ExecutorService directExecutor;
   private FakeScheduledExecutorService fakeExecutor;
 
   @Before
@@ -68,8 +66,8 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     initMocks(this);
 
     fakeExecutor = new FakeScheduledExecutorService();
-    directExecutor = MoreExecutors.newDirectExecutorService();
-    cacheManager = new DeviceCacheManager(directExecutor);
+    // DeviceCacheManager initialization requires immediate blocking task execution in its executor
+    cacheManager = new DeviceCacheManager(MoreExecutors.newDirectExecutorService());
 
     when(mockFirebaseRemoteConfigProvider.get()).thenReturn(mockFirebaseRemoteConfigComponent);
     when(mockFirebaseRemoteConfigComponent.get(FIREPERF_FRC_NAMESPACE_NAME))
