@@ -441,12 +441,10 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
       return false;
     }
     boolean sendRes = send(request);
-    /**
-     * We reset the sleepTime if the send was successful. For example,
-     *
-     * <p>uploadChunk(request) // false, then sleepTime becomes 1000 uploadChunk(request) // false,
-     * then sleepTime becomes 2000 uploadChunk(request) // true, then sleepTime becomes 0 again
-     */
+    // We reset the sleepTime if the send was successful. For example,
+    // uploadChunk(request) // false, then sleepTime becomes 1000
+    // uploadChunk(request) // false, then sleepTime becomes 2000
+    // uploadChunk(request) // true, then sleepTime becomes 0 again
     if (sendRes) {
       sleepTime = 0;
     }
