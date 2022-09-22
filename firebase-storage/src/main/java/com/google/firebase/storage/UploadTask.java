@@ -84,7 +84,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   /*package*/ static Sleeper sleeper = new SleeperImpl();
   /*package*/ static Clock clock = DefaultClock.getInstance();
   private int sleepTime =
-      1000; // TODO(mtewani): Make it so that the send is 0,1,2,4,8,... and start at 0
+      0; // TODO(mtewani): Make it so that the send is 0,1,2,4,8,... and start at 0
   private final int sleepInterval = 1000;
 
   UploadTask(StorageReference targetRef, StorageMetadata metadata, byte[] bytes) {
@@ -349,7 +349,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
         return false;
       }
       System.out.println("Increasing Sleep Time");
-      sleepTime *= 2;
+      sleepTime = Math.max(sleepTime * 2, sleepTime + (sleepInterval * 2));
     }
     return true;
   }
@@ -447,7 +447,11 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
       mServerException = e;
       return false;
     }
-    return send(request);
+    boolean sendRes = send(request);
+    if (sendRes) {
+      sleepTime = 0;
+    }
+    return sendRes;
   }
 
   private void uploadChunk() {
