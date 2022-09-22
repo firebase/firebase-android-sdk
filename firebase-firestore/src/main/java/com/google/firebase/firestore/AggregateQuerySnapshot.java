@@ -27,7 +27,7 @@ import java.util.Objects;
  * in test mocks. Subclassing is not supported in production code and new SDK releases may break
  * code that does so.
  */
-class AggregateQuerySnapshot {
+public class AggregateQuerySnapshot {
 
   private final long count;
   private final AggregateQuery query;
