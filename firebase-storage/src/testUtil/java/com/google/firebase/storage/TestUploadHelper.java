@@ -228,8 +228,6 @@ public class TestUploadHelper {
         });
   }
 
-  private static final String TEST_ASSET_ROOT = "assets/";
-
   public static Task<StringBuilder> smallTextUpload2() {
     final StringBuilder builder = new StringBuilder();
     StorageReference storage = FirebaseStorage.getInstance().getReference("flubbertest.txt");
