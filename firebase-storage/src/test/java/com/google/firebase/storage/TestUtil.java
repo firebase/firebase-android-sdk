@@ -148,6 +148,6 @@ public class TestUtil {
    * Tasks to be executed.
    */
   static void await(Task<?> task) throws InterruptedException {
-    await(task, 3, TimeUnit.SECONDS);
+    await(task, 30, TimeUnit.SECONDS);
   }
 }

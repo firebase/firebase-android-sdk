@@ -176,6 +176,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @VisibleForTesting
   boolean queue() {
+    System.out.println(Arrays.toString(Thread.currentThread().getStackTrace()));
     if (tryChangeState(INTERNAL_STATE_QUEUED, false)) {
       schedule();
       return true;

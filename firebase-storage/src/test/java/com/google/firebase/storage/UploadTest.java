@@ -67,7 +67,7 @@ public class UploadTest {
 
   private static final String TEST_ASSET_ROOT = "assets/";
 
-  @Rule public RetryRule retryRule = new RetryRule(3);
+  @Rule public RetryRule retryRule = new RetryRule(1);
   @Rule public final FirebaseAppRule firebaseAppRule = new FirebaseAppRule();
 
   @Rule public TemporaryFolder folder = new TemporaryFolder();
@@ -160,12 +160,13 @@ public class UploadTest {
         });
 
     // TODO(mrschmidt): Lower the timeout
-    TestUtil.await(task, 300, TimeUnit.SECONDS);
+    TestUtil.await(task, 10, TimeUnit.MINUTES);
 
     try {
       task.getResult();
       Assert.fail();
     } catch (RuntimeExecutionException e) {
+      System.out.println(e.getCause());
       Assert.assertEquals(taskException.get().getCause(), e.getCause().getCause());
     }
 
@@ -496,7 +497,7 @@ public class UploadTest {
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "flubbertest.jpg");
 
-    TestUtil.await(task, 5, TimeUnit.SECONDS);
+    TestUtil.await(task, 2, TimeUnit.MINUTES);
 
     factory.verifyOldMock();
     TestUtil.verifyTaskStateChanges("fileUploadRecovery", task.getResult().toString());
@@ -519,7 +520,7 @@ public class UploadTest {
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "flubbertest.jpg");
 
-    TestUtil.await(task, 5, TimeUnit.SECONDS);
+    TestUtil.await(task, 50, TimeUnit.SECONDS);
 
     factory.verifyOldMock();
     TestUtil.verifyTaskStateChanges("fileUploadNoRecovery", task.getResult().toString());

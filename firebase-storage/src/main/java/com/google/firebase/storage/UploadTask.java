@@ -83,7 +83,9 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   private static final Random random = new Random();
   /*package*/ static Sleeper sleeper = new SleeperImpl();
   /*package*/ static Clock clock = DefaultClock.getInstance();
-  private int sleepTime = 1000;
+  private int sleepTime =
+      1000; // TODO(mtewani): Make it so that the send is 0,1,2,4,8,... and start at 0
+  private final int sleepInterval = 1000;
 
   UploadTask(StorageReference targetRef, StorageMetadata metadata, byte[] bytes) {
     Preconditions.checkNotNull(targetRef);
@@ -346,6 +348,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
         }
         return false;
       }
+      System.out.println("Increasing Sleep Time");
       sleepTime *= 2;
     }
     return true;
@@ -429,11 +432,16 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   }
 
   private boolean delaySend(NetworkRequest request) {
+    System.out.println(
+        "Thread " + Thread.currentThread().getName() + "Waiting " + sleepTime + " milliseconds");
     try {
       Log.d(TAG, "Waiting " + sleepTime + " milliseconds");
+      System.out.println(
+          "Thread " + Thread.currentThread().getName() + "Waiting " + sleepTime + " milliseconds");
       sleeper.sleep(sleepTime + random.nextInt(RND_MAX));
     } catch (InterruptedException e) {
       Log.w(TAG, "thread interrupted during exponential backoff.");
+      System.out.println("thread interrupted during exponential backoff.");
 
       Thread.currentThread().interrupt();
       mServerException = e;
@@ -460,6 +468,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
       if (!delaySend(uploadRequest)) {
         mCurrentChunkSize = PREFERRED_CHUNK_SIZE;
         Log.d(TAG, "Resetting chunk size to " + mCurrentChunkSize);
+        System.out.println("Resetting chunk size to " + mCurrentChunkSize);
         return;
       }
 
