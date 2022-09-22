@@ -30,11 +30,18 @@ import static org.junit.Assert.assertTrue;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class CountTest {
+
+  @Before
+  public void setUp() {
+    // TODO(b/243368243): Remove this once backend is ready to support count.
+    org.junit.Assume.assumeTrue(BuildConfig.USE_EMULATOR_FOR_TESTS);
+  }
 
   @After
   public void tearDown() {
