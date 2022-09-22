@@ -293,7 +293,7 @@ public class UploadTest {
     Task<StringBuilder> task = TestUploadHelper.byteUploadCancel();
 
     // TODO(mrschmidt): Lower the timeout
-    TestUtil.await(task, 500, TimeUnit.SECONDS);
+    TestUtil.await(task, 1000, TimeUnit.SECONDS);
 
     factory.verifyOldMock();
     TestUtil.verifyTaskStateChanges("cancelledUpload", task.getResult().toString());
