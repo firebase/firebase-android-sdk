@@ -89,7 +89,7 @@ public class CountTest {
                 "c", map("k", "c")));
 
     AggregateQuerySnapshot snapshot = waitFor(collection.count().get(AggregateSource.SERVER));
-    assertEquals(Long.valueOf(3), snapshot.getCount());
+    assertEquals(3, snapshot.getCount());
   }
 
   @Test
@@ -103,7 +103,7 @@ public class CountTest {
 
     AggregateQuerySnapshot snapshot =
         waitFor(collection.whereEqualTo("k", "b").count().get(AggregateSource.SERVER));
-    assertEquals(Long.valueOf(1), snapshot.getCount());
+    assertEquals(1, snapshot.getCount());
   }
 
   @Test
@@ -119,7 +119,7 @@ public class CountTest {
     AggregateQuerySnapshot snapshot =
         waitFor(collection.orderBy("k").count().get(AggregateSource.SERVER));
     // "d" is filtered out because it is ordered by "k".
-    assertEquals(Long.valueOf(3), snapshot.getCount());
+    assertEquals(3, snapshot.getCount());
   }
 
   @Test
@@ -197,7 +197,7 @@ public class CountTest {
     AggregateQuerySnapshot snapshot =
         waitFor(db.collectionGroup(collectionGroup).count().get(AggregateSource.SERVER));
     assertEquals(
-        Long.valueOf(5), // "cg-doc1", "cg-doc2", "cg-doc3", "cg-doc4", "cg-doc5",
+        5, // "cg-doc1", "cg-doc2", "cg-doc3", "cg-doc4", "cg-doc5",
         snapshot.getCount());
   }
 
@@ -213,12 +213,12 @@ public class CountTest {
 
     AggregateQuerySnapshot snapshot =
         waitFor(collection.whereEqualTo("k", "a").limit(2).count().get(AggregateSource.SERVER));
-    assertEquals(Long.valueOf(2), snapshot.getCount());
+    assertEquals(2, snapshot.getCount());
 
     snapshot =
         waitFor(
             collection.whereEqualTo("k", "a").limitToLast(2).count().get(AggregateSource.SERVER));
-    assertEquals(Long.valueOf(2), snapshot.getCount());
+    assertEquals(2, snapshot.getCount());
 
     snapshot =
         waitFor(
@@ -227,7 +227,7 @@ public class CountTest {
                 .limitToLast(1000)
                 .count()
                 .get(AggregateSource.SERVER));
-    assertEquals(Long.valueOf(1), snapshot.getCount());
+    assertEquals(1, snapshot.getCount());
   }
 
   @Test
@@ -235,10 +235,10 @@ public class CountTest {
     CollectionReference collection = testFirestore().collection("random-coll");
 
     AggregateQuerySnapshot snapshot = waitFor(collection.count().get(AggregateSource.SERVER));
-    assertEquals(Long.valueOf(0), snapshot.getCount());
+    assertEquals(0, snapshot.getCount());
 
     snapshot = waitFor(collection.whereEqualTo("k", 100).count().get(AggregateSource.SERVER));
-    assertEquals(Long.valueOf(0), snapshot.getCount());
+    assertEquals(0, snapshot.getCount());
   }
 
   @Test
@@ -258,6 +258,6 @@ public class CountTest {
 
     waitFor(collection.getFirestore().enableNetwork());
     AggregateQuerySnapshot snapshot = waitFor(collection.count().get(AggregateSource.SERVER));
-    assertEquals(Long.valueOf(3), snapshot.getCount());
+    assertEquals(3, snapshot.getCount());
   }
 }
