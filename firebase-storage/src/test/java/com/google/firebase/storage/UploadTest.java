@@ -160,7 +160,7 @@ public class UploadTest {
         });
 
     // TODO(mrschmidt): Lower the timeout
-    TestUtil.await(task, 7, TimeUnit.MINUTES);
+    TestUtil.await(task, 1, TimeUnit.MINUTES);
 
     try {
       task.getResult();

@@ -83,8 +83,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   private static final Random random = new Random();
   /*package*/ static Sleeper sleeper = new SleeperImpl();
   /*package*/ static Clock clock = DefaultClock.getInstance();
-  private int sleepTime =
-      0; // TODO(mtewani): Make it so that the send is 0,1,2,4,8,... and start at 0
+  private int sleepTime = 0;
   private final int sleepInterval = 1000;
 
   UploadTask(StorageReference targetRef, StorageMetadata metadata, byte[] bytes) {
@@ -442,6 +441,12 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
       return false;
     }
     boolean sendRes = send(request);
+    /**
+     * We reset the sleepTime if the send was successful. For example,
+     *
+     * <p>uploadChunk(request) // false, then sleepTime becomes 1000 uploadChunk(request) // false,
+     * then sleepTime becomes 2000 uploadChunk(request) // true, then sleepTime becomes 0 again
+     */
     if (sendRes) {
       sleepTime = 0;
     }
