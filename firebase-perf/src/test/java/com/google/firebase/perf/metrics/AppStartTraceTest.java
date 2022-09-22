@@ -283,8 +283,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   @Test
   @Config(sdk = 26)
   public void timeToInitialDisplay_isLogged() {
+    // Test setup
     when(clock.getTime()).thenCallRealMethod(); // Use robolectric shadows to manipulate time
-    long appStartTime = TimeUnit.MILLISECONDS.toMicros(Process.getStartElapsedRealtime());
     View testView = new View(ApplicationProvider.getApplicationContext());
     when(activity1.findViewById(android.R.id.content)).thenReturn(testView);
     when(configResolver.getIsExperimentTTIDEnabled()).thenReturn(true);
@@ -292,6 +292,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     AppStartTrace trace =
         new AppStartTrace(transportManager, clock, configResolver, fakeExecutorService);
 
+    // Simulate resume and manually stepping time forward
     ShadowSystemClock.advanceBy(Duration.ofMillis(1000));
     long resumeTime = TimeUnit.NANOSECONDS.toMicros(SystemClock.elapsedRealtimeNanos());
     trace.onActivityCreated(activity1, bundle);
@@ -300,6 +301,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     fakeExecutorService.runAll();
     verify(transportManager, times(1))
         .log(isA(TraceMetric.class), isA(ApplicationProcessState.class));
+
+    // Simulate draw and manually stepping time forward
     ShadowSystemClock.advanceBy(Duration.ofMillis(1000));
     long drawTime = TimeUnit.NANOSECONDS.toMicros(SystemClock.elapsedRealtimeNanos());
     testView.getViewTreeObserver().dispatchOnDraw();
@@ -308,8 +311,10 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     verify(transportManager, times(2))
         .log(traceArgumentCaptor.capture(), isA(ApplicationProcessState.class));
 
+    // Verify ttid trace is being logged
     TraceMetric ttid = traceArgumentCaptor.getValue();
-    assertThat(ttid.getName()).isEqualTo("_experiment_as_ttid");
+    long appStartTime = TimeUnit.MILLISECONDS.toMicros(Process.getStartElapsedRealtime());
+    assertThat(ttid.getName()).isEqualTo("_experiment_app_start_ttid");
     assertThat(ttid.getDurationUs()).isNotEqualTo(resumeTime - appStartTime);
     assertThat(ttid.getDurationUs()).isEqualTo(drawTime - appStartTime);
   }

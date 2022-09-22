@@ -683,7 +683,7 @@ final class ConfigurationConstants {
 
     @Override
     protected String getRemoteConfigFlag() {
-      return "fpr_experiment_as_ttid";
+      return "fpr_experiment_app_start_ttid";
     }
 
     @Override
@@ -693,7 +693,7 @@ final class ConfigurationConstants {
 
     @Override
     protected String getMetadataFlag() {
-      return "experiment_as_ttid";
+      return "experiment_app_start_ttid";
     }
   }
 }

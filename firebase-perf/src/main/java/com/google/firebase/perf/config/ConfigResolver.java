@@ -768,7 +768,7 @@ public class ConfigResolver {
     return config.getDefault();
   }
 
-  /** Returns if _experiment_as_ttid should be captured. */
+  /** Returns if _experiment_app_start_ttid should be captured. */
   public boolean getIsExperimentTTIDEnabled() {
     // Order of precedence is:
     // 1. If the value exists in Android Manifest, return this value.

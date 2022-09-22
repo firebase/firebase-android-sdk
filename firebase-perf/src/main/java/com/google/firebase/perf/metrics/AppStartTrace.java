@@ -248,7 +248,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     }
 
     // Shadow-launch experiment of new app start time
-    if (configResolver.getIsExperimentTTIDEnabled()) {
+    final boolean isExperimentTTIDEnabled = configResolver.getIsExperimentTTIDEnabled();
+    if (isExperimentTTIDEnabled) {
       View rootView = activity.findViewById(android.R.id.content);
       FirstDrawDoneListener.registerForNextDraw(rootView, this::recordFirstDrawDone);
     }
@@ -272,12 +273,17 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
 
     // Log the app start trace in a non-main thread.
     executorService.execute(this::logAppStartTrace);
+
+    if (!isExperimentTTIDEnabled && isRegisteredForLifecycleCallbacks) {
+      // After AppStart trace is logged, we can unregister this callback.
+      unregisterActivityLifecycleCallbacks();
+    }
   }
 
   private void logColdStart(Timer start, Timer end, PerfSession session) {
     TraceMetric.Builder metric =
         TraceMetric.newBuilder()
-            .setName("_experiment_as_ttid")
+            .setName("_experiment_app_start_ttid")
             .setClientStartTimeUs(start.getMicros())
             .setDurationUs(start.getDurationMicros(end));
 
