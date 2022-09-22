@@ -166,7 +166,6 @@ public class UploadTest {
       task.getResult();
       Assert.fail();
     } catch (RuntimeExecutionException e) {
-      System.out.println(e.getStackTrace());
       Assert.assertEquals(taskException.get().getCause(), e.getCause().getCause());
     }
 
