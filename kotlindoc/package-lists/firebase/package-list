@@ -2,6 +2,7 @@ com.google.firebase
 com.google.firebase.analytics
 com.google.firebase.analytics.ktx
 com.google.firebase.appcheck
+com.google.firebase.appcheck.ktx
 com.google.firebase.appcheck.debug
 com.google.firebase.appcheck.debug.testing
 com.google.firebase.appcheck.playintegrity
