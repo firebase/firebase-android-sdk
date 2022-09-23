@@ -347,7 +347,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
         }
         return false;
       }
-      sleepTime = Math.max(sleepTime * 2, sleepTime + (minimumSleepInterval * 2));
+      sleepTime = Math.max(sleepTime * 2, minimumSleepInterval);
     }
     return true;
   }
@@ -429,6 +429,14 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     return true;
   }
 
+  /**
+   * Send with a delay that uses sleepTime to delay sending a request to the server. Will reset
+   * sleepTime upon send success. TODO: Create an exponential backoff helper to consolidate code
+   * here and in ExponentialBackoffSender.java
+   *
+   * @param request to send
+   * @return whether the delay and send were successful
+   */
   private boolean delaySend(NetworkRequest request) {
     try {
       Log.d(TAG, "Waiting " + sleepTime + " milliseconds");
