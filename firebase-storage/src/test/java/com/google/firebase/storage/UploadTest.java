@@ -124,7 +124,7 @@ public class UploadTest {
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "image.jpg");
 
-    TestUtil.await(task, 2, TimeUnit.MINUTES);
+    TestUtil.await(task, 3, TimeUnit.MINUTES);
 
     factory.verifyOldMock();
     TestUtil.verifyTaskStateChanges("fileUploadWith500", task.getResult().toString());
