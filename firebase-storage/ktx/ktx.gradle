@@ -17,6 +17,8 @@ plugins {
     id 'kotlin-android'
 }
 
+group = "com.google.firebase"
+
 firebaseLibrary {
     releaseWith project(':firebase-storage')
     publishJavadoc = true
