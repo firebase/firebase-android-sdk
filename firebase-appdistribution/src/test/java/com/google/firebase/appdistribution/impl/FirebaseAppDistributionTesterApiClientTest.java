@@ -23,6 +23,7 @@ import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.net.Uri;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -34,9 +35,7 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -391,29 +390,25 @@ public class FirebaseAppDistributionTesterApiClientTest {
   @Test
   public void attachScreenshot_whenResponseSuccessful_makesPostRequestAndReturnsFeedbackName()
       throws Exception {
-    InputStream inputStream =
-        new FileInputStream(
-            ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
+    Uri uri =
+        Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
 
-    Task<String> task =
-        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, inputStream);
+    Task<String> task = firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, uri);
     String result = awaitTask(task);
 
     assertThat(result).isEqualTo(FEEDBACK_NAME);
     verify(mockTesterApiHttpClient)
-        .makeUploadRequest(any(), eq(ATTACH_SCREENSHOT_PATH), eq(TEST_AUTH_TOKEN), eq(inputStream));
+        .makeUploadRequest(any(), eq(ATTACH_SCREENSHOT_PATH), eq(TEST_AUTH_TOKEN), eq(uri));
   }
 
   @Test
   public void attachScreenshot_getFidError_throwsError() throws FileNotFoundException {
     Exception expectedException = new Exception("test ex");
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(expectedException));
-    InputStream inputStream =
-        new FileInputStream(
-            ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
+    Uri uri =
+        Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
 
-    Task<String> task =
-        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, inputStream);
+    Task<String> task = firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, uri);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
@@ -423,12 +418,10 @@ public class FirebaseAppDistributionTesterApiClientTest {
     Exception expectedException = new Exception("test ex");
     when(mockFirebaseInstallations.getToken(false))
         .thenReturn(Tasks.forException(expectedException));
-    InputStream inputStream =
-        new FileInputStream(
-            ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
+    Uri uri =
+        Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
 
-    Task<String> task =
-        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, inputStream);
+    Task<String> task = firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, uri);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
@@ -438,12 +431,10 @@ public class FirebaseAppDistributionTesterApiClientTest {
     when(mockTesterApiHttpClient.makeUploadRequest(
             any(), eq(ATTACH_SCREENSHOT_PATH), eq(TEST_AUTH_TOKEN), any()))
         .thenThrow(new FirebaseAppDistributionException("test ex", Status.UNKNOWN));
-    InputStream inputStream =
-        new FileInputStream(
-            ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
+    Uri uri =
+        Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
 
-    Task<String> task =
-        firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, inputStream);
+    Task<String> task = firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, uri);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex");
   }

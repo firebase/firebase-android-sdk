@@ -648,4 +648,24 @@ public class FirebaseAppDistributionServiceImplTest {
     assertThat(argument.getValue().getStringExtra(INFO_TEXT_EXTRA_KEY))
         .isEqualTo("Some terms and conditions");
   }
+
+  @Test
+  public void startFeedback_screenshotFails_startActivityWithNoScreenshot()
+      throws InterruptedException {
+    when(mockScreenshotTaker.takeScreenshot())
+        .thenReturn(
+            Tasks.forException(new FirebaseAppDistributionException("Error", Status.UNKNOWN)));
+    when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
+    firebaseAppDistribution.startFeedback("Some terms and conditions");
+    TestUtils.awaitAsyncOperations(taskExecutor);
+
+    ArgumentCaptor<Intent> argument = ArgumentCaptor.forClass(Intent.class);
+    verify(activity).startActivity(argument.capture());
+    verify(mockTesterSignInManager).signInTester();
+    assertThat(argument.getValue().getStringExtra(RELEASE_NAME_EXTRA_KEY))
+        .isEqualTo("release-name");
+    assertThat(argument.getValue().hasExtra(SCREENSHOT_URI_EXTRA_KEY)).isFalse();
+    assertThat(argument.getValue().getStringExtra(INFO_TEXT_EXTRA_KEY))
+        .isEqualTo("Some terms and conditions");
+  }
 }

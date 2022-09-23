@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution.impl;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.util.AndroidUtilsLight;
@@ -123,13 +124,15 @@ class TesterApiHttpClient {
    *
    * @return the response body
    */
-  JSONObject makeUploadRequest(String tag, String path, String token, InputStream inputStream)
+  JSONObject makeUploadRequest(String tag, String path, String token, Uri contentUri)
       throws FirebaseAppDistributionException {
     Map<String, String> extraHeaders = new HashMap<>();
     extraHeaders.put(X_GOOG_UPLOAD_PROTOCOL_HEADER, X_GOOG_UPLOAD_PROTOCOL_RAW);
     extraHeaders.put(X_GOOG_UPLOAD_FILE_NAME_HEADER, X_GOOG_UPLOAD_FILE_NAME);
     RequestBodyWriter requestBodyWriter =
         outputStream -> {
+          InputStream inputStream =
+              firebaseApp.getApplicationContext().getContentResolver().openInputStream(contentUri);
           writeInputStreamToOutputStream(inputStream, outputStream);
         };
     return makePostRequest(tag, path, token, extraHeaders, requestBodyWriter);

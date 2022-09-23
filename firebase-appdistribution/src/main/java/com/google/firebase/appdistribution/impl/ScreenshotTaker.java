@@ -72,7 +72,6 @@ class ScreenshotTaker {
     return TaskUtils.runAsyncInTask(
         taskExecutor,
         () -> {
-          // throw new IllegalStateException("We got this far");
           firebaseApp.getApplicationContext().deleteFile(SCREENSHOT_FILE_NAME);
           return null;
         });

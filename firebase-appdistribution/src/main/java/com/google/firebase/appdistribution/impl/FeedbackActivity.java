@@ -26,10 +26,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import com.google.firebase.appdistribution.FirebaseAppDistributionException;
-import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 
 /** Activity for tester to compose and submit feedback. */
 public class FeedbackActivity extends AppCompatActivity {
@@ -71,20 +67,21 @@ public class FeedbackActivity extends AppCompatActivity {
     Button submitButton = this.findViewById(R.id.submitButton);
     submitButton.setOnClickListener(this::submitFeedback);
 
-    try {
-      Bitmap thumbnail = readThumbnail();
+    Bitmap thumbnail = readThumbnail();
+    if (thumbnail != null) {
       ImageView screenshotImageView = this.findViewById(R.id.thumbnail);
       screenshotImageView.setImageBitmap(thumbnail);
-    } catch (FirebaseAppDistributionException e) {
-      LogWrapper.getInstance().e(TAG, "No screenshot available.", e);
+    } else {
+      LogWrapper.getInstance().e(TAG, "No screenshot available");
       View screenshotErrorLabel = this.findViewById(R.id.screenshotErrorLabel);
       screenshotErrorLabel.setVisibility(View.VISIBLE);
     }
   }
 
-  private Bitmap readThumbnail() throws FirebaseAppDistributionException {
+  @Nullable
+  private Bitmap readThumbnail() {
     if (screenshotUri == null) {
-      throw new FirebaseAppDistributionException("No screenshot provided.", Status.UNKNOWN);
+      return null;
     }
     return ImageUtils.readScaledImage(
         getContentResolver(), screenshotUri, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
@@ -94,7 +91,7 @@ public class FeedbackActivity extends AppCompatActivity {
     setSubmittingStateEnabled(true);
     EditText feedbackText = findViewById(R.id.feedbackText);
     feedbackSender
-        .sendFeedback(releaseName, feedbackText.getText().toString(), getScreenshotInputStream())
+        .sendFeedback(releaseName, feedbackText.getText().toString(), screenshotUri)
         .addOnSuccessListener(
             unused -> {
               LogWrapper.getInstance().i(TAG, "Feedback submitted");
@@ -107,21 +104,6 @@ public class FeedbackActivity extends AppCompatActivity {
               Toast.makeText(this, "Error submitting feedback", Toast.LENGTH_LONG).show();
               setSubmittingStateEnabled(false);
             });
-  }
-
-  private @Nullable InputStream getScreenshotInputStream() {
-    if (screenshotUri == null) {
-      LogWrapper.getInstance().i(TAG, "No screenshot URI provided.");
-      return null;
-    }
-    LogWrapper.getInstance().i(TAG, "Trying to read screenshot from URI: " + screenshotUri);
-    try {
-      return this.getContentResolver().openInputStream(screenshotUri);
-    } catch (FileNotFoundException e) {
-      LogWrapper.getInstance()
-          .e(TAG, String.format("Could not read screenshot from URI %s", screenshotUri), e);
-      return null;
-    }
   }
 
   public void setSubmittingStateEnabled(boolean loading) {

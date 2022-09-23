@@ -18,9 +18,8 @@ import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
-import com.google.firebase.appdistribution.FirebaseAppDistributionException;
-import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -52,17 +51,16 @@ public class ImageUtils {
    *
    * <p>Based on https://developer.android.com/topic/performance/graphics/load-bitmap#load-bitmap.
    *
-   * @return the image
-   * @throws FirebaseAppDistributionException if the image could not be read
+   * @return the image, or null if it could not be decoded
+   * @throws IllegalArgumentException if target height or width are less than or equal to zero
    */
+  @Nullable
   public static Bitmap readScaledImage(
-      ContentResolver contentResolver, Uri uri, int targetWidth, int targetHeight)
-      throws FirebaseAppDistributionException {
+      ContentResolver contentResolver, Uri uri, int targetWidth, int targetHeight) {
     if (targetWidth <= 0 || targetHeight <= 0) {
-      throw new FirebaseAppDistributionException(
+      throw new IllegalArgumentException(
           String.format(
-              "Tried to read image with bad dimensions: %dx%d", targetWidth, targetHeight),
-          Status.UNKNOWN);
+              "Tried to read image with bad dimensions: %dx%d", targetWidth, targetHeight));
     }
 
     // Read the dimensions of the image first
@@ -71,8 +69,9 @@ public class ImageUtils {
       imageSize = ImageSize.read(inputStream);
       LogWrapper.getInstance().d("Read screenshot image size: " + imageSize);
     } catch (IOException e) {
-      throw new FirebaseAppDistributionException(
-          String.format("Could not read screenshot size from URI %s", uri), Status.UNKNOWN, e);
+      LogWrapper.getInstance()
+          .e(TAG, String.format("Could not read image size from URI %s", uri), e);
+      return null;
     }
 
     // Read the actual image, scaled using the actual and target dimensions
@@ -83,8 +82,8 @@ public class ImageUtils {
     try (InputStream inputStream = contentResolver.openInputStream(uri)) {
       return BitmapFactory.decodeStream(inputStream, /* outPadding= */ null, options);
     } catch (IOException e) {
-      throw new FirebaseAppDistributionException(
-          String.format("Could not read screenshot from URI %s", uri), Status.UNKNOWN, e);
+      LogWrapper.getInstance().e(TAG, String.format("Could not read image from URI %s", uri), e);
+      return null;
     }
   }
 

@@ -21,7 +21,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
+import android.content.ContentResolver;
+import android.net.Uri;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.common.collect.Iterators;
 import com.google.firebase.FirebaseApp;
@@ -30,8 +33,6 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.net.ssl.HttpsURLConnection;
@@ -42,6 +43,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.shadows.ShadowContentResolver;
 
 @RunWith(RobolectricTestRunner.class)
 public class TesterApiHttpClientTest {
@@ -254,13 +256,15 @@ public class TesterApiHttpClientTest {
     when(mockHttpsURLConnection.getInputStream()).thenReturn(responseInputStream);
     ByteArrayOutputStream requestBodyOutputStream = new ByteArrayOutputStream();
     when(mockHttpsURLConnection.getOutputStream()).thenReturn(requestBodyOutputStream);
-    File testRequestBodyFile =
-        ApplicationProvider.getApplicationContext().getFileStreamPath("requestBody.txt");
-    try (FileWriter writer = new FileWriter(testRequestBodyFile)) {
-      writer.write("Test post body");
-    }
 
-    testerApiHttpClient.makeUploadRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN, testRequestBodyFile);
+    ContentResolver contentResolver =
+        ApplicationProvider.getApplicationContext().getContentResolver();
+    ShadowContentResolver shadowContentResolver = shadowOf(contentResolver);
+    ByteArrayInputStream inputStream = new ByteArrayInputStream("Test post body".getBytes(UTF_8));
+    Uri uri = Uri.parse("file:///path/to/data");
+    shadowContentResolver.registerInputStream(uri, inputStream);
+
+    testerApiHttpClient.makeUploadRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN, uri);
 
     assertThat(new String(requestBodyOutputStream.toByteArray(), UTF_8))
         .isEqualTo("Test post body");
