@@ -22,6 +22,7 @@ import android.content.Context;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Images.Media;
@@ -37,8 +38,13 @@ import java.util.Set;
 class FeedbackTriggers extends ContentObserver {
 
   private static final String TAG = "FeedbackTriggers";
+  private static final boolean SHOULD_CHECK_IF_PENDING = Build.VERSION.SDK_INT == 29;
   private static final String[] PROJECTION =
-      new String[] {MediaStore.Images.Media.DATA, MediaStore.Images.Media._ID};
+      SHOULD_CHECK_IF_PENDING
+          ? new String[] {MediaStore.Images.Media.DATA}
+          : new String[] {
+            MediaStore.Images.Media.DATA, android.provider.MediaStore.MediaColumns.IS_PENDING
+          };
   private final Set<String> seenImages = new HashSet<>();
 
   private final Context context;
@@ -115,12 +121,11 @@ class FeedbackTriggers extends ContentObserver {
     try {
       cursor = context.getContentResolver().query(uri, PROJECTION, null, null, null);
       if (cursor != null && cursor.moveToFirst()) {
+        // TODO: check if it's pending
+        // (http://google3/lens/screenshots/demo/java/com/google/android/lensonscreenshots/ScreenshotDetector.java?l=184)
         String path = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA));
-        Long id = cursor.getLong(cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID));
         Log.i(TAG, "Path: " + path);
         if (path.toLowerCase().contains("screenshot")) {
-          // TODO: since we have a file path here, should we just use File or path everywhere
-          // instead of content URI?
           FirebaseAppDistribution.getInstance().startFeedback(infoText, uri);
         }
       }

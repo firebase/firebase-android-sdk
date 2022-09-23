@@ -18,11 +18,10 @@ import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.util.Log;
 import com.google.auto.value.AutoValue;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 
 public class ImageUtils {
@@ -65,42 +64,25 @@ public class ImageUtils {
               "Tried to read image with bad dimensions: %dx%d", targetWidth, targetHeight),
           Status.UNKNOWN);
     }
-    ImageSize imageSize = ImageSize.read(waitForInputStream(contentResolver, uri));
-    LogWrapper.getInstance().d("Read screenshot image size: " + imageSize);
 
+    // Read the dimensions of the image first
+    ImageSize imageSize;
+    try (InputStream inputStream = contentResolver.openInputStream(uri)) {
+      imageSize = ImageSize.read(inputStream);
+      LogWrapper.getInstance().d("Read screenshot image size: " + imageSize);
+    } catch (IOException e) {
+      throw new FirebaseAppDistributionException(
+          String.format("Could not read screenshot size from URI %s", uri), Status.UNKNOWN, e);
+    }
+
+    // Read the actual image, scaled using the actual and target dimensions
     final BitmapFactory.Options options = new BitmapFactory.Options();
     options.inSampleSize =
         calculateInSampleSize(imageSize.width(), imageSize.height(), targetWidth, targetHeight);
     // Get a fresh input stream because we've exhausted the last one
-    return BitmapFactory.decodeStream(
-        waitForInputStream(contentResolver, uri), /* outPadding= */ null, options);
-  }
-
-  private static InputStream waitForInputStream(ContentResolver contentResolver, Uri uri)
-      throws FirebaseAppDistributionException {
-    LogWrapper.getInstance().d(TAG, "Trying to read screenshot from URI: " + uri);
-    for (int i = 0; i < MAX_IMAGE_READ_RETRIES; i++) {
-      try {
-        return getInputStream(contentResolver, uri);
-      } catch (IllegalStateException e) {
-        Log.d(TAG, "Screenshot at URI is still pending. Sleeping.", e);
-        try {
-          Thread.sleep(IMAGE_READ_RETRY_SLEEP_MS);
-        } catch (InterruptedException ex) {
-          throw new FirebaseAppDistributionException(
-              "Interrupted while waiting for screenshot to become available", Status.UNKNOWN);
-        }
-      }
-    }
-    throw new FirebaseAppDistributionException(
-        "Timed out waiting for screenshot to be readable.", Status.UNKNOWN);
-  }
-
-  private static InputStream getInputStream(ContentResolver contentResolver, Uri uri)
-      throws FirebaseAppDistributionException {
-    try {
-      return contentResolver.openInputStream(uri);
-    } catch (FileNotFoundException e) {
+    try (InputStream inputStream = contentResolver.openInputStream(uri)) {
+      return BitmapFactory.decodeStream(inputStream, /* outPadding= */ null, options);
+    } catch (IOException e) {
       throw new FirebaseAppDistributionException(
           String.format("Could not read screenshot from URI %s", uri), Status.UNKNOWN, e);
     }

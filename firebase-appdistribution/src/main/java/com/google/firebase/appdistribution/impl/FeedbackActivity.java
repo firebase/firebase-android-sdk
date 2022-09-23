@@ -72,7 +72,6 @@ public class FeedbackActivity extends AppCompatActivity {
     submitButton.setOnClickListener(this::submitFeedback);
 
     try {
-      // TODO: set up loading state and wait for screenshot in the background
       Bitmap thumbnail = readThumbnail();
       ImageView screenshotImageView = this.findViewById(R.id.thumbnail);
       screenshotImageView.setImageBitmap(thumbnail);

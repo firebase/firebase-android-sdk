@@ -15,8 +15,8 @@
 package com.google.firebase.appdistribution.internal;
 
 import android.net.Uri;
-
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
@@ -85,7 +85,12 @@ public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback(@NonNull CharSequence infoText, @NonNull Uri screenshotUri) {
+  public void startFeedback(@NonNull int infoTextResourceId, @Nullable Uri screenshotUri) {
+    delegate.startFeedback(infoTextResourceId, screenshotUri);
+  }
+
+  @Override
+  public void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri) {
     delegate.startFeedback(infoText, screenshotUri);
   }
 }

@@ -318,18 +318,25 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void startFeedback(@NonNull CharSequence infoText) {
-    // TODO: prevent feedback from starting when another is already in progress. That would allow us
-    //  to remove the de-duping code in the example trigger.
     screenshotTaker
         .takeScreenshot()
         .addOnFailureListener(
-            taskExecutor, e -> LogWrapper.getInstance().e("Failed to take screenshot", e))
+            taskExecutor,
+            e -> {
+              LogWrapper.getInstance().w("Failed to take screenshot for feedback", e);
+              startFeedback(infoText, null);
+            })
         .addOnSuccessListener(
             taskExecutor, screenshotUri -> startFeedback(infoText, screenshotUri));
   }
 
   @Override
-  public void startFeedback(@NonNull CharSequence infoText, @NonNull Uri screenshotUri) {
+  public void startFeedback(@NonNull int infoTextResourceId, @Nullable Uri screenshotUri) {
+    startFeedback(firebaseApp.getApplicationContext().getText(infoTextResourceId), screenshotUri);
+  }
+
+  @Override
+  public void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri) {
     testerSignInManager
         .signInTester()
         .addOnFailureListener(
@@ -346,13 +353,16 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   private Task<Void> launchFeedbackActivity(
-      String releaseName, CharSequence infoText, Uri screenshotFilename) {
+      String releaseName, CharSequence infoText, @Nullable Uri screenshotUri) {
     return lifecycleNotifier.consumeForegroundActivity(
         activity -> {
+          LogWrapper.getInstance().i("Launching feedback activity");
           Intent intent = new Intent(activity, FeedbackActivity.class);
           intent.putExtra(RELEASE_NAME_EXTRA_KEY, releaseName);
           intent.putExtra(INFO_TEXT_EXTRA_KEY, infoText);
-          intent.putExtra(SCREENSHOT_URI_EXTRA_KEY, screenshotFilename.toString());
+          if (screenshotUri != null) {
+            intent.putExtra(SCREENSHOT_URI_EXTRA_KEY, screenshotUri.toString());
+          }
           activity.startActivity(intent);
         });
   }

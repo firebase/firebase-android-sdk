@@ -16,7 +16,6 @@ package com.google.firebase.appdistribution.internal;
 
 import android.app.Activity;
 import android.net.Uri;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Continuation;
@@ -86,7 +85,12 @@ public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback(@NonNull CharSequence infoText, @NonNull Uri screenshotUri) {
+  public void startFeedback(@NonNull int infoTextResourceId, @Nullable Uri screenshotUri) {
+    return;
+  }
+
+  @Override
+  public void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri) {
     return;
   }
 
