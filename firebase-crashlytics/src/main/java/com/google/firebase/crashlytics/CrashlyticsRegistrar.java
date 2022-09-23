@@ -29,10 +29,13 @@ import java.util.List;
 
 /** @hide */
 public class CrashlyticsRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-cls";
+
   @Override
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseCrashlytics.class)
+            .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.deferred(CrashlyticsNativeComponent.class))
@@ -40,7 +43,7 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
             .factory(this::buildCrashlytics)
             .eagerInDefaultApp()
             .build(),
-        LibraryVersionComponent.create("fire-cls", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 
   private FirebaseCrashlytics buildCrashlytics(ComponentContainer container) {
