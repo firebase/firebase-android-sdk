@@ -14,27 +14,25 @@ package com.google.firebase.storage.ktx {
     method @NonNull public static operator java.io.InputStream component3(@NonNull com.google.firebase.storage.StreamDownloadTask.TaskSnapshot);
     method @Nullable public static operator String component3(@NonNull com.google.firebase.storage.ListResult);
     method @Nullable public static operator android.net.Uri component4(@NonNull com.google.firebase.storage.UploadTask.TaskSnapshot);
-    method @NonNull public static kotlinx.coroutines.flow.Flow<com.google.firebase.storage.ktx.StorageProgress<com.google.firebase.storage.StreamDownloadTask.TaskSnapshot>> getProgress(@NonNull com.google.firebase.storage.StreamDownloadTask);
-    method @NonNull public static kotlinx.coroutines.flow.Flow<com.google.firebase.storage.ktx.StorageProgress<com.google.firebase.storage.FileDownloadTask.TaskSnapshot>> getProgress(@NonNull com.google.firebase.storage.FileDownloadTask);
-    method @NonNull public static kotlinx.coroutines.flow.Flow<com.google.firebase.storage.ktx.StorageProgress<com.google.firebase.storage.UploadTask.TaskSnapshot>> getProgress(@NonNull com.google.firebase.storage.UploadTask);
     method @NonNull public static com.google.firebase.storage.FirebaseStorage getStorage(@NonNull com.google.firebase.ktx.Firebase);
+    method @NonNull public static <T extends com.google.firebase.storage.StorageTask.SnapshotBase> kotlinx.coroutines.flow.Flow<com.google.firebase.storage.ktx.TaskState<T>> getTaskState(@NonNull com.google.firebase.storage.StorageTask<T>);
     method @NonNull public static com.google.firebase.storage.FirebaseStorage storage(@NonNull com.google.firebase.ktx.Firebase, @NonNull String url);
     method @NonNull public static com.google.firebase.storage.FirebaseStorage storage(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
     method @NonNull public static com.google.firebase.storage.FirebaseStorage storage(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app, @NonNull String url);
     method @NonNull public static com.google.firebase.storage.StorageMetadata storageMetadata(@NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.storage.StorageMetadata.Builder,kotlin.Unit> init);
   }
 
-  public abstract class StorageProgress<T> {
+  public abstract class TaskState<T> {
   }
 
-  public static final class StorageProgress.InProgress<T> extends com.google.firebase.storage.ktx.StorageProgress<T> {
-    ctor public StorageProgress.InProgress(@Nullable T snapshot);
+  public static final class TaskState.InProgress<T> extends com.google.firebase.storage.ktx.TaskState<T> {
+    ctor public TaskState.InProgress(@Nullable T snapshot);
     method public T getSnapshot();
     property public final T snapshot;
   }
 
-  public static final class StorageProgress.Paused<T> extends com.google.firebase.storage.ktx.StorageProgress<T> {
-    ctor public StorageProgress.Paused(@Nullable T snapshot);
+  public static final class TaskState.Paused<T> extends com.google.firebase.storage.ktx.TaskState<T> {
+    ctor public TaskState.Paused(@Nullable T snapshot);
     method public T getSnapshot();
     property public final T snapshot;
   }
