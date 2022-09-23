@@ -73,20 +73,21 @@ inline fun <reified T> MutableData.getValue(): T? {
  * - When the returned flow starts being collected, a [ValueEventListener] will be attached.
  * - When the flow completes, the listener will be removed.
  */
-fun Query.snapshots() = callbackFlow<DataSnapshot> {
-    val listener = addValueEventListener(object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            repo.scheduleNow {
-                trySendBlocking(snapshot)
+val Query.snapshots
+    get() = callbackFlow<DataSnapshot> {
+        val listener = addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                repo.scheduleNow {
+                    trySendBlocking(snapshot)
+                }
             }
-        }
 
-        override fun onCancelled(error: DatabaseError) {
-            cancel(message = "Error getting Query snapshot", cause = error.toException())
-        }
-    })
-    awaitClose { removeEventListener(listener) }
-}
+            override fun onCancelled(error: DatabaseError) {
+                cancel(message = "Error getting Query snapshot", cause = error.toException())
+            }
+        })
+        awaitClose { removeEventListener(listener) }
+    }
 
 /**
  * Starts listening to this query's child events and emits its values via a [Flow].
@@ -94,38 +95,39 @@ fun Query.snapshots() = callbackFlow<DataSnapshot> {
  * - When the returned flow starts being collected, a [ChildEventListener] will be attached.
  * - When the flow completes, the listener will be removed.
  */
-fun Query.childEvents() = callbackFlow<ChildEvent> {
-    val listener = addChildEventListener(object : ChildEventListener {
-        override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-            repo.scheduleNow {
-                trySendBlocking(ChildEvent.Added(snapshot, previousChildName))
+val Query.childEvents
+    get() = callbackFlow<ChildEvent> {
+        val listener = addChildEventListener(object : ChildEventListener {
+            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                repo.scheduleNow {
+                    trySendBlocking(ChildEvent.Added(snapshot, previousChildName))
+                }
             }
-        }
 
-        override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-            repo.scheduleNow {
-                trySendBlocking(ChildEvent.Changed(snapshot, previousChildName))
+            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
+                repo.scheduleNow {
+                    trySendBlocking(ChildEvent.Changed(snapshot, previousChildName))
+                }
             }
-        }
 
-        override fun onChildRemoved(snapshot: DataSnapshot) {
-            repo.scheduleNow {
-                trySendBlocking(ChildEvent.Removed(snapshot))
+            override fun onChildRemoved(snapshot: DataSnapshot) {
+                repo.scheduleNow {
+                    trySendBlocking(ChildEvent.Removed(snapshot))
+                }
             }
-        }
 
-        override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
-            repo.scheduleNow {
-                trySendBlocking(ChildEvent.Moved(snapshot, previousChildName))
+            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
+                repo.scheduleNow {
+                    trySendBlocking(ChildEvent.Moved(snapshot, previousChildName))
+                }
             }
-        }
 
-        override fun onCancelled(error: DatabaseError) {
-            cancel(message = "Error getting Query childEvent", cause = error.toException())
-        }
-    })
-    awaitClose { removeEventListener(listener) }
-}
+            override fun onCancelled(error: DatabaseError) {
+                cancel(message = "Error getting Query childEvent", cause = error.toException())
+            }
+        })
+        awaitClose { removeEventListener(listener) }
+    }
 
 internal const val LIBRARY_NAME: String = "fire-db-ktx"
 
