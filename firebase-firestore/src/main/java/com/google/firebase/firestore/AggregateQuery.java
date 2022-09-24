@@ -95,6 +95,10 @@ public class AggregateQuery {
     return query.equals(other.query);
   }
 
+  /**
+   * Calculates and returns the hash code for this object.
+   * @return the hash code for this object.
+   */
   @Override
   public int hashCode() {
     return query.hashCode();
