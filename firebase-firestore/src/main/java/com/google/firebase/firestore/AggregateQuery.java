@@ -35,9 +35,7 @@ public class AggregateQuery {
     this.query = query;
   }
 
-  /**
-   * Returns the query whose aggregations will be calculated by this object.
-   */
+  /** Returns the query whose aggregations will be calculated by this object. */
   @NonNull
   public Query getQuery() {
     return query;
@@ -78,14 +76,14 @@ public class AggregateQuery {
    * conditions are satisfied:
    *
    * <ol>
-   *   <li>{@code object} is a non-null instance of {@link AggregateQuery}.</li>
-   *   <li>{@code object} performs the same aggregations as this {@link AggregateQuery}.</li>
-   *   <li>{@code object} has the same underlying {@link Query} as this {@link AggregateQuery}.</li>
+   *   <li>{@code object} is a non-null instance of {@link AggregateQuery}.
+   *   <li>{@code object} performs the same aggregations as this {@link AggregateQuery}.
+   *   <li>{@code object} has the same underlying {@link Query} as this {@link AggregateQuery}.
    * </ol>
    *
    * @param object The object to compare to this object for equality.
-   * @return {@code true} if this object is "equal" to the given object, as defined above, or
-   * {@code false} otherwise.
+   * @return {@code true} if this object is "equal" to the given object, as defined above, or {@code
+   *     false} otherwise.
    */
   @Override
   public boolean equals(Object object) {
@@ -97,6 +95,7 @@ public class AggregateQuery {
 
   /**
    * Calculates and returns the hash code for this object.
+   *
    * @return the hash code for this object.
    */
   @Override

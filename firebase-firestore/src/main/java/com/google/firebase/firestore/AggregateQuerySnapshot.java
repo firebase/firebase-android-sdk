@@ -55,14 +55,14 @@ public class AggregateQuerySnapshot {
    * conditions are satisfied:
    *
    * <ol>
-   *   <li>{@code object} is a non-null instance of {@link AggregateQuerySnapshot}.</li>
-   *   <li>{@code object} has the same {@link AggregateQuery} as this object.</li>
-   *   <li>{@code object} has the same results as this object.</li>
+   *   <li>{@code object} is a non-null instance of {@link AggregateQuerySnapshot}.
+   *   <li>{@code object} has the same {@link AggregateQuery} as this object.
+   *   <li>{@code object} has the same results as this object.
    * </ol>
    *
    * @param object The object to compare to this object for equality.
-   * @return {@code true} if this object is "equal" to the given object, as defined above, or
-   * {@code false} otherwise.
+   * @return {@code true} if this object is "equal" to the given object, as defined above, or {@code
+   *     false} otherwise.
    */
   @Override
   public boolean equals(Object object) {
@@ -74,6 +74,7 @@ public class AggregateQuerySnapshot {
 
   /**
    * Calculates and returns the hash code for this object.
+   *
    * @return the hash code for this object.
    */
   @Override
