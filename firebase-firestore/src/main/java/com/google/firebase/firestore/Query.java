@@ -1224,10 +1224,17 @@ public class Query {
   }
 
   /**
-   * Creates an {@link AggregateQuery} counting the number of documents matching this query.
+   * Returns a query that counts the documents in the result set of this query.
    *
-   * @return An {@link AggregateQuery} object that can be used to count the number of documents in
-   *     the result set of this query.
+   * <p>The returned query, when executed, counts the documents in the result set of this query
+   * <em>without actually downloading the documents</em>. The count is performed on the server and
+   * only the resulting count is downloaded from the server.</p>
+   *
+   * <p>Using the returned query to count the documents is efficient because only the final count,
+   * not the documents' data, is downloaded. The returned query can even count the documents if the
+   * result set would be prohibitively large to download entirely (e.g. thousands of documents).</p>
+   *
+   * @return a query that counts the documents in the result set of this query.
    */
   @NonNull
   public AggregateQuery count() {
