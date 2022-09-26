@@ -35,8 +35,7 @@ import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import java.util.HashSet;
 import java.util.Set;
 
-class FeedbackTriggers extends ContentObserver {
-
+class ScreenshotDetectionFeedbackTrigger extends ContentObserver {
   private static final String TAG = "FeedbackTriggers";
   private static final boolean SHOULD_CHECK_IF_PENDING = Build.VERSION.SDK_INT == 29;
   private static final String[] PROJECTION =
@@ -45,7 +44,7 @@ class FeedbackTriggers extends ContentObserver {
           : new String[] {
             MediaStore.Images.Media.DATA, android.provider.MediaStore.MediaColumns.IS_PENDING
           };
-  private final Set<String> seenImages = new HashSet<>();
+  private final Set<Uri> seenImages = new HashSet<>();
 
   private final Context context;
   private final CharSequence infoText;
@@ -62,7 +61,8 @@ class FeedbackTriggers extends ContentObserver {
    * @param activity The host activity
    * @param handler The handler to run {@link #onChange} on, or null if none.
    */
-  public FeedbackTriggers(ComponentActivity activity, CharSequence infoText, Handler handler) {
+  public ScreenshotDetectionFeedbackTrigger(
+      ComponentActivity activity, CharSequence infoText, Handler handler) {
     super(handler);
     this.context = activity;
     this.infoText = infoText;
@@ -91,7 +91,8 @@ class FeedbackTriggers extends ContentObserver {
   void registerScreenshotObserver() {
     context
         .getContentResolver()
-        .registerContentObserver(Media.EXTERNAL_CONTENT_URI, true /*notifyForDescendants*/, this);
+        .registerContentObserver(
+            Media.EXTERNAL_CONTENT_URI, /* notifyForDescendants= */ true, this);
   }
 
   void unRegisterScreenshotObserver() {
@@ -101,7 +102,7 @@ class FeedbackTriggers extends ContentObserver {
   @Override
   public void onChange(boolean selfChange, Uri uri) {
     if (!uri.toString().matches(String.format("%s/[0-9]+", Media.EXTERNAL_CONTENT_URI))
-        || !seenImages.add(uri.toString())) {
+        || !seenImages.add(uri)) {
       return;
     }
 

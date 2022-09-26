@@ -251,28 +251,33 @@ public class TesterApiHttpClientTest {
   @Test
   public void makeUploadRequest_writesRequestBodyAndSetsCorrectHeaders() throws Exception {
     String responseJson = readTestFile("testSimpleResponse.json");
-    InputStream responseInputStream = new ByteArrayInputStream(responseJson.getBytes(UTF_8));
-    when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
-    when(mockHttpsURLConnection.getInputStream()).thenReturn(responseInputStream);
-    ByteArrayOutputStream requestBodyOutputStream = new ByteArrayOutputStream();
-    when(mockHttpsURLConnection.getOutputStream()).thenReturn(requestBodyOutputStream);
 
-    ContentResolver contentResolver =
-        ApplicationProvider.getApplicationContext().getContentResolver();
-    ShadowContentResolver shadowContentResolver = shadowOf(contentResolver);
-    ByteArrayInputStream inputStream = new ByteArrayInputStream("Test post body".getBytes(UTF_8));
-    Uri uri = Uri.parse("file:///path/to/data");
-    shadowContentResolver.registerInputStream(uri, inputStream);
+    // Setup test streams. They should be closed but close them anyway just to be safe.
+    try (InputStream postBodyInputStream =
+            new ByteArrayInputStream("Test post body".getBytes(UTF_8));
+        ByteArrayOutputStream requestBodyOutputStream = new ByteArrayOutputStream();
+        InputStream responseInputStream = new ByteArrayInputStream(responseJson.getBytes(UTF_8))) {
+      when(mockHttpsURLConnection.getResponseCode()).thenReturn(200);
+      when(mockHttpsURLConnection.getInputStream()).thenReturn(responseInputStream);
+      when(mockHttpsURLConnection.getOutputStream()).thenReturn(requestBodyOutputStream);
 
-    testerApiHttpClient.makeUploadRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN, uri);
+      ContentResolver contentResolver =
+          ApplicationProvider.getApplicationContext().getContentResolver();
+      ShadowContentResolver shadowContentResolver = shadowOf(contentResolver);
+      Uri uri = Uri.parse("file:///path/to/data");
+      shadowContentResolver.registerInputStream(uri, postBodyInputStream);
 
-    assertThat(new String(requestBodyOutputStream.toByteArray(), UTF_8))
-        .isEqualTo("Test post body");
-    verify(mockHttpsURLConnection).setDoOutput(true);
-    verify(mockHttpsURLConnection).setRequestMethod("POST");
-    verify(mockHttpsURLConnection).addRequestProperty("Content-Type", "application/json");
-    verify(mockHttpsURLConnection).addRequestProperty("X-Goog-Upload-Protocol", "raw");
-    verify(mockHttpsURLConnection).addRequestProperty("X-Goog-Upload-File-Name", "screenshot.png");
-    verify(mockHttpsURLConnection).disconnect();
+      testerApiHttpClient.makeUploadRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN, uri);
+
+      assertThat(new String(requestBodyOutputStream.toByteArray(), UTF_8))
+          .isEqualTo("Test post body");
+      verify(mockHttpsURLConnection).setDoOutput(true);
+      verify(mockHttpsURLConnection).setRequestMethod("POST");
+      verify(mockHttpsURLConnection).addRequestProperty("Content-Type", "application/json");
+      verify(mockHttpsURLConnection).addRequestProperty("X-Goog-Upload-Protocol", "raw");
+      verify(mockHttpsURLConnection)
+          .addRequestProperty("X-Goog-Upload-File-Name", "screenshot.png");
+      verify(mockHttpsURLConnection).disconnect();
+    }
   }
 }

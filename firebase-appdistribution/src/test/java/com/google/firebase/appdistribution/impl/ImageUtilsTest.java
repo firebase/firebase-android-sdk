@@ -60,7 +60,7 @@ public class ImageUtilsTest {
 
   @Test
   public void readScaledImage_targetIsLessThanHalf_scalesDown()
-      throws FirebaseAppDistributionException {
+      throws FirebaseAppDistributionException, IOException {
     Bitmap result =
         ImageUtils.readScaledImage(
             contentResolver,
@@ -74,7 +74,7 @@ public class ImageUtilsTest {
 
   @Test
   public void readScaledImage_targetExactlyPowerOfTwoSmaller_scalesDown()
-      throws FirebaseAppDistributionException {
+      throws FirebaseAppDistributionException, IOException {
     Bitmap result =
         ImageUtils.readScaledImage(
             contentResolver,
@@ -88,7 +88,7 @@ public class ImageUtilsTest {
 
   @Test
   public void readScaledImage_targetWidthIsSmaller_scalesDownToFitHeight()
-      throws FirebaseAppDistributionException {
+      throws FirebaseAppDistributionException, IOException {
     Bitmap result =
         ImageUtils.readScaledImage(
             contentResolver,
@@ -102,7 +102,7 @@ public class ImageUtilsTest {
 
   @Test
   public void readScaledImage_targetHeightIsSmaller_scalesDownToFitWidth()
-      throws FirebaseAppDistributionException {
+      throws FirebaseAppDistributionException, IOException {
     Bitmap result =
         ImageUtils.readScaledImage(
             contentResolver,
@@ -116,7 +116,7 @@ public class ImageUtilsTest {
 
   @Test
   public void readScaledImage_targetIsGreaterThanHalf_returnsOriginal()
-      throws FirebaseAppDistributionException {
+      throws FirebaseAppDistributionException, IOException {
     Bitmap result =
         ImageUtils.readScaledImage(
             contentResolver,
@@ -130,7 +130,7 @@ public class ImageUtilsTest {
 
   @Test
   public void readScaledImage_targetIsGreater_returnsOriginal()
-      throws FirebaseAppDistributionException {
+      throws FirebaseAppDistributionException, IOException {
     Bitmap result =
         ImageUtils.readScaledImage(
             contentResolver,
@@ -150,7 +150,7 @@ public class ImageUtilsTest {
   }
 
   @Test
-  public void readScaledImage_doesntExist_returnsNull() {
+  public void readScaledImage_doesntExist_returnsNull() throws IOException {
     Bitmap result =
         ImageUtils.readScaledImage(
             contentResolver,

@@ -41,7 +41,9 @@ class MainActivity : AppCompatActivity() {
     lateinit var signInStatus: TextView
     lateinit var progressPercent: TextView
     lateinit var progressBar: ProgressBar
-    private lateinit var feedbackTriggers: FeedbackTriggers
+
+    private lateinit var screenshotTriggerThread: HandlerThread
+    private lateinit var screenshotTrigger: ScreenshotDetectionFeedbackTrigger
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,20 +65,29 @@ class MainActivity : AppCompatActivity() {
         progressPercent = findViewById<TextView>(R.id.progress_percentage)
         progressBar = findViewById<ProgressBar>(R.id.progress_bar)
 
+        screenshotTriggerThread = HandlerThread("AppDistroFeedbackTrigger")
+        screenshotTriggerThread.start()
+        screenshotTrigger =
+            ScreenshotDetectionFeedbackTrigger(
+                this,
+                "Here's some terms and conditions",
+                Handler(screenshotTriggerThread.looper)
+            )
+    }
 
-        val thread = HandlerThread("AppDistroFeedbackTrigger")
-        thread.start()
-        feedbackTriggers = FeedbackTriggers(this, "Here's some terms and conditions", Handler(thread.looper))
+    override fun onDestroy() {
+        super.onDestroy()
+        screenshotTriggerThread.quitSafely()
     }
 
     override fun onPause() {
         super.onPause()
-        feedbackTriggers.unRegisterScreenshotObserver()
+        screenshotTrigger.unRegisterScreenshotObserver()
     }
 
     override fun onResume() {
         super.onResume()
-        feedbackTriggers.registerScreenshotObserver()
+        screenshotTrigger.registerScreenshotObserver()
 
         findViewById<TextView>(R.id.app_name).text =
             "Sample App v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"

@@ -56,7 +56,8 @@ public class ImageUtils {
    */
   @Nullable
   public static Bitmap readScaledImage(
-      ContentResolver contentResolver, Uri uri, int targetWidth, int targetHeight) {
+      ContentResolver contentResolver, Uri uri, int targetWidth, int targetHeight)
+      throws IOException {
     if (targetWidth <= 0 || targetHeight <= 0) {
       throw new IllegalArgumentException(
           String.format(
@@ -67,12 +68,8 @@ public class ImageUtils {
     ImageSize imageSize;
     try (InputStream inputStream = contentResolver.openInputStream(uri)) {
       imageSize = ImageSize.read(inputStream);
-      LogWrapper.getInstance().d("Read screenshot image size: " + imageSize);
-    } catch (IOException e) {
-      LogWrapper.getInstance()
-          .e(TAG, String.format("Could not read image size from URI %s", uri), e);
-      return null;
     }
+    LogWrapper.getInstance().d("Read screenshot image size: " + imageSize);
 
     // Read the actual image, scaled using the actual and target dimensions
     final BitmapFactory.Options options = new BitmapFactory.Options();
@@ -81,9 +78,6 @@ public class ImageUtils {
     // Get a fresh input stream because we've exhausted the last one
     try (InputStream inputStream = contentResolver.openInputStream(uri)) {
       return BitmapFactory.decodeStream(inputStream, /* outPadding= */ null, options);
-    } catch (IOException e) {
-      LogWrapper.getInstance().e(TAG, String.format("Could not read image from URI %s", uri), e);
-      return null;
     }
   }
 

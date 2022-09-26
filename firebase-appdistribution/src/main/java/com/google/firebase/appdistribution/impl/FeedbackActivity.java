@@ -26,6 +26,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import java.io.IOException;
 
 /** Activity for tester to compose and submit feedback. */
 public class FeedbackActivity extends AppCompatActivity {
@@ -67,7 +68,7 @@ public class FeedbackActivity extends AppCompatActivity {
     Button submitButton = this.findViewById(R.id.submitButton);
     submitButton.setOnClickListener(this::submitFeedback);
 
-    Bitmap thumbnail = readThumbnail();
+    Bitmap thumbnail = screenshotUri == null ? null : readThumbnail();
     if (thumbnail != null) {
       ImageView screenshotImageView = this.findViewById(R.id.thumbnail);
       screenshotImageView.setImageBitmap(thumbnail);
@@ -80,11 +81,20 @@ public class FeedbackActivity extends AppCompatActivity {
 
   @Nullable
   private Bitmap readThumbnail() {
-    if (screenshotUri == null) {
+    Bitmap thumbnail;
+    try {
+      thumbnail =
+          ImageUtils.readScaledImage(
+              getContentResolver(), screenshotUri, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+    } catch (IOException e) {
+      LogWrapper.getInstance()
+          .e(TAG, "Could not read screenshot image from URI: " + screenshotUri, e);
       return null;
     }
-    return ImageUtils.readScaledImage(
-        getContentResolver(), screenshotUri, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+    if (thumbnail == null) {
+      LogWrapper.getInstance().e(TAG, "Could not decode screenshot image: " + screenshotUri);
+    }
+    return thumbnail;
   }
 
   public void submitFeedback(View view) {

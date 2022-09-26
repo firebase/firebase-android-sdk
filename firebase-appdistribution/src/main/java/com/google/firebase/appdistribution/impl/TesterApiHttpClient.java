@@ -131,9 +131,13 @@ class TesterApiHttpClient {
     extraHeaders.put(X_GOOG_UPLOAD_FILE_NAME_HEADER, X_GOOG_UPLOAD_FILE_NAME);
     RequestBodyWriter requestBodyWriter =
         outputStream -> {
-          InputStream inputStream =
-              firebaseApp.getApplicationContext().getContentResolver().openInputStream(contentUri);
-          writeInputStreamToOutputStream(inputStream, outputStream);
+          try (InputStream inputStream =
+              firebaseApp
+                  .getApplicationContext()
+                  .getContentResolver()
+                  .openInputStream(contentUri)) {
+            writeInputStreamToOutputStream(inputStream, outputStream);
+          }
         };
     return makePostRequest(tag, path, token, extraHeaders, requestBodyWriter);
   }
@@ -154,13 +158,10 @@ class TesterApiHttpClient {
       for (Map.Entry<String, String> e : extraHeaders.entrySet()) {
         connection.addRequestProperty(e.getKey(), e.getValue());
       }
-      OutputStream outputStream = connection.getOutputStream();
-      try {
+      try (OutputStream outputStream = connection.getOutputStream()) {
         requestBodyWriter.write(outputStream);
       } catch (IOException e) {
         throw getException(tag, "Error writing network request body", Status.UNKNOWN, e);
-      } finally {
-        outputStream.close();
       }
       return readResponse(tag, connection);
     } catch (IOException e) {
