@@ -70,7 +70,7 @@ class MainActivity : AppCompatActivity() {
         screenshotTrigger =
             ScreenshotDetectionFeedbackTrigger(
                 this,
-                "Here's some terms and conditions",
+                R.string.terms_and_conditions,
                 Handler(screenshotTriggerThread.looper)
             )
     }

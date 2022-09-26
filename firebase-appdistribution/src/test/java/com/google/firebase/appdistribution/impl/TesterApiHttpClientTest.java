@@ -252,7 +252,6 @@ public class TesterApiHttpClientTest {
   public void makeUploadRequest_writesRequestBodyAndSetsCorrectHeaders() throws Exception {
     String responseJson = readTestFile("testSimpleResponse.json");
 
-    // Setup test streams. They should be closed but close them anyway just to be safe.
     try (InputStream postBodyInputStream =
             new ByteArrayInputStream("Test post body".getBytes(UTF_8));
         ByteArrayOutputStream requestBodyOutputStream = new ByteArrayOutputStream();
