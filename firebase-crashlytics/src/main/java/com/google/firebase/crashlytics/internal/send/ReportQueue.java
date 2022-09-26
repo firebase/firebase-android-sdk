@@ -125,7 +125,7 @@ final class ReportQueue {
     CountDownLatch latch = new CountDownLatch(1);
     new Thread(
             () -> {
-              ForcedSender.sendBlockingWithPriority(transport, Priority.HIGHEST);
+              ForcedSender.sendBlocking(transport, Priority.HIGHEST);
               latch.countDown();
             })
         .start();

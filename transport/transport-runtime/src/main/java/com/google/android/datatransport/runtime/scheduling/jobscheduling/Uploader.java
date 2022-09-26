@@ -111,7 +111,7 @@ public class Uploader {
         });
   }
 
-  BackendResponse logAndUpdateState(TransportContext transportContext, int attemptNumber) {
+  public BackendResponse logAndUpdateState(TransportContext transportContext, int attemptNumber) {
     TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
     long maxNextRequestWaitMillis = 0;
 
