@@ -266,15 +266,15 @@ public class TestDownloadHelper {
     List<FileDownloadTask> globalDownloadTasks = reference.getActiveDownloadTasks();
     Preconditions.checkState(
         globalDownloadTasks.size() == expectedTasks,
-        "Expected active download task to contain %s item(s), but contained %s item(s)",
+        "Expected active download task to contain %d item(s), but contained %d item(s)",
         globalDownloadTasks.size(),
         expectedTasks);
     List<FileDownloadTask> downloadTasksAtParent =
         StorageTaskManager.getInstance().getDownloadTasksUnder(reference.getParent());
     Preconditions.checkState(
         downloadTasksAtParent.size() == expectedTasks,
-        "Expected active download task at location %s to contain %s item(s), "
-            + "but contained %s item(s)",
+        "Expected active download task at location %s to contain %d item(s), "
+            + "but contained %d item(s)",
         reference.getParent(),
         downloadTasksAtParent.size(),
         expectedTasks);
