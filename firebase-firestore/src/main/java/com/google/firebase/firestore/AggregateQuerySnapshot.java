@@ -56,7 +56,7 @@ public class AggregateQuerySnapshot {
    *
    * <ol>
    *   <li>{@code object} is a non-null instance of {@link AggregateQuerySnapshot}.
-   *   <li>{@code object} has the same {@link AggregateQuery} as this object.
+   *   <li>The {@link AggregateQuery} of {@code object} compares equal to that of this object.
    *   <li>{@code object} has the same results as this object.
    * </ol>
    *

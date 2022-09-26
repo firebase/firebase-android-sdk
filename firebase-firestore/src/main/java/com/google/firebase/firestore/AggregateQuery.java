@@ -78,7 +78,7 @@ public class AggregateQuery {
    * <ol>
    *   <li>{@code object} is a non-null instance of {@link AggregateQuery}.
    *   <li>{@code object} performs the same aggregations as this {@link AggregateQuery}.
-   *   <li>{@code object} has the same underlying {@link Query} as this {@link AggregateQuery}.
+   *   <li>The underlying {@link Query} of {@code object} compares equal to that of this object.
    * </ol>
    *
    * @param object The object to compare to this object for equality.
