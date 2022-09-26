@@ -1227,8 +1227,7 @@ public class Query {
    * Returns a query that counts the documents in the result set of this query.
    *
    * <p>The returned query, when executed, counts the documents in the result set of this query
-   * <em>without actually downloading the documents</em>. The count is performed on the server and
-   * only the resulting count is downloaded.
+   * <em>without actually downloading the documents</em>.
    *
    * <p>Using the returned query to count the documents is efficient because only the final count,
    * not the documents' data, is downloaded. The returned query can even count the documents if the
