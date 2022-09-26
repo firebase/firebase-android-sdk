@@ -147,7 +147,7 @@ operator fun ListResult.component3(): String? = pageToken
  * Starts listening to this task's progress and emits its values via a [Flow].
  *
  * - When the returned flow starts being collected, it attaches the following listeners:
- * [OnProgressListener], [OnPausedListener].
+ * [OnProgressListener], [OnPausedListener], [OnCompleteListener].
  * - When the flow completes the listeners will be removed.
  */
 val <T : StorageTask<T>.SnapshotBase> StorageTask<T>.taskState: Flow<TaskState<T>>
