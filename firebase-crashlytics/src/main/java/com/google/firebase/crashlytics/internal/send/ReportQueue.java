@@ -14,13 +14,16 @@
 
 package com.google.firebase.crashlytics.internal.send;
 
+import android.annotation.SuppressLint;
 import com.google.android.datatransport.Event;
+import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.Transport;
-import com.google.android.datatransport.runtime.TransportRuntime;
+import com.google.android.datatransport.runtime.ForcedSender;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.common.OnDemandCounter;
+import com.google.firebase.crashlytics.internal.common.Utils;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import java.util.Locale;
@@ -117,22 +120,16 @@ final class ReportQueue {
     }
   }
 
+  @SuppressLint("DiscouragedApi") // best effort only
   public void flushScheduledReportsIfAble() {
     CountDownLatch latch = new CountDownLatch(1);
     new Thread(
             () -> {
-              TransportRuntime.getInstance()
-                  .getUploader()
-                  .upload(DataTransportCrashlyticsReportSender.transportContext, 1, () -> {});
+              ForcedSender.sendBlockingWithPriority(transport, Priority.HIGHEST);
               latch.countDown();
             })
         .start();
-    try {
-      //noinspection ResultOfMethodCallIgnored best effort only
-      latch.await(2, TimeUnit.SECONDS);
-    } catch (InterruptedException unused) {
-
-    }
+    Utils.awaitUninterruptibly(latch, 2, TimeUnit.SECONDS);
   }
 
   /** Send the report to Crashlytics through Google DataTransport. */

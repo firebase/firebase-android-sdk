@@ -101,7 +101,7 @@ thirdPartyLicenses {
 
 dependencies {
     implementation project(':transport:transport-api')
-    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'androidx.annotation:annotation:1.3.0'
     implementation 'javax.inject:javax.inject:1'
     implementation project(":encoders:firebase-encoders")
     implementation project(":encoders:firebase-encoders-proto")

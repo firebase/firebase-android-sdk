@@ -17,12 +17,9 @@ package com.google.firebase.crashlytics.internal.send;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import com.google.android.datatransport.Encoding;
-import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.cct.CCTDestination;
-import com.google.android.datatransport.runtime.Destination;
-import com.google.android.datatransport.runtime.TransportContext;
 import com.google.android.datatransport.runtime.TransportRuntime;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
@@ -49,22 +46,14 @@ public class DataTransportCrashlyticsReportSender {
       (r) -> TRANSFORM.reportToJson(r).getBytes(Charset.forName("UTF-8"));
 
   private final ReportQueue reportQueue;
-
-  private static final Destination destination =
-      new CCTDestination(CRASHLYTICS_ENDPOINT, CRASHLYTICS_API_KEY);
-  static final TransportContext transportContext =
-      TransportContext.builder()
-          .setBackendName(destination.getName())
-          .setExtras(destination.getExtras())
-          .setPriority(Priority.HIGHEST)
-          .build();
+  private final Transformer<CrashlyticsReport, byte[]> transportTransform;
 
   public static DataTransportCrashlyticsReportSender create(
       Context context, SettingsProvider settingsProvider, OnDemandCounter onDemandCounter) {
     TransportRuntime.initialize(context);
     final Transport<CrashlyticsReport> transport =
         TransportRuntime.getInstance()
-            .newFactory(destination)
+            .newFactory(new CCTDestination(CRASHLYTICS_ENDPOINT, CRASHLYTICS_API_KEY))
             .getTransport(
                 CRASHLYTICS_TRANSPORT_NAME,
                 CrashlyticsReport.class,
@@ -72,11 +61,13 @@ public class DataTransportCrashlyticsReportSender {
                 DEFAULT_TRANSFORM);
     ReportQueue reportQueue =
         new ReportQueue(transport, settingsProvider.getSettingsSync(), onDemandCounter);
-    return new DataTransportCrashlyticsReportSender(reportQueue);
+    return new DataTransportCrashlyticsReportSender(reportQueue, DEFAULT_TRANSFORM);
   }
 
-  DataTransportCrashlyticsReportSender(ReportQueue reportQueue) {
+  DataTransportCrashlyticsReportSender(
+      ReportQueue reportQueue, Transformer<CrashlyticsReport, byte[]> transportTransform) {
     this.reportQueue = reportQueue;
+    this.transportTransform = transportTransform;
   }
 
   @NonNull
