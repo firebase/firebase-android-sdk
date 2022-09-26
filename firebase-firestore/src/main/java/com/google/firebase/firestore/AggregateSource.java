@@ -14,13 +14,23 @@
 
 package com.google.firebase.firestore;
 
-/** Configures the behavior of {@link AggregateQuery#get}. */
+/**
+ * The sources from which an {@link AggregateQuery} can retrieve its results.
+ *
+ * @see AggregateQuery#get
+ */
 public enum AggregateSource {
   /**
-   * Reach to the Firestore backend and surface the result verbatim, that is no local documents or
-   * mutations in the SDK cache will be included in the surfaced result.
+   * Perform the aggregation on the server and download the result.
    *
-   * <p>Requires client to be online.
+   * <p>The result received from the server is presented, unaltered, without considering any local
+   * state. That is, documents in the local cache are not taken into consideration, neither are
+   * local modifications not yet synchronized with the server. Previously-downloaded results, if
+   * any, are not used: every request using this source necessarily involves a round trip to the
+   * server.
+   *
+   * <p>The {@link AggregateQuery} will fail if the server cannot be reached, such as if the client
+   * is offline.
    */
   SERVER,
 }
