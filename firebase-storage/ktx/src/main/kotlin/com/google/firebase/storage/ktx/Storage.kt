@@ -15,6 +15,7 @@
 package com.google.firebase.storage.ktx
 
 import androidx.annotation.Keep
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
@@ -31,6 +32,7 @@ import com.google.firebase.storage.StorageTask
 import com.google.firebase.storage.StorageTaskScheduler
 import com.google.firebase.storage.StreamDownloadTask
 import com.google.firebase.storage.UploadTask
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
@@ -161,12 +163,24 @@ val <T : StorageTask<T>.SnapshotBase> StorageTask<T>.taskState: Flow<TaskState<T
             }
         }
 
+        // Only used to close or cancel the Flows, doesn't send any values
+        val completionListener = OnCompleteListener<T> { task ->
+            if (task.isSuccessful) {
+                close()
+            } else {
+                val exception = task.exception
+                cancel("Error getting the TaskState", exception)
+            }
+        }
+
         addOnProgressListener(progressListener)
         addOnPausedListener(pauseListener)
+        addOnCompleteListener(completionListener)
 
         awaitClose {
             removeOnProgressListener(progressListener)
             removeOnPausedListener(pauseListener)
+            removeOnCompleteListener(completionListener)
         }
     }
 
