@@ -293,6 +293,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
       return;
     }
     String uploadURL = startRequest.getResultString(X_GOOG_UPLOAD_URL);
+    Log.d(TAG, "Upload URL: " + uploadURL);
     if (!TextUtils.isEmpty(uploadURL)) {
       mUploadUri = Uri.parse(uploadURL);
     }
@@ -519,6 +520,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
         Util.getCurrentAuthToken(mAuthProvider),
         Util.getCurrentAppCheckToken(mAppCheckProvider),
         mStorageRef.getApp().getApplicationContext());
+    Log.d(TAG, "Response Code: " + request.getResultCode());
     return processResultValid(request);
   }
 
