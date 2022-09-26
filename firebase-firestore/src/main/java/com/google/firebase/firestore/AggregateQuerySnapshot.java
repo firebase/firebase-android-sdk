@@ -43,7 +43,7 @@ public class AggregateQuerySnapshot {
     return query;
   }
 
-  /** Returns the number of documents in the result set of the query. */
+  /** Returns the number of documents in the result set of the underlying query. */
   public long getCount() {
     return count;
   }
