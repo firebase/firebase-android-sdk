@@ -49,7 +49,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutionException;
 
 /**
  * RemoteStore handles all interaction with the backend through a simple, clean interface. This
@@ -286,13 +285,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   private void disableNetworkInternal(boolean resetChannel) {
     if (resetChannel) {
-      try {
-        Tasks.await(watchStream.resetChannel());
-      } catch (ExecutionException e) {
-        e.printStackTrace();
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
+      watchStream.resetChannel();
     }
 
     watchStream.stop();

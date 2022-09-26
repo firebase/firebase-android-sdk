@@ -73,12 +73,15 @@ public class FirestoreChannel {
   private final CredentialsProvider<String> appCheckProvider;
 
   /** Manages the gRPC channel and provides all gRPC ClientCalls. */
-  private final GrpcCallProvider callProvider;
+  private GrpcCallProvider callProvider;
 
   /** The value to use as resource prefix header. */
   private final String resourcePrefixValue;
 
   private final GrpcMetadataProvider metadataProvider;
+
+  private final Context context;
+  private final DatabaseInfo databaseInfo;
 
   FirestoreChannel(
       AsyncQueue asyncQueue,
@@ -91,6 +94,9 @@ public class FirestoreChannel {
     this.metadataProvider = metadataProvider;
     this.authProvider = authProvider;
     this.appCheckProvider = appCheckProvider;
+
+    this.context = context;
+    this.databaseInfo = databaseInfo;
 
     FirestoreCallCredentials firestoreHeaders =
         new FirestoreCallCredentials(authProvider, appCheckProvider);
@@ -109,8 +115,13 @@ public class FirestoreChannel {
     callProvider.shutdown();
   }
 
-  public Task<Void> resetChannel() {
-    return callProvider.resetChannel();
+  public void resetChannel() {
+    callProvider.shutdown();
+    callProvider = null;
+
+    FirestoreCallCredentials firestoreHeaders =
+        new FirestoreCallCredentials(authProvider, appCheckProvider);
+    callProvider = new GrpcCallProvider(asyncQueue, context, databaseInfo, firestoreHeaders);
   }
 
   /**

@@ -237,19 +237,6 @@ public class CountTest {
   }
 
   @Test
-  public void testCanRunCountOnNonExistentCollection() {
-    CollectionReference collection = testFirestore().collection("random-coll");
-
-    AggregateQuerySnapshot snapshot =
-        waitFor(collection.count().get(AggregateSource.SERVER_DIRECT));
-    assertEquals(Long.valueOf(0), snapshot.getCount());
-
-    snapshot =
-        waitFor(collection.whereEqualTo("k", 100).count().get(AggregateSource.SERVER_DIRECT));
-    assertEquals(Long.valueOf(0), snapshot.getCount());
-  }
-
-  @Test
   public void testFailWithoutNetwork() {
     CollectionReference collection =
         testCollectionWithDocs(

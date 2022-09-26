@@ -19,7 +19,6 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.remote.Stream.StreamCallback;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.DelayedTask;
@@ -385,8 +384,8 @@ abstract class AbstractStream<ReqT, RespT, CallbackT extends StreamCallback>
     backoff.reset();
   }
 
-  public Task<Void> resetChannel() {
-    return firestoreChannel.resetChannel();
+  public void resetChannel() {
+    firestoreChannel.resetChannel();
   }
 
   protected void writeRequest(ReqT message) {
