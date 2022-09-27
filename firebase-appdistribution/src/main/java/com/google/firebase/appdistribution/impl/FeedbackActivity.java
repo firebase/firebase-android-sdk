@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution.impl;
 
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.method.LinkMovementMethod;
 import android.view.View;
@@ -25,7 +26,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import java.io.File;
+import java.io.IOException;
 
 /** Activity for tester to compose and submit feedback. */
 public class FeedbackActivity extends AppCompatActivity {
@@ -38,21 +39,21 @@ public class FeedbackActivity extends AppCompatActivity {
       "com.google.firebase.appdistribution.FeedbackActivity.RELEASE_NAME";
   public static final String INFO_TEXT_EXTRA_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.INFO_TEXT";
-  public static final String SCREENSHOT_FILENAME_EXTRA_KEY =
-      "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT_FILE_NAME";
+  public static final String SCREENSHOT_URI_EXTRA_KEY =
+      "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT_URI";
 
   private FeedbackSender feedbackSender;
   private String releaseName;
   private CharSequence infoText;
-  @Nullable private File screenshotFile;
+  @Nullable private Uri screenshotUri;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     releaseName = getIntent().getStringExtra(RELEASE_NAME_EXTRA_KEY);
     infoText = getIntent().getCharSequenceExtra(INFO_TEXT_EXTRA_KEY);
-    if (getIntent().hasExtra(SCREENSHOT_FILENAME_EXTRA_KEY)) {
-      screenshotFile = getFileStreamPath(getIntent().getStringExtra(SCREENSHOT_FILENAME_EXTRA_KEY));
+    if (getIntent().hasExtra(SCREENSHOT_URI_EXTRA_KEY)) {
+      screenshotUri = Uri.parse(getIntent().getStringExtra(SCREENSHOT_URI_EXTRA_KEY));
     }
     feedbackSender = FeedbackSender.getInstance();
     setupView();
@@ -67,11 +68,12 @@ public class FeedbackActivity extends AppCompatActivity {
     Button submitButton = this.findViewById(R.id.submitButton);
     submitButton.setOnClickListener(this::submitFeedback);
 
-    Bitmap thumbnail = readThumbnail();
+    Bitmap thumbnail = screenshotUri == null ? null : readThumbnail();
     if (thumbnail != null) {
       ImageView screenshotImageView = this.findViewById(R.id.thumbnail);
       screenshotImageView.setImageBitmap(thumbnail);
     } else {
+      LogWrapper.getInstance().e(TAG, "No screenshot available");
       View screenshotErrorLabel = this.findViewById(R.id.screenshotErrorLabel);
       screenshotErrorLabel.setVisibility(View.VISIBLE);
     }
@@ -79,17 +81,27 @@ public class FeedbackActivity extends AppCompatActivity {
 
   @Nullable
   private Bitmap readThumbnail() {
-    if (screenshotFile == null) {
+    Bitmap thumbnail;
+    try {
+      thumbnail =
+          ImageUtils.readScaledImage(
+              getContentResolver(), screenshotUri, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+    } catch (IOException e) {
+      LogWrapper.getInstance()
+          .e(TAG, "Could not read screenshot image from URI: " + screenshotUri, e);
       return null;
     }
-    return ImageUtils.readScaledImage(screenshotFile, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+    if (thumbnail == null) {
+      LogWrapper.getInstance().e(TAG, "Could not decode screenshot image: " + screenshotUri);
+    }
+    return thumbnail;
   }
 
   public void submitFeedback(View view) {
     setSubmittingStateEnabled(true);
     EditText feedbackText = findViewById(R.id.feedbackText);
     feedbackSender
-        .sendFeedback(releaseName, feedbackText.getText().toString(), screenshotFile)
+        .sendFeedback(releaseName, feedbackText.getText().toString(), screenshotUri)
         .addOnSuccessListener(
             unused -> {
               LogWrapper.getInstance().i(TAG, "Feedback submitted");
