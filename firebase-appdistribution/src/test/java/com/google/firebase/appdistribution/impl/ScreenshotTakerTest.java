@@ -23,11 +23,13 @@ import static org.robolectric.Shadows.shadowOf;
 
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
+import android.net.Uri;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import java.io.File;
 import java.util.concurrent.Executor;
 import org.junit.After;
 import org.junit.Before;
@@ -80,16 +82,14 @@ public class ScreenshotTakerTest {
   @Test
   public void takeAndDeleteScreenshot_success() throws Exception {
     // Take a screenshot
-    Task<String> task = screenshotTaker.takeScreenshot();
+    Task<Uri> task = screenshotTaker.takeScreenshot();
     shadowOf(getMainLooper()).idle();
-    String screenshotFilename = TestUtils.awaitTask(task);
+    Uri screenshotUri = TestUtils.awaitTask(task);
 
-    assertThat(screenshotFilename).isEqualTo(SCREENSHOT_FILE_NAME);
-    assertThat(
-            ApplicationProvider.getApplicationContext()
-                .getFileStreamPath(SCREENSHOT_FILE_NAME)
-                .length())
-        .isGreaterThan(0);
+    File expectedFile =
+        ApplicationProvider.getApplicationContext().getFileStreamPath(SCREENSHOT_FILE_NAME);
+    assertThat(screenshotUri).isEqualTo(Uri.fromFile(expectedFile));
+    assertThat(expectedFile.length()).isGreaterThan(0);
 
     // Delete the screenshot
     Task<Void> deleteScreenshot = screenshotTaker.deleteScreenshot();

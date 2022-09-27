@@ -20,7 +20,7 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.INFO_TEXT_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_EXTRA_KEY;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_FILENAME_EXTRA_KEY;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_URI_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskResult;
 
@@ -29,6 +29,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -317,37 +318,53 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     startFeedback(firebaseApp.getApplicationContext().getText(infoTextResourceId));
   }
 
-  @VisibleForTesting
+  @Override
   public void startFeedback(@NonNull CharSequence infoText) {
     screenshotTaker
         .takeScreenshot()
+        .addOnFailureListener(
+            taskExecutor,
+            e -> {
+              LogWrapper.getInstance().w("Failed to take screenshot for feedback", e);
+              startFeedback(infoText, null);
+            })
+        .addOnSuccessListener(
+            taskExecutor, screenshotUri -> startFeedback(infoText, screenshotUri));
+  }
+
+  @Override
+  public void startFeedback(@NonNull int infoTextResourceId, @Nullable Uri screenshotUri) {
+    startFeedback(firebaseApp.getApplicationContext().getText(infoTextResourceId), screenshotUri);
+  }
+
+  @Override
+  public void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri) {
+    testerSignInManager
+        .signInTester()
+        .addOnFailureListener(
+            taskExecutor,
+            e ->
+                LogWrapper.getInstance()
+                    .e("Failed to sign in tester. Could not collect feedback.", e))
+        .onSuccessTask(taskExecutor, unused -> releaseIdentifier.identifyRelease())
         .onSuccessTask(
             taskExecutor,
-            screenshotFilename ->
-                testerSignInManager
-                    .signInTester()
-                    .addOnFailureListener(
-                        taskExecutor,
-                        e ->
-                            LogWrapper.getInstance()
-                                .e("Failed to sign in tester. Could not collect feedback.", e))
-                    .onSuccessTask(taskExecutor, unused -> releaseIdentifier.identifyRelease())
-                    .onSuccessTask(
-                        taskExecutor,
-                        releaseName ->
-                            launchFeedbackActivity(releaseName, infoText, screenshotFilename)))
+            releaseName -> launchFeedbackActivity(releaseName, infoText, screenshotUri))
         .addOnFailureListener(
             taskExecutor, e -> LogWrapper.getInstance().e("Failed to launch feedback flow", e));
   }
 
   private Task<Void> launchFeedbackActivity(
-      String releaseName, CharSequence infoText, String screenshotFilename) {
+      String releaseName, CharSequence infoText, @Nullable Uri screenshotUri) {
     return lifecycleNotifier.consumeForegroundActivity(
         activity -> {
+          LogWrapper.getInstance().i("Launching feedback activity");
           Intent intent = new Intent(activity, FeedbackActivity.class);
           intent.putExtra(RELEASE_NAME_EXTRA_KEY, releaseName);
           intent.putExtra(INFO_TEXT_EXTRA_KEY, infoText);
-          intent.putExtra(SCREENSHOT_FILENAME_EXTRA_KEY, screenshotFilename);
+          if (screenshotUri != null) {
+            intent.putExtra(SCREENSHOT_URI_EXTRA_KEY, screenshotUri.toString());
+          }
           activity.startActivity(intent);
         });
   }

@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution.impl;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.util.AndroidUtilsLight;
@@ -24,8 +25,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -119,21 +118,26 @@ class TesterApiHttpClient {
   }
 
   /**
-   * Make a raw file upload request to the tester API at the given path using a FIS token for auth.
+   * Make an upload request to the tester API at the given path using a FIS token for auth.
    *
-   * <p>Uploads the file with gzip encoding.
+   * <p>Uploads the content with gzip encoding.
    *
    * @return the response body
    */
-  JSONObject makeUploadRequest(String tag, String path, String token, File file)
+  JSONObject makeUploadRequest(String tag, String path, String token, Uri contentUri)
       throws FirebaseAppDistributionException {
     Map<String, String> extraHeaders = new HashMap<>();
     extraHeaders.put(X_GOOG_UPLOAD_PROTOCOL_HEADER, X_GOOG_UPLOAD_PROTOCOL_RAW);
     extraHeaders.put(X_GOOG_UPLOAD_FILE_NAME_HEADER, X_GOOG_UPLOAD_FILE_NAME);
     RequestBodyWriter requestBodyWriter =
         outputStream -> {
-          FileInputStream inputStream = new FileInputStream(file);
-          writeInputStreamToOutputStream(inputStream, outputStream);
+          try (InputStream inputStream =
+              firebaseApp
+                  .getApplicationContext()
+                  .getContentResolver()
+                  .openInputStream(contentUri)) {
+            writeInputStreamToOutputStream(inputStream, outputStream);
+          }
         };
     return makePostRequest(tag, path, token, extraHeaders, requestBodyWriter);
   }
@@ -154,13 +158,10 @@ class TesterApiHttpClient {
       for (Map.Entry<String, String> e : extraHeaders.entrySet()) {
         connection.addRequestProperty(e.getKey(), e.getValue());
       }
-      OutputStream outputStream = connection.getOutputStream();
-      try {
+      try (OutputStream outputStream = connection.getOutputStream()) {
         requestBodyWriter.write(outputStream);
       } catch (IOException e) {
         throw getException(tag, "Error writing network request body", Status.UNKNOWN, e);
-      } finally {
-        outputStream.close();
       }
       return readResponse(tag, connection);
     } catch (IOException e) {

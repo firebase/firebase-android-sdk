@@ -14,11 +14,11 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import android.net.Uri;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import java.io.File;
 
 /** Sends tester feedback to the Tester API. */
 class FeedbackSender {
@@ -35,17 +35,17 @@ class FeedbackSender {
   }
 
   /** Send feedback text and optionally a screenshot to the Tester API for the given release. */
-  Task<Void> sendFeedback(String releaseName, String feedbackText, @Nullable File screenshotFile) {
+  Task<Void> sendFeedback(String releaseName, String feedbackText, @Nullable Uri screenshotUri) {
     return testerApiClient
         .createFeedback(releaseName, feedbackText)
-        .onSuccessTask(feedbackName -> attachScreenshot(feedbackName, screenshotFile))
+        .onSuccessTask(feedbackName -> attachScreenshot(feedbackName, screenshotUri))
         .onSuccessTask(testerApiClient::commitFeedback);
   }
 
-  private Task<String> attachScreenshot(String feedbackName, @Nullable File screenshotFile) {
-    if (screenshotFile == null) {
+  private Task<String> attachScreenshot(String feedbackName, @Nullable Uri screenshotUri) {
+    if (screenshotUri == null) {
       return Tasks.forResult(feedbackName);
     }
-    return testerApiClient.attachScreenshot(feedbackName, screenshotFile);
+    return testerApiClient.attachScreenshot(feedbackName, screenshotUri);
   }
 }

@@ -29,7 +29,7 @@ import static com.google.firebase.appdistribution.impl.ErrorMessages.RELEASE_NOT
 import static com.google.firebase.appdistribution.impl.ErrorMessages.UPDATE_CANCELED;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.INFO_TEXT_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_EXTRA_KEY;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_FILENAME_EXTRA_KEY;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_URI_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitAsyncOperations;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTask;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTaskFailure;
@@ -54,6 +54,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
+import android.net.Uri;
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.core.content.pm.ApplicationInfoBuilder;
@@ -99,7 +100,7 @@ public class FirebaseAppDistributionServiceImplTest {
   private static final String IAS_ARTIFACT_ID_KEY = "com.android.vending.internal.apk.id";
   private static final String TEST_URL = "https://test-url";
   private static final long INSTALLED_VERSION_CODE = 2;
-  private static final String TEST_SCREENSHOT_FILE_NAME = "screenshot.png";
+  private static final Uri TEST_SCREENSHOT_URI = Uri.parse("file:/path/to/screenshot.png");
 
   private static final AppDistributionReleaseInternal TEST_RELEASE_NEWER_AAB_INTERNAL =
       AppDistributionReleaseInternal.builder()
@@ -202,8 +203,7 @@ public class FirebaseAppDistributionServiceImplTest {
     activity = spy(Robolectric.buildActivity(TestActivity.class).create().get());
     mockForegroundActivity(mockLifecycleNotifier, activity);
 
-    when(mockScreenshotTaker.takeScreenshot())
-        .thenReturn(Tasks.forResult(TEST_SCREENSHOT_FILE_NAME));
+    when(mockScreenshotTaker.takeScreenshot()).thenReturn(Tasks.forResult(TEST_SCREENSHOT_URI));
   }
 
   @Test
@@ -664,8 +664,28 @@ public class FirebaseAppDistributionServiceImplTest {
     verify(mockTesterSignInManager).signInTester();
     assertThat(argument.getValue().getStringExtra(RELEASE_NAME_EXTRA_KEY))
         .isEqualTo("release-name");
-    assertThat(argument.getValue().getStringExtra(SCREENSHOT_FILENAME_EXTRA_KEY))
-        .isEqualTo(TEST_SCREENSHOT_FILE_NAME);
+    assertThat(argument.getValue().getStringExtra(SCREENSHOT_URI_EXTRA_KEY))
+        .isEqualTo(TEST_SCREENSHOT_URI.toString());
+    assertThat(argument.getValue().getStringExtra(INFO_TEXT_EXTRA_KEY))
+        .isEqualTo("Some terms and conditions");
+  }
+
+  @Test
+  public void startFeedback_screenshotFails_startActivityWithNoScreenshot()
+      throws InterruptedException {
+    when(mockScreenshotTaker.takeScreenshot())
+        .thenReturn(
+            Tasks.forException(new FirebaseAppDistributionException("Error", Status.UNKNOWN)));
+    when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
+    firebaseAppDistribution.startFeedback("Some terms and conditions");
+    TestUtils.awaitAsyncOperations(taskExecutor);
+
+    ArgumentCaptor<Intent> argument = ArgumentCaptor.forClass(Intent.class);
+    verify(activity).startActivity(argument.capture());
+    verify(mockTesterSignInManager).signInTester();
+    assertThat(argument.getValue().getStringExtra(RELEASE_NAME_EXTRA_KEY))
+        .isEqualTo("release-name");
+    assertThat(argument.getValue().hasExtra(SCREENSHOT_URI_EXTRA_KEY)).isFalse();
     assertThat(argument.getValue().getStringExtra(INFO_TEXT_EXTRA_KEY))
         .isEqualTo("Some terms and conditions");
   }
