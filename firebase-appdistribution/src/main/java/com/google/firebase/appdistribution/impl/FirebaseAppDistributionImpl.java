@@ -87,7 +87,6 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   private TaskCompletionSource<Void> showSignInDialogTask = null;
   private TaskCompletionSource<Void> showUpdateDialogTask = null;
-
   private AtomicBoolean feedbackInProgress = new AtomicBoolean(false);
 
   @VisibleForTesting
@@ -377,6 +376,11 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
           }
           activity.startActivity(intent);
         });
+  }
+
+  @VisibleForTesting
+  boolean isFeedbackInProgress() {
+    return feedbackInProgress.get();
   }
 
   @VisibleForTesting
