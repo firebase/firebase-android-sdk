@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution.impl;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.net.Uri;
 import android.view.View;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
@@ -57,10 +58,10 @@ class ScreenshotTaker {
   /**
    * Take a screenshot of the running host app and write it to a file.
    *
-   * @return a {@link Task} that will complete with the filename in app-level storage where the
+   * @return a {@link Task} that will complete with the file URI in app-level storage where the
    *     screenshot was written.
    */
-  Task<String> takeScreenshot() {
+  Task<Uri> takeScreenshot() {
     return deleteScreenshot()
         .onSuccessTask(unused -> captureScreenshot())
         .onSuccessTask(this::writeToFile);
@@ -71,7 +72,6 @@ class ScreenshotTaker {
     return TaskUtils.runAsyncInTask(
         taskExecutor,
         () -> {
-          // throw new IllegalStateException("We got this far");
           firebaseApp.getApplicationContext().deleteFile(SCREENSHOT_FILE_NAME);
           return null;
         });
@@ -97,7 +97,7 @@ class ScreenshotTaker {
         });
   }
 
-  private Task<String> writeToFile(Bitmap bitmap) {
+  private Task<Uri> writeToFile(Bitmap bitmap) {
     return TaskUtils.runAsyncInTask(
         taskExecutor,
         () -> {
@@ -108,7 +108,8 @@ class ScreenshotTaker {
             throw new FirebaseAppDistributionException(
                 "Failed to write screenshot to storage", Status.UNKNOWN, e);
           }
-          return SCREENSHOT_FILE_NAME;
+          return Uri.fromFile(
+              firebaseApp.getApplicationContext().getFileStreamPath(SCREENSHOT_FILE_NAME));
         });
   }
 

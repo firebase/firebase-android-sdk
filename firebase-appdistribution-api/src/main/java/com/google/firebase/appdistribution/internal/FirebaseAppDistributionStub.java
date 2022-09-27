@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution.internal;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Continuation;
@@ -60,9 +61,7 @@ public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
   }
 
   @Override
-  public void signOutTester() {
-    return;
-  }
+  public void signOutTester() {}
 
   @NonNull
   @Override
@@ -77,14 +76,16 @@ public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback(int infoTextResourceId) {
-    return;
-  }
+  public void startFeedback(int infoTextResourceId) {}
 
   @Override
-  public void startFeedback(@NonNull CharSequence infoText) {
-    return;
-  }
+  public void startFeedback(@NonNull CharSequence infoText) {}
+
+  @Override
+  public void startFeedback(@NonNull int infoTextResourceId, @Nullable Uri screenshotUri) {}
+
+  @Override
+  public void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri) {}
 
   private static <TResult> Task<TResult> getNotImplementedTask() {
     return Tasks.forException(
