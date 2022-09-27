@@ -14,7 +14,9 @@
 
 package com.google.firebase.appdistribution;
 
+import android.net.Uri;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.FirebaseAppDistributionProxy;
@@ -140,6 +142,42 @@ public interface FirebaseAppDistribution {
    *     Conditions)
    */
   void startFeedback(@NonNull CharSequence infoText);
+
+  /**
+   * Starts an activity to collect and submit feedback from the tester, along with the given
+   * screenshot.
+   *
+   * <p>Performs the following actions:
+   *
+   * <ol>
+   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
+   *   <li>Starts a full screen activity for the tester to compose and submit the feedback
+   * </ol>
+   *
+   * @param infoTextResourceId string resource ID of text to display to the tester before collecting
+   *     feedback data (e.g. Terms and Conditions)
+   * @param screenshot URI to a bitmap containing a screenshot that will be included with the
+   *     report, or null to not include a screenshot
+   */
+  void startFeedback(@NonNull int infoTextResourceId, @Nullable Uri screenshot);
+
+  /**
+   * Starts an activity to collect and submit feedback from the tester, along with the given
+   * screenshot.
+   *
+   * <p>Performs the following actions:
+   *
+   * <ol>
+   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
+   *   <li>Starts a full screen activity for the tester to compose and submit the feedback
+   * </ol>
+   *
+   * @param infoText text to display to the tester before collecting feedback data (e.g. Terms and
+   *     Conditions)
+   * @param screenshot URI to a bitmap containing a screenshot that will be included with the
+   *     report, or null to not include a screenshot
+   */
+  void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri);
 
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */
   @NonNull
