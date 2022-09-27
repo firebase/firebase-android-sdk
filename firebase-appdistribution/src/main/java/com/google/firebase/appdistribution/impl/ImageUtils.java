@@ -53,6 +53,8 @@ public class ImageUtils {
    *
    * @return the image, or null if it could not be decoded
    * @throws IllegalArgumentException if target height or width are less than or equal to zero
+   * @throws SecurityException if the app does not have access to the image
+   * @throws IOException if the image can't be read
    */
   @Nullable
   public static Bitmap readScaledImage(
