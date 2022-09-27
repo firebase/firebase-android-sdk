@@ -92,8 +92,9 @@ tasks above). While we do not currently offer any configuration for the Dackka
 plugin, this could change in the future as needed. Currently, the DackkaPlugin
 provides sensible defaults to output directories, package lists, and so forth.
 
-The DackkaPlugin also provides three extra tasks:
+The DackkaPlugin also provides four extra tasks:
 [cleanDackkaDocumentation][registerCleanDackkaDocumentation],
+[separateJavadocAndKotlinDoc][registerSeparateJavadocAndKotlinDoc]
 [copyJavaDocToCommonDirectory][registerCopyJavaDocToCommonDirectoryTask] and
 [copyKotlinDocToCommonDirectory][registerCopyKotlinDocToCommonDirectoryTask].
 
@@ -101,6 +102,9 @@ _cleanDackkaDocumentation_ is exactly what it sounds like, a task to clean up (d
 the output of Dackka. This is useful when testing Dackka outputs itself- and
 shouldn't be apart of the normal flow. The reasoning is that it would otherwise
 invalidate the gradle cache.
+
+_separateJavadocAndKotlinDoc_ copies the Javadoc and Kotlindoc directories from Dackka into
+their own subdirectories- for easy and consistent differentiation.
 
 _copyJavaDocToCommonDirectory_ copies the JavaDoc variant of the Dackka output for each sdk,
 and pastes it in a common directory under the root project's build directory. This makes it easier
