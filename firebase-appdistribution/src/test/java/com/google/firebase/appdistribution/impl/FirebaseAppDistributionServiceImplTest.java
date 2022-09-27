@@ -31,11 +31,13 @@ import static com.google.firebase.appdistribution.impl.FeedbackActivity.INFO_TEX
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_URI_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -53,6 +55,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.core.content.pm.ApplicationInfoBuilder;
 import androidx.test.core.content.pm.PackageInfoBuilder;
@@ -74,15 +77,19 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Predicate;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
+import org.robolectric.android.controller.ActivityController;
 import org.robolectric.shadows.ShadowAlertDialog;
+import org.robolectric.shadows.ShadowLog;
 import org.robolectric.shadows.ShadowPackageManager;
 
 @RunWith(RobolectricTestRunner.class)
@@ -122,6 +129,7 @@ public class FirebaseAppDistributionServiceImplTest {
           .setDownloadUrl(TEST_URL);
 
   private FirebaseAppDistributionImpl firebaseAppDistribution;
+  private ActivityController<TestActivity> activityController;
   private TestActivity activity;
   private FirebaseApp firebaseApp;
   private ExecutorService taskExecutor = Executors.newSingleThreadExecutor();
@@ -190,9 +198,17 @@ public class FirebaseAppDistributionServiceImplTest {
     packageInfo.setLongVersionCode(INSTALLED_VERSION_CODE);
     shadowPackageManager.installPackage(packageInfo);
 
-    activity = spy(Robolectric.buildActivity(TestActivity.class).create().get());
+    activityController = Robolectric.buildActivity(TestActivity.class).setup();
+    activity = spy(activityController.get());
     TestUtils.mockForegroundActivity(mockLifecycleNotifier, activity);
     when(mockScreenshotTaker.takeScreenshot()).thenReturn(Tasks.forResult(TEST_SCREENSHOT_URI));
+  }
+
+  @After
+  public void tearDown() {
+    if (activityController != null) {
+      activityController.close();
+    }
   }
 
   @Test
@@ -635,18 +651,43 @@ public class FirebaseAppDistributionServiceImplTest {
   @Test
   public void startFeedback_signsInTesterAndStartsActivity() throws InterruptedException {
     when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
+
     firebaseAppDistribution.startFeedback("Some terms and conditions");
     TestUtils.awaitAsyncOperations(taskExecutor);
 
-    ArgumentCaptor<Intent> argument = ArgumentCaptor.forClass(Intent.class);
-    verify(activity).startActivity(argument.capture());
     verify(mockTesterSignInManager).signInTester();
-    assertThat(argument.getValue().getStringExtra(RELEASE_NAME_EXTRA_KEY))
-        .isEqualTo("release-name");
-    assertThat(argument.getValue().getStringExtra(SCREENSHOT_URI_EXTRA_KEY))
+    Intent expectedIntent = new Intent(activity, FeedbackActivity.class);
+    Intent actualIntent = shadowOf(RuntimeEnvironment.getApplication()).getNextStartedActivity();
+    assertEquals(expectedIntent.getComponent(), actualIntent.getComponent());
+    assertThat(actualIntent.getStringExtra(RELEASE_NAME_EXTRA_KEY)).isEqualTo("release-name");
+    assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_EXTRA_KEY))
         .isEqualTo(TEST_SCREENSHOT_URI.toString());
-    assertThat(argument.getValue().getStringExtra(INFO_TEXT_EXTRA_KEY))
+    assertThat(actualIntent.getStringExtra(INFO_TEXT_EXTRA_KEY))
         .isEqualTo("Some terms and conditions");
+    assertThat(firebaseAppDistribution.isFeedbackInProgress()).isTrue();
+  }
+
+  @Test
+  public void startFeedback_calledMultipleTimes_onlyStartsOnce() throws InterruptedException {
+    when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
+
+    firebaseAppDistribution.startFeedback("Some terms and conditions");
+    firebaseAppDistribution.startFeedback("Some other terms and conditions");
+    TestUtils.awaitAsyncOperations(taskExecutor);
+
+    verify(activity, times(1)).startActivity(any());
+  }
+
+  @Test
+  public void startFeedback_closingActivity_setsInProgressToFalse() throws InterruptedException {
+    when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
+
+    firebaseAppDistribution.startFeedback("Some terms and conditions");
+    TestUtils.awaitAsyncOperations(taskExecutor);
+    // Simulate destroying the feedback activity
+    firebaseAppDistribution.onActivityDestroyed(new FeedbackActivity());
+
+    assertThat(firebaseAppDistribution.isFeedbackInProgress()).isFalse();
   }
 
   @Test
@@ -656,16 +697,58 @@ public class FirebaseAppDistributionServiceImplTest {
         .thenReturn(
             Tasks.forException(new FirebaseAppDistributionException("Error", Status.UNKNOWN)));
     when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
+
     firebaseAppDistribution.startFeedback("Some terms and conditions");
     TestUtils.awaitAsyncOperations(taskExecutor);
 
-    ArgumentCaptor<Intent> argument = ArgumentCaptor.forClass(Intent.class);
-    verify(activity).startActivity(argument.capture());
     verify(mockTesterSignInManager).signInTester();
-    assertThat(argument.getValue().getStringExtra(RELEASE_NAME_EXTRA_KEY))
-        .isEqualTo("release-name");
-    assertThat(argument.getValue().hasExtra(SCREENSHOT_URI_EXTRA_KEY)).isFalse();
-    assertThat(argument.getValue().getStringExtra(INFO_TEXT_EXTRA_KEY))
+    Intent expectedIntent = new Intent(activity, FeedbackActivity.class);
+    Intent actualIntent = shadowOf(RuntimeEnvironment.getApplication()).getNextStartedActivity();
+    assertEquals(expectedIntent.getComponent(), actualIntent.getComponent());
+    assertThat(actualIntent.getStringExtra(RELEASE_NAME_EXTRA_KEY)).isEqualTo("release-name");
+    assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_EXTRA_KEY)).isNull();
+    assertThat(actualIntent.getStringExtra(INFO_TEXT_EXTRA_KEY))
         .isEqualTo("Some terms and conditions");
+    assertThat(firebaseAppDistribution.isFeedbackInProgress()).isTrue();
+  }
+
+  @Test
+  public void startFeedback_signInTesterFails_logsAndSetsInProgressToFalse()
+      throws InterruptedException {
+    when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
+    FirebaseAppDistributionException exception =
+        new FirebaseAppDistributionException("Error", Status.UNKNOWN);
+    when(mockTesterSignInManager.signInTester()).thenReturn(Tasks.forException(exception));
+
+    firebaseAppDistribution.startFeedback("Some terms and conditions");
+    TestUtils.awaitAsyncOperations(taskExecutor);
+
+    assertThat(firebaseAppDistribution.isFeedbackInProgress()).isFalse();
+    assertLoggedError("Failed to launch feedback flow", exception);
+  }
+
+  @Test
+  public void startFeedback_cantIdentifyRelease_logsAndSetsInProgressToFalse()
+      throws InterruptedException {
+    FirebaseAppDistributionException exception =
+        new FirebaseAppDistributionException("Error", Status.UNKNOWN);
+    when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forException(exception));
+
+    firebaseAppDistribution.startFeedback("Some terms and conditions");
+    TestUtils.awaitAsyncOperations(taskExecutor);
+
+    assertThat(firebaseAppDistribution.isFeedbackInProgress()).isFalse();
+    assertLoggedError("Failed to launch feedback flow", exception);
+  }
+
+  private static void assertLoggedError(String partialMessage, Throwable e) {
+    Predicate<ShadowLog.LogItem> predicate =
+        log ->
+            log.type == Log.ERROR
+                && log.msg.contains(partialMessage)
+                && (e != null ? log.throwable == e : true);
+    List<ShadowLog.LogItem> matchingLogs =
+        ShadowLog.getLogs().stream().filter(predicate).collect(toList());
+    assertThat(matchingLogs).hasSize(1);
   }
 }
