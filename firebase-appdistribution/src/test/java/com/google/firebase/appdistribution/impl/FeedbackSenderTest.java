@@ -19,12 +19,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.net.Uri;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import java.io.File;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,8 +37,8 @@ public class FeedbackSenderTest {
   private static final String TEST_RELEASE_NAME = "release-name";
   private static final String TEST_FEEDBACK_NAME = "feedback-name";
   private static final String TEST_FEEDBACK_TEXT = "Feedback text";
-  private static final File TEST_SCREENSHOT_FILE =
-      ApplicationProvider.getApplicationContext().getFileStreamPath("test.png");
+  private static final Uri TEST_SCREENSHOT_URI =
+      Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
 
   @Mock private FirebaseAppDistributionTesterApiClient mockTesterApiClient;
 
@@ -54,16 +54,16 @@ public class FeedbackSenderTest {
   public void sendFeedback_success() throws Exception {
     when(mockTesterApiClient.createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT))
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
-    when(mockTesterApiClient.attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_FILE))
+    when(mockTesterApiClient.attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI))
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
     when(mockTesterApiClient.commitFeedback(TEST_FEEDBACK_NAME)).thenReturn(Tasks.forResult(null));
 
     Task<Void> task =
-        feedbackSender.sendFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_FILE);
+        feedbackSender.sendFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI);
     TestUtils.awaitTask(task);
 
     verify(mockTesterApiClient).createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT);
-    verify(mockTesterApiClient).attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_FILE);
+    verify(mockTesterApiClient).attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI);
     verify(mockTesterApiClient).commitFeedback(TEST_FEEDBACK_NAME);
   }
 
@@ -90,7 +90,7 @@ public class FeedbackSenderTest {
         .thenReturn(Tasks.forException(cause));
 
     Task<Void> task =
-        feedbackSender.sendFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_FILE);
+        feedbackSender.sendFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI);
 
     TestUtils.awaitTaskFailure(task, Status.AUTHENTICATION_FAILURE, "test ex");
   }
@@ -101,11 +101,11 @@ public class FeedbackSenderTest {
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
     FirebaseAppDistributionException cause =
         new FirebaseAppDistributionException("test ex", Status.AUTHENTICATION_FAILURE);
-    when(mockTesterApiClient.attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_FILE))
+    when(mockTesterApiClient.attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI))
         .thenReturn(Tasks.forException(cause));
 
     Task<Void> task =
-        feedbackSender.sendFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_FILE);
+        feedbackSender.sendFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI);
 
     TestUtils.awaitTaskFailure(task, Status.AUTHENTICATION_FAILURE, "test ex");
   }
@@ -114,7 +114,7 @@ public class FeedbackSenderTest {
   public void sendFeedback_commitFeedbackFails_failsTask() {
     when(mockTesterApiClient.createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT))
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
-    when(mockTesterApiClient.attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_FILE))
+    when(mockTesterApiClient.attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI))
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
     FirebaseAppDistributionException cause =
         new FirebaseAppDistributionException("test ex", Status.AUTHENTICATION_FAILURE);
@@ -122,7 +122,7 @@ public class FeedbackSenderTest {
         .thenReturn(Tasks.forException(cause));
 
     Task<Void> task =
-        feedbackSender.sendFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_FILE);
+        feedbackSender.sendFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI);
 
     TestUtils.awaitTaskFailure(task, Status.AUTHENTICATION_FAILURE, "test ex");
   }
