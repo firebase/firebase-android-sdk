@@ -86,7 +86,7 @@ public class FeedbackActivity extends AppCompatActivity {
       thumbnail =
           ImageUtils.readScaledImage(
               getContentResolver(), screenshotUri, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
-    } catch (IOException e) {
+    } catch (IOException | SecurityException e) {
       LogWrapper.getInstance()
           .e(TAG, "Could not read screenshot image from URI: " + screenshotUri, e);
       return null;
