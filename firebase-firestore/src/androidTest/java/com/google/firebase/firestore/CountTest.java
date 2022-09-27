@@ -88,9 +88,8 @@ public class CountTest {
                 "b", map("k", "b"),
                 "c", map("k", "c")));
 
-    AggregateQuerySnapshot snapshot =
-        waitFor(collection.count().get(AggregateSource.SERVER_DIRECT));
-    assertEquals(Long.valueOf(3), snapshot.getCount());
+    AggregateQuerySnapshot snapshot = waitFor(collection.count().get(AggregateSource.SERVER));
+    assertEquals(3L, snapshot.getCount());
   }
 
   @Test
@@ -103,8 +102,8 @@ public class CountTest {
                 "c", map("k", "c")));
 
     AggregateQuerySnapshot snapshot =
-        waitFor(collection.whereEqualTo("k", "b").count().get(AggregateSource.SERVER_DIRECT));
-    assertEquals(Long.valueOf(1), snapshot.getCount());
+        waitFor(collection.whereEqualTo("k", "b").count().get(AggregateSource.SERVER));
+    assertEquals(1L, snapshot.getCount());
   }
 
   @Test
@@ -118,9 +117,9 @@ public class CountTest {
                 "d", map("absent", "d")));
 
     AggregateQuerySnapshot snapshot =
-        waitFor(collection.orderBy("k").count().get(AggregateSource.SERVER_DIRECT));
+        waitFor(collection.orderBy("k").count().get(AggregateSource.SERVER));
     // "d" is filtered out because it is ordered by "k".
-    assertEquals(Long.valueOf(3), snapshot.getCount());
+    assertEquals(3L, snapshot.getCount());
   }
 
   @Test
@@ -132,7 +131,7 @@ public class CountTest {
                 "b", map("k", "b"),
                 "c", map("k", "c")));
 
-    collection.orderBy("k").count().get(AggregateSource.SERVER_DIRECT);
+    collection.orderBy("k").count().get(AggregateSource.SERVER);
     waitFor(collection.firestore.terminate());
   }
 
@@ -146,15 +145,15 @@ public class CountTest {
                 "c", map("k", "c")));
 
     AggregateQuerySnapshot snapshot1 =
-        waitFor(collection.whereEqualTo("k", "b").count().get(AggregateSource.SERVER_DIRECT));
+        waitFor(collection.whereEqualTo("k", "b").count().get(AggregateSource.SERVER));
     AggregateQuerySnapshot snapshot1_same =
-        waitFor(collection.whereEqualTo("k", "b").count().get(AggregateSource.SERVER_DIRECT));
+        waitFor(collection.whereEqualTo("k", "b").count().get(AggregateSource.SERVER));
 
     AggregateQuerySnapshot snapshot2 =
-        waitFor(collection.whereEqualTo("k", "a").count().get(AggregateSource.SERVER_DIRECT));
+        waitFor(collection.whereEqualTo("k", "a").count().get(AggregateSource.SERVER));
     waitFor(collection.document("d").set(map("k", "a")));
     AggregateQuerySnapshot snapshot2_different =
-        waitFor(collection.whereEqualTo("k", "a").count().get(AggregateSource.SERVER_DIRECT));
+        waitFor(collection.whereEqualTo("k", "a").count().get(AggregateSource.SERVER));
 
     assertTrue(snapshot1.equals(snapshot1_same));
     assertEquals(snapshot1.hashCode(), snapshot1_same.hashCode());
@@ -196,9 +195,9 @@ public class CountTest {
     waitFor(batch.commit());
 
     AggregateQuerySnapshot snapshot =
-        waitFor(db.collectionGroup(collectionGroup).count().get(AggregateSource.SERVER_DIRECT));
+        waitFor(db.collectionGroup(collectionGroup).count().get(AggregateSource.SERVER));
     assertEquals(
-        Long.valueOf(5), // "cg-doc1", "cg-doc2", "cg-doc3", "cg-doc4", "cg-doc5",
+        5L, // "cg-doc1", "cg-doc2", "cg-doc3", "cg-doc4", "cg-doc5",
         snapshot.getCount());
   }
 
@@ -213,18 +212,13 @@ public class CountTest {
                 "d", map("k", "d")));
 
     AggregateQuerySnapshot snapshot =
-        waitFor(
-            collection.whereEqualTo("k", "a").limit(2).count().get(AggregateSource.SERVER_DIRECT));
-    assertEquals(Long.valueOf(2), snapshot.getCount());
+        waitFor(collection.whereEqualTo("k", "a").limit(2).count().get(AggregateSource.SERVER));
+    assertEquals(2L, snapshot.getCount());
 
     snapshot =
         waitFor(
-            collection
-                .whereEqualTo("k", "a")
-                .limitToLast(2)
-                .count()
-                .get(AggregateSource.SERVER_DIRECT));
-    assertEquals(Long.valueOf(2), snapshot.getCount());
+            collection.whereEqualTo("k", "a").limitToLast(2).count().get(AggregateSource.SERVER));
+    assertEquals(2L, snapshot.getCount());
 
     snapshot =
         waitFor(
@@ -232,21 +226,19 @@ public class CountTest {
                 .whereEqualTo("k", "d")
                 .limitToLast(1000)
                 .count()
-                .get(AggregateSource.SERVER_DIRECT));
-    assertEquals(Long.valueOf(1), snapshot.getCount());
+                .get(AggregateSource.SERVER));
+    assertEquals(1L, snapshot.getCount());
   }
 
   @Test
   public void testCanRunCountOnNonExistentCollection() {
     CollectionReference collection = testFirestore().collection("random-coll");
 
-    AggregateQuerySnapshot snapshot =
-        waitFor(collection.count().get(AggregateSource.SERVER_DIRECT));
-    assertEquals(Long.valueOf(0), snapshot.getCount());
+    AggregateQuerySnapshot snapshot = waitFor(collection.count().get(AggregateSource.SERVER));
+    assertEquals(0L, snapshot.getCount());
 
-    snapshot =
-        waitFor(collection.whereEqualTo("k", 100).count().get(AggregateSource.SERVER_DIRECT));
-    assertEquals(Long.valueOf(0), snapshot.getCount());
+    snapshot = waitFor(collection.whereEqualTo("k", 100).count().get(AggregateSource.SERVER));
+    assertEquals(0L, snapshot.getCount());
   }
 
   @Test
@@ -259,14 +251,13 @@ public class CountTest {
                 "c", map("k", "c")));
     waitFor(collection.getFirestore().disableNetwork());
 
-    Exception e = waitForException(collection.count().get(AggregateSource.SERVER_DIRECT));
+    Exception e = waitForException(collection.count().get(AggregateSource.SERVER));
     assertThat(e, instanceOf(FirebaseFirestoreException.class));
     assertEquals(
         FirebaseFirestoreException.Code.UNAVAILABLE, ((FirebaseFirestoreException) e).getCode());
 
     waitFor(collection.getFirestore().enableNetwork());
-    AggregateQuerySnapshot snapshot =
-        waitFor(collection.count().get(AggregateSource.SERVER_DIRECT));
-    assertEquals(Long.valueOf(3), snapshot.getCount());
+    AggregateQuerySnapshot snapshot = waitFor(collection.count().get(AggregateSource.SERVER));
+    assertEquals(3L, snapshot.getCount());
   }
 }
