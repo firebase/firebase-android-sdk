@@ -45,10 +45,8 @@ class ScreenshotDetectionFeedbackTrigger extends ContentObserver {
   private static final boolean SHOULD_CHECK_IF_PENDING = Build.VERSION.SDK_INT >= 29;
   private static final String[] PROJECTION =
       SHOULD_CHECK_IF_PENDING
-          ? new String[] {MediaStore.Images.Media.DATA}
-          : new String[] {
-            MediaStore.Images.Media.DATA, android.provider.MediaStore.MediaColumns.IS_PENDING
-          };
+          ? new String[] {MediaStore.Images.Media.DATA, MediaStore.MediaColumns.IS_PENDING}
+          : new String[] {MediaStore.Images.Media.DATA};
   private final Set<Uri> seenImages = new HashSet<>();
 
   private final AppCompatActivity activity;
@@ -57,6 +55,8 @@ class ScreenshotDetectionFeedbackTrigger extends ContentObserver {
   private final ActivityResultLauncher<String> requestPermissionLauncher;
 
   private Uri currentUri;
+
+  private boolean hasRequestedPermission = false;
 
   /**
    * Creates a FeedbackTriggers instance for an activity.
@@ -102,13 +102,25 @@ class ScreenshotDetectionFeedbackTrigger extends ContentObserver {
   @Override
   public void onChange(boolean selfChange, Uri uri) {
     if (!uri.toString().matches(String.format("%s/[0-9]+", Media.EXTERNAL_CONTENT_URI))
-        || !seenImages.add(uri)) {
+        || seenImages.contains(uri)) {
       return;
     }
 
     if (ContextCompat.checkSelfPermission(activity, PERMISSION_TO_REQUEST) == PERMISSION_GRANTED) {
       maybeStartFeedbackForScreenshot(uri);
-    } else if (activity.shouldShowRequestPermissionRationale(PERMISSION_TO_REQUEST)) {
+    } else if (hasRequestedPermission) {
+      Log.i(
+          TAG,
+          "We've already request permission. Not requesting again for the life of the activity.");
+    } else {
+      // Set an in memory flag so we don't ask them again right away
+      hasRequestedPermission = true;
+      requestReadPermission(uri);
+    }
+  }
+
+  private void requestReadPermission(Uri uri) {
+    if (activity.shouldShowRequestPermissionRationale(PERMISSION_TO_REQUEST)) {
       Log.i(TAG, "Showing customer rationale for requesting permission.");
       new AlertDialog.Builder(activity)
           .setMessage(
@@ -122,7 +134,7 @@ class ScreenshotDetectionFeedbackTrigger extends ContentObserver {
               })
           .show();
     } else {
-      Log.i(TAG, "Does not have permission. Launching request.");
+      Log.i(TAG, "Launching request for permission without rationale.");
       currentUri = uri;
       requestPermissionLauncher.launch(PERMISSION_TO_REQUEST);
     }
@@ -133,8 +145,13 @@ class ScreenshotDetectionFeedbackTrigger extends ContentObserver {
     try {
       cursor = activity.getContentResolver().query(uri, PROJECTION, null, null, null);
       if (cursor != null && cursor.moveToFirst()) {
-        // TODO: check if it's pending
-        // (http://google3/lens/screenshots/demo/java/com/google/android/lensonscreenshots/ScreenshotDetector.java?l=184)
+        if (SHOULD_CHECK_IF_PENDING
+            && cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.IS_PENDING))
+                == 1) {
+          Log.i(TAG, "Ignoring pending image: " + uri);
+          return;
+        }
+        seenImages.add(uri);
         String path = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA));
         Log.i(TAG, "Path: " + path);
         if (path.toLowerCase().contains("screenshot")) {
