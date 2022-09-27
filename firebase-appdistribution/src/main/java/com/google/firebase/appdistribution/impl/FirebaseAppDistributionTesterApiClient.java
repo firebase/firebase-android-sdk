@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution.impl;
 
 import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
 
+import android.net.Uri;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -26,7 +27,6 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import java.io.File;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import org.json.JSONArray;
@@ -150,13 +150,13 @@ class FirebaseAppDistributionTesterApiClient {
    * @return a {@link Task} containing the feedback name, for convenience when chaining subsequent
    *     requests off of this task
    */
-  Task<String> attachScreenshot(String feedbackName, File screenshotFile) {
+  Task<String> attachScreenshot(String feedbackName, Uri screenshotUri) {
     return runWithFidAndToken(
         (unused, token) -> {
           LogWrapper.getInstance().i("Uploading screenshot for feedback: " + feedbackName);
           String path =
               String.format("upload/v1alpha/%s:uploadArtifact?type=SCREENSHOT", feedbackName);
-          testerApiHttpClient.makeUploadRequest(UPLOAD_SCREENSHOT_TAG, path, token, screenshotFile);
+          testerApiHttpClient.makeUploadRequest(UPLOAD_SCREENSHOT_TAG, path, token, screenshotUri);
           return feedbackName;
         });
   }

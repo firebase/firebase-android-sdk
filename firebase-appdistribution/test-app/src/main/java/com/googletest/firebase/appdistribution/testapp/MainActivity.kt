@@ -4,6 +4,8 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.HandlerThread
 import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
@@ -19,6 +21,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
+
     var firebaseAppDistribution = Firebase.appDistribution
     var updateTask: Task<Void>? = null
     var release: AppDistributionRelease? = null
@@ -39,6 +42,9 @@ class MainActivity : AppCompatActivity() {
     lateinit var progressPercent: TextView
     lateinit var progressBar: ProgressBar
 
+    private lateinit var screenshotTriggerThread: HandlerThread
+    private lateinit var screenshotTrigger: ScreenshotDetectionFeedbackTrigger
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -58,10 +64,31 @@ class MainActivity : AppCompatActivity() {
         signInStatus = findViewById<TextView>(R.id.sign_in_status)
         progressPercent = findViewById<TextView>(R.id.progress_percentage)
         progressBar = findViewById<ProgressBar>(R.id.progress_bar)
+
+        screenshotTriggerThread = HandlerThread("AppDistroFeedbackTrigger")
+        screenshotTriggerThread.start()
+        screenshotTrigger =
+            ScreenshotDetectionFeedbackTrigger(
+                this,
+                R.string.terms_and_conditions,
+                Handler(screenshotTriggerThread.looper)
+            )
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        screenshotTriggerThread.quitSafely()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        screenshotTrigger.unRegisterScreenshotObserver()
     }
 
     override fun onResume() {
         super.onResume()
+        screenshotTrigger.registerScreenshotObserver()
+
         findViewById<TextView>(R.id.app_name).text =
             "Sample App v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
         setupUI(isSignedIn = firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = false)
