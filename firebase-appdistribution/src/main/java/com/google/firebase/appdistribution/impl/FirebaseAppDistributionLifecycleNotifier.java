@@ -161,7 +161,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
             });
   }
 
-  private Task<Activity> getForegroundActivity() {
+  Task<Activity> getForegroundActivity() {
     synchronized (lock) {
       if (currentActivity != null) {
         return Tasks.forResult(currentActivity);
