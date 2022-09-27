@@ -47,6 +47,7 @@ import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class is the "real" implementation of the Firebase App Distribution API which should only be
@@ -77,6 +78,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private boolean remakeUpdateConfirmationDialog = false;
   private TaskCompletionSource<Void> showSignInDialogTask = null;
   private TaskCompletionSource<Void> showUpdateDialogTask = null;
+  private AtomicBoolean feedbackInProgress = new AtomicBoolean(false);
 
   @VisibleForTesting
   FirebaseAppDistributionImpl(
@@ -320,6 +322,12 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void startFeedback(@NonNull CharSequence infoText) {
+    if (!feedbackInProgress.compareAndSet(/* expect= */ false, /* update= */ true)) {
+      LogWrapper.getInstance()
+          .i("Ignoring startFeedback() call because feedback is already in progress");
+      return;
+    }
+    LogWrapper.getInstance().i("Starting feedback");
     screenshotTaker
         .takeScreenshot()
         .addOnFailureListener(
@@ -351,7 +359,10 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
             taskExecutor,
             releaseName -> launchFeedbackActivity(releaseName, infoText, screenshotUri))
         .addOnFailureListener(
-            taskExecutor, e -> LogWrapper.getInstance().e("Failed to launch feedback flow", e));
+            e -> {
+              LogWrapper.getInstance().e("Failed to launch feedback flow", e);
+              feedbackInProgress.set(false);
+            });
   }
 
   private Task<Void> launchFeedbackActivity(
@@ -367,6 +378,11 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
           }
           activity.startActivity(intent);
         });
+  }
+
+  @VisibleForTesting
+  boolean isFeedbackInProgress() {
+    return feedbackInProgress.get();
   }
 
   @VisibleForTesting
@@ -417,10 +433,13 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       dialogHostActivity = null;
     }
 
-    // If the feedback activity finishes, clean up the screenshot that was taken before starting
-    // the activity. If this does not happen for some reason it will be cleaned up the next time
-    // before taking a new screenshot.
     if (activity instanceof FeedbackActivity) {
+      LogWrapper.getInstance().i("FeedbackActivity destroyed");
+      feedbackInProgress.set(false);
+
+      // If the feedback activity finishes, clean up the screenshot that was taken before starting
+      // the activity. If this does not happen for some reason it will be cleaned up the next time
+      // before taking a new screenshot.
       screenshotTaker.deleteScreenshot();
     }
   }
