@@ -772,7 +772,7 @@ public class ConfigResolver {
   public boolean getIsExperimentTTIDEnabled() {
     // Order of precedence is:
     // 1. If the value exists in Android Manifest, return this value.
-    // 2. Cannot read value from RC because it's not initalized yet
+    // 2. If the value exists through Firebase Remote Config, cache and return this value.
     // 3. If the value exists in device cache, return this value.
     // 4. Otherwise, return default value.
     ExperimentTTID config = ExperimentTTID.getInstance();
@@ -783,7 +783,13 @@ public class ConfigResolver {
       return metadataValue.get();
     }
 
-    // 2. Cannot read value from RC because it's not initialized yet.
+    // 2. Reads value from Firebase Remote Config, saves this value in cache layer if valid.
+    Optional<Boolean> rcValue = getRemoteConfigBoolean(config);
+    if (rcValue.isAvailable()) {
+      deviceCacheManager.setValue(config.getDeviceCacheFlag(), rcValue.get());
+      return rcValue.get();
+    }
+
     // 3. Reads value from cache layer.
     Optional<Boolean> deviceCacheValue = getDeviceCacheBoolean(config);
     if (deviceCacheValue.isAvailable()) {

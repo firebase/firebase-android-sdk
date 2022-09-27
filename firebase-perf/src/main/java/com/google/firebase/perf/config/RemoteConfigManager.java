@@ -342,7 +342,9 @@ public class RemoteConfigManager {
       }
     }
 
-    // Save to device cache upon successful RC fetchAndActivate
+    // TODO: remove after experiment is over and experiment RC flag is no longer needed
+    // Save ExperimentTTID flag to device cache upon successful RC fetchAndActivate, because reading
+    // is done quite early and it is possible that RC isn't initialized yet.
     ExperimentTTID flag = ExperimentTTID.getInstance();
     FirebaseRemoteConfigValue rcValue = allRcConfigMap.get(flag.getRemoteConfigFlag());
     if (rcValue != null) {
