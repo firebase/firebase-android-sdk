@@ -81,6 +81,9 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
     testImplementation 'junit:junit:4.+'
+
+    // Shake detection
+    implementation 'com.squareup:seismic:1.0.3'
 }
 
 // This allows the app to connect to Firebase on the CI.
