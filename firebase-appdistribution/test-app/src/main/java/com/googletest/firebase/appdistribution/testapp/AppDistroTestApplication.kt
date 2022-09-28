@@ -5,6 +5,8 @@ import android.app.Application
 class AppDistroTestApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        ShakeForFeedback.enable(this)
+
+        // Default feedback triggers can also be initialized here
+//        ShakeForFeedback.enable(this)
     }
 }
