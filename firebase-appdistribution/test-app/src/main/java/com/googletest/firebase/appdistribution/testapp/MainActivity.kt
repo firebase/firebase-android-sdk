@@ -18,8 +18,6 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.HandlerThread
 import android.util.Log
 import android.view.Menu
 import android.view.MenuInflater
@@ -64,9 +62,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var progressBar: ProgressBar
     lateinit var feedbackTriggerMenu: TextInputLayout
 
-    private lateinit var screenshotTriggerThread: HandlerThread
-    private lateinit var screenshotTrigger: ScreenshotDetectionFeedbackTrigger
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -86,18 +81,13 @@ class MainActivity : AppCompatActivity() {
         signInStatus = findViewById(R.id.sign_in_status)
         progressBar = findViewById(R.id.progress_bar)
 
-        screenshotTriggerThread = HandlerThread("AppDistroFeedbackTrigger")
-        screenshotTriggerThread.start()
-        screenshotTrigger =
-            ScreenshotDetectionFeedbackTrigger(
-                this,
-                R.string.terms_and_conditions,
-                Handler(screenshotTriggerThread.looper)
-            )
-
         // Set up feedback trigger menu
         feedbackTriggerMenu = findViewById(R.id.feedbackTriggerMenu)
-        val items = listOf(FeedbackTrigger.NONE.label, FeedbackTrigger.SHAKE.label)
+        val items = listOf(
+            FeedbackTrigger.NONE.label,
+            FeedbackTrigger.SHAKE.label,
+            FeedbackTrigger.SCREENSHOT.label
+        )
         val adapter = ArrayAdapter(this, R.layout.list_item, items)
         val autoCompleteTextView = feedbackTriggerMenu.editText!! as AutoCompleteTextView
         autoCompleteTextView.setAdapter(adapter)
@@ -106,15 +96,26 @@ class MainActivity : AppCompatActivity() {
             // TODO: support enabling/disabling other triggers
             when(text.toString()) {
                 FeedbackTrigger.NONE.label -> {
-                    Log.i(TAG, "Disabling shake")
-                    ShakeForFeedback.disable(application)
+                    disableAllFeedbackTriggers()
                 }
                 FeedbackTrigger.SHAKE.label -> {
-                    Log.i(TAG, "Enabling shake")
+                    disableAllFeedbackTriggers()
+                    Log.i(TAG, "Enabling shake for feedback trigger")
                     ShakeForFeedback.enable(application, this)
+                }
+                FeedbackTrigger.SCREENSHOT.label -> {
+                    disableAllFeedbackTriggers()
+                    Log.i(TAG, "Enabling screenshot detection trigger")
+                    ScreenshotDetectionFeedbackTrigger.enable()
                 }
             }
         }
+    }
+
+    private fun disableAllFeedbackTriggers() {
+        Log.i(TAG, "Disabling all feedback triggers")
+        ShakeForFeedback.disable(application)
+        ScreenshotDetectionFeedbackTrigger.disable()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -133,19 +134,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        screenshotTriggerThread.quitSafely()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        screenshotTrigger.unRegisterScreenshotObserver()
-    }
-
     override fun onResume() {
         super.onResume()
-        screenshotTrigger.registerScreenshotObserver()
 
         findViewById<TextView>(R.id.app_name).text =
             "Sample App v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
