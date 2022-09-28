@@ -6,7 +6,11 @@ class AppDistroTestApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        // Default feedback triggers can also be initialized here
+        // Perform any required trigger initialization here
+        ScreenshotDetectionFeedbackTrigger.initialize(this, R.string.terms_and_conditions);
+
+        // Default feedback triggers can optionally be enabled application-wide here
 //        ShakeForFeedback.enable(this)
+//        ScreenshotDetectionFeedbackTrigger.enable()
     }
 }
