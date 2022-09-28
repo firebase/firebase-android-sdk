@@ -332,10 +332,10 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
             taskExecutor,
             e -> {
               LogWrapper.getInstance().w("Failed to take screenshot for feedback", e);
-              startFeedback(infoText, null);
+              doStartFeedback(infoText, null);
             })
         .addOnSuccessListener(
-            taskExecutor, screenshotUri -> startFeedback(infoText, screenshotUri));
+            taskExecutor, screenshotUri -> doStartFeedback(infoText, screenshotUri));
   }
 
   @Override
@@ -345,6 +345,15 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri) {
+    if (!feedbackInProgress.compareAndSet(/* expect= */ false, /* update= */ true)) {
+      LogWrapper.getInstance()
+          .i("Ignoring startFeedback() call because feedback is already in progress");
+      return;
+    }
+    doStartFeedback(infoText, screenshotUri);
+  }
+
+  private void doStartFeedback(CharSequence infoText, @Nullable Uri screenshotUri) {
     testerSignInManager
         .signInTester()
         .addOnFailureListener(
