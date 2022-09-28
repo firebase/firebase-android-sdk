@@ -11,7 +11,7 @@
         android:id="@+id/sign_out2"
         android:layout_width="156dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="44dp"
+        android:layout_marginTop="24dp"
         android:background="@color/purple_500"
         android:text="Sign Out Background"
         android:textColor="@color/white"
@@ -23,7 +23,7 @@
         android:id="@+id/update_app2"
         android:layout_width="128dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="44dp"
+        android:layout_marginTop="24dp"
         android:layout_marginEnd="24dp"
         android:background="@color/purple_500"
         android:text="Update App Background"
@@ -37,7 +37,7 @@
         android:id="@+id/check_for_update2"
         android:layout_width="156dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="24dp"
         android:background="@color/purple_500"
         android:text="Check For Update Background"
         android:textColor="@color/white"
@@ -49,7 +49,7 @@
         android:id="@+id/basic_config2"
         android:layout_width="128dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="24dp"
         android:background="@color/purple_500"
         android:text="Basic Config Background"
         android:textColor="@color/white"
@@ -61,7 +61,7 @@
         android:id="@+id/basic_config"
         android:layout_width="128dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="24dp"
         android:background="@color/purple_500"
         android:text="Basic Config"
         android:textColor="@color/white"
@@ -93,7 +93,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.14" />
+        app:layout_constraintVertical_bias="0.10" />
 
     <TextView
         android:id="@+id/sign_in_status"
@@ -124,7 +124,7 @@
         android:id="@+id/check_for_update"
         android:layout_width="156dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="24dp"
         android:background="@color/purple_500"
         android:text="Check For Update"
         android:textColor="@color/white"
@@ -136,7 +136,7 @@
         android:id="@+id/update_app"
         android:layout_width="128dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="44dp"
+        android:layout_marginTop="24dp"
         android:background="@color/purple_500"
         android:text="Update App"
         android:textColor="@color/white"
@@ -152,7 +152,7 @@
         app:layout_constraintTop_toBottomOf="@id/update_app"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="24dp"
         />
 
     <TextView
@@ -171,7 +171,7 @@
         android:id="@+id/sign_out"
         android:layout_width="156dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="44dp"
+        android:layout_marginTop="24dp"
         android:background="@color/purple_500"
         android:text="Sign Out"
         android:textColor="@color/white"
@@ -179,14 +179,33 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/progress_percentage" />
-    <Button
-        android:id="@+id/feedbackButton"
-        android:layout_width="wrap_content"
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/secondActivityButton"
+        android:layout_width="156dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:text="Send feedback"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="24dp"
+        android:background="@color/purple_500"
+        android:text="Start new activity"
+        android:textColor="@color/white"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/sign_out" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/sign_out2" />
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/feedbackTriggerMenu"
+        style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.ExposedDropdownMenu"
+        android:layout_width="match_parent"
+        android:layout_marginTop="24dp"
+        android:layout_marginHorizontal="60dp"
+        android:layout_height="wrap_content"
+        android:hint="@string/feedbackTriggerMenuLabel"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/secondActivityButton">
+        <AutoCompleteTextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="none"
+        />
+    </com.google.android.material.textfield.TextInputLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

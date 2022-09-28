@@ -21,12 +21,19 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
+import androidx.core.widget.doOnTextChanged
 import com.google.android.gms.tasks.Task
+import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.appdistribution.AppDistributionRelease
 import com.google.firebase.appdistribution.FirebaseAppDistributionException
 import com.google.firebase.appdistribution.UpdateProgress
@@ -51,11 +58,11 @@ class MainActivity : AppCompatActivity() {
     lateinit var signOutButtonBackground: AppCompatButton
     lateinit var checkForUpdateButtonBackground: AppCompatButton
     lateinit var updateAppButtonBackground: AppCompatButton
-    lateinit var feedbackButton: AppCompatButton
-    lateinit var progressPercentage: TextView
+    lateinit var secondActivityButton: AppCompatButton
     lateinit var signInStatus: TextView
     lateinit var progressPercent: TextView
     lateinit var progressBar: ProgressBar
+    lateinit var feedbackTriggerMenu: TextInputLayout
 
     private lateinit var screenshotTriggerThread: HandlerThread
     private lateinit var screenshotTrigger: ScreenshotDetectionFeedbackTrigger
@@ -63,22 +70,21 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        signInButton = findViewById<AppCompatButton>(R.id.sign_in_button)
-        signOutButton = findViewById<AppCompatButton>(R.id.sign_out)
-        checkForUpdateButton = findViewById<AppCompatButton>(R.id.check_for_update)
-        updateAppButton = findViewById<AppCompatButton>(R.id.update_app)
-        updateIfNewReleaseAvailableButton = findViewById<AppCompatButton>(R.id.basic_config)
+        signInButton = findViewById(R.id.sign_in_button)
+        signOutButton = findViewById(R.id.sign_out)
+        checkForUpdateButton = findViewById(R.id.check_for_update)
+        updateAppButton = findViewById(R.id.update_app)
+        updateIfNewReleaseAvailableButton = findViewById(R.id.basic_config)
         updateIfNewReleaseAvailableButtonBackground =
-            findViewById<AppCompatButton>(R.id.basic_config2)
-        signInButtonBackground = findViewById<AppCompatButton>(R.id.sign_in_button2)
-        signOutButtonBackground = findViewById<AppCompatButton>(R.id.sign_out2)
-        checkForUpdateButtonBackground = findViewById<AppCompatButton>(R.id.check_for_update2)
-        updateAppButtonBackground = findViewById<AppCompatButton>(R.id.update_app2)
-        feedbackButton = findViewById<AppCompatButton>(R.id.feedbackButton)
-        progressPercentage = findViewById<TextView>(R.id.progress_percentage)
-        signInStatus = findViewById<TextView>(R.id.sign_in_status)
-        progressPercent = findViewById<TextView>(R.id.progress_percentage)
-        progressBar = findViewById<ProgressBar>(R.id.progress_bar)
+            findViewById(R.id.basic_config2)
+        signInButtonBackground = findViewById(R.id.sign_in_button2)
+        signOutButtonBackground = findViewById(R.id.sign_out2)
+        checkForUpdateButtonBackground = findViewById(R.id.check_for_update2)
+        updateAppButtonBackground = findViewById(R.id.update_app2)
+        secondActivityButton = findViewById(R.id.secondActivityButton)
+        progressPercent = findViewById(R.id.progress_percentage)
+        signInStatus = findViewById(R.id.sign_in_status)
+        progressBar = findViewById(R.id.progress_bar)
 
         screenshotTriggerThread = HandlerThread("AppDistroFeedbackTrigger")
         screenshotTriggerThread.start()
@@ -88,6 +94,43 @@ class MainActivity : AppCompatActivity() {
                 R.string.terms_and_conditions,
                 Handler(screenshotTriggerThread.looper)
             )
+
+        // Set up feedback trigger menu
+        feedbackTriggerMenu = findViewById(R.id.feedbackTriggerMenu)
+        val items = listOf(FeedbackTrigger.NONE.label, FeedbackTrigger.SHAKE.label)
+        val adapter = ArrayAdapter(this, R.layout.list_item, items)
+        val autoCompleteTextView = feedbackTriggerMenu.editText!! as AutoCompleteTextView
+        autoCompleteTextView.setAdapter(adapter)
+        autoCompleteTextView.setText(FeedbackTrigger.NONE.label, false)
+        autoCompleteTextView.doOnTextChanged { text, start, before, count ->
+            // TODO: support enabling/disabling other triggers
+            when(text.toString()) {
+                FeedbackTrigger.NONE.label -> {
+                    Log.i(TAG, "Disabling shake")
+                    ShakeForFeedback.disable(application)
+                }
+                FeedbackTrigger.SHAKE.label -> {
+                    Log.i(TAG, "Enabling shake")
+                    ShakeForFeedback.enable(application, this)
+                }
+            }
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        val inflater: MenuInflater = menuInflater
+        inflater.inflate(R.menu.action_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.startFeedbackMenuItem -> {
+                Firebase.appDistribution.startFeedback(R.string.terms_and_conditions)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     override fun onDestroy() {
@@ -211,23 +254,21 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        feedbackButton.setOnClickListener {
-            firebaseAppDistribution.startFeedback(R.string.terms_and_conditions)
-        }
+        secondActivityButton.setOnClickListener { startSecondActivity() }
     }
 
-    fun startSecondActivity() {
+    private fun startSecondActivity() {
         val intent = Intent(this, SecondActivity::class.java)
         startActivity(intent)
     }
 
-    fun setProgressBar() {
+    private fun setProgressBar() {
         progressBar.visibility = View.VISIBLE
         progressPercent.visibility = View.VISIBLE
         progressBar.isIndeterminate = false
     }
 
-    fun failureListener(exception: Exception) {
+    private fun failureListener(exception: Exception) {
         val ex = exception as FirebaseAppDistributionException
         Log.d("FirebaseAppDistribution", "MAINACTIVITY:ERROR ERROR. CODE: " + exception.errorCode)
         AlertDialog.Builder(this)
@@ -237,7 +278,7 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    fun progressListener(updateProgress: UpdateProgress) {
+    private fun progressListener(updateProgress: UpdateProgress) {
         val percentage =
             ((updateProgress.apkBytesDownloaded * 100) / updateProgress.apkFileTotalBytes).toInt()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -252,7 +293,7 @@ class MainActivity : AppCompatActivity() {
         release: AppDistributionRelease? = null
     ) {
         progressBar.visibility = View.GONE
-        progressPercentage.visibility = View.GONE
+        progressPercent.visibility = View.GONE
         if (isUpdateAvailable) {
             signInStatus.text =
                 "Release available - ${release?.displayVersion} (${release?.versionCode})"
@@ -279,5 +320,16 @@ class MainActivity : AppCompatActivity() {
         updateAppButtonBackground.visibility = if (isSignedIn) View.VISIBLE else View.GONE
         updateAppButton.visibility = View.GONE
         updateAppButtonBackground.visibility = View.GONE
+    }
+
+    companion object {
+        const val TAG = "MainActivity"
+
+        enum class FeedbackTrigger(val label: String) {
+            NONE("None"),
+            SHAKE("Shake the device"),
+            SCREENSHOT("Take a screenshot"),
+            NOTIFICATION("Click the notification")
+        }
     }
 }
