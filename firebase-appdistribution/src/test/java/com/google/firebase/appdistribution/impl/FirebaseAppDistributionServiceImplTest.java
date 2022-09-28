@@ -46,6 +46,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -689,11 +690,42 @@ public class FirebaseAppDistributionServiceImplTest {
   }
 
   @Test
-  public void startFeedback_calledMultipleTimes_onlyStartsOnce() throws InterruptedException {
+  public void startFeedback_withoutUri_onlyStartsOnce() throws InterruptedException {
     when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
 
     firebaseAppDistribution.startFeedback("Some terms and conditions");
     firebaseAppDistribution.startFeedback("Some other terms and conditions");
+    TestUtils.awaitAsyncOperations(taskExecutor);
+
+    verify(activity, times(1)).startActivity(any());
+  }
+
+  @Test
+  public void startFeedback_withUri_doesNotTakeScreenshot() throws InterruptedException {
+    when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
+    Uri providedUri = Uri.parse("file:/provided/uri");
+    firebaseAppDistribution.startFeedback("Some terms and conditions", providedUri);
+    TestUtils.awaitAsyncOperations(taskExecutor);
+
+    verifyNoInteractions(mockScreenshotTaker);
+    verify(mockTesterSignInManager).signInTester();
+    Intent expectedIntent = new Intent(activity, FeedbackActivity.class);
+    Intent actualIntent = shadowOf(RuntimeEnvironment.getApplication()).getNextStartedActivity();
+    assertEquals(expectedIntent.getComponent(), actualIntent.getComponent());
+    assertThat(actualIntent.getStringExtra(RELEASE_NAME_EXTRA_KEY)).isEqualTo("release-name");
+    assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_EXTRA_KEY))
+        .isEqualTo(providedUri.toString());
+    assertThat(actualIntent.getStringExtra(INFO_TEXT_EXTRA_KEY))
+        .isEqualTo("Some terms and conditions");
+    assertThat(firebaseAppDistribution.isFeedbackInProgress()).isTrue();
+  }
+
+  @Test
+  public void startFeedback_withUri_onlyStartsOnce() throws InterruptedException {
+    when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
+
+    firebaseAppDistribution.startFeedback("Some terms and conditions", TEST_SCREENSHOT_URI);
+    firebaseAppDistribution.startFeedback("Some other terms and conditions", TEST_SCREENSHOT_URI);
     TestUtils.awaitAsyncOperations(taskExecutor);
 
     verify(activity, times(1)).startActivity(any());
