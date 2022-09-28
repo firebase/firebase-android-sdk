@@ -17,8 +17,6 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
-import androidx.core.content.ContentProviderCompat.requireContext
-import androidx.core.widget.addTextChangedListener
 import androidx.core.widget.doOnTextChanged
 import com.google.android.gms.tasks.Task
 import com.google.android.material.textfield.TextInputLayout
@@ -84,19 +82,19 @@ class MainActivity : AppCompatActivity() {
 
         // Set up feedback trigger menu
         feedbackTriggerMenu = findViewById(R.id.feedbackTriggerMenu)
-        val items = listOf(TRIGGER_NONE, TRIGGER_SHAKE)
+        val items = listOf(FeedbackTrigger.NONE.label, FeedbackTrigger.SHAKE.label)
         val adapter = ArrayAdapter(this, R.layout.list_item, items)
         val autoCompleteTextView = feedbackTriggerMenu.editText!! as AutoCompleteTextView
         autoCompleteTextView.setAdapter(adapter)
-        autoCompleteTextView.setText(TRIGGER_NONE, false)
+        autoCompleteTextView.setText(FeedbackTrigger.NONE.label, false)
         autoCompleteTextView.doOnTextChanged { text, start, before, count ->
             // TODO: support enabling/disabling other triggers
             when(text.toString()) {
-                TRIGGER_NONE -> {
+                FeedbackTrigger.NONE.label -> {
                     Log.i(TAG, "Disabling shake")
                     ShakeForFeedback.disable(application)
                 }
-                TRIGGER_SHAKE -> {
+                FeedbackTrigger.SHAKE.label -> {
                     Log.i(TAG, "Enabling shake")
                     ShakeForFeedback.enable(application, this)
                 }
@@ -310,9 +308,12 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val TAG = "MainActivity"
-        const val TRIGGER_NONE = "None"
-        const val TRIGGER_SHAKE = "Shake the device"
-        const val TRIGGER_SCREENSHOT = "Take a screenshot"
-        const val TRIGGER_NOTIFICATION = "Click the notification"
+
+        enum class FeedbackTrigger(val label: String) {
+            NONE("None"),
+            SHAKE("Shake the device"),
+            SCREENSHOT("Take a screenshot"),
+            NOTIFICATION("Click the notification")
+        }
     }
 }

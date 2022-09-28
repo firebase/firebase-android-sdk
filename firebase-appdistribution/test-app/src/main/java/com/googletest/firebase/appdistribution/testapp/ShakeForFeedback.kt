@@ -15,9 +15,7 @@ object ShakeForFeedback : ShakeDetector.Listener, Application.ActivityLifecycleC
     private val shakeDetector = ShakeDetector(this)
     private var isEnabled = false
 
-    fun enable(application: Application) = enable(application, null)
-
-    fun enable(application: Application, currentActivity: Activity?) {
+    fun enable(application: Application, currentActivity: Activity? = null) {
         synchronized(this) {
             if (!isEnabled) {
                 application.registerActivityLifecycleCallbacks(this)
