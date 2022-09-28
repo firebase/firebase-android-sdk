@@ -1,275 +1,226 @@
-// Copyright 2022 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+package com.googletest.firebase.appdistribution.testapp
 
-package com.googletest.firebase.appdistribution.testapp;
+import android.Manifest.permission.READ_EXTERNAL_STORAGE
+import android.Manifest.permission.READ_MEDIA_IMAGES
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.app.AlertDialog
+import android.app.Application
+import android.content.pm.PackageManager.PERMISSION_GRANTED
+import android.database.ContentObserver
+import android.database.Cursor
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.os.Handler
+import android.os.HandlerThread
+import android.provider.MediaStore
+import android.util.Log
+import androidx.activity.result.ActivityResultCaller
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import com.google.firebase.appdistribution.FirebaseAppDistribution
+import java.util.*
 
-import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
-import static android.Manifest.permission.READ_MEDIA_IMAGES;
-import static android.content.pm.PackageManager.PERMISSION_GRANTED;
+class ScreenshotDetectionFeedbackTrigger
+private constructor(private val infoTextResourceId: Int, handler: Handler) :
+  ContentObserver(handler), Application.ActivityLifecycleCallbacks {
 
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Application;
-import android.database.ContentObserver;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.provider.MediaStore;
-import android.provider.MediaStore.Images.Media;
-import android.util.Log;
-import androidx.activity.result.ActivityResultCaller;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-import com.google.firebase.appdistribution.FirebaseAppDistribution;
-import java.util.HashSet;
-import java.util.Set;
+  private val seenImages = HashSet<Uri>()
+  private var requestPermissionLauncher: ActivityResultLauncher<String>? = null
+  private var currentActivity: Activity? = null
+  private var currentUri: Uri? = null
+  private var isEnabled = false
+  private var hasRequestedPermission = false
 
-class ScreenshotDetectionFeedbackTrigger extends ContentObserver
-    implements Application.ActivityLifecycleCallbacks {
-  private static final String TAG = "ScreenshotDetectionFeedbackTrigger";
-  private static final String PERMISSION_TO_REQUEST =
-      Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-          ? READ_MEDIA_IMAGES
-          : READ_EXTERNAL_STORAGE;
-  private static final boolean SHOULD_CHECK_IF_PENDING = Build.VERSION.SDK_INT >= 29;
-  private static final String[] PROJECTION =
-      SHOULD_CHECK_IF_PENDING
-          ? new String[] {MediaStore.Images.Media.DATA, MediaStore.MediaColumns.IS_PENDING}
-          : new String[] {MediaStore.Images.Media.DATA};
-
-  private final Set<Uri> seenImages = new HashSet<>();
-  private final int infoTextResourceId;
-
-  private ActivityResultLauncher<String> requestPermissionLauncher;
-  private Activity currentActivity;
-  private Uri currentUri;
-  private boolean isEnabled = false;
-  private boolean hasRequestedPermission = false;
-
-  private static ScreenshotDetectionFeedbackTrigger instance;
-
-  /**
-   * Initialize the screenshot detection trigger for this application.
-   *
-   * <p>This should be called during {@link Application#onCreate()}. {@link #enable()} should then
-   * be called when you want to actually start detecting screenshots.
-   *
-   * @param application the {@link Application} object
-   * @param infoTextResourceId resource ID of info text to show to testers before giving feedback
-   */
-  public static void initialize(Application application, int infoTextResourceId) {
-    if (instance == null) {
-      HandlerThread handlerThread = new HandlerThread("AppDistroFeedbackTrigger");
-      handlerThread.start();
-      instance =
-          new ScreenshotDetectionFeedbackTrigger(
-              application, infoTextResourceId, new Handler(handlerThread.getLooper()));
+  override fun onChange(selfChange: Boolean, uri: Uri?) {
+    if (uri == null || !isExternalContent(uri) || seenImages.contains(uri)) {
+      return
+    }
+    currentActivity?.let { activity ->
+      if (isPermissionGranted(activity)) {
+        maybeStartFeedbackForScreenshot(activity, uri)
+      } else if (hasRequestedPermission) {
+        info("We've already request permission. Not requesting again for the life of the activity.")
+      } else {
+        // Set an in memory flag so we don't ask them again right away
+        hasRequestedPermission = true
+        requestReadPermission(activity, uri)
+      }
     }
   }
 
-  /**
-   * Start listening for screenshots, and start feedback when a new screenshot is detected.
-   *
-   * @throws IllegalStateException if {@link #initialize} has not been called yet
-   */
-  public static void enable() {
-    if (instance == null) {
-      throw new IllegalStateException(
-          "You must call initialize() in your Application.onCreate() before enabling screenshot detection");
-    }
-    if (!instance.isEnabled) {
-      instance.isEnabled = true;
-      instance.listenForScreenshots();
-    }
-  }
-
-  /**
-   * Stop listening for screenshots.
-   *
-   * @throws IllegalStateException if {@link #initialize} has not been called yet
-   */
-  public static void disable() {
-    if (instance == null) {
-      throw new IllegalStateException(
-          "You must call initialize() in your Application.onCreate() before enabling screenshot detection");
-    }
-    if (instance.isEnabled) {
-      instance.isEnabled = false;
-      instance.stopListeningForScreenshots();
-    }
-  }
-
-  private ScreenshotDetectionFeedbackTrigger(
-      Application application, int infoTextResourceId, Handler handler) {
-    super(handler);
-    this.infoTextResourceId = infoTextResourceId;
-    application.registerActivityLifecycleCallbacks(this);
-  }
-
-  @Override
-  public void onChange(boolean selfChange, Uri uri) {
-    if (currentActivity == null) {
-      Log.w(TAG, "There is no current activity. Ignoring change to external media.");
-      return;
-    }
-
-    if (!uri.toString().matches(String.format("%s/[0-9]+", Media.EXTERNAL_CONTENT_URI))
-        || seenImages.contains(uri)) {
-      return;
-    }
-
-    if (ContextCompat.checkSelfPermission(currentActivity, PERMISSION_TO_REQUEST)
-        == PERMISSION_GRANTED) {
-      maybeStartFeedbackForScreenshot(uri);
-    } else if (hasRequestedPermission) {
-      Log.i(
-          TAG,
-          "We've already request permission. Not requesting again for the life of the activity.");
-    } else {
-      // Set an in memory flag so we don't ask them again right away
-      hasRequestedPermission = true;
-      requestReadPermission(uri);
-    }
-  }
-
-  @Override
-  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-    if (activity instanceof ActivityResultCaller) {
+  override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+    if (activity is ActivityResultCaller) {
       requestPermissionLauncher =
-          ((ActivityResultCaller) activity)
-              .registerForActivityResult(
-                  new ActivityResultContracts.RequestPermission(),
-                  isGranted -> {
-                    if (!isEnabled) {
-                      Log.w(
-                          TAG,
-                          "Trigger disabled after permission check. Abandoning screenshot detection.");
-                    } else if (currentActivity == null) {
-                      Log.w(
-                          TAG,
-                          "There is no current activity after permission check. Abandoning screenshot detection.");
-                    } else if (isGranted) {
-                      maybeStartFeedbackForScreenshot(currentUri);
-                    } else {
-                      Log.i(TAG, "Permission not granted");
-                      // TODO: Ideally we would show a message indicating the impact of not enabling
-                      // the
-                      // permission, but there's no way to know if they've permanently denied the
-                      // permission, and we don't want to show them a message on every screenshot.
-                    }
-                  });
-    } else {
-      Log.w(
-          TAG,
-          "Not listening for screenshots because this activity can't register for permission request results: "
-              + activity);
-    }
-  }
-
-  @Override
-  public void onActivityResumed(@NonNull Activity activity) {
-    currentActivity = activity;
-    if (isEnabled) {
-      listenForScreenshots();
-    }
-  }
-
-  @Override
-  public void onActivityPaused(@NonNull Activity activity) {
-    if (isEnabled) {
-      stopListeningForScreenshots();
-    }
-    currentActivity = null;
-  }
-
-  private void requestReadPermission(Uri uri) {
-    if (currentActivity.shouldShowRequestPermissionRationale(PERMISSION_TO_REQUEST)) {
-      Log.i(TAG, "Showing customer rationale for requesting permission.");
-      new AlertDialog.Builder(currentActivity)
-          .setMessage(
-              "Taking a screenshot of the app can initiate feedback to the developer. To enable this feature, allow the app access to device storage.")
-          .setPositiveButton(
-              "OK",
-              (a, b) -> {
-                Log.i(TAG, "Launching request for permission.");
-                currentUri = uri;
-                requestPermissionLauncher.launch(PERMISSION_TO_REQUEST);
-              })
-          .show();
-    } else {
-      Log.i(TAG, "Launching request for permission without rationale.");
-      currentUri = uri;
-      requestPermissionLauncher.launch(PERMISSION_TO_REQUEST);
-    }
-  }
-
-  private void maybeStartFeedbackForScreenshot(Uri uri) {
-    Cursor cursor = null;
-    try {
-      cursor = currentActivity.getContentResolver().query(uri, PROJECTION, null, null, null);
-      if (cursor != null && cursor.moveToFirst()) {
-        if (SHOULD_CHECK_IF_PENDING
-            && cursor.getInt(cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.IS_PENDING))
-                == 1) {
-          Log.i(TAG, "Ignoring pending image: " + uri);
-          return;
+        activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+          if (!isEnabled) {
+            warn("Trigger disabled after permission check. Abandoning screenshot detection.")
+          } else if (isGranted) {
+            maybeStartFeedbackForScreenshot(activity, currentUri!!)
+          } else {
+            info("Permission not granted")
+            // TODO: Ideally we would show a message indicating the impact of not enabling
+            // the permission, but there's no way to know if they've permanently denied
+            // the permission, and we don't want to show them a message after every
+            // screenshot.
+          }
         }
-        seenImages.add(uri);
-        String path = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA));
-        Log.i(TAG, "Path: " + path);
-        if (path.toLowerCase().contains("screenshot")) {
-          FirebaseAppDistribution.getInstance().startFeedback(infoTextResourceId, uri);
+    } else {
+      warn("Not listening for screenshots because this activity can't register for permission request results: $activity")
+    }
+  }
+
+  override fun onActivityResumed(activity: Activity) {
+    currentActivity = activity
+    if (isEnabled) {
+      listenForScreenshots()
+    }
+  }
+
+  override fun onActivityPaused(activity: Activity) {
+    if (isEnabled) {
+      stopListeningForScreenshots()
+    }
+    currentActivity = null
+  }
+
+  private fun requestReadPermission(activity: Activity, uri: Uri) {
+    if (activity.shouldShowRequestPermissionRationale(permissionToRequest)) {
+      info("Showing customer rationale for requesting permission.")
+      AlertDialog.Builder(activity)
+        .setMessage(
+          "Taking a screenshot of the app can initiate feedback to the developer. To enable this feature, allow the app access to device storage."
+        )
+        .setPositiveButton("OK") { _, _ ->
+          info("Launching request for permission.")
+          currentUri = uri
+          requestPermissionLauncher!!.launch(permissionToRequest)
+        }
+        .show()
+    } else {
+      info("Launching request for permission without rationale.")
+      currentUri = uri
+      requestPermissionLauncher!!.launch(permissionToRequest)
+    }
+  }
+
+  private fun maybeStartFeedbackForScreenshot(activity: Activity, uri: Uri) {
+    var cursor: Cursor? = null
+    try {
+      cursor = activity.contentResolver.query(uri, contentProjection, null, null, null)
+      if (cursor != null && cursor.moveToFirst()) {
+        val pendingColumn = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.IS_PENDING)
+        if (shouldCheckIfPending && cursor.getInt(pendingColumn) == 1) {
+          info("Ignoring pending image: $uri")
+          return
+        }
+        seenImages.add(uri)
+        val path = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA))
+        info("Path: $path")
+        if (path.lowercase(Locale.getDefault()).contains("screenshot")) {
+          FirebaseAppDistribution.getInstance().startFeedback(infoTextResourceId, uri)
         }
       }
-    } catch (Exception e) {
-      Log.e(TAG, "Could not determine if media change was due to taking a screenshot", e);
+    } catch (e: Exception) {
+      error("Could not determine if media change was due to taking a screenshot", e)
     } finally {
-      if (cursor != null) cursor.close();
+      cursor?.close()
     }
   }
 
-  private void listenForScreenshots() {
-    if (currentActivity != null) {
-      currentActivity
-          .getContentResolver()
-          .registerContentObserver(
-              Media.EXTERNAL_CONTENT_URI, /* notifyForDescendants= */ true, this);
+  private fun listenForScreenshots() {
+    currentActivity?.let { activity ->
+      activity.contentResolver.registerContentObserver(
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+        /* notifyForDescendants= */ true,
+        this
+      )
     }
   }
 
-  private void stopListeningForScreenshots() {
-    if (currentActivity != null) {
-      currentActivity.getContentResolver().unregisterContentObserver(this);
-    }
+  private fun stopListeningForScreenshots() {
+    currentActivity?.let { activity -> activity.contentResolver.unregisterContentObserver(this) }
   }
 
   // Other lifecycle methods
-  @Override
-  public void onActivityDestroyed(@NonNull Activity activity) {}
+  override fun onActivityDestroyed(activity: Activity) {}
+  override fun onActivityStarted(activity: Activity) {}
+  override fun onActivityStopped(activity: Activity) {}
+  override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
 
-  @Override
-  public void onActivityStarted(@NonNull Activity activity) {}
+  companion object {
+    const val TAG = "ScreenshotDetectionFeedbackTrigger"
 
-  @Override
-  public void onActivityStopped(@NonNull Activity activity) {}
+    private val permissionToRequest =
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) READ_MEDIA_IMAGES
+      else READ_EXTERNAL_STORAGE
+    private val shouldCheckIfPending = Build.VERSION.SDK_INT >= 29
+    private val contentProjection =
+      if (shouldCheckIfPending)
+        arrayOf(MediaStore.Images.Media.DATA, MediaStore.MediaColumns.IS_PENDING)
+      else arrayOf(MediaStore.Images.Media.DATA)
 
-  @Override
-  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {}
+    @SuppressLint("StaticFieldLeak") // Reference to Activity is set to null in onActivityPaused
+    private var instance: ScreenshotDetectionFeedbackTrigger? = null
+
+    /**
+     * Initialize the screenshot detection trigger for this application.
+     *
+     * This should be called during [Application.onCreate]. [enable] should then be called when you
+     * want to actually start detecting screenshots.
+     *
+     * @param application the [Application] object
+     * @param infoTextResourceId resource ID of info text to show to testers before giving feedback
+     */
+    open fun initialize(application: Application, infoTextResourceId: Int) {
+      if (instance == null) {
+        val handlerThread = HandlerThread("AppDistroFeedbackTrigger")
+        handlerThread.start()
+        instance = ScreenshotDetectionFeedbackTrigger(infoTextResourceId, Handler(handlerThread.looper))
+        application.registerActivityLifecycleCallbacks(instance)
+      }
+    }
+
+    /**
+     * Start listening for screenshots, and start feedback when a new screenshot is detected.
+     *
+     * @throws IllegalStateException if [initialize] has not been called yet
+     */
+    open fun enable() {
+      instance?.also {
+        it.isEnabled = true
+        it.listenForScreenshots()
+      } ?: throw IllegalStateException(
+        "You must call initialize() in your Application.onCreate() before enabling screenshot detection"
+      )
+    }
+
+    /**
+     * Stop listening for screenshots.
+     *
+     * @throws IllegalStateException if [initialize] has not been called yet
+     */
+    open fun disable() {
+      instance?.also {
+        it.isEnabled = false
+        it.stopListeningForScreenshots()
+      } ?: throw IllegalStateException(
+        "You must call initialize() in your Application.onCreate() before enabling screenshot detection"
+      )
+    }
+
+    private fun isExternalContent(uri: Uri) =
+      uri.toString().matches("${MediaStore.Images.Media.EXTERNAL_CONTENT_URI}/\\d+".toRegex())
+
+    private fun isPermissionGranted(activity: Activity) =
+      ContextCompat.checkSelfPermission(activity, permissionToRequest) == PERMISSION_GRANTED
+
+    private fun info(msg: String) = Log.i(TAG, msg)
+
+    private fun warn(msg: String) = Log.w(TAG, msg)
+
+    private fun error(msg: String, e: Throwable) = Log.e(TAG, msg, e)
+  }
 }
