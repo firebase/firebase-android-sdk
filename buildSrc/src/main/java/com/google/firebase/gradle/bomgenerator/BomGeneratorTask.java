@@ -64,7 +64,6 @@ public class BomGeneratorTask extends DefaultTask {
           "com.google.firebase:firebase-common-ktx",
           "com.google.firebase:firebase-config",
           "com.google.firebase:firebase-config-ktx",
-          "com.google.firebase:firebase-core",
           "com.google.firebase:firebase-crashlytics",
           "com.google.firebase:firebase-crashlytics-ktx",
           "com.google.firebase:firebase-crashlytics-ndk",
@@ -170,6 +169,9 @@ public class BomGeneratorTask extends DefaultTask {
       ImmutableList.of(
           "com.google.android.gms:play-services-ads",
           "com.google.gms:google-services",
+          "com.google.firebase:firebase-appindexing",
+          "com.google.firebase:firebase-iid",
+          "com.google.firebase:firebase-core",
           "com.android.tools.build:gradle",
           "com.google.firebase:perf-plugin",
           "com.google.firebase:firebase-crashlytics-gradle",
