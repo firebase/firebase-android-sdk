@@ -5,9 +5,11 @@ import com.android.build.gradle.LibraryExtension
 import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Delete
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 
@@ -90,8 +92,9 @@ tasks above). While we do not currently offer any configuration for the Dackka
 plugin, this could change in the future as needed. Currently, the DackkaPlugin
 provides sensible defaults to output directories, package lists, and so forth.
 
-The DackkaPlugin also provides three extra tasks:
+The DackkaPlugin also provides four extra tasks:
 [cleanDackkaDocumentation][registerCleanDackkaDocumentation],
+[separateJavadocAndKotlinDoc][registerSeparateJavadocAndKotlinDoc]
 [copyJavaDocToCommonDirectory][registerCopyJavaDocToCommonDirectoryTask] and
 [copyKotlinDocToCommonDirectory][registerCopyKotlinDocToCommonDirectoryTask].
 
@@ -99,6 +102,9 @@ _cleanDackkaDocumentation_ is exactly what it sounds like, a task to clean up (d
 the output of Dackka. This is useful when testing Dackka outputs itself- and
 shouldn't be apart of the normal flow. The reasoning is that it would otherwise
 invalidate the gradle cache.
+
+_separateJavadocAndKotlinDoc_ copies the Javadoc and Kotlindoc directories from Dackka into
+their own subdirectories- for easy and consistent differentiation.
 
 _copyJavaDocToCommonDirectory_ copies the JavaDoc variant of the Dackka output for each sdk,
 and pastes it in a common directory under the root project's build directory. This makes it easier
@@ -119,24 +125,30 @@ abstract class DackkaPlugin : Plugin<Project> {
         registerCleanDackkaDocumentation(project)
         project.afterEvaluate {
             if (shouldWePublish(project)) {
-                val generateDocumentation = registerGenerateDackkaDocumentationTask(project)
-                val dackkaFilesDirectory = generateDocumentation.flatMap { it.outputDirectory }
-                val firesiteTransform = registerFiresiteTransformTask(project, dackkaFilesDirectory)
-                val transformedFilesDirectory = firesiteTransform.flatMap { it.outputDirectory }
-                val copyJavaDocToCommonDirectory = registerCopyJavaDocToCommonDirectoryTask(project, transformedFilesDirectory)
-                val copyKotlinDocToCommonDirectory = registerCopyKotlinDocToCommonDirectoryTask(project, transformedFilesDirectory)
+                val dackkaOutputDirectory = project.provider { fileFromBuildDir("dackkaRawOutput") }
+                val separatedFilesDirectory = project.provider { fileFromBuildDir("dackkaSeparatedFiles") }
+                val transformedDackkaFilesDirectory = project.provider { fileFromBuildDir("dackkaTransformedFiles") }
+
+                val generateDocumentation = registerGenerateDackkaDocumentationTask(project, dackkaOutputDirectory)
+                val separateJavadocAndKotlinDoc = registerSeparateJavadocAndKotlinDoc(project, dackkaOutputDirectory, separatedFilesDirectory)
+                val firesiteTransform = registerFiresiteTransformTask(project, separatedFilesDirectory, transformedDackkaFilesDirectory)
+                val copyJavaDocToCommonDirectory = registerCopyJavaDocToCommonDirectoryTask(project, transformedDackkaFilesDirectory)
+                val copyKotlinDocToCommonDirectory = registerCopyKotlinDocToCommonDirectoryTask(project, transformedDackkaFilesDirectory)
 
                 project.tasks.register("kotlindoc") {
                     group = "documentation"
                     dependsOn(
                         generateDocumentation,
+                        separateJavadocAndKotlinDoc,
                         firesiteTransform,
                         copyJavaDocToCommonDirectory,
                         copyKotlinDocToCommonDirectory
                     )
                 }
             } else {
-                project.tasks.register("kotlindoc")
+                project.tasks.register("kotlindoc") {
+                    group = "documentation"
+                }
             }
         }
     }
@@ -158,7 +170,10 @@ abstract class DackkaPlugin : Plugin<Project> {
     }
 
     // TODO(b/243324828): Refactor when fixed, so we no longer need stubs
-    private fun registerGenerateDackkaDocumentationTask(project: Project): Provider<GenerateDocumentationTask> {
+    private fun registerGenerateDackkaDocumentationTask(
+        project: Project,
+        targetDirectory: Provider<File>
+    ): Provider<GenerateDocumentationTask> {
         val docStubs = project.tasks.register<GenerateStubsTask>("docStubsForDackkaInput")
         val docsTask = project.tasks.register<GenerateDocumentationTask>("generateDackkaDocumentation")
         with(project.extensions.getByType<LibraryExtension>()) {
@@ -193,6 +208,8 @@ abstract class DackkaPlugin : Plugin<Project> {
 
                         kotlinSources.set(sourcesForKotlin)
                         dependencies.set(classpath)
+
+                        outputDirectory.set(targetDirectory)
 
                         applyCommonConfigurations()
                     }
@@ -232,20 +249,72 @@ abstract class DackkaPlugin : Plugin<Project> {
         dependsOnAndMustRunAfter("createFullJarRelease")
 
         val dackkaFile = project.provider { project.dackkaConfig.singleFile }
-        val dackkaOutputDirectory = File(project.buildDir, "dackkaDocumentation")
 
         dackkaJarFile.set(dackkaFile)
-        outputDirectory.set(dackkaOutputDirectory)
         clientName.set(project.firebaseConfigValue { artifactId })
     }
 
-    private fun registerFiresiteTransformTask(project: Project, dackkaFilesDirectory: Provider<File>) =
-        project.tasks.register<FiresiteTransformTask>("firesiteTransform") {
-            mustRunAfter("generateDackkaDocumentation")
+    // TODO(b/248302613): Remove when dackka exposes configuration for this
+    private fun registerSeparateJavadocAndKotlinDoc(
+        project: Project,
+        dackkaOutputDirectory: Provider<File>,
+        outputDirectory: Provider<File>
+    ): TaskProvider<Task> {
+        val outputJavadocFolder = project.childFile(outputDirectory, "android")
+        val outputKotlindocFolder = project.childFile(outputDirectory, "kotlin")
 
-            dackkaFiles.set(dackkaFilesDirectory)
-            outputDirectory.set(project.file("${project.buildDir}/dackkaTransformedFiles"))
+        val separateJavadoc = project.tasks.register<Copy>("separateJavadoc") {
+            dependsOn("generateDackkaDocumentation")
+
+            val javadocClientFolder = project.childFile(dackkaOutputDirectory, "reference/client")
+            val javadocComFolder = project.childFile(dackkaOutputDirectory, "reference/com")
+
+            fromDirectory(javadocClientFolder)
+            fromDirectory(javadocComFolder)
+
+            into(outputJavadocFolder)
         }
+
+        val separateKotlindoc = project.tasks.register<Copy>("separateKotlindoc") {
+            dependsOn("generateDackkaDocumentation")
+
+            val kotlindocFolder = project.childFile(dackkaOutputDirectory, "reference/kotlin")
+
+            from(kotlindocFolder)
+
+            into(outputKotlindocFolder)
+        }
+
+        return project.tasks.register("separateJavadocAndKotlinDoc") {
+            dependsOn(separateJavadoc, separateKotlindoc)
+        }
+    }
+
+    private fun registerFiresiteTransformTask(
+        project: Project,
+        separatedFilesDirectory: Provider<File>,
+        targetDirectory: Provider<File>
+    ): TaskProvider<Task> {
+        val transformJavadoc = project.tasks.register<FiresiteTransformTask>("firesiteTransformJavadoc") {
+            dependsOnAndMustRunAfter("separateJavadoc")
+
+            referenceHeadTagsPath.set("docs/reference/android")
+            dackkaFiles.set(project.childFile(separatedFilesDirectory, "android"))
+            outputDirectory.set(project.childFile(targetDirectory, "android"))
+        }
+
+        val transformKotlindoc = project.tasks.register<FiresiteTransformTask>("firesiteTransformKotlindoc") {
+            dependsOnAndMustRunAfter("separateKotlindoc")
+
+            referenceHeadTagsPath.set("docs/reference/kotlin")
+            dackkaFiles.set(project.childFile(separatedFilesDirectory, "kotlin"))
+            outputDirectory.set(project.childFile(targetDirectory, "kotlin"))
+        }
+
+        return project.tasks.register("firesiteTransform") {
+            dependsOn(transformJavadoc, transformKotlindoc)
+        }
+    }
 
     // TODO(b/246593212): Migrate doc files to single directory
     private fun registerCopyJavaDocToCommonDirectoryTask(project: Project, outputDirectory: Provider<File>) =
@@ -258,12 +327,10 @@ abstract class DackkaPlugin : Plugin<Project> {
             if (project.rootProject.findProperty("dackkaJavadoc") == "true") {
                 mustRunAfter("firesiteTransform")
 
-                val outputFolder = project.file("${project.rootProject.buildDir}/firebase-kotlindoc/android")
-                val clientFolder = outputDirectory.map { project.file("${it.path}/reference/client") }
-                val comFolder = outputDirectory.map { project.file("${it.path}/reference/com") }
+                val outputFolder = project.rootProject.fileFromBuildDir("firebase-kotlindoc/android")
+                val javaFolder = project.childFile(outputDirectory, "android")
 
-                fromDirectory(clientFolder)
-                fromDirectory(comFolder)
+                fromDirectory(javaFolder)
 
                 into(outputFolder)
             }
@@ -274,8 +341,8 @@ abstract class DackkaPlugin : Plugin<Project> {
         project.tasks.register<Copy>("copyKotlinDocToCommonDirectory") {
             mustRunAfter("firesiteTransform")
 
-            val outputFolder = project.file("${project.rootProject.buildDir}/firebase-kotlindoc")
-            val kotlinFolder = outputDirectory.map { project.file("${it.path}/reference/kotlin") }
+            val outputFolder = project.rootProject.fileFromBuildDir("firebase-kotlindoc")
+            val kotlinFolder = project.childFile(outputDirectory, "kotlin")
 
             fromDirectory(kotlinFolder)
 
@@ -287,8 +354,9 @@ abstract class DackkaPlugin : Plugin<Project> {
         project.tasks.register<Delete>("cleanDackkaDocumentation") {
             group = "cleanup"
 
-            delete("${project.buildDir}/dackkaDocumentation")
-            delete("${project.buildDir}/dackkaTransformedFiles")
-            delete("${project.rootProject.buildDir}/firebase-kotlindoc")
+            val outputDirs = listOf("dackkaRawOutput", "dackkaSeparatedFiles", "dackkaTransformedFiles")
+
+            delete(outputDirs.map { project.fileFromBuildDir(it) })
+            delete(project.rootProject.fileFromBuildDir("firebase-kotlindoc"))
         }
 }
