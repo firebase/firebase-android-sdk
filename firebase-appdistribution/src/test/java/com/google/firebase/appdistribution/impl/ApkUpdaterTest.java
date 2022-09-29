@@ -233,7 +233,6 @@ public class ApkUpdaterTest {
             ErrorMessages.APK_INSTALLATION_FAILED,
             FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
 
-    assertThat(updateTask.isComplete()).isFalse();
     FirebaseAppDistributionException e =
         assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());
     assertThat(e.getErrorCode()).isEqualTo(Status.INSTALLATION_FAILURE);
