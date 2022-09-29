@@ -77,9 +77,9 @@ class MainActivity : AppCompatActivity() {
         val adapter = ArrayAdapter(this, R.layout.list_item, items)
         val autoCompleteTextView = feedbackTriggerMenu.editText!! as AutoCompleteTextView
         autoCompleteTextView.setAdapter(adapter)
+        // TODO: set it to the actual currently enabled trigger
         autoCompleteTextView.setText(FeedbackTrigger.NONE.label, false)
         autoCompleteTextView.doOnTextChanged { text, start, before, count ->
-            // TODO: support enabling/disabling other triggers
             when(text.toString()) {
                 FeedbackTrigger.NONE.label -> {
                     disableAllFeedbackTriggers()
