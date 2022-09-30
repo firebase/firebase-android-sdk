@@ -43,7 +43,7 @@ inline fun remoteMessage(to: String, crossinline init: RemoteMessage.Builder.() 
     return builder.build()
 }
 
-public val FirebaseMessagingService.coroutineScope: CoroutineScope
+val FirebaseMessagingService.coroutineScope: CoroutineScope
     get() {
         val scope: CoroutineScope? = this.getTag(JOB_KEY)
         if (scope != null) {
