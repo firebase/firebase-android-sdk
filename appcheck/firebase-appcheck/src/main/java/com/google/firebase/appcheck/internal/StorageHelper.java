@@ -54,18 +54,21 @@ public class StorageHelper {
     checkNotNull(context);
     checkNotEmpty(persistenceKey);
     String prefsName = String.format(PREFS_TEMPLATE, persistenceKey);
-    this.sharedPreferences = new Lazy(() -> context.getSharedPreferences(prefsName, Context.MODE_PRIVATE));
+    this.sharedPreferences =
+        new Lazy(() -> context.getSharedPreferences(prefsName, Context.MODE_PRIVATE));
   }
 
   public void saveAppCheckToken(@NonNull AppCheckToken appCheckToken) {
     if (appCheckToken instanceof DefaultAppCheckToken) {
-      sharedPreferences.get()
+      sharedPreferences
+          .get()
           .edit()
           .putString(TOKEN_KEY, ((DefaultAppCheckToken) appCheckToken).serializeTokenToString())
           .putString(TOKEN_TYPE_KEY, TokenType.DEFAULT_APP_CHECK_TOKEN.name())
           .apply();
     } else {
-      sharedPreferences.get()
+      sharedPreferences
+          .get()
           .edit()
           .putString(TOKEN_KEY, appCheckToken.getToken())
           .putString(TOKEN_TYPE_KEY, TokenType.UNKNOWN_APP_CHECK_TOKEN.name())

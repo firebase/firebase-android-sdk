@@ -2,8 +2,6 @@ package com.google.firebase.appcheck;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
-
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
@@ -20,18 +18,18 @@ public class StrictModeTest {
   @Test
   public void initializingFirebaseAppcheck_shouldNotViolateStrictMode() {
     strictMode.runOnMainThread(
-            () -> {
-              FirebaseApp app =
-                      FirebaseApp.initializeApp(
-                              ApplicationProvider.getApplicationContext(),
-                              new FirebaseOptions.Builder()
-                                      .setApiKey("api")
-                                      .setProjectId("123")
-                                      .setApplicationId("appId")
-                                      .build(),
-                              "hello");
-              app.get(FirebaseAppCheck.class);
-              app.get(InternalAppCheckTokenProvider.class);
-            });
+        () -> {
+          FirebaseApp app =
+              FirebaseApp.initializeApp(
+                  ApplicationProvider.getApplicationContext(),
+                  new FirebaseOptions.Builder()
+                      .setApiKey("api")
+                      .setProjectId("123")
+                      .setApplicationId("appId")
+                      .build(),
+                  "hello");
+          app.get(FirebaseAppCheck.class);
+          app.get(InternalAppCheckTokenProvider.class);
+        });
   }
 }
