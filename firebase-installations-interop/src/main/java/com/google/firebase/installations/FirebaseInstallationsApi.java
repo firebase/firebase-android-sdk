@@ -48,9 +48,9 @@ public interface FirebaseInstallationsApi {
   Task<InstallationTokenResult> getToken(boolean forceRefresh);
 
   /**
-   * Async function that deletes this Firebase app installation from Firebase backend. This call
-   * would possibly lead Firebase Notification, Firebase RemoteConfig, Firebase Predictions or
-   * Firebase In-App Messaging not function properly.
+   * Async function that deletes this Firebase app installation from Firebase backend. This call may
+   * cause Firebase Cloud Messaging, Firebase Remote Config, Firebase A/B Testing, or Firebase
+   * In-App Messaging to not function properly.
    */
   @NonNull
   Task<Void> delete();

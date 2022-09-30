@@ -15,6 +15,7 @@
 package com.google.firebase.storage.ktx
 
 import androidx.annotation.Keep
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
@@ -23,10 +24,19 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 import com.google.firebase.storage.FileDownloadTask
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ListResult
+import com.google.firebase.storage.OnPausedListener
+import com.google.firebase.storage.OnProgressListener
 import com.google.firebase.storage.StorageMetadata
 import com.google.firebase.storage.StorageReference
+import com.google.firebase.storage.StorageTask
+import com.google.firebase.storage.StorageTaskScheduler
 import com.google.firebase.storage.StreamDownloadTask
 import com.google.firebase.storage.UploadTask
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 
 /** Returns the [FirebaseStorage] instance of the default [FirebaseApp]. */
 val Firebase.storage: FirebaseStorage
@@ -132,6 +142,47 @@ operator fun ListResult.component2(): List<StorageReference> = prefixes
  * @return the pageToken of the [ListResult]
  */
 operator fun ListResult.component3(): String? = pageToken
+
+/**
+ * Starts listening to this task's progress and emits its values via a [Flow].
+ *
+ * - When the returned flow starts being collected, it attaches the following listeners:
+ * [OnProgressListener], [OnPausedListener], [OnCompleteListener].
+ * - When the flow completes the listeners will be removed.
+ */
+val <T : StorageTask<T>.SnapshotBase> StorageTask<T>.taskState: Flow<TaskState<T>>
+    get() = callbackFlow {
+        val progressListener = OnProgressListener<T> { snapshot ->
+            StorageTaskScheduler.getInstance().scheduleCallback {
+                trySendBlocking(TaskState.InProgress(snapshot))
+            }
+        }
+        val pauseListener = OnPausedListener<T> { snapshot ->
+            StorageTaskScheduler.getInstance().scheduleCallback {
+                trySendBlocking(TaskState.Paused(snapshot))
+            }
+        }
+
+        // Only used to close or cancel the Flows, doesn't send any values
+        val completionListener = OnCompleteListener<T> { task ->
+            if (task.isSuccessful) {
+                close()
+            } else {
+                val exception = task.exception
+                cancel("Error getting the TaskState", exception)
+            }
+        }
+
+        addOnProgressListener(progressListener)
+        addOnPausedListener(pauseListener)
+        addOnCompleteListener(completionListener)
+
+        awaitClose {
+            removeOnProgressListener(progressListener)
+            removeOnPausedListener(pauseListener)
+            removeOnCompleteListener(completionListener)
+        }
+    }
 
 internal const val LIBRARY_NAME: String = "fire-stg-ktx"
 

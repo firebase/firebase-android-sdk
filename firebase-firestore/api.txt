@@ -19,6 +19,20 @@ package com.google.firebase {
 
 package com.google.firebase.firestore {
 
+  public class AggregateQuery {
+    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.AggregateQuerySnapshot> get(@NonNull com.google.firebase.firestore.AggregateSource);
+    method @NonNull public com.google.firebase.firestore.Query getQuery();
+  }
+
+  public class AggregateQuerySnapshot {
+    method public long getCount();
+    method @NonNull public com.google.firebase.firestore.AggregateQuery getQuery();
+  }
+
+  public enum AggregateSource {
+    enum_constant public static final com.google.firebase.firestore.AggregateSource SERVER;
+  }
+
   public class Blob implements java.lang.Comparable<com.google.firebase.firestore.Blob> {
     method public int compareTo(@NonNull com.google.firebase.firestore.Blob);
     method @NonNull public static com.google.firebase.firestore.Blob fromBytes(@NonNull byte[]);
@@ -154,7 +168,7 @@ package com.google.firebase.firestore {
     method @NonNull public <TResult> com.google.android.gms.tasks.Task<TResult> runTransaction(@NonNull com.google.firebase.firestore.Transaction.Function<TResult>);
     method @NonNull public <TResult> com.google.android.gms.tasks.Task<TResult> runTransaction(@NonNull com.google.firebase.firestore.TransactionOptions, @NonNull com.google.firebase.firestore.Transaction.Function<TResult>);
     method public void setFirestoreSettings(@NonNull com.google.firebase.firestore.FirebaseFirestoreSettings);
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setIndexConfiguration(@NonNull String);
+    method @NonNull @com.google.firebase.annotations.PreviewApi public com.google.android.gms.tasks.Task<java.lang.Void> setIndexConfiguration(@NonNull String);
     method public static void setLoggingEnabled(boolean);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> terminate();
     method public void useEmulator(@NonNull String, int);
@@ -290,6 +304,7 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull java.util.concurrent.Executor, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
     method @NonNull public com.google.firebase.firestore.ListenerRegistration addSnapshotListener(@NonNull android.app.Activity, @NonNull com.google.firebase.firestore.MetadataChanges, @NonNull com.google.firebase.firestore.EventListener<com.google.firebase.firestore.QuerySnapshot>);
+    method @NonNull public com.google.firebase.firestore.AggregateQuery count();
     method @NonNull public com.google.firebase.firestore.Query endAt(@NonNull com.google.firebase.firestore.DocumentSnapshot);
     method @NonNull public com.google.firebase.firestore.Query endAt(java.lang.Object...);
     method @NonNull public com.google.firebase.firestore.Query endBefore(@NonNull com.google.firebase.firestore.DocumentSnapshot);

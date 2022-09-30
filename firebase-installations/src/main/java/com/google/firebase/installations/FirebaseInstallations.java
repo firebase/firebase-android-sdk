@@ -25,6 +25,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.components.Lazy;
 import com.google.firebase.heartbeatinfo.HeartBeatController;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
@@ -65,7 +66,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final FirebaseInstallationServiceClient serviceClient;
   private final PersistedInstallation persistedInstallation;
   private final Utils utils;
-  private final IidStore iidStore;
+  private final Lazy<IidStore> iidStore;
   private final RandomFidGenerator fidGenerator;
   private final Object lock = new Object();
   private final ExecutorService backgroundExecutor;
@@ -137,7 +138,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
             firebaseApp.getApplicationContext(), heartBeatProvider),
         new PersistedInstallation(firebaseApp),
         Utils.getInstance(),
-        new IidStore(firebaseApp),
+        new Lazy<>(() -> new IidStore(firebaseApp)),
         new RandomFidGenerator());
   }
 
@@ -147,7 +148,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       FirebaseInstallationServiceClient serviceClient,
       PersistedInstallation persistedInstallation,
       Utils utils,
-      IidStore iidStore,
+      Lazy<IidStore> iidStore,
       RandomFidGenerator fidGenerator) {
     this.firebaseApp = firebaseApp;
     this.serviceClient = serviceClient;
@@ -266,7 +267,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
   /**
    * Call to delete this Firebase app installation from the Firebase backend. This call may cause
-   * Firebase Cloud Messaging, Firebase Remote Config, Firebase Predictions, or Firebase In-App
+   * Firebase Cloud Messaging, Firebase Remote Config, Firebase A/B Testing, or Firebase In-App
    * Messaging to not function properly.
    */
   @NonNull
@@ -372,6 +373,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     // Execute network calls (CreateInstallations or GenerateAuthToken) to the FIS Servers on
     // a separate executor i.e networkExecutor
     networkExecutor.execute(() -> doNetworkCallIfNecessary(forceRefresh));
+  }
+
+  private IidStore getIidStore() {
+    return iidStore.get();
   }
 
   private void doNetworkCallIfNecessary(boolean forceRefresh) {
@@ -506,7 +511,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       return fidGenerator.createRandomFid();
     }
     // For a default/chime firebase installation, read the existing iid from shared prefs
-    String fid = iidStore.readIid();
+    String fid = getIidStore().readIid();
     if (TextUtils.isEmpty(fid)) {
       fid = fidGenerator.createRandomFid();
     }
@@ -524,7 +529,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         && prefs.getFirebaseInstallationId().length() == 11) {
       // For a default firebase installation, read the stored star scoped iid token. This token
       // will be used for authenticating Instance-ID when migrating to FIS.
-      iidToken = iidStore.readToken();
+      iidToken = getIidStore().readToken();
     }
 
     InstallationResponse response =

@@ -43,8 +43,6 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
-        // Neccesary for Dagger
-        incremental = false
     }
 
     sourceSets {
@@ -104,6 +102,9 @@ dependencies {
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'com.google.guava:guava:30.1-android'
 
+    androidTestImplementation project(':integ-testing')
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation "androidx.annotation:annotation:1.0.0"
     androidTestImplementation "org.mockito:mockito-core:2.25.0"
     androidTestImplementation "com.google.dexmaker:dexmaker:1.2"
     androidTestImplementation "com.linkedin.dexmaker:dexmaker-mockito:2.28.1"

@@ -54,6 +54,7 @@ public class BomGeneratorTask extends DefaultTask {
           "com.google.firebase:firebase-analytics-ktx",
           "com.google.firebase:firebase-appcheck-debug",
           "com.google.firebase:firebase-appcheck-debug-testing",
+          "com.google.firebase:firebase-appcheck-ktx",
           "com.google.firebase:firebase-appcheck-playintegrity",
           "com.google.firebase:firebase-appcheck-safetynet",
           "com.google.firebase:firebase-appcheck",

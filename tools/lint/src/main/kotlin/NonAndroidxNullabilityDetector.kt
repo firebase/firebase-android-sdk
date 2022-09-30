@@ -93,7 +93,7 @@ class NonAndroidxNullabilityDetector : Detector(), SourceCodeScanner {
         }
 
         private fun doVisit(node: UDeclaration) {
-            for (annotation in node.annotations) {
+            for (annotation in node.uAnnotations) {
                 ensureAndroidNullability(context, annotation)
             }
         }

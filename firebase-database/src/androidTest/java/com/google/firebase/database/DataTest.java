@@ -1084,10 +1084,10 @@ public class DataTest {
 
     DatabaseReference ref =
         new DatabaseReference(
-            IntegrationTestValues.getNamespace() + "/a%b&c@d/space: /non-ascii:ø", ctx);
+            IntegrationTestValues.getDatabaseUrl() + "/a%b&c@d/space: /non-ascii:ø", ctx);
     String result = ref.toString();
     String encoded =
-        IntegrationTestValues.getNamespace() + "/a%25b%26c%40d/space%3A%20/non-ascii%3A%C3%B8";
+        IntegrationTestValues.getDatabaseUrl() + "/a%25b%26c%40d/space%3A%20/non-ascii%3A%C3%B8";
     assertEquals(encoded, result);
 
     String child = "" + new Random().nextInt(100000000);
@@ -1102,7 +1102,7 @@ public class DataTest {
           InterruptedException {
     DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
 
-    DatabaseReference ref = new DatabaseReference(IntegrationTestValues.getNamespace(), ctx);
+    DatabaseReference ref = new DatabaseReference(IntegrationTestValues.getDatabaseUrl(), ctx);
     assertNull(ref.getKey());
     assertEquals("a", ref.child("a").getKey());
     assertEquals("c", ref.child("b/c").getKey());
@@ -1114,7 +1114,7 @@ public class DataTest {
           InterruptedException {
     DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
 
-    DatabaseReference ref = new DatabaseReference(IntegrationTestValues.getNamespace(), ctx);
+    DatabaseReference ref = new DatabaseReference(IntegrationTestValues.getDatabaseUrl(), ctx);
     // Clear any data there
     new WriteFuture(ref, new MapBuilder().put("foo", 10).build()).timedGet();
 
@@ -1133,7 +1133,7 @@ public class DataTest {
   public void parentWorksForRootAndNonRootLocations() throws DatabaseException {
     DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
 
-    DatabaseReference ref = new DatabaseReference(IntegrationTestValues.getNamespace(), ctx);
+    DatabaseReference ref = new DatabaseReference(IntegrationTestValues.getDatabaseUrl(), ctx);
     assertNull(ref.getParent());
     DatabaseReference child = ref.child("a");
     assertEquals(ref, child.getParent());
@@ -1146,9 +1146,9 @@ public class DataTest {
     DatabaseReference ref = IntegrationTestHelpers.getRandomNode();
 
     ref = ref.getRoot();
-    assertEquals(IntegrationTestValues.getNamespace(), ref.toString());
+    assertEquals(IntegrationTestValues.getDatabaseUrl(), ref.toString());
     ref = ref.getRoot(); // Should be a no-op
-    assertEquals(IntegrationTestValues.getNamespace(), ref.toString());
+    assertEquals(IntegrationTestValues.getDatabaseUrl(), ref.toString());
   }
 
   // NOTE: skip test about child accepting numbers. Not applicable in a type-safe language
@@ -1187,14 +1187,14 @@ public class DataTest {
       }
 
       try {
-        new DatabaseReference(IntegrationTestValues.getNamespace() + "/" + path, ctx);
+        new DatabaseReference(IntegrationTestValues.getDatabaseUrl() + "/" + path, ctx);
         fail("Should not be a valid path: " + path);
       } catch (DatabaseException e) {
         // No-op, expected
       }
 
       try {
-        new DatabaseReference(IntegrationTestValues.getNamespace() + "/tests/" + path, ctx);
+        new DatabaseReference(IntegrationTestValues.getDatabaseUrl() + "/tests/" + path, ctx);
         fail("Should not be a valid path: " + path);
       } catch (DatabaseException e) {
         // No-op, expected
@@ -1478,7 +1478,7 @@ public class DataTest {
 
     String child = "" + new Random().nextInt(100000000);
     DatabaseReference ref1 =
-        new DatabaseReference(IntegrationTestValues.getNamespace() + "/" + child, ctx1);
+        new DatabaseReference(IntegrationTestValues.getDatabaseUrl() + "/" + child, ctx1);
     DatabaseReference ref2 =
         new DatabaseReference(
             "http://"
@@ -1497,7 +1497,7 @@ public class DataTest {
   @Test
   public void namespacesAreCaseInsensitiveInToString() throws DatabaseException {
     DatabaseConfig ctx = IntegrationTestHelpers.getContext(0);
-    DatabaseReference ref1 = new DatabaseReference(IntegrationTestValues.getNamespace(), ctx);
+    DatabaseReference ref1 = new DatabaseReference(IntegrationTestValues.getDatabaseUrl(), ctx);
     DatabaseReference ref2 =
         new DatabaseReference(
             "http://"

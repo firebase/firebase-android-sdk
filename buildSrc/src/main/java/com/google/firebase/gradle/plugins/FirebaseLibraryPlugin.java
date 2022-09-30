@@ -18,22 +18,26 @@ import static com.google.firebase.gradle.plugins.ClosureUtil.closureOf;
 
 import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.api.AndroidSourceSet;
+import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.dsl.TestOptions;
 import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatExtension;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.firebase.gradle.plugins.apiinfo.ApiInformationTask;
-import com.google.firebase.gradle.plugins.apiinfo.GenerateApiTxtFileTask;
-import com.google.firebase.gradle.plugins.apiinfo.GetMetalavaJarTask;
 import com.google.firebase.gradle.plugins.ci.Coverage;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer;
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin;
 import java.io.File;
 import java.nio.file.Paths;
+import kotlin.Unit;
 import org.gradle.api.JavaVersion;
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.FileCollection;
+import org.gradle.api.publish.PublishingExtension;
+import org.gradle.api.publish.maven.MavenPublication;
+import org.gradle.api.publish.tasks.GenerateModuleMetadata;
 import org.gradle.api.tasks.TaskProvider;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
 
@@ -63,14 +67,18 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     // In the case of and android library signing config only affects instrumentation test APK.
     // We need it signed with default debug credentials in order for FTL to accept the APK.
     android.buildTypes(
-        types ->
+        (NamedDomainObjectContainer<BuildType> types) ->
             types
                 .getByName("release")
                 .setSigningConfig(types.getByName("debug").getSigningConfig()));
+    android.defaultConfig(
+        cfg -> {
+          cfg.buildConfigField("String", "VERSION_NAME", "\"" + project.getVersion() + "\"");
+        });
 
     // see https://github.com/robolectric/robolectric/issues/5456
     android.testOptions(
-        options ->
+        (TestOptions options) ->
             options
                 .getUnitTests()
                 .all(
@@ -101,6 +109,8 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
 
     setupStaticAnalysis(project, firebaseLibrary);
 
+    configurePublishing(project, firebaseLibrary, android);
+
     // reduce the likelihood of kotlin module files colliding.
     project
         .getTasks()
@@ -112,11 +122,10 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                     .setFreeCompilerArgs(
                         ImmutableList.of("-module-name", kotlinModuleName(project))));
 
-    Dokka.configure(project, android, firebaseLibrary);
+    project.getPluginManager().apply(DackkaPlugin.class);
   }
 
   private static void setupApiInformationAnalysis(Project project, LibraryExtension android) {
-    File metalavaOutputJarFile = new File(project.getRootProject().getBuildDir(), "metalava.jar");
     AndroidSourceSet mainSourceSet = android.getSourceSets().getByName("main");
     File outputFile =
         project
@@ -128,14 +137,6 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                     project.getPath().substring(1).replace(":", "_")));
     File outputApiFile = new File(outputFile.getAbsolutePath() + "_api.txt");
 
-    project
-        .getTasks()
-        .register(
-            "getMetalavaJar",
-            GetMetalavaJarTask.class,
-            task -> {
-              task.setOutputFile(metalavaOutputJarFile);
-            });
     File apiTxt =
         project.file("api.txt").exists()
             ? project.file("api.txt")
@@ -147,33 +148,27 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                 "apiInformation",
                 ApiInformationTask.class,
                 task -> {
-                  task.setApiTxt(apiTxt);
-                  task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
-                  task.setSourceSet(mainSourceSet);
-                  task.setOutputFile(outputFile);
-                  task.setBaselineFile(project.file("baseline.txt"));
-                  task.setOutputApiFile(outputApiFile);
-                  if (project.hasProperty("updateBaseline")) {
-                    task.setUpdateBaseline(true);
-                  } else {
-                    task.setUpdateBaseline(false);
-                  }
-                  task.dependsOn("getMetalavaJar");
+                  task.getSources()
+                      .value(project.provider(() -> mainSourceSet.getJava().getSrcDirs()));
+                  task.getApiTxtFile().set(apiTxt);
+                  task.getBaselineFile().set(project.file("baseline.txt"));
+                  task.getOutputFile().set(outputFile);
+                  task.getOutputApiFile().set(outputApiFile);
+                  task.getUpdateBaseline().set(project.hasProperty("updateBaseline"));
                 });
 
-    TaskProvider<GenerateApiTxtFileTask> generateApiTxt =
+    TaskProvider<GenerateApiTxtTask> generateApiTxt =
         project
             .getTasks()
             .register(
                 "generateApiTxtFile",
-                GenerateApiTxtFileTask.class,
+                GenerateApiTxtTask.class,
                 task -> {
-                  task.setApiTxt(project.file("api.txt"));
-                  task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
-                  task.setSourceSet(mainSourceSet);
-                  task.setBaselineFile(project.file("baseline.txt"));
-                  task.setUpdateBaseline(project.hasProperty("updateBaseline"));
-                  task.dependsOn("getMetalavaJar");
+                  task.getSources()
+                      .value(project.provider(() -> mainSourceSet.getJava().getSrcDirs()));
+                  task.getApiTxtFile().set(project.file("api.txt"));
+                  task.getBaselineFile().set(project.file("baseline.txt"));
+                  task.getUpdateBaseline().set(project.hasProperty("updateBaseline"));
                 });
 
     TaskProvider<GenerateStubsTask> docStubs =
@@ -182,9 +177,9 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
             .register(
                 "docStubs",
                 GenerateStubsTask.class,
-                task -> {
-                  task.setSourceSet(mainSourceSet);
-                });
+                task ->
+                    task.getSources()
+                        .value(project.provider(() -> mainSourceSet.getJava().getSrcDirs())));
     project.getTasks().getByName("check").dependsOn(docStubs);
 
     android
@@ -200,7 +195,8 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                                 config.attributes(
                                     container ->
                                         container.attribute(
-                                            Attribute.of("artifactType", String.class), "jar")))
+                                            Attribute.of("artifactType", String.class),
+                                            "android-classes")))
                         .getArtifacts()
                         .getArtifactFiles();
                 apiInfo.configure(t -> t.setClassPath(jars));
@@ -243,5 +239,54 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
     String fullyQualifiedProjectPath = project.getPath().replaceAll(":", "-");
 
     return project.getRootProject().getName() + fullyQualifiedProjectPath;
+  }
+
+  private static void configurePublishing(
+      Project project, FirebaseLibraryExtension firebaseLibrary, LibraryExtension android) {
+    android.publishing(
+        p -> {
+          p.singleVariant(
+              "release",
+              v -> {
+                v.withSourcesJar();
+                return Unit.INSTANCE;
+              });
+        });
+    project
+        .getTasks()
+        .withType(
+            GenerateModuleMetadata.class,
+            task -> {
+              task.setEnabled(false);
+            });
+    project.afterEvaluate(
+        p -> {
+          project.apply(ImmutableMap.of("plugin", "maven-publish"));
+          PublishingExtension publishing =
+              project.getExtensions().getByType(PublishingExtension.class);
+          publishing.repositories(
+              repos ->
+                  repos.maven(
+                      repo -> {
+                        String s = project.getRootProject().getBuildDir() + "/m2repository";
+                        File file = new File(s);
+                        repo.setUrl(file.toURI());
+                        repo.setName("BuildDir");
+                      }));
+          publishing.publications(
+              publications ->
+                  publications.create(
+                      "mavenAar",
+                      MavenPublication.class,
+                      publication -> {
+                        publication.from(
+                            project
+                                .getComponents()
+                                .findByName(firebaseLibrary.type.getComponentName()));
+                        publication.setArtifactId(firebaseLibrary.artifactId.get());
+                        publication.setGroupId(firebaseLibrary.groupId.get());
+                        firebaseLibrary.applyPomCustomization(publication.getPom());
+                      }));
+        });
   }
 }

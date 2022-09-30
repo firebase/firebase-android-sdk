@@ -56,7 +56,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
   private static final String RELEASE_NAME =
       "projects/123456789/installations/cccccccccccccccccccccc/releases/release-id";
   private static final String FEEDBACK_NAME =
-      "projects/123456789/installations/cccccccccccccccccccccc/releases/release-id/feedback/feedback-id";
+      "projects/123456789/installations/cccccccccccccccccccccc/releases/release-id/feedbackReports/feedback-id";
   private static final String FEEDBACK_TEXT = "The feedback";
   private static final String APK_HASH = "apk-hash";
   private static final String IAS_ARTIFACT_ID = "ias-artifact-id";
@@ -67,11 +67,11 @@ public class FirebaseAppDistributionTesterApiClientTest {
   private static final String FIND_RELEASE_USING_IAS_PATH =
       "v1alpha/projects/123456789/installations/cccccccccccccccccccccc/releases:find?iasArtifactId=ias-artifact-id";
   private static final String CREATE_FEEDBACK_PATH =
-      "v1alpha/projects/123456789/installations/cccccccccccccccccccccc/releases/release-id/feedback";
+      "v1alpha/projects/123456789/installations/cccccccccccccccccccccc/releases/release-id/feedbackReports";
   private static final String COMMIT_FEEDBACK_PATH =
-      "v1alpha/projects/123456789/installations/cccccccccccccccccccccc/releases/release-id/feedback/feedback-id:commit";
+      "v1alpha/projects/123456789/installations/cccccccccccccccccccccc/releases/release-id/feedbackReports/feedback-id:commit";
   private static final String ATTACH_SCREENSHOT_PATH =
-      "upload/v1alpha/projects/123456789/installations/cccccccccccccccccccccc/releases/release-id/feedback/feedback-id:uploadArtifact?type=SCREENSHOT";
+      "upload/v1alpha/projects/123456789/installations/cccccccccccccccccccccc/releases/release-id/feedbackReports/feedback-id:uploadArtifact?type=SCREENSHOT";
 
   private FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   @Mock private Provider<FirebaseInstallationsApi> mockFirebaseInstallationsProvider;

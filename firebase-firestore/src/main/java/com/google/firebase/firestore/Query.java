@@ -1223,6 +1223,23 @@ public class Query {
     }
   }
 
+  /**
+   * Returns a query that counts the documents in the result set of this query.
+   *
+   * <p>The returned query, when executed, counts the documents in the result set of this query
+   * <em>without actually downloading the documents</em>.
+   *
+   * <p>Using the returned query to count the documents is efficient because only the final count,
+   * not the documents' data, is downloaded. The returned query can even count the documents if the
+   * result set would be prohibitively large to download entirely (e.g. thousands of documents).
+   *
+   * @return a query that counts the documents in the result set of this query.
+   */
+  @NonNull
+  public AggregateQuery count() {
+    return new AggregateQuery(this);
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {

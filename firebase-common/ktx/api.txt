@@ -2,11 +2,10 @@
 package com.google.firebase.ktx {
 
   public final class Firebase {
-    field public static final com.google.firebase.ktx.Firebase INSTANCE;
+    field @NonNull public static final com.google.firebase.ktx.Firebase INSTANCE;
   }
 
   public final class FirebaseKt {
-    ctor public FirebaseKt();
     method @NonNull public static com.google.firebase.FirebaseApp app(@NonNull com.google.firebase.ktx.Firebase, @NonNull String name);
     method @NonNull public static com.google.firebase.FirebaseApp getApp(@NonNull com.google.firebase.ktx.Firebase);
     method @NonNull public static com.google.firebase.FirebaseOptions getOptions(@NonNull com.google.firebase.ktx.Firebase);

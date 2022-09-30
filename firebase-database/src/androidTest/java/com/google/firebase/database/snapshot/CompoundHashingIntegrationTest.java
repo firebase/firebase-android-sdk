@@ -149,7 +149,7 @@ public class CompoundHashingIntegrationTest {
   private void oneRound() throws Throwable {
     final Node initialState = randomNode(random.nextInt(5000));
     Node currentState = initialState;
-    SynchronousConnection conn = new SynchronousConnection(IntegrationTestValues.getNamespace());
+    SynchronousConnection conn = new SynchronousConnection(IntegrationTestValues.getDatabaseUrl());
     conn.connect();
     conn.setValue(Path.getEmptyPath(), initialState, /*wait=*/ false);
     int numUpdates = random.nextInt(30);

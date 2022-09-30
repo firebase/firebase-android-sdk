@@ -23,5 +23,3 @@ discoverSubprojects(file('subprojects.cfg')).each {
 }
 
 renameBuildScripts(rootProject)
-
-apply from: new File(settingsDir, 'gradle/buildCache.gradle')

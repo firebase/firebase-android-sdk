@@ -18,8 +18,12 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.core.OnlineState;
+import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Transaction;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.QueryPurpose;
@@ -746,5 +750,15 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   @Override
   public TargetData getTargetDataForTarget(int targetId) {
     return this.listenTargets.get(targetId);
+  }
+
+  public Task<Long> runCountQuery(Query query) {
+    if (canUseNetwork()) {
+      return datastore.runCountQuery(query);
+    } else {
+      return Tasks.forException(
+          new FirebaseFirestoreException(
+              "Failed to get result from server.", FirebaseFirestoreException.Code.UNAVAILABLE));
+    }
   }
 }

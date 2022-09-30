@@ -17,9 +17,6 @@ package com.google.firebase.gradle.plugins;
 import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatExtension;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.firebase.gradle.plugins.apiinfo.ApiInformationTask;
-import com.google.firebase.gradle.plugins.apiinfo.GenerateApiTxtFileTask;
-import com.google.firebase.gradle.plugins.apiinfo.GetMetalavaJarTask;
 import com.google.firebase.gradle.plugins.ci.Coverage;
 import java.io.File;
 import java.nio.file.Paths;
@@ -28,6 +25,8 @@ import org.gradle.api.Project;
 import org.gradle.api.attributes.Attribute;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaPluginConvention;
+import org.gradle.api.publish.PublishingExtension;
+import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile;
@@ -58,7 +57,8 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
                         ImmutableList.of("-module-name", kotlinModuleName(project))));
 
     setupStaticAnalysis(project, firebaseLibrary);
-    project.afterEvaluate(p -> Dokka.configure(project, null, firebaseLibrary));
+    configurePublishing(project, firebaseLibrary);
+    project.getTasks().register("kotlindoc");
   }
 
   private static void setupStaticAnalysis(Project project, FirebaseLibraryExtension library) {
@@ -92,7 +92,6 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
   }
 
   private static void setupApiInformationAnalysis(Project project) {
-    File metalavaOutputJarFile = new File(project.getRootProject().getBuildDir(), "metalava.jar");
     SourceSet mainSourceSet =
         project
             .getConvention()
@@ -109,15 +108,6 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
                     project.getPath().substring(1).replace(":", "_")));
     File outputApiFile = new File(outputFile.getAbsolutePath() + "_api.txt");
 
-    project
-        .getTasks()
-        .register(
-            "getMetalavaJar",
-            GetMetalavaJarTask.class,
-            task -> {
-              task.setOutputFile(metalavaOutputJarFile);
-            });
-
     File apiTxt =
         project.file("api.txt").exists()
             ? project.file("api.txt")
@@ -129,33 +119,27 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
                 "apiInformation",
                 ApiInformationTask.class,
                 task -> {
-                  task.setApiTxt(apiTxt);
-                  task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
-                  task.setSourceSet(mainSourceSet);
-                  task.setOutputFile(outputFile);
-                  task.setBaselineFile(project.file("baseline.txt"));
-                  task.setOutputApiFile(outputApiFile);
-                  if (project.hasProperty("updateBaseline")) {
-                    task.setUpdateBaseline(true);
-                  } else {
-                    task.setUpdateBaseline(false);
-                  }
-                  task.dependsOn("getMetalavaJar");
+                  task.getSources()
+                      .value(project.provider(() -> mainSourceSet.getJava().getSrcDirs()));
+                  task.getApiTxtFile().set(apiTxt);
+                  task.getBaselineFile().set(project.file("baseline.txt"));
+                  task.getOutputFile().set(outputFile);
+                  task.getOutputApiFile().set(outputApiFile);
+                  task.getUpdateBaseline().set(project.hasProperty("updateBaseline"));
                 });
 
-    TaskProvider<GenerateApiTxtFileTask> generateApiTxt =
+    TaskProvider<GenerateApiTxtTask> generateApiTxt =
         project
             .getTasks()
             .register(
                 "generateApiTxtFile",
-                GenerateApiTxtFileTask.class,
+                GenerateApiTxtTask.class,
                 task -> {
-                  task.setApiTxt(project.file("api.txt"));
-                  task.setMetalavaJarPath(metalavaOutputJarFile.getAbsolutePath());
-                  task.setSourceSet(mainSourceSet);
-                  task.setBaselineFile(project.file("baseline.txt"));
-                  task.setUpdateBaseline(project.hasProperty("updateBaseline"));
-                  task.dependsOn("getMetalavaJar");
+                  task.getSources()
+                      .value(project.provider(() -> mainSourceSet.getJava().getSrcDirs()));
+                  task.getApiTxtFile().set(project.file("api.txt"));
+                  task.getBaselineFile().set(project.file("baseline.txt"));
+                  task.getUpdateBaseline().set(project.hasProperty("updateBaseline"));
                 });
 
     TaskProvider<GenerateStubsTask> docStubs =
@@ -164,11 +148,9 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
             .register(
                 "docStubs",
                 GenerateStubsTask.class,
-                task -> {
-                  task.dependsOn("getMetalavaJar");
-
-                  task.setSourceSet(mainSourceSet);
-                });
+                task ->
+                    task.getSources()
+                        .value(project.provider(() -> mainSourceSet.getJava().getSrcDirs())));
     project.getTasks().getByName("check").dependsOn(docStubs);
 
     project.afterEvaluate(
@@ -198,5 +180,35 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
     String fullyQualifiedProjectPath = project.getPath().replaceAll(":", "-");
 
     return project.getRootProject().getName() + fullyQualifiedProjectPath;
+  }
+
+  private static void configurePublishing(
+      Project project, FirebaseLibraryExtension firebaseLibrary) {
+    project.apply(ImmutableMap.of("plugin", "maven-publish"));
+    PublishingExtension publishing = project.getExtensions().getByType(PublishingExtension.class);
+    publishing.repositories(
+        repos ->
+            repos.maven(
+                repo -> {
+                  String s = project.getRootProject().getBuildDir() + "/m2repository";
+                  File file = new File(s);
+                  repo.setUrl(file.toURI());
+                  repo.setName("BuildDir");
+                }));
+    publishing.publications(
+        publications ->
+            publications.create(
+                "mavenAar",
+                MavenPublication.class,
+                publication -> {
+                  publication.from(
+                      project.getComponents().findByName(firebaseLibrary.type.getComponentName()));
+                  project.afterEvaluate(
+                      p -> {
+                        publication.setArtifactId(firebaseLibrary.artifactId.get());
+                        publication.setGroupId(firebaseLibrary.groupId.get());
+                        firebaseLibrary.applyPomCustomization(publication.getPom());
+                      });
+                }));
   }
 }

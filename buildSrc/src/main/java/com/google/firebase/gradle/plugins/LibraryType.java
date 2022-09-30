@@ -29,6 +29,14 @@ public enum LibraryType {
   }
 
   public String getComponentName() {
+    // Due to the fact that multiple components are created for android libraries(1 per variant),
+    // the "android" component contains artifacts from all 3 variants for Kotlin libraries, which is
+    // invalid(bug in
+    // https://github.com/wupdigital/android-maven-publish ?).
+    // So we explicitly choose the "Release" variant for android libraries.
+    if (this == ANDROID) {
+      return "release";
+    }
     return name().toLowerCase();
   }
 }

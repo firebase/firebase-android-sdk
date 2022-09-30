@@ -39,7 +39,7 @@ public class AffectedProjectFinder {
     this(project, changedPaths(project.getRootDir()), ignorePaths);
   }
 
-  private AffectedProjectFinder(
+  public AffectedProjectFinder(
       Project project, Set<String> changedPaths, List<Pattern> ignorePaths) {
     this.project = project;
     this.changedPaths =
@@ -68,9 +68,10 @@ public class AffectedProjectFinder {
 
   private static Set<String> changedPaths(File workDir) {
     try {
+      // works on CI only.
       Process process =
           Runtime.getRuntime()
-              .exec("git diff --name-only --submodule=diff HEAD@{0} HEAD@{1}", null, workDir);
+              .exec("git diff --name-only --submodule=diff HEAD^1 HEAD", null, workDir);
       try {
         return ImmutableSet.copyOf(
             CharStreams.readLines(new InputStreamReader(process.getInputStream())));

@@ -1,3 +1,7 @@
+# 20.0.3
+- [fixed] Fixed an issue that caused infinite number of retries with no exponential
+  backoff for `uploadChunk`
+
 # 19.2.2
 - [fixed] Fixed an issue that caused the SDK to report incorrect values for
   "getTotalByteCount()" after a download was paused and resumed.

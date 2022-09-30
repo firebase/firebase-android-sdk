@@ -62,6 +62,10 @@ public class StorageTaskScheduler {
     CALLBACK_QUEUE_EXECUTOR.allowCoreThreadTimeOut(true);
   }
 
+  public static void setCallbackQueueKeepAlive(long keepAliveTime, TimeUnit timeUnit) {
+    CALLBACK_QUEUE_EXECUTOR.setKeepAliveTime(keepAliveTime, timeUnit);
+  }
+
   public static StorageTaskScheduler getInstance() {
     return sInstance;
   }

@@ -26,9 +26,9 @@ import com.google.firebase.inappmessaging.internal.TestDeviceHelper;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.internal.time.Clock;
 import com.google.firebase.installations.FirebaseInstallationsApi;
-import dagger.Lazy;
 import dagger.Module;
 import dagger.Provides;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 /** Test bindings for API client */
@@ -77,7 +77,9 @@ public class TestApiClientModule {
   @Provides
   @FirebaseAppScope
   ApiClient providesApiClient(
-      Lazy<GrpcClient> grpcClient, Application application, ProviderInstaller providerInstaller) {
+      Provider<GrpcClient> grpcClient,
+      Application application,
+      ProviderInstaller providerInstaller) {
     return new ApiClient(grpcClient, firebaseApp, application, clock, providerInstaller);
   }
 }

@@ -21,6 +21,7 @@ group = 'com.google.firebase'
 firebaseLibrary {
     testLab.enabled = false
     publishSources = true
+    publishJavadoc = false
 }
 
 android {
@@ -45,5 +46,5 @@ android {
 dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-components')
-    implementation 'com.google.android.play:core:1.9.0'
+    implementation 'com.google.android.play:feature-delivery:2.0.0'
 }

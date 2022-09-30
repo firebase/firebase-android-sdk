@@ -514,12 +514,13 @@ public class Repo implements PersistentConnection.Delegate {
    */
   public Task<DataSnapshot> getValue(Query query) {
     TaskCompletionSource<DataSnapshot> source = new TaskCompletionSource<>();
+    final Repo repo = this;
     this.scheduleNow(
         new Runnable() {
           @Override
           public void run() {
             // Always check active-listener in-memory caches first. These are always at least as
-            // up to date as the persistence cache.
+            // up to date as the persistence cache
             Node serverValue = serverSyncTree.getServerValue(query.getSpec());
             if (serverValue != null) {
               source.setResult(
@@ -548,15 +549,35 @@ public class Repo implements PersistentConnection.Delegate {
                           source.setException(Objects.requireNonNull(task.getException()));
                         }
                       } else {
+                        /*
+                         * We need to replicate the behavior that occurs when running `once()`. In other words,
+                         * we need to create a new eventRegistration, register it with a view and then
+                         * overwrite the data at that location, and then remove the view.
+                         */
                         Node serverNode = NodeUtilities.NodeFromJSON(task.getResult());
-                        postEvents(
-                            serverSyncTree.applyServerOverwrite(query.getPath(), serverNode));
+                        QuerySpec spec = query.getSpec();
+                        // EventRegistrations require a listener to be attached, so a dummy
+                        // ValueEventListener was created.
+                        keepSynced(spec, /*keep=*/ true, /*skipDedup=*/ true);
+                        List<? extends Event> events;
+                        if (spec.loadsAllData()) {
+                          events = serverSyncTree.applyServerOverwrite(spec.getPath(), serverNode);
+                        } else {
+                          events =
+                              serverSyncTree.applyTaggedQueryOverwrite(
+                                  spec.getPath(),
+                                  serverNode,
+                                  getServerSyncTree().tagForQuery(spec));
+                        }
+                        repo.postEvents(
+                            events); // to ensure that other listeners end up getting their cached
+                        // events.
                         source.setResult(
                             InternalHelpers.createDataSnapshot(
                                 query.getRef(),
                                 IndexedNode.from(serverNode, query.getSpec().getIndex())));
+                        keepSynced(spec, /*keep=*/ false, /*skipDedup=*/ true);
                       }
-                      serverSyncTree.setQueryInactive(query.getSpec());
                     });
           }
         });
@@ -743,9 +764,12 @@ public class Repo implements PersistentConnection.Delegate {
   }
 
   public void keepSynced(QuerySpec query, boolean keep) {
-    hardAssert(query.getPath().isEmpty() || !query.getPath().getFront().equals(Constants.DOT_INFO));
+    keepSynced(query, keep, /*skipDedup=*/ false);
+  }
 
-    serverSyncTree.keepSynced(query, keep);
+  public void keepSynced(QuerySpec query, boolean keep, final boolean skipDedup) {
+    hardAssert(query.getPath().isEmpty() || !query.getPath().getFront().equals(Constants.DOT_INFO));
+    serverSyncTree.keepSynced(query, keep, skipDedup);
   }
 
   PersistentConnection getConnection() {

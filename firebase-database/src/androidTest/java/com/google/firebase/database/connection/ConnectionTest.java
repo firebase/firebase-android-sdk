@@ -62,8 +62,8 @@ public class ConnectionTest {
         };
     HostInfo info =
         new HostInfo(
-            IntegrationTestValues.getProjectId() + "." + IntegrationTestValues.getServer(),
-            IntegrationTestValues.getProjectId(),
+            IntegrationTestValues.getHostname(),
+            IntegrationTestValues.getNamespace(),
             /*secure=*/ true);
     DatabaseConfig config = IntegrationTestHelpers.newFrozenTestConfig();
     Connection conn = new Connection(config.getConnectionContext(), info, null, del, null, "");

@@ -107,9 +107,9 @@ public class FirebaseDatabaseTest {
   public void getInstanceForAppWithUrl() {
     FirebaseApp app =
         appForDatabaseUrl(IntegrationTestValues.getAltNamespace(), "getInstanceForAppWithUrl");
-    FirebaseDatabase db = FirebaseDatabase.getInstance(app, IntegrationTestValues.getNamespace());
+    FirebaseDatabase db = FirebaseDatabase.getInstance(app, IntegrationTestValues.getDatabaseUrl());
 
-    assertEquals(IntegrationTestValues.getNamespace(), db.getReference().toString());
+    assertEquals(IntegrationTestValues.getDatabaseUrl(), db.getReference().toString());
   }
 
   @Test
@@ -140,15 +140,15 @@ public class FirebaseDatabaseTest {
   public void getDifferentInstanceForAppWithUrl() {
     FirebaseApp app =
         appForDatabaseUrl(
-            IntegrationTestValues.getNamespace(), "getDifferentInstanceForAppWithUrl");
+            IntegrationTestValues.getDatabaseUrl(), "getDifferentInstanceForAppWithUrl");
     FirebaseDatabase unspecified = FirebaseDatabase.getInstance(app);
     FirebaseDatabase original =
-        FirebaseDatabase.getInstance(app, IntegrationTestValues.getNamespace());
+        FirebaseDatabase.getInstance(app, IntegrationTestValues.getDatabaseUrl());
     FirebaseDatabase alternate =
         FirebaseDatabase.getInstance(app, IntegrationTestValues.getAltNamespace());
 
-    assertEquals(IntegrationTestValues.getNamespace(), unspecified.getReference().toString());
-    assertEquals(IntegrationTestValues.getNamespace(), original.getReference().toString());
+    assertEquals(IntegrationTestValues.getDatabaseUrl(), unspecified.getReference().toString());
+    assertEquals(IntegrationTestValues.getDatabaseUrl(), original.getReference().toString());
     assertEquals(IntegrationTestValues.getAltNamespace(), alternate.getReference().toString());
   }
 
@@ -201,7 +201,8 @@ public class FirebaseDatabaseTest {
   @Test
   public void getReference() {
     FirebaseDatabase db = FirebaseDatabase.getInstance();
-    assertEquals(IntegrationTestValues.getNamespace() + "/foo", db.getReference("foo").toString());
+    assertEquals(
+        IntegrationTestValues.getDatabaseUrl() + "/foo", db.getReference("foo").toString());
   }
 
   @Test
@@ -235,16 +236,16 @@ public class FirebaseDatabaseTest {
   @Test
   public void getReferenceFromURLWithEmptyPath() {
     FirebaseDatabase db = FirebaseDatabase.getInstance();
-    DatabaseReference ref = db.getReferenceFromUrl(IntegrationTestValues.getNamespace());
-    assertEquals(IntegrationTestValues.getNamespace(), ref.toString());
+    DatabaseReference ref = db.getReferenceFromUrl(IntegrationTestValues.getDatabaseUrl());
+    assertEquals(IntegrationTestValues.getDatabaseUrl(), ref.toString());
   }
 
   @Test
   public void getReferenceFromURLWithPath() {
     FirebaseDatabase db = FirebaseDatabase.getInstance();
     DatabaseReference ref =
-        db.getReferenceFromUrl(IntegrationTestValues.getNamespace() + "/foo/bar");
-    assertEquals(IntegrationTestValues.getNamespace() + "/foo/bar", ref.toString());
+        db.getReferenceFromUrl(IntegrationTestValues.getDatabaseUrl() + "/foo/bar");
+    assertEquals(IntegrationTestValues.getDatabaseUrl() + "/foo/bar", ref.toString());
   }
 
   @Test(expected = DatabaseException.class)
@@ -261,8 +262,8 @@ public class FirebaseDatabaseTest {
 
   @Test
   public void referenceEqualityForDatabase() {
-    FirebaseDatabase db1 = dbForDatabaseUrl(IntegrationTestValues.getNamespace(), "db1");
-    FirebaseDatabase db2 = dbForDatabaseUrl(IntegrationTestValues.getNamespace(), "db2");
+    FirebaseDatabase db1 = dbForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), "db1");
+    FirebaseDatabase db2 = dbForDatabaseUrl(IntegrationTestValues.getDatabaseUrl(), "db2");
     FirebaseDatabase altDb = dbForDatabaseUrl(IntegrationTestValues.getAltNamespace(), "altdb");
 
     DatabaseReference testRef1 = db1.getReference();

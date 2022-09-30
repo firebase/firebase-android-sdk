@@ -165,7 +165,6 @@ public class IndexBackfillerTest {
     backfiller.setMaxDocumentsToProcess(2);
 
     addFieldIndex("coll1", "foo");
-    Target target = query("coll1").orderBy(orderBy("foo")).toTarget();
     addDoc("coll1/docA", version(5), "foo", 1);
     addDoc("coll1/docB", version(3), "foo", 1);
     addDoc("coll1/docC", version(10), "foo", 1);
@@ -186,7 +185,6 @@ public class IndexBackfillerTest {
     backfiller.setMaxDocumentsToProcess(2);
 
     addFieldIndex("coll1", "foo");
-    Target target = query("coll1").orderBy(orderBy("foo")).toTarget();
     addDoc("coll1/docA", version(1), "foo", 1);
     addDoc("coll1/docB", version(1), "foo", 1);
     addDoc("coll1/docC", version(1), "foo", 1);
@@ -363,7 +361,7 @@ public class IndexBackfillerTest {
 
     // Update doc to new remote version with new value.
     addDoc("coll/doc", version(40), "foo", 2);
-    documentsProcessed = backfiller.backfill();
+    backfiller.backfill();
 
     verifyQueryResults(queryA, "coll/doc");
   }

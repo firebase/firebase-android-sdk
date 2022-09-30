@@ -259,6 +259,27 @@ public class DisplayCallbacksImplTest {
   }
 
   @Test
+  public void logImpression_forOneMessageShouldNotAffectOtherMessages() {
+    FirebaseInAppMessagingDisplayCallbacks displayCallbacksImplOne =
+        displayCallbacksFactory.generateDisplayCallback(
+            BANNER_TEST_MESSAGE_MODEL, ANALYTICS_EVENT_NAME);
+
+    FirebaseInAppMessagingDisplayCallbacks displayCallbacksImplTwo =
+        displayCallbacksFactory.generateDisplayCallback(
+            BANNER_TEST_MESSAGE_MODEL, ANALYTICS_EVENT_NAME);
+
+    displayCallbacksImplOne.impressionDetected();
+
+    assertThat(((DisplayCallbacksImpl) displayCallbacksImplOne).wasImpressed()).isTrue();
+    assertThat(((DisplayCallbacksImpl) displayCallbacksImplTwo).wasImpressed()).isFalse();
+
+    displayCallbacksImplTwo.impressionDetected();
+
+    assertThat(((DisplayCallbacksImpl) displayCallbacksImplOne).wasImpressed()).isTrue();
+    assertThat(((DisplayCallbacksImpl) displayCallbacksImplTwo).wasImpressed()).isTrue();
+  }
+
+  @Test
   public void logImpression_forTestCampaign_doesRecordImpression() {
     displayCallbacksImpl =
         displayCallbacksFactory.generateDisplayCallback(
