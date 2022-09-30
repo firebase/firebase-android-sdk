@@ -167,7 +167,7 @@ public class FirebaseMessagingService extends EnhancedIntentService {
     super.onDestroy();
   }
 
-  /** hide */
+  /** @hide */
   public <T> T setCoroutineScope(@NonNull T newScope) {
     T previousScope;
     previousScope = (T) closeableCoroutineScope;
