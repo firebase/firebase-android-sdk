@@ -30,7 +30,6 @@ import java.io.Closeable
 import kotlin.coroutines.CoroutineContext
 
 internal const val LIBRARY_NAME: String = "fire-fcm-ktx"
-private const val JOB_KEY = "com.google.firebase.messaging.FirebaseMessagingService.JOB_KEY"
 
 /** Returns the [FirebaseMessaging] instance of the default [FirebaseApp]. */
 val Firebase.messaging: FirebaseMessaging
@@ -43,16 +42,22 @@ inline fun remoteMessage(to: String, crossinline init: RemoteMessage.Builder.() 
     return builder.build()
 }
 
+/**
+ * [CoroutineScope] tied to this [FirebaseMessagingService].
+ * This scope will be canceled when the Service is destroyed,
+ * i.e [FirebaseMessagingService.onDestroy] is called
+ *
+ * This scope is bound to
+ * [Dispatchers.Main.immediate][kotlinx.coroutines.MainCoroutineDispatcher.immediate]
+ */
 val FirebaseMessagingService.coroutineScope: CoroutineScope
     get() {
-        val scope: CoroutineScope? = this.getTag(JOB_KEY)
+        val scope: CoroutineScope? = this.getCoroutineScope()
         if (scope != null) {
             return scope
         }
-        return setTagIfAbsent(
-            JOB_KEY,
-            CloseableCoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-        )
+        val coroutineContext = SupervisorJob() + Dispatchers.Main.immediate
+        return setCoroutineScope(CloseableCoroutineScope(coroutineContext))
     }
 
 internal class CloseableCoroutineScope(context: CoroutineContext) : Closeable, CoroutineScope {

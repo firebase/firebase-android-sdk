@@ -83,7 +83,7 @@ public class FirebaseMessagingService extends EnhancedIntentService {
   private static final int RECENTLY_RECEIVED_MESSAGE_IDS_MAX_SIZE = 10;
 
   @Nullable
-  private final Map<String, Object> mTags = new HashMap<>();
+  private Object closeableCoroutineScope = null;
   private volatile boolean mDestroyed = false;
 
   /**
@@ -161,33 +161,21 @@ public class FirebaseMessagingService extends EnhancedIntentService {
   @CallSuper
   public void onDestroy() {
     mDestroyed = true;
-    if (mTags != null) {
-      synchronized (mTags) {
-        // Close all the added Closeables
-        for (Object value : mTags.values()) {
-          closeWithRuntimeException(value);
-        }
-      }
+    if (closeableCoroutineScope != null) {
+      closeWithRuntimeException(closeableCoroutineScope);
     }
     super.onDestroy();
   }
 
-  /** @hide */
-  public <T> T setTagIfAbsent(@NonNull String key, @NonNull T newValue) {
-    // As this method is final, it will still be called on mock objects even
-    // though mCloseables won't actually be created...we'll just not do anything
-    // in that case.
-    if (mTags == null) {
-      return null;
+  /** hide */
+  public <T> T setCoroutineScope(@NonNull T newScope) {
+    T previousScope;
+    previousScope = (T) closeableCoroutineScope;
+    if (previousScope == null) {
+      closeableCoroutineScope = newScope;
     }
-    T previous;
-    synchronized (mTags) {
-      previous = (T) mTags.get(key);
-      if (previous == null) {
-        mTags.put(key, newValue);
-      }
-    }
-    T result = previous == null ? newValue : previous;
+
+    T result = previousScope == null ? newScope : previousScope;
     if (mDestroyed) {
       // It is possible that we'll call close() multiple times on the same object, but
       // Closeable interface requires close method to be idempotent:
@@ -199,13 +187,8 @@ public class FirebaseMessagingService extends EnhancedIntentService {
 
   /** @hide */
   @Nullable
-  public <T> T getTag(@NonNull String key) {
-    if (mTags == null) {
-      return null;
-    }
-    synchronized (mTags) {
-      return (T) mTags.get(key);
-    }
+  public <T> T getCoroutineScope() {
+    return (T) closeableCoroutineScope;
   }
 
   /** @hide */
