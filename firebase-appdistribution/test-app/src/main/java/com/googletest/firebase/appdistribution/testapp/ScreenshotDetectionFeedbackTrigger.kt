@@ -21,8 +21,10 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
-import com.google.firebase.appdistribution.FirebaseAppDistribution
+import com.google.firebase.appdistribution.ktx.appDistribution
+import com.google.firebase.ktx.Firebase
 import java.util.*
+import kotlin.collections.HashSet
 
 class ScreenshotDetectionFeedbackTrigger
 private constructor(private val infoTextResourceId: Int, handler: Handler) :
@@ -125,7 +127,7 @@ private constructor(private val infoTextResourceId: Int, handler: Handler) :
           val path = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA))
           Log.i(TAG, "Path: $path")
           if (path.lowercase(Locale.getDefault()).contains("screenshot")) {
-            FirebaseAppDistribution.getInstance().startFeedback(infoTextResourceId, uri)
+            Firebase.appDistribution.startFeedback(infoTextResourceId, uri)
           }
         }
       }
