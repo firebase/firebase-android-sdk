@@ -324,76 +324,6 @@ public class TraceTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testAddingSubtraceWithStartAndStop() {
-    Trace trace = new Trace(TRACE_1, mockTransportManager, mockClock, mockAppStateMonitor);
-
-    currentTime = 1;
-    trace.start();
-
-    currentTime = 2;
-    trace.startStage(TRACE_2);
-
-    currentTime = 3;
-    trace.stopStage();
-
-    currentTime = 4;
-    trace.stop();
-
-    assertThat(trace.getName()).isEqualTo(TRACE_1);
-    assertThat(trace.getStartTime().getMicros()).isEqualTo(1);
-    assertThat(trace.getEndTime().getMicros()).isEqualTo(4);
-    assertThat(trace.getSubtraces()).hasSize(1);
-    assertThat(trace.getCounters()).isEmpty();
-
-    Trace subtrace = trace.getSubtraces().get(0);
-
-    assertThat(subtrace.getName()).isEqualTo(TRACE_2);
-    assertThat(subtrace.getStartTime().getMicros()).isEqualTo(2);
-    assertThat(subtrace.getEndTime().getMicros()).isEqualTo(3);
-    assertThat(subtrace.getSubtraces()).isEmpty();
-    assertThat(subtrace.getCounters()).isEmpty();
-
-    verify(mockTransportManager).log(arguments.capture(), nullable(ApplicationProcessState.class));
-  }
-
-  @Test
-  public void testAddingSubtraceAndCountersWithStartAndStop() {
-    Trace trace = new Trace(TRACE_1, mockTransportManager, mockClock, mockAppStateMonitor);
-
-    currentTime = 1;
-    trace.start();
-
-    currentTime = 2;
-    trace.startStage(TRACE_2);
-    trace.incrementMetric(METRIC_1, 1);
-    trace.incrementMetric(METRIC_1, 1);
-    trace.incrementMetric(METRIC_2, 1);
-    trace.incrementMetric(METRIC_2, 1);
-    trace.incrementMetric(METRIC_2, 1);
-
-    currentTime = 3;
-    trace.stop();
-
-    assertThat(trace.getName()).isEqualTo(TRACE_1);
-    assertThat(trace.getStartTime().getMicros()).isEqualTo(1);
-    assertThat(trace.getEndTime().getMicros()).isEqualTo(3);
-    assertThat(trace.getSubtraces()).hasSize(1);
-    assertThat(trace.getCounters()).hasSize(2);
-    assertThat(trace.getCounters().get(METRIC_1).getCount()).isEqualTo(2);
-    assertThat(trace.getCounters().get(METRIC_2).getCount()).isEqualTo(3);
-
-    Trace subtrace = trace.getSubtraces().get(0);
-
-    assertThat(subtrace.getName()).isEqualTo(TRACE_2);
-    assertThat(subtrace.getStartTime().getMicros()).isEqualTo(2);
-    assertThat(subtrace.getEndTime().getMicros()).isEqualTo(3);
-    assertThat(subtrace.getSubtraces()).isEmpty();
-    assertThat(subtrace.getCounters()).isEmpty();
-
-    verify(mockTransportManager).log(arguments.capture(), nullable(ApplicationProcessState.class));
-  }
-
-  @Test
   public void testGlobalTrace() {
     Trace trace = Trace.getTrace(TRACE_1, mockTransportManager, mockClock, mockAppStateMonitor);
 
@@ -401,7 +331,6 @@ public class TraceTest extends FirebasePerformanceTestBase {
     Trace.startTrace(TRACE_1);
 
     currentTime = 2;
-    trace.startStage(TRACE_2);
     trace.incrementMetric(METRIC_1, 1);
     trace.incrementMetric(METRIC_1, 1);
     trace.incrementMetric(METRIC_2, 1);
@@ -414,18 +343,9 @@ public class TraceTest extends FirebasePerformanceTestBase {
     assertThat(trace.getName()).isEqualTo(TRACE_1);
     assertThat(trace.getStartTime().getMicros()).isEqualTo(1);
     assertThat(trace.getEndTime().getMicros()).isEqualTo(3);
-    assertThat(trace.getSubtraces()).hasSize(1);
     assertThat(trace.getCounters()).hasSize(2);
     assertThat(trace.getCounters().get(METRIC_1).getCount()).isEqualTo(2);
     assertThat(trace.getCounters().get(METRIC_2).getCount()).isEqualTo(3);
-
-    Trace subtrace = trace.getSubtraces().get(0);
-
-    assertThat(subtrace.getName()).isEqualTo(TRACE_2);
-    assertThat(subtrace.getStartTime().getMicros()).isEqualTo(2);
-    assertThat(subtrace.getEndTime().getMicros()).isEqualTo(3);
-    assertThat(subtrace.getSubtraces()).isEmpty();
-    assertThat(subtrace.getCounters()).isEmpty();
 
     verify(mockTransportManager).log(arguments.capture(), nullable(ApplicationProcessState.class));
 

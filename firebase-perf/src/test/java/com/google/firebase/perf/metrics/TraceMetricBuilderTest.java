@@ -134,36 +134,11 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testAddingSubtraceWithStartAndStop() {
-    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
-    currentTime = 1;
-    trace.start();
-    currentTime = 2;
-    trace.startStage(TRACE_2);
-    currentTime = 3;
-    trace.stop();
-    TraceMetric traceMetric = new TraceMetricBuilder(trace).build();
-
-    Assert.assertEquals(TRACE_1, traceMetric.getName());
-    Assert.assertEquals(1, traceMetric.getClientStartTimeUs());
-    Assert.assertEquals(2, traceMetric.getDurationUs());
-    Assert.assertEquals(0, traceMetric.getCountersCount());
-
-    TraceMetric subtrace = traceMetric.getSubtraces(0);
-    Assert.assertEquals(TRACE_2, subtrace.getName());
-    Assert.assertEquals(2, subtrace.getClientStartTimeUs());
-    Assert.assertEquals(1, subtrace.getDurationUs());
-    Assert.assertEquals(0, subtrace.getCountersCount());
-    Assert.assertEquals(0, subtrace.getSubtracesCount());
-  }
-
-  @Test
   public void testAddingSubtraceAndCountersWithStartAndStop() {
     Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
     currentTime = 1;
     trace.start();
     currentTime = 2;
-    trace.startStage(TRACE_2);
     trace.incrementMetric(METRIC_1, 1);
     trace.incrementMetric(METRIC_1, 1);
     trace.incrementMetric(METRIC_2, 1);
@@ -182,14 +157,6 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
     Assert.assertEquals(2, counterMap.size());
     Assert.assertEquals(Long.valueOf(2), counterMap.get(METRIC_1));
     Assert.assertEquals(Long.valueOf(3), counterMap.get(METRIC_2));
-    Assert.assertEquals(1, traceMetric.getSubtracesCount());
-
-    TraceMetric subtrace = traceMetric.getSubtraces(0);
-    Assert.assertEquals(TRACE_2, subtrace.getName());
-    Assert.assertEquals(2, subtrace.getClientStartTimeUs());
-    Assert.assertEquals(1, subtrace.getDurationUs());
-    Assert.assertEquals(0, subtrace.getCountersCount());
-    Assert.assertEquals(0, subtrace.getSubtracesCount());
   }
 
   @Test
@@ -198,7 +165,6 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
     currentTime = 1;
     trace.start();
     currentTime = 2;
-    trace.startStage(TRACE_2);
     trace.putAttribute(TRACE_ATTRIBUTE_KEY, TRACE_ATTRIBUTE_VALUE);
     currentTime = 3;
     trace.stop();
@@ -218,7 +184,6 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
     trace.start();
     currentTime = 2;
     trace.putAttribute(TRACE_ATTRIBUTE_KEY + beforeStart, TRACE_ATTRIBUTE_VALUE + beforeStart);
-    trace.startStage(TRACE_2);
     trace.putAttribute(TRACE_ATTRIBUTE_KEY + afterStart, TRACE_ATTRIBUTE_VALUE + afterStart);
     currentTime = 3;
     trace.stop();
@@ -260,7 +225,6 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
     currentTime = 1;
     trace.start();
     currentTime = 2;
-    trace.startStage(TRACE_2);
     trace.putAttribute(TRACE_ATTRIBUTE_KEY, TRACE_ATTRIBUTE_VALUE);
     currentTime = 3;
     trace.removeAttribute(TRACE_ATTRIBUTE_KEY);
@@ -304,7 +268,6 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
     currentTime = 1;
     trace.start();
     currentTime = 2;
-    trace.startStage(TRACE_2);
     trace.putAttribute(TRACE_ATTRIBUTE_KEY, TRACE_ATTRIBUTE_VALUE);
     currentTime = 3;
     trace.removeAttribute(TRACE_ATTRIBUTE_KEY + "NonExisting");
@@ -321,7 +284,6 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
     currentTime = 1;
     trace.start();
     currentTime = 2;
-    trace.startStage(TRACE_2);
     trace.putAttribute(TRACE_ATTRIBUTE_KEY, TRACE_ATTRIBUTE_VALUE);
     currentTime = 3;
     trace.putAttribute(TRACE_ATTRIBUTE_KEY, TRACE_ATTRIBUTE_VALUE + "New");

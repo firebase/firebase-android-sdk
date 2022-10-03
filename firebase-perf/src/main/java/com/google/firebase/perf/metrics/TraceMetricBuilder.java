@@ -46,13 +46,6 @@ class TraceMetricBuilder {
       traceMetric.putCounters(counter.getName(), counter.getCount());
     }
 
-    List<Trace> subTraces = trace.getSubtraces();
-    if (!subTraces.isEmpty()) {
-      for (Trace subtrace : subTraces) {
-        traceMetric.addSubtraces(new TraceMetricBuilder(subtrace).build());
-      }
-    }
-
     traceMetric.putAllCustomAttributes(trace.getAttributes());
 
     com.google.firebase.perf.v1.PerfSession[] perfSessions =

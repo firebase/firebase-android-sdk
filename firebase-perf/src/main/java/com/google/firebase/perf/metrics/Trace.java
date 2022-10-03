@@ -64,7 +64,6 @@ public class Trace extends AppStateUpdateHandler
 
   // TODO(b/177317027): Consider using a Set to avoid adding same PerfSession object
   private final List<PerfSession> sessions;
-  private final List<Trace> subtraces;
 
   private final TransportManager transportManager;
   private final Clock clock;
@@ -114,7 +113,6 @@ public class Trace extends AppStateUpdateHandler
    * @param name Name of the trace
    * @param startTime Start time of the trace
    * @param endTime End time of the trace
-   * @param subtraces List of subtraces
    * @param counters List of counters
    * @param attributes The map of custom attributes
    * @hide
@@ -124,14 +122,12 @@ public class Trace extends AppStateUpdateHandler
       @NonNull String name,
       Timer startTime,
       Timer endTime,
-      @Nullable List<Trace> subtraces,
       @Nullable Map<String, Counter> counters,
       @Nullable Map<String, String> attributes) {
     this.parent = parent;
     this.name = name.trim();
     this.startTime = startTime;
     this.endTime = endTime;
-    this.subtraces = subtraces != null ? subtraces : new ArrayList<>();
     this.counterNameToCounterMap = counters != null ? counters : new ConcurrentHashMap<>();
     this.customAttributesMap = attributes != null ? attributes : new ConcurrentHashMap<>();
     clock = parent.clock;
@@ -169,7 +165,6 @@ public class Trace extends AppStateUpdateHandler
     super(appStateMonitor);
     parent = null;
     this.name = name.trim();
-    subtraces = new ArrayList<>();
     counterNameToCounterMap = new ConcurrentHashMap<>();
     customAttributesMap = new ConcurrentHashMap<>();
     this.clock = clock;
@@ -182,8 +177,6 @@ public class Trace extends AppStateUpdateHandler
     super(isDataOnly ? null : AppStateMonitor.getInstance());
     parent = in.readParcelable(Trace.class.getClassLoader());
     name = in.readString();
-    subtraces = new ArrayList<>();
-    in.readList(subtraces, Trace.class.getClassLoader());
     counterNameToCounterMap = new ConcurrentHashMap<>();
     customAttributesMap = new ConcurrentHashMap<>();
     in.readMap(counterNameToCounterMap, Counter.class.getClassLoader());
@@ -255,7 +248,6 @@ public class Trace extends AppStateUpdateHandler
     unregisterForAppState();
     endTime = clock.getTime();
     if (parent == null) {
-      setEndTimeOfLastStage(endTime);
       if (!name.isEmpty()) {
         transportManager.log(new TraceMetricBuilder(this).build(), getAppState());
 
@@ -267,44 +259,6 @@ public class Trace extends AppStateUpdateHandler
         logger.error("Trace name is empty, no log is sent to server");
       }
     }
-  }
-
-  /**
-   * Set the end time of the last stage if there is any
-   *
-   * @param endTime time in millis to be set as end time of the last stage
-   */
-  private void setEndTimeOfLastStage(Timer endTime) {
-    if (subtraces.isEmpty()) {
-      return;
-    }
-    int lastLocation = subtraces.size() - 1;
-    Trace lastStage = subtraces.get(lastLocation);
-    // The end time of a stage can only be set once and can not be changed afterwards.
-    if (lastStage.endTime == null) {
-      lastStage.endTime = endTime;
-    }
-  }
-
-  /**
-   * Start a stage. If a stage is already running, it is stopped.
-   *
-   * @param name Name to be given to the stage.
-   * @hide
-   */
-  void startStage(@NonNull String name) {
-    Timer currentTime = clock.getTime();
-    setEndTimeOfLastStage(currentTime);
-    subtraces.add(new Trace(this, name, currentTime, null, null, null, null));
-  }
-
-  /**
-   * Stop currently running stage.
-   *
-   * @hide
-   */
-  void stopStage() {
-    setEndTimeOfLastStage(clock.getTime());
   }
 
   @NonNull
@@ -523,13 +477,6 @@ public class Trace extends AppStateUpdateHandler
     return endTime;
   }
 
-  /** @hide */
-  @VisibleForTesting
-  @NonNull
-  List<Trace> getSubtraces() {
-    return subtraces;
-  }
-
   /**
    * non-zero endTime indicates Trace's stop() method has been called already.
    *
@@ -574,7 +521,6 @@ public class Trace extends AppStateUpdateHandler
   public void writeToParcel(@NonNull Parcel out, int flags) {
     out.writeParcelable(parent, 0);
     out.writeString(name);
-    out.writeList(subtraces);
     out.writeMap(counterNameToCounterMap);
     out.writeParcelable(startTime, 0);
     out.writeParcelable(endTime, 0);
