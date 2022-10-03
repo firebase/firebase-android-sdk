@@ -1,5 +1,9 @@
 # Unreleased
 
+# 20.0.3
+- [fixed] Fixed an issue that caused infinite number of retries with no exponential
+  backoff for `uploadChunk`
+
 # 20.2.0
 * [unchanged] Updated to accommodate the release of the updated
   [firebase_storage_full] Kotlin extensions library.

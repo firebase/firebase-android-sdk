@@ -26,6 +26,7 @@ The Kotlin extensions library transitively includes the updated
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library.
+
 # 24.3.0
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).

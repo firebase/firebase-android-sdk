@@ -23,6 +23,7 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
@@ -36,6 +37,10 @@ val Project.metalavaConfig: Configuration
             ?: configurations.create("metalavaArtifacts") {
                 this.dependencies.add(this@metalavaConfig.dependencies.create("com.android.tools.metalava:metalava:1.0.0-alpha06"))
             }
+
+val Project.docStubs: File?
+    get() =
+        project.file("${buildDir.path}/doc-stubs")
 
 fun Project.runMetalavaWithArgs(
     arguments: List<String>,
@@ -64,7 +69,7 @@ abstract class GenerateStubsTask : DefaultTask() {
     @get:InputFiles
     abstract val sources: SetProperty<File>
 
-    @get:InputFiles
+    @get:[InputFiles Classpath]
     lateinit var classPath: FileCollection
 
     @get:OutputDirectory
