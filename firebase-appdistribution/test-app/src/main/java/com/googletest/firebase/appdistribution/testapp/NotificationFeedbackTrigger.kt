@@ -80,7 +80,7 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
                 activity, /* requestCode= */ 0, intent, PendingIntent.FLAG_IMMUTABLE
             )
             val builder = NotificationCompat.Builder(activity, FEEBACK_NOTIFICATION_CHANNEL_ID)
-                .setSmallIcon(R.drawable.test_app_icon)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(activity.getText(R.string.feedback_notification_title))
                 .setContentText(activity.getText(R.string.feedback_notification_text))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
