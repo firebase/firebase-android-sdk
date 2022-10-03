@@ -15,24 +15,26 @@
         android:background="@color/purple_500"
         android:text="Sign Out Background"
         android:textColor="@color/white"
-        app:layout_constraintHorizontal_bias="0.937"
+        app:layout_constraintHorizontal_bias="0.94"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/progress_percentage" />
+
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/update_app2"
-        android:layout_width="128dp"
+        android:layout_width="156dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:layout_marginEnd="24dp"
+        android:layout_marginEnd="16dp"
         android:background="@color/purple_500"
         android:text="Update App Background"
         android:textColor="@color/white"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.83"
+        app:layout_constraintHorizontal_bias="0.94"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/check_for_update2" />
+
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/check_for_update2"
         android:layout_width="156dp"
@@ -41,53 +43,57 @@
         android:background="@color/purple_500"
         android:text="Check For Update Background"
         android:textColor="@color/white"
-        app:layout_constraintHorizontal_bias="0.937"
+        app:layout_constraintHorizontal_bias="0.94"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/sign_in_button2" />
+
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/basic_config2"
-        android:layout_width="128dp"
+        android:layout_width="156dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:background="@color/purple_500"
         android:text="Basic Config Background"
         android:textColor="@color/white"
-        app:layout_constraintHorizontal_bias="0.727"
+        app:layout_constraintHorizontal_bias="0.94"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/sign_in_status" />
+
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/basic_config"
-        android:layout_width="128dp"
+        android:layout_width="156dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:background="@color/purple_500"
         android:text="Basic Config"
         android:textColor="@color/white"
-        app:layout_constraintHorizontal_bias="0.212"
+        app:layout_constraintHorizontal_bias="0.235"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/sign_in_status" />
+
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/sign_in_button2"
-        android:layout_width="128dp"
+        android:layout_width="156dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:background="@color/purple_500"
         android:text="Sign In Background"
         android:textColor="@color/white"
-        app:layout_constraintHorizontal_bias="0.763"
+        app:layout_constraintHorizontal_bias="0.94"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/basic_config2" />
+
     <TextView
         android:id="@+id/app_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Sample App!"
         android:textColor="@color/design_default_color_on_secondary"
-        android:textSize="32dp"
+        android:textSize="32sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -102,24 +108,24 @@
         android:layout_marginTop="24dp"
         android:text="Tester Signed In!"
         android:textColor="@color/design_default_color_on_secondary"
-        android:textSize="20dp"
+        android:textSize="20sp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/app_name" />
 
-
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/sign_in_button"
-        android:layout_width="128dp"
+        android:layout_width="156dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:background="@color/purple_500"
         android:text="Sign In"
         android:textColor="@color/white"
-        app:layout_constraintHorizontal_bias="0.212"
+        app:layout_constraintHorizontal_bias="0.235"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/basic_config" />
+
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/check_for_update"
         android:layout_width="156dp"
@@ -132,18 +138,20 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/sign_in_button" />
+
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/update_app"
-        android:layout_width="128dp"
+        android:layout_width="156dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:background="@color/purple_500"
         android:text="Update App"
         android:textColor="@color/white"
-        app:layout_constraintHorizontal_bias="0.212"
+        app:layout_constraintHorizontal_bias="0.235"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/check_for_update" />
+
     <ProgressBar
         android:id="@+id/progress_bar"
         style="?android:attr/progressBarStyleHorizontal"
@@ -161,7 +169,7 @@
         android:layout_height="wrap_content"
         android:text="Tester Signed In!"
         android:textColor="@color/design_default_color_on_secondary"
-        android:textSize="20dp"
+        android:textSize="20sp"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/progress_bar"
@@ -179,6 +187,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@id/progress_percentage" />
+
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/secondActivityButton"
         android:layout_width="156dp"
@@ -187,9 +196,11 @@
         android:background="@color/purple_500"
         android:text="Start new activity"
         android:textColor="@color/white"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.6"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/sign_out2" />
+
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/feedbackTriggerMenu"
         style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.ExposedDropdownMenu"
@@ -205,7 +216,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="none"
+            android:hint="@string/feedbackTriggerMenuLabel"
         />
     </com.google.android.material.textfield.TextInputLayout>
-
 </androidx.constraintlayout.widget.ConstraintLayout>
