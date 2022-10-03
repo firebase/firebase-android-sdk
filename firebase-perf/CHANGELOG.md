@@ -21,11 +21,23 @@ Refer [GMaven](https://maven.google.com/web/index.html?q=firebase-perf#com.googl
 
 ## Unreleased
 
+*   {{fixed}} Cleaned up old implementation of stages (unused within Fireperf).
+
+## Released
+
+## v20.0.6 (M112)
+
+#### Android library
+
 *   {{fixed}} Fixed a bug where screen traces were not capturing frame metrics for multi-activity apps.
 *   {{feature}} Added support for measuring screen performance metrics for "Activity Fragments" out-of-the-box.
 *   {{fixed}} Excluded custom attributes whose key/value length is 0.
 
-## Released
+#### Kotlin extensions
+
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
 
 ## v20.0.6 (M112)
 
