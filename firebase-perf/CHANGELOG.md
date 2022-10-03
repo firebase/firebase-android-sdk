@@ -1,7 +1,9 @@
 # Unreleased
+
 * [fixed] Fixed a bug where screen traces were not capturing frame metrics for multi-activity apps.
 * [feature] Added support for measuring screen performance metrics for "Activity Fragments" out-of-the-box.
 * [fixed] Excluded custom attributes whose key/value length is 0.
+
 
 # 20.2.0
 * [unchanged] Updated to accommodate the release of the updated
