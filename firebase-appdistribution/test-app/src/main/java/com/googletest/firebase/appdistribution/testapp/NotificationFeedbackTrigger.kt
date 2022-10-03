@@ -49,10 +49,8 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
             )
             channel.description =
                 application.getString(R.string.feedback_notification_channel_description)
-            val notificationManager = application.getSystemService(
-                NotificationManager::class.java
-            )
-            notificationManager.createNotificationChannel(channel)
+            application.getSystemService(NotificationManager::class.java)
+                .createNotificationChannel(channel)
         }
         application.registerActivityLifecycleCallbacks(this)
     }
