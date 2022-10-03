@@ -1,8 +1,27 @@
 # Unreleased
 
+# 21.2.0
+* [unchanged] Updated to accommodate the release of the updated
+  [remote_config] Kotlin extensions library.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+  `firebase-config` library. The Kotlin extensions library has the following
+  additional updates:
+
+* [feature] Firebase now supports Kotlin coroutines.
+  With this release, we added
+  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}
+  to `firebase-config-ktx` as a transitive dependency, which exposes the
+  `Task<T>.await()` suspend function to convert a
+  [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
+  coroutine.
+
 # 21.1.2
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -14,6 +33,7 @@ updates.
   information, see
   <a href="https://github.com/firebase/firebase-android-sdk/issues/3757"
      class="external">GitHub Issue #3757</a>
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -31,6 +51,7 @@ updates.
 
 * [changed] Added first-open time to [remote_config] server requests.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-config` library. The Kotlin extensions library has no additional
@@ -43,6 +64,7 @@ updates.
   [note](#basement18-0-0_base18-0-1_tasks18-0-1) at the top of this release
   entry.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-config` library. The Kotlin extensions library has no additional
@@ -51,6 +73,7 @@ updates.
 # 21.0.1
 * [fixed] Fixed a bug in the initialization of [remote_config] with a
   non-primary Firebase app.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -61,6 +84,7 @@ updates.
 * [changed] Internal infrastructure improvements.
 * [changed] Internal changes to support dynamic feature modules.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-config` library. The Kotlin extensions library has no additional
@@ -68,6 +92,7 @@ updates.
 
 # 20.0.4
 * [changed] Improved condition targeting signals.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -78,6 +103,7 @@ updates.
 * [changed] Standardize support for other Firebase products that integrate
   with [remote_config].
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-config` library. The Kotlin extensions library has no additional
@@ -87,6 +113,7 @@ updates.
 * [fixed] Fixed an issue that was causing [remote_config] to return the
   static default value even if a remote value was defined. (#2186)
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-config` library. The Kotlin extensions library has no additional
@@ -95,6 +122,7 @@ updates.
 # 20.0.1
 * [changed] Added support for other Firebase products to integrate with
   [remote_config].
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -136,6 +164,7 @@ updates.
   and [`FirebaseRemoteConfigSettings.Builder#setMinimumFetchIntervalInSeconds(long)`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder#setMinimumFetchIntervalInSeconds(long))
   instead.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-config` library. The Kotlin extensions library has no additional
@@ -152,6 +181,7 @@ updates.
   one, so this library needed to be upgraded to avoid conflicts. No developer
   action is necessary.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-config` library. The Kotlin extensions library has no additional
@@ -162,6 +192,7 @@ updates.
   which is a step towards a direct dependency on the Firebase installations
   service in a future release.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-config` library. The Kotlin extensions library has no additional
@@ -170,6 +201,7 @@ updates.
 # 19.1.3
 * [fixed] Fixed an issue where [`FirebaseRemoteConfig.fetch()`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig.html#fetch())
 would sometimes report a misformatted language tag.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -181,6 +213,7 @@ updates.
   [`FirebaseRemoteConfigSettings.Builder.setFetchTimeoutInSeconds()`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder) 
   was not always honored.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-config` library. The Kotlin extensions library has no additional
@@ -190,6 +223,7 @@ updates.
 * [changed] Updated [`FirebaseRemoteConfig.fetch()`](docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfig.html#fetch())
 implementation to use [`FirebaseInstanceId.getInstanceId()`](/docs/reference/android/com/google/firebase/iid/FirebaseInstanceId.html#getInstanceId())
 in favor of the deprecated [`FirebaseInstanceId.getToken()`](/docs/reference/android/com/google/firebase/iid/FirebaseInstanceId.html#getToken()).
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -201,6 +235,7 @@ updates.
   [`FirebaseRemoteConfigSettings.Builder`](/docs/reference/android/com/google/firebase/remoteconfig/FirebaseRemoteConfigSettings.Builder)
   object to provide better Kotlin patterns.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-config` library. The Kotlin extensions library has no additional
@@ -210,6 +245,7 @@ updates.
 * [fixed] Resolved
   [known issue](//github.com/firebase/firebase-android-sdk/issues/973) where
   network calls may fail on devices using API 19 and earlier.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -230,6 +266,7 @@ updates.
   object reference instead of the Byte Array. Byte Arrays set via the
   Firebase console were unaffected by this bug.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-config` library. The Kotlin extensions library has no additional
@@ -238,6 +275,7 @@ updates.
 # 19.0.2
 * [unchanged] Updated to accommodate the release of the [remote_config]
   Kotlin extensions library.
+
 
 ## Kotlin
 * [feature] The beta release of a [remote_config] Android library with

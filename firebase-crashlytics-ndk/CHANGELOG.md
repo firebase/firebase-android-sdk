@@ -1,5 +1,8 @@
 # Unreleased
 
+# 18.2.14
+* [changed] Updated `firebase-crashlytics` dependency to v18.2.14.
+
 # 18.2.13
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).

@@ -1,8 +1,27 @@
 # Unreleased
 
+# 18.3.0
+* [changed] Improved crash reporting reliability for crashes that occur early
+  in the app's lifecycle.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+  `firebase-crashlytics` library. The Kotlin extensions library has the
+  following additional updates:
+
+* [feature] Firebase now supports Kotlin coroutines.
+  With this release, we added
+  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}
+  to `firebase-crashlytics-ktx` as a transitive dependency, which exposes the
+  `Task<T>.await()` suspend function to convert a
+  [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
+  coroutine.
+
 # 18.2.13
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).
+  
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -12,6 +31,7 @@ updates.
 # 18.2.12
 * [changed] Internal changes to avoid accessing device-specific information.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-crashlytics` library. The Kotlin extensions library has no additional
@@ -20,6 +40,7 @@ updates.
 # 18.2.11
 * [changed] Improved crash reporting reliability for multi-process apps on
   Android 28 and above.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -36,6 +57,7 @@ updates.
 * [fixed] Fixed a bug that prevented [crashlytics] from initalizing on some
   devices in some cases. (#3269)
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-crashlytics` library. The Kotlin extensions library has no additional
@@ -48,6 +70,7 @@ updates.
   [note](#basement18-0-0_base18-0-1_tasks18-0-1) at the top of this release
   entry.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-crashlytics` library. The Kotlin extensions library has no additional
@@ -56,6 +79,7 @@ updates.
 # 18.2.8
 * [changed] Updated to the latest version of the `firebase-datatransport`
   library.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -71,6 +95,7 @@ updates.
 * [fixed] Fixed a StrictMode `DiskReadViolation`.
   (#3265)
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-crashlytics` library. The Kotlin extensions library has no additional
@@ -79,6 +104,7 @@ updates.
 # 18.2.6
 * [changed] Internal changes to support future improvements to Flutter crash
   reporting.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -92,6 +118,7 @@ updates.
 * [changed] Internal improvements to [crashlytics] file management, to
   ensure consistent creation and removal of intermediate [crashlytics] files.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-crashlytics` library. The Kotlin extensions library has no additional
@@ -100,6 +127,7 @@ updates.
 # 18.2.4
 * [changed] Internal changes to support ANR collection and their upcoming
   display in the console.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -113,6 +141,7 @@ updates.
 * [changed] Internal changes to support upcoming Unity crash reporting
   improvements.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-crashlytics` library. The Kotlin extensions library has no additional
@@ -122,6 +151,7 @@ updates.
 * [fixed] Fixed a `ConcurrentModificationException` that could be logged to
   logcat when setting multiple custom key/values in rapid succession.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-crashlytics` library. The Kotlin extensions library has no additional
@@ -130,6 +160,7 @@ updates.
 # 18.2.0
 * [changed] Internal changes.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-crashlytics` library. The Kotlin extensions library has no additional
@@ -137,6 +168,7 @@ updates.
 
 # 18.1.0
 * [changed] Internal changes to support upcoming Unity features.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -147,6 +179,7 @@ updates.
 * [fixed] Fixed a bug that could prevent proper removal of [crashlytics] NDK
   crash report files when crash reporting is disabled, resulting in excessive
   disk use.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -161,6 +194,7 @@ updates.
   calls when reporting is disabled.
 
 * [changed] Internal changes to support dynamic feature modules.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -178,6 +212,7 @@ updates.
   state rather than crashing.
   (#2504)
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-crashlytics` library. The Kotlin extensions library has no additional
@@ -189,6 +224,8 @@ updates.
   API to allow bulk logging of custom keys and values.
   ([Github PR #2443](//github.com/firebase/firebase-android-sdk/pull/2443){: .external})
 
+
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-crashlytics` library. The Kotlin extensions library has no additional
@@ -197,6 +234,7 @@ updates.
 # 17.3.1
 * [changed] Removed OkHttp dependency to eliminate conflicts with apps and
   SDKs using incompatible versions.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -211,6 +249,7 @@ updates.
   in rare cases.
   ([Github Issue #2013](//github.com/firebase/firebase-android-sdk/issues/2013){: .external})
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-crashlytics` library. The Kotlin extensions library has no additional
@@ -223,6 +262,7 @@ updates.
 
 * [fixed] Fixed a bug preventing crash reports from being sent in some cases
   when an app is using [crashlytics] on multiple processes.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -244,6 +284,7 @@ updates.
 
   {% include "docs/reference/android/client/_includes/_iid-indirect-dependency-solutions.html" %}
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-crashlytics` library. The Kotlin extensions library has no additional
@@ -255,6 +296,7 @@ updates.
   ([Github Issue #1705](//github.com/firebase/firebase-android-sdk/issues/1705){: .external})
   and increased the number of retries before deleting events
   ([Github Issue #1708](//github.com/firebase/firebase-android-sdk/issues/1708){: .external}).
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -268,6 +310,8 @@ updates.
 * [fixed] Removed a harmless, yet unexpected `FileNotFoundException` log
   output that printed when an optional file is unavailable.
   ([Github Issue #1559](//github.com/firebase/firebase-android-sdk/issues/1559#issuecomment-638387614){: .external})
+
+
 
 ## Kotlin
 * [feature] The [firebase_crashlytics] Android library with Kotlin

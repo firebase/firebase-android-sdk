@@ -1,5 +1,23 @@
 # Unreleased
 
+# 16.1.0
+* [unchanged] Updated to accommodate the release of the updated
+  [app_check] Kotlin extensions library.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-appcheck` library. The Kotlin extensions library has the following
+additional updates:
+
+* [feature] Firebase now supports Kotlin coroutines.
+  With this release, we added
+  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}
+  to `firebase-appcheck-ktx` as a transitive dependency, which exposes the
+  `Task<T>.await()` suspend function to convert a
+  [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
+  coroutine.
+
 # 16.0.1
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).

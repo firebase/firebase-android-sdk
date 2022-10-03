@@ -1,5 +1,9 @@
 # Unreleased
 
+# 21.1.0
+* [changed] Internal changes to ensure functionality alignment with other
+  SDK releases.
+
 # 21.0.2
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).

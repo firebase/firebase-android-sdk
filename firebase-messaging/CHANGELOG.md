@@ -1,8 +1,27 @@
 # Unreleased
 
+# 23.1.0
+* [unchanged] Updated to accommodate the release of the updated
+  [messaging_longer] Kotlin extensions library.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+  `firebase-messaging` library. The Kotlin extensions library has the following
+  additional updates:
+
+* [feature] Firebase now supports Kotlin coroutines.
+  With this release, we added
+  [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}
+  to `firebase-messaging-ktx` as a transitive dependency, which exposes the
+  `Task<T>.await()` suspend function to convert a
+  [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
+  coroutine.
+
 # 23.0.8
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -12,6 +31,7 @@ updates.
 # 23.0.7
 * [changed] Message broadcasts now finish immediately after binding to the
   service. This change should reduce the chance of ANRs.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -26,6 +46,7 @@ updates.
 * [fixed] Added an annotation to an internal class to fix a missing class
   warning.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-messaging` library. The Kotlin extensions library has no additional
@@ -37,6 +58,7 @@ updates.
 
 * [fixed] Upgraded logging priority for message delivery events to avoid
   dropped logs.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -51,6 +73,7 @@ updates.
 
 * [changed] Internal changes to notification building methods.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-messaging` library. The Kotlin extensions library has no additional
@@ -59,6 +82,8 @@ updates.
 # 23.0.2
 * [fixed] Fixed an issue where the messaging component in
   the [firebase_bom_long] leaked the `httpcomponents` transitive dependencies.
+
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -87,6 +112,7 @@ updates.
 * [fixed] Fixed reference documentation for [`RemoteMessage.getMessageId()`](/docs/reference/android/com/google/firebase/messaging/RemoteMessage#public-string-getmessageid)
   and updated obsolete references to Google Cloud Messaging (GCM).
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-messaging` library. The Kotlin extensions library has no additional
@@ -104,6 +130,7 @@ updates.
     that it is allowed to display notifications for the app. This could be used
     in the future to show an app’s notifications without needing to start the
     app, which may improve message reliability and timeliness.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -130,6 +157,7 @@ updates.
 
 *   [changed] Internal infrastructure improvements.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-messaging` library. The Kotlin extensions library has no additional
@@ -144,6 +172,7 @@ updates.
     Instance ID if it is present. This will allow [firebase_messaging] to
     remove its dependency on Firebase Instance ID in the future.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-messaging` library. The Kotlin extensions library has no additional
@@ -153,6 +182,7 @@ updates.
 * [changed] Updated to latest version of the `firebase-datatransport` library.
 
 * [feature] The SDK now gracefully handles missing default resources.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -169,6 +199,7 @@ updates.
 *   [fixed] Fixed an issue where events were erronously logged to
     [firebase_analytics] twice.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-messaging` library. The Kotlin extensions library has no additional
@@ -183,6 +214,7 @@ updates.
 
 * [changed] Internal changes to the Google Play services interface to improve
   future development velocity.
+
 
 ## Kotlin
 * [feature] The [messaging_longer] Android library with Kotlin

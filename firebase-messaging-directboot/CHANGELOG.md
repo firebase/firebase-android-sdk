@@ -1,9 +1,12 @@
 # Unreleased
 
+# 23.1.0
+* [changed] Internal changes to ensure functionality alignment with other
+  SDK releases.
+
 # 23.0.8
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).
-
 # 23.0.7
 * [changed] Updated `minSdkVersion` to 19 to match [messaging_longer]
   `minSdkVersion`.
@@ -17,7 +20,6 @@
 *   [changed] Internal changes to ensure functionality alignment with other
     SDK releases. For more details, refer to the
     [[messaging_longer] v23.0.6 release notes](/support/release-notes/android#messaging_v23-0-6).
-
 # 23.0.5
 *   [changed] Internal changes to ensure functionality alignment with other
     SDK releases. For more details, refer to the
@@ -98,6 +100,7 @@ A fix for this issue was released on July 08, 2020
 * [changed] Internal changes to ensure functionality alignment with other SDK
   releases. For more information, refer to the
   [Firebase Instance ID v20.2.1 release notes](/support/release-notes/android#iid_v20-2-1).
+
 
 # 20.2.0
 *   [feature] The Firebase Cloud Messaging Direct Boot SDK is now available

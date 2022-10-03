@@ -1,5 +1,9 @@
 # Unreleased
 
+# 16.0.0-beta05
+* [unchanged] Updated to accommodate the release of the updated
+  [appdistro] Kotlin extensions library.
+
 # 16.0.0-beta03
 * [feature] The [appdistro] SDK has been split into two libraries:
 
@@ -17,6 +21,7 @@
   [add these SDKs](/docs/app-distribution/set-up-alerts?platform=android#add-appdistro)
   to your Android app.
 
+
 ## Kotlin
 * [removed] The Kotlin extensions library `firebase-appdistribution-ktx`
   has been removed. All its functionality has been moved to the new API-only
@@ -31,6 +36,7 @@ incorrect error message.
 
 * [changed] Internal improvements to tests.
 
+
 ## Kotlin
 The Kotlin extensions library transitively includes the base
 `firebase-app-distribution` library. The Kotlin extensions library has no
@@ -41,6 +47,7 @@ additional updates.
   can use this SDK to notify testers in-app when a new test build is available.
   To learn more, visit the
   [[appdistro] reference documentation](/docs/reference/android/com/google/firebase/appdistribution/package-summary).
+
 
 ## Kotlin
 The [appdistro] Android library with Kotlin extensions is now available in
