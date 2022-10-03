@@ -43,7 +43,6 @@ import java.util.concurrent.Executors
 class MainActivity : AppCompatActivity() {
 
     var firebaseAppDistribution = Firebase.appDistribution
-    var updateTask: Task<Void>? = null
     val executorService: ExecutorService = Executors.newFixedThreadPool(1)
 
     lateinit var signInButton: AppCompatButton
@@ -61,6 +60,9 @@ class MainActivity : AppCompatActivity() {
     lateinit var progressPercent: TextView
     lateinit var progressBar: ProgressBar
     lateinit var feedbackTriggerMenu: TextInputLayout
+
+    var updateTask: Task<Void>? = null
+    var release: AppDistributionRelease? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -86,14 +88,15 @@ class MainActivity : AppCompatActivity() {
         val items = listOf(
             FeedbackTrigger.NONE.label,
             FeedbackTrigger.SHAKE.label,
-            FeedbackTrigger.SCREENSHOT.label
+            FeedbackTrigger.SCREENSHOT.label,
+            FeedbackTrigger.NOTIFICATION.label,
         )
         val adapter = ArrayAdapter(this, R.layout.list_item, items)
         val autoCompleteTextView = feedbackTriggerMenu.editText!! as AutoCompleteTextView
         autoCompleteTextView.setAdapter(adapter)
         // TODO: set it to the actual currently enabled trigger
         autoCompleteTextView.setText(FeedbackTrigger.NONE.label, false)
-        autoCompleteTextView.doOnTextChanged { text, start, before, count ->
+        autoCompleteTextView.doOnTextChanged { text, _, _, _ ->
             when(text.toString()) {
                 FeedbackTrigger.NONE.label -> {
                     disableAllFeedbackTriggers()
@@ -108,6 +111,11 @@ class MainActivity : AppCompatActivity() {
                     Log.i(TAG, "Enabling screenshot detection trigger")
                     ScreenshotDetectionFeedbackTrigger.enable()
                 }
+                FeedbackTrigger.NOTIFICATION.label -> {
+                    disableAllFeedbackTriggers()
+                    Log.i(TAG, "Enabling notification trigger")
+                    NotificationFeedbackTrigger.enable(this)
+                }
             }
         }
     }
@@ -116,6 +124,7 @@ class MainActivity : AppCompatActivity() {
         Log.i(TAG, "Disabling all feedback triggers")
         ShakeForFeedback.disable(application)
         ScreenshotDetectionFeedbackTrigger.disable()
+        NotificationFeedbackTrigger.disable();
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
