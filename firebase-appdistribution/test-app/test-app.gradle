@@ -60,7 +60,6 @@ dependencies {
     println("Building with HEAD version ':firebase-appdistribution' of SDK")
 
     // All variants use the API
-    implementation project(':firebase-common')
     implementation project(':firebase-appdistribution-api:ktx')
 
     // In this test project we also need to explicitly declare these dependencies

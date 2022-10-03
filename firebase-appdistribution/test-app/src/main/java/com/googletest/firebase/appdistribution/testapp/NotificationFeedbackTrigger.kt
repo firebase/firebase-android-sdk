@@ -76,8 +76,9 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
         if (ContextCompat.checkSelfPermission(activity, POST_NOTIFICATIONS) == PERMISSION_GRANTED) {
             val intent = Intent(activity, TakeScreenshotAndTriggerFeedbackActivity::class.java)
             intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
-            val pendingIntent =
-                PendingIntent.getActivity(activity, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+            val pendingIntent = PendingIntent.getActivity(
+                activity, /* requestCode= */ 0, intent, PendingIntent.FLAG_IMMUTABLE
+            )
             val builder = NotificationCompat.Builder(activity, FEEBACK_NOTIFICATION_CHANNEL_ID)
                 .setSmallIcon(R.drawable.test_app_icon)
                 .setContentTitle(activity.getText(R.string.feedback_notification_title))
@@ -96,29 +97,32 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
                 )
             } else {
                 requestPermission(activity)
-                hasRequestedPermission = true
             }
         }
     }
 
     private fun requestPermission(activity: Activity) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            return // no need
-        }
-        if (activity.shouldShowRequestPermissionRationale(POST_NOTIFICATIONS)) {
-            Log.i(TAG, "Showing customer rationale for requesting permission.")
-            AlertDialog.Builder(activity)
-                .setMessage(
-                    "Using a notification to initiate feedback to the developer. To enable this feature, allow the app post notifications."
-                )
-                .setPositiveButton("OK") { _, _ ->
-                    Log.i(TAG, "Launching request for permission.")
-                    requestPermissionLauncher!!.launch(POST_NOTIFICATIONS)
-                }
-                .show()
+        var launcher = requestPermissionLauncher
+        if (launcher == null) {
+            Log.i(TAG, "Not requesting permission, because of inability to register for result.")
         } else {
-            Log.i(TAG, "Launching request for permission without rationale.")
-            requestPermissionLauncher!!.launch(POST_NOTIFICATIONS)
+            if (activity.shouldShowRequestPermissionRationale(POST_NOTIFICATIONS)) {
+                Log.i(TAG, "Showing customer rationale for requesting permission.")
+                AlertDialog.Builder(activity)
+                    .setMessage(
+                        "Using a notification to initiate feedback to the developer. "
+                                + "To enable this feature, allow the app to post notifications."
+                    )
+                    .setPositiveButton("OK") { _, _ ->
+                        Log.i(TAG, "Launching request for permission.")
+                        launcher.launch(POST_NOTIFICATIONS)
+                    }
+                    .show()
+            } else {
+                Log.i(TAG, "Launching request for permission without rationale.")
+                launcher.launch(POST_NOTIFICATIONS)
+            }
+            hasRequestedPermission = true
         }
     }
 
@@ -139,6 +143,7 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
     }
 
     override fun onActivityPaused(activity: Activity) {
+        requestPermissionLauncher = null
         cancelNotification(activity)
     }
 
@@ -148,12 +153,14 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
     }
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-        if (activity is ActivityResultCaller) {
+        if (activity is ActivityResultCaller && !hasRequestedPermission) {
             requestPermissionLauncher =
-                activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-                        isGranted: Boolean ->
+                activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
                     if (!isEnabled) {
-                        Log.w(TAG, "Trigger disabled after permission check. Abandoning notification.")
+                        Log.w(
+                            TAG,
+                            "Trigger disabled after permission check. Abandoning notification."
+                        )
                     } else if (isGranted) {
                         showNotification(activity)
                     } else {
@@ -165,7 +172,10 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
                     }
                 }
         } else {
-            Log.w(TAG, "Not listening for screenshots because this activity can't register for permission request results: $activity")
+            Log.w(
+                TAG,
+                "Not showing notification because this activity can't register for permission request results: $activity"
+            )
         }
     }
 
