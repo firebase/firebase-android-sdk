@@ -71,28 +71,13 @@ def has_sdk_changes()
   }
 end
 
-tester_team = [
-  'rlazo',
-  'vkryachko',
-  'yifanyang',
-  'VinayGuthal',
-  'davidmotson',
-  'daymxn',
-  'emilypgoogle'
-]
-
-is_enabled = true if tester_team.include? github.pr_author
-
 ### Actions
 
 # Warn if a changelog is left out on a non-trivial PR that has modified
 # SDK source files.
 #
-# TODO: remove the `is_enabled` after tests are complete
-if is_enabled && has_sdk_changes()
-  if !has_changelog_changes && !declared_trivial
-    warning = "Did you forget to add a changelog entry? (Add the 'no-changelog'"\
-      " label to the PR to silence this warning.)"
-    warn(warning)
-  end
+if has_sdk_changes() && !has_changelog_changes && !declared_trivial
+  warning = "Did you forget to add a changelog entry? (Add the 'no-changelog'"\
+            " label to the PR to silence this warning.)"
+  warn(warning)
 end
