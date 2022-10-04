@@ -183,32 +183,28 @@ abstract class DackkaPlugin : Plugin<Project> {
 
                     val classpath = compileConfiguration.getJars() + project.javadocConfig.getJars() + project.files(bootClasspath)
 
-                    val sourcesForJava = sourceSets.flatMap {
-                        // TODO(b/246984444): Investigate why kotlinDirectories includes javaDirectories
+                    val sourceDirectories = sourceSets.flatMap {
                         it.javaDirectories.map { it.absoluteFile }
                     }
 
                     docStubs.configure {
                         classPath = classpath
-                        sources.set(project.provider { sourcesForJava })
+                        sources.set(project.provider { sourceDirectories })
                     }
 
                     docsTask.configure {
                         if (!isKotlin) dependsOn(docStubs)
 
-                        val sourcesForKotlin = emptyList<File>() + projectSpecificSources(project)
                         val packageLists = fetchPackageLists(project)
 
                         val excludedFiles = projectSpecificSuppressedFiles(project)
-                        val fixedJavaSources = if (!isKotlin) listOf(project.docStubs) else sourcesForJava
+                        val fixedSourceDirectories = if (!isKotlin) listOf(project.docStubs) else sourceDirectories
 
-                        javaSources.set(fixedJavaSources)
+                        sources.set(fixedSourceDirectories + projectSpecificSources(project))
                         suppressedFiles.set(excludedFiles)
                         packageListFiles.set(packageLists)
 
-                        kotlinSources.set(sourcesForKotlin)
                         dependencies.set(classpath)
-
                         outputDirectory.set(targetDirectory)
 
                         applyCommonConfigurations()

@@ -28,8 +28,7 @@ import org.json.JSONObject
  *
  * @property dackkaJarFile a [File] of the Dackka fat jar
  * @property dependencies a list of all dependent jars (the classpath)
- * @property kotlinSources a list of kotlin source roots
- * @property javaSources a list of java source roots
+ * @property sources a list of source roots
  * @property suppressedFiles a list of files to exclude from documentation
  * @property outputDirectory where to store the generated files
  */
@@ -43,11 +42,7 @@ abstract class GenerateDocumentationTaskExtension : DefaultTask() {
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val kotlinSources: ListProperty<File>
-
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val javaSources: ListProperty<File>
+    abstract val sources: ListProperty<File>
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -106,7 +101,7 @@ abstract class GenerateDocumentationTask @Inject constructor(
                     "scopeId" to "androidx",
                     "sourceSetName" to "main"
                 ),
-                "sourceRoots" to kotlinSources.get().map { it.path } + javaSources.get().map { it.path },
+                "sourceRoots" to sources.get().map { it.path },
                 "classpath" to dependencies.get().map { it.path },
                 "documentedVisibilities" to listOf("PUBLIC", "PROTECTED"),
                 "skipEmptyPackages" to "true",
