@@ -234,7 +234,6 @@ public class TraceTest extends FirebasePerformanceTestBase {
     assertThat(trace.getName()).isEqualTo(TRACE_1);
     assertThat(trace.getStartTime().getMicros()).isEqualTo(1);
     assertThat(trace.getEndTime().getMicros()).isEqualTo(2);
-    assertThat(trace.getSubtraces()).isEmpty();
     assertThat(trace.getCounters()).isEmpty();
 
     verify(mockTransportManager).log(arguments.capture(), nullable(ApplicationProcessState.class));
@@ -265,7 +264,6 @@ public class TraceTest extends FirebasePerformanceTestBase {
     assertThat(trace.getCounters()).hasSize(2);
     assertThat(trace.getCounters().get(METRIC_1).getCount()).isEqualTo(5);
     assertThat(trace.getCounters().get(METRIC_2).getCount()).isEqualTo(11);
-    assertThat(trace.getSubtraces()).isEmpty();
 
     verify(mockTransportManager).log(arguments.capture(), nullable(ApplicationProcessState.class));
   }
@@ -290,7 +288,6 @@ public class TraceTest extends FirebasePerformanceTestBase {
     assertThat(trace.getCounters()).hasSize(2);
     assertThat(trace.getCounters().get(METRIC_1).getCount()).isEqualTo(0);
     assertThat(trace.getCounters().get(METRIC_2).getCount()).isEqualTo(0);
-    assertThat(trace.getSubtraces()).isEmpty();
 
     verify(mockTransportManager).log(arguments.capture(), nullable(ApplicationProcessState.class));
   }
@@ -512,7 +509,6 @@ public class TraceTest extends FirebasePerformanceTestBase {
     assertThat(trace2.getCounters()).hasSize(2);
     assertThat(trace2.getCounters().get(METRIC_1).getCount()).isEqualTo(2);
     assertThat(trace2.getCounters().get(METRIC_2).getCount()).isEqualTo(3);
-    assertThat(trace2.getSubtraces()).isEmpty();
 
     verify(mockTransportManager, never()).log(arguments.capture());
 
@@ -1049,7 +1045,6 @@ public class TraceTest extends FirebasePerformanceTestBase {
     assertThat(trace.getCounters().get(METRIC_1).getCount()).isEqualTo(2);
     assertThat(trace.getCounters().get(METRIC_2).getCount()).isEqualTo(3);
 
-    assertThat(trace.getSubtraces()).isEmpty();
     verify(mockTransportManager).log(arguments.capture(), nullable(ApplicationProcessState.class));
   }
 }

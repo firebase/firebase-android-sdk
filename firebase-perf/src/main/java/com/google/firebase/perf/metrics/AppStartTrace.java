@@ -287,14 +287,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
             .setClientStartTimeUs(start.getMicros())
             .setDurationUs(start.getDurationMicros(end));
 
-    TraceMetric.Builder subtrace =
-        TraceMetric.newBuilder()
-            .setName("_experiment_classLoadTime")
-            .setClientStartTimeUs(FirebasePerfProvider.getAppStartTime().getMicros())
-            .setDurationUs(FirebasePerfProvider.getAppStartTime().getDurationMicros(end));
-
-    metric.addSubtraces(subtrace).addPerfSessions(this.startSession.build());
-
     transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
   }
 
@@ -304,30 +296,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
             .setName(Constants.TraceNames.APP_START_TRACE_NAME.toString())
             .setClientStartTimeUs(getappStartTime().getMicros())
             .setDurationUs(getappStartTime().getDurationMicros(onResumeTime));
-    List<TraceMetric> subtraces = new ArrayList<>(/* initialCapacity= */ 3);
 
-    TraceMetric.Builder traceMetricBuilder =
-        TraceMetric.newBuilder()
-            .setName(Constants.TraceNames.ON_CREATE_TRACE_NAME.toString())
-            .setClientStartTimeUs(getappStartTime().getMicros())
-            .setDurationUs(getappStartTime().getDurationMicros(onCreateTime));
-    subtraces.add(traceMetricBuilder.build());
-
-    traceMetricBuilder = TraceMetric.newBuilder();
-    traceMetricBuilder
-        .setName(Constants.TraceNames.ON_START_TRACE_NAME.toString())
-        .setClientStartTimeUs(onCreateTime.getMicros())
-        .setDurationUs(onCreateTime.getDurationMicros(onStartTime));
-    subtraces.add(traceMetricBuilder.build());
-
-    traceMetricBuilder = TraceMetric.newBuilder();
-    traceMetricBuilder
-        .setName(Constants.TraceNames.ON_RESUME_TRACE_NAME.toString())
-        .setClientStartTimeUs(onStartTime.getMicros())
-        .setDurationUs(onStartTime.getDurationMicros(onResumeTime));
-    subtraces.add(traceMetricBuilder.build());
-
-    metric.addAllSubtraces(subtraces).addPerfSessions(this.startSession.build());
+    metric.addPerfSessions(this.startSession.build());
 
     transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
   }
