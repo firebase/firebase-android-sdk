@@ -39,8 +39,6 @@ import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -206,8 +204,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
       return;
     }
     this.firstDrawDone = clock.getTime();
-    executorService.execute(
-        () -> this.logColdStart(getStartTimer(), this.firstDrawDone, this.startSession));
+    executorService.execute(() -> this.logColdStart(getStartTimer(), this.firstDrawDone));
 
     if (isRegisteredForLifecycleCallbacks) {
       // After AppStart trace is queued to be logged, we can unregister this callback.
@@ -280,20 +277,12 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     }
   }
 
-  private void logColdStart(Timer start, Timer end, PerfSession session) {
+  private void logColdStart(Timer start, Timer end) {
     TraceMetric.Builder metric =
         TraceMetric.newBuilder()
             .setName("_experiment_app_start_ttid")
             .setClientStartTimeUs(start.getMicros())
             .setDurationUs(start.getDurationMicros(end));
-
-    TraceMetric.Builder subtrace =
-        TraceMetric.newBuilder()
-            .setName("_experiment_classLoadTime")
-            .setClientStartTimeUs(FirebasePerfProvider.getAppStartTime().getMicros())
-            .setDurationUs(FirebasePerfProvider.getAppStartTime().getDurationMicros(end));
-
-    metric.addSubtraces(subtrace).addPerfSessions(this.startSession.build());
 
     transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
   }
@@ -304,30 +293,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
             .setName(Constants.TraceNames.APP_START_TRACE_NAME.toString())
             .setClientStartTimeUs(getappStartTime().getMicros())
             .setDurationUs(getappStartTime().getDurationMicros(onResumeTime));
-    List<TraceMetric> subtraces = new ArrayList<>(/* initialCapacity= */ 3);
 
-    TraceMetric.Builder traceMetricBuilder =
-        TraceMetric.newBuilder()
-            .setName(Constants.TraceNames.ON_CREATE_TRACE_NAME.toString())
-            .setClientStartTimeUs(getappStartTime().getMicros())
-            .setDurationUs(getappStartTime().getDurationMicros(onCreateTime));
-    subtraces.add(traceMetricBuilder.build());
-
-    traceMetricBuilder = TraceMetric.newBuilder();
-    traceMetricBuilder
-        .setName(Constants.TraceNames.ON_START_TRACE_NAME.toString())
-        .setClientStartTimeUs(onCreateTime.getMicros())
-        .setDurationUs(onCreateTime.getDurationMicros(onStartTime));
-    subtraces.add(traceMetricBuilder.build());
-
-    traceMetricBuilder = TraceMetric.newBuilder();
-    traceMetricBuilder
-        .setName(Constants.TraceNames.ON_RESUME_TRACE_NAME.toString())
-        .setClientStartTimeUs(onStartTime.getMicros())
-        .setDurationUs(onStartTime.getDurationMicros(onResumeTime));
-    subtraces.add(traceMetricBuilder.build());
-
-    metric.addAllSubtraces(subtraces).addPerfSessions(this.startSession.build());
+    metric.addPerfSessions(this.startSession.build());
 
     transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
   }

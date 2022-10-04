@@ -68,18 +68,6 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
   }
 
   @Test
-  public void testExceedMaxSubtrace() {
-    TraceMetric.Builder trace = createValidTraceMetric();
-
-    TraceMetric.Builder subtrace = createValidTraceMetric();
-    TraceMetric subSubtrace = createValidTraceMetric().build();
-
-    subtrace.addSubtraces(subSubtrace);
-    trace.addSubtraces(subtrace);
-    assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
-  }
-
-  @Test
   public void testNullTraceId() {
     TraceMetric trace = createValidTraceMetric().clearName().build();
     assertThat(new FirebasePerfTraceValidator(trace).isValidPerfMetric()).isFalse();
@@ -115,14 +103,6 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
   }
 
   @Test
-  public void testInvalidSubtrace() {
-    TraceMetric.Builder trace = createValidTraceMetric();
-    TraceMetric subtrace = createValidTraceMetric().clearName().build();
-    trace.addSubtraces(subtrace);
-    assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
-  }
-
-  @Test
   public void testEmptyCounterId() {
     TraceMetric trace = createValidTraceMetric().putCounters("", 10).build();
     assertThat(new FirebasePerfTraceValidator(trace).isValidPerfMetric()).isFalse();
@@ -149,14 +129,6 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
   public void testNegativeCounterValue() {
     TraceMetric trace = createValidTraceMetric().putCounters("counterKey", -2).build();
     assertThat(new FirebasePerfTraceValidator(trace).isValidPerfMetric()).isTrue();
-  }
-
-  @Test
-  public void testInvalidCounterSubtrace() {
-    TraceMetric.Builder trace = createValidTraceMetric();
-    TraceMetric subtrace = createValidTraceMetric().putCounters("", 10).build();
-    trace.addSubtraces(subtrace);
-    assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isFalse();
   }
 
   @Test
@@ -245,9 +217,6 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
   @Test
   public void testIsValid() {
     TraceMetric.Builder trace = createValidTraceMetric().putCounters("counter", 2);
-    TraceMetric subtrace =
-        createValidTraceMetric().setName("subtrace1").putCounters("subtraceCounter", 2).build();
-    trace.addSubtraces(subtrace);
     assertThat(new FirebasePerfTraceValidator(trace.build()).isValidPerfMetric()).isTrue();
   }
 

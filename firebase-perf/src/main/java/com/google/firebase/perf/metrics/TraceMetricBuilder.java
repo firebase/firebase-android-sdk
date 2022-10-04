@@ -18,7 +18,6 @@ import androidx.annotation.NonNull;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,13 +43,6 @@ class TraceMetricBuilder {
 
     for (Counter counter : traceCounters.values()) {
       traceMetric.putCounters(counter.getName(), counter.getCount());
-    }
-
-    List<Trace> subTraces = trace.getSubtraces();
-    if (!subTraces.isEmpty()) {
-      for (Trace subtrace : subTraces) {
-        traceMetric.addSubtraces(new TraceMetricBuilder(subtrace).build());
-      }
     }
 
     traceMetric.putAllCustomAttributes(trace.getAttributes());

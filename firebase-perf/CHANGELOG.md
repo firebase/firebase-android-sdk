@@ -1,9 +1,6 @@
 # Unreleased
 
-* [fixed] Fixed a bug where screen traces were not capturing frame metrics for multi-activity apps.
-* [feature] Added support for measuring screen performance metrics for "Activity Fragments" out-of-the-box.
-* [fixed] Excluded custom attributes whose key/value length is 0.
-
+* [fixed] Cleaned up old implementation of stages (unused within Fireperf).
 
 # 20.2.0
 * [unchanged] Updated to accommodate the release of the updated
@@ -43,7 +40,6 @@ updates.
   multi-Activity apps.
 
 * [fixed] Excluded custom attributes that have key/value lengths of 0.
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated

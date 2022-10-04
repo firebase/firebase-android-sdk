@@ -35,13 +35,13 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
   }
 
   /**
-   * Validates a trace metric, it validates root trace and subtraces and checks if the name, deep
-   * and durations are valid.
+   * Validates a trace metric, it validates root trace and checks if the name, deep and durations
+   * are valid.
    *
    * @return a boolean which indicates if the trace is valid.
    */
   public boolean isValidPerfMetric() {
-    if (!isValidTrace(traceMetric, 0)) {
+    if (!isValidTrace(traceMetric)) {
       logger.warn("Invalid Trace:" + traceMetric.getName());
       return false;
     }
@@ -61,31 +61,18 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
     if (hasTraceCounters) {
       return true;
     }
-    for (TraceMetric subtrace : trace.getSubtracesList()) {
-      boolean hasSubtraceCounters = subtrace.getCountersCount() > 0;
-      if (hasSubtraceCounters) {
-        return true;
-      }
-    }
     return false;
   }
 
   /**
-   * Validates counters in a trace metric, it validates root trace counters and subtrace counters
-   * and checks if the counter name and counts are valid.
+   * Validates counters in a trace metric, it validates root trace counters and checks if the
+   * counter name and counts are valid.
    */
-  private boolean areCountersValid(@NonNull TraceMetric trace) {
-    return areCountersValid(trace, 0);
-  }
-
-  private boolean areCountersValid(@Nullable TraceMetric trace, int deep) {
+  private boolean areCountersValid(@Nullable TraceMetric trace) {
     if (trace == null) {
       return false;
     }
-    if (deep > Constants.MAX_SUBTRACE_DEEP) {
-      logger.warn("Exceed MAX_SUBTRACE_DEEP:" + Constants.MAX_SUBTRACE_DEEP);
-      return false;
-    }
+
     // TODO(b/35766630): Add validations for auto instrumented counters.
     for (Map.Entry<String, Long> entry : trace.getCountersMap().entrySet()) {
       if (!isValidCounterId(entry.getKey())) {
@@ -98,11 +85,6 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
       }
     }
 
-    for (TraceMetric subtrace : trace.getSubtracesList()) {
-      if (!areCountersValid(subtrace, deep + 1)) {
-        return false;
-      }
-    }
     return true;
   }
 
@@ -115,13 +97,9 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
     return totalFrames != null && totalFrames.compareTo(0L) > 0;
   }
 
-  private boolean isValidTrace(@Nullable TraceMetric trace, int deep) {
+  private boolean isValidTrace(@Nullable TraceMetric trace) {
     if (trace == null) {
       logger.warn("TraceMetric is null");
-      return false;
-    }
-    if (deep > Constants.MAX_SUBTRACE_DEEP) {
-      logger.warn("Exceed MAX_SUBTRACE_DEEP:" + Constants.MAX_SUBTRACE_DEEP);
       return false;
     }
     // TODO(b/35766630): Add validations for auto instrumented traces.
@@ -141,11 +119,7 @@ final class FirebasePerfTraceValidator extends PerfMetricValidator {
       logger.warn("non-positive totalFrames in screen trace " + trace.getName());
       return false;
     }
-    for (TraceMetric subtrace : trace.getSubtracesList()) {
-      if (!isValidTrace(subtrace, deep + 1)) {
-        return false;
-      }
-    }
+
     if (!areAllAttributesValid(trace.getCustomAttributesMap())) {
       return false;
     }
