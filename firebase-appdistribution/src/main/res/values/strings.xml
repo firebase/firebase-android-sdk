@@ -14,9 +14,9 @@
 
 <resources>
 
-  <string name="signin_dialog_title">Enable new build alerts</string>
-  <string name="singin_dialog_message">Get in-app alerts when new builds are ready to test.</string>
-  <string name="singin_yes_button">Turn on</string>
+  <string name="signin_dialog_title">Sign in as a tester</string>
+  <string name="singin_dialog_message">Sign in to enable beta testing features like new build alerts and in-app feedback.</string>
+  <string name="singin_yes_button">Sign in</string>
   <string name="singin_no_button">Not now</string>
   <string name="no_update_available">No new release available, try calling checkForUpdate.</string>
   <string name="update_dialog_title">New Version Available</string>
