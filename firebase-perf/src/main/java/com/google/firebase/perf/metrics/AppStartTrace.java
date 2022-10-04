@@ -39,8 +39,6 @@ import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -206,8 +204,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
       return;
     }
     this.firstDrawDone = clock.getTime();
-    executorService.execute(
-        () -> this.logColdStart(getStartTimer(), this.firstDrawDone, this.startSession));
+    executorService.execute(() -> this.logColdStart(getStartTimer(), this.firstDrawDone));
 
     if (isRegisteredForLifecycleCallbacks) {
       // After AppStart trace is queued to be logged, we can unregister this callback.
@@ -280,7 +277,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     }
   }
 
-  private void logColdStart(Timer start, Timer end, PerfSession session) {
+  private void logColdStart(Timer start, Timer end) {
     TraceMetric.Builder metric =
         TraceMetric.newBuilder()
             .setName("_experiment_app_start_ttid")
