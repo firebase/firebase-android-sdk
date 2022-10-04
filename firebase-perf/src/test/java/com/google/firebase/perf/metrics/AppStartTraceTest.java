@@ -159,23 +159,6 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     Assert.assertEquals(appStart.getMicros(), metric.getClientStartTimeUs());
     Assert.assertEquals(resumeTime - getElapsedRealtimeMicros(appStart), metric.getDurationUs());
 
-    Assert.assertEquals(3, metric.getSubtracesCount());
-    Assert.assertEquals(
-        Constants.TraceNames.ON_CREATE_TRACE_NAME.toString(), metric.getSubtraces(0).getName());
-    Assert.assertEquals(appStart.getMicros(), metric.getSubtraces(0).getClientStartTimeUs());
-    Assert.assertEquals(
-        createTime - getElapsedRealtimeMicros(appStart), metric.getSubtraces(0).getDurationUs());
-
-    Assert.assertEquals(
-        Constants.TraceNames.ON_START_TRACE_NAME.toString(), metric.getSubtraces(1).getName());
-    Assert.assertEquals(createTime, metric.getSubtraces(1).getClientStartTimeUs());
-    Assert.assertEquals(startTime - createTime, metric.getSubtraces(1).getDurationUs());
-
-    Assert.assertEquals(
-        Constants.TraceNames.ON_RESUME_TRACE_NAME.toString(), metric.getSubtraces(2).getName());
-    Assert.assertEquals(startTime, metric.getSubtraces(2).getClientStartTimeUs());
-    Assert.assertEquals(resumeTime - startTime, metric.getSubtraces(2).getDurationUs());
-
     Assert.assertEquals(1, metric.getPerfSessionsCount());
   }
 
