@@ -22,6 +22,8 @@ import android.util.Log;
 import androidx.annotation.CallSuper;
 import androidx.annotation.MainThread;
 import androidx.annotation.VisibleForTesting;
+import androidx.lifecycle.LifecycleService;
+
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -35,7 +37,7 @@ import java.util.concurrent.ExecutorService;
  * @hide
  */
 @SuppressLint("UnwrappedWakefulBroadcastReceiver") // Not used within GmsCore
-public abstract class EnhancedIntentService extends Service {
+public abstract class EnhancedIntentService extends LifecycleService {
   private static final String TAG = "EnhancedIntentService";
 
   // Use a different thread per service instance, so it can be reclaimed once the service is done.

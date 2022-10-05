@@ -93,6 +93,7 @@ dependencies {
     annotationProcessor project(":encoders:firebase-encoders-processor")
 
     implementation 'androidx.annotation:annotation:1.2.0'
+    api 'androidx.lifecycle:lifecycle-service:2.5.1'
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
     implementation "com.google.android.gms:play-services-basement:18.1.0"
     implementation 'com.google.android.gms:play-services-base:18.0.1'
