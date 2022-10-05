@@ -12,7 +12,7 @@ import com.squareup.seismic.ShakeDetector
 object ShakeForFeedback : ShakeDetector.Listener, Application.ActivityLifecycleCallbacks {
     const val TAG: String = "ShakeForFeedback"
 
-    private val shakeDetector = ShakeDetector(this)
+    private val shakeDetector = ShakeDetector(this).also { it.setSensitivity(ShakeDetector.SENSITIVITY_LIGHT) }
     private var isEnabled = false
 
     fun enable(application: Application, currentActivity: Activity? = null) {
