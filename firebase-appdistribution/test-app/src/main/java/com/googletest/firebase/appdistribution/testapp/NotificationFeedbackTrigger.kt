@@ -24,6 +24,7 @@ import com.google.firebase.ktx.Firebase
 import com.googletest.firebase.appdistribution.testapp.NotificationFeedbackTrigger.SCREENSHOT_FILE_NAME
 import com.googletest.firebase.appdistribution.testapp.NotificationFeedbackTrigger.takeScreenshot
 import java.io.IOException
+import java.util.*
 
 @SuppressLint("StaticFieldLeak") // Reference to Activity is set to null in onActivityDestroyed
 object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
@@ -35,7 +36,9 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
   private var isEnabled = false
   private var hasRequestedPermission = false
   private var currentActivity: Activity? = null
-  private var requestPermissionLauncher: ActivityResultLauncher<String>? = null
+  // TODO(lkellogg): this is getting too complex - simplify it by, for example, only enabling this
+  //   trigger on a per-activity basis instead of app-wide
+  private var requestPermissionLaunchers: WeakHashMap<Activity, ActivityResultLauncher<String>?> = WeakHashMap()
 
   fun initialize(application: Application) {
     // Create the NotificationChannel, but only on API 26+ because
@@ -108,7 +111,7 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
   }
 
   private fun requestPermission(activity: Activity) {
-    var launcher = requestPermissionLauncher
+    var launcher = requestPermissionLaunchers[activity]
     if (launcher == null) {
       Log.i(TAG, "Not requesting permission, because of inability to register for result.")
     } else {
@@ -155,14 +158,14 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
   override fun onActivityDestroyed(activity: Activity) {
     if (activity == currentActivity) {
       Log.d(TAG, "clearing current activity")
-      requestPermissionLauncher = null
       currentActivity = null
     }
+    requestPermissionLaunchers[activity] = null
   }
 
   override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
     if (activity is ActivityResultCaller && !hasRequestedPermission) {
-      requestPermissionLauncher =
+      requestPermissionLaunchers[activity] =
         activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) {
           isGranted: Boolean ->
           if (!isEnabled) {
