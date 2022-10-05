@@ -21,7 +21,12 @@ import android.os.IBinder;
 import android.util.Log;
 import androidx.annotation.CallSuper;
 import androidx.annotation.MainThread;
+import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.ServiceLifecycleDispatcher;
+
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -35,7 +40,7 @@ import java.util.concurrent.ExecutorService;
  * @hide
  */
 @SuppressLint("UnwrappedWakefulBroadcastReceiver") // Not used within GmsCore
-public abstract class EnhancedIntentService extends Service {
+public abstract class EnhancedIntentService extends Service implements LifecycleOwner {
   private static final String TAG = "EnhancedIntentService";
 
   // Use a different thread per service instance, so it can be reclaimed once the service is done.
@@ -44,9 +49,12 @@ public abstract class EnhancedIntentService extends Service {
   // Binder object returned by the onBind call.
   private Binder binder;
 
+  private final ServiceLifecycleDispatcher mDispatcher = new ServiceLifecycleDispatcher(this);
+
   /** @hide */
   @Override
   public final synchronized IBinder onBind(Intent intent) {
+    mDispatcher.onServicePreSuperOnBind();
     if (Log.isLoggable(TAG, Log.DEBUG)) {
       Log.d(TAG, "Service received bind request");
     }
@@ -92,6 +100,7 @@ public abstract class EnhancedIntentService extends Service {
   /** @hide */
   @Override
   public final int onStartCommand(final Intent originalIntent, int flags, final int startId) {
+    mDispatcher.onServicePreSuperOnStart();
     synchronized (lock) {
       lastStartId = startId;
       runningTasks++;
@@ -117,11 +126,34 @@ public abstract class EnhancedIntentService extends Service {
     return START_REDELIVER_INTENT;
   }
 
-  @Override
+
   @CallSuper
+  @Override
   public void onDestroy() {
+    mDispatcher.onServicePreSuperOnDestroy();
     executor.shutdown();
     super.onDestroy();
+  }
+
+  @CallSuper
+  @Override
+  public void onCreate() {
+    mDispatcher.onServicePreSuperOnCreate();
+    super.onCreate();
+  }
+
+  @SuppressWarnings("deprecation")
+  @CallSuper
+  @Override
+  public void onStart(Intent intent, int startId) {
+    mDispatcher.onServicePreSuperOnStart();
+    super.onStart(intent, startId);
+  }
+
+  @NonNull
+  @Override
+  public Lifecycle getLifecycle() {
+    return mDispatcher.getLifecycle();
   }
 
   private void finishTask(Intent originalIntent) {
