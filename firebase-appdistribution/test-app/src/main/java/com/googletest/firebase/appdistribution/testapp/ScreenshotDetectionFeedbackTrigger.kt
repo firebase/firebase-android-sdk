@@ -31,7 +31,9 @@ private constructor(private val infoTextResourceId: Int, handler: Handler) :
   ContentObserver(handler), Application.ActivityLifecycleCallbacks {
 
   private val seenImages = HashSet<Uri>()
-  private var requestPermissionLauncher: ActivityResultLauncher<String>? = null
+  // TODO(lkellogg): this is getting too complex - simplify it by, for example, only enabling this
+  //   trigger on a per-activity basis instead of app-wide
+  private var requestPermissionLaunchers: WeakHashMap<Activity, ActivityResultLauncher<String>?> = WeakHashMap()
   private var currentActivity: Activity? = null
   private var currentUri: Uri? = null
   private var isEnabled = false
@@ -46,7 +48,7 @@ private constructor(private val infoTextResourceId: Int, handler: Handler) :
 
   override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
     if (activity is ActivityResultCaller) {
-      requestPermissionLauncher =
+      requestPermissionLaunchers[activity] =
         activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) {
           isGranted: Boolean ->
           if (!isEnabled) {
@@ -62,8 +64,15 @@ private constructor(private val infoTextResourceId: Int, handler: Handler) :
           }
         }
     } else {
-      Log.w(TAG, "Not listening for screenshots because this activity can't register for permission request results: $activity")
+      Log.w(
+        TAG,
+        "Not listening for screenshots because this activity can't register for permission request results: $activity"
+      )
     }
+  }
+
+  override fun onActivityDestroyed(activity: Activity) {
+    requestPermissionLaunchers[activity] = null
   }
 
   override fun onActivityResumed(activity: Activity) {
@@ -85,7 +94,10 @@ private constructor(private val infoTextResourceId: Int, handler: Handler) :
       if (isPermissionGranted(activity)) {
         maybeStartFeedbackForScreenshot(activity, uri)
       } else if (hasRequestedPermission) {
-        Log.i(TAG, "We've already request permission. Not requesting again for the life of the activity.")
+        Log.i(
+          TAG,
+          "We've already request permission. Not requesting again for the life of the activity."
+        )
       } else {
         // Set an in memory flag so we don't ask them again right away
         hasRequestedPermission = true
@@ -95,22 +107,27 @@ private constructor(private val infoTextResourceId: Int, handler: Handler) :
   }
 
   private fun requestReadPermission(activity: Activity, uri: Uri) {
-    if (activity.shouldShowRequestPermissionRationale(permissionToRequest)) {
-      Log.i(TAG, "Showing customer rationale for requesting permission.")
-      AlertDialog.Builder(activity)
-        .setMessage(
-          "Taking a screenshot of the app can initiate feedback to the developer. To enable this feature, allow the app access to device storage."
-        )
-        .setPositiveButton("OK") { _, _ ->
-          Log.i(TAG, "Launching request for permission.")
-          currentUri = uri
-          requestPermissionLauncher!!.launch(permissionToRequest)
-        }
-        .show()
+    var launcher = requestPermissionLaunchers[activity]
+    if (launcher == null) {
+      Log.i(TAG, "Not requesting permission, because of inability to register for result.")
     } else {
-      Log.i(TAG, "Launching request for permission without rationale.")
-      currentUri = uri
-      requestPermissionLauncher!!.launch(permissionToRequest)
+      if (activity.shouldShowRequestPermissionRationale(permissionToRequest)) {
+        Log.i(TAG, "Showing customer rationale for requesting permission.")
+        AlertDialog.Builder(activity)
+          .setMessage(
+            "Taking a screenshot of the app can initiate feedback to the developer. To enable this feature, allow the app access to device storage."
+          )
+          .setPositiveButton("OK") { _, _ ->
+            Log.i(TAG, "Launching request for permission.")
+            currentUri = uri
+            launcher.launch(permissionToRequest)
+          }
+          .show()
+      } else {
+        Log.i(TAG, "Launching request for permission without rationale.")
+        currentUri = uri
+        launcher.launch(permissionToRequest)
+      }
     }
   }
 
@@ -161,7 +178,6 @@ private constructor(private val infoTextResourceId: Int, handler: Handler) :
   }
 
   // Other lifecycle methods
-  override fun onActivityDestroyed(activity: Activity) {}
   override fun onActivityStarted(activity: Activity) {}
   override fun onActivityStopped(activity: Activity) {}
   override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
