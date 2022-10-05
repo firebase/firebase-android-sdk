@@ -62,10 +62,10 @@ android {
         abortOnError false
     }
 
-    compileSdkVersion project.targetSdkVersion
+    compileSdk 31
     defaultConfig {
-        minSdkVersion 19
-        targetSdkVersion project.targetSdkVersion
+        minSdk 19
+        targetSdk 31
         versionName version
 
         multiDexEnabled true
