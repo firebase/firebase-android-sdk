@@ -15,7 +15,6 @@ import android.util.Log
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -24,7 +23,6 @@ import com.google.firebase.ktx.Firebase
 import com.googletest.firebase.appdistribution.testapp.NotificationFeedbackTrigger.SCREENSHOT_FILE_NAME
 import com.googletest.firebase.appdistribution.testapp.NotificationFeedbackTrigger.takeScreenshot
 import java.io.IOException
-import java.util.*
 
 @SuppressLint("StaticFieldLeak") // Reference to Activity is set to null in onActivityDestroyed
 object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
@@ -36,9 +34,6 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
   private var isEnabled = false
   private var hasRequestedPermission = false
   private var currentActivity: Activity? = null
-  // TODO(lkellogg): this is getting too complex - simplify it by, for example, only enabling this
-  //   trigger on a per-activity basis instead of app-wide
-  private var requestPermissionLaunchers: WeakHashMap<Activity, ActivityResultLauncher<String>?> = WeakHashMap()
 
   fun initialize(application: Application) {
     // Create the NotificationChannel, but only on API 26+ because
@@ -59,11 +54,43 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
     application.registerActivityLifecycleCallbacks(this)
   }
 
-  fun enable(currentActivity: Activity? = null) {
-    this.currentActivity = currentActivity
+  fun <T> registerPermissionLauncher(activity: T): ActivityResultLauncher<String>? where
+  T : Activity,
+  T : ActivityResultCaller {
+    if (hasRequestedPermission) {
+      Log.i(TAG, "Already request permission; Not trying again.")
+      return null
+    }
+
+    return activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+      isGranted: Boolean ->
+      if (!isEnabled) {
+        Log.w(TAG, "Trigger disabled after permission check. Abandoning notification.")
+      } else if (isGranted) {
+        showNotification(activity)
+      } else {
+        Log.i(TAG, "Permission not granted")
+        // TODO: Ideally we would show a message indicating the impact of not
+        //   enabling the permission, but there's no way to know if they've
+        //   permanently denied the permission, and we don't want to show them a
+        //   message after each time we try to post a notification.
+      }
+    }
+  }
+
+  fun enable(activity: Activity? = null, launcher: ActivityResultLauncher<String>? = null) {
+    currentActivity = activity
     isEnabled = true
-    if (currentActivity != null) {
-      showNotification(currentActivity)
+    if (activity != null) {
+      if (hasPermission(activity)) {
+        showNotification(activity)
+      } else {
+        if (launcher != null) {
+          requestPermission(activity, launcher)
+        } else {
+          Log.i(TAG, "Not requesting permission, because of no launcher was provided.")
+        }
+      }
     }
   }
 
@@ -77,62 +104,52 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
   }
 
   private fun showNotification(activity: Activity) {
-    if (ContextCompat.checkSelfPermission(activity, POST_NOTIFICATIONS) == PERMISSION_GRANTED) {
-      val intent = Intent(activity, TakeScreenshotAndTriggerFeedbackActivity::class.java)
-      intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
-      val pendingIntent =
-        PendingIntent.getActivity(
-          activity,
-          /* requestCode= */ 0,
-          intent,
-          PendingIntent.FLAG_IMMUTABLE
-        )
-      val builder =
-        NotificationCompat.Builder(activity, FEEBACK_NOTIFICATION_CHANNEL_ID)
-          .setSmallIcon(R.mipmap.ic_launcher)
-          .setContentTitle(activity.getText(R.string.feedback_notification_title))
-          .setContentText(activity.getText(R.string.feedback_notification_text))
-          .setPriority(NotificationCompat.PRIORITY_LOW)
-          .setContentIntent(pendingIntent)
-      val notificationManager = NotificationManagerCompat.from(activity)
-      Log.i(TAG, "Showing notification")
-      notificationManager.notify(FEEDBACK_NOTIFICATION_ID, builder.build())
-    } else {
-      // no permission to post notifications - try to get it
-      if (hasRequestedPermission) {
-        Log.i(
-          TAG,
-          "We've already request permission. Not requesting again for the life of the activity."
-        )
-      } else {
-        requestPermission(activity)
-      }
-    }
+    val intent = Intent(activity, TakeScreenshotAndTriggerFeedbackActivity::class.java)
+    intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+    val pendingIntent =
+      PendingIntent.getActivity(
+        activity,
+        /* requestCode = */ 0,
+        intent,
+        PendingIntent.FLAG_IMMUTABLE
+      )
+    val builder =
+      NotificationCompat.Builder(activity, FEEBACK_NOTIFICATION_CHANNEL_ID)
+        .setSmallIcon(R.mipmap.ic_launcher)
+        .setContentTitle(activity.getText(R.string.feedback_notification_title))
+        .setContentText(activity.getText(R.string.feedback_notification_text))
+        .setPriority(NotificationCompat.PRIORITY_LOW)
+        .setContentIntent(pendingIntent)
+    val notificationManager = NotificationManagerCompat.from(activity)
+    Log.i(TAG, "Showing notification")
+    notificationManager.notify(FEEDBACK_NOTIFICATION_ID, builder.build())
   }
 
-  private fun requestPermission(activity: Activity) {
-    var launcher = requestPermissionLaunchers[activity]
-    if (launcher == null) {
-      Log.i(TAG, "Not requesting permission, because of inability to register for result.")
-    } else {
-      if (activity.shouldShowRequestPermissionRationale(POST_NOTIFICATIONS)) {
-        Log.i(TAG, "Showing customer rationale for requesting permission.")
-        AlertDialog.Builder(activity)
-          .setMessage(
-            "Using a notification to initiate feedback to the developer. " +
-              "To enable this feature, allow the app to post notifications."
-          )
-          .setPositiveButton("OK") { _, _ ->
-            Log.i(TAG, "Launching request for permission.")
-            launcher.launch(POST_NOTIFICATIONS)
-          }
-          .show()
-      } else {
-        Log.i(TAG, "Launching request for permission without rationale.")
-        launcher.launch(POST_NOTIFICATIONS)
-      }
-      hasRequestedPermission = true
+  private fun hasPermission(activity: Activity) =
+    ContextCompat.checkSelfPermission(activity, POST_NOTIFICATIONS) == PERMISSION_GRANTED
+
+  private fun requestPermission(activity: Activity, launcher: ActivityResultLauncher<String>) {
+    if (hasRequestedPermission) {
+      Log.i(TAG, "Already request permission; Not trying again.")
+      return
     }
+    if (activity.shouldShowRequestPermissionRationale(POST_NOTIFICATIONS)) {
+      Log.i(TAG, "Showing customer rationale for requesting permission.")
+      AlertDialog.Builder(activity)
+        .setMessage(
+          "Using a notification to initiate feedback to the developer. " +
+            "To enable this feature, allow the app to post notifications."
+        )
+        .setPositiveButton("OK") { _, _ ->
+          Log.i(TAG, "Launching request for permission.")
+          launcher.launch(POST_NOTIFICATIONS)
+        }
+        .show()
+    } else {
+      Log.i(TAG, "Launching request for permission without rationale.")
+      launcher.launch(POST_NOTIFICATIONS)
+    }
+    hasRequestedPermission = true
   }
 
   private fun cancelNotification(context: Context) {
@@ -160,35 +177,10 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
       Log.d(TAG, "clearing current activity")
       currentActivity = null
     }
-    requestPermissionLaunchers[activity] = null
-  }
-
-  override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-    if (activity is ActivityResultCaller && !hasRequestedPermission) {
-      requestPermissionLaunchers[activity] =
-        activity.registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-          isGranted: Boolean ->
-          if (!isEnabled) {
-            Log.w(TAG, "Trigger disabled after permission check. Abandoning notification.")
-          } else if (isGranted) {
-            showNotification(activity)
-          } else {
-            Log.i(TAG, "Permission not granted")
-            // TODO: Ideally we would show a message indicating the impact of not
-            //   enabling the permission, but there's no way to know if they've
-            //   permanently denied the permission, and we don't want to show them a
-            //   message after each time we try to post a notification.
-          }
-        }
-    } else {
-      Log.w(
-        TAG,
-        "Not showing notification because this activity can't register for permission request results: $activity"
-      )
-    }
   }
 
   // Other lifecycle methods
+  override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
   override fun onActivityStarted(activity: Activity) {}
   override fun onActivityStopped(activity: Activity) {}
   override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
@@ -215,10 +207,10 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
   }
 }
 
-class TakeScreenshotAndTriggerFeedbackActivity : AppCompatActivity() {
+class TakeScreenshotAndTriggerFeedbackActivity : Activity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    takeScreenshot()
+    takeScreenshot() // at this point currentActivity still points to the previous activity
   }
 
   override fun onResume() {
