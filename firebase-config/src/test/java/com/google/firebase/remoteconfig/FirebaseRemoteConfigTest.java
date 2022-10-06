@@ -1134,7 +1134,14 @@ public final class FirebaseRemoteConfigTest {
 
   @Test
   public void realtime_stream_listen_fail() throws Exception {
-    when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(400);
+    when(mockHttpURLConnection.getInputStream())
+        .thenReturn(
+            new ByteArrayInputStream(
+                "{\\r\\n   \\\"latestTemplateVersionNumber\\\": 1\\r\\n}"
+                    .getBytes(StandardCharsets.UTF_8)));
+    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
+    when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
     verify(mockListener).onError(any(FirebaseRemoteConfigRealtimeUpdateFetchException.class));
@@ -1219,23 +1226,6 @@ public final class FirebaseRemoteConfigTest {
     verify(mockListener, never())
         .onError(any(FirebaseRemoteConfigRealtimeUpdateStreamException.class));
     verify(mockFetchHandler).getTemplateVersionNumber();
-  }
-
-  @Test
-  public void realtimeFetch_defaultTemplateVersion_excludeFetchEtag() throws Exception {
-    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
-    when(mockHttpURLConnection.getInputStream())
-        .thenReturn(
-            new ByteArrayInputStream(
-                "{ \"featureDisabled\": false,  \"latestTemplateVersionNumber\": 2 }"
-                    .getBytes(StandardCharsets.UTF_8)));
-    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(0L);
-    when(mockFetchHandler.fetchWithoutEtag(0L))
-        .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
-    configAutoFetch.fetchLatestConfig(0, 1);
-
-    verify(mockListener).onEvent();
-    verify(mockFetchHandler).fetchWithoutEtag(0L);
   }
 
   @Test

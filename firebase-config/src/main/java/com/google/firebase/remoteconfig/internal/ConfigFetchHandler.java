@@ -162,53 +162,7 @@ public class ConfigFetchHandler {
             executor,
             (cachedFetchConfigsTask) ->
                 fetchIfCacheExpiredAndNotThrottled(
-                    cachedFetchConfigsTask,
-                    minimumFetchIntervalInSeconds, /*excludeEtagHeader */
-                    false));
-  }
-
-  /**
-   * Starts fetching configs from the Firebase Remote Config server without the Etag header in the
-   * request.
-   *
-   * <p>Guarantees consistency between memory and disk; fetched configs are saved to memory only
-   * after they have been written to disk.
-   *
-   * <p>Fetches even if the read of the fetch cache fails (assumes there are no cached fetched
-   * configs in that case).
-   *
-   * <p>Fetch request does not include Etag in the header. This is to force a fetch response with an
-   * UPDATE status.
-   *
-   * <p>If the fetch request could not be created or there was error connecting to the server, the
-   * returned Task throws a {@link FirebaseRemoteConfigClientException}.
-   *
-   * <p>If the server responds with an error, the returned Task throws a {@link
-   * FirebaseRemoteConfigServerException}.
-   *
-   * <p>If any of the following is true, then the returned Task throws a {@link
-   * FirebaseRemoteConfigFetchThrottledException}:
-   *
-   * <ul>
-   *   <li>The backoff duration from a previous throttled exception has not expired,
-   *   <li>The backend responded with a throttled error, or
-   *   <li>The backend responded with unavailable errors for the last two fetch requests.
-   * </ul>
-   *
-   * @return A {@link Task} representing the fetch call that returns a {@link FetchResponse} with
-   *     the configs fetched from the backend. If the backend was not called or the backend had no
-   *     updates, the {@link FetchResponse}'s configs will be {@code null}.
-   */
-  public Task<FetchResponse> fetchWithoutEtag(long minimumFetchIntervalInSeconds) {
-    return fetchedConfigsCache
-        .get()
-        .continueWithTask(
-            executor,
-            (cachedFetchConfigsTask) ->
-                fetchIfCacheExpiredAndNotThrottled(
-                    cachedFetchConfigsTask,
-                    minimumFetchIntervalInSeconds, /*excludeEtagHeader */
-                    true));
+                    cachedFetchConfigsTask, minimumFetchIntervalInSeconds));
   }
 
   /**
@@ -219,9 +173,7 @@ public class ConfigFetchHandler {
    * fetch time and {@link BackoffMetadata} in {@link ConfigMetadataClient}.
    */
   private Task<FetchResponse> fetchIfCacheExpiredAndNotThrottled(
-      Task<ConfigContainer> cachedFetchConfigsTask,
-      long minimumFetchIntervalInSeconds,
-      boolean excludeEtagHeader) {
+      Task<ConfigContainer> cachedFetchConfigsTask, long minimumFetchIntervalInSeconds) {
     Date currentTime = new Date(clock.currentTimeMillis());
     if (cachedFetchConfigsTask.isSuccessful()
         && areCachedFetchConfigsValid(minimumFetchIntervalInSeconds, currentTime)) {
@@ -266,7 +218,7 @@ public class ConfigFetchHandler {
                     String installationId = installationIdTask.getResult();
                     String installationToken = installationAuthTokenTask.getResult().getToken();
                     return fetchFromBackendAndCacheResponse(
-                        installationId, installationToken, currentTime, excludeEtagHeader);
+                        installationId, installationToken, currentTime);
                   });
     }
 
@@ -326,10 +278,9 @@ public class ConfigFetchHandler {
    * {@code fetchedConfigsCache}.
    */
   private Task<FetchResponse> fetchFromBackendAndCacheResponse(
-      String installationId, String installationToken, Date fetchTime, boolean excludeEtagHeader) {
+      String installationId, String installationToken, Date fetchTime) {
     try {
-      FetchResponse fetchResponse =
-          fetchFromBackend(installationId, installationToken, fetchTime, excludeEtagHeader);
+      FetchResponse fetchResponse = fetchFromBackend(installationId, installationToken, fetchTime);
       if (fetchResponse.getStatus() != Status.BACKEND_UPDATES_FETCHED) {
         return Tasks.forResult(fetchResponse);
       }
@@ -352,7 +303,7 @@ public class ConfigFetchHandler {
    */
   @WorkerThread
   private FetchResponse fetchFromBackend(
-      String installationId, String installationToken, Date currentTime, boolean excludeEtagHeader)
+      String installationId, String installationToken, Date currentTime)
       throws FirebaseRemoteConfigException {
     try {
       HttpURLConnection urlConnection = frcBackendApiClient.createHttpURLConnection();
@@ -366,8 +317,7 @@ public class ConfigFetchHandler {
               frcMetadata.getLastFetchETag(),
               customHttpHeaders,
               getFirstOpenTime(),
-              currentTime,
-              excludeEtagHeader);
+              currentTime);
 
       if (response.getFetchedConfigs() != null) {
         // Set template version in metadata to be saved on disk.
