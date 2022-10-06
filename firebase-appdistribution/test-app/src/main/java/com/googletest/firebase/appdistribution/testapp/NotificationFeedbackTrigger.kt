@@ -20,8 +20,6 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.google.firebase.appdistribution.ktx.appDistribution
 import com.google.firebase.ktx.Firebase
-import com.googletest.firebase.appdistribution.testapp.NotificationFeedbackTrigger.SCREENSHOT_FILE_NAME
-import com.googletest.firebase.appdistribution.testapp.NotificationFeedbackTrigger.takeScreenshot
 import java.io.IOException
 
 @SuppressLint("StaticFieldLeak") // Reference to Activity is set to null in onActivityDestroyed
@@ -29,11 +27,11 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
   private const val TAG: String = "NotificationFeedbackTrigger"
   private const val FEEBACK_NOTIFICATION_CHANNEL_ID = "InAppFeedbackNotification"
   private const val FEEDBACK_NOTIFICATION_ID = 1
-  const val SCREENSHOT_FILE_NAME = "com.googletest.firebase.appdistribution.testapp.screenshot.png"
 
   private var isEnabled = false
   private var hasRequestedPermission = false
-  private var currentActivity: Activity? = null // Activity to be used for screenshot
+
+  internal var currentActivity: Activity? = null // Activity to be used for screenshot
 
   /**
    * Initialize the notification trigger for this application.
@@ -161,7 +159,6 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
     notificationManager.notify(FEEDBACK_NOTIFICATION_ID, builder.build())
   }
 
-
   private fun cancelNotification(context: Context) {
     val notificationManager = NotificationManagerCompat.from(context)
     Log.i(TAG, "Cancelling notification")
@@ -177,7 +174,6 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
     }
   }
 
-
   override fun onActivityDestroyed(activity: Activity) {
     if (activity == currentActivity) {
       Log.d(TAG, "clearing current activity")
@@ -191,13 +187,26 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
   override fun onActivityPaused(activity: Activity) {}
   override fun onActivityStopped(activity: Activity) {}
   override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+}
 
-  fun takeScreenshot() {
-    val activity = currentActivity
+class TakeScreenshotAndTriggerFeedbackActivity : Activity() {
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    val activity = NotificationFeedbackTrigger.currentActivity // points to the previous activity
     if (activity == null) {
       Log.e(TAG, "Can't take screenshot because current activity is unknown")
       return
     }
+    takeScreenshot(activity)
+  }
+
+  override fun onResume() {
+    super.onResume()
+    val screenshotUri = Uri.fromFile(getFileStreamPath(SCREENSHOT_FILE_NAME))
+    Firebase.appDistribution.startFeedback(R.string.terms_and_conditions, screenshotUri)
+  }
+
+  fun takeScreenshot(activity: Activity) {
     val view = activity.window.decorView.rootView
     val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.RGB_565)
     val canvas = Canvas(bitmap)
@@ -206,22 +215,15 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
       activity.openFileOutput(SCREENSHOT_FILE_NAME, Context.MODE_PRIVATE).use { outputStream ->
         bitmap.compress(Bitmap.CompressFormat.PNG, /* quality = */ 100, outputStream)
       }
-      Log.i(TAG, "Wrote screenshot to $SCREENSHOT_FILE_NAME")
+      Log.i(TAG, "Wrote screenshot to ${SCREENSHOT_FILE_NAME}")
     } catch (e: IOException) {
-      Log.e(TAG, "Can't write $SCREENSHOT_FILE_NAME", e)
+      Log.e(TAG, "Can't write ${SCREENSHOT_FILE_NAME}", e)
     }
   }
-}
 
-class TakeScreenshotAndTriggerFeedbackActivity : Activity() {
-  override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    takeScreenshot() // at this point currentActivity still points to the previous activity
-  }
-
-  override fun onResume() {
-    super.onResume()
-    val screenshotUri = Uri.fromFile(getFileStreamPath(SCREENSHOT_FILE_NAME))
-    Firebase.appDistribution.startFeedback(R.string.terms_and_conditions, screenshotUri)
+  companion object {
+    private const val TAG: String = "TakeScreenshotAndTriggerFeedbackActivity"
+    private const val SCREENSHOT_FILE_NAME =
+      "com.googletest.firebase.appdistribution.testapp.screenshot.png"
   }
 }
