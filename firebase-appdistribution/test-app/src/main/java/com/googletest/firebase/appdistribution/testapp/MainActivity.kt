@@ -184,10 +184,11 @@ class MainActivity : AppCompatActivity() {
             firebaseAppDistribution
                 .checkForNewRelease()
                 .addOnSuccessListener {
-                    setupUI(
-                        isSignedIn = firebaseAppDistribution.isTesterSignedIn,
-                        isUpdateAvailable = it != null,
-                        release = it)
+                        release ->
+                            setupUI(
+                                isSignedIn = firebaseAppDistribution.isTesterSignedIn,
+                                isUpdateAvailable = release != null,
+                                release = release)
                 }
                 .addOnFailureListener { failureListener(it) }
         }
@@ -197,10 +198,11 @@ class MainActivity : AppCompatActivity() {
                 firebaseAppDistribution
                     .checkForNewRelease()
                     .addOnSuccessListener {
-                        setupUI(
-                            isSignedIn = firebaseAppDistribution.isTesterSignedIn,
-                            isUpdateAvailable = it != null,
-                            release = it)
+                            release ->
+                                setupUI(
+                                    isSignedIn = firebaseAppDistribution.isTesterSignedIn,
+                                    isUpdateAvailable = release != null,
+                                    release = release)
                     }
                     .addOnFailureListener { failureListener(it) }
             }
