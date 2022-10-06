@@ -167,7 +167,7 @@ public class ConfigFetchHttpClientTest {
     FetchResponse response = fetch(SECOND_ETAG);
 
     assertThat(response.getLastFetchETag()).isNull();
-    assertThat(response.getFetchedConfigs()).isNull();
+    assertThat(response.getFetchedConfigs()).isNotNull();
   }
 
   @Test
