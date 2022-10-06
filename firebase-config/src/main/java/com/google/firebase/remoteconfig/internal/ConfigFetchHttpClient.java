@@ -218,12 +218,12 @@ public class ConfigFetchHttpClient {
       } catch (IOException e) {
       }
     }
+    ConfigContainer fetchedConfigs = extractConfigs(fetchResponse, currentTime);
 
     if (!backendHasUpdates(fetchResponse)) {
-      return FetchResponse.forBackendHasNoUpdates(currentTime);
+      return FetchResponse.forBackendHasNoUpdates(currentTime, fetchedConfigs);
     }
 
-    ConfigContainer fetchedConfigs = extractConfigs(fetchResponse, currentTime);
     return FetchResponse.forBackendUpdatesFetched(fetchedConfigs, fetchResponseETag);
   }
 

@@ -807,7 +807,7 @@ public class ConfigFetchHandlerTest {
             /* firstOpenTime= */ any(),
             /* currentTime= */ any(),
             /* excludeEtagHeader */ any()))
-        .thenReturn(FetchResponse.forBackendHasNoUpdates(date));
+        .thenReturn(FetchResponse.forBackendHasNoUpdates(date, firstFetchedContainer));
   }
 
   private void fetchCallToBackendThrowsException(int httpErrorCode) throws Exception {

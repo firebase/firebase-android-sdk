@@ -625,11 +625,12 @@ public class ConfigFetchHandler {
           lastFetchETag);
     }
 
-    public static FetchResponse forBackendHasNoUpdates(Date fetchTime) {
+    public static FetchResponse forBackendHasNoUpdates(
+        Date fetchTime, ConfigContainer fetchedConfigs) {
       return new FetchResponse(
           fetchTime,
           Status.BACKEND_HAS_NO_UPDATES,
-          /*fetchedConfigs=*/ null,
+          /*fetchedConfigs=*/ fetchedConfigs,
           /*lastFetchETag=*/ null);
     }
 
