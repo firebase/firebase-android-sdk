@@ -35,8 +35,8 @@ import java.util.concurrent.Executors
 class MainActivity : AppCompatActivity() {
     var firebaseAppDistribution = Firebase.appDistribution
     var updateTask: Task<Void>? = null
-    var release: AppDistributionRelease? = null
     val executorService: ExecutorService = Executors.newFixedThreadPool(1)
+
     lateinit var signInButton: AppCompatButton
     lateinit var signOutButton: AppCompatButton
     lateinit var checkForUpdateButton: AppCompatButton
@@ -125,10 +125,11 @@ class MainActivity : AppCompatActivity() {
             firebaseAppDistribution
                 .checkForNewRelease()
                 .addOnSuccessListener {
-                    setupUI(
-                        isSignedIn = firebaseAppDistribution.isTesterSignedIn,
-                        isUpdateAvailable = it != null,
-                        release = it)
+                        release ->
+                            setupUI(
+                                isSignedIn = firebaseAppDistribution.isTesterSignedIn,
+                                isUpdateAvailable = release != null,
+                                release = release)
                 }
                 .addOnFailureListener { failureListener(it) }
         }
@@ -138,11 +139,11 @@ class MainActivity : AppCompatActivity() {
                 firebaseAppDistribution
                     .checkForNewRelease()
                     .addOnSuccessListener {
-                        release = it
-                        setupUI(
-                            isSignedIn = firebaseAppDistribution.isTesterSignedIn,
-                            isUpdateAvailable = release != null,
-                            release = release)
+                            release ->
+                                setupUI(
+                                    isSignedIn = firebaseAppDistribution.isTesterSignedIn,
+                                    isUpdateAvailable = release != null,
+                                    release = release)
                     }
                     .addOnFailureListener { failureListener(it) }
             }
