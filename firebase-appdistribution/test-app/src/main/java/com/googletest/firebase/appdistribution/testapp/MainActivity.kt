@@ -13,7 +13,6 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.core.widget.doOnTextChanged
@@ -47,7 +46,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var feedbackTriggerMenu: TextInputLayout
 
     var updateTask: Task<Void>? = null
-    var notificationPermissionLauncher: ActivityResultLauncher<String>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,7 +65,10 @@ class MainActivity : AppCompatActivity() {
         progressPercent = findViewById(R.id.progress_percentage)
         signInStatus = findViewById(R.id.sign_in_status)
         progressBar = findViewById(R.id.progress_bar)
-        notificationPermissionLauncher = NotificationFeedbackTrigger.registerPermissionLauncher(this)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            NotificationFeedbackTrigger.requestPermission(this)
+        }
 
         // Set up feedback trigger menu
         feedbackTriggerMenu = findViewById(R.id.feedbackTriggerMenu)
@@ -100,7 +101,7 @@ class MainActivity : AppCompatActivity() {
                 FeedbackTrigger.NOTIFICATION.label -> {
                     disableAllFeedbackTriggers()
                     Log.i(TAG, "Enabling notification trigger")
-                    NotificationFeedbackTrigger.enable(this, notificationPermissionLauncher)
+                    NotificationFeedbackTrigger.enable(this)
                 }
             }
         }
