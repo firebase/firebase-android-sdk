@@ -15,6 +15,7 @@ import android.util.Log
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -124,7 +125,11 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
   fun enable(activity: Activity) {
     activityToScreenshot = activity
     isEnabled = true
-    showNotification(activity)
+    if (ContextCompat.checkSelfPermission(activity, POST_NOTIFICATIONS) == PERMISSION_GRANTED) {
+      showNotification(activity)
+    } else {
+      Log.w(TAG, "Not showing notification because permission has not been granted.")
+    }
   }
 
   /** Hide notifications. */
@@ -137,6 +142,7 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
     activityToScreenshot = null
   }
 
+  @RequiresPermission(POST_NOTIFICATIONS)
   private fun showNotification(context: Context) {
     val intent = Intent(context, TakeScreenshotAndTriggerFeedbackActivity::class.java)
     intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
