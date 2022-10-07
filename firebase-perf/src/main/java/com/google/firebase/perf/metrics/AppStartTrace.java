@@ -68,7 +68,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   private static final int CORE_POOL_SIZE = 0;
   private static final int MAX_POOL_SIZE = 1; // Only need single thread
 
-  private static volatile AppStartTrace instance;
   private static ExecutorService executorService;
 
   private boolean isRegisteredForLifecycleCallbacks = false;
@@ -129,29 +128,17 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     // no-op, for backward compatibility with old version plugin.
   }
 
-  public static AppStartTrace getInstance() {
-    return instance != null ? instance : getInstance(TransportManager.getInstance(), new Clock());
-  }
-
-  static AppStartTrace getInstance(TransportManager transportManager, Clock clock) {
-    if (instance == null) {
-      synchronized (AppStartTrace.class) {
-        if (instance == null) {
-          instance =
-              new AppStartTrace(
-                  transportManager,
-                  clock,
-                  ConfigResolver.getInstance(),
-                  new ThreadPoolExecutor(
-                      CORE_POOL_SIZE,
-                      MAX_POOL_SIZE,
-                      /* keepAliveTime= */ MAX_LATENCY_BEFORE_UI_INIT + 10,
-                      TimeUnit.SECONDS,
-                      new LinkedBlockingQueue<>()));
-        }
-      }
-    }
-    return instance;
+  public AppStartTrace() {
+    this(
+        TransportManager.getInstance(),
+        new Clock(),
+        ConfigResolver.getInstance(),
+        new ThreadPoolExecutor(
+            CORE_POOL_SIZE,
+            MAX_POOL_SIZE,
+            /* keepAliveTime= */ MAX_LATENCY_BEFORE_UI_INIT + 10,
+            TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>()));
   }
 
   AppStartTrace(
