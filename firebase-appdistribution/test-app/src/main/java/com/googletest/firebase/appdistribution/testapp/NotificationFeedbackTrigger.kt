@@ -31,7 +31,7 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
   private var isEnabled = false
   private var hasRequestedPermission = false
 
-  internal var currentActivity: Activity? = null // Activity to be used for screenshot
+  internal var activityToScreenshot: Activity? = null
 
   /**
    * Initialize the notification trigger for this application.
@@ -122,19 +122,19 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
    * @param activity the [Activity] object
    */
   fun enable(activity: Activity) {
-    currentActivity = activity
+    activityToScreenshot = activity
     isEnabled = true
     showNotification(activity)
   }
 
   /** Hide notifications. */
   fun disable() {
-    val activity = currentActivity
+    val activity = activityToScreenshot
     if (activity != null) {
       cancelNotification(activity)
     }
     isEnabled = false
-    currentActivity = null
+    activityToScreenshot = null
   }
 
   private fun showNotification(context: Context) {
@@ -169,15 +169,15 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
     if (isEnabled) {
       if (activity !is TakeScreenshotAndTriggerFeedbackActivity) {
         Log.d(TAG, "setting current activity")
-        currentActivity = activity
+        activityToScreenshot = activity
       }
     }
   }
 
   override fun onActivityDestroyed(activity: Activity) {
-    if (activity == currentActivity) {
+    if (activity == activityToScreenshot) {
       Log.d(TAG, "clearing current activity")
-      currentActivity = null
+      activityToScreenshot = null
     }
   }
 
@@ -192,9 +192,9 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
 class TakeScreenshotAndTriggerFeedbackActivity : Activity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    val activity = NotificationFeedbackTrigger.currentActivity // points to the previous activity
+    val activity = NotificationFeedbackTrigger.activityToScreenshot
     if (activity == null) {
-      Log.e(TAG, "Can't take screenshot because current activity is unknown")
+      Log.e(TAG, "Can't take screenshot because activity is unknown")
       return
     }
     takeScreenshot(activity)
