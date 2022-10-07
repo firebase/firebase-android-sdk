@@ -177,7 +177,7 @@ public interface FirebaseAppDistribution {
    * @param screenshot URI to a bitmap containing a screenshot that will be included with the
    *     report, or null to not include a screenshot
    */
-  void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri);
+  void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshot);
 
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */
   @NonNull
