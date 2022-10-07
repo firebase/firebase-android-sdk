@@ -108,9 +108,15 @@ public class FrameMetricsRecorder {
     Optional<PerfFrameMetrics> data = this.snapshot();
     try {
       frameMetricsAggregator.remove(activity);
-    } catch (IllegalArgumentException | NullPointerException err) {
+    } catch (IllegalArgumentException err) {
       logger.warn(
           "View not hardware accelerated. Unable to collect FrameMetrics. %s", err.toString());
+      frameMetricsAggregator.reset();
+      return Optional.absent();
+    } catch (NullPointerException err) {
+      frameMetricsAggregator.reset();
+      logger.warn(
+          "NullPointerException. %s", err.toString());
       return Optional.absent();
     }
     frameMetricsAggregator.reset();
