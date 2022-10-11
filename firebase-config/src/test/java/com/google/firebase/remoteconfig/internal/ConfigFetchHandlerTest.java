@@ -1033,10 +1033,10 @@ public class ConfigFetchHandlerTest {
         ConfigContainer.newBuilder().withFetchTime(fetchTime);
 
     JSONObject entries = fetchResponse.getJSONObject(ENTRIES);
-    containerBuilder.replaceConfigsWith(entries);
+    containerBuilder = containerBuilder.replaceConfigsWith(entries);
 
     JSONArray experimentDescriptions = fetchResponse.getJSONArray(EXPERIMENT_DESCRIPTIONS);
-    containerBuilder.withAbtExperiments(experimentDescriptions);
+    containerBuilder = containerBuilder.withAbtExperiments(experimentDescriptions);
 
     return containerBuilder.build();
   }
