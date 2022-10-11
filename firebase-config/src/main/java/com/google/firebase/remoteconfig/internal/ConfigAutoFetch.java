@@ -203,7 +203,7 @@ public class ConfigAutoFetch {
           if (fetchResponse.getFetchedConfigs() != null) {
             newTemplateVersion = fetchResponse.getFetchedConfigs().getTemplateVersionNumber();
           } else if (fetchResponse.getStatus()
-                  == ConfigFetchHandler.FetchResponse.Status.BACKEND_HAS_NO_UPDATES) {
+              == ConfigFetchHandler.FetchResponse.Status.BACKEND_HAS_NO_UPDATES) {
             newTemplateVersion = targetVersion;
           }
 
