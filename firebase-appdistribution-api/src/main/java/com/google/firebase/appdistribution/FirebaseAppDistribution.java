@@ -14,7 +14,11 @@
 
 package com.google.firebase.appdistribution;
 
+import android.app.Activity;
+import android.os.Build;
+import androidx.activity.result.ActivityResultCaller;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.FirebaseAppDistributionProxy;
@@ -46,6 +50,12 @@ public interface FirebaseAppDistribution {
    *       newest release is an AAB, directs the tester to the Play app to complete the download and
    *       installation.
    * </ol>
+   *
+   * <p>On Android 13 and above, his method requires the <a
+   * href="https://developer.android.com/develop/ui/views/notifications/notification-permission">runtime
+   * permission for sending notifications</a>: {@code POST_NOTIFICATIONS}. Either <a
+   * href="https://developer.android.com/training/permissions/requesting">request the permission</a>
+   * on your own or call {@link #requestNotificationPermissions}.
    *
    * <p>If you don't include the {@code com.google.firebase:firebase-appdistribution} artifact in
    * your build, then this method returns a failed {@link Task} with {@link
@@ -108,6 +118,26 @@ public interface FirebaseAppDistribution {
    */
   @NonNull
   UpdateTask updateApp();
+
+  /**
+   * Requests the {@code POST_NOTIFICATIONS} permission, if it is not already granted.
+   *
+   * <p>This <b>must</b> be called from {@link Activity#onCreate}.
+   *
+   * <p>Android 13 (API level 33) and above support a <a
+   * href="https://developer.android.com/develop/ui/views/notifications/notification-permission">runtime
+   * permission for sending notifications</a>: {@code POST_NOTIFICATIONS}. If you target Android 13
+   * or higher and do not want to <a
+   * href="https://developer.android.com/training/permissions/requesting">request the permission</a>
+   * on your own, call this method to request the permission. This is helpful if you use the {@link
+   * #updateIfNewReleaseAvailable} method, which shows notifications.
+   *
+   * @param activity the activity being initialized (this method <b>must</b> be called from this
+   *     activity's {@link Activity#onCreate})
+   */
+  @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+  <T extends Activity & ActivityResultCaller> void requestNotificationPermissions(
+      @NonNull T activity);
 
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */
   @NonNull

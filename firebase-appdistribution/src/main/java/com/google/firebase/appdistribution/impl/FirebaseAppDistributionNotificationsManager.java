@@ -23,6 +23,7 @@ import android.os.Build;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 class FirebaseAppDistributionNotificationsManager {
   private static final String TAG = "NotificationsManager:";
@@ -46,7 +47,25 @@ class FirebaseAppDistributionNotificationsManager {
   }
 
   void updateNotification(long totalBytes, long downloadedBytes, int stringResourceId) {
-    NotificationManager notificationManager = createNotificationManager(context);
+    NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
+
+    if (!notificationManager.areNotificationsEnabled()) {
+      LogWrapper.getInstance()
+          .w("Not showing app update notifications because app notifications are disabled.");
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      NotificationChannel channel =
+          new NotificationChannel(
+              NOTIFICATION_CHANNEL_ID,
+              context.getString(R.string.notifications_channel_name),
+              NotificationManager.IMPORTANCE_DEFAULT);
+      channel.setDescription(context.getString(R.string.notifications_channel_description));
+      // Register the channel with the system; you can't change the importance
+      // or other notification behaviors after this
+      notificationManager.createNotificationChannel(channel);
+    }
+
     NotificationCompat.Builder notificationBuilder =
         new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
             .setOnlyAlertOnce(true)
@@ -61,25 +80,6 @@ class FirebaseAppDistributionNotificationsManager {
       notificationBuilder.setContentIntent(appLaunchIntent);
     }
     notificationManager.notify(NOTIFICATION_TAG, /*id =*/ 0, notificationBuilder.build());
-  }
-
-  private NotificationManager createNotificationManager(Context context) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      NotificationChannel channel =
-          new NotificationChannel(
-              NOTIFICATION_CHANNEL_ID,
-              context.getString(R.string.notifications_channel_name),
-              NotificationManager.IMPORTANCE_DEFAULT);
-      channel.setDescription(context.getString(R.string.notifications_channel_description));
-      // Register the channel with the system; you can't change the importance
-      // or other notification behaviors after this
-      NotificationManager notificationManager =
-          (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-      notificationManager.createNotificationChannel(channel);
-      return notificationManager;
-    } else {
-      return (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-    }
   }
 
   @Nullable

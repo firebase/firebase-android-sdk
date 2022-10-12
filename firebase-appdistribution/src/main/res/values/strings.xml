@@ -34,4 +34,7 @@
   <string name="unknown_sources_dialog_title">Enable Unknown Sources</string>
   <string name="unknown_sources_dialog_description">To install the update enable unknown sources</string>
   <string name="unknown_sources_yes_button">Settings</string>
+  <string name="notification_permission_rationale">To enable testing features like new build alerts, allow the app to post notifications.</string>
+  <string name="notification_permission_yes_button">OK</string>
+  <string name="notification_permission_no_button">No thanks</string>
 </resources>

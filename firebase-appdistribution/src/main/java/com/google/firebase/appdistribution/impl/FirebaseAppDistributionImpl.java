@@ -21,13 +21,21 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskResult;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.os.Build;
+import androidx.activity.result.ActivityResultCaller;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationManagerCompat;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -291,6 +299,50 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       } else {
         return apkUpdater.updateApk(cachedNewRelease, showDownloadInNotificationManager);
       }
+    }
+  }
+
+  @Override
+  @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+  public <T extends Activity & ActivityResultCaller> void requestNotificationPermissions(
+      @NonNull T activity) {
+    if (NotificationManagerCompat.from(firebaseApp.getApplicationContext())
+        .areNotificationsEnabled()) {
+      LogWrapper.getInstance().i("Already has permission to show notifications.");
+      return;
+    }
+
+    ActivityResultLauncher<String> launcher =
+        activity.registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            isGranted -> {
+              if (!isGranted) {
+                LogWrapper.getInstance().w("Permission to show notifications was denied.");
+                // Ideally we would show a message indicating the impact of not enabling the
+                // permission, but there's no way to know if they've permanently denied the
+                // permission, and we don't want to show them a message after each time we try to
+                // post a notification.
+              }
+            });
+
+    if (ActivityCompat.shouldShowRequestPermissionRationale(
+        activity, Manifest.permission.POST_NOTIFICATIONS)) {
+      LogWrapper.getInstance().i("Showing customer rationale for requesting permission.");
+      new AlertDialog.Builder(activity)
+          .setMessage(R.string.notification_permission_rationale)
+          .setPositiveButton(
+              R.string.notification_permission_yes_button,
+              (a, b) -> {
+                LogWrapper.getInstance().i("Launching request for permission.");
+                launcher.launch(Manifest.permission.POST_NOTIFICATIONS);
+              })
+          .setNegativeButton(
+              R.string.notification_permission_no_button,
+              (a, b) -> LogWrapper.getInstance().i("Tester declined to enable notifications."))
+          .show();
+    } else {
+      LogWrapper.getInstance().i("Launching request for permission without rationale.");
+      launcher.launch(Manifest.permission.POST_NOTIFICATIONS);
     }
   }
 

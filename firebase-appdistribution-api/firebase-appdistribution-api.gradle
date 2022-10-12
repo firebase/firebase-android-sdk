@@ -17,11 +17,11 @@ plugins {
 }
 
 android {
-    compileSdkVersion project.targetSdkVersion
+    compileSdk project.appDistributionTargetSdkVersion
 
     defaultConfig {
-        minSdkVersion 16
-        targetSdkVersion project.targetSdkVersion
+        minSdk 16
+        targetSdk project.appDistributionTargetSdkVersion
         multiDexEnabled true
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -42,6 +42,7 @@ dependencies {
     implementation project(':firebase-components')
     implementation project(':firebase-common')
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
+    implementation 'androidx.activity:activity:1.5.1'
     testImplementation 'junit:junit:4.13.2'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"

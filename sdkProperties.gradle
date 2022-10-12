@@ -15,4 +15,5 @@
 ext {
     targetSdkVersion = 29
     minSdkVersion = 14
+    appDistributionTargetSdkVersion = 33
 }

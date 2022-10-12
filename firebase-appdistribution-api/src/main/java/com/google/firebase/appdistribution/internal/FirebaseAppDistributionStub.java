@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution.internal;
 
 import android.app.Activity;
+import androidx.activity.result.ActivityResultCaller;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Continuation;
@@ -72,6 +73,10 @@ public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
   public UpdateTask updateApp() {
     return new NotImplementedUpdateTask();
   }
+
+  @Override
+  public <T extends Activity & ActivityResultCaller> void requestNotificationPermissions(
+      @NonNull T activity) {}
 
   private static <TResult> Task<TResult> getNotImplementedTask() {
     return Tasks.forException(

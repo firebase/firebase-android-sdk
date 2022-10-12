@@ -14,7 +14,11 @@
 
 package com.google.firebase.appdistribution.internal;
 
+import android.app.Activity;
+import android.os.Build;
+import androidx.activity.result.ActivityResultCaller;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
@@ -70,5 +74,12 @@ public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
   @Override
   public UpdateTask updateApp() {
     return delegate.updateApp();
+  }
+
+  @Override
+  @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+  public <T extends Activity & ActivityResultCaller> void requestNotificationPermissions(
+      @NonNull T activity) {
+    delegate.requestNotificationPermissions(activity);
   }
 }
