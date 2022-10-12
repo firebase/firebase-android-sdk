@@ -79,10 +79,19 @@ public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
   public void startFeedback(@NonNull CharSequence infoText) {}
 
   @Override
-  public void startFeedback(@NonNull int infoTextResourceId, @Nullable Uri screenshotUri) {}
+  public void startFeedback(int infoTextResourceId, @Nullable Uri screenshotUri) {}
 
   @Override
   public void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri) {}
+
+  @Override
+  public void showFeedbackNotification(int infoTextResourceId, int importance) {}
+
+  @Override
+  public void showFeedbackNotification(@NonNull CharSequence infoText, int importance) {}
+
+  @Override
+  public void cancelFeedbackNotification() {}
 
   private static <TResult> Task<TResult> getNotImplementedTask() {
     return Tasks.forException(

@@ -14,9 +14,12 @@
 
 package com.google.firebase.appdistribution;
 
+import android.app.Activity;
+import android.app.NotificationChannel;
 import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.FirebaseAppDistributionProxy;
@@ -159,7 +162,7 @@ public interface FirebaseAppDistribution {
    * @param screenshot URI to a bitmap containing a screenshot that will be included with the
    *     report, or null to not include a screenshot
    */
-  void startFeedback(@NonNull int infoTextResourceId, @Nullable Uri screenshot);
+  void startFeedback(int infoTextResourceId, @Nullable Uri screenshot);
 
   /**
    * Starts an activity to collect and submit feedback from the tester, along with the given
@@ -178,6 +181,76 @@ public interface FirebaseAppDistribution {
    *     report, or null to not include a screenshot
    */
   void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshot);
+
+  /**
+   * Displays a notification that, when tapped, will take a screenshot of the current activity, then
+   * start a new activity to collect and submit feedback from the tester along with the screenshot.
+   *
+   * <p>On Android 13 and above, this method requires the <a
+   * href="https://developer.android.com/develop/ui/views/notifications/notification-permission">runtime
+   * permission for sending notifications</a>: {@code POST_NOTIFICATIONS}. If your app targets
+   * Android 13 (API level 33) or above, you should <a
+   * href="https://developer.android.com/training/permissions/requesting">request the
+   * permission</a>.
+   *
+   * <p>When the notification is tapped:
+   *
+   * <ol>
+   *   <li>If the app is open, take a screenshot of the current activity
+   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
+   *   <li>Starts a full screen activity for the tester to compose and submit the feedback
+   * </ol>
+   *
+   * <p>On Android 8 and above, the notification will be created in its own notification channel.
+   *
+   * @param infoTextResourceId string resource ID of text to display to the tester before collecting
+   *     feedback data (e.g. Terms and Conditions)
+   * @param importance the amount the user should be interrupted by notifications from the feedback
+   *     notification channel. Once the channel's importance is set it cannot be changed except by
+   *     the user. See {@link NotificationChannel#setImportance}. On platforms below Android 8, the
+   *     importance will be translated into a comparable notification priority (see {@link
+   *     NotificationCompat.Builder#setPriority}).
+   */
+  void showFeedbackNotification(int infoTextResourceId, int importance);
+
+  /**
+   * Displays a notification that, when tapped, will take a screenshot of the current activity, then
+   * start a new activity to collect and submit feedback from the tester along with the screenshot.
+   *
+   * <p>On Android 13 and above, this method requires the <a
+   * href="https://developer.android.com/develop/ui/views/notifications/notification-permission">runtime
+   * permission for sending notifications</a>: {@code POST_NOTIFICATIONS}. If your app targets
+   * Android 13 (API level 33) or above, you should <a
+   * href="https://developer.android.com/training/permissions/requesting">request the
+   * permission</a>.
+   *
+   * <p>When the notification is tapped:
+   *
+   * <ol>
+   *   <li>If the app is open, take a screenshot of the current activity
+   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
+   *   <li>Starts a full screen activity for the tester to compose and submit the feedback
+   * </ol>
+   *
+   * <p>On Android 8 and above, the notification will be created in its own notification channel.
+   *
+   * @param infoText text to display to the tester before collecting feedback data (e.g. Terms and
+   *     Conditions)
+   * @param importance the amount the user should be interrupted by notifications from the feedback
+   *     notification channel. Once the channel's importance is set it cannot be changed except by
+   *     the user. See {@link NotificationChannel#setImportance}. On platforms below Android 8, the
+   *     importance will be translated into a comparable notification priority (see {@link
+   *     NotificationCompat.Builder#setPriority}).
+   */
+  void showFeedbackNotification(@NonNull CharSequence infoText, int importance);
+
+  /**
+   * Hides the notification shown with {@link #showFeedbackNotification}.
+   *
+   * <p>This should be called in the {@link Activity#onDestroy} of the activity that showed the
+   * notification.
+   */
+  void cancelFeedbackNotification();
 
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */
   @NonNull

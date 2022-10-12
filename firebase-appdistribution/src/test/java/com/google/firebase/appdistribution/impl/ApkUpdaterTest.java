@@ -167,7 +167,7 @@ public class ApkUpdaterTest {
     assertThat(e.getErrorCode()).isEqualTo(Status.DOWNLOAD_FAILURE);
     assertThat(e).hasMessageThat().contains("Failed to download APK");
     assertThat(e).hasCauseThat().isEqualTo(caughtException);
-    verify(mockNotificationsManager).updateNotification(0, 0, R.string.download_failed);
+    verify(mockNotificationsManager).showAppUpdateNotification(0, 0, R.string.download_failed);
   }
 
   @Test
@@ -211,7 +211,7 @@ public class ApkUpdaterTest {
 
     // Verify that the notification in validateJarFile is set.
     verify(mockNotificationsManager)
-        .updateNotification(0, TEST_FILE.length(), R.string.download_failed);
+        .showAppUpdateNotification(0, TEST_FILE.length(), R.string.download_failed);
   }
 
   @Test
@@ -239,7 +239,7 @@ public class ApkUpdaterTest {
     assertThat(progressEvents).hasSize(1);
     assertThat(progressEvents.get(0).getUpdateStatus()).isEqualTo(UpdateStatus.INSTALL_FAILED);
     assertThat(updateTask.isSuccessful()).isFalse();
-    verify(mockNotificationsManager).updateNotification(1000, 1000, R.string.install_failed);
+    verify(mockNotificationsManager).showAppUpdateNotification(1000, 1000, R.string.install_failed);
   }
 
   @Test

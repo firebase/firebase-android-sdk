@@ -18,9 +18,6 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.HOST_ACTIVITY_INTERRUPTED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.INFO_TEXT_EXTRA_KEY;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_EXTRA_KEY;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_URI_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskResult;
 
@@ -66,6 +63,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private final ReleaseIdentifier releaseIdentifier;
   private final ScreenshotTaker screenshotTaker;
   private final Executor taskExecutor;
+  private final FirebaseAppDistributionNotificationsManager notificationsManager;
 
   private final Object updateIfNewReleaseTaskLock = new Object();
 
@@ -81,13 +79,11 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private AlertDialog updateConfirmationDialog;
   private AlertDialog signInConfirmationDialog;
   @Nullable private Activity dialogHostActivity = null;
-
   private boolean remakeSignInConfirmationDialog = false;
   private boolean remakeUpdateConfirmationDialog = false;
-
   private TaskCompletionSource<Void> showSignInDialogTask = null;
   private TaskCompletionSource<Void> showUpdateDialogTask = null;
-  private AtomicBoolean feedbackInProgress = new AtomicBoolean(false);
+  private final AtomicBoolean feedbackInProgress = new AtomicBoolean(false);
 
   @VisibleForTesting
   FirebaseAppDistributionImpl(
@@ -111,6 +107,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     this.lifecycleNotifier = lifecycleNotifier;
     this.screenshotTaker = screenshotTaker;
     this.taskExecutor = taskExecutor;
+    this.notificationsManager =
+        new FirebaseAppDistributionNotificationsManager(firebaseApp.getApplicationContext());
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
     lifecycleNotifier.addOnActivityPausedListener(this::onActivityPaused);
     lifecycleNotifier.addOnActivityResumedListener(this::onActivityResumed);
@@ -339,8 +337,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback(@NonNull int infoTextResourceId, @Nullable Uri screenshotUri) {
-    startFeedback(firebaseApp.getApplicationContext().getText(infoTextResourceId), screenshotUri);
+  public void startFeedback(int infoTextResourceId, @Nullable Uri screenshotUri) {
+    startFeedback(getText(infoTextResourceId), screenshotUri);
   }
 
   @Override
@@ -351,6 +349,21 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       return;
     }
     doStartFeedback(infoText, screenshotUri);
+  }
+
+  @Override
+  public void showFeedbackNotification(int infoTextResourceId, int importance) {
+    showFeedbackNotification(getText(infoTextResourceId), importance);
+  }
+
+  @Override
+  public void showFeedbackNotification(@NonNull CharSequence infoText, int importance) {
+    notificationsManager.showFeedbackNotification(infoText, importance);
+  }
+
+  @Override
+  public void cancelFeedbackNotification() {
+    notificationsManager.cancelFeedbackNotification();
   }
 
   private void doStartFeedback(CharSequence infoText, @Nullable Uri screenshotUri) {
@@ -378,10 +391,10 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         activity -> {
           LogWrapper.getInstance().i("Launching feedback activity");
           Intent intent = new Intent(activity, FeedbackActivity.class);
-          intent.putExtra(RELEASE_NAME_EXTRA_KEY, releaseName);
-          intent.putExtra(INFO_TEXT_EXTRA_KEY, infoText);
+          intent.putExtra(FeedbackActivity.RELEASE_NAME_EXTRA_KEY, releaseName);
+          intent.putExtra(FeedbackActivity.INFO_TEXT_EXTRA_KEY, infoText);
           if (screenshotUri != null) {
-            intent.putExtra(SCREENSHOT_URI_EXTRA_KEY, screenshotUri.toString());
+            intent.putExtra(FeedbackActivity.SCREENSHOT_URI_EXTRA_KEY, screenshotUri.toString());
           }
           activity.startActivity(intent);
         });
@@ -568,5 +581,9 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     return (showUpdateDialogTask != null
         && !showUpdateDialogTask.getTask().isComplete()
         && remakeUpdateConfirmationDialog);
+  }
+
+  private CharSequence getText(int resourceId) {
+    return firebaseApp.getApplicationContext().getText(resourceId);
   }
 }

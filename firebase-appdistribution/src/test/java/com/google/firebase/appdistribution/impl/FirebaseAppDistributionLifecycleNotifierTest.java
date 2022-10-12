@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution.impl;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -29,22 +30,33 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.ActivityConsumer;
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.ActivityFunction;
+import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.NullableActivityFunction;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
 public class FirebaseAppDistributionLifecycleNotifierTest {
-  private TestActivity activity;
-  private FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
   static class TestActivity extends Activity {}
 
+  static class OtherTestActivity extends Activity {}
+
+  @Captor private ArgumentCaptor<Activity> activityArgCaptor;
+  private TestActivity activity;
+  private OtherTestActivity otherActivity;
+  private FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
+
   @Before
   public void setup() {
+    MockitoAnnotations.initMocks(this);
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
+    otherActivity = Robolectric.buildActivity(OtherTestActivity.class).create().get();
     lifecycleNotifier = new FirebaseAppDistributionLifecycleNotifier();
   }
 
@@ -210,5 +222,78 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     assertThat(task.getException()).isInstanceOf(RuntimeException.class);
     RuntimeException e = (RuntimeException) task.getException();
     assertThat(e).hasMessageThat().isEqualTo("exception in continuation");
+  }
+
+  @Test
+  public void applyToNullableForegroundActivity_ignoringOtherActivity_completesWithCurrentActivity()
+      throws FirebaseAppDistributionException {
+    NullableActivityFunction<String> function = mock(NullableActivityFunction.class);
+    when(function.apply(any())).thenReturn("return-value");
+    lifecycleNotifier.onActivityResumed(activity); // Current activity is a TestActivity
+
+    Task<String> task =
+        lifecycleNotifier.applyToNullableForegroundActivity(OtherTestActivity.class, function);
+
+    verify(function).apply(activityArgCaptor.capture());
+    assertThat(activityArgCaptor.getValue()).isEqualTo(activity);
+    assertThat(task.isComplete()).isTrue();
+    assertThat(task.isSuccessful()).isTrue();
+    assertThat(task.getResult()).isEqualTo("return-value");
+  }
+
+  @Test
+  public void applyToNullableForegroundActivity_ignoringCurrentActivity_returnsPreviousActivity()
+      throws FirebaseAppDistributionException {
+    NullableActivityFunction<String> function = mock(NullableActivityFunction.class);
+    when(function.apply(any())).thenReturn("return-value");
+    lifecycleNotifier.onActivityResumed(activity); // First activity is a TestActivity
+    lifecycleNotifier.onActivityPaused(activity);
+    lifecycleNotifier.onActivityResumed(otherActivity); // Second activity is a OtherTestActivity
+
+    Task<String> task =
+        lifecycleNotifier.applyToNullableForegroundActivity(OtherTestActivity.class, function);
+
+    verify(function).apply(activityArgCaptor.capture());
+    assertThat(activityArgCaptor.getValue()).isEqualTo(activity);
+    assertThat(task.isComplete()).isTrue();
+    assertThat(task.isSuccessful()).isTrue();
+    assertThat(task.getResult()).isEqualTo("return-value");
+  }
+
+  @Test
+  public void applyToNullableForegroundActivity_previousActivityDestroyed_completesWithNull()
+      throws FirebaseAppDistributionException {
+    NullableActivityFunction<String> function = mock(NullableActivityFunction.class);
+    when(function.apply(any())).thenReturn("return-value");
+    lifecycleNotifier.onActivityResumed(activity); // First activity is a TestActivity
+    lifecycleNotifier.onActivityPaused(activity);
+    lifecycleNotifier.onActivityResumed(otherActivity); // Second activity is a OtherTestActivity
+    lifecycleNotifier.onActivityDestroyed(activity);
+
+    Task<String> task =
+        lifecycleNotifier.applyToNullableForegroundActivity(OtherTestActivity.class, function);
+
+    verify(function).apply(activityArgCaptor.capture());
+    assertThat(activityArgCaptor.getValue()).isNull();
+    assertThat(task.isComplete()).isTrue();
+    assertThat(task.isSuccessful()).isTrue();
+    assertThat(task.getResult()).isEqualTo("return-value");
+  }
+
+  @Test
+  public void applyToNullableForegroundActivity_noPreviousActivity_completesWithNull()
+      throws FirebaseAppDistributionException {
+    NullableActivityFunction<String> function = mock(NullableActivityFunction.class);
+    when(function.apply(any())).thenReturn("return-value");
+    lifecycleNotifier.onActivityResumed(activity); // Current activity is a TestActivity
+
+    Task<String> task =
+        lifecycleNotifier.applyToNullableForegroundActivity(TestActivity.class, function);
+
+    verify(function).apply(activityArgCaptor.capture());
+    assertThat(activityArgCaptor.getValue()).isNull();
+    assertThat(task.isComplete()).isTrue();
+    assertThat(task.isSuccessful()).isTrue();
+    assertThat(task.getResult()).isEqualTo("return-value");
   }
 }

@@ -15,6 +15,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.widget.doOnTextChanged
 import com.google.android.gms.tasks.Task
 import com.google.android.material.textfield.TextInputLayout
@@ -66,9 +67,8 @@ class MainActivity : AppCompatActivity() {
         signInStatus = findViewById(R.id.sign_in_status)
         progressBar = findViewById(R.id.progress_bar)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            NotificationFeedbackTrigger.requestPermission(this)
-        }
+        firebaseAppDistribution.showFeedbackNotification(
+            R.string.terms_and_conditions, NotificationManagerCompat.IMPORTANCE_HIGH);
 
         // Set up feedback trigger menu
         feedbackTriggerMenu = findViewById(R.id.feedbackTriggerMenu)
@@ -76,7 +76,6 @@ class MainActivity : AppCompatActivity() {
             FeedbackTrigger.NONE.label,
             FeedbackTrigger.SHAKE.label,
             FeedbackTrigger.SCREENSHOT.label,
-            FeedbackTrigger.NOTIFICATION.label,
         )
         val adapter = ArrayAdapter(this, R.layout.list_item, items)
         val autoCompleteTextView = feedbackTriggerMenu.editText!! as AutoCompleteTextView
@@ -98,20 +97,19 @@ class MainActivity : AppCompatActivity() {
                     Log.i(TAG, "Enabling screenshot detection trigger")
                     ScreenshotDetectionFeedbackTrigger.enable()
                 }
-                FeedbackTrigger.NOTIFICATION.label -> {
-                    disableAllFeedbackTriggers()
-                    Log.i(TAG, "Enabling notification trigger")
-                    NotificationFeedbackTrigger.enable(this)
-                }
             }
         }
+    }
+
+    override fun onDestroy() {
+        firebaseAppDistribution.cancelFeedbackNotification()
+        super.onDestroy()
     }
 
     private fun disableAllFeedbackTriggers() {
         Log.i(TAG, "Disabling all feedback triggers")
         ShakeForFeedback.disable(application)
         ScreenshotDetectionFeedbackTrigger.disable()
-        NotificationFeedbackTrigger.disable();
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -208,18 +206,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        signOutButton.setOnClickListener {
-            firebaseAppDistribution.signOutTester()
-            setupUI(
-                isSignedIn = firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = false)
-        }
+       signOutButton.setOnClickListener {
+           firebaseAppDistribution.signOutTester()
+           setupUI(
+               isSignedIn = firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = false)
+       }
 
-        signOutButtonBackground.setOnClickListener {
-            executorService.execute { firebaseAppDistribution.signOutTester() }
+       signOutButtonBackground.setOnClickListener {
+           executorService.execute { firebaseAppDistribution.signOutTester() }
 
-            setupUI(
-                isSignedIn = firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = false)
-        }
+           setupUI(
+               isSignedIn = firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = false)
+       }
 
         updateAppButton.setOnClickListener {
             setProgressBar()
@@ -314,8 +312,7 @@ class MainActivity : AppCompatActivity() {
         enum class FeedbackTrigger(val label: String) {
             NONE("None"),
             SHAKE("Shake the device"),
-            SCREENSHOT("Take a screenshot"),
-            NOTIFICATION("Click the notification")
+            SCREENSHOT("Take a screenshot")
         }
     }
 }

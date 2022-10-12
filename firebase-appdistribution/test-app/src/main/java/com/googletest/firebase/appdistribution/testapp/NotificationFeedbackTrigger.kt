@@ -49,11 +49,11 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
       val channel =
         NotificationChannel(
           FEEBACK_NOTIFICATION_CHANNEL_ID,
-          application.getString(R.string.feedback_notification_channel_name),
+          application.getString(R.string.feedback_trigger_notification_channel_name),
           NotificationManager.IMPORTANCE_HIGH
         )
       channel.description =
-        application.getString(R.string.feedback_notification_channel_description)
+        application.getString(R.string.feedback_trigger_notification_channel_description)
       application
         .getSystemService(NotificationManager::class.java)
         .createNotificationChannel(channel)
@@ -156,8 +156,8 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
     val builder =
       NotificationCompat.Builder(context, FEEBACK_NOTIFICATION_CHANNEL_ID)
         .setSmallIcon(R.mipmap.ic_launcher)
-        .setContentTitle(context.getText(R.string.feedback_notification_title))
-        .setContentText(context.getText(R.string.feedback_notification_text))
+        .setContentTitle(context.getText(R.string.feedback_trigger_notification_title))
+        .setContentText(context.getText(R.string.feedback_trigger_notification_text))
         .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setContentIntent(pendingIntent)
     val notificationManager = NotificationManagerCompat.from(context)
@@ -221,9 +221,9 @@ class TakeScreenshotAndTriggerFeedbackActivity : Activity() {
       activity.openFileOutput(SCREENSHOT_FILE_NAME, Context.MODE_PRIVATE).use { outputStream ->
         bitmap.compress(Bitmap.CompressFormat.PNG, /* quality = */ 100, outputStream)
       }
-      Log.i(TAG, "Wrote screenshot to ${SCREENSHOT_FILE_NAME}")
+      Log.i(TAG, "Wrote screenshot to $SCREENSHOT_FILE_NAME")
     } catch (e: IOException) {
-      Log.e(TAG, "Can't write ${SCREENSHOT_FILE_NAME}", e)
+      Log.e(TAG, "Can't write $SCREENSHOT_FILE_NAME", e)
     }
   }
 

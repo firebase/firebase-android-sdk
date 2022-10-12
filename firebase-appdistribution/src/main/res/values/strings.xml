@@ -29,8 +29,13 @@
   <string name="install_failed">Install failed</string>
   <string name="install_canceled">Install canceled</string>
   <string name="update_canceled">Update canceled </string>
-  <string name="notifications_channel_name">App Distribution App Update Downloads</string>
-  <string name="notifications_channel_description">Shows download progress of in-app updates from App Distribution SDK</string>
+  <string name="notifications_group_name">Firebase App Distribution</string>
+  <string name="app_update_notification_channel_name">App updates</string>
+  <string name="app_update_notification_channel_description">Shows progress of in-app updates</string>
+  <string name="feedback_notification_channel_name">Feedback</string>
+  <string name="feedback_notification_channel_description">Tap to leave feedback</string>
+  <string name="feedback_notification_title">We want your feedback!</string>
+  <string name="feedback_notification_text">Tap to leave feedback for %1$s</string>
   <string name="unknown_sources_dialog_title">Enable Unknown Sources</string>
   <string name="unknown_sources_dialog_description">To install the update enable unknown sources</string>
   <string name="unknown_sources_yes_button">Settings</string>
