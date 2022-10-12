@@ -39,17 +39,20 @@ import java.util.List;
  */
 @Keep
 public class FirebaseInAppMessagingDisplayRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-fiamd";
+
   @Override
   @Keep
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseInAppMessagingDisplay.class)
+            .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInAppMessaging.class))
             .factory(this::buildFirebaseInAppMessagingUI)
             .eagerInDefaultApp()
             .build(),
-        LibraryVersionComponent.create("fire-fiamd", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 
   private FirebaseInAppMessagingDisplay buildFirebaseInAppMessagingUI(
