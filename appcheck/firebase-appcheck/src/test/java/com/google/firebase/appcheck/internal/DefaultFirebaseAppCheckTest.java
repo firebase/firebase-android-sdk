@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
@@ -74,7 +75,10 @@ public class DefaultFirebaseAppCheckTest {
     when(mockAppCheckProvider.getToken()).thenReturn(Tasks.forResult(validDefaultAppCheckToken));
 
     defaultFirebaseAppCheck =
-        new DefaultFirebaseAppCheck(mockFirebaseApp, () -> mockHeartBeatController);
+        new DefaultFirebaseAppCheck(
+            mockFirebaseApp,
+            () -> mockHeartBeatController,
+            MoreExecutors.newDirectExecutorService());
   }
 
   @Test

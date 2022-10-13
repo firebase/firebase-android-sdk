@@ -42,8 +42,13 @@ dependencies {
     implementation project(':firebase-components')
     implementation 'androidx.annotation:annotation:1.1.0'
 
+    // We're exposing this library as a transitive dependency so developers can
+    // get Kotlin Coroutines support out-of-the-box for methods that return a Task
+    api "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:$coroutinesVersion"
+
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutinesVersion"
 }
