@@ -198,8 +198,7 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any(),
-            /* excludeEtagHeader */ any());
+            /* currentTime= */ any());
   }
 
   @Test
@@ -398,8 +397,7 @@ public class ConfigFetchHandlerTest {
 
   @Test
   public void fetch_fetchBackendCallFails_taskThrowsException() throws Exception {
-    when(mockBackendFetchApiClient.fetch(
-            any(), any(), any(), any(), any(), any(), any(), any(), any()))
+    when(mockBackendFetchApiClient.fetch(any(), any(), any(), any(), any(), any(), any(), any()))
         .thenThrow(
             new FirebaseRemoteConfigClientException("Fetch failed due to an unexpected error."));
 
@@ -738,17 +736,6 @@ public class ConfigFetchHandlerTest {
         .isEqualTo(firstFetchedContainer.getFetchTime());
   }
 
-  @Test
-  public void fetchWithoutEtag_andSuccess() throws Exception {
-    fetchCallToHttpClientUpdatesClockAndReturnsConfig(secondFetchedContainer);
-
-    fetchHandler.fetchWithoutEtag(0L);
-
-    assertThat(metadataClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_SUCCESS);
-    assertThat(metadataClient.getLastSuccessfulFetchTime())
-        .isEqualTo(secondFetchedContainer.getFetchTime());
-  }
-
   private ConfigFetchHandler getNewFetchHandler(AnalyticsConnector analyticsConnector) {
     ConfigFetchHandler fetchHandler =
         spy(
@@ -792,8 +779,7 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any(),
-            /* excludeEtagHeader */ any());
+            /* currentTime= */ any());
   }
 
   private void setBackendResponseToNoChange(Date date) throws Exception {
@@ -805,9 +791,7 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any(),
-            /* excludeEtagHeader */ any()))
-        .thenReturn(FetchResponse.forBackendHasNoUpdates(date, firstFetchedContainer));
+            /* currentTime= */ any())).thenReturn(FetchResponse.forBackendHasNoUpdates(date, firstFetchedContainer));
   }
 
   private void fetchCallToBackendThrowsException(int httpErrorCode) throws Exception {
@@ -821,8 +805,7 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any(),
-            /* excludeEtagHeader */ any());
+            /* currentTime= */ any());
   }
 
   /**
@@ -902,8 +885,7 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any(),
-            /* excludeEtagHeader */ any());
+            /* currentTime= */ any());
   }
 
   private void verifyBackendIsCalled(Map<String, String> userProperties, Long firstOpenTime)
@@ -917,8 +899,7 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ eq(firstOpenTime),
-            /* currentTime= */ any(),
-            /* excludeEtagHeader */ any());
+            /* currentTime= */ any());
   }
 
   private void verifyBackendIsNeverCalled() throws Exception {
@@ -931,8 +912,7 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ any(),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any(),
-            /* excludeEtagHeader */ any());
+            /* currentTime= */ any());
   }
 
   private void verifyETags(@Nullable String requestETag, String responseETag) throws Exception {
@@ -945,8 +925,7 @@ public class ConfigFetchHandlerTest {
             /* lastFetchETag= */ eq(requestETag),
             /* customHeaders= */ any(),
             /* firstOpenTime= */ any(),
-            /* currentTime= */ any(),
-            /* excludeEtagHeader */ any());
+            /* currentTime= */ any());
     assertThat(metadataClient.getLastFetchETag()).isEqualTo(responseETag);
   }
 
