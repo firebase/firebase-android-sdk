@@ -37,12 +37,14 @@ import java.util.List;
 @KeepForSdk
 @Keep
 public final class FirebaseDynamicLinkRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-dl";
 
   @Override
   @Keep
   public List<Component<?>> getComponents() {
     Component<FirebaseDynamicLinks> firebaseDynamicLinks =
         Component.builder(FirebaseDynamicLinks.class)
+            .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.optionalProvider(AnalyticsConnector.class))
             .factory(
@@ -53,6 +55,7 @@ public final class FirebaseDynamicLinkRegistrar implements ComponentRegistrar {
             .build(); // no need for eager init for the Internal component.
 
     return Arrays.asList(
-        firebaseDynamicLinks, LibraryVersionComponent.create("fire-dl", BuildConfig.VERSION_NAME));
+        firebaseDynamicLinks,
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }

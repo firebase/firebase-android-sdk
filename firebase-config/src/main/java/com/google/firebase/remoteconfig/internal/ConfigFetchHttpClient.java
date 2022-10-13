@@ -414,7 +414,7 @@ public class ConfigFetchHttpClient {
         // Do nothing if entries do not exist.
       }
       if (entries != null) {
-        containerBuilder.replaceConfigsWith(entries);
+        containerBuilder = containerBuilder.replaceConfigsWith(entries);
       }
 
       JSONArray experimentDescriptions = null;
@@ -424,7 +424,7 @@ public class ConfigFetchHttpClient {
         // Do nothing if entries do not exist.
       }
       if (experimentDescriptions != null) {
-        containerBuilder.withAbtExperiments(experimentDescriptions);
+        containerBuilder = containerBuilder.withAbtExperiments(experimentDescriptions);
       }
 
       JSONObject personalizationMetadata = null;
@@ -434,7 +434,7 @@ public class ConfigFetchHttpClient {
         // Do nothing if personalizationMetadata does not exist.
       }
       if (personalizationMetadata != null) {
-        containerBuilder.withPersonalizationMetadata(personalizationMetadata);
+        containerBuilder = containerBuilder.withPersonalizationMetadata(personalizationMetadata);
       }
 
       String templateVersionNumber = null;
