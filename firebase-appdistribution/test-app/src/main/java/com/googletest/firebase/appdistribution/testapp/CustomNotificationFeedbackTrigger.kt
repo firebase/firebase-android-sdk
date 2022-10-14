@@ -24,7 +24,7 @@ import com.google.firebase.ktx.Firebase
 import java.io.IOException
 
 @SuppressLint("StaticFieldLeak") // Reference to Activity is set to null in onActivityDestroyed
-object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
+object CustomNotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
   private const val TAG: String = "NotificationFeedbackTrigger"
   private const val FEEBACK_NOTIFICATION_CHANNEL_ID = "InAppFeedbackNotification"
   private const val FEEDBACK_NOTIFICATION_ID = 1
@@ -49,11 +49,11 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
       val channel =
         NotificationChannel(
           FEEBACK_NOTIFICATION_CHANNEL_ID,
-          application.getString(R.string.feedback_trigger_notification_channel_name),
+          application.getString(R.string.feedbackTriggerNotificationChannelName),
           NotificationManager.IMPORTANCE_HIGH
         )
       channel.description =
-        application.getString(R.string.feedback_trigger_notification_channel_description)
+        application.getString(R.string.feedbackTriggerNotificationChannelDescription)
       application
         .getSystemService(NotificationManager::class.java)
         .createNotificationChannel(channel)
@@ -156,8 +156,8 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
     val builder =
       NotificationCompat.Builder(context, FEEBACK_NOTIFICATION_CHANNEL_ID)
         .setSmallIcon(R.mipmap.ic_launcher)
-        .setContentTitle(context.getText(R.string.feedback_trigger_notification_title))
-        .setContentText(context.getText(R.string.feedback_trigger_notification_text))
+        .setContentTitle(context.getText(R.string.feedbackTriggerNotificationTitle))
+        .setContentText(context.getText(R.string.feedbackTriggerNotificationText))
         .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setContentIntent(pendingIntent)
     val notificationManager = NotificationManagerCompat.from(context)
@@ -198,7 +198,7 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
 class TakeScreenshotAndTriggerFeedbackActivity : Activity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    val activity = NotificationFeedbackTrigger.activityToScreenshot
+    val activity = CustomNotificationFeedbackTrigger.activityToScreenshot
     if (activity == null) {
       Log.e(TAG, "Can't take screenshot because activity is unknown")
       return
@@ -209,7 +209,8 @@ class TakeScreenshotAndTriggerFeedbackActivity : Activity() {
   override fun onResume() {
     super.onResume()
     val screenshotUri = Uri.fromFile(getFileStreamPath(SCREENSHOT_FILE_NAME))
-    Firebase.appDistribution.startFeedback(R.string.terms_and_conditions, screenshotUri)
+    Firebase.appDistribution.startFeedback(R.string.termsAndConditions, screenshotUri)
+    finish()
   }
 
   fun takeScreenshot(activity: Activity) {

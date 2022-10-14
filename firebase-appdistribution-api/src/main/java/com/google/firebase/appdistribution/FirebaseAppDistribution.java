@@ -205,10 +205,10 @@ public interface FirebaseAppDistribution {
    *
    * @param infoTextResourceId string resource ID of text to display to the tester before collecting
    *     feedback data (e.g. Terms and Conditions)
-   * @param importance the amount the user should be interrupted by notifications from the feedback
-   *     notification channel. Once the channel's importance is set it cannot be changed except by
-   *     the user. See {@link NotificationChannel#setImportance}. On platforms below Android 8, the
-   *     importance will be translated into a comparable notification priority (see {@link
+   * @param importance the level of interruption for the feedback notification channel. Once the
+   *     channel's importance is set it cannot be changed except by the user. See {@link
+   *     NotificationChannel#setImportance}. On platforms below Android 8, the importance will be
+   *     translated into a comparable notification priority (see {@link
    *     NotificationCompat.Builder#setPriority}).
    */
   void showFeedbackNotification(int infoTextResourceId, int importance);
@@ -236,10 +236,10 @@ public interface FirebaseAppDistribution {
    *
    * @param infoText text to display to the tester before collecting feedback data (e.g. Terms and
    *     Conditions)
-   * @param importance the amount the user should be interrupted by notifications from the feedback
-   *     notification channel. Once the channel's importance is set it cannot be changed except by
-   *     the user. See {@link NotificationChannel#setImportance}. On platforms below Android 8, the
-   *     importance will be translated into a comparable notification priority (see {@link
+   * @param importance the level of interruption for the feedback notification channel. Once the
+   *     channel's importance is set it cannot be changed except by the user. See {@link
+   *     NotificationChannel#setImportance}. On platforms below Android 8, the importance will be
+   *     translated into a comparable notification priority (see {@link
    *     NotificationCompat.Builder#setPriority}).
    */
   void showFeedbackNotification(@NonNull CharSequence infoText, int importance);

@@ -334,11 +334,10 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   @Override
   public void onActivityDestroyed(@NonNull Activity activity) {
     synchronized (lock) {
+      // If an activity is destroyed, delete all references to it, including the previous activity
       if (currentActivity == activity) {
         updateCurrentActivity(null);
       }
-
-      // If an activity is destroyed, delete all references to it, including the previous activity
       if (previousActivity == activity) {
         previousActivity = null;
       }

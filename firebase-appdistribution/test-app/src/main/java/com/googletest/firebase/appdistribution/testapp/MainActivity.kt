@@ -67,13 +67,16 @@ class MainActivity : AppCompatActivity() {
         signInStatus = findViewById(R.id.sign_in_status)
         progressBar = findViewById(R.id.progress_bar)
 
-        firebaseAppDistribution.showFeedbackNotification(
-            R.string.terms_and_conditions, NotificationManagerCompat.IMPORTANCE_HIGH);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            CustomNotificationFeedbackTrigger.requestPermission(this)
+        }
 
         // Set up feedback trigger menu
         feedbackTriggerMenu = findViewById(R.id.feedbackTriggerMenu)
         val items = listOf(
             FeedbackTrigger.NONE.label,
+            FeedbackTrigger.SDK_NOTIFICATION.label,
+            FeedbackTrigger.CUSTOM_NOTIFICATION.label,
             FeedbackTrigger.SHAKE.label,
             FeedbackTrigger.SCREENSHOT.label,
         )
@@ -86,6 +89,17 @@ class MainActivity : AppCompatActivity() {
             when(text.toString()) {
                 FeedbackTrigger.NONE.label -> {
                     disableAllFeedbackTriggers()
+                }
+                FeedbackTrigger.SDK_NOTIFICATION.label -> {
+                    disableAllFeedbackTriggers()
+                    Log.i(TAG, "Enabling notification trigger (SDK)")
+                    firebaseAppDistribution.showFeedbackNotification(
+                        R.string.termsAndConditions, NotificationManagerCompat.IMPORTANCE_HIGH)
+                }
+                FeedbackTrigger.CUSTOM_NOTIFICATION.label -> {
+                    disableAllFeedbackTriggers()
+                    Log.i(TAG, "Enabling notification trigger (custom)")
+                    CustomNotificationFeedbackTrigger.enable(this)
                 }
                 FeedbackTrigger.SHAKE.label -> {
                     disableAllFeedbackTriggers()
@@ -108,6 +122,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun disableAllFeedbackTriggers() {
         Log.i(TAG, "Disabling all feedback triggers")
+        firebaseAppDistribution.cancelFeedbackNotification()
+        CustomNotificationFeedbackTrigger.disable()
         ShakeForFeedback.disable(application)
         ScreenshotDetectionFeedbackTrigger.disable()
     }
@@ -121,7 +137,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.startFeedbackMenuItem -> {
-                Firebase.appDistribution.startFeedback(R.string.terms_and_conditions)
+                Firebase.appDistribution.startFeedback(R.string.termsAndConditions)
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -206,18 +222,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-       signOutButton.setOnClickListener {
-           firebaseAppDistribution.signOutTester()
-           setupUI(
-               isSignedIn = firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = false)
-       }
+        signOutButton.setOnClickListener {
+            firebaseAppDistribution.signOutTester()
+            setupUI(
+                isSignedIn = firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = false)
+        }
 
-       signOutButtonBackground.setOnClickListener {
-           executorService.execute { firebaseAppDistribution.signOutTester() }
+        signOutButtonBackground.setOnClickListener {
+            executorService.execute { firebaseAppDistribution.signOutTester() }
 
-           setupUI(
-               isSignedIn = firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = false)
-       }
+            setupUI(
+                isSignedIn = firebaseAppDistribution.isTesterSignedIn, isUpdateAvailable = false)
+        }
 
         updateAppButton.setOnClickListener {
             setProgressBar()
@@ -312,7 +328,9 @@ class MainActivity : AppCompatActivity() {
         enum class FeedbackTrigger(val label: String) {
             NONE("None"),
             SHAKE("Shake the device"),
-            SCREENSHOT("Take a screenshot")
+            SCREENSHOT("Take a screenshot"),
+            SDK_NOTIFICATION("Tap a notification (SDK)"),
+            CUSTOM_NOTIFICATION("Tap a notification (custom)")
         }
     }
 }

@@ -33,29 +33,24 @@ import androidx.core.app.NotificationManagerCompat;
 class FirebaseAppDistributionNotificationsManager {
   private static final String TAG = "FirebaseAppDistributionNotificationsManager";
 
+  private static final String PACKAGE_PREFIX = "com.google.firebase.appdistribution";
+
   @VisibleForTesting
-  static final String CHANNEL_GROUP_ID =
-      "com.google.firebase.appdistribution.notification_channel_group_id";
+  static final String CHANNEL_GROUP_ID = prependPackage("notification_channel_group_id");
 
   @VisibleForTesting
   enum Notification {
-    APP_UPDATE(
-        "com.google.firebase.appdistribution.notification_channel_id",
-        "com.google.firebase.appdistribution.app_update_notification_tag",
-        0),
-    FEEDBACK(
-        "com.google.firebase.appdistribution.feedback_notification_channel_id",
-        "com.google.firebase.appdistribution.feedback_notification_tag",
-        1);
+    APP_UPDATE("notification_channel_id", "app_update_notification_tag"),
+    FEEDBACK("feedback_notification_channel_id", "feedback_notification_tag");
 
     final String channelId;
     final String tag;
     final int id;
 
-    Notification(String channelId, String tag, int id) {
-      this.channelId = channelId;
-      this.tag = tag;
-      this.id = id;
+    Notification(String channelId, String tag) {
+      this.channelId = prependPackage(channelId);
+      this.tag = prependPackage(tag);
+      this.id = ordinal();
     }
   }
 
@@ -212,5 +207,9 @@ class FirebaseAppDistributionNotificationsManager {
     // Register the channel with the system; you can't change the importance
     // or other notification behaviors after this
     notificationManager.createNotificationChannel(channel);
+  }
+
+  private static String prependPackage(String id) {
+    return String.format("%s.%s", PACKAGE_PREFIX, id);
   }
 }
