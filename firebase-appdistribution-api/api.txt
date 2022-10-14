@@ -14,17 +14,17 @@ package com.google.firebase.appdistribution {
   }
 
   public interface FirebaseAppDistribution {
+    method public void cancelFeedbackNotification();
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.appdistribution.AppDistributionRelease> checkForNewRelease();
     method @NonNull public static com.google.firebase.appdistribution.FirebaseAppDistribution getInstance();
-    method public void cancelFeedbackNotification();
     method public boolean isTesterSignedIn();
-    method public void showFeedbackNotification(@NonNull int, int);
+    method public void showFeedbackNotification(int, int);
     method public void showFeedbackNotification(@NonNull CharSequence, int);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> signInTester();
     method public void signOutTester();
     method public void startFeedback(int);
     method public void startFeedback(@NonNull CharSequence);
-    method public void startFeedback(@NonNull int, @Nullable android.net.Uri);
+    method public void startFeedback(int, @Nullable android.net.Uri);
     method public void startFeedback(@NonNull CharSequence, @Nullable android.net.Uri);
     method @NonNull public com.google.firebase.appdistribution.UpdateTask updateApp();
     method @NonNull public com.google.firebase.appdistribution.UpdateTask updateIfNewReleaseAvailable();
