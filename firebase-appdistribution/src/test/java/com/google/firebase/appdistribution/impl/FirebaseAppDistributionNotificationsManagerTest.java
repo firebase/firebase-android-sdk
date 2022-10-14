@@ -28,6 +28,7 @@ import android.app.NotificationManager;
 import android.content.Intent;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appdistribution.InterruptionLevel;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -110,7 +111,7 @@ public class FirebaseAppDistributionNotificationsManagerTest {
   @Test
   public void showFeedbackNotification_createsGroupAndChannel() {
     firebaseAppDistributionNotificationsManager.showFeedbackNotification(
-        "Terms and conditions", IMPORTANCE_HIGH);
+        "Terms and conditions", InterruptionLevel.HIGH);
     assertThat(shadowOf(notificationManager).getNotificationChannelGroup(CHANNEL_GROUP_ID))
         .isNotNull();
     assertThat(shadowOf(notificationManager).getNotificationChannels()).hasSize(1);
@@ -123,7 +124,7 @@ public class FirebaseAppDistributionNotificationsManagerTest {
   @Test
   public void showFeedbackNotification_setsIntentToScreenshotActivity() {
     firebaseAppDistributionNotificationsManager.showFeedbackNotification(
-        "Terms and conditions", IMPORTANCE_HIGH);
+        "Terms and conditions", InterruptionLevel.HIGH);
     assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
     Notification notification =
         shadowOf(notificationManager).getNotification(FEEDBACK.tag, FEEDBACK.id);
@@ -141,7 +142,7 @@ public class FirebaseAppDistributionNotificationsManagerTest {
   @Test
   public void showFeedbackNotification_convertsImportanceToPriority() {
     firebaseAppDistributionNotificationsManager.showFeedbackNotification(
-        "Terms and conditions", IMPORTANCE_HIGH);
+        "Terms and conditions", InterruptionLevel.HIGH);
     assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
     Notification notification =
         shadowOf(notificationManager).getNotification(FEEDBACK.tag, FEEDBACK.id);

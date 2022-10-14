@@ -21,6 +21,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
+import com.google.firebase.appdistribution.InterruptionLevel;
 import com.google.firebase.appdistribution.UpdateTask;
 import com.google.firebase.inject.Provider;
 
@@ -95,13 +96,15 @@ public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
   }
 
   @Override
-  public void showFeedbackNotification(int infoTextResourceId, int importance) {
-    delegate.showFeedbackNotification(infoTextResourceId, importance);
+  public void showFeedbackNotification(
+      int infoTextResourceId, InterruptionLevel interruptionLevel) {
+    delegate.showFeedbackNotification(infoTextResourceId, interruptionLevel);
   }
 
   @Override
-  public void showFeedbackNotification(@NonNull CharSequence infoText, int importance) {
-    delegate.showFeedbackNotification(infoText, importance);
+  public void showFeedbackNotification(
+      @NonNull CharSequence infoText, InterruptionLevel interruptionLevel) {
+    delegate.showFeedbackNotification(infoText, interruptionLevel);
   }
 
   @Override

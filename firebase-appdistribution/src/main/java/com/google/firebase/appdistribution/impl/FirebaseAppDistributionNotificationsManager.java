@@ -16,7 +16,6 @@ package com.google.firebase.appdistribution.impl;
 
 import android.app.NotificationChannel;
 import android.app.NotificationChannelGroup;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -29,6 +28,7 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import com.google.firebase.appdistribution.InterruptionLevel;
 
 class FirebaseAppDistributionNotificationsManager {
   private static final String TAG = "FirebaseAppDistributionNotificationsManager";
@@ -78,7 +78,7 @@ class FirebaseAppDistributionNotificationsManager {
           Notification.APP_UPDATE,
           R.string.app_update_notification_channel_name,
           R.string.app_update_notification_channel_description,
-          NotificationManager.IMPORTANCE_DEFAULT);
+          InterruptionLevel.DEFAULT);
     }
 
     if (!notificationManager.areNotificationsEnabled()) {
@@ -129,7 +129,8 @@ class FirebaseAppDistributionNotificationsManager {
         : baseFlags;
   }
 
-  public void showFeedbackNotification(@NonNull CharSequence infoText, int importance) {
+  public void showFeedbackNotification(
+      @NonNull CharSequence infoText, InterruptionLevel interruptionLevel) {
     // Create the NotificationChannel, but only on API 26+ because
     // the NotificationChannel class is new and not in the support library
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -138,7 +139,7 @@ class FirebaseAppDistributionNotificationsManager {
           Notification.FEEDBACK,
           R.string.feedback_notification_channel_name,
           R.string.feedback_notification_channel_description,
-          importance);
+          interruptionLevel);
     }
 
     if (!notificationManager.areNotificationsEnabled()) {
@@ -161,7 +162,7 @@ class FirebaseAppDistributionNotificationsManager {
             .setSmallIcon(appIconSource.getNonAdaptiveIconOrDefault(context))
             .setContentTitle(context.getString(R.string.feedback_notification_title))
             .setContentText(context.getString(R.string.feedback_notification_text, appLabel))
-            .setPriority(convertImportanceToPriority(importance))
+            .setPriority(getNotificationPriority(interruptionLevel))
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setAutoCancel(false)
@@ -177,29 +178,44 @@ class FirebaseAppDistributionNotificationsManager {
         .cancel(Notification.FEEDBACK.tag, Notification.FEEDBACK.id);
   }
 
-  private int convertImportanceToPriority(int importance) {
-    switch (importance) {
-      case NotificationManagerCompat.IMPORTANCE_MIN:
+  private int getNotificationPriority(InterruptionLevel interruptionLevel) {
+    switch (interruptionLevel) {
+      case MIN:
         return NotificationCompat.PRIORITY_MIN;
-      case NotificationManagerCompat.IMPORTANCE_LOW:
+      case LOW:
         return NotificationCompat.PRIORITY_LOW;
-      case NotificationManagerCompat.IMPORTANCE_HIGH:
+      case HIGH:
         return NotificationCompat.PRIORITY_HIGH;
-      case NotificationManagerCompat.IMPORTANCE_MAX:
+      case MAX:
         return NotificationCompat.PRIORITY_MAX;
-      case NotificationManagerCompat.IMPORTANCE_UNSPECIFIED:
-      case NotificationManagerCompat.IMPORTANCE_NONE:
-      case NotificationManagerCompat.IMPORTANCE_DEFAULT:
+      case DEFAULT:
       default:
         return NotificationCompat.PRIORITY_DEFAULT;
     }
   }
 
+  private int getChannelImportance(InterruptionLevel interruptionLevel) {
+    switch (interruptionLevel) {
+      case MIN:
+        return NotificationManagerCompat.IMPORTANCE_MIN;
+      case LOW:
+        return NotificationManagerCompat.IMPORTANCE_LOW;
+      case HIGH:
+      case MAX: // IMPORTANCE_MAX exists but is so far unused
+        return NotificationManagerCompat.IMPORTANCE_HIGH;
+      case DEFAULT:
+      default:
+        return NotificationManagerCompat.IMPORTANCE_DEFAULT;
+    }
+  }
+
   @RequiresApi(Build.VERSION_CODES.O)
-  private void createChannel(Notification notification, int name, int description, int importance) {
+  private void createChannel(
+      Notification notification, int name, int description, InterruptionLevel interruptionLevel) {
     notificationManager.createNotificationChannelGroup(
         new NotificationChannelGroup(
             CHANNEL_GROUP_ID, context.getString(R.string.notifications_group_name)));
+    int importance = getChannelImportance(interruptionLevel);
     NotificationChannel channel =
         new NotificationChannel(notification.channelId, context.getString(name), importance);
     channel.setDescription(context.getString(description));

@@ -20,6 +20,7 @@ import androidx.core.widget.doOnTextChanged
 import com.google.android.gms.tasks.Task
 import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.appdistribution.AppDistributionRelease
+import com.google.firebase.appdistribution.InterruptionLevel
 import com.google.firebase.appdistribution.UpdateProgress
 import com.google.firebase.appdistribution.ktx.appDistribution
 import com.google.firebase.ktx.Firebase
@@ -94,7 +95,7 @@ class MainActivity : AppCompatActivity() {
                     disableAllFeedbackTriggers()
                     Log.i(TAG, "Enabling notification trigger (SDK)")
                     firebaseAppDistribution.showFeedbackNotification(
-                        R.string.termsAndConditions, NotificationManagerCompat.IMPORTANCE_HIGH)
+                        R.string.termsAndConditions, InterruptionLevel.HIGH)
                 }
                 FeedbackTrigger.CUSTOM_NOTIFICATION.label -> {
                     disableAllFeedbackTriggers()

@@ -39,6 +39,7 @@ import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import com.google.firebase.appdistribution.InterruptionLevel;
 import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
@@ -352,13 +353,15 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   @Override
-  public void showFeedbackNotification(int infoTextResourceId, int importance) {
-    showFeedbackNotification(getText(infoTextResourceId), importance);
+  public void showFeedbackNotification(
+      int infoTextResourceId, InterruptionLevel interruptionLevel) {
+    showFeedbackNotification(getText(infoTextResourceId), interruptionLevel);
   }
 
   @Override
-  public void showFeedbackNotification(@NonNull CharSequence infoText, int importance) {
-    notificationsManager.showFeedbackNotification(infoText, importance);
+  public void showFeedbackNotification(
+      @NonNull CharSequence infoText, InterruptionLevel interruptionLevel) {
+    notificationsManager.showFeedbackNotification(infoText, interruptionLevel);
   }
 
   @Override
