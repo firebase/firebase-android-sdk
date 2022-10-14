@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager.PERMISSION_DENIED
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -15,7 +16,6 @@ import android.util.Log
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
-import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -26,7 +26,7 @@ import java.io.IOException
 @SuppressLint("StaticFieldLeak") // Reference to Activity is set to null in onActivityDestroyed
 object CustomNotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
   private const val TAG: String = "NotificationFeedbackTrigger"
-  private const val FEEBACK_NOTIFICATION_CHANNEL_ID = "InAppFeedbackNotification"
+  private const val FEEDBACK_NOTIFICATION_CHANNEL_ID = "InAppFeedbackNotification"
   private const val FEEDBACK_NOTIFICATION_ID = 1
 
   private var isEnabled = false
@@ -48,7 +48,7 @@ object CustomNotificationFeedbackTrigger : Application.ActivityLifecycleCallback
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val channel =
         NotificationChannel(
-          FEEBACK_NOTIFICATION_CHANNEL_ID,
+          FEEDBACK_NOTIFICATION_CHANNEL_ID,
           application.getString(R.string.feedbackTriggerNotificationChannelName),
           NotificationManager.IMPORTANCE_HIGH
         )
@@ -125,11 +125,7 @@ object CustomNotificationFeedbackTrigger : Application.ActivityLifecycleCallback
   fun enable(activity: Activity) {
     activityToScreenshot = activity
     isEnabled = true
-    if (ContextCompat.checkSelfPermission(activity, POST_NOTIFICATIONS) == PERMISSION_GRANTED) {
-      showNotification(activity)
-    } else {
-      Log.w(TAG, "Not showing notification because permission has not been granted.")
-    }
+    showNotification(activity)
   }
 
   /** Hide notifications. */
@@ -142,8 +138,12 @@ object CustomNotificationFeedbackTrigger : Application.ActivityLifecycleCallback
     activityToScreenshot = null
   }
 
-  @RequiresPermission(POST_NOTIFICATIONS)
   private fun showNotification(context: Context) {
+    if (ContextCompat.checkSelfPermission(context, POST_NOTIFICATIONS) == PERMISSION_DENIED) {
+      Log.w(TAG, "Not showing notification because permission has not been granted.")
+      return
+    }
+
     val intent = Intent(context, TakeScreenshotAndTriggerFeedbackActivity::class.java)
     intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
     val pendingIntent =
@@ -154,7 +154,7 @@ object CustomNotificationFeedbackTrigger : Application.ActivityLifecycleCallback
         PendingIntent.FLAG_IMMUTABLE
       )
     val builder =
-      NotificationCompat.Builder(context, FEEBACK_NOTIFICATION_CHANNEL_ID)
+      NotificationCompat.Builder(context, FEEDBACK_NOTIFICATION_CHANNEL_ID)
         .setSmallIcon(R.mipmap.ic_launcher)
         .setContentTitle(context.getText(R.string.feedbackTriggerNotificationTitle))
         .setContentText(context.getText(R.string.feedbackTriggerNotificationText))
@@ -213,7 +213,7 @@ class TakeScreenshotAndTriggerFeedbackActivity : Activity() {
     finish()
   }
 
-  fun takeScreenshot(activity: Activity) {
+  private fun takeScreenshot(activity: Activity) {
     val view = activity.window.decorView.rootView
     val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.RGB_565)
     val canvas = Canvas(bitmap)

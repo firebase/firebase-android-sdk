@@ -240,6 +240,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
       if (currentActivity != activity) {
         if (currentActivity != null) {
           // Store a reference to the previous activity in case the current activity is ignored
+          // later in call to applyToNullableForegroundActivity()
           previousActivity = currentActivity;
         }
         currentActivity = activity;
