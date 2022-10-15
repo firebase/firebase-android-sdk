@@ -126,7 +126,8 @@ public class QuerySnapshotTest {
             /*isFromCache=*/ false,
             /*mutatedKeys=*/ keySet(),
             /*didSyncStateChange=*/ true,
-            /* excludesMetadataChanges= */ false);
+            /* excludesMetadataChanges= */ false,
+            /* hasCachedResults= */ false);
 
     QuerySnapshot snapshot =
         new QuerySnapshot(new Query(fooQuery, firestore), viewSnapshot, firestore);

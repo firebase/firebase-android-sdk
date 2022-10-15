@@ -116,7 +116,8 @@ public class TestUtil {
             isFromCache,
             mutatedKeys,
             /* didSyncStateChange= */ true,
-            /* excludesMetadataChanges= */ false);
+            /* excludesMetadataChanges= */ false,
+            /* hasCachedResults= */ false);
     return new QuerySnapshot(query(path), viewSnapshot, FIRESTORE);
   }
 

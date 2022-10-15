@@ -311,7 +311,10 @@ public class View {
               fromCache,
               docChanges.mutatedKeys,
               syncStatedChanged,
-              /* excludesMetadataChanges= */ false);
+              /* excludesMetadataChanges= */ false,
+              /* hasCachedResults= */ targetChange == null
+                  ? false
+                  : !targetChange.getResumeToken().isEmpty());
     }
     return new ViewChange(snapshot, limboDocumentChanges);
   }
