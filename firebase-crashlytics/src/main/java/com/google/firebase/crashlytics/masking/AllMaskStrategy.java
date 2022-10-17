@@ -4,8 +4,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * Strategy for masking all a original exception message. This class replaces all characters with
- * place holder characters.
+ * The strategy for masking all a original exception message. This class replaces all characters
+ * with place holder characters.
  */
 public class AllMaskStrategy implements ThrowableMessageMaskingStrategy {
   @NonNull private final String placeHolder;
