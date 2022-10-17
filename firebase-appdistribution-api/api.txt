@@ -18,8 +18,8 @@ package com.google.firebase.appdistribution {
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.appdistribution.AppDistributionRelease> checkForNewRelease();
     method @NonNull public static com.google.firebase.appdistribution.FirebaseAppDistribution getInstance();
     method public boolean isTesterSignedIn();
-    method public void showFeedbackNotification(int, com.google.firebase.appdistribution.InterruptionLevel);
-    method public void showFeedbackNotification(@NonNull CharSequence, com.google.firebase.appdistribution.InterruptionLevel);
+    method public void showFeedbackNotification(int, @NonNull com.google.firebase.appdistribution.InterruptionLevel);
+    method public void showFeedbackNotification(@NonNull CharSequence, @NonNull com.google.firebase.appdistribution.InterruptionLevel);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> signInTester();
     method public void signOutTester();
     method public void startFeedback(int);

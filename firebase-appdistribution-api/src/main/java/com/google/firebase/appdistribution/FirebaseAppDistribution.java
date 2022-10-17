@@ -206,7 +206,8 @@ public interface FirebaseAppDistribution {
    *     below Android 8, this corresponds to a notification channel importance and once set cannot
    *     be changed except by the user.
    */
-  void showFeedbackNotification(int infoTextResourceId, InterruptionLevel interruptionLevel);
+  void showFeedbackNotification(
+      int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel);
 
   /**
    * Displays a notification that, when tapped, will take a screenshot of the current activity, then
@@ -234,7 +235,7 @@ public interface FirebaseAppDistribution {
    *     be changed except by the user.
    */
   void showFeedbackNotification(
-      @NonNull CharSequence infoText, InterruptionLevel interruptionLevel);
+      @NonNull CharSequence infoText, @NonNull InterruptionLevel interruptionLevel);
 
   /**
    * Hides the notification shown with {@link #showFeedbackNotification}.

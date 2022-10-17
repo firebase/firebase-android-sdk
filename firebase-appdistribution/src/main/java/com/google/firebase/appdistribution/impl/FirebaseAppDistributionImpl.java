@@ -354,13 +354,13 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void showFeedbackNotification(
-      int infoTextResourceId, InterruptionLevel interruptionLevel) {
+      int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel) {
     showFeedbackNotification(getText(infoTextResourceId), interruptionLevel);
   }
 
   @Override
   public void showFeedbackNotification(
-      @NonNull CharSequence infoText, InterruptionLevel interruptionLevel) {
+      @NonNull CharSequence infoText, @NonNull InterruptionLevel interruptionLevel) {
     notificationsManager.showFeedbackNotification(infoText, interruptionLevel);
   }
 

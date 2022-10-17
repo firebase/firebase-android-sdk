@@ -87,11 +87,11 @@ public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
 
   @Override
   public void showFeedbackNotification(
-      int infoTextResourceId, InterruptionLevel interruptionLevel) {}
+      int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel) {}
 
   @Override
   public void showFeedbackNotification(
-      @NonNull CharSequence infoText, InterruptionLevel interruptionLevel) {}
+      @NonNull CharSequence infoText, @NonNull InterruptionLevel interruptionLevel) {}
 
   @Override
   public void cancelFeedbackNotification() {}

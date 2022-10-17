@@ -97,13 +97,13 @@ public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
 
   @Override
   public void showFeedbackNotification(
-      int infoTextResourceId, InterruptionLevel interruptionLevel) {
+      int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel) {
     delegate.showFeedbackNotification(infoTextResourceId, interruptionLevel);
   }
 
   @Override
   public void showFeedbackNotification(
-      @NonNull CharSequence infoText, InterruptionLevel interruptionLevel) {
+      @NonNull CharSequence infoText, @NonNull InterruptionLevel interruptionLevel) {
     delegate.showFeedbackNotification(infoText, interruptionLevel);
   }
 
