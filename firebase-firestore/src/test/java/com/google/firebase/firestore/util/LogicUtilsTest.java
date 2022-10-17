@@ -309,6 +309,80 @@ public class LogicUtilsTest {
   }
   @Test
   public void testInExpansionForCompositeFilters() {
-    // TODO
+    CompositeFilter cf1 = andFilters(
+      filter("a", "==", 1),
+      filter("b", "in", Arrays.asList(2,3,4))
+    );
+
+    assertThat(computeInExpansion(cf1)).isEqualTo(
+            andFilters(
+                    filter("a", "==", 1),
+                    orFilters(
+                            filter("b", "==", 2),
+                            filter("b", "==", 3),
+                            filter("b", "==", 4)
+                    )
+            )
+    );
+
+    CompositeFilter cf2 = orFilters(
+            filter("a", "==", 1),
+            filter("b", "in", Arrays.asList(2,3,4))
+    );
+
+    assertThat(computeInExpansion(cf2)).isEqualTo(
+            orFilters(
+                    filter("a", "==", 1),
+                    orFilters(
+                            filter("b", "==", 2),
+                            filter("b", "==", 3),
+                            filter("b", "==", 4)
+                    )
+            )
+    );
+
+    CompositeFilter cf3 = andFilters(
+            filter("a", "==", 1),
+            orFilters(
+                    filter("b", "==", 2),
+                    filter("c", "in", Arrays.asList(2,3,4))
+            )
+    );
+
+    assertThat(computeInExpansion(cf3)).isEqualTo(
+            andFilters(
+                    filter("a", "==", 1),
+                    orFilters(
+                            filter("b", "==", 2),
+                            orFilters(
+                                    filter("c", "==", 2),
+                                    filter("c", "==", 3),
+                                    filter("c", "==", 4)
+                            )
+                    )
+            )
+    );
+
+    CompositeFilter cf4 = orFilters(
+            filter("a", "==", 1),
+            andFilters(
+                    filter("b", "==", 2),
+                    filter("c", "in", Arrays.asList(2,3,4))
+            )
+    );
+
+    assertThat(computeInExpansion(cf4)).isEqualTo(
+            orFilters(
+                    filter("a", "==", 1),
+                    andFilters(
+                            filter("b", "==", 2),
+                            orFilters(
+                                    filter("c", "==", 2),
+                                    filter("c", "==", 3),
+                                    filter("c", "==", 4)
+                            )
+                    )
+            )
+    );
   }
 }
