@@ -18,6 +18,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import com.google.firebase.crashlytics.masking.AllMaskStrategy;
 import com.google.firebase.crashlytics.masking.NoMaskStrategy;
 import com.google.firebase.crashlytics.masking.ThrowableMessageMaskingStrategy;
 import java.util.Arrays;
@@ -44,13 +45,17 @@ public class TrimmedThrowableDataTest extends CrashlyticsTestCase {
   private Exception mockException;
   private Exception mockCause;
 
+  private final String originalExceptionMessage = "exception";
+  private final String originalCauseMessage = "cause";
+
   private final ThrowableMessageMaskingStrategy noMaskStrategy = new NoMaskStrategy();
+  private final ThrowableMessageMaskingStrategy allMaskStrategy = new AllMaskStrategy();
 
   public void setUp() throws Exception {
     mockException = mock(Exception.class);
     mockCause = mock(Exception.class);
-    doReturn("exception").when(mockException).getLocalizedMessage();
-    doReturn("cause").when(mockCause).getLocalizedMessage();
+    doReturn(originalExceptionMessage).when(mockException).getLocalizedMessage();
+    doReturn(originalCauseMessage).when(mockCause).getLocalizedMessage();
   }
 
   public void testStackTraceIsTrimmed() {
@@ -131,5 +136,33 @@ public class TrimmedThrowableDataTest extends CrashlyticsTestCase {
           new StackTraceElement("TestClass" + id, "method" + id + i, "TestClass" + id + ".java", i);
     }
     return stacktrace;
+  }
+
+  public void testLocalizedMessageIsNotMasked() {
+    doReturn(mockStackTrace(3)).when(mockException).getStackTrace();
+    doReturn(mockStackTrace(3)).when(mockCause).getStackTrace();
+    doReturn(mockCause).when(mockException).getCause();
+
+    final StackTraceTrimmingStrategy trimmingStrategy = new TruncateStrategy(1);
+    final TrimmedThrowableData t =
+        new TrimmedThrowableData(mockException, trimmingStrategy, noMaskStrategy);
+
+    assertEquals(originalExceptionMessage, t.localizedMessage);
+    assertEquals(originalCauseMessage, t.cause.localizedMessage);
+  }
+
+  public void testLocalizedMessageIsAllMasked() {
+    doReturn(mockStackTrace(3)).when(mockException).getStackTrace();
+    doReturn(mockStackTrace(3)).when(mockCause).getStackTrace();
+    doReturn(mockCause).when(mockException).getCause();
+
+    final StackTraceTrimmingStrategy trimmingStrategy = new TruncateStrategy(1);
+    final TrimmedThrowableData t =
+        new TrimmedThrowableData(mockException, trimmingStrategy, allMaskStrategy);
+
+    // exception -> *********
+    assertEquals("*********", t.localizedMessage);
+    // cause -> *****
+    assertEquals("*****", t.cause.localizedMessage);
   }
 }
