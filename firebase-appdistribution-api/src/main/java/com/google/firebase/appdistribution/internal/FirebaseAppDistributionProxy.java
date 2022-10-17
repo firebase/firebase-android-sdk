@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution.internal;
 import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
@@ -76,7 +77,7 @@ public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback(int infoTextResourceId) {
+  public void startFeedback(@StringRes int infoTextResourceId) {
     delegate.startFeedback(infoTextResourceId);
   }
 
@@ -86,7 +87,7 @@ public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback(int infoTextResourceId, @Nullable Uri screenshotUri) {
+  public void startFeedback(@StringRes int infoTextResourceId, @Nullable Uri screenshotUri) {
     delegate.startFeedback(infoTextResourceId, screenshotUri);
   }
 
@@ -97,7 +98,7 @@ public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
 
   @Override
   public void showFeedbackNotification(
-      int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel) {
+      @StringRes int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel) {
     delegate.showFeedbackNotification(infoTextResourceId, interruptionLevel);
   }
 

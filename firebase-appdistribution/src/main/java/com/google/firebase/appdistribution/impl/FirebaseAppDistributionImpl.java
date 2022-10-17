@@ -29,6 +29,7 @@ import android.net.Uri;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -311,7 +312,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback(int infoTextResourceId) {
+  public void startFeedback(@StringRes int infoTextResourceId) {
     // TODO(lkellogg): Once we have the real FeedbackActivity view implemented, we should write a
     // test that checks that <a> tags are preserved
     startFeedback(firebaseApp.getApplicationContext().getText(infoTextResourceId));
@@ -338,7 +339,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback(int infoTextResourceId, @Nullable Uri screenshotUri) {
+  public void startFeedback(@StringRes int infoTextResourceId, @Nullable Uri screenshotUri) {
     startFeedback(getText(infoTextResourceId), screenshotUri);
   }
 
@@ -354,7 +355,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void showFeedbackNotification(
-      int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel) {
+      @StringRes int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel) {
     showFeedbackNotification(getText(infoTextResourceId), interruptionLevel);
   }
 

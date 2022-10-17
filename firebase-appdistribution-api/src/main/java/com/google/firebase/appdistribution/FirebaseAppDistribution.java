@@ -18,6 +18,7 @@ import android.app.Activity;
 import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.FirebaseAppDistributionProxy;
@@ -127,7 +128,7 @@ public interface FirebaseAppDistribution {
    * @param infoTextResourceId string resource ID of text to display to the tester before collecting
    *     feedback data (e.g. Terms and Conditions)
    */
-  void startFeedback(int infoTextResourceId);
+  void startFeedback(@StringRes int infoTextResourceId);
 
   /**
    * Takes a screenshot, and starts an activity to collect and submit feedback from the tester.
@@ -161,7 +162,7 @@ public interface FirebaseAppDistribution {
    * @param screenshot URI to a bitmap containing a screenshot that will be included with the
    *     report, or null to not include a screenshot
    */
-  void startFeedback(int infoTextResourceId, @Nullable Uri screenshot);
+  void startFeedback(@StringRes int infoTextResourceId, @Nullable Uri screenshot);
 
   /**
    * Starts an activity to collect and submit feedback from the tester, along with the given
@@ -207,7 +208,7 @@ public interface FirebaseAppDistribution {
    *     be changed except by the user.
    */
   void showFeedbackNotification(
-      int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel);
+      @StringRes int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel);
 
   /**
    * Displays a notification that, when tapped, will take a screenshot of the current activity, then

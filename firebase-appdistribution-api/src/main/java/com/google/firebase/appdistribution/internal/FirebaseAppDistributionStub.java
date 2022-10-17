@@ -18,6 +18,7 @@ import android.app.Activity;
 import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -74,20 +75,20 @@ public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback(int infoTextResourceId) {}
+  public void startFeedback(@StringRes int infoTextResourceId) {}
 
   @Override
   public void startFeedback(@NonNull CharSequence infoText) {}
 
   @Override
-  public void startFeedback(int infoTextResourceId, @Nullable Uri screenshotUri) {}
+  public void startFeedback(@StringRes int infoTextResourceId, @Nullable Uri screenshotUri) {}
 
   @Override
   public void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri) {}
 
   @Override
   public void showFeedbackNotification(
-      int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel) {}
+      @StringRes int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel) {}
 
   @Override
   public void showFeedbackNotification(
