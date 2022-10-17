@@ -18,6 +18,8 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import com.google.firebase.crashlytics.masking.NoMaskStrategy;
+import com.google.firebase.crashlytics.masking.ThrowableMessageMaskingStrategy;
 import java.util.Arrays;
 import java.util.UUID;
 
@@ -42,6 +44,8 @@ public class TrimmedThrowableDataTest extends CrashlyticsTestCase {
   private Exception mockException;
   private Exception mockCause;
 
+  private final ThrowableMessageMaskingStrategy noMaskStrategy = new NoMaskStrategy();
+
   public void setUp() throws Exception {
     mockException = mock(Exception.class);
     mockCause = mock(Exception.class);
@@ -53,7 +57,8 @@ public class TrimmedThrowableDataTest extends CrashlyticsTestCase {
     doReturn(mockStackTrace(3)).when(mockException).getStackTrace();
 
     final StackTraceTrimmingStrategy trimmingStrategy = new TruncateStrategy(1);
-    final TrimmedThrowableData t = new TrimmedThrowableData(mockException, trimmingStrategy);
+    final TrimmedThrowableData t =
+        new TrimmedThrowableData(mockException, trimmingStrategy, noMaskStrategy);
 
     assertEquals(1, t.stacktrace.length);
     assertEquals(mockException.getStackTrace()[0], t.stacktrace[0]);
@@ -65,7 +70,8 @@ public class TrimmedThrowableDataTest extends CrashlyticsTestCase {
     doReturn(mockCause).when(mockException).getCause();
 
     final StackTraceTrimmingStrategy trimmingStrategy = new TruncateStrategy(1);
-    final TrimmedThrowableData t = new TrimmedThrowableData(mockException, trimmingStrategy);
+    final TrimmedThrowableData t =
+        new TrimmedThrowableData(mockException, trimmingStrategy, noMaskStrategy);
 
     assertEquals(1, t.stacktrace.length);
     assertEquals(mockException.getStackTrace()[0], t.stacktrace[0]);
@@ -78,7 +84,8 @@ public class TrimmedThrowableDataTest extends CrashlyticsTestCase {
     doReturn(mockStackTrace(3)).when(mockException).getStackTrace();
 
     final StackTraceTrimmingStrategy trimmingStrategy = new TruncateStrategy(5);
-    final TrimmedThrowableData t = new TrimmedThrowableData(mockException, trimmingStrategy);
+    final TrimmedThrowableData t =
+        new TrimmedThrowableData(mockException, trimmingStrategy, noMaskStrategy);
 
     assertEquals(3, t.stacktrace.length);
     assertTrue(Arrays.equals(mockException.getStackTrace(), t.stacktrace));
@@ -90,7 +97,8 @@ public class TrimmedThrowableDataTest extends CrashlyticsTestCase {
     doReturn(mockCause).when(mockException).getCause();
 
     final StackTraceTrimmingStrategy trimmingStrategy = new TruncateStrategy(5);
-    final TrimmedThrowableData t = new TrimmedThrowableData(mockException, trimmingStrategy);
+    final TrimmedThrowableData t =
+        new TrimmedThrowableData(mockException, trimmingStrategy, noMaskStrategy);
 
     assertEquals(3, t.stacktrace.length);
     assertTrue(Arrays.equals(mockException.getStackTrace(), t.stacktrace));
@@ -105,7 +113,8 @@ public class TrimmedThrowableDataTest extends CrashlyticsTestCase {
     doReturn(mockCause).when(mockException).getCause();
 
     final StackTraceTrimmingStrategy trimmingStrategy = new TruncateStrategy(4);
-    final TrimmedThrowableData t = new TrimmedThrowableData(mockException, trimmingStrategy);
+    final TrimmedThrowableData t =
+        new TrimmedThrowableData(mockException, trimmingStrategy, noMaskStrategy);
 
     assertEquals(3, t.stacktrace.length);
     assertTrue(Arrays.equals(mockException.getStackTrace(), t.stacktrace));

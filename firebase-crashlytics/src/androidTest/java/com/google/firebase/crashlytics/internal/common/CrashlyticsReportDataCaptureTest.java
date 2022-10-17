@@ -40,6 +40,8 @@ import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
+import com.google.firebase.crashlytics.masking.NoMaskStrategy;
+import com.google.firebase.crashlytics.masking.ThrowableMessageMaskingStrategy;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
 import org.junit.Before;
@@ -66,6 +68,8 @@ public class CrashlyticsReportDataCaptureTest {
 
   @Mock private FirebaseInstallationsApi installationsApiMock;
 
+  private final ThrowableMessageMaskingStrategy maskingStrategy = new NoMaskStrategy();
+
   @Before
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
@@ -90,7 +94,8 @@ public class CrashlyticsReportDataCaptureTest {
     AppData appData =
         AppData.create(context, idManager, "googleAppId", "buildId", developmentPlatformProvider);
     dataCapture =
-        new CrashlyticsReportDataCapture(context, idManager, appData, stackTraceTrimmingStrategy);
+        new CrashlyticsReportDataCapture(
+            context, idManager, appData, stackTraceTrimmingStrategy, maskingStrategy);
   }
 
   @Test
