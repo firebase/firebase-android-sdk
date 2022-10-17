@@ -26,7 +26,7 @@ public enum InterruptionLevel {
    * <p>Translates to {@link NotificationManager#IMPORTANCE_MIN} on Android O+ and {@link
    * NotificationCompat#PRIORITY_MIN} on older platforms.
    */
-  MIN,
+  MIN(NotificationManager.IMPORTANCE_MIN, NotificationCompat.PRIORITY_MIN),
 
   /**
    * Low interruption level.
@@ -34,7 +34,7 @@ public enum InterruptionLevel {
    * <p>Translates to {@link NotificationManager#IMPORTANCE_LOW} on Android O+ and {@link
    * NotificationCompat#PRIORITY_LOW} on older platforms.
    */
-  LOW,
+  LOW(NotificationManager.IMPORTANCE_LOW, NotificationCompat.PRIORITY_LOW),
 
   /**
    * Default interruption level.
@@ -42,7 +42,7 @@ public enum InterruptionLevel {
    * <p>Translates to {@link NotificationManager#IMPORTANCE_DEFAULT} on Android O+ and {@link
    * NotificationCompat#PRIORITY_DEFAULT} on older platforms.
    */
-  DEFAULT,
+  DEFAULT(NotificationManager.IMPORTANCE_DEFAULT, NotificationCompat.PRIORITY_DEFAULT),
 
   /**
    * High interruption level.
@@ -50,7 +50,7 @@ public enum InterruptionLevel {
    * <p>Translates to {@link NotificationManager#IMPORTANCE_HIGH} on Android O+ and {@link
    * NotificationCompat#PRIORITY_HIGH} on older platforms.
    */
-  HIGH,
+  HIGH(NotificationManager.IMPORTANCE_HIGH, NotificationCompat.PRIORITY_HIGH),
 
   /**
    * Maximum interruption level.
@@ -58,5 +58,24 @@ public enum InterruptionLevel {
    * <p>Translates to {@link NotificationManager#IMPORTANCE_HIGH} on Android O+ and {@link
    * NotificationCompat#PRIORITY_MAX} on older platforms.
    */
-  MAX
+  MAX(NotificationManager.IMPORTANCE_HIGH, NotificationCompat.PRIORITY_MAX);
+
+  /**
+   * The notification channel importance corresponding to this interruption level on Android O+.
+   *
+   * @hide
+   */
+  public final int channelImportance;
+
+  /**
+   * The notification priority corresponding to this interruption level on older platforms.
+   *
+   * @hide
+   */
+  public final int notificationPriority;
+
+  InterruptionLevel(int channelImportance, int notificationPriority) {
+    this.channelImportance = channelImportance;
+    this.notificationPriority = notificationPriority;
+  }
 }

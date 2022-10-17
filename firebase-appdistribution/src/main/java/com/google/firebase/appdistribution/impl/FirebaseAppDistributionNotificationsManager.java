@@ -162,7 +162,7 @@ class FirebaseAppDistributionNotificationsManager {
             .setSmallIcon(appIconSource.getNonAdaptiveIconOrDefault(context))
             .setContentTitle(context.getString(R.string.feedback_notification_title))
             .setContentText(context.getString(R.string.feedback_notification_text, appLabel))
-            .setPriority(getNotificationPriority(interruptionLevel))
+            .setPriority(interruptionLevel.notificationPriority)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setAutoCancel(false)
@@ -178,46 +178,15 @@ class FirebaseAppDistributionNotificationsManager {
         .cancel(Notification.FEEDBACK.tag, Notification.FEEDBACK.id);
   }
 
-  private int getNotificationPriority(InterruptionLevel interruptionLevel) {
-    switch (interruptionLevel) {
-      case MIN:
-        return NotificationCompat.PRIORITY_MIN;
-      case LOW:
-        return NotificationCompat.PRIORITY_LOW;
-      case HIGH:
-        return NotificationCompat.PRIORITY_HIGH;
-      case MAX:
-        return NotificationCompat.PRIORITY_MAX;
-      case DEFAULT:
-      default:
-        return NotificationCompat.PRIORITY_DEFAULT;
-    }
-  }
-
-  private int getChannelImportance(InterruptionLevel interruptionLevel) {
-    switch (interruptionLevel) {
-      case MIN:
-        return NotificationManagerCompat.IMPORTANCE_MIN;
-      case LOW:
-        return NotificationManagerCompat.IMPORTANCE_LOW;
-      case HIGH:
-      case MAX: // IMPORTANCE_MAX exists but is so far unused
-        return NotificationManagerCompat.IMPORTANCE_HIGH;
-      case DEFAULT:
-      default:
-        return NotificationManagerCompat.IMPORTANCE_DEFAULT;
-    }
-  }
-
   @RequiresApi(Build.VERSION_CODES.O)
   private void createChannel(
       Notification notification, int name, int description, InterruptionLevel interruptionLevel) {
     notificationManager.createNotificationChannelGroup(
         new NotificationChannelGroup(
             CHANNEL_GROUP_ID, context.getString(R.string.notifications_group_name)));
-    int importance = getChannelImportance(interruptionLevel);
     NotificationChannel channel =
-        new NotificationChannel(notification.channelId, context.getString(name), importance);
+        new NotificationChannel(
+            notification.channelId, context.getString(name), interruptionLevel.channelImportance);
     channel.setDescription(context.getString(description));
     channel.setGroup(CHANNEL_GROUP_ID);
     // Register the channel with the system; you can't change the importance

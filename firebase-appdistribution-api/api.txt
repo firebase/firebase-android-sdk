@@ -18,8 +18,8 @@ package com.google.firebase.appdistribution {
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.appdistribution.AppDistributionRelease> checkForNewRelease();
     method @NonNull public static com.google.firebase.appdistribution.FirebaseAppDistribution getInstance();
     method public boolean isTesterSignedIn();
-    method public void showFeedbackNotification(int, int);
-    method public void showFeedbackNotification(@NonNull CharSequence, int);
+    method public void showFeedbackNotification(int, com.google.firebase.appdistribution.InterruptionLevel);
+    method public void showFeedbackNotification(@NonNull CharSequence, com.google.firebase.appdistribution.InterruptionLevel);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> signInTester();
     method public void signOutTester();
     method public void startFeedback(int);
@@ -47,6 +47,14 @@ package com.google.firebase.appdistribution {
     enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status NOT_IMPLEMENTED;
     enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status UNKNOWN;
     enum_constant public static final com.google.firebase.appdistribution.FirebaseAppDistributionException.Status UPDATE_NOT_AVAILABLE;
+  }
+
+  public enum InterruptionLevel {
+    enum_constant public static final com.google.firebase.appdistribution.InterruptionLevel DEFAULT;
+    enum_constant public static final com.google.firebase.appdistribution.InterruptionLevel HIGH;
+    enum_constant public static final com.google.firebase.appdistribution.InterruptionLevel LOW;
+    enum_constant public static final com.google.firebase.appdistribution.InterruptionLevel MAX;
+    enum_constant public static final com.google.firebase.appdistribution.InterruptionLevel MIN;
   }
 
   public interface OnProgressListener {
