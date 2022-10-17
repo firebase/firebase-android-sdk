@@ -20,9 +20,7 @@ import com.google.firebase.firestore.core.CompositeFilter;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.InFilter;
-import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -291,20 +289,22 @@ public class LogicUtils {
   }
 
   /**
-   * The `in` filter is only a syntactic sugar over a disjunction of equalities. For instance:
-   * `a in [1,2,3]` is in fact `a==1 || a==2 || a==3`. This method expands any `in` filter in the
-   * given input into a disjunction of equality filters and returns the expanded filter.
+   * The `in` filter is only a syntactic sugar over a disjunction of equalities. For instance: `a in
+   * [1,2,3]` is in fact `a==1 || a==2 || a==3`. This method expands any `in` filter in the given
+   * input into a disjunction of equality filters and returns the expanded filter.
    */
   protected static Filter computeInExpansion(Filter filter) {
     assertFieldFilterOrCompositeFilter(filter);
 
     List<Filter> expandedFilters = new ArrayList<>();
 
-    if(filter instanceof FieldFilter) {
-      if(filter instanceof InFilter) {
+    if (filter instanceof FieldFilter) {
+      if (filter instanceof InFilter) {
         // We have reached a field filter with `in` operator.
-        for(Value value : ((InFilter) filter).getValue().getArrayValue().getValuesList()) {
-          expandedFilters.add(FieldFilter.create(((InFilter) filter).getField(), FieldFilter.Operator.EQUAL, value));
+        for (Value value : ((InFilter) filter).getValue().getArrayValue().getValuesList()) {
+          expandedFilters.add(
+              FieldFilter.create(
+                  ((InFilter) filter).getField(), FieldFilter.Operator.EQUAL, value));
         }
         return new CompositeFilter(expandedFilters, CompositeFilter.Operator.OR);
       } else {
@@ -315,7 +315,7 @@ public class LogicUtils {
 
     // We have a composite filter.
     CompositeFilter compositeFilter = (CompositeFilter) filter;
-    for(Filter subfilter : compositeFilter.getFilters()) {
+    for (Filter subfilter : compositeFilter.getFilters()) {
       expandedFilters.add(computeInExpansion(subfilter));
     }
     return new CompositeFilter(expandedFilters, compositeFilter.getOperator());
