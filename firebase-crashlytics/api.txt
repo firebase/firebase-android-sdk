@@ -32,7 +32,27 @@ package com.google.firebase.crashlytics {
     method public void setCustomKey(@NonNull String, long);
     method public void setCustomKey(@NonNull String, @NonNull String);
     method public void setCustomKeys(@NonNull com.google.firebase.crashlytics.CustomKeysAndValues);
+    method public void setMaskingStrategy(@NonNull com.google.firebase.crashlytics.masking.ThrowableMessageMaskingStrategy);
     method public void setUserId(@NonNull String);
+  }
+
+}
+
+package com.google.firebase.crashlytics.masking {
+
+  public class AllMaskStrategy implements com.google.firebase.crashlytics.masking.ThrowableMessageMaskingStrategy {
+    ctor public AllMaskStrategy();
+    ctor public AllMaskStrategy(@NonNull String);
+    method @Nullable public String getMaskedMessage(@Nullable String);
+  }
+
+  public class NoMaskStrategy implements com.google.firebase.crashlytics.masking.ThrowableMessageMaskingStrategy {
+    ctor public NoMaskStrategy();
+    method @Nullable public String getMaskedMessage(@Nullable String);
+  }
+
+  public interface ThrowableMessageMaskingStrategy {
+    method @Nullable public String getMaskedMessage(@Nullable String);
   }
 
 }
