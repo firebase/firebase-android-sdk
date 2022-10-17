@@ -36,6 +36,8 @@ import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.MiddleOutFallbackStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.RemoveRepeatsStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
+import com.google.firebase.crashlytics.masking.NoMaskStrategy;
+import com.google.firebase.crashlytics.masking.ThrowableMessageMaskingStrategy;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -93,6 +95,8 @@ public class CrashlyticsCore {
 
   private final CrashlyticsNativeComponent nativeComponent;
 
+  private ThrowableMessageMaskingStrategy throwableMessageMaskingStrategy;
+
   // region Constructors
 
   public CrashlyticsCore(
@@ -117,6 +121,7 @@ public class CrashlyticsCore {
 
     startTime = System.currentTimeMillis();
     onDemandCounter = new OnDemandCounter();
+    throwableMessageMaskingStrategy = new NoMaskStrategy();
   }
 
   // endregion
@@ -157,6 +162,7 @@ public class CrashlyticsCore {
               logFileManager,
               userMetadata,
               stackTraceTrimmingStrategy,
+              throwableMessageMaskingStrategy,
               settingsProvider,
               onDemandCounter);
 
@@ -354,6 +360,10 @@ public class CrashlyticsCore {
    */
   public void setCustomKeys(Map<String, String> keysAndValues) {
     controller.setCustomKeys(keysAndValues);
+  }
+
+  public void setMaskingStrategy(ThrowableMessageMaskingStrategy maskingStrategy) {
+    this.throwableMessageMaskingStrategy = maskingStrategy;
   }
 
   // endregion

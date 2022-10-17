@@ -31,6 +31,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.TrimmedThrowableData;
+import com.google.firebase.crashlytics.masking.ThrowableMessageMaskingStrategy;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,16 +68,19 @@ public class CrashlyticsReportDataCapture {
   private final IdManager idManager;
   private final AppData appData;
   private final StackTraceTrimmingStrategy stackTraceTrimmingStrategy;
+  private final ThrowableMessageMaskingStrategy throwableMessageMaskingStrategy;
 
   public CrashlyticsReportDataCapture(
       Context context,
       IdManager idManager,
       AppData appData,
-      StackTraceTrimmingStrategy stackTraceTrimmingStrategy) {
+      StackTraceTrimmingStrategy stackTraceTrimmingStrategy,
+      ThrowableMessageMaskingStrategy throwableMessageMaskingStrategy) {
     this.context = context;
     this.idManager = idManager;
     this.appData = appData;
     this.stackTraceTrimmingStrategy = stackTraceTrimmingStrategy;
+    this.throwableMessageMaskingStrategy = throwableMessageMaskingStrategy;
   }
 
   public CrashlyticsReport captureReportData(String identifier, long timestampSeconds) {
@@ -93,7 +97,8 @@ public class CrashlyticsReportDataCapture {
       boolean includeAllThreads) {
     final int orientation = context.getResources().getConfiguration().orientation;
     final TrimmedThrowableData trimmedEvent =
-        new TrimmedThrowableData(event, stackTraceTrimmingStrategy);
+        new TrimmedThrowableData(
+            event, stackTraceTrimmingStrategy, throwableMessageMaskingStrategy);
 
     return Event.builder()
         .setType(type)

@@ -37,6 +37,7 @@ import com.google.firebase.crashlytics.internal.common.IdManager;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
+import com.google.firebase.crashlytics.masking.ThrowableMessageMaskingStrategy;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.concurrent.Callable;
@@ -468,5 +469,10 @@ public class FirebaseCrashlytics {
    */
   public void setCrashlyticsCollectionEnabled(@Nullable Boolean enabled) {
     core.setCrashlyticsCollectionEnabled(enabled);
+  }
+
+  /** Sets a masking rule for a exception message of crash cause. Default strategy is no masking. */
+  public void setMaskingStrategy(@NonNull ThrowableMessageMaskingStrategy maskingStrategy) {
+    core.setMaskingStrategy(maskingStrategy);
   }
 }

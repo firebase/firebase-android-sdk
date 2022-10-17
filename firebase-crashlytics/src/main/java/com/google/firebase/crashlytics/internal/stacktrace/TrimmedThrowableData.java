@@ -14,6 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.stacktrace;
 
+import com.google.firebase.crashlytics.masking.ThrowableMessageMaskingStrategy;
+
 /**
  * Decorator class that exposes the appropriate APIs for Crashlytics to write crash data, but which
  * pre-processes the stack trace to remove unnecessary frames based on the passed-in
@@ -25,12 +27,18 @@ public class TrimmedThrowableData {
   public final StackTraceElement[] stacktrace;
   public final TrimmedThrowableData cause;
 
-  public TrimmedThrowableData(Throwable ex, StackTraceTrimmingStrategy trimmingStrategy) {
-    this.localizedMessage = ex.getLocalizedMessage();
+  public TrimmedThrowableData(
+      Throwable ex,
+      StackTraceTrimmingStrategy trimmingStrategy,
+      ThrowableMessageMaskingStrategy maskingStrategy) {
+    this.localizedMessage = maskingStrategy.getMaskedMessage(ex.getLocalizedMessage());
     this.className = ex.getClass().getName();
     this.stacktrace = trimmingStrategy.getTrimmedStackTrace(ex.getStackTrace());
 
     final Throwable exCause = ex.getCause();
-    this.cause = (exCause != null) ? new TrimmedThrowableData(exCause, trimmingStrategy) : null;
+    this.cause =
+        (exCause != null)
+            ? new TrimmedThrowableData(exCause, trimmingStrategy, maskingStrategy)
+            : null;
   }
 }
