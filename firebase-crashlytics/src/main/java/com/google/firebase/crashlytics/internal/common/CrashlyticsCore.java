@@ -26,6 +26,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.ThrowableMessageMaskingStrategyProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
@@ -36,7 +37,6 @@ import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.MiddleOutFallbackStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.RemoveRepeatsStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
-import com.google.firebase.crashlytics.masking.NoMaskStrategy;
 import com.google.firebase.crashlytics.masking.ThrowableMessageMaskingStrategy;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -95,7 +95,7 @@ public class CrashlyticsCore {
 
   private final CrashlyticsNativeComponent nativeComponent;
 
-  private ThrowableMessageMaskingStrategy throwableMessageMaskingStrategy;
+  private final ThrowableMessageMaskingStrategyProvider throwableMessageMaskingStrategyProvider;
 
   // region Constructors
 
@@ -121,7 +121,7 @@ public class CrashlyticsCore {
 
     startTime = System.currentTimeMillis();
     onDemandCounter = new OnDemandCounter();
-    throwableMessageMaskingStrategy = new NoMaskStrategy();
+    throwableMessageMaskingStrategyProvider = new ThrowableMessageMaskingStrategyProvider();
   }
 
   // endregion
@@ -162,7 +162,7 @@ public class CrashlyticsCore {
               logFileManager,
               userMetadata,
               stackTraceTrimmingStrategy,
-              throwableMessageMaskingStrategy,
+              throwableMessageMaskingStrategyProvider,
               settingsProvider,
               onDemandCounter);
 
@@ -363,7 +363,7 @@ public class CrashlyticsCore {
   }
 
   public void setMaskingStrategy(ThrowableMessageMaskingStrategy maskingStrategy) {
-    this.throwableMessageMaskingStrategy = maskingStrategy;
+    throwableMessageMaskingStrategyProvider.setMaskingStrategy(maskingStrategy);
   }
 
   // endregion

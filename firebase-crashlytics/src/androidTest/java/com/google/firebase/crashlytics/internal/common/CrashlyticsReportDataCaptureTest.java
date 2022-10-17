@@ -33,10 +33,12 @@ import android.content.ContextWrapper;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
+import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
+import com.google.firebase.crashlytics.internal.ThrowableMessageMaskingStrategyProvider;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
@@ -68,7 +70,7 @@ public class CrashlyticsReportDataCaptureTest {
 
   @Mock private FirebaseInstallationsApi installationsApiMock;
 
-  private final ThrowableMessageMaskingStrategy maskingStrategy = new NoMaskStrategy();
+  @Mock private ThrowableMessageMaskingStrategyProvider maskingStrategyProvider;
 
   @Before
   public void setUp() throws Exception {
@@ -76,6 +78,7 @@ public class CrashlyticsReportDataCaptureTest {
     when(installationsApiMock.getId()).thenReturn(Tasks.forResult("installId"));
     when(stackTraceTrimmingStrategy.getTrimmedStackTrace(any(StackTraceElement[].class)))
         .thenAnswer(i -> i.getArguments()[0]);
+    when(maskingStrategyProvider.getMaskingStrategy()).thenReturn(new NoMaskStrategy());
     context = getContext();
     idManager =
         new IdManager(
@@ -95,7 +98,7 @@ public class CrashlyticsReportDataCaptureTest {
         AppData.create(context, idManager, "googleAppId", "buildId", developmentPlatformProvider);
     dataCapture =
         new CrashlyticsReportDataCapture(
-            context, idManager, appData, stackTraceTrimmingStrategy, maskingStrategy);
+            context, idManager, appData, stackTraceTrimmingStrategy, maskingStrategyProvider);
   }
 
   @Test
@@ -165,7 +168,7 @@ public class CrashlyticsReportDataCaptureTest {
   }
 
   @Test
-  public void testCaptureEvent_noChainedExceptionsAllThreads() {
+  public void testCaptureEvent_noChainedExceptionsAllThreads_noMask() {
     final RuntimeException eventException = new RuntimeException("fatal");
     final Thread eventThread = Thread.currentThread();
 
@@ -201,7 +204,7 @@ public class CrashlyticsReportDataCaptureTest {
   }
 
   @Test
-  public void testCaptureEvent_someChainedExceptionsAllThreads() {
+  public void testCaptureEvent_someChainedExceptionsAllThreads_noMask() {
     final IllegalStateException cause2 = new IllegalStateException("cause 2");
     final IllegalArgumentException cause = new IllegalArgumentException("cause", cause2);
     final RuntimeException eventException = new RuntimeException("fatal", cause);
@@ -248,7 +251,7 @@ public class CrashlyticsReportDataCaptureTest {
   }
 
   @Test
-  public void testCaptureEvent_noChainedExceptionsOneThread() {
+  public void testCaptureEvent_noChainedExceptionsOneThread_noMask() {
     final RuntimeException eventException = new RuntimeException("fatal");
     final Thread eventThread = Thread.currentThread();
 
@@ -319,7 +322,7 @@ public class CrashlyticsReportDataCaptureTest {
   }
 
   @Test
-  public void testCaptureEvent_overflowChainedExceptionsOneThread() {
+  public void testCaptureEvent_overflowChainedExceptionsOneThread_noMask() {
     final IllegalStateException cause2 = new IllegalStateException("cause 2");
     final IllegalArgumentException cause = new IllegalArgumentException("cause", cause2);
     final RuntimeException eventException = new RuntimeException("fatal", cause);
@@ -350,6 +353,97 @@ public class CrashlyticsReportDataCaptureTest {
     assertNotNull(event.getApp().getExecution().getSignal());
   }
 
+  @Test
+  public void testCaptureEvent_noChainedExceptionsAllThreads_mask() {
+    final String replaceMessage = "replaced message";
+    when(maskingStrategyProvider.getMaskingStrategy())
+        .thenReturn(new ReplaceStrategy(replaceMessage));
+
+    final RuntimeException eventException = new RuntimeException("original message");
+    final Thread eventThread = Thread.currentThread();
+
+    final CrashlyticsReport.Session.Event event =
+        dataCapture.captureEventData(
+            eventException,
+            eventThread,
+            eventType,
+            timestamp,
+            eventThreadImportance,
+            maxChainedExceptions,
+            true);
+
+    assertEquals(eventType, event.getType());
+    assertEquals(timestamp, event.getTimestamp());
+    final List<Execution.Thread> threads = event.getApp().getExecution().getThreads();
+    assertTrue(threads.size() > 1);
+    final Execution.Thread firstThread = threads.get(0);
+    assertThread(firstThread, eventThread.getName(), eventThreadImportance);
+    for (int i = 1; i < threads.size(); ++i) {
+      assertThread(threads.get(i), 0);
+    }
+
+    final Execution.Exception builtException = event.getApp().getExecution().getException();
+    assertMaskedException(replaceMessage, builtException, 0, eventThreadImportance);
+    assertNull(builtException.getCausedBy());
+
+    assertArrayEquals(firstThread.getFrames().toArray(), builtException.getFrames().toArray());
+
+    assertEquals(1, event.getApp().getExecution().getBinaries().size());
+
+    assertNotNull(event.getApp().getExecution().getSignal());
+  }
+
+  @Test
+  public void testCaptureEvent_someChainedExceptionsAllThreads_mask() {
+    final String replaceMessage = "replaced message";
+    when(maskingStrategyProvider.getMaskingStrategy())
+        .thenReturn(new ReplaceStrategy(replaceMessage));
+
+    final IllegalStateException cause2 = new IllegalStateException("cause 2");
+    final IllegalArgumentException cause = new IllegalArgumentException("cause", cause2);
+    final RuntimeException eventException = new RuntimeException("fatal", cause);
+    final Thread eventThread = Thread.currentThread();
+
+    final CrashlyticsReport.Session.Event event =
+        dataCapture.captureEventData(
+            eventException,
+            eventThread,
+            eventType,
+            timestamp,
+            eventThreadImportance,
+            maxChainedExceptions,
+            true);
+
+    assertEquals(eventType, event.getType());
+    assertEquals(timestamp, event.getTimestamp());
+    final List<Execution.Thread> threads = event.getApp().getExecution().getThreads();
+    assertTrue(threads.size() > 1);
+    final Execution.Thread firstThread = threads.get(0);
+    assertThread(firstThread, eventThread.getName(), eventThreadImportance);
+    for (int i = 1; i < threads.size(); ++i) {
+      assertThread(threads.get(i), 0);
+    }
+
+    final Execution.Exception builtException = event.getApp().getExecution().getException();
+    assertMaskedException(replaceMessage, builtException, 0, eventThreadImportance);
+
+    Execution.Exception builtCause = builtException.getCausedBy();
+    assertNotNull(builtCause);
+
+    assertMaskedException(replaceMessage, builtCause, 0, eventThreadImportance);
+
+    builtCause = builtCause.getCausedBy();
+    assertNotNull(builtCause);
+
+    assertMaskedException(replaceMessage, builtCause, 0, eventThreadImportance);
+
+    assertNull(builtCause.getCausedBy());
+
+    assertEquals(1, event.getApp().getExecution().getBinaries().size());
+
+    assertNotNull(event.getApp().getExecution().getSignal());
+  }
+
   private static void assertThread(
       Execution.Thread thread, String expectedName, int expectedImportance) {
     assertEquals(expectedName, thread.getName());
@@ -368,6 +462,19 @@ public class CrashlyticsReportDataCaptureTest {
       int expectedOverflowCount,
       int expectedImportance) {
     assertEquals(actualException.getMessage(), builtException.getReason());
+    assertEquals(expectedOverflowCount, builtException.getOverflowCount());
+    assertFalse(builtException.getFrames().isEmpty());
+    for (Execution.Thread.Frame frame : builtException.getFrames()) {
+      assertEquals(expectedImportance, frame.getImportance());
+    }
+  }
+
+  private static void assertMaskedException(
+      String expectMaskedMessage,
+      Execution.Exception builtException,
+      int expectedOverflowCount,
+      int expectedImportance) {
+    assertEquals(expectMaskedMessage, builtException.getReason());
     assertEquals(expectedOverflowCount, builtException.getOverflowCount());
     assertFalse(builtException.getFrames().isEmpty());
     for (Execution.Thread.Frame frame : builtException.getFrames()) {
@@ -436,5 +543,19 @@ public class CrashlyticsReportDataCaptureTest {
         .setPss(1L)
         .setRss(1L)
         .build();
+  }
+
+  private static class ReplaceStrategy implements ThrowableMessageMaskingStrategy {
+    private final String replaceMessage;
+
+    ReplaceStrategy(String replaceMessage) {
+      this.replaceMessage = replaceMessage;
+    }
+
+    @Nullable
+    @Override
+    public String getMaskedMessage(@Nullable String originalMessage) {
+      return replaceMessage;
+    }
   }
 }

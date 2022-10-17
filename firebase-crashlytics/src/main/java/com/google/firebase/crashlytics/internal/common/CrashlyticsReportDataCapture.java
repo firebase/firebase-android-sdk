@@ -23,6 +23,7 @@ import android.os.Environment;
 import android.os.StatFs;
 import android.text.TextUtils;
 import com.google.firebase.crashlytics.BuildConfig;
+import com.google.firebase.crashlytics.internal.ThrowableMessageMaskingStrategyProvider;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Architecture;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
@@ -31,7 +32,6 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.TrimmedThrowableData;
-import com.google.firebase.crashlytics.masking.ThrowableMessageMaskingStrategy;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -68,19 +68,19 @@ public class CrashlyticsReportDataCapture {
   private final IdManager idManager;
   private final AppData appData;
   private final StackTraceTrimmingStrategy stackTraceTrimmingStrategy;
-  private final ThrowableMessageMaskingStrategy throwableMessageMaskingStrategy;
+  private final ThrowableMessageMaskingStrategyProvider throwableMessageMaskingStrategyProvider;
 
   public CrashlyticsReportDataCapture(
       Context context,
       IdManager idManager,
       AppData appData,
       StackTraceTrimmingStrategy stackTraceTrimmingStrategy,
-      ThrowableMessageMaskingStrategy throwableMessageMaskingStrategy) {
+      ThrowableMessageMaskingStrategyProvider throwableMessageMaskingStrategyProvider) {
     this.context = context;
     this.idManager = idManager;
     this.appData = appData;
     this.stackTraceTrimmingStrategy = stackTraceTrimmingStrategy;
-    this.throwableMessageMaskingStrategy = throwableMessageMaskingStrategy;
+    this.throwableMessageMaskingStrategyProvider = throwableMessageMaskingStrategyProvider;
   }
 
   public CrashlyticsReport captureReportData(String identifier, long timestampSeconds) {
@@ -98,7 +98,9 @@ public class CrashlyticsReportDataCapture {
     final int orientation = context.getResources().getConfiguration().orientation;
     final TrimmedThrowableData trimmedEvent =
         new TrimmedThrowableData(
-            event, stackTraceTrimmingStrategy, throwableMessageMaskingStrategy);
+            event,
+            stackTraceTrimmingStrategy,
+            throwableMessageMaskingStrategyProvider.getMaskingStrategy());
 
     return Event.builder()
         .setType(type)

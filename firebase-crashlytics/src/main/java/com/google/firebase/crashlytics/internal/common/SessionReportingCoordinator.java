@@ -24,6 +24,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.ThrowableMessageMaskingStrategyProvider;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -35,7 +36,6 @@ import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
-import com.google.firebase.crashlytics.masking.ThrowableMessageMaskingStrategy;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -68,7 +68,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       LogFileManager logFileManager,
       UserMetadata userMetadata,
       StackTraceTrimmingStrategy stackTraceTrimmingStrategy,
-      ThrowableMessageMaskingStrategy throwableMessageMaskingStrategy,
+      ThrowableMessageMaskingStrategyProvider throwableMessageMaskingStrategyProvider,
       SettingsProvider settingsProvider,
       OnDemandCounter onDemandCounter) {
     final CrashlyticsReportDataCapture dataCapture =
@@ -77,7 +77,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
             idManager,
             appData,
             stackTraceTrimmingStrategy,
-            throwableMessageMaskingStrategy);
+            throwableMessageMaskingStrategyProvider);
     final CrashlyticsReportPersistence reportPersistence =
         new CrashlyticsReportPersistence(fileStore, settingsProvider);
     final DataTransportCrashlyticsReportSender reportSender =
