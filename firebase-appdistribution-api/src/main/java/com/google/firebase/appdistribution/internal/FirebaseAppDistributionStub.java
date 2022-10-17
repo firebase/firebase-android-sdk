@@ -30,6 +30,7 @@ import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import com.google.firebase.appdistribution.InterruptionLevel;
 import com.google.firebase.appdistribution.OnProgressListener;
 import com.google.firebase.appdistribution.UpdateTask;
 import java.util.concurrent.Executor;
@@ -85,10 +86,12 @@ public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
   public void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri) {}
 
   @Override
-  public void showFeedbackNotification(int infoTextResourceId, int importance) {}
+  public void showFeedbackNotification(
+      int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel) {}
 
   @Override
-  public void showFeedbackNotification(@NonNull CharSequence infoText, int importance) {}
+  public void showFeedbackNotification(
+      @NonNull CharSequence infoText, @NonNull InterruptionLevel interruptionLevel) {}
 
   @Override
   public void cancelFeedbackNotification() {}

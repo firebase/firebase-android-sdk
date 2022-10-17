@@ -15,11 +15,9 @@
 package com.google.firebase.appdistribution;
 
 import android.app.Activity;
-import android.app.NotificationChannel;
 import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.app.NotificationCompat;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.FirebaseAppDistributionProxy;
@@ -202,17 +200,14 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * <p>On Android 8 and above, the notification will be created in its own notification channel.
-   *
    * @param infoTextResourceId string resource ID of text to display to the tester before collecting
    *     feedback data (e.g. Terms and Conditions)
-   * @param importance the level of interruption for the feedback notification channel. Once the
-   *     channel's importance is set it cannot be changed except by the user. See {@link
-   *     NotificationChannel#setImportance}. On platforms below Android 8, the importance will be
-   *     translated into a comparable notification priority (see {@link
-   *     NotificationCompat.Builder#setPriority}).
+   * @param interruptionLevel the level of interruption for the feedback notification. On platforms
+   *     below Android 8, this corresponds to a notification channel importance and once set cannot
+   *     be changed except by the user.
    */
-  void showFeedbackNotification(int infoTextResourceId, int importance);
+  void showFeedbackNotification(
+      int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel);
 
   /**
    * Displays a notification that, when tapped, will take a screenshot of the current activity, then
@@ -233,17 +228,14 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * <p>On Android 8 and above, the notification will be created in its own notification channel.
-   *
    * @param infoText text to display to the tester before collecting feedback data (e.g. Terms and
    *     Conditions)
-   * @param importance the level of interruption for the feedback notification channel. Once the
-   *     channel's importance is set it cannot be changed except by the user. See {@link
-   *     NotificationChannel#setImportance}. On platforms below Android 8, the importance will be
-   *     translated into a comparable notification priority (see {@link
-   *     NotificationCompat.Builder#setPriority}).
+   * @param interruptionLevel the level of interruption for the feedback notification. On platforms
+   *     below Android 8, this corresponds to a notification channel importance and once set cannot
+   *     be changed except by the user.
    */
-  void showFeedbackNotification(@NonNull CharSequence infoText, int importance);
+  void showFeedbackNotification(
+      @NonNull CharSequence infoText, @NonNull InterruptionLevel interruptionLevel);
 
   /**
    * Hides the notification shown with {@link #showFeedbackNotification}.
