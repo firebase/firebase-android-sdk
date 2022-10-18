@@ -36,8 +36,8 @@ import java.io.IOException;
 /** Activity for tester to compose and submit feedback. */
 public class FeedbackActivity extends AppCompatActivity {
   private static final String TAG = "FeedbackActivity";
-  private static final int THUMBNAIL_WIDTH = 600;
-  private static final int THUMBNAIL_HEIGHT = -1; // scale proportionally
+  private static final int SCREENSHOT_TARGET_WIDTH_PX = 600;
+  private static final int SCREENSHOT_TARGET_HEIGHT_PX = -1; // scale proportionally
 
   public static final String RELEASE_NAME_EXTRA_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.RELEASE_NAME";
@@ -79,10 +79,10 @@ public class FeedbackActivity extends AppCompatActivity {
     Button sendButton = this.findViewById(R.id.sendButton);
     sendButton.setOnClickListener(this::submitFeedback);
 
-    Bitmap thumbnail = screenshotUri == null ? null : readThumbnail();
-    if (thumbnail != null) {
+    Bitmap screenshot = screenshotUri == null ? null : readScreenshot();
+    if (screenshot != null) {
       ImageView screenshotImageView = this.findViewById(R.id.screenshotImageView);
-      screenshotImageView.setImageBitmap(thumbnail);
+      screenshotImageView.setImageBitmap(screenshot);
       CheckBox checkBox = findViewById(R.id.screenshotCheckBox);
       checkBox.setChecked(true);
       checkBox.setOnClickListener(
@@ -97,21 +97,21 @@ public class FeedbackActivity extends AppCompatActivity {
   }
 
   @Nullable
-  private Bitmap readThumbnail() {
-    Bitmap thumbnail;
+  private Bitmap readScreenshot() {
+    Bitmap bitmap;
     try {
-      thumbnail =
+      bitmap =
           ImageUtils.readScaledImage(
-              getContentResolver(), screenshotUri, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+              getContentResolver(), screenshotUri, SCREENSHOT_TARGET_WIDTH_PX, SCREENSHOT_TARGET_HEIGHT_PX);
     } catch (IOException | SecurityException e) {
       LogWrapper.getInstance()
           .e(TAG, "Could not read screenshot image from URI: " + screenshotUri, e);
       return null;
     }
-    if (thumbnail == null) {
+    if (bitmap == null) {
       LogWrapper.getInstance().e(TAG, "Could not decode screenshot image: " + screenshotUri);
     }
-    return thumbnail;
+    return bitmap;
   }
 
   public void submitFeedback(View view) {
