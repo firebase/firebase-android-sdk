@@ -83,6 +83,10 @@ dependencies {
   implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
 
+  // TODO(yifany): remove after the issue is fixed
+  // https://github.com/firebase/firebase-android-sdk/issues/4206
+  implementation "com.google.firebase:firebase-iid:21.1.0"
+
   // Common utilities (application side)
   implementation "androidx.test:rules:1.4.0"
   implementation "androidx.test:runner:1.4.0"
