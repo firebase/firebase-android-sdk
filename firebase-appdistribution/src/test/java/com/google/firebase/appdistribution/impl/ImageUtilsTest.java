@@ -59,8 +59,7 @@ public class ImageUtilsTest {
   }
 
   @Test
-  public void readScaledImage_targetIsLessThanHalf_scalesDown()
-      throws FirebaseAppDistributionException, IOException {
+  public void readScaledImage_targetIsLessThanHalf_scalesDown() throws IOException {
     Bitmap result =
         ImageUtils.readScaledImage(
             contentResolver,
@@ -73,8 +72,7 @@ public class ImageUtilsTest {
   }
 
   @Test
-  public void readScaledImage_targetExactlyPowerOfTwoSmaller_scalesDown()
-      throws FirebaseAppDistributionException, IOException {
+  public void readScaledImage_targetExactlyPowerOfTwoSmaller_scalesDown() throws IOException {
     Bitmap result =
         ImageUtils.readScaledImage(
             contentResolver,
@@ -87,8 +85,7 @@ public class ImageUtilsTest {
   }
 
   @Test
-  public void readScaledImage_targetWidthIsSmaller_scalesDownToFitHeight()
-      throws FirebaseAppDistributionException, IOException {
+  public void readScaledImage_targetWidthIsSmaller_scalesDownToFitHeight() throws IOException {
     Bitmap result =
         ImageUtils.readScaledImage(
             contentResolver,
@@ -101,8 +98,7 @@ public class ImageUtilsTest {
   }
 
   @Test
-  public void readScaledImage_targetHeightIsSmaller_scalesDownToFitWidth()
-      throws FirebaseAppDistributionException, IOException {
+  public void readScaledImage_targetHeightIsSmaller_scalesDownToFitWidth() throws IOException {
     Bitmap result =
         ImageUtils.readScaledImage(
             contentResolver,
@@ -115,8 +111,7 @@ public class ImageUtilsTest {
   }
 
   @Test
-  public void readScaledImage_targetIsGreaterThanHalf_returnsOriginal()
-      throws FirebaseAppDistributionException, IOException {
+  public void readScaledImage_targetIsGreaterThanHalf_returnsOriginal() throws IOException {
     Bitmap result =
         ImageUtils.readScaledImage(
             contentResolver,
@@ -129,8 +124,7 @@ public class ImageUtilsTest {
   }
 
   @Test
-  public void readScaledImage_targetIsGreater_returnsOriginal()
-      throws FirebaseAppDistributionException, IOException {
+  public void readScaledImage_targetIsGreater_returnsOriginal() throws IOException {
     Bitmap result =
         ImageUtils.readScaledImage(
             contentResolver,
@@ -143,10 +137,36 @@ public class ImageUtilsTest {
   }
 
   @Test
-  public void readScaledImage_zeroDimension_throws() {
+  public void readScaledImage_negativeHeight_scalesProportionally() throws IOException {
+    Bitmap result =
+            ImageUtils.readScaledImage(
+                    contentResolver,
+                    TEST_SCREENSHOT_URI,
+                    TEST_SCREENSHOT_WIDTH / 4,
+                    -1);
+
+    assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH / 4);
+    assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT / 4);
+  }
+
+  @Test
+  public void readScaledImage_negativeWidth_scalesProportionally() throws IOException {
+    Bitmap result =
+            ImageUtils.readScaledImage(
+                    contentResolver,
+                    TEST_SCREENSHOT_URI,
+                    -1,
+                    TEST_SCREENSHOT_HEIGHT / 4);
+
+    assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH / 4);
+    assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT / 4);
+  }
+
+  @Test
+  public void readScaledImage_negativeDimensions_throws() {
     assertThrows(
         IllegalArgumentException.class,
-        () -> ImageUtils.readScaledImage(contentResolver, TEST_SCREENSHOT_URI, 500, 0));
+        () -> ImageUtils.readScaledImage(contentResolver, TEST_SCREENSHOT_URI, -1, -1));
   }
 
   @Test
