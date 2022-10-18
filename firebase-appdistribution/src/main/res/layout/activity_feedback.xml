@@ -131,7 +131,7 @@
         android:id="@+id/infoText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/placeholder_info_text"
+        android:text=""
         android:textSize="16sp"
         android:padding="16dp" />
 
