@@ -23,7 +23,6 @@ import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.graphics.Bitmap.Config;
 import android.net.Uri;
-import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -139,11 +138,8 @@ public class ImageUtilsTest {
   @Test
   public void readScaledImage_negativeHeight_scalesProportionally() throws IOException {
     Bitmap result =
-            ImageUtils.readScaledImage(
-                    contentResolver,
-                    TEST_SCREENSHOT_URI,
-                    TEST_SCREENSHOT_WIDTH / 4,
-                    -1);
+        ImageUtils.readScaledImage(
+            contentResolver, TEST_SCREENSHOT_URI, TEST_SCREENSHOT_WIDTH / 4, -1);
 
     assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH / 4);
     assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT / 4);
@@ -152,11 +148,8 @@ public class ImageUtilsTest {
   @Test
   public void readScaledImage_negativeWidth_scalesProportionally() throws IOException {
     Bitmap result =
-            ImageUtils.readScaledImage(
-                    contentResolver,
-                    TEST_SCREENSHOT_URI,
-                    -1,
-                    TEST_SCREENSHOT_HEIGHT / 4);
+        ImageUtils.readScaledImage(
+            contentResolver, TEST_SCREENSHOT_URI, -1, TEST_SCREENSHOT_HEIGHT / 4);
 
     assertThat(result.getWidth()).isEqualTo(TEST_SCREENSHOT_WIDTH / 4);
     assertThat(result.getHeight()).isEqualTo(TEST_SCREENSHOT_HEIGHT / 4);

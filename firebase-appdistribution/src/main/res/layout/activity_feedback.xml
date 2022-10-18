@@ -33,6 +33,7 @@
             android:layout_gravity="center"
             android:layout_weight="1"
             android:layout_marginStart="16dp"
+            android:layout_marginLeft="16dp"
             android:text="@string/send_feedback"
             android:textSize="24sp" />
 

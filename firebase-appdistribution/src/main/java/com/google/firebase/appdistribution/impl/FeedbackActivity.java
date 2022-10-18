@@ -102,7 +102,10 @@ public class FeedbackActivity extends AppCompatActivity {
     try {
       bitmap =
           ImageUtils.readScaledImage(
-              getContentResolver(), screenshotUri, SCREENSHOT_TARGET_WIDTH_PX, SCREENSHOT_TARGET_HEIGHT_PX);
+              getContentResolver(),
+              screenshotUri,
+              SCREENSHOT_TARGET_WIDTH_PX,
+              SCREENSHOT_TARGET_HEIGHT_PX);
     } catch (IOException | SecurityException e) {
       LogWrapper.getInstance()
           .e(TAG, "Could not read screenshot image from URI: " + screenshotUri, e);
