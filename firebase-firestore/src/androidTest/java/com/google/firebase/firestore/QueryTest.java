@@ -1161,4 +1161,31 @@ public class QueryTest {
 
     checkOnlineAndOfflineResultsMatch(query2, "doc3");
   }
+
+  @Test
+  public void useInWithArrayContainsAny() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "doc1", map("a", 1, "b", asList(0)),
+            "doc2", map("b", asList(1)),
+            "doc3", map("a", 3, "b", asList(2, 7)),
+            "doc4", map("a", 1, "b", asList(3, 7)),
+            "doc5", map("a", 1),
+            "doc6", map("a", 2));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+
+    Query query1 =
+        collection.where(
+            Filter.or(
+                Filter.inArray("a", asList(2, 3)), Filter.arrayContainsAny("b", asList(0, 7))));
+
+    checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc3", "doc4", "doc6");
+
+    Query query2 =
+        collection.where(
+            Filter.and(
+                Filter.inArray("a", asList(2, 3)), Filter.arrayContainsAny("b", asList(0, 7))));
+
+    checkOnlineAndOfflineResultsMatch(query2, "doc3");
+  }
 }
