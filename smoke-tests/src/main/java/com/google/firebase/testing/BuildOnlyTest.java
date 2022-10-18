@@ -16,7 +16,6 @@ package com.google.firebase.testing;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.firebase.appindexing.FirebaseAppIndex;
 import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader;
@@ -31,11 +30,6 @@ import static androidx.test.core.app.ApplicationProvider.getApplicationContext;
 /** Contains initialization test cases for build-only libraries. */
 @RunWith(JUnit4.class)
 public final class BuildOnlyTest {
-
-  @Test
-  public void appindexing_IsNotNull() {
-    assertThat(FirebaseAppIndex.getInstance(getApplicationContext())).isNotNull();
-  }
 
   @Test
   public void inappmessaging_IsNotNull() {
