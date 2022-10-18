@@ -579,7 +579,7 @@ public class Query {
       case ARRAY_CONTAINS:
         return Arrays.asList(Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY, Operator.NOT_IN);
       case IN:
-        return Arrays.asList(Operator.ARRAY_CONTAINS_ANY, Operator.IN, Operator.NOT_IN);
+        return Arrays.asList(Operator.ARRAY_CONTAINS_ANY, Operator.NOT_IN);
       case ARRAY_CONTAINS_ANY:
         return Arrays.asList(
             Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY, Operator.IN, Operator.NOT_IN);

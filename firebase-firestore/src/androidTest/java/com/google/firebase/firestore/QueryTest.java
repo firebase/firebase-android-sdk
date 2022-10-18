@@ -1134,4 +1134,31 @@ public class QueryTest {
         "doc4",
         "doc6");
   }
+
+  @Test
+  public void multipleInOps() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "doc1", map("a", 1, "b", 0),
+            "doc2", map("b", 1),
+            "doc3", map("a", 3, "b", 2),
+            "doc4", map("a", 1, "b", 3),
+            "doc5", map("a", 1),
+            "doc6", map("a", 2));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+
+    Query query1 =
+        collection
+            .where(Filter.or(Filter.inArray("a", asList(2, 3)), Filter.inArray("b", asList(0, 2))))
+            .orderBy("a");
+
+    checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc6", "doc3");
+
+    Query query2 =
+        collection
+            .where(Filter.and(Filter.inArray("a", asList(2, 3)), Filter.inArray("b", asList(0, 2))))
+            .orderBy("a");
+
+    checkOnlineAndOfflineResultsMatch(query2, "doc3");
+  }
 }

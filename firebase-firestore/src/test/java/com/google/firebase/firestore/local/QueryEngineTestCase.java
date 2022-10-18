@@ -640,4 +640,35 @@ public abstract class QueryEngineTestCase {
         expectFullCollectionScan(() -> runQuery(query2, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query2.comparator(), doc1, doc4, doc6), result2);
   }
+
+  @Test
+  public void queryWithMultipleIns() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 1, "b", 0));
+    MutableDocument doc2 = doc("coll/2", 1, map("b", 1));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 3, "b", 2));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 1, "b", 3));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 1));
+    MutableDocument doc6 = doc("coll/6", 1, map("a", 2));
+    addDocument(doc1, doc2, doc3, doc4, doc5, doc6);
+
+    Query query1 =
+        query("coll")
+            .filter(
+                orFilters(
+                    filter("a", "in", Arrays.asList(2, 3)),
+                    filter("b", "in", Arrays.asList(0, 2))));
+    DocumentSet result1 =
+        expectFullCollectionScan(() -> runQuery(query1, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query1.comparator(), doc1, doc3, doc6), result1);
+
+    Query query2 =
+        query("coll")
+            .filter(
+                andFilters(
+                    filter("a", "in", Arrays.asList(2, 3)),
+                    filter("b", "in", Arrays.asList(0, 2))));
+    DocumentSet result2 =
+        expectFullCollectionScan(() -> runQuery(query2, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query2.comparator(), doc3), result2);
+  }
 }
