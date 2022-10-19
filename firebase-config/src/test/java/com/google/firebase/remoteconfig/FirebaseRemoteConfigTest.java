@@ -93,6 +93,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 import org.skyscreamer.jsonassert.JSONAssert;
 
 /**
@@ -104,6 +105,7 @@ import org.skyscreamer.jsonassert.JSONAssert;
 @Config(
     manifest = Config.NONE,
     shadows = {ShadowPreconditions.class})
+@LooperMode(LooperMode.Mode.LEGACY)
 public final class FirebaseRemoteConfigTest {
   private static final String APP_ID = "1:14368190084:android:09cb977358c6f241";
   private static final String API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";

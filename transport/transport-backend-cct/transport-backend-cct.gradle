@@ -65,14 +65,14 @@ dependencies {
 
     testImplementation 'com.google.protobuf:protobuf-java-util:3.11.0'
     testImplementation 'androidx.test:core:1.2.0'
-    testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
     testImplementation 'com.github.tomakehurst:wiremock:2.26.3'
     //Android compatible version of Apache httpclient.
     testImplementation 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'junit:junit:4.13-beta-2'
+    // Keep Robolectric to 4.3.1 for httpclient and TelephonyManager compatibility.
+    testImplementation "org.robolectric:robolectric:4.3.1"
+    testImplementation 'junit:junit:4.13.1'
 
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
