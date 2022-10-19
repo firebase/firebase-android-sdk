@@ -337,7 +337,9 @@ public class LogicUtils {
       return Collections.emptyList();
     }
 
-    Filter result = computeDistributedNormalForm(filter);
+    // The `in` operator is a syntactic sugar over a disjunction of equalities. We should first
+    // replace such filters with equality filters before running the DNF transform.
+    Filter result = computeDistributedNormalForm(computeInExpansion(filter));
 
     hardAssert(
         isDisjunctiveNormalForm(result),
