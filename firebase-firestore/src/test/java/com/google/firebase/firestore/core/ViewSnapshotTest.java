@@ -49,7 +49,7 @@ public class ViewSnapshotTest {
     boolean hasPendingWrites = true;
     boolean syncStateChanges = true;
     boolean excludesMetadataChanges = true;
-    boolean hasCachedResults = false;
+    boolean hasCachedResults = true;
 
     ViewSnapshot snapshot =
         new ViewSnapshot(
