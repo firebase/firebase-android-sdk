@@ -71,10 +71,12 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 
 // TODO: Refactor and clean this logic
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
+@LooperMode(LooperMode.Mode.LEGACY)
 public class InAppMessageStreamManagerTest {
   private static final long PAST = 1000000;
   private static final long NOW = PAST + 100000;
