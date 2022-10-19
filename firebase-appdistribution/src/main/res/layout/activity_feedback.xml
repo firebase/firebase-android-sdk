@@ -52,22 +52,7 @@
     </LinearLayout>
 
     <View
-        android:id="@+id/divider0"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_weight="0"
-        android:background="?android:attr/listDivider" />
-
-    <TextView
-        android:id="@+id/senderText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/sender"
-        android:textSize="24sp"
-        android:padding="16dp" />
-
-    <View
-        android:id="@+id/divider1"
+        android:id="@+id/topDivider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_weight="0"
@@ -89,7 +74,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="3"
-                android:autofillHints=""
                 android:background="@null"
                 android:gravity="start"
                 android:hint="@string/feedback_text_hint"
@@ -123,7 +107,7 @@
     </ScrollView>
 
     <View
-        android:id="@+id/divider2"
+        android:id="@+id/bottomDivider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="?android:attr/listDivider" />
@@ -132,7 +116,6 @@
         android:id="@+id/infoText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text=""
         android:textSize="16sp"
         android:padding="16dp" />
 

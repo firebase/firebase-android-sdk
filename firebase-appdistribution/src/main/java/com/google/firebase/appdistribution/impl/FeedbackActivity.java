@@ -64,11 +64,8 @@ public class FeedbackActivity extends AppCompatActivity {
   }
 
   private void setupView() {
-    setTheme(R.style.Theme_Feedback);
+    setTheme(R.style.FeedbackTheme);
     setContentView(R.layout.activity_feedback);
-
-    TextView senderText = findViewById(R.id.senderText);
-    senderText.setText(getString(R.string.sender, "tester@e.mail"));
 
     TextView infoTextView = this.findViewById(R.id.infoText);
     infoTextView.setText(infoText);

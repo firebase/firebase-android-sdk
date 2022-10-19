@@ -33,12 +33,12 @@
   <string name="unknown_sources_dialog_title">Enable Unknown Sources</string>
   <string name="unknown_sources_dialog_description">To install the update enable unknown sources</string>
   <string name="unknown_sources_yes_button">Settings</string>
-  <string name="back_button_description">back</string>
+  <string name="back_button_description">Back</string>
   <string name="send_feedback">Send feedback</string>
-  <string name="send_button_description">send</string>
+  <string name="send_button_description">Send</string>
   <string name="sender">From: %1$s</string>
   <string name="feedback_text_hint">Have feedback? Let us know how we can make this app better.</string>
   <string name="screenshot">Screenshot</string>
   <string name="no_screenshot">Screenshot (not available)</string>
-  <string name="screenshot_image_description">screenshot image</string>
+  <string name="screenshot_image_description">Screenshot image</string>
 </resources>
