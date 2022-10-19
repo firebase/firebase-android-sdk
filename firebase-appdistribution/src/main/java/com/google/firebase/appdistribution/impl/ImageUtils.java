@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution.impl;
 import android.content.ContentResolver;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Rect;
 import android.net.Uri;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
@@ -24,10 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class ImageUtils {
-
-  private static final String TAG = "ImageUtils";
-  public static final int MAX_IMAGE_READ_RETRIES = 10;
-  public static final int IMAGE_READ_RETRY_SLEEP_MS = 300;
+  private ImageUtils() {}
 
   @AutoValue
   abstract static class ImageSize {
@@ -38,7 +36,7 @@ public class ImageUtils {
     static ImageSize read(InputStream inputStream) {
       final BitmapFactory.Options options = new BitmapFactory.Options();
       options.inJustDecodeBounds = true;
-      BitmapFactory.decodeStream(inputStream, /* outPadding= */ null, options);
+      BitmapFactory.decodeStream(inputStream, /* outPadding= */ (Rect) null, options);
       return new AutoValue_ImageUtils_ImageSize(options.outWidth, options.outHeight);
     }
   }
@@ -57,10 +55,10 @@ public class ImageUtils {
    * @throws IOException if the image can't be read
    */
   @Nullable
-  public static Bitmap readScaledImage(
+  static Bitmap readScaledImage(
       ContentResolver contentResolver, Uri uri, int targetWidth, int targetHeight)
       throws IOException {
-    if (targetWidth <= 0 || targetHeight <= 0) {
+    if (targetWidth <= 0 && targetHeight <= 0) {
       throw new IllegalArgumentException(
           String.format(
               "Tried to read image with bad dimensions: %dx%d", targetWidth, targetHeight));
@@ -79,7 +77,7 @@ public class ImageUtils {
         calculateInSampleSize(imageSize.width(), imageSize.height(), targetWidth, targetHeight);
     // Get a fresh input stream because we've exhausted the last one
     try (InputStream inputStream = contentResolver.openInputStream(uri)) {
-      return BitmapFactory.decodeStream(inputStream, /* outPadding= */ null, options);
+      return BitmapFactory.decodeStream(inputStream, /* outPadding= */ (Rect) null, options);
     }
   }
 
