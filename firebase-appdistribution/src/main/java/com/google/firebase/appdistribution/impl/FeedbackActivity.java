@@ -14,12 +14,17 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static android.view.View.GONE;
+import static android.view.View.INVISIBLE;
+import static android.view.View.VISIBLE;
+
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.method.LinkMovementMethod;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -30,10 +35,9 @@ import java.io.IOException;
 
 /** Activity for tester to compose and submit feedback. */
 public class FeedbackActivity extends AppCompatActivity {
-
   private static final String TAG = "FeedbackActivity";
-  private static final int THUMBNAIL_WIDTH = 200;
-  private static final int THUMBNAIL_HEIGHT = 200;
+  private static final int SCREENSHOT_TARGET_WIDTH_PX = 600;
+  private static final int SCREENSHOT_TARGET_HEIGHT_PX = -1; // scale proportionally
 
   public static final String RELEASE_NAME_EXTRA_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.RELEASE_NAME";
@@ -60,41 +64,54 @@ public class FeedbackActivity extends AppCompatActivity {
   }
 
   private void setupView() {
+    setTheme(R.style.FeedbackTheme);
     setContentView(R.layout.activity_feedback);
 
     TextView infoTextView = this.findViewById(R.id.infoText);
     infoTextView.setText(infoText);
     infoTextView.setMovementMethod(LinkMovementMethod.getInstance());
-    Button submitButton = this.findViewById(R.id.submitButton);
-    submitButton.setOnClickListener(this::submitFeedback);
 
-    Bitmap thumbnail = screenshotUri == null ? null : readThumbnail();
-    if (thumbnail != null) {
-      ImageView screenshotImageView = this.findViewById(R.id.thumbnail);
-      screenshotImageView.setImageBitmap(thumbnail);
+    findViewById(R.id.backButton).setOnClickListener(v -> finish());
+
+    Button sendButton = this.findViewById(R.id.sendButton);
+    sendButton.setOnClickListener(this::submitFeedback);
+
+    Bitmap screenshot = screenshotUri == null ? null : readScreenshot();
+    if (screenshot != null) {
+      ImageView screenshotImageView = this.findViewById(R.id.screenshotImageView);
+      screenshotImageView.setImageBitmap(screenshot);
+      CheckBox checkBox = findViewById(R.id.screenshotCheckBox);
+      checkBox.setChecked(true);
+      checkBox.setOnClickListener(
+          v -> screenshotImageView.setVisibility(checkBox.isChecked() ? VISIBLE : GONE));
     } else {
       LogWrapper.getInstance().e(TAG, "No screenshot available");
-      View screenshotErrorLabel = this.findViewById(R.id.screenshotErrorLabel);
-      screenshotErrorLabel.setVisibility(View.VISIBLE);
+      CheckBox checkBox = findViewById(R.id.screenshotCheckBox);
+      checkBox.setText(R.string.no_screenshot);
+      checkBox.setClickable(false);
+      checkBox.setChecked(false);
     }
   }
 
   @Nullable
-  private Bitmap readThumbnail() {
-    Bitmap thumbnail;
+  private Bitmap readScreenshot() {
+    Bitmap bitmap;
     try {
-      thumbnail =
+      bitmap =
           ImageUtils.readScaledImage(
-              getContentResolver(), screenshotUri, THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT);
+              getContentResolver(),
+              screenshotUri,
+              SCREENSHOT_TARGET_WIDTH_PX,
+              SCREENSHOT_TARGET_HEIGHT_PX);
     } catch (IOException | SecurityException e) {
       LogWrapper.getInstance()
           .e(TAG, "Could not read screenshot image from URI: " + screenshotUri, e);
       return null;
     }
-    if (thumbnail == null) {
+    if (bitmap == null) {
       LogWrapper.getInstance().e(TAG, "Could not decode screenshot image: " + screenshotUri);
     }
-    return thumbnail;
+    return bitmap;
   }
 
   public void submitFeedback(View view) {
@@ -117,7 +134,6 @@ public class FeedbackActivity extends AppCompatActivity {
   }
 
   public void setSubmittingStateEnabled(boolean loading) {
-    findViewById(R.id.submitButton).setVisibility(loading ? View.INVISIBLE : View.VISIBLE);
-    findViewById(R.id.loadingLabel).setVisibility(loading ? View.VISIBLE : View.INVISIBLE);
+    findViewById(R.id.sendButton).setVisibility(loading ? INVISIBLE : VISIBLE);
   }
 }
