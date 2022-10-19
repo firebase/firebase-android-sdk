@@ -1,0 +1,3 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="FeedbackTheme" parent="Theme.AppCompat.Light.NoActionBar" />
+</resources>

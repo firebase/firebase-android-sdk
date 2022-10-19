@@ -29,6 +29,9 @@ android {
         multiDexEnabled true
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary = true
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
