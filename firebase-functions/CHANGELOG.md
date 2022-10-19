@@ -1,6 +1,6 @@
 # Unreleased
 
-* [fixed] Updated dependency of `firebase-iid` to its latest
+* [changed] Updated dependency of `firebase-iid` to its latest
   version (v21.1.0).
   
 ## Kotlin
