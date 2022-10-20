@@ -108,16 +108,15 @@ public class FrameMetricsRecorder {
     Optional<PerfFrameMetrics> data = this.snapshot();
     try {
       frameMetricsAggregator.remove(activity);
-    } catch (IllegalArgumentException err) {
+    } catch (IllegalArgumentException | NullPointerException ex) {
+      // Both of these exceptions result from android.view.View.addFrameMetricsListener silently
+      // failing when the view is not hardware-accelerated. Successful addFrameMetricsListener
+      // stores an observer in a list, and initializes the list if it was uninitialized. Invoking
+      // View.removeFrameMetricsListener(listener) throws IAE if it doesn't exist in the list, or
+      // throws NPE if the list itself was never initialized.
       logger.warn(
-          "View not hardware accelerated. Unable to collect FrameMetrics. %s", err.toString());
-      frameMetricsAggregator.reset();
-      return Optional.absent();
-    } catch (NullPointerException err) {
-      frameMetricsAggregator.reset();
-      logger.warn(
-          "NullPointerException. %s", err.toString());
-      return Optional.absent();
+          "View not hardware accelerated. Unable to collect FrameMetrics. %s", ex.toString());
+      data = Optional.absent();
     }
     frameMetricsAggregator.reset();
     isRecording = false;
