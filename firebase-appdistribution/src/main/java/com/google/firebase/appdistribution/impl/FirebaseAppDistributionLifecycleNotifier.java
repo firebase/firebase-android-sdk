@@ -42,7 +42,14 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
 
   /** A functional interface for a function that takes an activity and produces a new value. */
   interface ActivityFunction<T> {
-    T apply(Activity activity) throws FirebaseAppDistributionException;
+    T apply(@NonNull Activity activity) throws FirebaseAppDistributionException;
+  }
+
+  /**
+   * A functional interface for a function that takes a nullable activity and produces a new value.
+   */
+  interface NullableActivityFunction<T> {
+    T apply(@Nullable Activity activity) throws FirebaseAppDistributionException;
   }
 
   private static FirebaseAppDistributionLifecycleNotifier instance;
@@ -50,6 +57,9 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
 
   @GuardedBy("lock")
   private Activity currentActivity;
+
+  @GuardedBy("lock")
+  private Activity previousActivity;
 
   /** A queue of listeners that trigger when the activity is foregrounded. */
   @GuardedBy("lock")
@@ -110,7 +120,34 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
    * activity available when this method is called.
    */
   <T> Task<T> applyToForegroundActivity(ActivityFunction<T> function) {
-    return getForegroundActivity()
+    return getForegroundActivity(null)
+        .onSuccessTask(
+            // Use direct executor to ensure the consumer is called while Activity is in foreground
+            DIRECT_EXECUTOR,
+            activity -> {
+              try {
+                return Tasks.forResult(function.apply(activity));
+              } catch (Throwable t) {
+                return Tasks.forException(FirebaseAppDistributionExceptions.wrap(t));
+              }
+            });
+  }
+
+  /**
+   * Apply a function to a foreground activity, when one is available, returning a {@link Task} that
+   * will complete immediately after the function is applied.
+   *
+   * <p>If the foreground activity is of type {@code classToIgnore}, the previously active activity
+   * will be passed to the function, which may be null if there was no previously active activity or
+   * the activity has been destroyed.
+   *
+   * <p>The function will be called immediately once the activity is available. This may be main
+   * thread or the calling thread, depending on whether or not there is already a foreground
+   * activity available when this method is called.
+   */
+  <T, A extends Activity> Task<T> applyToNullableForegroundActivity(
+      Class<A> classToIgnore, NullableActivityFunction<T> function) {
+    return getForegroundActivity(classToIgnore)
         .onSuccessTask(
             // Use direct executor to ensure the consumer is called while Activity is in foreground
             DIRECT_EXECUTOR,
@@ -162,22 +199,52 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   }
 
   Task<Activity> getForegroundActivity() {
+    return getForegroundActivity(null);
+  }
+
+  <A extends Activity> Task<Activity> getForegroundActivity(@Nullable Class<A> classToIgnore) {
     synchronized (lock) {
       if (currentActivity != null) {
-        return Tasks.forResult(currentActivity);
+        return Tasks.forResult(
+            getActivityWithIgnoredClass(currentActivity, previousActivity, classToIgnore));
       }
+
       TaskCompletionSource<Activity> task = new TaskCompletionSource<>();
 
       addOnActivityResumedListener(
           new OnActivityResumedListener() {
             @Override
             public void onResumed(Activity activity) {
-              task.setResult(activity);
+              task.setResult(
+                  getActivityWithIgnoredClass(activity, previousActivity, classToIgnore));
               removeOnActivityResumedListener(this);
             }
           });
 
       return task.getTask();
+    }
+  }
+
+  @Nullable
+  private static <A extends Activity> Activity getActivityWithIgnoredClass(
+      Activity activity, @Nullable Activity fallbackActivity, @Nullable Class<A> classToIgnore) {
+    if (classToIgnore != null && classToIgnore.isInstance(activity)) {
+      return fallbackActivity;
+    } else {
+      return activity;
+    }
+  }
+
+  private void updateCurrentActivity(@Nullable Activity activity) {
+    synchronized (lock) {
+      if (currentActivity != activity) {
+        if (currentActivity != null) {
+          // Store a reference to the previous activity in case the current activity is ignored
+          // later in call to applyToNullableForegroundActivity()
+          previousActivity = currentActivity;
+        }
+        currentActivity = activity;
+      }
     }
   }
 
@@ -220,7 +287,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   @Override
   public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
     synchronized (lock) {
-      currentActivity = activity;
+      updateCurrentActivity(activity);
       for (OnActivityCreatedListener listener : onActivityCreatedListeners) {
         listener.onCreated(activity);
       }
@@ -230,7 +297,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   @Override
   public void onActivityStarted(@NonNull Activity activity) {
     synchronized (lock) {
-      currentActivity = activity;
+      updateCurrentActivity(activity);
       for (OnActivityStartedListener listener : onActivityStartedListeners) {
         listener.onStarted(activity);
       }
@@ -240,7 +307,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   @Override
   public void onActivityResumed(@NonNull Activity activity) {
     synchronized (lock) {
-      currentActivity = activity;
+      updateCurrentActivity(activity);
       for (OnActivityResumedListener listener : onActivityResumedListeners) {
         listener.onResumed(activity);
       }
@@ -250,8 +317,8 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   @Override
   public void onActivityPaused(@NonNull Activity activity) {
     synchronized (lock) {
-      if (this.currentActivity == activity) {
-        this.currentActivity = null;
+      if (currentActivity == activity) {
+        updateCurrentActivity(null);
       }
       for (OnActivityPausedListener listener : onActivityPausedListeners) {
         listener.onPaused(activity);
@@ -268,8 +335,12 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   @Override
   public void onActivityDestroyed(@NonNull Activity activity) {
     synchronized (lock) {
-      if (this.currentActivity == activity) {
-        this.currentActivity = null;
+      // If an activity is destroyed, delete all references to it, including the previous activity
+      if (currentActivity == activity) {
+        updateCurrentActivity(null);
+      }
+      if (previousActivity == activity) {
+        previousActivity = null;
       }
 
       for (OnActivityDestroyedListener listener : onDestroyedListeners) {

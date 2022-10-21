@@ -48,7 +48,7 @@ class SecondActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.startFeedbackMenuItem -> {
-                Firebase.appDistribution.startFeedback(R.string.terms_and_conditions)
+                Firebase.appDistribution.startFeedback(R.string.termsAndConditions)
                 true
             }
             else -> super.onOptionsItemSelected(item)
