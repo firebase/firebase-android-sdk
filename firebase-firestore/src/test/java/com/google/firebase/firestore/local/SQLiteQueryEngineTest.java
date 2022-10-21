@@ -327,7 +327,21 @@ public class SQLiteQueryEngineTest extends QueryEngineTestCase {
 
     DocumentSet result3 =
         expectOptimizedCollectionScan(() -> runQuery(query3, SnapshotVersion.NONE));
-    assertEquals(docSet(query2.comparator(), doc3, doc6), result3);
+    assertEquals(docSet(query3.comparator(), doc3, doc6), result3);
+
+    // Nested composite filter: (a IN [0,1,2,3] && (a IN [0,2] || (b>1 && a IN [1,3]))
+    Query query4 =
+        query("coll")
+            .filter(
+                andFilters(
+                    filter("a", "in", Arrays.asList(0, 1, 2, 3)),
+                    orFilters(
+                        filter("a", "in", Arrays.asList(0, 2)),
+                        andFilters(filter("b", ">=", 1), filter("a", "in", Arrays.asList(1, 3))))));
+
+    DocumentSet result4 =
+        expectOptimizedCollectionScan(() -> runQuery(query4, SnapshotVersion.NONE));
+    assertEquals(docSet(query4.comparator(), doc3, doc4), result4);
   }
 
   @Test
@@ -366,5 +380,21 @@ public class SQLiteQueryEngineTest extends QueryEngineTestCase {
     DocumentSet result2 =
         expectOptimizedCollectionScan(() -> runQuery(query2, SnapshotVersion.NONE));
     assertEquals(docSet(query2.comparator(), doc3), result2);
+
+    // Nested composite filter: (b in [0,3] && (b IN [1] || (b in [2,3] && a IN [1,3]))
+    Query query3 =
+        query("coll")
+            .filter(
+                andFilters(
+                    filter("b", "in", Arrays.asList(0, 3)),
+                    orFilters(
+                        filter("b", "in", Arrays.asList(1)),
+                        andFilters(
+                            filter("b", "in", Arrays.asList(2, 3)),
+                            filter("a", "in", Arrays.asList(1, 3))))));
+
+    DocumentSet result3 =
+        expectOptimizedCollectionScan(() -> runQuery(query3, SnapshotVersion.NONE));
+    assertEquals(docSet(query3.comparator(), doc4), result3);
   }
 }
