@@ -14,15 +14,21 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static android.app.NotificationManager.IMPORTANCE_HIGH;
 import static android.content.Context.NOTIFICATION_SERVICE;
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.appdistribution.impl.FirebaseAppDistributionNotificationsManager.NOTIFICATION_TAG;
+import static com.google.firebase.appdistribution.impl.FirebaseAppDistributionNotificationsManager.CHANNEL_GROUP_ID;
+import static com.google.firebase.appdistribution.impl.FirebaseAppDistributionNotificationsManager.Notification.APP_UPDATE;
+import static com.google.firebase.appdistribution.impl.FirebaseAppDistributionNotificationsManager.Notification.FEEDBACK;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.Intent;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.appdistribution.InterruptionLevel;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,41 +54,98 @@ public class FirebaseAppDistributionNotificationsManagerTest {
   }
 
   @Test
-  public void updateNotification_withProgress() {
-    firebaseAppDistributionNotificationsManager.updateNotification(
+  public void showAppUpdateNotification_createsGroupAndChannel() {
+    firebaseAppDistributionNotificationsManager.showAppUpdateNotification(
+        1000, 900, R.string.downloading_app_update);
+    assertThat(shadowOf(notificationManager).getNotificationChannelGroup(CHANNEL_GROUP_ID))
+        .isNotNull();
+    assertThat(shadowOf(notificationManager).getNotificationChannels()).hasSize(1);
+    NotificationChannel channel =
+        (NotificationChannel) shadowOf(notificationManager).getNotificationChannels().get(0);
+    assertThat(channel.getId()).isEqualTo(APP_UPDATE.channelId);
+  }
+
+  @Test
+  public void showAppUpdateNotification_withProgress() {
+    firebaseAppDistributionNotificationsManager.showAppUpdateNotification(
         1000, 900, R.string.downloading_app_update);
     assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
-    Notification notification = shadowOf(notificationManager).getNotification(NOTIFICATION_TAG, 0);
+    Notification notification =
+        shadowOf(notificationManager).getNotification(APP_UPDATE.tag, APP_UPDATE.id);
     assertThat(shadowOf(notification).getProgress()).isEqualTo(90);
     assertThat(shadowOf(notification).getContentTitle().toString()).contains("Downloading");
   }
 
   @Test
-  public void updateNotification_withError() {
-    firebaseAppDistributionNotificationsManager.updateNotification(
+  public void showAppUpdateNotification_withError() {
+    firebaseAppDistributionNotificationsManager.showAppUpdateNotification(
         1000, 1000, R.string.download_failed);
     assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
-    Notification notification = shadowOf(notificationManager).getNotification(NOTIFICATION_TAG, 0);
+    Notification notification =
+        shadowOf(notificationManager).getNotification(APP_UPDATE.tag, APP_UPDATE.id);
     assertThat(shadowOf(notification).getProgress()).isEqualTo(100);
     assertThat(shadowOf(notification).getContentTitle().toString()).contains("Download failed");
   }
 
   @Test
-  public void updateNotification_withSuccess() {
-    firebaseAppDistributionNotificationsManager.updateNotification(
+  public void showAppUpdateNotification_withSuccess() {
+    firebaseAppDistributionNotificationsManager.showAppUpdateNotification(
         1000, 1000, R.string.download_completed);
     assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
-    Notification notification = shadowOf(notificationManager).getNotification(NOTIFICATION_TAG, 0);
+    Notification notification =
+        shadowOf(notificationManager).getNotification(APP_UPDATE.tag, APP_UPDATE.id);
     assertThat(shadowOf(notification).getProgress()).isEqualTo(100);
     assertThat(shadowOf(notification).getContentTitle().toString()).contains("Download completed");
   }
 
   @Test
-  public void updateNotification_withZeroTotalBytes_shows0Percent() {
-    firebaseAppDistributionNotificationsManager.updateNotification(
+  public void showAppUpdateNotification_withZeroTotalBytes_shows0Percent() {
+    firebaseAppDistributionNotificationsManager.showAppUpdateNotification(
         0, 0, R.string.downloading_app_update);
     assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
-    Notification notification = shadowOf(notificationManager).getNotification(NOTIFICATION_TAG, 0);
+    Notification notification =
+        shadowOf(notificationManager).getNotification(APP_UPDATE.tag, APP_UPDATE.id);
     assertThat(shadowOf(notification).getProgress()).isEqualTo(0);
+  }
+
+  @Test
+  public void showFeedbackNotification_createsGroupAndChannel() {
+    firebaseAppDistributionNotificationsManager.showFeedbackNotification(
+        "Terms and conditions", InterruptionLevel.HIGH);
+    assertThat(shadowOf(notificationManager).getNotificationChannelGroup(CHANNEL_GROUP_ID))
+        .isNotNull();
+    assertThat(shadowOf(notificationManager).getNotificationChannels()).hasSize(1);
+    NotificationChannel channel =
+        (NotificationChannel) shadowOf(notificationManager).getNotificationChannels().get(0);
+    assertThat(channel.getImportance()).isEqualTo(IMPORTANCE_HIGH);
+    assertThat(channel.getId()).isEqualTo(FEEDBACK.channelId);
+  }
+
+  @Test
+  public void showFeedbackNotification_setsIntentToScreenshotActivity() {
+    firebaseAppDistributionNotificationsManager.showFeedbackNotification(
+        "Terms and conditions", InterruptionLevel.HIGH);
+    assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
+    Notification notification =
+        shadowOf(notificationManager).getNotification(FEEDBACK.tag, FEEDBACK.id);
+    Intent expectedIntent =
+        new Intent(
+            ApplicationProvider.getApplicationContext(),
+            TakeScreenshotAndStartFeedbackActivity.class);
+    Intent actualIntent = shadowOf(notification.contentIntent).getSavedIntent();
+    assertThat(actualIntent.getComponent()).isEqualTo(expectedIntent.getComponent());
+    assertThat(
+            actualIntent.getStringExtra(TakeScreenshotAndStartFeedbackActivity.INFO_TEXT_EXTRA_KEY))
+        .isEqualTo("Terms and conditions");
+  }
+
+  @Test
+  public void showFeedbackNotification_convertsImportanceToPriority() {
+    firebaseAppDistributionNotificationsManager.showFeedbackNotification(
+        "Terms and conditions", InterruptionLevel.HIGH);
+    assertThat(shadowOf(notificationManager).size()).isEqualTo(1);
+    Notification notification =
+        shadowOf(notificationManager).getNotification(FEEDBACK.tag, FEEDBACK.id);
+    assertThat(notification.priority).isEqualTo(Notification.PRIORITY_HIGH);
   }
 }

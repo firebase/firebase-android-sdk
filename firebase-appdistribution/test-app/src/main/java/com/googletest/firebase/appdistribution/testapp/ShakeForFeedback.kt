@@ -50,7 +50,7 @@ object ShakeForFeedback : ShakeDetector.Listener, Application.ActivityLifecycleC
 
     override fun hearShake() {
         Log.i(TAG, "Shake detected")
-        Firebase.appDistribution.startFeedback(R.string.terms_and_conditions)
+        Firebase.appDistribution.startFeedback(R.string.termsAndConditions)
     }
 
     override fun onActivityResumed(activity: Activity) {
