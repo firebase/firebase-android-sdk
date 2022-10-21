@@ -14,9 +14,11 @@
 
 package com.google.firebase.appdistribution;
 
+import android.app.Activity;
 import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.internal.FirebaseAppDistributionProxy;
@@ -34,6 +36,7 @@ import com.google.firebase.appdistribution.internal.FirebaseAppDistributionProxy
  * <p>Call {@link #getInstance()} to get the singleton instance of {@link FirebaseAppDistribution}.
  */
 public interface FirebaseAppDistribution {
+
   /**
    * Updates the app to the newest release, if one is available.
    *
@@ -125,7 +128,7 @@ public interface FirebaseAppDistribution {
    * @param infoTextResourceId string resource ID of text to display to the tester before collecting
    *     feedback data (e.g. Terms and Conditions)
    */
-  void startFeedback(int infoTextResourceId);
+  void startFeedback(@StringRes int infoTextResourceId);
 
   /**
    * Takes a screenshot, and starts an activity to collect and submit feedback from the tester.
@@ -159,7 +162,7 @@ public interface FirebaseAppDistribution {
    * @param screenshot URI to a bitmap containing a screenshot that will be included with the
    *     report, or null to not include a screenshot
    */
-  void startFeedback(@NonNull int infoTextResourceId, @Nullable Uri screenshot);
+  void startFeedback(@StringRes int infoTextResourceId, @Nullable Uri screenshot);
 
   /**
    * Starts an activity to collect and submit feedback from the tester, along with the given
@@ -178,6 +181,70 @@ public interface FirebaseAppDistribution {
    *     report, or null to not include a screenshot
    */
   void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshot);
+
+  /**
+   * Displays a notification that, when tapped, will take a screenshot of the current activity, then
+   * start a new activity to collect and submit feedback from the tester along with the screenshot.
+   *
+   * <p>On Android 13 and above, this method requires the <a
+   * href="https://developer.android.com/develop/ui/views/notifications/notification-permission">runtime
+   * permission for sending notifications</a>: {@code POST_NOTIFICATIONS}. If your app targets
+   * Android 13 (API level 33) or above, you should <a
+   * href="https://developer.android.com/training/permissions/requesting">request the
+   * permission</a>.
+   *
+   * <p>When the notification is tapped:
+   *
+   * <ol>
+   *   <li>If the app is open, take a screenshot of the current activity
+   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
+   *   <li>Starts a full screen activity for the tester to compose and submit the feedback
+   * </ol>
+   *
+   * @param infoTextResourceId string resource ID of text to display to the tester before collecting
+   *     feedback data (e.g. Terms and Conditions)
+   * @param interruptionLevel the level of interruption for the feedback notification. On platforms
+   *     below Android 8, this corresponds to a notification channel importance and once set cannot
+   *     be changed except by the user.
+   */
+  void showFeedbackNotification(
+      @StringRes int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel);
+
+  /**
+   * Displays a notification that, when tapped, will take a screenshot of the current activity, then
+   * start a new activity to collect and submit feedback from the tester along with the screenshot.
+   *
+   * <p>On Android 13 and above, this method requires the <a
+   * href="https://developer.android.com/develop/ui/views/notifications/notification-permission">runtime
+   * permission for sending notifications</a>: {@code POST_NOTIFICATIONS}. If your app targets
+   * Android 13 (API level 33) or above, you should <a
+   * href="https://developer.android.com/training/permissions/requesting">request the
+   * permission</a>.
+   *
+   * <p>When the notification is tapped:
+   *
+   * <ol>
+   *   <li>If the app is open, take a screenshot of the current activity
+   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
+   *   <li>Starts a full screen activity for the tester to compose and submit the feedback
+   * </ol>
+   *
+   * @param infoText text to display to the tester before collecting feedback data (e.g. Terms and
+   *     Conditions)
+   * @param interruptionLevel the level of interruption for the feedback notification. On platforms
+   *     below Android 8, this corresponds to a notification channel importance and once set cannot
+   *     be changed except by the user.
+   */
+  void showFeedbackNotification(
+      @NonNull CharSequence infoText, @NonNull InterruptionLevel interruptionLevel);
+
+  /**
+   * Hides the notification shown with {@link #showFeedbackNotification}.
+   *
+   * <p>This should be called in the {@link Activity#onDestroy} of the activity that showed the
+   * notification.
+   */
+  void cancelFeedbackNotification();
 
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */
   @NonNull

@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager.PERMISSION_DENIED
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -15,7 +16,6 @@ import android.util.Log
 import androidx.activity.result.ActivityResultCaller
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
-import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -24,9 +24,9 @@ import com.google.firebase.ktx.Firebase
 import java.io.IOException
 
 @SuppressLint("StaticFieldLeak") // Reference to Activity is set to null in onActivityDestroyed
-object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
+object CustomNotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
   private const val TAG: String = "NotificationFeedbackTrigger"
-  private const val FEEBACK_NOTIFICATION_CHANNEL_ID = "InAppFeedbackNotification"
+  private const val FEEDBACK_NOTIFICATION_CHANNEL_ID = "InAppFeedbackNotification"
   private const val FEEDBACK_NOTIFICATION_ID = 1
 
   private var isEnabled = false
@@ -48,12 +48,12 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val channel =
         NotificationChannel(
-          FEEBACK_NOTIFICATION_CHANNEL_ID,
-          application.getString(R.string.feedback_notification_channel_name),
+          FEEDBACK_NOTIFICATION_CHANNEL_ID,
+          application.getString(R.string.feedbackTriggerNotificationChannelName),
           NotificationManager.IMPORTANCE_HIGH
         )
       channel.description =
-        application.getString(R.string.feedback_notification_channel_description)
+        application.getString(R.string.feedbackTriggerNotificationChannelDescription)
       application
         .getSystemService(NotificationManager::class.java)
         .createNotificationChannel(channel)
@@ -125,11 +125,7 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
   fun enable(activity: Activity) {
     activityToScreenshot = activity
     isEnabled = true
-    if (ContextCompat.checkSelfPermission(activity, POST_NOTIFICATIONS) == PERMISSION_GRANTED) {
-      showNotification(activity)
-    } else {
-      Log.w(TAG, "Not showing notification because permission has not been granted.")
-    }
+    showNotification(activity)
   }
 
   /** Hide notifications. */
@@ -142,8 +138,12 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
     activityToScreenshot = null
   }
 
-  @RequiresPermission(POST_NOTIFICATIONS)
   private fun showNotification(context: Context) {
+    if (ContextCompat.checkSelfPermission(context, POST_NOTIFICATIONS) == PERMISSION_DENIED) {
+      Log.w(TAG, "Not showing notification because permission has not been granted.")
+      return
+    }
+
     val intent = Intent(context, TakeScreenshotAndTriggerFeedbackActivity::class.java)
     intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
     val pendingIntent =
@@ -154,10 +154,10 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
         PendingIntent.FLAG_IMMUTABLE
       )
     val builder =
-      NotificationCompat.Builder(context, FEEBACK_NOTIFICATION_CHANNEL_ID)
+      NotificationCompat.Builder(context, FEEDBACK_NOTIFICATION_CHANNEL_ID)
         .setSmallIcon(R.mipmap.ic_launcher)
-        .setContentTitle(context.getText(R.string.feedback_notification_title))
-        .setContentText(context.getText(R.string.feedback_notification_text))
+        .setContentTitle(context.getText(R.string.feedbackTriggerNotificationTitle))
+        .setContentText(context.getText(R.string.feedbackTriggerNotificationText))
         .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setContentIntent(pendingIntent)
     val notificationManager = NotificationManagerCompat.from(context)
@@ -198,7 +198,7 @@ object NotificationFeedbackTrigger : Application.ActivityLifecycleCallbacks {
 class TakeScreenshotAndTriggerFeedbackActivity : Activity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    val activity = NotificationFeedbackTrigger.activityToScreenshot
+    val activity = CustomNotificationFeedbackTrigger.activityToScreenshot
     if (activity == null) {
       Log.e(TAG, "Can't take screenshot because activity is unknown")
       return
@@ -209,10 +209,11 @@ class TakeScreenshotAndTriggerFeedbackActivity : Activity() {
   override fun onResume() {
     super.onResume()
     val screenshotUri = Uri.fromFile(getFileStreamPath(SCREENSHOT_FILE_NAME))
-    Firebase.appDistribution.startFeedback(R.string.terms_and_conditions, screenshotUri)
+    Firebase.appDistribution.startFeedback(R.string.termsAndConditions, screenshotUri)
+    finish()
   }
 
-  fun takeScreenshot(activity: Activity) {
+  private fun takeScreenshot(activity: Activity) {
     val view = activity.window.decorView.rootView
     val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.RGB_565)
     val canvas = Canvas(bitmap)
@@ -221,9 +222,9 @@ class TakeScreenshotAndTriggerFeedbackActivity : Activity() {
       activity.openFileOutput(SCREENSHOT_FILE_NAME, Context.MODE_PRIVATE).use { outputStream ->
         bitmap.compress(Bitmap.CompressFormat.PNG, /* quality = */ 100, outputStream)
       }
-      Log.i(TAG, "Wrote screenshot to ${SCREENSHOT_FILE_NAME}")
+      Log.i(TAG, "Wrote screenshot to $SCREENSHOT_FILE_NAME")
     } catch (e: IOException) {
-      Log.e(TAG, "Can't write ${SCREENSHOT_FILE_NAME}", e)
+      Log.e(TAG, "Can't write $SCREENSHOT_FILE_NAME", e)
     }
   }
 
