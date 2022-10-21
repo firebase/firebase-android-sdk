@@ -1134,4 +1134,167 @@ public class QueryTest {
         "doc4",
         "doc6");
   }
+
+  @Test
+  public void multipleInOps() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "doc1", map("a", 1, "b", 0),
+            "doc2", map("b", 1),
+            "doc3", map("a", 3, "b", 2),
+            "doc4", map("a", 1, "b", 3),
+            "doc5", map("a", 1),
+            "doc6", map("a", 2));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+
+    // Two IN operations on different fields with disjunction.
+    Query query1 =
+        collection
+            .where(Filter.or(Filter.inArray("a", asList(2, 3)), Filter.inArray("b", asList(0, 2))))
+            .orderBy("a");
+    checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc6", "doc3");
+
+    // Two IN operations on different fields with conjunction.
+    Query query2 =
+        collection
+            .where(Filter.and(Filter.inArray("a", asList(2, 3)), Filter.inArray("b", asList(0, 2))))
+            .orderBy("a");
+    checkOnlineAndOfflineResultsMatch(query2, "doc3");
+
+    // Two IN operations on the same field.
+    // a IN [1,2,3] && a IN [0,1,4] should result in "a==1".
+    Query query3 =
+        collection.where(
+            Filter.and(Filter.inArray("a", asList(1, 2, 3)), Filter.inArray("a", asList(0, 1, 4))));
+    checkOnlineAndOfflineResultsMatch(query3, "doc1", "doc4", "doc5");
+
+    // a IN [2,3] && a IN [0,1,4] is never true and so the result should be an empty set.
+    Query query4 =
+        collection.where(
+            Filter.and(Filter.inArray("a", asList(2, 3)), Filter.inArray("a", asList(0, 1, 4))));
+    checkOnlineAndOfflineResultsMatch(query4);
+
+    // a IN [0,3] || a IN [0,2] should union them (similar to: a IN [0,2,3]).
+    Query query5 =
+        collection.where(
+            Filter.or(Filter.inArray("a", asList(0, 3)), Filter.inArray("a", asList(0, 2))));
+    checkOnlineAndOfflineResultsMatch(query5, "doc3", "doc6");
+
+    // Nested composite filter on the same field.
+    Query query6 =
+        collection.where(
+            Filter.and(
+                Filter.inArray("a", asList(1, 3)),
+                Filter.or(
+                    Filter.inArray("a", asList(0, 2)),
+                    Filter.and(
+                        Filter.greaterThanOrEqualTo("b", 1), Filter.inArray("a", asList(1, 3))))));
+    checkOnlineAndOfflineResultsMatch(query6, "doc3", "doc4");
+
+    // Nested composite filter on different fields.
+    Query query7 =
+        collection.where(
+            Filter.and(
+                Filter.inArray("b", asList(0, 3)),
+                Filter.or(
+                    Filter.inArray("b", asList(1)),
+                    Filter.and(
+                        Filter.inArray("b", asList(2, 3)), Filter.inArray("a", asList(1, 3))))));
+    checkOnlineAndOfflineResultsMatch(query7, "doc4");
+  }
+
+  @Test
+  public void useInWithArrayContainsAny() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "doc1", map("a", 1, "b", asList(0)),
+            "doc2", map("b", asList(1)),
+            "doc3", map("a", 3, "b", asList(2, 7), "c", 10),
+            "doc4", map("a", 1, "b", asList(3, 7)),
+            "doc5", map("a", 1),
+            "doc6", map("a", 2, "c", 20));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+
+    Query query1 =
+        collection.where(
+            Filter.or(
+                Filter.inArray("a", asList(2, 3)), Filter.arrayContainsAny("b", asList(0, 7))));
+    checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc3", "doc4", "doc6");
+
+    Query query2 =
+        collection.where(
+            Filter.and(
+                Filter.inArray("a", asList(2, 3)), Filter.arrayContainsAny("b", asList(0, 7))));
+    checkOnlineAndOfflineResultsMatch(query2, "doc3");
+
+    Query query3 =
+        collection.where(
+            Filter.or(
+                Filter.and(Filter.inArray("a", asList(2, 3)), Filter.equalTo("c", 10)),
+                Filter.arrayContainsAny("b", asList(0, 7))));
+    checkOnlineAndOfflineResultsMatch(query3, "doc1", "doc3", "doc4");
+
+    Query query4 =
+        collection.where(
+            Filter.and(
+                Filter.inArray("a", asList(2, 3)),
+                Filter.or(Filter.arrayContainsAny("b", asList(0, 7)), Filter.equalTo("c", 20))));
+    checkOnlineAndOfflineResultsMatch(query4, "doc3", "doc6");
+  }
+
+  @Test
+  public void useInWithArrayContains() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "doc1", map("a", 1, "b", asList(0)),
+            "doc2", map("b", asList(1)),
+            "doc3", map("a", 3, "b", asList(2, 7)),
+            "doc4", map("a", 1, "b", asList(3, 7)),
+            "doc5", map("a", 1),
+            "doc6", map("a", 2));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+
+    Query query1 =
+        collection.where(
+            Filter.or(Filter.inArray("a", asList(2, 3)), Filter.arrayContains("b", 3)));
+    checkOnlineAndOfflineResultsMatch(query1, "doc3", "doc4", "doc6");
+
+    Query query2 =
+        collection.where(
+            Filter.and(Filter.inArray("a", asList(2, 3)), Filter.arrayContains("b", 7)));
+    checkOnlineAndOfflineResultsMatch(query2, "doc3");
+
+    Query query3 =
+        collection.where(
+            Filter.or(
+                Filter.inArray("a", asList(2, 3)),
+                Filter.and(Filter.arrayContains("b", 3), Filter.equalTo("a", 1))));
+    checkOnlineAndOfflineResultsMatch(query3, "doc3", "doc4", "doc6");
+
+    Query query4 =
+        collection.where(
+            Filter.and(
+                Filter.inArray("a", asList(2, 3)),
+                Filter.or(Filter.arrayContains("b", 7), Filter.equalTo("a", 1))));
+    checkOnlineAndOfflineResultsMatch(query4, "doc3");
+  }
+
+  @Test
+  public void orderByEquality() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "doc1", map("a", 1, "b", asList(0)),
+            "doc2", map("b", asList(1)),
+            "doc3", map("a", 3, "b", asList(2, 7), "c", 10),
+            "doc4", map("a", 1, "b", asList(3, 7)),
+            "doc5", map("a", 1),
+            "doc6", map("a", 2, "c", 20));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+
+    Query query1 = collection.where(Filter.equalTo("a", 1)).orderBy("a");
+    checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc4", "doc5");
+
+    Query query2 = collection.where(Filter.inArray("a", asList(2, 3))).orderBy("a");
+    checkOnlineAndOfflineResultsMatch(query2, "doc6", "doc3");
+  }
 }
