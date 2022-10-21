@@ -18,9 +18,6 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.HOST_ACTIVITY_INTERRUPTED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.INFO_TEXT_EXTRA_KEY;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_EXTRA_KEY;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_URI_EXTRA_KEY;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskResult;
 
@@ -32,6 +29,7 @@ import android.content.Intent;
 import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -43,6 +41,7 @@ import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import com.google.firebase.appdistribution.InterruptionLevel;
 import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
@@ -68,6 +67,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private final ReleaseIdentifier releaseIdentifier;
   private final ScreenshotTaker screenshotTaker;
   private final Executor taskExecutor;
+  private final FirebaseAppDistributionNotificationsManager notificationsManager;
   private TaskCache<UpdateTask> updateIfNewReleaseAvailableTaskCache = new TaskCache<>();
   private TaskCache<Task<AppDistributionRelease>> checkForNewReleaseTaskCache = new TaskCache<>();
   @Lightweight private Executor lightweightExecutor;
@@ -78,7 +78,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private boolean remakeUpdateConfirmationDialog = false;
   private TaskCompletionSource<Void> showSignInDialogTask = null;
   private TaskCompletionSource<Void> showUpdateDialogTask = null;
-  private AtomicBoolean feedbackInProgress = new AtomicBoolean(false);
+  private final AtomicBoolean feedbackInProgress = new AtomicBoolean(false);
 
   @VisibleForTesting
   FirebaseAppDistributionImpl(
@@ -105,6 +105,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     this.lightweightExecutor = lightweightExecutor;
     this.screenshotTaker = screenshotTaker;
     this.taskExecutor = taskExecutor;
+    this.notificationsManager =
+        new FirebaseAppDistributionNotificationsManager(firebaseApp.getApplicationContext());
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
     lifecycleNotifier.addOnActivityPausedListener(this::onActivityPaused);
     lifecycleNotifier.addOnActivityResumedListener(this::onActivityResumed);
@@ -314,7 +316,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback(int infoTextResourceId) {
+  public void startFeedback(@StringRes int infoTextResourceId) {
     // TODO(lkellogg): Once we have the real FeedbackActivity view implemented, we should write a
     // test that checks that <a> tags are preserved
     startFeedback(firebaseApp.getApplicationContext().getText(infoTextResourceId));
@@ -341,8 +343,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback(@NonNull int infoTextResourceId, @Nullable Uri screenshotUri) {
-    startFeedback(firebaseApp.getApplicationContext().getText(infoTextResourceId), screenshotUri);
+  public void startFeedback(@StringRes int infoTextResourceId, @Nullable Uri screenshotUri) {
+    startFeedback(getText(infoTextResourceId), screenshotUri);
   }
 
   @Override
@@ -353,6 +355,23 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       return;
     }
     doStartFeedback(infoText, screenshotUri);
+  }
+
+  @Override
+  public void showFeedbackNotification(
+      @StringRes int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel) {
+    showFeedbackNotification(getText(infoTextResourceId), interruptionLevel);
+  }
+
+  @Override
+  public void showFeedbackNotification(
+      @NonNull CharSequence infoText, @NonNull InterruptionLevel interruptionLevel) {
+    notificationsManager.showFeedbackNotification(infoText, interruptionLevel);
+  }
+
+  @Override
+  public void cancelFeedbackNotification() {
+    notificationsManager.cancelFeedbackNotification();
   }
 
   private void doStartFeedback(CharSequence infoText, @Nullable Uri screenshotUri) {
@@ -380,10 +399,10 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         activity -> {
           LogWrapper.getInstance().i("Launching feedback activity");
           Intent intent = new Intent(activity, FeedbackActivity.class);
-          intent.putExtra(RELEASE_NAME_EXTRA_KEY, releaseName);
-          intent.putExtra(INFO_TEXT_EXTRA_KEY, infoText);
+          intent.putExtra(FeedbackActivity.RELEASE_NAME_EXTRA_KEY, releaseName);
+          intent.putExtra(FeedbackActivity.INFO_TEXT_EXTRA_KEY, infoText);
           if (screenshotUri != null) {
-            intent.putExtra(SCREENSHOT_URI_EXTRA_KEY, screenshotUri.toString());
+            intent.putExtra(FeedbackActivity.SCREENSHOT_URI_EXTRA_KEY, screenshotUri.toString());
           }
           activity.startActivity(intent);
         });
@@ -553,5 +572,9 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     return (showUpdateDialogTask != null
         && !showUpdateDialogTask.getTask().isComplete()
         && remakeUpdateConfirmationDialog);
+  }
+
+  private CharSequence getText(int resourceId) {
+    return firebaseApp.getApplicationContext().getText(resourceId);
   }
 }
