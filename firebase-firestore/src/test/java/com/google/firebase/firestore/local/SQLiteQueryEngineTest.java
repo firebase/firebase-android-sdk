@@ -397,4 +397,145 @@ public class SQLiteQueryEngineTest extends QueryEngineTestCase {
         expectOptimizedCollectionScan(() -> runQuery(query3, SnapshotVersion.NONE));
     assertEquals(docSet(query3.comparator(), doc4), result3);
   }
+
+  @Test
+  public void queryInWithArrayContainsAny() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 1, "b", Arrays.asList(0)));
+    MutableDocument doc2 = doc("coll/2", 1, map("b", Arrays.asList(1)));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 3, "b", Arrays.asList(2, 7), "c", 10));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 1, "b", Arrays.asList(3, 7)));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 1));
+    MutableDocument doc6 = doc("coll/6", 1, map("a", 2, "c", 20));
+    addDocument(doc1, doc2, doc3, doc4, doc5, doc6);
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.DESCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "b", Kind.CONTAINS));
+    indexManager.updateIndexEntries(docMap(doc1, doc2, doc3, doc4, doc5, doc6));
+    indexManager.updateCollectionGroup("coll", IndexOffset.fromDocument(doc6));
+
+    Query query1 =
+        query("coll")
+            .filter(
+                orFilters(
+                    filter("a", "in", Arrays.asList(2, 3)),
+                    filter("b", "array-contains-any", Arrays.asList(0, 7))));
+    DocumentSet result1 =
+        expectOptimizedCollectionScan(() -> runQuery(query1, SnapshotVersion.NONE));
+    assertEquals(docSet(query1.comparator(), doc1, doc3, doc4, doc6), result1);
+
+    Query query2 =
+        query("coll")
+            .filter(
+                andFilters(
+                    filter("a", "in", Arrays.asList(2, 3)),
+                    filter("b", "array-contains-any", Arrays.asList(0, 7))));
+
+    DocumentSet result2 =
+        expectOptimizedCollectionScan(() -> runQuery(query2, SnapshotVersion.NONE));
+    assertEquals(docSet(query2.comparator(), doc3), result2);
+
+    Query query3 =
+        query("coll")
+            .filter(
+                orFilters(
+                    andFilters(filter("a", "in", Arrays.asList(2, 3)), filter("c", "==", 10)),
+                    filter("b", "array-contains-any", Arrays.asList(0, 7))));
+    DocumentSet result3 =
+        expectOptimizedCollectionScan(() -> runQuery(query3, SnapshotVersion.NONE));
+    assertEquals(docSet(query3.comparator(), doc1, doc3, doc4), result3);
+
+    Query query4 =
+        query("coll")
+            .filter(
+                andFilters(
+                    filter("a", "in", Arrays.asList(2, 3)),
+                    orFilters(
+                        filter("b", "array-contains-any", Arrays.asList(0, 7)),
+                        filter("c", "==", 20))));
+    DocumentSet result4 =
+        expectOptimizedCollectionScan(() -> runQuery(query4, SnapshotVersion.NONE));
+    assertEquals(docSet(query4.comparator(), doc3, doc6), result4);
+  }
+
+  @Test
+  public void queryInWithArrayContains() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 1, "b", Arrays.asList(0)));
+    MutableDocument doc2 = doc("coll/2", 1, map("b", Arrays.asList(1)));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 3, "b", Arrays.asList(2, 7), "c", 10));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 1, "b", Arrays.asList(3, 7)));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 1));
+    MutableDocument doc6 = doc("coll/6", 1, map("a", 2, "c", 20));
+    addDocument(doc1, doc2, doc3, doc4, doc5, doc6);
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.DESCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "b", Kind.CONTAINS));
+    indexManager.updateIndexEntries(docMap(doc1, doc2, doc3, doc4, doc5, doc6));
+    indexManager.updateCollectionGroup("coll", IndexOffset.fromDocument(doc6));
+
+    Query query1 =
+        query("coll")
+            .filter(
+                orFilters(
+                    filter("a", "in", Arrays.asList(2, 3)), filter("b", "array-contains", 3)));
+    DocumentSet result1 =
+        expectOptimizedCollectionScan(() -> runQuery(query1, SnapshotVersion.NONE));
+    assertEquals(docSet(query1.comparator(), doc3, doc4, doc6), result1);
+
+    Query query2 =
+        query("coll")
+            .filter(
+                andFilters(
+                    filter("a", "in", Arrays.asList(2, 3)), filter("b", "array-contains", 7)));
+
+    DocumentSet result2 =
+        expectOptimizedCollectionScan(() -> runQuery(query2, SnapshotVersion.NONE));
+    assertEquals(docSet(query2.comparator(), doc3), result2);
+
+    Query query3 =
+        query("coll")
+            .filter(
+                orFilters(
+                    filter("a", "in", Arrays.asList(2, 3)),
+                    andFilters(filter("b", "array-contains", 3), filter("a", "==", 1))));
+    DocumentSet result3 =
+        expectOptimizedCollectionScan(() -> runQuery(query3, SnapshotVersion.NONE));
+    assertEquals(docSet(query3.comparator(), doc3, doc4, doc6), result3);
+
+    Query query4 =
+        query("coll")
+            .filter(
+                andFilters(
+                    filter("a", "in", Arrays.asList(2, 3)),
+                    orFilters(filter("b", "array-contains", 7), filter("a", "==", 1))));
+    DocumentSet result4 =
+        expectOptimizedCollectionScan(() -> runQuery(query4, SnapshotVersion.NONE));
+    assertEquals(docSet(query4.comparator(), doc3), result4);
+  }
+
+  @Test
+  public void orderByEquality() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 1, "b", Arrays.asList(0)));
+    MutableDocument doc2 = doc("coll/2", 1, map("b", Arrays.asList(1)));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 3, "b", Arrays.asList(2, 7), "c", 10));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 1, "b", Arrays.asList(3, 7)));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 1));
+    MutableDocument doc6 = doc("coll/6", 1, map("a", 2, "c", 20));
+    addDocument(doc1, doc2, doc3, doc4, doc5, doc6);
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.DESCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "b", Kind.CONTAINS));
+    indexManager.updateIndexEntries(docMap(doc1, doc2, doc3, doc4, doc5, doc6));
+    indexManager.updateCollectionGroup("coll", IndexOffset.fromDocument(doc6));
+
+    Query query1 = query("coll").filter(filter("a", "==", 1)).orderBy(orderBy("a"));
+    DocumentSet result1 =
+        expectOptimizedCollectionScan(() -> runQuery(query1, SnapshotVersion.NONE));
+    assertEquals(docSet(query1.comparator(), doc1, doc4, doc5), result1);
+
+    Query query2 =
+        query("coll").filter(filter("a", "in", Arrays.asList(2, 3))).orderBy(orderBy("a"));
+    DocumentSet result2 =
+        expectOptimizedCollectionScan(() -> runQuery(query2, SnapshotVersion.NONE));
+    assertEquals(docSet(query2.comparator(), doc6, doc3), result2);
+  }
 }
