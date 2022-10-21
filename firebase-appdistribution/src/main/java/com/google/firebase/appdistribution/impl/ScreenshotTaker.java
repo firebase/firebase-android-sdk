@@ -19,8 +19,10 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.net.Uri;
 import android.view.View;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
@@ -59,7 +61,7 @@ class ScreenshotTaker {
    * Take a screenshot of the running host app and write it to a file.
    *
    * @return a {@link Task} that will complete with the file URI in app-level storage where the
-   *     screenshot was written.
+   *     screenshot was written, or null if no activity could be found to screenshot.
    */
   Task<Uri> takeScreenshot() {
     return deleteScreenshot()
@@ -79,8 +81,15 @@ class ScreenshotTaker {
 
   @VisibleForTesting
   Task<Bitmap> captureScreenshot() {
-    return lifecycleNotifier.applyToForegroundActivity(
+    return lifecycleNotifier.applyToNullableForegroundActivity(
+        // Ignore TakeScreenshotAndStartFeedbackActivity class if it's the current activity
+        TakeScreenshotAndStartFeedbackActivity.class,
         activity -> {
+          if (activity == null) {
+            // TakeScreenshotAndStartFeedbackActivity was the current activity and there was no
+            // active previous activity
+            return null;
+          }
           // We only take the screenshot here because this will be called on the main thread, so we
           // want to do as little work as possible
           try {
@@ -97,7 +106,10 @@ class ScreenshotTaker {
         });
   }
 
-  private Task<Uri> writeToFile(Bitmap bitmap) {
+  private Task<Uri> writeToFile(@Nullable Bitmap bitmap) {
+    if (bitmap == null) {
+      return Tasks.forResult(null);
+    }
     return TaskUtils.runAsyncInTask(
         taskExecutor,
         () -> {
