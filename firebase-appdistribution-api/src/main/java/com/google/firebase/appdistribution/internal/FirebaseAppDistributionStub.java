@@ -19,6 +19,7 @@ import android.app.Activity;
 import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -31,6 +32,7 @@ import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import com.google.firebase.appdistribution.InterruptionLevel;
 import com.google.firebase.appdistribution.OnProgressListener;
 import com.google.firebase.appdistribution.UpdateTask;
 import java.util.concurrent.Executor;
@@ -76,16 +78,27 @@ public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback(int infoTextResourceId) {}
+  public void startFeedback(@StringRes int infoTextResourceId) {}
 
   @Override
   public void startFeedback(@NonNull CharSequence infoText) {}
 
   @Override
-  public void startFeedback(@NonNull int infoTextResourceId, @Nullable Uri screenshotUri) {}
+  public void startFeedback(@StringRes int infoTextResourceId, @Nullable Uri screenshotUri) {}
 
   @Override
   public void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri) {}
+
+  @Override
+  public void showFeedbackNotification(
+      @StringRes int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel) {}
+
+  @Override
+  public void showFeedbackNotification(
+      @NonNull CharSequence infoText, @NonNull InterruptionLevel interruptionLevel) {}
+
+  @Override
+  public void cancelFeedbackNotification() {}
 
   private static <TResult> Task<TResult> getNotImplementedTask() {
     return Tasks.forException(
