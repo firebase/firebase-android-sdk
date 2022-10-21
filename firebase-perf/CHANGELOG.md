@@ -1,6 +1,8 @@
 # Unreleased
 
-* 
+* [fixed] Fixed a `NullPointerException` crash when instrumenting screen traces
+  on Android 7, 8, and 9.
+  (#4146)
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
