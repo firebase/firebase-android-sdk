@@ -1,10 +1,10 @@
 <resources>
-    <string name="app_name">App Distro Sample</string>
-    <string name="terms_and_conditions"><b>Before giving feedback</b> you might want to check out the <a href="https://policies.google.com/terms">Terms and Conditions</a></string>
+    <string name="appName">App Distro Sample</string>
+    <string name="termsAndConditions"><b>Before giving feedback</b> you might want to check out the <a href="https://policies.google.com/terms">Terms and Conditions</a></string>
     <string name="feedbackTriggerMenuLabel">Choose a feedback trigger</string>
     <string name="startFeedbackLabel">Start feedback</string>
-    <string name="feedback_notification_title">We want your Feedback!</string>
-    <string name="feedback_notification_text">Click to leave feedback for the App Distro Sample App</string>
-    <string name="feedback_notification_channel_name">Feedback Notification</string>
-    <string name="feedback_notification_channel_description">Used to trigger Feedback</string>
+    <string name="feedbackTriggerNotificationTitle">We want your Feedback!</string>
+    <string name="feedbackTriggerNotificationText">This is a custom notification shown by the App Distro Sample App</string>
+    <string name="feedbackTriggerNotificationChannelName">Feedback notification</string>
+    <string name="feedbackTriggerNotificationChannelDescription">Used to trigger feedback</string>
 </resources>

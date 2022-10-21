@@ -309,7 +309,7 @@ class ApkUpdater {
               .build());
     }
     if (showNotification) {
-      appDistributionNotificationsManager.updateNotification(
+      appDistributionNotificationsManager.showAppUpdateNotification(
           totalBytes, downloadedBytes, stringResourceId);
     }
   }
