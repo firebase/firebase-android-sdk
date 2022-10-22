@@ -14,9 +14,11 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.toDataMap;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -25,13 +27,20 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.Collections;
 
 @RunWith(AndroidJUnit4.class)
 public class CountTest {
@@ -252,5 +261,24 @@ public class CountTest {
     waitFor(collection.getFirestore().enableNetwork());
     AggregateQuerySnapshot snapshot = waitFor(collection.count().get(AggregateSource.SERVER));
     assertEquals(3L, snapshot.getCount());
+  }
+
+  @Test
+  public void testFailWithGoodMessageIfMissingIndex() {
+    assumeFalse(
+        "Skip this test when running against the Firestore emulator because the Firestore emulator "
+            + "does not use indexes and never fails with a 'missing index' error",
+        BuildConfig.USE_EMULATOR_FOR_TESTS);
+
+    CollectionReference collection = testCollectionWithDocs(Collections.emptyMap());
+    Query compositeIndexQuery = collection.whereEqualTo("field1", 42).whereLessThan("field2", 99);
+    AggregateQuery compositeIndexCountQuery = compositeIndexQuery.count();
+    Task<AggregateQuerySnapshot> task = compositeIndexCountQuery.get(AggregateSource.SERVER);
+
+    Throwable throwable = assertThrows(Throwable.class, () -> waitFor(task));
+
+    Throwable cause = throwable.getCause();
+    assertThat(cause).hasMessageThat().ignoringCase().contains("index");
+    assertThat(cause).hasMessageThat().contains("https://console.firebase.google.com");
   }
 }
