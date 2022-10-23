@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.toDataMap;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -32,15 +31,12 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
+import java.util.Collections;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.util.Collections;
 
 @RunWith(AndroidJUnit4.class)
 public class CountTest {
