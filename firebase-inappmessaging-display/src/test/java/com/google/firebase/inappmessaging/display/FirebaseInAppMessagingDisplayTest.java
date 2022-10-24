@@ -87,11 +87,13 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 import org.robolectric.shadows.ShadowActivity;
 import org.robolectric.shadows.ShadowPackageManager;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 21, qualifiers = "port")
+@LooperMode(LooperMode.Mode.LEGACY)
 public class FirebaseInAppMessagingDisplayTest {
 
   private com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay fiamUI;
