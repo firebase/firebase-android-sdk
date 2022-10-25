@@ -575,11 +575,14 @@ public class ConfigFetchHandler {
           lastFetchETag);
     }
 
-    public static FetchResponse forBackendHasNoUpdates(Date fetchTime) {
+    // Passing in param fetchedConfigs because it contains templateVersion but no other active
+    // fields.
+    public static FetchResponse forBackendHasNoUpdates(
+        Date fetchTime, ConfigContainer fetchedConfigs) {
       return new FetchResponse(
           fetchTime,
           Status.BACKEND_HAS_NO_UPDATES,
-          /*fetchedConfigs=*/ null,
+          /*fetchedConfigs=*/ fetchedConfigs,
           /*lastFetchETag=*/ null);
     }
 
