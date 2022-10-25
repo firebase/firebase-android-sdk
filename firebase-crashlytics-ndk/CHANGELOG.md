@@ -1,7 +1,15 @@
 # Unreleased
 
-# 18.2.14
-* [changed] Updated `firebase-crashlytics` dependency to v18.2.14.
+# 18.3.1
+* [changed] Updated `firebase-crashlytics` dependency to v18.3.1.
+
+# 18.3.0
+Warning: We're aware of an
+[issue](https://github.com/firebase/firebase-android-sdk/issues/4223){: .external}
+in the [crashlytics] Android SDK v18.3.0.<br>**We strongly recommend
+using the latest version of the SDK (v18.3.1+ or [bom] v31.0.1+).**
+
+* [changed] Updated `firebase-crashlytics` dependency to v18.3.0.
 
 # 18.2.13
 * [changed] Updated dependency of `play-services-basement` to its latest
