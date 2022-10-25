@@ -1,4 +1,5 @@
 # Unreleased
+Fix Firestore failing to raise initial snapshot from empty local cache result.
 
 # 24.4.0
 * [unchanged] Updated to accommodate the release of the updated

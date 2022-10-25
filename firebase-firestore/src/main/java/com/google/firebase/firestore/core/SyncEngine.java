@@ -226,7 +226,6 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       Query mirrorQuery = this.queriesByTarget.get(targetId).get(0);
       currentTargetSyncState = this.queryViewsByQuery.get(mirrorQuery).getView().getSyncState();
     }
-    ;
     synthesizedCurrentChange =
         TargetChange.createSynthesizedTargetChangeForCurrentChange(
             currentTargetSyncState == SyncState.SYNCED, resumeToken);

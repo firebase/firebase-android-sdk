@@ -300,8 +300,11 @@ public class View {
     boolean syncStatedChanged = newSyncState != syncState;
     syncState = newSyncState;
     ViewSnapshot snapshot = null;
+
     if (viewChanges.size() != 0 || syncStatedChanged) {
       boolean fromCache = newSyncState == SyncState.LOCAL;
+      boolean hasCachedResults =
+          targetChange == null ? false : !targetChange.getResumeToken().isEmpty();
       snapshot =
           new ViewSnapshot(
               query,
@@ -312,9 +315,7 @@ public class View {
               docChanges.mutatedKeys,
               syncStatedChanged,
               /* excludesMetadataChanges= */ false,
-              /* hasCachedResults= */ targetChange == null
-                  ? false
-                  : !targetChange.getResumeToken().isEmpty());
+              hasCachedResults);
     }
     return new ViewChange(snapshot, limboDocumentChanges);
   }
