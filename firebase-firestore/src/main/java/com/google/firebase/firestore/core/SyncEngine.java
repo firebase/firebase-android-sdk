@@ -225,10 +225,11 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     if (this.queriesByTarget.get(targetId) != null) {
       Query mirrorQuery = this.queriesByTarget.get(targetId).get(0);
       currentTargetSyncState = this.queryViewsByQuery.get(mirrorQuery).getView().getSyncState();
-      synthesizedCurrentChange =
-          TargetChange.createSynthesizedTargetChangeForCurrentChange(
-              currentTargetSyncState == SyncState.SYNCED, resumeToken);
     }
+    ;
+    synthesizedCurrentChange =
+        TargetChange.createSynthesizedTargetChangeForCurrentChange(
+            currentTargetSyncState == SyncState.SYNCED, resumeToken);
 
     // TODO(wuandy): Investigate if we can extract the logic of view change computation and
     // update tracked limbo in one place, and have both emitNewSnapsAndNotifyLocalStore

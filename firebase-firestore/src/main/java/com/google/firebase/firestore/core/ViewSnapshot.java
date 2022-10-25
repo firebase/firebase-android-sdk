@@ -174,6 +174,7 @@ public class ViewSnapshot {
     result = 31 * result + (isFromCache ? 1 : 0);
     result = 31 * result + (didSyncStateChange ? 1 : 0);
     result = 31 * result + (excludesMetadataChanges ? 1 : 0);
+    result = 31 * result + (hasCachedResults ? 1 : 0);
     return result;
   }
 
