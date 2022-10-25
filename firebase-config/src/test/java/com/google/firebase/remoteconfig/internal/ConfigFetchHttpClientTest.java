@@ -161,13 +161,15 @@ public class ConfigFetchHttpClientTest {
   }
 
   @Test
-  public void fetch_noChange_responseNotSet() throws Exception {
+  public void fetch_noChange_responseOnlyContainsTemplateVersion() throws Exception {
     setServerResponseTo(noChangeResponseBody, SECOND_ETAG);
 
     FetchResponse response = fetch(SECOND_ETAG);
 
     assertThat(response.getLastFetchETag()).isNull();
     assertThat(response.getFetchedConfigs()).isNotNull();
+    assertThat(response.getFetchedConfigs().getTemplateVersionNumber()).isNotNull();
+    assertThat(response.getFetchedConfigs().getConfigs().length()).isEqualTo(0);
   }
 
   @Test
