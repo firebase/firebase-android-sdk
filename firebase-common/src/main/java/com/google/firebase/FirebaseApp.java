@@ -426,15 +426,21 @@ public class FirebaseApp {
     FirebaseTrace.popTrace(); // ComponentDiscovery
 
     FirebaseTrace.pushTrace("Runtime");
-    componentRuntime =
+    ComponentRuntime.Builder builder =
         ComponentRuntime.builder(UI_EXECUTOR)
             .addLazyComponentRegistrars(registrars)
             .addComponentRegistrar(new FirebaseCommonRegistrar())
             .addComponent(Component.of(applicationContext, Context.class))
             .addComponent(Component.of(this, FirebaseApp.class))
             .addComponent(Component.of(options, FirebaseOptions.class))
-            .setProcessor(new ComponentMonitor())
-            .build();
+            .setProcessor(new ComponentMonitor());
+
+    // Don't provide StartupTime in direct boot mode
+    if (UserManagerCompat.isUserUnlocked(applicationContext)) {
+      builder.addComponent(Component.of(StartupTime.now(), StartupTime.class));
+    }
+
+    componentRuntime = builder.build();
     FirebaseTrace.popTrace(); // Runtime
 
     dataCollectionConfigStorage =

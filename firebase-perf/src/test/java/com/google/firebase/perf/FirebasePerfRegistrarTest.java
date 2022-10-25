@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.StartupTime;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.installations.FirebaseInstallationsApi;
@@ -35,9 +36,7 @@ public class FirebasePerfRegistrarTest {
     FirebasePerfRegistrar firebasePerfRegistrar = new FirebasePerfRegistrar();
     List<Component<?>> components = firebasePerfRegistrar.getComponents();
 
-    // Note: Although we have 3 deps but looks like size doesn't count deps towards interface like
-    // FirebaseInstallationsApi
-    assertThat(components).hasSize(2);
+    assertThat(components).hasSize(3);
 
     Component<?> firebasePerfComponent = components.get(0);
 
@@ -49,5 +48,13 @@ public class FirebasePerfRegistrarTest {
             Dependency.requiredProvider(TransportFactory.class));
 
     assertThat(firebasePerfComponent.isLazy()).isTrue();
+
+    Component<?> firebasePerfEarlyComponent = components.get(1);
+
+    assertThat(firebasePerfEarlyComponent.getDependencies())
+        .containsExactly(
+            Dependency.required(FirebaseApp.class), Dependency.optionalProvider(StartupTime.class));
+
+    assertThat(firebasePerfEarlyComponent.isLazy()).isFalse();
   }
 }

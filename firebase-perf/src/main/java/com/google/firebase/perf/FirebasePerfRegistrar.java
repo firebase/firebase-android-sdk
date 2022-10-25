@@ -17,6 +17,7 @@ package com.google.firebase.perf;
 import androidx.annotation.Keep;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.StartupTime;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
@@ -54,6 +55,13 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .add(Dependency.requiredProvider(TransportFactory.class))
             .factory(FirebasePerfRegistrar::providesFirebasePerformance)
             .build(),
+        Component.builder(FirebasePerfEarly.class)
+            .name(LIBRARY_NAME)
+            .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.optionalProvider(StartupTime.class))
+            .alwaysEager()
+            .factory(FirebasePerfRegistrar::providesFirebasePerformanceEarly)
+            .build(),
         /**
          * Fireperf SDK is lazily by {@link FirebasePerformanceInitializer} during {@link
          * com.google.firebase.perf.application.AppStateMonitor#onActivityResumed(Activity)}. we use
@@ -76,5 +84,9 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .build();
 
     return component.getFirebasePerformance();
+  }
+
+  private static FirebasePerfEarly providesFirebasePerformanceEarly(ComponentContainer container) {
+    return new FirebasePerfEarly(container.get(FirebaseApp.class));
   }
 }

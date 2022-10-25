@@ -22,9 +22,10 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.StartupTime;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.logging.AndroidLogger;
-import com.google.firebase.perf.provider.FirebasePerfProvider;
 import com.google.firebase.perf.util.Optional;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
@@ -93,8 +94,12 @@ public class RemoteConfigManager {
         firebaseRemoteConfig == null
             ? new ConcurrentHashMap<>()
             : new ConcurrentHashMap<>(firebaseRemoteConfig.getAll());
-    this.appStartTimeInMs =
-        TimeUnit.MICROSECONDS.toMillis(FirebasePerfProvider.getAppStartTime().getMicros());
+    StartupTime startupTime = FirebaseApp.getInstance().get(StartupTime.class);
+    if (startupTime != null) {
+      this.appStartTimeInMs = startupTime.getEpochMillis();
+    } else {
+      this.appStartTimeInMs = System.currentTimeMillis();
+    }
     this.appStartConfigFetchDelayInMs = appStartConfigFetchDelayInMs;
   }
 
