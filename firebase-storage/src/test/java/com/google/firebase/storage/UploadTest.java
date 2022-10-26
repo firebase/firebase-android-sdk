@@ -100,6 +100,36 @@ public class UploadTest {
     TestUtil.verifyTaskStateChanges("smallTextUpload", task.getResult().toString());
   }
 
+  /**
+   * This test will replicate uploadChunk() returning 500's and test to make sure the retries are
+   * limited and using exponential backoff. If the maxretry limit is not checked, then the await
+   * task will time out.
+   *
+   * @throws Exception
+   */
+  @Test
+  public void fileUploadWith500() throws Exception {
+
+    System.out.println("Starting test fileUploadWith500.");
+
+    MockConnectionFactory factory = NetworkLayerMock.ensureNetworkMock("fileUploadWith500", true);
+
+    String filename = TEST_ASSET_ROOT + "image.jpg";
+    ClassLoader classLoader = UploadTest.class.getClassLoader();
+    InputStream imageStream = classLoader.getResourceAsStream(filename);
+    Uri sourceFile = Uri.parse("file://" + filename);
+
+    ContentResolver resolver = ApplicationProvider.getApplicationContext().getContentResolver();
+    Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
+
+    Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "image.jpg");
+
+    TestUtil.await(task, 3, TimeUnit.MINUTES);
+
+    factory.verifyOldMock();
+    TestUtil.verifyTaskStateChanges("fileUploadWith500", task.getResult().toString());
+  }
+
   @Test
   public void cantUploadToRoot() throws Exception {
     System.out.println("Starting test cantUploadToRoot.");
@@ -130,12 +160,13 @@ public class UploadTest {
         });
 
     // TODO(mrschmidt): Lower the timeout
-    TestUtil.await(task, 300, TimeUnit.SECONDS);
+    TestUtil.await(task, 1, TimeUnit.MINUTES);
 
     try {
       task.getResult();
       Assert.fail();
     } catch (RuntimeExecutionException e) {
+      // Note: This test can be flaky due to the fact that the second .getCause() may be null.
       Assert.assertEquals(taskException.get().getCause(), e.getCause().getCause());
     }
 
@@ -263,7 +294,7 @@ public class UploadTest {
     Task<StringBuilder> task = TestUploadHelper.byteUploadCancel();
 
     // TODO(mrschmidt): Lower the timeout
-    TestUtil.await(task, 500, TimeUnit.SECONDS);
+    TestUtil.await(task, 1000, TimeUnit.SECONDS);
 
     factory.verifyOldMock();
     TestUtil.verifyTaskStateChanges("cancelledUpload", task.getResult().toString());
@@ -466,7 +497,7 @@ public class UploadTest {
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "flubbertest.jpg");
 
-    TestUtil.await(task, 5, TimeUnit.SECONDS);
+    TestUtil.await(task, 4, TimeUnit.MINUTES);
 
     factory.verifyOldMock();
     TestUtil.verifyTaskStateChanges("fileUploadRecovery", task.getResult().toString());
@@ -489,7 +520,7 @@ public class UploadTest {
 
     Task<StringBuilder> task = TestUploadHelper.fileUpload(sourceFile, "flubbertest.jpg");
 
-    TestUtil.await(task, 5, TimeUnit.SECONDS);
+    TestUtil.await(task);
 
     factory.verifyOldMock();
     TestUtil.verifyTaskStateChanges("fileUploadNoRecovery", task.getResult().toString());

@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
@@ -40,10 +41,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 
 /** Tests for {@link DefaultFirebaseAppCheck}. */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
+@LooperMode(LooperMode.Mode.LEGACY)
 public class DefaultFirebaseAppCheckTest {
 
   private static final String EXCEPTION_TEXT = "exceptionText";
@@ -74,7 +77,10 @@ public class DefaultFirebaseAppCheckTest {
     when(mockAppCheckProvider.getToken()).thenReturn(Tasks.forResult(validDefaultAppCheckToken));
 
     defaultFirebaseAppCheck =
-        new DefaultFirebaseAppCheck(mockFirebaseApp, () -> mockHeartBeatController);
+        new DefaultFirebaseAppCheck(
+            mockFirebaseApp,
+            () -> mockHeartBeatController,
+            MoreExecutors.newDirectExecutorService());
   }
 
   @Test

@@ -17,6 +17,7 @@ package com.google.android.datatransport.runtime.scheduling.jobscheduling;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.runtime.EncodedPayload;
@@ -111,7 +112,8 @@ public class Uploader {
         });
   }
 
-  BackendResponse logAndUpdateState(TransportContext transportContext, int attemptNumber) {
+  @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  public BackendResponse logAndUpdateState(TransportContext transportContext, int attemptNumber) {
     TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
     long maxNextRequestWaitMillis = 0;
 

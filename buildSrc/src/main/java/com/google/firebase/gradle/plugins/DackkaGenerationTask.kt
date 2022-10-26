@@ -3,6 +3,7 @@ package com.google.firebase.gradle.plugins
 import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
@@ -27,8 +28,7 @@ import org.json.JSONObject
  *
  * @property dackkaJarFile a [File] of the Dackka fat jar
  * @property dependencies a list of all dependent jars (the classpath)
- * @property kotlinSources a list of kotlin source roots
- * @property javaSources a list of java source roots
+ * @property sources a list of source roots
  * @property suppressedFiles a list of files to exclude from documentation
  * @property outputDirectory where to store the generated files
  */
@@ -38,15 +38,11 @@ abstract class GenerateDocumentationTaskExtension : DefaultTask() {
     abstract val dackkaJarFile: Property<File>
 
     @get:[InputFiles Classpath]
-    abstract val dependencies: ListProperty<File>
+    abstract val dependencies: Property<FileCollection>
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val kotlinSources: ListProperty<File>
-
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val javaSources: ListProperty<File>
+    abstract val sources: ListProperty<File>
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -105,7 +101,7 @@ abstract class GenerateDocumentationTask @Inject constructor(
                     "scopeId" to "androidx",
                     "sourceSetName" to "main"
                 ),
-                "sourceRoots" to kotlinSources.get().map { it.path } + javaSources.get().map { it.path },
+                "sourceRoots" to sources.get().map { it.path },
                 "classpath" to dependencies.get().map { it.path },
                 "documentedVisibilities" to listOf("PUBLIC", "PROTECTED"),
                 "skipEmptyPackages" to "true",
