@@ -640,4 +640,206 @@ public abstract class QueryEngineTestCase {
         expectFullCollectionScan(() -> runQuery(query2, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
     assertEquals(docSet(query2.comparator(), doc1, doc4, doc6), result2);
   }
+
+  @Test
+  public void queryWithMultipleInsOnTheSameField() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 1, "b", 0));
+    MutableDocument doc2 = doc("coll/2", 1, map("b", 1));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 3, "b", 2));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 1, "b", 3));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 1));
+    MutableDocument doc6 = doc("coll/6", 1, map("a", 2));
+    addDocument(doc1, doc2, doc3, doc4, doc5, doc6);
+
+    // a IN [1,2,3] && a IN [0,1,4] should result in "a==1".
+    Query query1 =
+        query("coll")
+            .filter(
+                andFilters(
+                    filter("a", "in", Arrays.asList(1, 2, 3)),
+                    filter("a", "in", Arrays.asList(0, 1, 4))));
+    DocumentSet result1 =
+        expectFullCollectionScan(() -> runQuery(query1, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query1.comparator(), doc1, doc4, doc5), result1);
+
+    // a IN [2,3] && a IN [0,1,4] is never true and so the result should be an empty set.
+    Query query2 =
+        query("coll")
+            .filter(
+                andFilters(
+                    filter("a", "in", Arrays.asList(2, 3)),
+                    filter("a", "in", Arrays.asList(0, 1, 4))));
+    DocumentSet result2 =
+        expectFullCollectionScan(() -> runQuery(query2, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query2.comparator()), result2);
+
+    // a IN [0,3] || a IN [0,2] should union them (similar to: a IN [0,2,3]).
+    Query query3 =
+        query("coll")
+            .filter(
+                orFilters(
+                    filter("a", "in", Arrays.asList(0, 3)),
+                    filter("a", "in", Arrays.asList(0, 2))));
+
+    DocumentSet result3 =
+        expectFullCollectionScan(() -> runQuery(query3, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query3.comparator(), doc3, doc6), result3);
+  }
+
+  @Test
+  public void queryWithMultipleInsOnDifferentFields() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 1, "b", 0));
+    MutableDocument doc2 = doc("coll/2", 1, map("b", 1));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 3, "b", 2));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 1, "b", 3));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 1));
+    MutableDocument doc6 = doc("coll/6", 1, map("a", 2));
+    addDocument(doc1, doc2, doc3, doc4, doc5, doc6);
+
+    Query query1 =
+        query("coll")
+            .filter(
+                orFilters(
+                    filter("a", "in", Arrays.asList(2, 3)),
+                    filter("b", "in", Arrays.asList(0, 2))));
+    DocumentSet result1 =
+        expectFullCollectionScan(() -> runQuery(query1, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query1.comparator(), doc1, doc3, doc6), result1);
+
+    Query query2 =
+        query("coll")
+            .filter(
+                andFilters(
+                    filter("a", "in", Arrays.asList(2, 3)),
+                    filter("b", "in", Arrays.asList(0, 2))));
+    DocumentSet result2 =
+        expectFullCollectionScan(() -> runQuery(query2, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query2.comparator(), doc3), result2);
+  }
+
+  @Test
+  public void queryInWithArrayContainsAny() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 1, "b", Arrays.asList(0)));
+    MutableDocument doc2 = doc("coll/2", 1, map("b", Arrays.asList(1)));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 3, "b", Arrays.asList(2, 7), "c", 10));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 1, "b", Arrays.asList(3, 7)));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 1));
+    MutableDocument doc6 = doc("coll/6", 1, map("a", 2, "c", 20));
+    addDocument(doc1, doc2, doc3, doc4, doc5, doc6);
+
+    Query query1 =
+        query("coll")
+            .filter(
+                orFilters(
+                    filter("a", "in", Arrays.asList(2, 3)),
+                    filter("b", "array-contains-any", Arrays.asList(0, 7))));
+    DocumentSet result1 =
+        expectFullCollectionScan(() -> runQuery(query1, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query1.comparator(), doc1, doc3, doc4, doc6), result1);
+
+    Query query2 =
+        query("coll")
+            .filter(
+                andFilters(
+                    filter("a", "in", Arrays.asList(2, 3)),
+                    filter("b", "array-contains-any", Arrays.asList(0, 7))));
+
+    DocumentSet result2 =
+        expectFullCollectionScan(() -> runQuery(query2, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query2.comparator(), doc3), result2);
+
+    Query query3 =
+        query("coll")
+            .filter(
+                orFilters(
+                    andFilters(filter("a", "in", Arrays.asList(2, 3)), filter("c", "==", 10)),
+                    filter("b", "array-contains-any", Arrays.asList(0, 7))));
+    DocumentSet result3 =
+        expectFullCollectionScan(() -> runQuery(query3, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query3.comparator(), doc1, doc3, doc4), result3);
+
+    Query query4 =
+        query("coll")
+            .filter(
+                andFilters(
+                    filter("a", "in", Arrays.asList(2, 3)),
+                    orFilters(
+                        filter("b", "array-contains-any", Arrays.asList(0, 7)),
+                        filter("c", "==", 20))));
+    DocumentSet result4 =
+        expectFullCollectionScan(() -> runQuery(query4, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query4.comparator(), doc3, doc6), result4);
+  }
+
+  @Test
+  public void queryInWithArrayContains() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 1, "b", Arrays.asList(0)));
+    MutableDocument doc2 = doc("coll/2", 1, map("b", Arrays.asList(1)));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 3, "b", Arrays.asList(2, 7), "c", 10));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 1, "b", Arrays.asList(3, 7)));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 1));
+    MutableDocument doc6 = doc("coll/6", 1, map("a", 2, "c", 20));
+    addDocument(doc1, doc2, doc3, doc4, doc5, doc6);
+
+    Query query1 =
+        query("coll")
+            .filter(
+                orFilters(
+                    filter("a", "in", Arrays.asList(2, 3)), filter("b", "array-contains", 3)));
+    DocumentSet result1 =
+        expectFullCollectionScan(() -> runQuery(query1, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query1.comparator(), doc3, doc4, doc6), result1);
+
+    Query query2 =
+        query("coll")
+            .filter(
+                andFilters(
+                    filter("a", "in", Arrays.asList(2, 3)), filter("b", "array-contains", 7)));
+
+    DocumentSet result2 =
+        expectFullCollectionScan(() -> runQuery(query2, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query2.comparator(), doc3), result2);
+
+    Query query3 =
+        query("coll")
+            .filter(
+                orFilters(
+                    filter("a", "in", Arrays.asList(2, 3)),
+                    andFilters(filter("b", "array-contains", 3), filter("a", "==", 1))));
+    DocumentSet result3 =
+        expectFullCollectionScan(() -> runQuery(query3, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query3.comparator(), doc3, doc4, doc6), result3);
+
+    Query query4 =
+        query("coll")
+            .filter(
+                andFilters(
+                    filter("a", "in", Arrays.asList(2, 3)),
+                    orFilters(filter("b", "array-contains", 7), filter("a", "==", 1))));
+    DocumentSet result4 =
+        expectFullCollectionScan(() -> runQuery(query4, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query4.comparator(), doc3), result4);
+  }
+
+  @Test
+  public void orderByEquality() throws Exception {
+    MutableDocument doc1 = doc("coll/1", 1, map("a", 1, "b", Arrays.asList(0)));
+    MutableDocument doc2 = doc("coll/2", 1, map("b", Arrays.asList(1)));
+    MutableDocument doc3 = doc("coll/3", 1, map("a", 3, "b", Arrays.asList(2, 7), "c", 10));
+    MutableDocument doc4 = doc("coll/4", 1, map("a", 1, "b", Arrays.asList(3, 7)));
+    MutableDocument doc5 = doc("coll/5", 1, map("a", 1));
+    MutableDocument doc6 = doc("coll/6", 1, map("a", 2, "c", 20));
+    addDocument(doc1, doc2, doc3, doc4, doc5, doc6);
+
+    Query query1 = query("coll").filter(filter("a", "==", 1)).orderBy(orderBy("a"));
+    DocumentSet result1 =
+        expectFullCollectionScan(() -> runQuery(query1, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query1.comparator(), doc1, doc4, doc5), result1);
+
+    Query query2 =
+        query("coll").filter(filter("a", "in", Arrays.asList(2, 3))).orderBy(orderBy("a"));
+    DocumentSet result2 =
+        expectFullCollectionScan(() -> runQuery(query2, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
+    assertEquals(docSet(query2.comparator(), doc6, doc3), result2);
+  }
 }
