@@ -48,6 +48,12 @@ inline fun <T> Trace.trace(block: Trace.() -> T): T {
     }
 }
 
+/**
+ * Creates a [Trace] object with given [name] and measures the time it takes to
+ * run the [block] wrapped by calls to [start] and [stop].
+ */
+inline fun <T> trace(name: String, block: Trace.() -> T): T = Trace.create(name).trace(block)
+
 internal const val LIBRARY_NAME: String = "fire-perf-ktx"
 
 /** @suppress */
