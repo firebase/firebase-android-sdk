@@ -108,7 +108,8 @@ public class QueryListenerTest {
             snap2.isFromCache(),
             snap2.getMutatedKeys(),
             /* didSyncStateChange= */ true,
-            /* excludesMetadataChanges= */ false);
+            /* excludesMetadataChanges= */ false,
+            /* hasCachedResults= */ false);
     assertEquals(asList(snap2Prime), otherAccum);
   }
 
@@ -262,7 +263,8 @@ public class QueryListenerTest {
             snap4.isFromCache(),
             snap4.getMutatedKeys(),
             snap4.didSyncStateChange(),
-            /* excludeMetadataChanges= */ true); // This test excludes document metadata changes
+            /* excludeMetadataChanges= */ true,
+            /* hasCachedResults= */ false); // This test excludes document metadata changes
 
     assertEquals(
         asList(
@@ -302,7 +304,9 @@ public class QueryListenerTest {
             snap2.isFromCache(),
             snap2.getMutatedKeys(),
             snap2.didSyncStateChange(),
-            /* excludesMetadataChanges= */ true);
+            /* excludesMetadataChanges= */ true,
+            /* hasCachedResults= */ false);
+
     assertEquals(
         asList(applyExpectedMetadata(snap1, MetadataChanges.EXCLUDE), expectedSnapshot2),
         filteredAccum);
@@ -344,7 +348,8 @@ public class QueryListenerTest {
             /* isFromCache= */ false,
             snap3.getMutatedKeys(),
             /* didSyncStateChange= */ true,
-            /* excludesMetadataChanges= */ true);
+            /* excludesMetadataChanges= */ true,
+            /* hasCachedResults= */ false);
     assertEquals(asList(expectedSnapshot), events);
   }
 
@@ -382,7 +387,9 @@ public class QueryListenerTest {
             /* isFromCache= */ true,
             snap1.getMutatedKeys(),
             /* didSyncStateChange= */ true,
-            /* excludesMetadataChanges= */ true);
+            /* excludesMetadataChanges= */ true,
+            /* hasCachedResults= */ false);
+
     ViewSnapshot expectedSnapshot2 =
         new ViewSnapshot(
             snap2.getQuery(),
@@ -392,7 +399,8 @@ public class QueryListenerTest {
             /* isFromCache= */ true,
             snap2.getMutatedKeys(),
             /* didSyncStateChange= */ false,
-            /* excludesMetadataChanges= */ true);
+            /* excludesMetadataChanges= */ true,
+            /* hasCachedResults= */ false);
     assertEquals(asList(expectedSnapshot1, expectedSnapshot2), events);
   }
 
@@ -419,7 +427,8 @@ public class QueryListenerTest {
             /* isFromCache= */ true,
             snap1.getMutatedKeys(),
             /* didSyncStateChange= */ true,
-            /* excludesMetadataChanges= */ true);
+            /* excludesMetadataChanges= */ true,
+            /* hasCachedResults= */ false);
     assertEquals(asList(expectedSnapshot), events);
   }
 
@@ -445,7 +454,8 @@ public class QueryListenerTest {
             /* isFromCache= */ true,
             snap1.getMutatedKeys(),
             /* didSyncStateChange= */ true,
-            /* excludesMetadataChanges= */ true);
+            /* excludesMetadataChanges= */ true,
+            /* hasCachedResults= */ false);
     assertEquals(asList(expectedSnapshot), events);
   }
 
@@ -458,6 +468,7 @@ public class QueryListenerTest {
         snap.isFromCache(),
         snap.getMutatedKeys(),
         snap.didSyncStateChange(),
-        MetadataChanges.EXCLUDE.equals(metadata));
+        MetadataChanges.EXCLUDE.equals(metadata),
+        snap.hasCachedResults());
   }
 }

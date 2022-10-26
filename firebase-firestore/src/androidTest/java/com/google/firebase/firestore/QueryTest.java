@@ -551,6 +551,50 @@ public class QueryTest {
   }
 
   @Test
+  public void testQueriesCanRaiseInitialSnapshotFromCachedEmptyResults() {
+    CollectionReference collectionReference = testCollection();
+
+    // Populate the cache with empty query result.
+    QuerySnapshot querySnapshotA = waitFor(collectionReference.get());
+    assertFalse(querySnapshotA.getMetadata().isFromCache());
+    assertEquals(asList(), querySnapshotToValues(querySnapshotA));
+
+    // Add a snapshot listener whose first event should be raised from cache.
+    EventAccumulator<QuerySnapshot> accum = new EventAccumulator<>();
+    ListenerRegistration listenerRegistration =
+        collectionReference.addSnapshotListener(accum.listener());
+    QuerySnapshot querySnapshotB = accum.await();
+    assertTrue(querySnapshotB.getMetadata().isFromCache());
+    assertEquals(asList(), querySnapshotToValues(querySnapshotB));
+
+    listenerRegistration.remove();
+  }
+
+  @Test
+  public void testQueriesCanRaiseInitialSnapshotFromEmptyDueToDeleteCachedResults() {
+    Map<String, Map<String, Object>> testDocs = map("a", map("foo", 1L));
+    CollectionReference collectionReference = testCollectionWithDocs(testDocs);
+    // Populate the cache with single document.
+    QuerySnapshot querySnapshotA = waitFor(collectionReference.get());
+    assertFalse(querySnapshotA.getMetadata().isFromCache());
+    assertEquals(asList(testDocs.get("a")), querySnapshotToValues(querySnapshotA));
+
+    // delete the document, make cached result empty.
+    DocumentReference docRef = collectionReference.document("a");
+    waitFor(docRef.delete());
+
+    // Add a snapshot listener whose first event should be raised from cache.
+    EventAccumulator<QuerySnapshot> accum = new EventAccumulator<>();
+    ListenerRegistration listenerRegistration =
+        collectionReference.addSnapshotListener(accum.listener());
+    QuerySnapshot querySnapshotB = accum.await();
+    assertTrue(querySnapshotB.getMetadata().isFromCache());
+    assertEquals(asList(), querySnapshotToValues(querySnapshotB));
+
+    listenerRegistration.remove();
+  }
+
+  @Test
   public void testQueriesCanUseNotEqualFilters() {
     // These documents are ordered by value in "zip" since the notEquals filter is an inequality,
     // which results in documents being sorted by value.

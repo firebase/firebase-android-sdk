@@ -56,21 +56,26 @@ public class QuerySnapshotTest {
     ObjectValue firstValue = wrapObject("a", 1);
     ObjectValue secondValue = wrapObject("b", 1);
 
-    QuerySnapshot foo = TestUtil.querySnapshot("foo", map(), map("a", firstValue), true, false);
-    QuerySnapshot fooDup = TestUtil.querySnapshot("foo", map(), map("a", firstValue), true, false);
+    QuerySnapshot foo =
+        TestUtil.querySnapshot("foo", map(), map("a", firstValue), true, false, false);
+    QuerySnapshot fooDup =
+        TestUtil.querySnapshot("foo", map(), map("a", firstValue), true, false, false);
     QuerySnapshot differentPath =
-        TestUtil.querySnapshot("bar", map(), map("a", firstValue), true, false);
+        TestUtil.querySnapshot("bar", map(), map("a", firstValue), true, false, false);
     QuerySnapshot differentDoc =
-        TestUtil.querySnapshot("foo", map(), map("a", secondValue), true, false);
+        TestUtil.querySnapshot("foo", map(), map("a", secondValue), true, false, false);
     QuerySnapshot noPendingWrites =
-        TestUtil.querySnapshot("foo", map(), map("a", firstValue), false, false);
+        TestUtil.querySnapshot("foo", map(), map("a", firstValue), false, false, false);
     QuerySnapshot fromCache =
-        TestUtil.querySnapshot("foo", map(), map("a", firstValue), true, true);
+        TestUtil.querySnapshot("foo", map(), map("a", firstValue), true, true, false);
+    QuerySnapshot hasCachedResults =
+        TestUtil.querySnapshot("foo", map(), map("a", firstValue), true, false, true);
     assertEquals(foo, fooDup);
     assertNotEquals(foo, differentPath);
     assertNotEquals(foo, differentDoc);
     assertNotEquals(foo, noPendingWrites);
     assertNotEquals(foo, fromCache);
+    assertNotEquals(foo, hasCachedResults);
 
     // Note: `foo` and `differentDoc` have the same hash code since we no longer take document
     // contents into account.
@@ -88,7 +93,8 @@ public class QuerySnapshotTest {
 
     ObjectValue objectData =
         ObjectValue.fromMap(map("timestamp", ServerTimestamps.valueOf(Timestamp.now(), null)));
-    QuerySnapshot foo = TestUtil.querySnapshot("foo", map(), map("a", objectData), true, false);
+    QuerySnapshot foo =
+        TestUtil.querySnapshot("foo", map(), map("a", objectData), true, false, false);
 
     List<POJO> docs = foo.toObjects(POJO.class);
     assertEquals(1, docs.size());
@@ -126,7 +132,8 @@ public class QuerySnapshotTest {
             /*isFromCache=*/ false,
             /*mutatedKeys=*/ keySet(),
             /*didSyncStateChange=*/ true,
-            /* excludesMetadataChanges= */ false);
+            /* excludesMetadataChanges= */ false,
+            /* hasCachedResults= */ false);
 
     QuerySnapshot snapshot =
         new QuerySnapshot(new Query(fooQuery, firestore), viewSnapshot, firestore);
