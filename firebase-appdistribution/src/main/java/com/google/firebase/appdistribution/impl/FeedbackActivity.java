@@ -23,7 +23,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.method.LinkMovementMethod;
 import android.view.View;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -72,9 +71,7 @@ public class FeedbackActivity extends AppCompatActivity {
     infoTextView.setMovementMethod(LinkMovementMethod.getInstance());
 
     findViewById(R.id.backButton).setOnClickListener(v -> finish());
-
-    Button sendButton = this.findViewById(R.id.sendButton);
-    sendButton.setOnClickListener(this::submitFeedback);
+    findViewById(R.id.sendButton).setOnClickListener(this::submitFeedback);
 
     Bitmap screenshot = screenshotUri == null ? null : readScreenshot();
     if (screenshot != null) {
