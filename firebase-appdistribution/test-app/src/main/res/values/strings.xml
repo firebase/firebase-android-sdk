@@ -1,6 +1,6 @@
 <resources>
     <string name="appName">App Distro Sample</string>
-    <string name="termsAndConditions"><b>Before giving feedback</b> you might want to check out the <a href="https://policies.google.com/terms">Terms and Conditions</a></string>
+    <string name="feedbackInfoText">This is a placeholder for text from the developer that is shown to the tester before they provide feedback. It can contain <a href="https://firebase.google.com/docs/app-distribution">links</a> to more information.</string>
     <string name="feedbackTriggerMenuLabel">Choose a feedback trigger</string>
     <string name="startFeedbackLabel">Start feedback</string>
     <string name="feedbackTriggerNotificationTitle">We want your Feedback!</string>
