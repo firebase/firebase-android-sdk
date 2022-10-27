@@ -47,8 +47,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var progressBar: ProgressBar
     lateinit var feedbackTriggerMenu: TextInputLayout
 
-    var updateTask: Task<Void>? = null
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
