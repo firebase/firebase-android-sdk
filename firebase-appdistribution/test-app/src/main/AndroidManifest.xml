@@ -18,6 +18,7 @@
       </intent-filter>
     </activity>
     <activity android:name="com.googletest.firebase.appdistribution.testapp.SecondActivity" />
+    <activity android:name="com.googletest.firebase.appdistribution.testapp.ScreenshotDetectionActivity" />
     <activity android:name="com.googletest.firebase.appdistribution.testapp.TakeScreenshotAndTriggerFeedbackActivity" />
   </application>
 </manifest>
