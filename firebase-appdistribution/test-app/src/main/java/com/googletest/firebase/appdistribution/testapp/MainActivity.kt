@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity() {
                 FeedbackTrigger.SHAKE.label -> {
                     disableAllFeedbackTriggers()
                     Log.i(TAG, "Enabling shake for feedback trigger")
-                    ShakeForFeedback.enable(application, this)
+                    ShakeDetectionFeedbackTrigger.enable(application, this)
                 }
                 FeedbackTrigger.SCREENSHOT.label -> {
                     disableAllFeedbackTriggers()
@@ -125,7 +125,7 @@ class MainActivity : AppCompatActivity() {
         Log.i(TAG, "Disabling all feedback triggers")
         firebaseAppDistribution.cancelFeedbackNotification()
         CustomNotificationFeedbackTrigger.disable()
-        ShakeForFeedback.disable(application)
+        ShakeDetectionFeedbackTrigger.disable(application)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
