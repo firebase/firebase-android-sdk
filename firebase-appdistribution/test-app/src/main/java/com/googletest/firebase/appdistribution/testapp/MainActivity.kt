@@ -96,7 +96,7 @@ class MainActivity : AppCompatActivity() {
                     disableAllFeedbackTriggers()
                     Log.i(TAG, "Enabling notification trigger (SDK)")
                     firebaseAppDistribution.showFeedbackNotification(
-                        R.string.termsAndConditions, InterruptionLevel.HIGH)
+                        R.string.feedbackInfoText, InterruptionLevel.HIGH)
                 }
                 FeedbackTrigger.CUSTOM_NOTIFICATION.label -> {
                     disableAllFeedbackTriggers()
@@ -110,8 +110,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 FeedbackTrigger.SCREENSHOT.label -> {
                     disableAllFeedbackTriggers()
-                    Log.i(TAG, "Enabling screenshot detection trigger")
-                    ScreenshotDetectionFeedbackTrigger.enable()
+                    startActivity(Intent(this, ScreenshotDetectionActivity::class.java))
+                    // Set the selection back to None since once we're back to this activity the
+                    // trigger will be disabled
+                    autoCompleteTextView.setText(FeedbackTrigger.NONE.label, false)
                 }
             }
         }
@@ -127,7 +129,6 @@ class MainActivity : AppCompatActivity() {
         firebaseAppDistribution.cancelFeedbackNotification()
         CustomNotificationFeedbackTrigger.disable()
         ShakeForFeedback.disable(application)
-        ScreenshotDetectionFeedbackTrigger.disable()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -139,7 +140,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.startFeedbackMenuItem -> {
-                Firebase.appDistribution.startFeedback(R.string.termsAndConditions)
+                Firebase.appDistribution.startFeedback(R.string.feedbackInfoText)
                 true
             }
             else -> super.onOptionsItemSelected(item)
