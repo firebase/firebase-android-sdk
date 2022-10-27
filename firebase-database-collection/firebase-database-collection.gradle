@@ -18,6 +18,7 @@ plugins {
 
 firebaseLibrary {
     publishSources = true
+    publishJavadoc = false
 }
 
 android {

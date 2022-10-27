@@ -53,6 +53,7 @@ public class FirebaseStorage {
   @Nullable private final Provider<InternalAppCheckTokenProvider> mAppCheckProvider;
   @Nullable private final String mBucketName;
   private long sMaxUploadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
+  private long sMaxChunkUploadRetry = DateUtils.MINUTE_IN_MILLIS; //  60 * 1000
   private long sMaxDownloadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
   private long sMaxQueryRetry = 2 * DateUtils.MINUTE_IN_MILLIS; //  2 * 60 * 1000
 
@@ -224,6 +225,25 @@ public class FirebaseStorage {
    */
   public void setMaxUploadRetryTimeMillis(long maxTransferRetryMillis) {
     sMaxUploadRetry = maxTransferRetryMillis;
+  }
+
+  /**
+   * Returns the maximum time to retry sending a chunk if a failure occurs
+   *
+   * @return maximum time in milliseconds. Defaults to 1 minute.
+   */
+  public long getMaxChunkUploadRetry() {
+    return sMaxChunkUploadRetry;
+  }
+
+  /**
+   * Sets the maximum time to retry sending a chunk if a failure occurs
+   *
+   * @param maxChunkRetryMillis the maximum time in milliseconds. Defaults to 1 minute (60,000
+   *     milliseconds).
+   */
+  public void setMaxChunkUploadRetry(long maxChunkRetryMillis) {
+    sMaxChunkUploadRetry = maxChunkRetryMillis;
   }
 
   /**

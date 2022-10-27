@@ -81,6 +81,7 @@ import java.util.concurrent.Future;
 import java.util.function.Predicate;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -679,6 +680,7 @@ public class FirebaseAppDistributionServiceImplTest {
     verify(activity, times(1)).startActivity(any());
   }
 
+  @Ignore("Currently flaky - it occasionally fails because getNextStartedActivity() returns null")
   @Test
   public void startFeedback_withUri_doesNotTakeScreenshot() throws InterruptedException {
     when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));

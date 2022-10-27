@@ -23,6 +23,7 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
@@ -68,7 +69,7 @@ abstract class GenerateStubsTask : DefaultTask() {
     @get:InputFiles
     abstract val sources: SetProperty<File>
 
-    @get:InputFiles
+    @get:[InputFiles Classpath]
     lateinit var classPath: FileCollection
 
     @get:OutputDirectory

@@ -27,7 +27,8 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity() {
-    val firebaseAppDistribution = Firebase.appDistribution
+    var firebaseAppDistribution = Firebase.appDistribution
+    var updateTask: Task<Void>? = null
     val executorService: ExecutorService = Executors.newFixedThreadPool(1)
 
     lateinit var signInButton: AppCompatButton
@@ -45,8 +46,6 @@ class MainActivity : AppCompatActivity() {
     lateinit var progressPercent: TextView
     lateinit var progressBar: ProgressBar
     lateinit var feedbackTriggerMenu: TextInputLayout
-
-    var updateTask: Task<Void>? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
