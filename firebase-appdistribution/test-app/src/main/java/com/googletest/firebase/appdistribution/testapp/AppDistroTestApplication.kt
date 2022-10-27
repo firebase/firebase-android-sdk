@@ -7,7 +7,6 @@ class AppDistroTestApplication : Application() {
         super.onCreate()
 
         // Perform any required trigger initialization here
-        ScreenshotDetectionFeedbackTrigger.initialize(this, R.string.termsAndConditions)
         CustomNotificationFeedbackTrigger.initialize(this);
 
         // Default feedback triggers can optionally be enabled application-wide here
