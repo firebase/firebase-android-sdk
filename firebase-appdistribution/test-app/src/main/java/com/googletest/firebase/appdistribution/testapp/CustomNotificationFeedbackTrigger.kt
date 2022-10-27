@@ -209,7 +209,7 @@ class TakeScreenshotAndTriggerFeedbackActivity : Activity() {
   override fun onResume() {
     super.onResume()
     val screenshotUri = Uri.fromFile(getFileStreamPath(SCREENSHOT_FILE_NAME))
-    Firebase.appDistribution.startFeedback(R.string.termsAndConditions, screenshotUri)
+    Firebase.appDistribution.startFeedback(R.string.feedbackInfoText, screenshotUri)
     finish()
   }
 
