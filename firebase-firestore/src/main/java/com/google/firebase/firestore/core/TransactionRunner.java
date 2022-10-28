@@ -95,11 +95,13 @@ public class TransactionRunner<TResult> {
 
   private static boolean isRetryableTransactionError(Exception e) {
     if (e instanceof FirebaseFirestoreException) {
-      // In transactions, the backend will fail outdated reads with FAILED_PRECONDITION and
-      // non-matching document versions with ABORTED. These errors should be retried.
+      // In transactions, the backend will fail outdated reads with FAILED_PRECONDITION,non-matching
+      // document versions with ABORTED, and attempts to create already exists with ALREADY_EXISTS.
+      // These errors should be retried.
       FirebaseFirestoreException.Code code = ((FirebaseFirestoreException) e).getCode();
       return code == FirebaseFirestoreException.Code.ABORTED
           || code == FirebaseFirestoreException.Code.FAILED_PRECONDITION
+          || code == FirebaseFirestoreException.Code.ALREADY_EXISTS
           || !Datastore.isPermanentError(((FirebaseFirestoreException) e).getCode());
     }
     return false;
