@@ -1,5 +1,6 @@
 # Unreleased
-- [fixed] Fix FAILED_PRECONDITION when writing to a deleted document in a transaction. Ported from web SDK  (#5871).JMASW N
+- [fixed] Fix FAILED_PRECONDITION when writing to a deleted document in a transaction. Ported from web SDK.
+  See the [issue report in GitHub](https://github.com/firebase/firebase-js-sdk/issues/5871).
 - [fixed] Fixed Firestore failing to raise initial snapshot from empty local cache result.
 
 # 24.4.0
@@ -11,7 +12,6 @@
 The Kotlin extensions library transitively includes the updated
   `firebase-firestore` library. The Kotlin extensions library has the following
   additional updates:
-SDEW
 * [feature] Firebase now supports Kotlin coroutines.
   With this release, we added
   [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}

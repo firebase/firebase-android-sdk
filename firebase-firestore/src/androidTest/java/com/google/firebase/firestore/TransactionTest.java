@@ -250,11 +250,6 @@ public class TransactionTest {
     tt.withExistingDoc().run(get, set1, set2).expectDoc(map("foo", "bar2"));
   }
 
-  // This test is identical to the test above, except that withNonexistentDoc()
-  // is replaced by withDeletedDoc(), to guard against regression of
-  // https://github.com/firebase/firebase-js-sdk/issues/5871, where transactions
-  // would incorrectly fail with FAILED_PRECONDITION when operations were
-  // performed on a deleted document (rather than a non-existent document).
   @Test
   public void testRunsTransactionsAfterGettingNonexistentDoc() {
     FirebaseFirestore firestore = testFirestore();
@@ -273,6 +268,11 @@ public class TransactionTest {
     tt.withNonexistentDoc().run(get, set1, set2).expectDoc(map("foo", "bar2"));
   }
 
+  // This test is identical to the test above, except that withNonexistentDoc()
+  // is replaced by withDeletedDoc(), to guard against regression of
+  // https://github.com/firebase/firebase-js-sdk/issues/5871, where transactions
+  // would incorrectly fail with FAILED_PRECONDITION when operations were
+  // performed on a deleted document (rather than a non-existent document).
   @Test
   public void testRunsTransactionsAfterGettingDeletedDoc() {
     FirebaseFirestore firestore = testFirestore();
