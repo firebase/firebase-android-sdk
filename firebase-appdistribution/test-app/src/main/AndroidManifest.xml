@@ -19,6 +19,7 @@
     </activity>
     <activity android:name="com.googletest.firebase.appdistribution.testapp.SecondActivity" />
     <activity android:name="com.googletest.firebase.appdistribution.testapp.ScreenshotDetectionActivity" />
-    <activity android:name="com.googletest.firebase.appdistribution.testapp.TakeScreenshotAndTriggerFeedbackActivity" />
+    <activity android:name="com.googletest.firebase.appdistribution.testapp.CustomNotificationActivity" />
+    <activity android:name="com.googletest.firebase.appdistribution.testapp.CustomNotificationTakeScreenshotActivity" />
   </application>
 </manifest>

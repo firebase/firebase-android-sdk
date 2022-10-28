@@ -66,10 +66,6 @@ class MainActivity : AppCompatActivity() {
         signInStatus = findViewById(R.id.sign_in_status)
         progressBar = findViewById(R.id.progress_bar)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            CustomNotificationFeedbackTrigger.requestPermission(this)
-        }
-
         // Set up feedback trigger menu
         feedbackTriggerMenu = findViewById(R.id.feedbackTriggerMenu)
         val items = listOf(
@@ -97,8 +93,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 FeedbackTrigger.CUSTOM_NOTIFICATION.label -> {
                     disableAllFeedbackTriggers()
-                    Log.i(TAG, "Enabling notification trigger (custom)")
-                    CustomNotificationFeedbackTrigger.enable(this)
+                    startActivity(Intent(this, CustomNotificationActivity::class.java))
                 }
                 FeedbackTrigger.SHAKE.label -> {
                     disableAllFeedbackTriggers()
@@ -108,9 +103,6 @@ class MainActivity : AppCompatActivity() {
                 FeedbackTrigger.SCREENSHOT.label -> {
                     disableAllFeedbackTriggers()
                     startActivity(Intent(this, ScreenshotDetectionActivity::class.java))
-                    // Set the selection back to None since once we're back to this activity the
-                    // trigger will be disabled
-                    autoCompleteTextView.setText(FeedbackTrigger.NONE.label, false)
                 }
             }
         }
@@ -124,7 +116,6 @@ class MainActivity : AppCompatActivity() {
     private fun disableAllFeedbackTriggers() {
         Log.i(TAG, "Disabling all feedback triggers")
         firebaseAppDistribution.cancelFeedbackNotification()
-        CustomNotificationFeedbackTrigger.disable()
         ShakeDetectionFeedbackTrigger.disable(application)
     }
 
