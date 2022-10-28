@@ -10,7 +10,7 @@ class AppDistroTestApplication : Application() {
         CustomNotificationFeedbackTrigger.initialize(this);
 
         // Default feedback triggers can optionally be enabled application-wide here
-//        ShakeForFeedback.enable(this)
+//        ShakeDetectionFeedbackTrigger.enable(this)
 //        ScreenshotDetectionFeedbackTrigger.enable()
 //        NotificationFeedbackTrigger.enable()
     }
