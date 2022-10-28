@@ -14,14 +14,14 @@
 
 package com.google.firebase;
 
+import android.os.SystemClock;
 import com.google.auto.value.AutoValue;
 
 /**
  * Represents the time at which Firebase began initialization, both in unix time/epoch milliseconds
- * and in nanoseconds since the startup of the JVM. The absence of a StartupTime indicates an
- * unreliable or misleading time, such as a launch in direct boot mode. Because of this, StartupTime
- * cannot be guarenteed to be present, and instead should be optionally depended on, and its absence
- * handled.
+ * and in milliseconds since boot. The absence of a StartupTime indicates an unreliable or
+ * misleading time, such as a launch in direct boot mode. Because of this, StartupTime cannot be
+ * guaranteed to be present, and instead should be optionally depended on, and its absence handled.
  */
 @AutoValue
 public abstract class StartupTime {
@@ -29,22 +29,19 @@ public abstract class StartupTime {
   /** @return The epoch time that Firebase began initializing, in milliseconds */
   public abstract long getEpochMillis();
 
-  /**
-   * @return The number of nanoseconds from the start of the program to when Firebase began
-   *     initializing, measured by the JVM
-   */
-  public abstract long getStartupNanos();
+  /** @return The number of milliseconds from boot to when Firebase began initializing */
+  public abstract long getElapsedRealtime();
 
   /**
    * @param epochMillis Time in milliseconds since epoch
-   * @param startupNanos Time in nanoseconds since JVM start
+   * @param elapsedRealtime Time in milliseconds since boot
    */
-  public static StartupTime create(long epochMillis, long startupNanos) {
-    return new AutoValue_StartupTime(epochMillis, startupNanos);
+  public static StartupTime create(long epochMillis, long elapsedRealtime) {
+    return new AutoValue_StartupTime(epochMillis, elapsedRealtime);
   }
 
   /** @return A StartupTime represented by the current epoch time and JVM nano time */
   public static StartupTime now() {
-    return create(System.currentTimeMillis(), System.nanoTime());
+    return create(System.currentTimeMillis(), SystemClock.elapsedRealtime());
   }
 }

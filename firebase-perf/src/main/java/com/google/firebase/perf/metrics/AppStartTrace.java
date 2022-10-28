@@ -171,8 +171,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     if (startupTime == null) {
       firebaseStartupTime = new Timer();
     }
-    firebaseStartupTime =
-        Timer.ofElapsedRealtime(TimeUnit.NANOSECONDS.toMillis(startupTime.getStartupNanos()));
+    firebaseStartupTime = Timer.ofElapsedRealtime(startupTime.getElapsedRealtime());
   }
 
   /** Called from FirebasePerfEarly to register this callback. */

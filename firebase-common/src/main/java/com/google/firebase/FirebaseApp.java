@@ -416,6 +416,7 @@ public class FirebaseApp {
     this.applicationContext = Preconditions.checkNotNull(applicationContext);
     this.name = Preconditions.checkNotEmpty(name);
     this.options = Preconditions.checkNotNull(options);
+    StartupTime startupTime = StartupTime.now();
 
     FirebaseTrace.pushTrace("Firebase");
 
@@ -437,7 +438,7 @@ public class FirebaseApp {
 
     // Don't provide StartupTime in direct boot mode
     if (UserManagerCompat.isUserUnlocked(applicationContext)) {
-      builder.addComponent(Component.of(StartupTime.now(), StartupTime.class));
+      builder.addComponent(Component.of(startupTime, StartupTime.class));
     }
 
     componentRuntime = builder.build();

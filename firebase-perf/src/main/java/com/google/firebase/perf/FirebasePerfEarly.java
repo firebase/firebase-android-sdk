@@ -33,11 +33,6 @@ import com.google.firebase.perf.session.SessionManager;
 public class FirebasePerfEarly {
   private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-  @NonNull
-  public static FirebasePerfEarly getInstance() {
-    return FirebaseApp.getInstance().get(FirebasePerfEarly.class);
-  }
-
   public FirebasePerfEarly(FirebaseApp app) {
     Context context = app.getApplicationContext();
 

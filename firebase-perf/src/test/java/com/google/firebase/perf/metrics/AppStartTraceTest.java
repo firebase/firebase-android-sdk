@@ -97,8 +97,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     traceArgumentCaptor = ArgumentCaptor.forClass(TraceMetric.class);
     appStart =
         Timer.ofElapsedRealtime(
-            TimeUnit.NANOSECONDS.toMillis(
-                FirebaseApp.getInstance().get(StartupTime.class).getStartupNanos()));
+            FirebaseApp.getInstance().get(StartupTime.class).getElapsedRealtime());
   }
 
   @After

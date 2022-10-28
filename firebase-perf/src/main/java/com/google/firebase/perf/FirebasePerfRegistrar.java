@@ -59,7 +59,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.optionalProvider(StartupTime.class))
-            .alwaysEager()
+            .eagerInDefaultApp()
             .factory(FirebasePerfRegistrar::providesFirebasePerformanceEarly)
             .build(),
         /**
