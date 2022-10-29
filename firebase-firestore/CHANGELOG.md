@@ -2,8 +2,10 @@
 - [fixed] Fixed Firestore failing to raise initial snapshot from empty local cache result.
 
 # 24.4.0
-* [unchanged] Updated to accommodate the release of the updated
-  [firestore] Kotlin extensions library.
+* [feature] Added
+  [`Query.count()`](/docs/reference/android/com/google/firebase/firestore/Query#count()),
+  which fetches the number of documents in the result set without actually
+  downloading the documents.
 
 
 ## Kotlin
@@ -27,7 +29,6 @@ The Kotlin extensions library transitively includes the updated
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library.
-
 # 24.3.0
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).

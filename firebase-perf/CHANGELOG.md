@@ -1,14 +1,6 @@
 # Unreleased
-
 * 
 
-## Kotlin
-The Kotlin extensions library transitively includes the updated
-`firebase-performance` library. The Kotlin extensions library has the following
-additional updates:
-
-* [feature] Added a [`trace(String, Trace.() -> T)`](https://firebase.google.com/docs/reference/kotlin/com/google/firebase/perf/ktx/package-summary#trace(kotlin.String,kotlin.Function1))
- extension function to create a custom trace with the given name.
 
 # 20.2.0
 * [unchanged] Updated to accommodate the release of the updated

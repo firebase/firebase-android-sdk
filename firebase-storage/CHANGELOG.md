@@ -1,18 +1,14 @@
 # Unreleased
 
-# 20.0.3
-- [fixed] Fixed an issue that caused infinite number of retries with no exponential
-  backoff for `uploadChunk`
-
-# 20.2.0
-* [unchanged] Updated to accommodate the release of the updated
-  [firebase_storage_full] Kotlin extensions library.
+# 20.1.0
+* [fixed] Fixed an issue that caused an infinite number of retries with no
+  exponential backoff for `uploadChunk()`.
 
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
-  `firebase-storage` library. The Kotlin extensions library has the following
-  additional updates:
+`firebase-storage` library. The Kotlin extensions library has the following
+additional updates:
 
 * [feature] Firebase now supports Kotlin coroutines.
   With this release, we added
