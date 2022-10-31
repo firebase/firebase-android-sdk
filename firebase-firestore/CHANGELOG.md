@@ -13,6 +13,7 @@
 The Kotlin extensions library transitively includes the updated
   `firebase-firestore` library. The Kotlin extensions library has the following
   additional updates:
+
 * [feature] Firebase now supports Kotlin coroutines.
   With this release, we added
   [`kotlinx-coroutines-play-services`](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-play-services/){: .external}
