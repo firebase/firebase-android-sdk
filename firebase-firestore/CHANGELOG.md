@@ -1,6 +1,7 @@
 # Unreleased
-- [fixed] Fix FAILED_PRECONDITION when writing to a deleted document in a transaction. Ported from web SDK.
-  See the [issue report in GitHub](https://github.com/firebase/firebase-js-sdk/issues/5871).
+- [fixed] Fix FAILED_PRECONDITION when writing to a deleted document in a transaction.
+  (#5871).
+
 - [fixed] Fixed Firestore failing to raise initial snapshot from empty local cache result.
 
 # 24.4.0

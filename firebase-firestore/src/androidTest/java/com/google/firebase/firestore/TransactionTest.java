@@ -82,8 +82,8 @@ public class TransactionTest {
    * Used for testing that all possible combinations of executing transactions result in the desired
    * document value or error.
    *
-   * <p>`run()`, `withExistingDoc()`,`withNonexistentDoc()` and `withDeletedDoc()` don't actually do
-   * anything except assign variables into the TransactionTester.
+   * <p>`run()`, `withExistingDoc()`, `withNonexistentDoc()` and `withDeletedDoc()` don't actually
+   * do anything except assign variables into the TransactionTester.
    *
    * <p>`expectDoc()`, `expectNoDoc()`, and `expectError()` will trigger the transaction to run and
    * assert that the end result matches the input.
@@ -188,7 +188,7 @@ public class TransactionTest {
           waitFor(docRef.delete());
           break;
         default:
-          throw new Error("invalid fromDocumentType: " + fromDocumentType);
+          throw new RuntimeException("invalid fromDocumentType: " + fromDocumentType);
       }
     }
 
@@ -709,23 +709,23 @@ public class TransactionTest {
   public void testRetryOnAlreadyExistsError() {
     final FirebaseFirestore firestore = testFirestore();
     DocumentReference doc = firestore.collection("foo").document();
-    CountDownLatch latch = new CountDownLatch(2);
+    AtomicInteger retryCount = new AtomicInteger(0);
     waitFor(
         firestore.runTransaction(
             transaction -> {
-              latch.countDown();
+              retryCount.getAndIncrement();
               transaction.get(doc);
               // Do a write outside of the transaction.
-              waitFor(doc.set(map("count", 1)));
-              // Now try to set the doc within the transaction.This should fail once
+              if (retryCount.get() == 1) waitFor(doc.set(map("count", retryCount.get())));
+              // Now try to set the doc within the transaction. This should fail once
               // with ALREADY_EXISTS error.
-              transaction.set(doc, map("count", 2));
+              transaction.set(doc, map("count", 22));
               return null;
             }));
     DocumentSnapshot snapshot = waitFor(doc.get());
-    assertEquals(0, latch.getCount());
+    assertEquals(2, retryCount.get());
     assertTrue(snapshot.exists());
-    assertEquals(2L, snapshot.getData().get("count"));
+    assertEquals(22L, snapshot.getData().get("count"));
   }
 
   @Test
