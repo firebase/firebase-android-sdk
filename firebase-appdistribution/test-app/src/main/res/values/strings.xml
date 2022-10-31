@@ -5,6 +5,6 @@
     <string name="startFeedbackLabel">Start feedback</string>
     <string name="feedbackTriggerNotificationTitle">We want your Feedback!</string>
     <string name="feedbackTriggerNotificationText">This is a custom notification shown by the App Distro Sample App</string>
-    <string name="feedbackTriggerNotificationChannelName">Feedback notification</string>
+    <string name="feedbackTriggerNotificationChannelName">Custom feedback notification</string>
     <string name="feedbackTriggerNotificationChannelDescription">Used to trigger feedback</string>
 </resources>
