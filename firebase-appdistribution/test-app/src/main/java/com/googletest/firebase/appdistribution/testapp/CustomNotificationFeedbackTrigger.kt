@@ -41,50 +41,48 @@ object CustomNotificationFeedbackTrigger {
    * @param activity the current activity, which will be captured by the screenshot
    */
   fun showNotification(activity: Activity) {
-    synchronized(this) {
-      if (ContextCompat.checkSelfPermission(activity, POST_NOTIFICATIONS) == PERMISSION_DENIED) {
-        Log.w(TAG, "Not showing notification because permission has not been granted.")
-        return
-      }
-
-      // Create the NotificationChannel, but only on API 26+ because
-      // the NotificationChannel class is new and not in the support library
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val channel =
-          NotificationChannel(
-            FEEDBACK_NOTIFICATION_CHANNEL_ID,
-            activity.getString(R.string.feedbackTriggerNotificationChannelName),
-            NotificationManager.IMPORTANCE_HIGH
-          )
-        channel.description =
-          activity.getString(R.string.feedbackTriggerNotificationChannelDescription)
-        activity
-          .getSystemService(NotificationManager::class.java)
-          .createNotificationChannel(channel)
-      }
-
-      val intent = Intent(activity, CustomNotificationTakeScreenshotActivity::class.java)
-      intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
-      val pendingIntent =
-        PendingIntent.getActivity(
-          activity,
-          /* requestCode = */ 0,
-          intent,
-          PendingIntent.FLAG_IMMUTABLE
-        )
-      val builder =
-        NotificationCompat.Builder(activity, FEEDBACK_NOTIFICATION_CHANNEL_ID)
-          .setSmallIcon(R.mipmap.ic_launcher)
-          .setContentTitle(activity.getText(R.string.feedbackTriggerNotificationTitle))
-          .setContentText(activity.getText(R.string.feedbackTriggerNotificationText))
-          .setPriority(NotificationCompat.PRIORITY_HIGH)
-          .setContentIntent(pendingIntent)
-          .setOngoing(true)
-      val notificationManager = NotificationManagerCompat.from(activity)
-      Log.i(TAG, "Showing notification")
-      notificationManager.notify(FEEDBACK_NOTIFICATION_ID, builder.build())
-      activityToScreenshot = activity
+    if (ContextCompat.checkSelfPermission(activity, POST_NOTIFICATIONS) == PERMISSION_DENIED) {
+      Log.w(TAG, "Not showing notification because permission has not been granted.")
+      return
     }
+
+    // Create the NotificationChannel, but only on API 26+ because
+    // the NotificationChannel class is new and not in the support library
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val channel =
+        NotificationChannel(
+          FEEDBACK_NOTIFICATION_CHANNEL_ID,
+          activity.getString(R.string.feedbackTriggerNotificationChannelName),
+          NotificationManager.IMPORTANCE_HIGH
+        )
+      channel.description =
+        activity.getString(R.string.feedbackTriggerNotificationChannelDescription)
+      activity
+        .getSystemService(NotificationManager::class.java)
+        .createNotificationChannel(channel)
+    }
+
+    val intent = Intent(activity, CustomNotificationTakeScreenshotActivity::class.java)
+    intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+    val pendingIntent =
+      PendingIntent.getActivity(
+        activity,
+        /* requestCode = */ 0,
+        intent,
+        PendingIntent.FLAG_IMMUTABLE
+      )
+    val builder =
+      NotificationCompat.Builder(activity, FEEDBACK_NOTIFICATION_CHANNEL_ID)
+        .setSmallIcon(R.mipmap.ic_launcher)
+        .setContentTitle(activity.getText(R.string.feedbackTriggerNotificationTitle))
+        .setContentText(activity.getText(R.string.feedbackTriggerNotificationText))
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
+        .setContentIntent(pendingIntent)
+        .setOngoing(true)
+    val notificationManager = NotificationManagerCompat.from(activity)
+    Log.i(TAG, "Showing notification")
+    notificationManager.notify(FEEDBACK_NOTIFICATION_ID, builder.build())
+    activityToScreenshot = activity
   }
 
   /**
@@ -93,11 +91,9 @@ object CustomNotificationFeedbackTrigger {
    * This must be called from the [Activity.onDestroy] of the activity showing the notification.
    */
   fun cancelNotification() {
-    synchronized(this) {
-      activityToScreenshot?.let {
-        Log.i(TAG, "Cancelling notification")
-        NotificationManagerCompat.from(it).cancel(FEEDBACK_NOTIFICATION_ID)
-      }
+    activityToScreenshot?.let {
+      Log.i(TAG, "Cancelling notification")
+      NotificationManagerCompat.from(it).cancel(FEEDBACK_NOTIFICATION_ID)
     }
   }
 }
@@ -105,14 +101,12 @@ object CustomNotificationFeedbackTrigger {
 class CustomNotificationTakeScreenshotActivity : Activity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    synchronized(CustomNotificationFeedbackTrigger) {
-      val activity = CustomNotificationFeedbackTrigger.activityToScreenshot
-      if (activity == null) {
-        Log.e(TAG, "Can't take screenshot because activity is unknown")
-        return
-      }
-      takeScreenshot(activity)
+    val activity = CustomNotificationFeedbackTrigger.activityToScreenshot
+    if (activity == null) {
+      Log.e(TAG, "Can't take screenshot because activity is unknown")
+      return
     }
+    takeScreenshot(activity)
   }
 
   override fun onResume() {
