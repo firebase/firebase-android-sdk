@@ -709,23 +709,23 @@ public class TransactionTest {
   public void testRetryOnAlreadyExistsError() {
     final FirebaseFirestore firestore = testFirestore();
     DocumentReference doc = firestore.collection("foo").document();
-    AtomicInteger retryCount = new AtomicInteger(0);
+    AtomicInteger transactionCallbackCount = new AtomicInteger(0);
     waitFor(
         firestore.runTransaction(
             transaction -> {
-              retryCount.getAndIncrement();
+              int currentCount = transactionCallbackCount.incrementAndGet();
               transaction.get(doc);
               // Do a write outside of the transaction.
-              if (retryCount.get() == 1) waitFor(doc.set(map("count", retryCount.get())));
+              if (currentCount == 1) waitFor(doc.set(map("foo1", "bar1")));
               // Now try to set the doc within the transaction. This should fail once
               // with ALREADY_EXISTS error.
-              transaction.set(doc, map("count", 22));
+              transaction.set(doc, map("foo2", "bar2"));
               return null;
             }));
     DocumentSnapshot snapshot = waitFor(doc.get());
-    assertEquals(2, retryCount.get());
+    assertEquals(2, transactionCallbackCount.get());
     assertTrue(snapshot.exists());
-    assertEquals(22L, snapshot.getData().get("count"));
+    assertEquals(map("foo1", "bar1", "foo2", "bar2"), snapshot.getData());
   }
 
   @Test
