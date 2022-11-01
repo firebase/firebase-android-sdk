@@ -725,7 +725,7 @@ public class TransactionTest {
     DocumentSnapshot snapshot = waitFor(doc.get());
     assertEquals(2, transactionCallbackCount.get());
     assertTrue(snapshot.exists());
-    assertEquals(map("foo1", "bar1", "foo2", "bar2"), snapshot.getData());
+    assertEquals(map("foo2", "bar2"), snapshot.getData());
   }
 
   @Test
