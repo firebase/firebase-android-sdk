@@ -1,4 +1,7 @@
 # Unreleased
+- [fixed] Fix FAILED_PRECONDITION when writing to a deleted document in a transaction.
+  (#5871).
+
 - [fixed] Fixed Firestore failing to raise initial snapshot from empty local cache result.
 
 # 24.4.0
