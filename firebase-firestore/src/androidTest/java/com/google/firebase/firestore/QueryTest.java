@@ -1136,7 +1136,7 @@ public class QueryTest {
   }
 
   @Test
-  public void multipleInOps() {
+  public void testMultipleInOps() {
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", 0),
@@ -1204,7 +1204,7 @@ public class QueryTest {
   }
 
   @Test
-  public void useInWithArrayContainsAny() {
+  public void testUsingInWithArrayContainsAny() {
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", asList(0)),
@@ -1243,7 +1243,7 @@ public class QueryTest {
   }
 
   @Test
-  public void useInWithArrayContains() {
+  public void testUsingInWithArrayContains() {
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", asList(0)),
@@ -1280,7 +1280,7 @@ public class QueryTest {
   }
 
   @Test
-  public void orderByEquality() {
+  public void testOrderByEquality() {
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", asList(0)),

@@ -596,10 +596,6 @@ public class ValidationTest {
   @Test
   public void queriesWithMultipleDisjunctiveFiltersFail() {
     expectError(
-        () -> testCollection().whereIn("foo", asList(1, 2)).whereIn("bar", asList(1, 2)),
-        "Invalid Query. You cannot use more than one 'in' filter.");
-
-    expectError(
         () -> testCollection().whereNotIn("foo", asList(1, 2)).whereNotIn("bar", asList(1, 2)),
         "All where filters with an inequality (notEqualTo, notIn, lessThan, "
             + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
@@ -611,20 +607,6 @@ public class ValidationTest {
                 .whereArrayContainsAny("foo", asList(1, 2))
                 .whereArrayContainsAny("bar", asList(1, 2)),
         "Invalid Query. You cannot use more than one 'array_contains_any' filter.");
-
-    expectError(
-        () ->
-            testCollection()
-                .whereArrayContainsAny("foo", asList(1, 2))
-                .whereIn("bar", asList(1, 2)),
-        "Invalid Query. You cannot use 'in' filters with 'array_contains_any' filters.");
-
-    expectError(
-        () ->
-            testCollection()
-                .whereIn("bar", asList(1, 2))
-                .whereArrayContainsAny("foo", asList(1, 2)),
-        "Invalid Query. You cannot use 'array_contains_any' filters with 'in' filters.");
 
     expectError(
         () ->
@@ -655,7 +637,7 @@ public class ValidationTest {
                 .whereIn("bar", asList(1, 2))
                 .whereArrayContains("foo", 1)
                 .whereArrayContainsAny("foo", asList(1, 2)),
-        "Invalid Query. You cannot use 'array_contains_any' filters with 'in' filters.");
+        "Invalid Query. You cannot use 'array_contains_any' filters with 'array_contains' filters.");
 
     expectError(
         () ->
