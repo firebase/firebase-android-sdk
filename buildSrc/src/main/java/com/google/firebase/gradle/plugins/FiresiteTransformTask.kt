@@ -19,7 +19,7 @@ import org.gradle.api.tasks.TaskAction
  * More specifically, it:
  *  - Deletes unnecessary files
  *  - Removes Class and Index headers from _toc.yaml files
- *  - Appends /docs/ to hyperlinks in html files
+ *  - Changes links to be appropriate for Firesite versus normal Devsite behavior
  *  - Removes the prefix path from book_path
  *  - Removes the firebase prefix from all links
  *  - Changes the path for _reference-head-tags at the top of html files
@@ -35,6 +35,9 @@ abstract class FiresiteTransformTask : DefaultTask() {
 
     @get:Input
     abstract val referenceHeadTagsPath: Property<String>
+
+    @get:Input
+    abstract val referencePath: Property<String>
 
     @get:OutputDirectory
     abstract val outputDirectory: Property<File>
@@ -65,14 +68,20 @@ abstract class FiresiteTransformTask : DefaultTask() {
     }
 
     private fun File.fixHTMLFile() {
-        val fixedContent = readText().fixBookPath().fixHyperlinks().removeLeadingFirebaseDomainInLinks().fixReferenceHeadTagsPath()
+        val fixedContent = readText().fixBookPath().fixReferenceHeadTagsPath().fixLinks()
         writeText(fixedContent)
     }
 
     private fun File.fixYamlFile() {
-        val fixedContent = readText().removeClassHeader().removeIndexHeader().removeLeadingFirebaseDomainInLinks()
+        val fixedContent = readText().removeClassHeader().removeIndexHeader().fixLinks()
         writeText(fixedContent)
     }
+
+    // Our documentation does not live under the standard path expected by Dackka, especially
+    // between Kotlin + Javadocs
+    // TODO(b/243674305): Remove when dackka exposes configuration for this
+    private fun String.fixLinks() =
+        replace(Regex("(?<=\")/reference[^\"]*?(?=/com/google/firebase)"), referencePath.get())
 
     // We utilize difference reference head tags between Kotlin and Java docs
     // TODO(b/248316730): Remove when dackka exposes configuration for this
@@ -91,11 +100,6 @@ abstract class FiresiteTransformTask : DefaultTask() {
     // TODO(b/243674303): Remove when dackka exposes configuration for this
     private fun String.fixBookPath() =
         remove(Regex("(?<=setvar book_path ?%})(.+)(?=/_book.yaml\\{% ?endsetvar)"))
-
-    // Our documentation lives under /docs/reference/ versus the expected /reference/
-    // TODO(b/243674305): Remove when dackka exposes configuration for this
-    private fun String.fixHyperlinks() =
-        replace(Regex("(?<=href=\")(/)(?=reference/.*\\.html)"), "/docs/")
 
     // The documentation will work fine without this. This is primarily to make sure that links
     // resolve to their local counter part. Meaning when the docs are staged, they will resolve to

@@ -294,6 +294,7 @@ abstract class DackkaPlugin : Plugin<Project> {
         val transformJavadoc = project.tasks.register<FiresiteTransformTask>("firesiteTransformJavadoc") {
             dependsOnAndMustRunAfter("separateJavadoc")
 
+            referencePath.set("/docs/reference/android")
             referenceHeadTagsPath.set("docs/reference/android")
             dackkaFiles.set(project.childFile(separatedFilesDirectory, "android"))
             outputDirectory.set(project.childFile(targetDirectory, "android"))
@@ -303,6 +304,7 @@ abstract class DackkaPlugin : Plugin<Project> {
             dependsOnAndMustRunAfter("separateKotlindoc")
 
             referenceHeadTagsPath.set("docs/reference/kotlin")
+            referencePath.set("/docs/reference/kotlin")
             dackkaFiles.set(project.childFile(separatedFilesDirectory, "kotlin"))
             outputDirectory.set(project.childFile(targetDirectory, "kotlin"))
         }
