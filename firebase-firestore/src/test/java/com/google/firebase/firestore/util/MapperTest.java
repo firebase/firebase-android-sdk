@@ -1883,16 +1883,14 @@ public class MapperTest {
   @Test
   public void passingInListTopLevelThrows() {
     assertExceptionContains(
-        "Class java.util.List has generic type parameters, please use GenericTypeIndicator "
-            + "instead",
+        "Class java.util.List has generic type parameters",
         () -> convertToCustomClass(Collections.singletonList("foo"), List.class));
   }
 
   @Test
   public void passingInMapTopLevelThrows() {
     assertExceptionContains(
-        "Class java.util.Map has generic type parameters, please use GenericTypeIndicator "
-            + "instead",
+        "Class java.util.Map has generic type parameters",
         () -> convertToCustomClass(Collections.singletonMap("foo", "bar"), Map.class));
   }
 
@@ -1920,7 +1918,7 @@ public class MapperTest {
   public void passingInGenericBeanTopLevelThrows() {
     assertExceptionContains(
         "Class com.google.firebase.firestore.util.MapperTest$GenericBean has generic type "
-            + "parameters, please use GenericTypeIndicator instead",
+            + "parameters",
         () -> deserialize("{'value': 'foo'}", GenericBean.class));
   }
 
