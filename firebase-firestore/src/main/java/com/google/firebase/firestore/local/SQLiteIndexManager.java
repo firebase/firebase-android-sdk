@@ -23,6 +23,7 @@ import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
 import android.text.TextUtils;
+import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
@@ -58,7 +59,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.SortedSet;
@@ -478,17 +478,19 @@ final class SQLiteIndexManager implements IndexManager {
 
     List<String> subQueries = new ArrayList<>();
     List<Object> bindings = new ArrayList<>();
-    List<Target> subTargets = getSubTargets(target);
+    List<Pair<Target, FieldIndex>> indexes = new ArrayList<>();
 
-    for (Target subTarget : subTargets) {
+    for (Target subTarget : getSubTargets(target)) {
       FieldIndex fieldIndex = getFieldIndex(subTarget);
       if (fieldIndex == null) {
         return null;
       }
+      indexes.add(Pair.create(subTarget, fieldIndex));
     }
 
-    for (Target subTarget : subTargets) {
-      @NonNull FieldIndex fieldIndex = Objects.requireNonNull(getFieldIndex(subTarget));
+    for (Pair<Target, FieldIndex> pair : indexes) {
+      Target subTarget = pair.first;
+      @NonNull FieldIndex fieldIndex = pair.second;
       @Nullable List<Value> arrayValues = subTarget.getArrayValues(fieldIndex);
       @Nullable Collection<Value> notInValues = subTarget.getNotInValues(fieldIndex);
       Bound lowerBound = subTarget.getLowerBound(fieldIndex);
