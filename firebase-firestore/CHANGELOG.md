@@ -3,6 +3,7 @@
   (#5871).
 
 - [fixed] Fixed Firestore failing to raise initial snapshot from empty local cache result.
+- [fixed] Removed invalid suggestions to use `GenericTypeIndicator` from error messages.
 
 # 24.4.0
 * [feature] Added
