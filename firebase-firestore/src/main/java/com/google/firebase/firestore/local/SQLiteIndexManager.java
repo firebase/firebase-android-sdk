@@ -23,6 +23,7 @@ import static com.google.firebase.firestore.util.Util.repeatSequence;
 import static java.lang.Math.max;
 
 import android.text.TextUtils;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -57,6 +58,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.SortedSet;
@@ -476,13 +478,17 @@ final class SQLiteIndexManager implements IndexManager {
 
     List<String> subQueries = new ArrayList<>();
     List<Object> bindings = new ArrayList<>();
+    List<Target> subTargets = getSubTargets(target);
 
-    for (Target subTarget : getSubTargets(target)) {
+    for (Target subTarget : subTargets) {
       FieldIndex fieldIndex = getFieldIndex(subTarget);
       if (fieldIndex == null) {
         return null;
       }
+    }
 
+    for (Target subTarget : subTargets) {
+      @NonNull FieldIndex fieldIndex = Objects.requireNonNull(getFieldIndex(subTarget));
       @Nullable List<Value> arrayValues = subTarget.getArrayValues(fieldIndex);
       @Nullable Collection<Value> notInValues = subTarget.getNotInValues(fieldIndex);
       Bound lowerBound = subTarget.getLowerBound(fieldIndex);
