@@ -1,0 +1,86 @@
+# Copyright 2022 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import asyncio
+import json
+import logging
+import tempfile
+import yaml
+
+from .test_project_builder import TestProjectBuilder
+from .utils import execute
+from pathlib import Path
+
+
+logger = logging.getLogger('fireci.macrobenchmark')
+
+
+async def start(build_only: bool, local: bool, repeat: int, output: Path):
+  logger.info('Starting macrobenchmark test ...')
+
+  config = _process_config_yaml()
+  product_versions = _assemble_all_products()
+  test_dir = _prepare_test_directory()
+  template_project_dir = Path('health-metrics/benchmark/template')
+
+  test_projects = []
+  for test_config in config['test-apps']:
+    builder = TestProjectBuilder(test_config, test_dir, template_project_dir, product_versions)
+    test_projects.append(builder.build())
+
+  if not build_only:
+    if local:
+      test_outputs = []
+      for test_project in test_projects:
+        test_output = test_project.run_local(repeat)
+        test_outputs.append(test_output)
+    else:
+      remote_runs = [x.run_remote(repeat) for x in test_projects]
+      test_outputs = await asyncio.gather(*remote_runs)
+
+    with open(output, 'w') as file:
+      json.dump(test_outputs, file)
+
+  logger.info(f'Completed macrobenchmark test and saved output to "{output}"')
+
+
+def _assemble_all_products() -> dict[str, str]:
+  execute('./gradlew', 'assembleAllForSmokeTests', logger=logger)
+
+  product_versions: dict[str, str] = {}
+  with open('build/m2repository/changed-artifacts.json') as json_file:
+    artifacts = json.load(json_file)
+    for artifact in artifacts['headGit']:
+      group_id, artifact_id, version = artifact.split(':')
+      product_versions[f'{group_id}:{artifact_id}'] = version
+
+  logger.info(f'Product versions: {product_versions}')
+  return product_versions
+
+
+def _process_config_yaml():
+  with open('health-metrics/benchmark/config.yaml') as yaml_file:
+    config = yaml.safe_load(yaml_file)
+    for app in config['test-apps']:
+      app['plugins'] = app.get('plugins', [])
+      app['traces'] = app.get('traces', [])
+      app['plugins'].extend(config['common-plugins'])
+      app['traces'].extend(config['common-traces'])
+    return config
+
+
+def _prepare_test_directory() -> Path:
+  test_dir = tempfile.mkdtemp(prefix='benchmark-test-')
+  logger.info(f'Temporary test directory created at: {test_dir}')
+  return Path(test_dir)
