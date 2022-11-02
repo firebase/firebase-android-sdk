@@ -114,8 +114,12 @@ public class FeedbackActivity extends AppCompatActivity {
   public void submitFeedback(View view) {
     setSubmittingStateEnabled(true);
     EditText feedbackText = findViewById(R.id.feedbackText);
+    CheckBox screenshotCheckBox = findViewById(R.id.screenshotCheckBox);
     feedbackSender
-        .sendFeedback(releaseName, feedbackText.getText().toString(), screenshotUri)
+        .sendFeedback(
+            releaseName,
+            feedbackText.getText().toString(),
+            screenshotCheckBox.isChecked() ? screenshotUri : null)
         .addOnSuccessListener(
             unused -> {
               LogWrapper.getInstance().i(TAG, "Feedback submitted");
@@ -132,5 +136,7 @@ public class FeedbackActivity extends AppCompatActivity {
 
   public void setSubmittingStateEnabled(boolean loading) {
     findViewById(R.id.sendButton).setVisibility(loading ? INVISIBLE : VISIBLE);
+    findViewById(R.id.feedbackText).setEnabled(!loading);
+    findViewById(R.id.feedbackText).setFocusable(!loading);
   }
 }
