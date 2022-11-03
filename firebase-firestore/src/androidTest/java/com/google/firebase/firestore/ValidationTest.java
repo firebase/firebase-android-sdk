@@ -676,14 +676,6 @@ public class ValidationTest {
                 .whereArrayContains("foo", 1)
                 .whereArrayContains("foo", 1),
         "Invalid Query. You cannot use more than one 'array_contains' filter.");
-
-    expectError(
-        () ->
-            testCollection()
-                .whereArrayContains("foo", 1)
-                .whereIn("bar", asList(1, 2))
-                .whereIn("bar", asList(1, 2)),
-        "Invalid Query. You cannot use more than one 'in' filter.");
   }
 
   @Test
