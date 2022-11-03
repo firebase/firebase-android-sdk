@@ -67,16 +67,22 @@ public class ConfigMetadataClient {
   private static final String BACKOFF_END_TIME_IN_MILLIS_KEY = "backoff_end_time_in_millis";
   private static final String NUM_FAILED_FETCHES_KEY = "num_failed_fetches";
   private static final String LAST_TEMPLATE_VERSION = "last_template_version";
+  private static final String NUM_FAILED_REALTIME_STREAMS_KEY = "num_failed_realtime_stream";
+  private static final String REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY =
+      "realtime_backoff_end_time_in_millis";
+  static final int NO_FAILED_REALTIME_STREAMS = 0;
 
   private final SharedPreferences frcMetadata;
 
   private final Object frcInfoLock;
   private final Object backoffMetadataLock;
+  private final Object realtimeBackoffMetadataLock;
 
   public ConfigMetadataClient(SharedPreferences frcMetadata) {
     this.frcMetadata = frcMetadata;
     this.frcInfoLock = new Object();
     this.backoffMetadataLock = new Object();
+    realtimeBackoffMetadataLock = new Object();
   }
 
   public long getFetchTimeoutInSeconds() {
@@ -262,6 +268,59 @@ public class ConfigMetadataClient {
 
     int getNumFailedFetches() {
       return numFailedFetches;
+    }
+
+    Date getBackoffEndTime() {
+      return backoffEndTime;
+    }
+  }
+
+  // -----------------------------------------------------------------
+  // Realtime exponential backoff logic.
+  // -----------------------------------------------------------------
+
+  RealtimeBackoffMetadata getRealtimeBackoffMetadata() {
+    synchronized (realtimeBackoffMetadataLock) {
+      return new RealtimeBackoffMetadata(
+          frcMetadata.getInt(NUM_FAILED_REALTIME_STREAMS_KEY, NO_FAILED_REALTIME_STREAMS),
+          new Date(
+              frcMetadata.getLong(
+                  REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY, NO_BACKOFF_TIME_IN_MILLIS)));
+    }
+  }
+
+  void setRealtimeBackoffMetadata(int numFailedStreams, Date backoffEndTime) {
+    synchronized (realtimeBackoffMetadataLock) {
+      frcMetadata
+          .edit()
+          .putInt(NUM_FAILED_REALTIME_STREAMS_KEY, numFailedStreams)
+          .putLong(REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY, backoffEndTime.getTime())
+          .apply();
+    }
+  }
+
+  void resetRealtimeBackoff() {
+    setRealtimeBackoffMetadata(NO_FAILED_REALTIME_STREAMS, NO_BACKOFF_TIME);
+  }
+
+  /**
+   * Container for backoff metadata values such as the number of failed fetches and the backoff end
+   * time.
+   *
+   * <p>The purpose of this class is to avoid race conditions when retrieving backoff metadata
+   * values separately.
+   */
+  static class RealtimeBackoffMetadata {
+    private int numFailedStreams;
+    private Date backoffEndTime;
+
+    RealtimeBackoffMetadata(int numFailedStreams, Date backoffEndTime) {
+      this.numFailedStreams = numFailedStreams;
+      this.backoffEndTime = backoffEndTime;
+    }
+
+    int getNumFailedStreams() {
+      return numFailedStreams;
     }
 
     Date getBackoffEndTime() {

@@ -40,6 +40,7 @@ public class ConfigRealtimeHandler {
   private final FirebaseInstallationsApi firebaseInstallations;
   private final Context context;
   private final String namespace;
+  private final ConfigMetadataClient metadataClient;
   private final ExecutorService executorService;
 
   public ConfigRealtimeHandler(
@@ -48,6 +49,7 @@ public class ConfigRealtimeHandler {
       ConfigFetchHandler configFetchHandler,
       Context context,
       String namespace,
+      ConfigMetadataClient metadataClient,
       ExecutorService executorService) {
 
     this.listeners = new LinkedHashSet<>();
@@ -58,6 +60,7 @@ public class ConfigRealtimeHandler {
     this.firebaseInstallations = firebaseInstallations;
     this.context = context;
     this.namespace = namespace;
+    this.metadataClient = metadataClient;
     this.executorService = executorService;
   }
 
@@ -91,7 +94,8 @@ public class ConfigRealtimeHandler {
               configFetchHandler,
               context,
               namespace,
-              listeners);
+              listeners,
+              metadataClient);
       this.realtimeHttpClientTask =
           this.executorService.submit(
               new RealtimeHttpClientFutureTask(

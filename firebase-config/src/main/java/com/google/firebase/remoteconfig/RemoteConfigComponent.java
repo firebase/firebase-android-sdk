@@ -210,7 +210,13 @@ public class RemoteConfigComponent {
               fetchHandler,
               getHandler,
               metadataClient,
-              getRealtime(firebaseApp, firebaseInstallations, fetchHandler, context, namespace));
+              getRealtime(
+                  firebaseApp,
+                  firebaseInstallations,
+                  fetchHandler,
+                  context,
+                  namespace,
+                  metadataClient));
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
       frcNamespaceInstancesStatic.put(namespace, in);
@@ -265,13 +271,15 @@ public class RemoteConfigComponent {
       FirebaseInstallationsApi firebaseInstallations,
       ConfigFetchHandler configFetchHandler,
       Context context,
-      String namespace) {
+      String namespace,
+      ConfigMetadataClient metadataClient) {
     return new ConfigRealtimeHandler(
         firebaseApp,
         firebaseInstallations,
         configFetchHandler,
         context,
         namespace,
+        metadataClient,
         executorService);
   }
 

@@ -17,6 +17,7 @@ package com.google.firebase.remoteconfig.internal;
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.REALTIME_REGEX_URL;
 import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.HTTP_TOO_MANY_REQUESTS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -24,7 +25,10 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.util.AndroidUtilsLight;
+import com.google.android.gms.common.util.Clock;
+import com.google.android.gms.common.util.DefaultClock;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -40,6 +44,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -52,6 +57,14 @@ import java.util.regex.Pattern;
 import org.json.JSONObject;
 
 public class ConfigRealtimeHttpClient {
+  /**
+   * The exponential backoff intervals, up to ~4 hours.
+   *
+   * <p>Every value must be even.
+   */
+  @VisibleForTesting
+  static final int[] BACKOFF_TIME_DURATIONS_IN_MINUTES = {2, 4, 8, 16, 32, 64, 128, 256};
+
   private static final String API_KEY_HEADER = "X-Goog-Api-Key";
   private static final String X_ANDROID_PACKAGE_HEADER = "X-Android-Package";
   private static final String X_ANDROID_CERT_HEADER = "X-Android-Cert";
@@ -70,9 +83,6 @@ public class ConfigRealtimeHttpClient {
   private int httpRetriesRemaining;
 
   @GuardedBy("this")
-  private long httpRetrySeconds;
-
-  @GuardedBy("this")
   private boolean isRealtimeDisabled;
 
   private final int ORIGINAL_RETRIES = 7;
@@ -84,6 +94,8 @@ public class ConfigRealtimeHttpClient {
   private final Context context;
   private final String namespace;
   private final Random random;
+  private final Clock clock;
+  private final ConfigMetadataClient metadataClient;
 
   public ConfigRealtimeHttpClient(
       FirebaseApp firebaseApp,
@@ -91,7 +103,8 @@ public class ConfigRealtimeHttpClient {
       ConfigFetchHandler configFetchHandler,
       Context context,
       String namespace,
-      Set<ConfigUpdateListener> listeners) {
+      Set<ConfigUpdateListener> listeners,
+      ConfigMetadataClient metadataClient) {
 
     this.listeners = listeners;
     this.httpURLConnection = null;
@@ -100,12 +113,14 @@ public class ConfigRealtimeHttpClient {
     // Retry parameters
     this.random = new Random();
     resetRetryParameters();
+    clock = DefaultClock.getInstance();
 
     this.firebaseApp = firebaseApp;
     this.configFetchHandler = configFetchHandler;
     this.firebaseInstallations = firebaseInstallations;
     this.context = context;
     this.namespace = namespace;
+    this.metadataClient = metadataClient;
     this.isRealtimeDisabled = false;
   }
 
@@ -201,6 +216,42 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
+  // TODO(issues/265): Make this an atomic operation within the Metadata class to avoid possible
+  // concurrency issues.
+  /**
+   * Increment the number of failed stream attempts, increase the backoff duration, set the backoff
+   * end time to "backoff duration" after {@code lastFailedRealtimeStreamTime} and persist the new
+   * values to disk-backed metadata.
+   */
+  private void updateBackoffMetadataWithLastFailedStreamConnectionTime(
+      Date lastFailedRealtimeStreamTime) {
+    int numFailedStreams = metadataClient.getRealtimeBackoffMetadata().getNumFailedStreams();
+
+    numFailedStreams++;
+
+    long backoffDurationInMillis = getRandomizedBackoffDurationInMillis(numFailedStreams);
+    Date backoffEndTime =
+        new Date(lastFailedRealtimeStreamTime.getTime() + backoffDurationInMillis);
+
+    metadataClient.setRealtimeBackoffMetadata(numFailedStreams, backoffEndTime);
+  }
+
+  /**
+   * Returns a random backoff duration from the range {@code timeoutDuration} +/- 50% of {@code
+   * timeoutDuration}, where {@code timeoutDuration = }{@link
+   * #BACKOFF_TIME_DURATIONS_IN_MINUTES}{@code [numFailedStreams-1]}.
+   */
+  private long getRandomizedBackoffDurationInMillis(int numFailedStreams) {
+    // The backoff duration length after numFailedFetches.
+    long timeOutDurationInMillis =
+        MINUTES.toMillis(
+            BACKOFF_TIME_DURATIONS_IN_MINUTES[
+                Math.min(numFailedStreams, BACKOFF_TIME_DURATIONS_IN_MINUTES.length) - 1]);
+
+    // A random duration that is in the range: timeOutDuration +/- 50% of timeOutDuration.
+    return timeOutDurationInMillis / 2 + random.nextInt((int) timeOutDurationInMillis);
+  }
+
   private synchronized void enableBackoff() {
     this.isRealtimeDisabled = true;
   }
@@ -211,7 +262,6 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized void resetRetryParameters() {
-    httpRetrySeconds = random.nextInt(5) + 1;
     httpRetriesRemaining = ORIGINAL_RETRIES;
   }
 
@@ -252,9 +302,12 @@ public class ConfigRealtimeHttpClient {
   @SuppressLint("VisibleForTests")
   public synchronized void retryHTTPConnection() {
     if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
-      if (httpRetriesRemaining < ORIGINAL_RETRIES) {
-        httpRetrySeconds *= getRetryMultiplier();
-      }
+      Date currentTime = new Date(clock.currentTimeMillis());
+      long retrySeconds =
+          Math.max(
+              0,
+              metadataClient.getRealtimeBackoffMetadata().getBackoffEndTime().getTime()
+                  - currentTime.getTime());
       httpRetriesRemaining--;
       scheduledExecutorService.schedule(
           new Runnable() {
@@ -263,8 +316,8 @@ public class ConfigRealtimeHttpClient {
               beginRealtimeHttpStream();
             }
           },
-          httpRetrySeconds,
-          TimeUnit.SECONDS);
+          retrySeconds,
+          TimeUnit.MILLISECONDS);
     } else {
       propagateErrors(
           new FirebaseRemoteConfigRealtimeUpdateStreamException(
@@ -288,6 +341,8 @@ public class ConfigRealtimeHttpClient {
           @Override
           public void onEvent() {
             closeRealtimeHttpStream();
+            updateBackoffMetadataWithLastFailedStreamConnectionTime(
+                new Date(clock.currentTimeMillis()));
             retryHTTPConnection();
           }
 
@@ -329,6 +384,14 @@ public class ConfigRealtimeHttpClient {
       return;
     }
 
+    ConfigMetadataClient.RealtimeBackoffMetadata backoffMetadata =
+        metadataClient.getRealtimeBackoffMetadata();
+    Date currentTime = new Date(clock.currentTimeMillis());
+    if (currentTime.before(backoffMetadata.getBackoffEndTime())) {
+      retryHTTPConnection();
+      return;
+    }
+
     Integer responseCode = null;
     try {
       // Create the open the connection.
@@ -339,6 +402,7 @@ public class ConfigRealtimeHttpClient {
       if (responseCode == HttpURLConnection.HTTP_OK) {
         // Reset the retries remaining if we opened the connection without an exception.
         resetRetryParameters();
+        metadataClient.resetRealtimeBackoff();
 
         // Start listening for realtime notifications.
         ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
@@ -354,6 +418,8 @@ public class ConfigRealtimeHttpClient {
       if (responseCode == null
           || responseCode == HttpURLConnection.HTTP_OK
           || isStatusCodeRetryable(responseCode)) {
+        updateBackoffMetadataWithLastFailedStreamConnectionTime(
+            new Date(clock.currentTimeMillis()));
         retryHTTPConnection();
       } else {
         propagateErrors(

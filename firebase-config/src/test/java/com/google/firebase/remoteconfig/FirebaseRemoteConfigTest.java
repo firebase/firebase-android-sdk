@@ -284,7 +284,8 @@ public final class FirebaseRemoteConfigTest {
             mockFetchHandler,
             context,
             "firebase",
-            listeners);
+            listeners,
+            metadataClient);
   }
 
   @Test
