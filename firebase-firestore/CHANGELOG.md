@@ -1,9 +1,10 @@
 # Unreleased
 - [fixed] Fix FAILED_PRECONDITION when writing to a deleted document in a transaction.
-  (#5871).
-
+  ([Issue #5871](//github.com/firebase/firebase-android-sdk/issues/5871))
 - [fixed] Fixed Firestore failing to raise initial snapshot from empty local cache result.
 - [fixed] Removed invalid suggestions to use `GenericTypeIndicator` from error messages.
+- [changed] Updated dependency of `io.grpc.*` to its latest
+  version (v1.50.2).
 
 # 24.4.0
 * [feature] Added
