@@ -98,7 +98,7 @@ abstract class FiresiteTransformTask : DefaultTask() {
      * --> "firebase.appcheck"
      * ```
      */
-    // TODO(b/): Remove when dackka exposes configuration for this
+    // TODO(b/257293594): Remove when dackka exposes configuration for this
     private fun String.removeGoogleGroupId() =
         remove(Regex("(?<=\")com.google.(?=firebase.)"))
 
