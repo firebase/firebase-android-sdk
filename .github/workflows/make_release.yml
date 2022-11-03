@@ -1,0 +1,26 @@
+name: Build Release Artifacts
+
+on:
+  pull_request:
+    branches:
+      - 'releases/**'
+
+
+jobs:
+  create-branches:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Perform gradle build
+        run: |
+          ./gradlew  firebasePublish -PprojectsToPublish=firebase-firestore -PpublishMode=RELEASE -PincludeFireEscapeArtifacts=true
+
+      - name: Upload generated artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: m2repository.zip
+          path: build/
+          retention-days: 5
