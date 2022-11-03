@@ -35,6 +35,7 @@ import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.FirstDrawDoneListener;
+import com.google.firebase.perf.util.PreDrawListener;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
@@ -96,6 +97,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   private Timer onStartTime = null;
   private Timer onResumeTime = null;
   private Timer firstDrawDone = null;
+  private Timer preDraw = null;
+  private List<TraceMetric> preDrawSubtraces = new ArrayList<>();
 
   private PerfSession startSession;
   private boolean isStartedFromBackground = false;
@@ -196,7 +199,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
    */
   private static Timer getStartTimer() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-      return Timer.ofElapsedRealtime(Process.getStartElapsedRealtime());
+      return Timer.ofElapsedRealtime(
+          Process.getStartElapsedRealtime(), Process.getStartUptimeMillis());
     }
     return FirebasePerfProvider.getAppStartTime();
   }
@@ -213,6 +217,27 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
       // After AppStart trace is queued to be logged, we can unregister this callback.
       unregisterActivityLifecycleCallbacks();
     }
+  }
+
+  private void recordFirstDrawDonePreDraw() {
+    if (preDraw != null) {
+      return;
+    }
+    Timer start = getStartTimer();
+    this.preDraw = clock.getTime();
+    TraceMetric.Builder subtrace =
+        TraceMetric.newBuilder()
+            .setName("_experiment_preDraw")
+            .setClientStartTimeUs(start.getMicros())
+            .setDurationUs(start.getDurationMicros(this.preDraw));
+    preDrawSubtraces.add(subtrace.build());
+
+    subtrace = TraceMetric.newBuilder();
+    subtrace
+        .setName("_experiment_preDraw_uptimeMillis")
+        .setClientStartTimeUs(start.getMicros())
+        .setDurationUs(start.getDurationUptimeMicros(this.preDraw));
+    preDrawSubtraces.add(subtrace.build());
   }
 
   @Override
@@ -252,6 +277,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     if (isExperimentTTIDEnabled) {
       View rootView = activity.findViewById(android.R.id.content);
       FirstDrawDoneListener.registerForNextDraw(rootView, this::recordFirstDrawDone);
+      PreDrawListener.registerForNextDraw(rootView, this::recordFirstDrawDonePreDraw);
     }
 
     if (onResumeTime != null) { // An activity already called onResume()
@@ -286,15 +312,24 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
             .setName("_experiment_app_start_ttid")
             .setClientStartTimeUs(start.getMicros())
             .setDurationUs(start.getDurationMicros(end));
+    List<TraceMetric> subtraces = new ArrayList<>();
 
     TraceMetric.Builder subtrace =
         TraceMetric.newBuilder()
             .setName("_experiment_classLoadTime")
             .setClientStartTimeUs(FirebasePerfProvider.getAppStartTime().getMicros())
             .setDurationUs(FirebasePerfProvider.getAppStartTime().getDurationMicros(end));
+    subtraces.add(subtrace.build());
 
-    metric.addSubtraces(subtrace).addPerfSessions(this.startSession.build());
+    subtrace = TraceMetric.newBuilder();
+    subtrace
+        .setName("_experiment_uptimeMillis")
+        .setClientStartTimeUs(start.getMicros())
+        .setDurationUs(start.getDurationUptimeMicros(end));
+    subtraces.add(subtrace.build());
 
+    subtraces.addAll(preDrawSubtraces);
+    metric.addAllSubtraces(subtraces).addPerfSessions(this.startSession.build());
     transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
   }
 

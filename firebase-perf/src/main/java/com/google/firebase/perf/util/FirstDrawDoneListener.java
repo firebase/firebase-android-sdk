@@ -23,10 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * OnDrawListener that unregisters itself and invokes callback when the next draw is done. This API
- * 16+ implementation is an approximation of the initial display time. {@link
- * android.view.Choreographer#postFrameCallback} is an Android API that provides a simpler and more
- * accurate initial display time, but it was bugged before API 30, hence we use this backported
- * implementation.
+ * 16+ implementation is an approximation of the initial-display-time defined by Android Vitals.
  */
 @RequiresApi(Build.VERSION_CODES.JELLY_BEAN)
 public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
