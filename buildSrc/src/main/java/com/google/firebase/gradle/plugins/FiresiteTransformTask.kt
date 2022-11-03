@@ -6,6 +6,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -21,7 +22,7 @@ import org.gradle.api.tasks.TaskAction
  *  - Removes Class and Index headers from _toc.yaml files
  *  - Changes links to be appropriate for Firesite versus normal Devsite behavior
  *  - Removes the prefix path from book_path
- *  - Removes the firebase prefix from all links
+ *  - Removes the google groupId for Javadocs
  *  - Changes the path for _reference-head-tags at the top of html files
  *
  *  **Please note:**
@@ -38,6 +39,10 @@ abstract class FiresiteTransformTask : DefaultTask() {
 
     @get:Input
     abstract val referencePath: Property<String>
+
+    @get:Input
+    @get:Optional
+    abstract val removeGoogleGroupId: Property<Boolean>
 
     @get:OutputDirectory
     abstract val outputDirectory: Property<File>
@@ -73,9 +78,29 @@ abstract class FiresiteTransformTask : DefaultTask() {
     }
 
     private fun File.fixYamlFile() {
-        val fixedContent = readText().removeClassHeader().removeIndexHeader().fixLinks()
+        val fixedContent = readText().removeClassHeader().removeIndexHeader().fixLinks().let {
+            if (removeGoogleGroupId.getOrElse(false)) it.removeGoogleGroupId() else it
+        }
         writeText(fixedContent)
     }
+
+    /**
+     * Removes the leading `com.google` group id from strings in the file
+     *
+     * We have internal SDKs that generate their docs outside the scope of this plugin. The Javadoc
+     * variant of those SDks is typically generated with metalava- which does *not* provide the
+     * groupId. This makes the output look weird, as not all SDKs line up. So this method exists
+     * to correct Javadoc nav files, so that they align with internally generated docs.
+     *
+     * Example output:
+     * ```
+     * removeGoogleGroupId("com.google.firebase.appcheck")
+     * --> "firebase.appcheck"
+     * ```
+     */
+    // TODO(b/): Remove when dackka exposes configuration for this
+    private fun String.removeGoogleGroupId() =
+        remove(Regex("(?<=\")com.google.(?=firebase.)"))
 
     // Our documentation does not live under the standard path expected by Dackka, especially
     // between Kotlin + Javadocs
@@ -100,11 +125,4 @@ abstract class FiresiteTransformTask : DefaultTask() {
     // TODO(b/243674303): Remove when dackka exposes configuration for this
     private fun String.fixBookPath() =
         remove(Regex("(?<=setvar book_path ?%})(.+)(?=/_book.yaml\\{% ?endsetvar)"))
-
-    // The documentation will work fine without this. This is primarily to make sure that links
-    // resolve to their local counter part. Meaning when the docs are staged, they will resolve to
-    // staged docs instead of prod docs- and vise versa.
-    // TODO(b/243673063): Remove when dackka exposes configuration for this
-    private fun String.removeLeadingFirebaseDomainInLinks() =
-        remove(Regex("(?<=\")(https://firebase\\.google\\.com)(?=/docs/reference)"))
 }
