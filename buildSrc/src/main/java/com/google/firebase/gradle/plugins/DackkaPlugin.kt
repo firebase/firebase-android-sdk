@@ -294,6 +294,7 @@ abstract class DackkaPlugin : Plugin<Project> {
         val transformJavadoc = project.tasks.register<FiresiteTransformTask>("firesiteTransformJavadoc") {
             dependsOnAndMustRunAfter("separateJavadoc")
 
+            removeGoogleGroupId.set(true)
             referencePath.set("/docs/reference/android")
             referenceHeadTagsPath.set("docs/reference/android")
             dackkaFiles.set(project.childFile(separatedFilesDirectory, "android"))
