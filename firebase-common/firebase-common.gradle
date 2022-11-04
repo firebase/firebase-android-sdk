@@ -66,6 +66,7 @@ dependencies {
     implementation project(':firebase-components')
     implementation 'com.google.android.gms:play-services-basement:18.1.0'
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
+    implementation 'androidx.concurrent:concurrent-futures:1.1.0'
 
     // FirebaseApp references storage, so storage needs to be on classpath when dokka runs.
     javadocClasspath project(path: ':firebase-storage')
