@@ -99,7 +99,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   private Timer onResumeTime = null;
   private Timer firstDrawDone = null;
   private Timer preDraw = null;
-  private List<TraceMetric> preDrawSubtraces = new ArrayList<>();
 
   private PerfSession startSession;
   private boolean isStartedFromBackground = false;
@@ -236,7 +235,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     this.experimentTtid.addPerfSessions(this.startSession.build());
 
     if (subtraceCount > 0) {
-      executorService.execute(() -> this.logColdStart(this.experimentTtid));
+      executorService.execute(() -> this.logExperimentTtid(this.experimentTtid));
 
       if (isRegisteredForLifecycleCallbacks) {
         // After AppStart trace is queued to be logged, we can unregister this callback.
@@ -267,7 +266,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     this.experimentTtid.addSubtraces(subtrace.build());
 
     if (subtraceCount > 0) {
-      executorService.execute(() -> this.logColdStart(this.experimentTtid));
+      executorService.execute(() -> this.logExperimentTtid(this.experimentTtid));
 
       if (isRegisteredForLifecycleCallbacks) {
         // After AppStart trace is queued to be logged, we can unregister this callback.
@@ -342,7 +341,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     }
   }
 
-  private void logColdStart(TraceMetric.Builder metric) {
+  private void logExperimentTtid(TraceMetric.Builder metric) {
     transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
   }
 
