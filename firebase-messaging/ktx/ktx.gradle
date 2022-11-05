@@ -24,11 +24,11 @@ firebaseLibrary {
 }
 
 android {
-    compileSdkVersion project.targetSdkVersion
+    compileSdk 31
     defaultConfig {
         minSdkVersion 19
         multiDexEnabled true
-        targetSdkVersion project.targetSdkVersion
+        targetSdk 31
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

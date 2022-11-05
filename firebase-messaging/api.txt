@@ -17,7 +17,7 @@ package com.google.firebase.messaging {
     field @Deprecated public static final String INSTANCE_ID_SCOPE = "FCM";
   }
 
-  public class FirebaseMessagingService extends android.app.Service {
+  public class FirebaseMessagingService extends androidx.lifecycle.LifecycleService {
     ctor public FirebaseMessagingService();
     method public final android.os.IBinder onBind(android.content.Intent);
     method @WorkerThread public void onDeletedMessages();
