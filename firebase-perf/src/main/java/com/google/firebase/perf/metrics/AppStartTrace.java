@@ -383,7 +383,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
 
   @Override
   public void onActivityPaused(Activity activity) {
-    if (this.firstDrawDone != null && this.preDraw != null) {
+    if (isExperimentTraceDone()) {
       return;
     }
     Timer onPauseTime = clock.getTime();
@@ -397,7 +397,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
 
   @Override
   public void onActivityStopped(Activity activity) {
-    if (this.firstDrawDone != null && this.preDraw != null) {
+    if (isExperimentTraceDone()) {
       return;
     }
     Timer onStopTime = clock.getTime();
