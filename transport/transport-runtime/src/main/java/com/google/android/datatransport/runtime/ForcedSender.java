@@ -14,7 +14,6 @@
 
 package com.google.android.datatransport.runtime;
 
-import android.annotation.SuppressLint;
 import androidx.annotation.Discouraged;
 import androidx.annotation.WorkerThread;
 import com.google.android.datatransport.Priority;
@@ -26,16 +25,11 @@ import com.google.android.datatransport.Transport;
 public final class ForcedSender {
   @WorkerThread
   public static void sendBlocking(Transport<?> transport, Priority priority) {
-    @SuppressLint("DiscouragedApi")
-    TransportContext context = getTransportContextOrThrow(transport).withPriority(priority);
-    TransportRuntime.getInstance().getUploader().logAndUpdateState(context, 1);
-  }
-
-  private static TransportContext getTransportContextOrThrow(Transport<?> transport) {
     if (transport instanceof TransportImpl) {
-      return ((TransportImpl<?>) transport).getTransportContext();
+      TransportContext context =
+          ((TransportImpl<?>) transport).getTransportContext().withPriority(priority);
+      TransportRuntime.getInstance().getUploader().logAndUpdateState(context, 1);
     }
-    throw new IllegalArgumentException("Expected instance of TransportImpl.");
   }
 
   private ForcedSender() {}
