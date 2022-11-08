@@ -1,0 +1,25 @@
+name: Build Release Artifacts
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - 'releases/**'
+
+jobs:
+  build-artifacts:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Perform gradle build
+        run: |
+          ./gradlew  firebasePublish -PprojectsToPublish=firebase-firestore -PpublishMode=RELEASE -PincludeFireEscapeArtifacts=true
+      - name: Upload generated artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: release_artifacts.zip
+          path: build/*.zip
+          retention-days: 5
