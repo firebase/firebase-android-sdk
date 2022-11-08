@@ -38,7 +38,7 @@ def start(
 ):
   logger.info('Starting to analyze macrobenchmark test results ...')
 
-  if output_dir is None:
+  if not output_dir:
     output_dir = Path(tempfile.mkdtemp(prefix='macrobenchmark-analysis-'))
     logger.info(f'Created temporary dir "{output_dir}" to save analysis results')
 

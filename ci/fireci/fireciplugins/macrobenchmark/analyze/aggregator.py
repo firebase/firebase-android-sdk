@@ -46,7 +46,7 @@ def calculate_statistic(trace: str, device: str, data: pd.DataFrame, output_dir:
   dispersions = pd.DataFrame([pd.Series(cv, name='cv'), pd.Series(rmad, name='rmad')])
 
   # Optionally save percentiles and dispersions to file
-  if output_dir is not None:
+  if output_dir:
     percentiles.to_json(output_dir.joinpath('percentiles.json'), orient='index')
     dispersions.to_json(output_dir.joinpath('dispersions.json'), orient='index')
     logger.info(f'Percentiles and dispersions saved in: {output_dir}')
@@ -73,8 +73,7 @@ def calculate_statistic_diff(
   percentage = delta / ctl_mean
 
   # Optionally save statistics to file
-  if output_dir is not None:
+  if output_dir:
     delta.to_json(output_dir.joinpath('delta.json'))
     percentage.to_json(output_dir.joinpath('percentage.json'))
     logger.info(f'Percentiles diff saved in: {output_dir}')
-

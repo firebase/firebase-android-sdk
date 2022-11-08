@@ -28,12 +28,12 @@ DataPoint = TypedDict('DataPoint', {'duration': float, 'device': str, 'trace': s
 
 
 def collect_data_points(ftl_results_dir: list[str], local_reports_dir: Path) -> list[DataPoint]:
-  if not ftl_results_dir and local_reports_dir is None:
+  if not ftl_results_dir and not local_reports_dir:
     raise ClickException('Neither ftl-results-dir or local-reports-dir is provided.')
-  elif ftl_results_dir and local_reports_dir is None:
+  elif ftl_results_dir and not local_reports_dir:
     temp_dir = _download(ftl_results_dir)
     return _extract_raw_data(temp_dir)
-  elif not ftl_results_dir and local_reports_dir is not None:
+  elif not ftl_results_dir and local_reports_dir:
     return _extract_raw_data(local_reports_dir)
   else:
     raise ClickException('Should specify either ftl-results-dir or local-reports-dir, not both.')
