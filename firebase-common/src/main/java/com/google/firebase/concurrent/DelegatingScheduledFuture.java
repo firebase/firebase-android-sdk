@@ -14,11 +14,16 @@
 
 package com.google.firebase.concurrent;
 
+import android.annotation.SuppressLint;
 import androidx.concurrent.futures.AbstractResolvableFuture;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+// While direct use of AbstractResolvableFuture is not encouraged, it's stable for use and is not
+// going to be removed. In this case it's required since we need to implement a ScheduledFuture so
+// we can't use CallbackToFutureAdapter.
+@SuppressLint("RestrictedApi")
 class DelegatingScheduledFuture<V> extends AbstractResolvableFuture<V>
     implements ScheduledFuture<V> {
 
