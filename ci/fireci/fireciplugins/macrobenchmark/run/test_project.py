@@ -16,6 +16,7 @@ import asyncio
 import glob
 import re
 import shutil
+import random
 
 from .log_decorator import LogDecorator
 from .utils import execute, execute_async, generate_test_run_id
@@ -27,10 +28,10 @@ from typing import TypedDict
 logger = getLogger('fireci.macrobenchmark')
 
 
-class TestOutput(TypedDict, total=False):
+class RemoteTestOutput(TypedDict, total=False):
   project: str
-  local_reports_dir: str
-  ftl_results_dirs: list[str]
+  successful_runs: list[str]
+  exceptions: list[str]  # Using str due to Exception being not JSON serializable
 
 
 class TestProject:
@@ -39,7 +40,7 @@ class TestProject:
     self.test_project_dir = project_dir
     self.logger = custom_logger
 
-  def run_local(self, repeat: int) -> TestOutput:
+  def run_local(self, repeat: int):
     self.logger.info(f'Running test locally for {repeat} times ...')
     local_reports_dir = self.test_project_dir.joinpath('_reports')
 
@@ -59,10 +60,9 @@ class TestProject:
           shutil.copy(report, device_dir)
           run_logger.debug(f'Copied report file "{report}" to "{device_dir}"')
 
-    self.logger.info(f'Completed all {repeat} runs, reports saved at "{local_reports_dir}"')
-    return TestOutput(project=self.name, local_reports_dir=str(local_reports_dir))
+    self.logger.info(f'Finished all {repeat} runs, local reports dir: "{local_reports_dir}"')
 
-  async def run_remote(self, repeat: int) -> TestOutput:
+  async def run_remote(self, repeat: int) -> RemoteTestOutput:
     self.logger.info(f'Running test remotely for {repeat} times ...')
 
     with chdir(self.test_project_dir):
@@ -71,9 +71,9 @@ class TestProject:
       test_apk_path = glob.glob('**/macrobenchmark-benchmark.apk', recursive=True)[0]
       self.logger.info(f'App apk: "{app_apk_path}", Test apk: "{test_apk_path}"')
 
-      async def run(index: int, results_dir: str):
+      async def run(index: int, run_id: str) -> str:
         run_logger = LogDecorator(self.logger, f'run-{index}')
-        run_logger.info(f'Run-{index}: {results_dir}')
+        run_logger.info(f'Run-{index}: {run_id}')
         ftl_environment_variables = [
           'clearPackageData=true',
           'additionalTestOutputDir=/sdcard/Download',
@@ -84,19 +84,25 @@ class TestProject:
         args += ['--type', 'instrumentation']
         args += ['--app', app_apk_path]
         args += ['--test', test_apk_path]
-        args += ['--device', 'model=f2q,version=30,locale=en,orientation=portrait']
         args += ['--device', 'model=oriole,version=32,locale=en,orientation=portrait']
-        args += ['--device', 'model=redfin,version=30,locale=en,orientation=portrait']
         args += ['--directories-to-pull', '/sdcard/Download']
         args += ['--results-bucket', 'fireescape-benchmark-results']
-        args += ['--results-dir', results_dir]
+        args += ['--results-dir', run_id]
         args += ['--environment-variables', ','.join(ftl_environment_variables)]
         args += ['--timeout', '30m']
         args += ['--project', 'fireescape-c4819']
         await execute_async(executable, *args, logger=run_logger)
+        return run_id
 
-      ftl_results_dirs = [generate_test_run_id() for _ in range(repeat)]
-      runs = [run(i, ftl_results_dirs[i]) for i in range(repeat)]
-      await asyncio.gather(*runs)
-    self.logger.info(f'Completed all {repeat} runs, ftl results dirs: {ftl_results_dirs}')
-    return TestOutput(project=self.name, ftl_results_dirs=ftl_results_dirs)
+      runs = [run(i, generate_test_run_id()) for i in range(repeat)]
+      results = await asyncio.gather(*runs, return_exceptions=True)
+      successes = [x for x in results if not isinstance(x, Exception)]
+      exceptions = [x for x in results if isinstance(x, Exception)]
+
+    self.logger.info(f'Finished all {repeat} runs, successes: {successes}, failures: {exceptions}')
+
+    return RemoteTestOutput(
+      project=self.name,
+      successful_runs=successes,
+      exceptions=[str(e) for e in exceptions]
+    )

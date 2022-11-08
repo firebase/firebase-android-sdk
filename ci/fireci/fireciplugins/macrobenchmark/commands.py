@@ -50,9 +50,7 @@ def macrobenchmark():
   type=click.Path(dir_okay=True, resolve_path=True, path_type=Path),
   default='macrobenchmark-output.json',
   show_default=True,
-  help='The file for saving macrobenchmark test output. If running locally, the file contains '
-       'the directory name of local test reports. If running remotely, the file contains Firebase '
-       'Test Lab results directory names.'
+  help='The file for saving macrobenchmark test output if running on Firebase Test Lab.'
 )
 @ci_command(group=macrobenchmark)
 def run(build_only: bool, local: bool, repeat: int, output: Path):

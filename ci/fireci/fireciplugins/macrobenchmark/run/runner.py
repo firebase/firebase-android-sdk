@@ -16,6 +16,8 @@ import asyncio
 import json
 import logging
 import tempfile
+
+import click
 import yaml
 
 from .test_project_builder import TestProjectBuilder
@@ -34,25 +36,38 @@ async def start(build_only: bool, local: bool, repeat: int, output: Path):
   test_dir = _prepare_test_directory()
   template_project_dir = Path('health-metrics/benchmark/template')
 
-  test_projects = []
-  for test_config in config['test-apps']:
-    builder = TestProjectBuilder(test_config, test_dir, template_project_dir, product_versions)
-    test_projects.append(builder.build())
+  test_projects = [
+    TestProjectBuilder(
+      test_config,
+      test_dir,
+      template_project_dir,
+      product_versions,
+    ).build() for test_config in config['test-apps']]
 
   if not build_only:
     if local:
-      test_outputs = []
       for test_project in test_projects:
-        test_output = test_project.run_local(repeat)
-        test_outputs.append(test_output)
+        test_project.run_local(repeat)
     else:
-      remote_runs = [x.run_remote(repeat) for x in test_projects]
-      test_outputs = await asyncio.gather(*remote_runs)
+      remote_runs = [test_project.run_remote(repeat) for test_project in test_projects]
+      results = await asyncio.gather(*remote_runs, return_exceptions=True)
+      test_outputs = [x for x in results if not isinstance(x, Exception)]
+      exceptions = [x for x in results if isinstance(x, Exception)]
 
-    with open(output, 'w') as file:
-      json.dump(test_outputs, file)
+      with open(output, 'w') as file:
+        json.dump(test_outputs, file)
+        logger.info(f'Output of remote testing saved to: {output}')
 
-  logger.info(f'Completed macrobenchmark test and saved output to "{output}"')
+      if exceptions:
+        logger.error(f'Exceptions occurred: {exceptions}')
+      for test_output in test_outputs:
+        if test_output['exceptions']:
+          logger.error(f'Exceptions occurred: {test_output["exceptions"]}')
+
+      if exceptions or any(test_output['exceptions'] for test_output in test_outputs):
+        raise click.ClickException('Macrobenchmark test failed with above exceptions')
+
+  logger.info(f'Completed macrobenchmark test successfully')
 
 
 def _assemble_all_products() -> dict[str, str]:

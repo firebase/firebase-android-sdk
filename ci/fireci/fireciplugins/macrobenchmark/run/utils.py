@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import click
 import datetime
 import string
 import random
@@ -45,7 +44,7 @@ def execute(program: str, *args: [str], logger: Logger | LoggerAdapter) -> None:
   else:
     message = f'"{command}" failed with return code {popen.returncode}'
     logger.error(message)
-    raise click.ClickException(message)
+    raise RuntimeError(message)
 
 
 async def execute_async(program: str, *args: [str], logger: Logger | LoggerAdapter) -> None:
@@ -62,4 +61,4 @@ async def execute_async(program: str, *args: [str], logger: Logger | LoggerAdapt
   else:
     message = f'"{command}" failed with return code {process.returncode}'
     logger.error(message)
-    raise click.ClickException(message)
+    raise RuntimeError(message)
