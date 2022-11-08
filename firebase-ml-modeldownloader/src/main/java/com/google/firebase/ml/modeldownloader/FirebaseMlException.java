@@ -33,9 +33,9 @@ public class FirebaseMlException extends FirebaseException {
   public static final int UNKNOWN = 2;
 
   /**
-   * Client specified an invalid argument. Note that this differs from <code>FAILED_PRECONDITION</code>.
-   * <code>INVALID_ARGUMENT</code> indicates arguments that are problematic regardless of the state
-   * of the system (for example, an invalid field name).
+   * Client specified an invalid argument. Note that this differs from <code>FAILED_PRECONDITION
+   * </code>. <code>INVALID_ARGUMENT</code> indicates arguments that are problematic regardless of
+   * the state of the system (for example, an invalid field name).
    */
   public static final int INVALID_ARGUMENT = 3;
 
