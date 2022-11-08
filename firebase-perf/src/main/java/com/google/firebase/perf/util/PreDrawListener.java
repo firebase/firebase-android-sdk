@@ -41,13 +41,11 @@ public class PreDrawListener implements ViewTreeObserver.OnPreDrawListener {
 
   @Override
   public boolean onPreDraw() {
-    // Set viewReference to null so any onDraw past the first is a no-op
+    // Set viewReference to null so any onPreDraw past the first is a no-op
     View view = viewReference.getAndSet(null);
     if (view == null) {
       return true;
     }
-    // OnDrawListeners cannot be removed within onDraw, so we remove it with a
-    // GlobalLayoutListener
     view.getViewTreeObserver().removeOnPreDrawListener(this);
     mainThreadHandler.post(callback);
     return true;
