@@ -10,7 +10,7 @@ building a macrobenchmark test app for each of the Firebase Android SDKs.
 If not all of them are required, comment out irrelevant ones for faster build
 and test time.
 
-## Run benchmark tests
+## Run macrobenchmark tests
 
 ### Prerequisite
 
@@ -35,16 +35,27 @@ and test time.
    [doc](https://cloud.google.com/docs/authentication) for full guidance on
    authentication.
 
-### Run benchmark tests locally
-
-1. Build all test apps by running below command in the root
-   directory `firebase-android-sdk`:
-
-   ```shell
-   fireci macrobenchmark --build-only
-   ```
+### Run tests locally
 
 1. [Connect an Android device to the computer](https://d.android.com/studio/run/device)
+
+1. Run below command in the repository root directory `firebase-android-sdk`:
+
+   ```shell
+   fireci macrobenchmark run --local
+   ```
+
+   **Note**: specify `--repeat <number>` to run the test multiple times. Run
+   `fireci macrobenchmark run --help` to see more details.
+
+Alternatively, developers can also create test apps with `fireci`, and run the
+test from either CLI or Android Studio:
+
+1. Run below command to build all test apps:
+
+   ```shell
+   fireci macrobenchmark run --build-only
+   ```
 
 1. Locate the temporary test apps directory from the log, for example:
 
@@ -89,22 +100,89 @@ and test time.
      Alternatively, same set of result files are produced at the same output
      location as invoking tests from CLI, which can be used for inspection.
 
-### Run benchmark tests on Firebase Test Lab
+### Run tests on Firebase Test Lab
 
-Build and run all tests on FTL by running below command in the root
-directory `firebase-android-sdk`:
+Run below command to build and run all tests on FTL:
 
+```shell
+fireci macrobenchmark run --remote
 ```
-fireci macrobenchmark
-```
 
-Alternatively, it is possible to build all test apps via steps described in
-[Running benchmark tests locally](#running-benchmark-tests-locally)
-and manually
-[run tests on FTL with `gcloud` CLI ](https://firebase.google.com/docs/test-lab/android/command-line#running_your_instrumentation_tests).
+**Note**: `--repeat <number>` is also supported to submit the test to FTL for
+`<number>` times. All tests on FTL will run in parallel.
+
+Alternatively, developers can still build test apps locally, and manually
+[run tests on FTL with `gcloud` CLI](https://firebase.google.com/docs/test-lab/android/command-line#running_your_instrumentation_tests).
 
 Aggregated benchmark results are displayed in the log. The log also
 contains links to FTL result pages and result files on Google Cloud Storage.
+
+## Analyze macrobenchmark results
+
+Besides results from `*-benchmarkData.json` as descriped above, `fireci`
+supports more in depth analysis, such as:
+
+- calculating percentiles and visualizing distributions for one test run
+- comparing two sets of results (with stats and graphs) from two different runs
+
+To see more details, run
+
+```shell
+fireci macrobenchmark analyze --help
+```
+
+### Example usage
+
+1. Analyzing local test results
+
+   ```shell
+   fireci macrobenchmark analyze --local-reports-dir <path-to-dir>
+   ```
+
+   `<path-to-dir>` is the directory containing the `*-benchmarkData.json` from
+   the local test runs.
+
+   **Note**: If the test is started:
+
+   - with `fireci macrobenchmark run --local`, `fireci` copies all benchmark
+     json files into a dir, which can be supplied here.
+   - manually (CLI or Android Studio), `<path-to-dir>` shall be the directory
+     that contains `*-benchmarkData.json` in the gradle build directory.
+
+1. Analyzing remote test results
+
+   ```shell
+   fireci macrobenchmark analyze --ftl-results-dir <dir1> --ftl-results-dir <dir2> ...
+   ```
+
+   `<dir1>`, `<dir2>` are Firebase Test Lab results directory names, such as
+   `2022-11-04_11:18:34.039437_OqZn`.
+
+1. Comparing two sets of result from two different FTL runs
+
+   ```shell
+   fireci macrobenchmark analyze \
+     --diff-mode \
+     --ctl-ftl-results-dir <dir1-from-run1> \
+     --ctl-ftl-results-dir <dir2-from-run1> \
+     ...
+     --exp-ftl-results-dir <dir1-from-run2> \
+     --exp-ftl-results-dir <dir2-from-run2> \
+     ...
+   ```
+
+   `ctl` and `exp` are short for "control group" and "experimental group".
+
+1. Comparing a local test run against a FTL run
+
+   ```shell
+   fireci macrobenchmark analyze \
+     --diff-mode \
+     --ctl-ftl-results-dir <dir1-from-ftl-run> \
+     --ctl-ftl-results-dir <dir2-from-ftl-run> \
+     ...
+     --exp-local-reports-dir <dir-from-local-run>
+   ```
 
 ## Toolchains
 
