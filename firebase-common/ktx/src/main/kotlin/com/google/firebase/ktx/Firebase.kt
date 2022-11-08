@@ -26,9 +26,9 @@ import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.components.Dependency
 import com.google.firebase.components.Qualified
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import java.util.concurrent.Executor
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
-import java.util.concurrent.Executor
 
 /**
  * Single access point to all firebase SDKs from Kotlin.
