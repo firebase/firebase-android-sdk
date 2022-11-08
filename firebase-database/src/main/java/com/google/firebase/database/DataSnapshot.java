@@ -166,7 +166,7 @@ public class DataSnapshot {
    *
    * An example class might look like:
    *
-   * <pre><code>
+   * <pre>
    *     class Message {
    *         private String author;
    *         private String text;
@@ -190,7 +190,7 @@ public class DataSnapshot {
    *
    *     // Later
    *     Message m = snapshot.getValue(Message.class);
-   * </code></pre>
+   * </pre>
    *
    * @param valueType The class into which this snapshot should be marshalled
    * @param <T> The type to return. Implicitly defined from the class passed in
@@ -208,10 +208,10 @@ public class DataSnapshot {
    * properly-typed Collection. So, in the case where you want a {@link java.util.List} of Message
    * instances, you will need to do something like the following:
    *
-   * <pre><code>
+   * <pre>
    *     GenericTypeIndicator&lt;List&lt;Message&gt;&gt; t = new GenericTypeIndicator&lt;List&lt;Message&gt;&gt;() {};
    *     List&lt;Message&gt; messages = snapshot.getValue(t);
-   * </code></pre>
+   * </pre>
    *
    * It is important to use a subclass of {@link GenericTypeIndicator}. See {@link
    * GenericTypeIndicator} for more details
@@ -255,11 +255,12 @@ public class DataSnapshot {
 
   /**
    * Gives access to all of the immediate children of this snapshot. Can be used in native for
-   * loops: <code>
-   * <br>    for (DataSnapshot child : parent.getChildren()) {
-   * <br>    &nbsp;&nbsp;&nbsp;&nbsp;...
-   * <br>    }
-   * </code>
+   * loops:
+   * <pre>
+   * for (DataSnapshot child : parent.getChildren()) {
+   *   &nbsp;&nbsp;&nbsp;&nbsp;...
+   * }
+   * </pre>
    *
    * @return The immediate children of this snapshot
    */
