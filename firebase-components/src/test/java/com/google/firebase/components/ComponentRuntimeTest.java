@@ -16,6 +16,7 @@ package com.google.firebase.components;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.components.Qualified.qualified;
+import static com.google.firebase.components.Qualified.unqualified;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
@@ -646,8 +647,8 @@ public final class ComponentRuntimeTest {
             runtime.getAllComponentsForTest().stream()
                 .filter(
                     c ->
-                        (c.getProvidedInterfaces().contains(ComponentOne.class)
-                            || c.getProvidedInterfaces().contains(ComponentTwo.class)))
+                        (c.getProvidedInterfaces().contains(unqualified(ComponentOne.class))
+                            || c.getProvidedInterfaces().contains(unqualified(ComponentTwo.class))))
                 .allMatch(c -> c.getFactory() == replacedFactory))
         .isTrue();
   }
