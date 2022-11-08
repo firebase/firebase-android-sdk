@@ -653,10 +653,13 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       updateTrackedLimboDocuments(viewChange.getLimboChanges(), queryView.getTargetId());
 
       if (viewChange.getSnapshot() != null) {
+        Logger.debug(TAG, "Adding snapshot to event: %s", viewChange.getSnapshot());
         newSnapshots.add(viewChange.getSnapshot());
         LocalViewChanges docChanges =
             LocalViewChanges.fromViewSnapshot(queryView.getTargetId(), viewChange.getSnapshot());
         documentChangesInAllViews.add(docChanges);
+      } else {
+        Logger.debug(TAG, "Snapshot for query %s is null", entry.getKey());
       }
     }
     syncEngineListener.onViewSnapshots(newSnapshots);
