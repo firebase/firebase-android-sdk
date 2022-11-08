@@ -256,6 +256,7 @@ public class DataSnapshot {
   /**
    * Gives access to all of the immediate children of this snapshot. Can be used in native for
    * loops:
+   *
    * <pre>
    * for (DataSnapshot child : parent.getChildren()) {
    *   &nbsp;&nbsp;&nbsp;&nbsp;...

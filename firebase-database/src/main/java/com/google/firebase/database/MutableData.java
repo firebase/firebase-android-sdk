@@ -92,6 +92,7 @@ public class MutableData {
 
   /**
    * Used to iterate over the immediate children at this location
+   *
    * <pre>
    *     for (MutableData child : parent.getChildren()) {
    *         &nbsp;&nbsp;&nbsp;&nbsp;...
