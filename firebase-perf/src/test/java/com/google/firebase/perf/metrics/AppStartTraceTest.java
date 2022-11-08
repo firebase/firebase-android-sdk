@@ -298,6 +298,11 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     trace.onActivityCreated(activity1, bundle);
     trace.onActivityStarted(activity1);
     trace.onActivityResumed(activity1);
+    // Experiment: simulate backgrounding before draw
+    trace.onActivityPaused(activity1);
+    trace.onActivityStopped(activity1);
+    trace.onActivityStarted(activity1);
+    trace.onActivityResumed(activity1);
     fakeExecutorService.runAll();
     verify(transportManager, times(1))
         .log(isA(TraceMetric.class), isA(ApplicationProcessState.class));
@@ -318,5 +323,6 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     assertThat(ttid.getName()).isEqualTo("_experiment_app_start_ttid");
     assertThat(ttid.getDurationUs()).isNotEqualTo(resumeTime - appStartTime);
     assertThat(ttid.getDurationUs()).isEqualTo(drawTime - appStartTime);
+    assertThat(ttid.getSubtracesCount()).isEqualTo(6);
   }
 }
