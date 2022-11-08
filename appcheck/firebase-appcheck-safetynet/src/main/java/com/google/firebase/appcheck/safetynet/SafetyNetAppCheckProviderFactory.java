@@ -23,10 +23,7 @@ import com.google.firebase.appcheck.safetynet.internal.SafetyNetAppCheckProvider
 /**
  * Implementation of an {@link AppCheckProviderFactory} that builds {@link
  * SafetyNetAppCheckProvider}s. This is the default implementation.
- *
- * @deprecated Use {@code PlayIntegrityAppCheckProviderFactory} instead.
  */
-@Deprecated
 public class SafetyNetAppCheckProviderFactory implements AppCheckProviderFactory {
 
   private static final SafetyNetAppCheckProviderFactory instance =
@@ -37,10 +34,7 @@ public class SafetyNetAppCheckProviderFactory implements AppCheckProviderFactory
   /**
    * Gets an instance of this class for installation into a {@link
    * com.google.firebase.appcheck.FirebaseAppCheck} instance.
-   *
-   * @deprecated Use {@code PlayIntegrityAppCheckProviderFactory#getInstance} instead.
    */
-  @Deprecated
   @NonNull
   public static SafetyNetAppCheckProviderFactory getInstance() {
     return instance;
