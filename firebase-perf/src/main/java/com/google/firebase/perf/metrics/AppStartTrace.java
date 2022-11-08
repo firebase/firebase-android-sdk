@@ -380,10 +380,30 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   }
 
   @Override
-  public void onActivityPaused(Activity activity) {}
+  public void onActivityPaused(Activity activity) {
+    if (this.firstDrawDone != null && this.preDraw != null) {
+      return;
+    }
+    Timer onPauseTime = clock.getTime();
+    TraceMetric.Builder subtrace = TraceMetric.newBuilder()
+            .setName("_experiment_onPause")
+            .setClientStartTimeUs(onPauseTime.getMicros())
+            .setDurationUs(getStartTimer().getDurationMicros(onPauseTime));
+    this.experimentTtid.addSubtraces(subtrace.build());
+  }
 
   @Override
-  public synchronized void onActivityStopped(Activity activity) {}
+  public void onActivityStopped(Activity activity) {
+    if (this.firstDrawDone != null && this.preDraw != null) {
+      return;
+    }
+    Timer onStopTime = clock.getTime();
+    TraceMetric.Builder subtrace = TraceMetric.newBuilder()
+            .setName("_experiment_onStop")
+            .setClientStartTimeUs(onStopTime.getMicros())
+            .setDurationUs(getStartTimer().getDurationMicros(onStopTime));
+    this.experimentTtid.addSubtraces(subtrace.build());
+  }
 
   @Override
   public void onActivityDestroyed(Activity activity) {}
