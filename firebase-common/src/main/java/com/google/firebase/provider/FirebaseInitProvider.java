@@ -27,11 +27,12 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.StartupTime;
 
 /** Initializes Firebase APIs at app startup time. */
 public class FirebaseInitProvider extends ContentProvider {
-
   private static final String TAG = "FirebaseInitProvider";
+  public static StartupTime startupTime;
 
   /** Should match the {@link FirebaseInitProvider} authority if $androidId is empty. */
   @VisibleForTesting
@@ -48,6 +49,7 @@ public class FirebaseInitProvider extends ContentProvider {
   /** Called before {@link Application#onCreate()}. */
   @Override
   public boolean onCreate() {
+    startupTime = StartupTime.now();
     if (FirebaseApp.initializeApp(getContext()) == null) {
       Log.i(TAG, "FirebaseApp initialization unsuccessful");
     } else {

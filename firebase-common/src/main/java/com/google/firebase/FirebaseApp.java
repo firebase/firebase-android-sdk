@@ -51,6 +51,7 @@ import com.google.firebase.events.Publisher;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatController;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
+import com.google.firebase.provider.FirebaseInitProvider;
 import com.google.firebase.tracing.ComponentMonitor;
 import com.google.firebase.tracing.FirebaseTrace;
 import java.nio.charset.Charset;
@@ -416,7 +417,7 @@ public class FirebaseApp {
     this.applicationContext = Preconditions.checkNotNull(applicationContext);
     this.name = Preconditions.checkNotEmpty(name);
     this.options = Preconditions.checkNotNull(options);
-    StartupTime startupTime = StartupTime.now();
+    StartupTime startupTime = FirebaseInitProvider.startupTime;
 
     FirebaseTrace.pushTrace("Firebase");
 
@@ -436,8 +437,8 @@ public class FirebaseApp {
             .addComponent(Component.of(options, FirebaseOptions.class))
             .setProcessor(new ComponentMonitor());
 
-    // Don't provide StartupTime in direct boot mode
-    if (UserManagerCompat.isUserUnlocked(applicationContext)) {
+    // Don't provide StartupTime in direct boot mode or if Firebase was manually started
+    if (UserManagerCompat.isUserUnlocked(applicationContext) && startupTime != null) {
       builder.addComponent(Component.of(startupTime, StartupTime.class));
     }
 
