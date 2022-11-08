@@ -305,6 +305,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     // Simulate draw and manually stepping time forward
     ShadowSystemClock.advanceBy(Duration.ofMillis(1000));
     long drawTime = TimeUnit.NANOSECONDS.toMicros(SystemClock.elapsedRealtimeNanos());
+    testView.getViewTreeObserver().dispatchOnPreDraw();
     testView.getViewTreeObserver().dispatchOnDraw();
     shadowOf(Looper.getMainLooper()).idle();
     fakeExecutorService.runNext();
