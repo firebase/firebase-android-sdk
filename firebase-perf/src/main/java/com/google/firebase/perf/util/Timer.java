@@ -127,6 +127,7 @@ public class Timer implements Parcelable {
     // TODO: consider removing this method and make Timer immutable thus fully thread-safe
     wallClockMicros = wallClockMicros();
     elapsedRealtimeMicros = elapsedRealtimeMicros();
+    uptimeMicros = uptimeMicros();
   }
 
   /** Return wall-clock time in microseconds. */
