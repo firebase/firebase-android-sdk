@@ -83,9 +83,10 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
                               .add("lintChecks", project.project(checkProject));
                         }
                       }
+                      if (library.runApiInformation) {
+                        setupApiInformationAnalysis(project);
+                      }
                     }));
-
-    setupApiInformationAnalysis(project);
 
     project.getTasks().register("firebaseLint", task -> task.dependsOn("lint"));
     Coverage.apply(library);

@@ -24,6 +24,7 @@ class FirebaseProprietaryLibraryPlugin : Plugin<Project> {
 
         val library = project.extensions.getByType(FirebaseLibraryExtension::class.java)
         library.publishSources = false
+        library.runApiInformation = false
         library.customizePom {
             licenses {
                 license {
