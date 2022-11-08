@@ -212,7 +212,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     }
     Timer start = getStartTimer();
     this.firstDrawDone = clock.getTime();
-    int subtraceCount = this.experimentTtid.getSubtracesCount();
     this.experimentTtid
         .setClientStartTimeUs(start.getMicros())
         .setDurationUs(start.getDurationMicros(this.firstDrawDone));
@@ -234,7 +233,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
 
     this.experimentTtid.addPerfSessions(this.startSession.build());
 
-    if (subtraceCount > 0) {
+    if (isExperimentTraceDone()) {
       executorService.execute(() -> this.logExperimentTtid(this.experimentTtid));
 
       if (isRegisteredForLifecycleCallbacks) {
@@ -250,7 +249,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     }
     Timer start = getStartTimer();
     this.preDraw = clock.getTime();
-    int subtraceCount = this.experimentTtid.getSubtracesCount();
     TraceMetric.Builder subtrace =
         TraceMetric.newBuilder()
             .setName("_experiment_preDraw")
@@ -265,7 +263,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
         .setDurationUs(start.getDurationUptimeMicros(this.preDraw));
     this.experimentTtid.addSubtraces(subtrace.build());
 
-    if (subtraceCount > 0) {
+    if (isExperimentTraceDone()) {
       executorService.execute(() -> this.logExperimentTtid(this.experimentTtid));
 
       if (isRegisteredForLifecycleCallbacks) {
@@ -273,6 +271,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
         unregisterActivityLifecycleCallbacks();
       }
     }
+  }
+
+  private boolean isExperimentTraceDone() {
+    return this.preDraw != null && this.firstDrawDone != null;
   }
 
   @Override
@@ -385,7 +387,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
       return;
     }
     Timer onPauseTime = clock.getTime();
-    TraceMetric.Builder subtrace = TraceMetric.newBuilder()
+    TraceMetric.Builder subtrace =
+        TraceMetric.newBuilder()
             .setName("_experiment_onPause")
             .setClientStartTimeUs(onPauseTime.getMicros())
             .setDurationUs(getStartTimer().getDurationMicros(onPauseTime));
@@ -398,7 +401,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
       return;
     }
     Timer onStopTime = clock.getTime();
-    TraceMetric.Builder subtrace = TraceMetric.newBuilder()
+    TraceMetric.Builder subtrace =
+        TraceMetric.newBuilder()
             .setName("_experiment_onStop")
             .setClientStartTimeUs(onStopTime.getMicros())
             .setDurationUs(getStartTimer().getDurationMicros(onStopTime));

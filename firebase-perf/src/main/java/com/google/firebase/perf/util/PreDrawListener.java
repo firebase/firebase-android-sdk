@@ -19,6 +19,10 @@ import android.view.View;
 import android.view.ViewTreeObserver;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * OnPreDraw listener that unregisters itself and post a callback to the main thread during
+ * OnPreDraw. This is an approximation of the initial-display time defined by Android Vitals.
+ */
 public class PreDrawListener implements ViewTreeObserver.OnPreDrawListener {
   private final Handler mainThreadHandler = new Handler(Looper.getMainLooper());
   private final AtomicReference<View> viewReference;
