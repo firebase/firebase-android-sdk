@@ -134,6 +134,29 @@ public final class Utils {
     }
   }
 
+  /** Invokes latch.await(timeout, unit) uninterruptibly. */
+  public static boolean awaitUninterruptibly(CountDownLatch latch, long timeout, TimeUnit unit) {
+    boolean interrupted = false;
+    try {
+      long remainingNanos = unit.toNanos(timeout);
+      long end = System.nanoTime() + remainingNanos;
+
+      while (true) {
+        try {
+          // CountDownLatch treats negative timeouts just like zero.
+          return latch.await(remainingNanos, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException e) {
+          interrupted = true;
+          remainingNanos = end - System.nanoTime();
+        }
+      }
+    } finally {
+      if (interrupted) {
+        Thread.currentThread().interrupt();
+      }
+    }
+  }
+
   /**
    * ExecutorService that is used exclusively by the awaitEvenIfOnMainThread function. If the
    * Continuation which counts down the latch is called on the same thread which is waiting on the

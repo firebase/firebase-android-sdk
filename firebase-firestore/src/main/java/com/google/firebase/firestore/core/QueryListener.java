@@ -88,7 +88,8 @@ public class QueryListener {
               newSnapshot.isFromCache(),
               newSnapshot.getMutatedKeys(),
               newSnapshot.didSyncStateChange(),
-              /* excludesMetadataChanges= */ true);
+              /* excludesMetadataChanges= */ true,
+              newSnapshot.hasCachedResults());
     }
 
     if (!raisedInitialEvent) {
@@ -142,8 +143,11 @@ public class QueryListener {
       return false;
     }
 
-    // Raise data from cache if we have any documents or we are offline
-    return !snapshot.getDocuments().isEmpty() || onlineState.equals(OnlineState.OFFLINE);
+    // Raise data from cache if we have any documents, have cached results before,
+    // or we are offline.
+    return (!snapshot.getDocuments().isEmpty()
+        || snapshot.hasCachedResults()
+        || onlineState.equals(OnlineState.OFFLINE));
   }
 
   private boolean shouldRaiseEvent(ViewSnapshot snapshot) {
@@ -174,7 +178,8 @@ public class QueryListener {
             snapshot.getDocuments(),
             snapshot.getMutatedKeys(),
             snapshot.isFromCache(),
-            snapshot.excludesMetadataChanges());
+            snapshot.excludesMetadataChanges(),
+            snapshot.hasCachedResults());
     raisedInitialEvent = true;
     Logger.debug(
         "QueryListener", "(%x) Raising initial event: %s", System.identityHashCode(this), snapshot);

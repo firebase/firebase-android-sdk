@@ -90,6 +90,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 import org.skyscreamer.jsonassert.JSONAssert;
 
 /**
@@ -99,6 +100,7 @@ import org.skyscreamer.jsonassert.JSONAssert;
  */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
+@LooperMode(LooperMode.Mode.LEGACY)
 public class ConfigFetchHandlerTest {
   private static final String INSTALLATION_ID = "'fL71_VyL3uo9jNMWu1L60S";
   private static final String INSTALLATION_AUTH_TOKEN =
@@ -1033,10 +1035,10 @@ public class ConfigFetchHandlerTest {
         ConfigContainer.newBuilder().withFetchTime(fetchTime);
 
     JSONObject entries = fetchResponse.getJSONObject(ENTRIES);
-    containerBuilder.replaceConfigsWith(entries);
+    containerBuilder = containerBuilder.replaceConfigsWith(entries);
 
     JSONArray experimentDescriptions = fetchResponse.getJSONArray(EXPERIMENT_DESCRIPTIONS);
-    containerBuilder.withAbtExperiments(experimentDescriptions);
+    containerBuilder = containerBuilder.withAbtExperiments(experimentDescriptions);
 
     return containerBuilder.build();
   }

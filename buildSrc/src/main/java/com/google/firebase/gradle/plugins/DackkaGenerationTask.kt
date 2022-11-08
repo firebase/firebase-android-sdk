@@ -3,11 +3,13 @@ package com.google.firebase.gradle.plugins
 import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
@@ -19,7 +21,6 @@ import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkerExecutor
 import org.json.JSONObject
-
 /**
  * Extension class for [GenerateDocumentationTask].
  *
@@ -27,8 +28,7 @@ import org.json.JSONObject
  *
  * @property dackkaJarFile a [File] of the Dackka fat jar
  * @property dependencies a list of all dependent jars (the classpath)
- * @property kotlinSources a list of kotlin source roots
- * @property javaSources a list of java source roots
+ * @property sources a list of source roots
  * @property suppressedFiles a list of files to exclude from documentation
  * @property outputDirectory where to store the generated files
  */
@@ -38,15 +38,11 @@ abstract class GenerateDocumentationTaskExtension : DefaultTask() {
     abstract val dackkaJarFile: Property<File>
 
     @get:[InputFiles Classpath]
-    abstract val dependencies: ListProperty<File>
+    abstract val dependencies: Property<FileCollection>
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val kotlinSources: ListProperty<File>
-
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val javaSources: ListProperty<File>
+    abstract val sources: ListProperty<File>
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -55,6 +51,9 @@ abstract class GenerateDocumentationTaskExtension : DefaultTask() {
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val packageListFiles: ListProperty<File>
+
+    @get:Input
+    abstract val clientName: Property<String>
 
     @get:OutputDirectory
     abstract val outputDirectory: Property<File>
@@ -89,7 +88,7 @@ abstract class GenerateDocumentationTask @Inject constructor(
     @TaskAction
     fun build() {
         val configFile = saveToJsonFile(constructArguments())
-        launchDackka(configFile, workerExecutor)
+        launchDackka(clientName, configFile, workerExecutor)
     }
 
     private fun constructArguments(): JSONObject {
@@ -102,7 +101,7 @@ abstract class GenerateDocumentationTask @Inject constructor(
                     "scopeId" to "androidx",
                     "sourceSetName" to "main"
                 ),
-                "sourceRoots" to kotlinSources.get().map { it.path } + javaSources.get().map { it.path },
+                "sourceRoots" to sources.get().map { it.path },
                 "classpath" to dependencies.get().map { it.path },
                 "documentedVisibilities" to listOf("PUBLIC", "PROTECTED"),
                 "skipEmptyPackages" to "true",
@@ -122,9 +121,10 @@ abstract class GenerateDocumentationTask @Inject constructor(
     private fun createExternalLinks(packageLists: ListProperty<File>): List<ExternalDocumentationLink> {
         val linksMap = mapOf(
             "android" to "https://developer.android.com/reference/kotlin/",
-            "google" to "https://developer.android.com/reference/",
+            "google" to "https://developers.google.com/android/reference/",
             "firebase" to "https://firebase.google.com/docs/reference/kotlin/",
-            "coroutines" to "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/"
+            "coroutines" to "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/",
+            "kotlin" to "https://kotlinlang.org/api/latest/jvm/stdlib/"
         )
 
         return packageLists.get().map {
@@ -142,13 +142,13 @@ abstract class GenerateDocumentationTask @Inject constructor(
         return outputFile
     }
 
-    private fun launchDackka(argsFile: File, workerExecutor: WorkerExecutor) {
+    private fun launchDackka(clientName: Property<String>, argsFile: File, workerExecutor: WorkerExecutor) {
         val workQueue = workerExecutor.noIsolation()
 
         workQueue.submit(DackkaWorkAction::class.java) {
             args.set(listOf(argsFile.path, "-loggingLevel", "WARN"))
             classpath.set(setOf(dackkaJarFile.get()))
-            projectName.set(project.name)
+            projectName.set(clientName)
         }
     }
 }

@@ -113,7 +113,7 @@ dependencies {
     testImplementation 'com.google.android.gms:play-services-cloud-messaging:17.0.1'
     testImplementation 'androidx.test:rules:1.2.0'
     testImplementation 'androidx.test:runner:1.2.0'
-    testImplementation "org.robolectric:robolectric:4.6.1"
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.13-beta-2'
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
@@ -133,4 +133,13 @@ dependencies {
     testImplementation 'androidx.test.ext:truth:1.4.0'
     testImplementation 'androidx.test.services:test-services:1.2.0'
     testImplementation 'androidx.core:core:1.6.0'
+
+    androidTestImplementation project(':integ-testing')
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation "androidx.annotation:annotation:1.0.0"
+    androidTestImplementation 'org.mockito:mockito-core:2.25.0'
+    androidTestImplementation 'org.mockito:mockito-inline:2.25.0'
 }

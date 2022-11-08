@@ -56,7 +56,7 @@ public class FilterTest {
 
     CompositeFilter orFilter = orFilters(A, B, C);
     assertTrue(orFilter.isDisjunction());
-    assertEquals(andFilter.getFilters(), Arrays.asList(A, B, C));
+    assertEquals(orFilter.getFilters(), Arrays.asList(A, B, C));
   }
 
   @Test

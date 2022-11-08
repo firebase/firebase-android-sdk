@@ -199,7 +199,11 @@ public class Transaction {
   private Precondition precondition(DocumentKey key) {
     @Nullable SnapshotVersion version = readVersions.get(key);
     if (!writtenDocs.contains(key) && version != null) {
-      return Precondition.updateTime(version);
+      if (version.equals(SnapshotVersion.NONE)) {
+        return Precondition.exists(false);
+      } else {
+        return Precondition.updateTime(version);
+      }
     } else {
       return Precondition.NONE;
     }

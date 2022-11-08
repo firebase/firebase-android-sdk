@@ -35,11 +35,13 @@ import java.util.List;
  */
 @KeepForSdk
 public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-app-check";
 
   @Override
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseAppCheck.class, (InternalAppCheckTokenProvider.class))
+            .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.optionalProvider(HeartBeatController.class))
             .factory(
@@ -50,6 +52,6 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
             .alwaysEager()
             .build(),
         HeartBeatConsumerComponent.create(),
-        LibraryVersionComponent.create("fire-app-check", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }

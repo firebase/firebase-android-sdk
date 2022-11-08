@@ -188,8 +188,7 @@ public class JavadocPlugin implements Plugin<Project> {
                   .setValue(
                       ImmutableList.of(
                           ImmutableList.of("book.path", "/docs/reference/_book.yaml"),
-                          ImmutableList.of(
-                              "project.path", "/docs/reference/android/_project.yaml")));
+                          ImmutableList.of("project.path", "/_project.yaml")));
 
               // root path assumed by docs
               options.addStringOption("toroot", "/docs/reference/android/");
@@ -303,7 +302,9 @@ public class JavadocPlugin implements Plugin<Project> {
         .artifactView(
             view ->
                 view.attributes(
-                    attrs -> attrs.attribute(Attribute.of("artifactType", String.class), "jar")))
+                    attrs ->
+                        attrs.attribute(
+                            Attribute.of("artifactType", String.class), "android-classes")))
         .getArtifacts()
         .getArtifactFiles();
   }
