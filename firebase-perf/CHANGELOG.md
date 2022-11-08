@@ -1,5 +1,7 @@
 # Unreleased
-* 
+* [fixed] Fixed a `NullPointerException` crash when instrumenting screen traces
+  on Android 7, 8, and 9.
+  (#4146)
 
 
 # 20.2.0
