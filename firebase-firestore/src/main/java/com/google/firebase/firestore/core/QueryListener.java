@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
+import com.google.firebase.firestore.util.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -96,6 +97,8 @@ public class QueryListener {
         raisedEvent = true;
       }
     } else if (shouldRaiseEvent(newSnapshot)) {
+      Logger.debug(
+          "QueryListener", "(%x) Raising event: %s", System.identityHashCode(this), newSnapshot);
       listener.onEvent(newSnapshot, null);
       raisedEvent = true;
     }
@@ -173,6 +176,8 @@ public class QueryListener {
             snapshot.isFromCache(),
             snapshot.excludesMetadataChanges());
     raisedInitialEvent = true;
+    Logger.debug(
+        "QueryListener", "(%x) Raising initial event: %s", System.identityHashCode(this), snapshot);
     listener.onEvent(snapshot, null);
   }
 }

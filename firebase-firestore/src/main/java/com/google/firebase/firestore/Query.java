@@ -43,6 +43,7 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.ServerTimestamps;
 import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Executors;
+import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
@@ -1203,6 +1204,7 @@ public class Query {
           hardAssert(snapshot != null, "Got event without value or error set");
 
           QuerySnapshot querySnapshot = new QuerySnapshot(this, snapshot, firestore);
+          Logger.debug("Query", "(%x) Received event", System.identityHashCode(this));
           userListener.onEvent(querySnapshot, null);
         };
 
