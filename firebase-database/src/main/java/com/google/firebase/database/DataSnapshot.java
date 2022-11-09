@@ -105,12 +105,12 @@ public class DataSnapshot {
    * returned are:
    *
    * <ul>
-   *   <li>Boolean
-   *   <li>String
-   *   <li>Long
-   *   <li>Double
-   *   <li>Map&lt;String, Object&gt;
-   *   <li>List&lt;Object&gt;
+   *   <li><code>Boolean</code>
+   *   <li><code>String</code>
+   *   <li><code>Long</code>
+   *   <li><code>Double</code>
+   *   <li><code>Map&lt;String, Object&gt;</code>
+   *   <li><code>List&lt;Object&gt;</code>
    * </ul>
    *
    * This list is recursive; the possible types for {@link java.lang.Object} in the above list is
@@ -129,12 +129,12 @@ public class DataSnapshot {
    * returned are:
    *
    * <ul>
-   *   <li>Boolean
-   *   <li>String
-   *   <li>Long
-   *   <li>Double
-   *   <li>Map&lt;String, Object&gt;
-   *   <li>List&lt;Object&gt;
+   *   <li><code>Boolean</code>
+   *   <li><code>String</code>
+   *   <li><code>Long</code>
+   *   <li><code>Double</code>
+   *   <li><code>Map&lt;String, Object&gt;</code>
+   *   <li><code>List&lt;Object&gt;</code>
    * </ul>
    *
    * This list is recursive; the possible types for {@link java.lang.Object} in the above list is
@@ -300,8 +300,8 @@ public class DataSnapshot {
    * types:
    *
    * <ul>
-   *   <li>Double
-   *   <li>String
+   *   <li><code>Double</code>
+   *   <li><code>String</code>
    * </ul>
    *
    * Note that null is also allowed
