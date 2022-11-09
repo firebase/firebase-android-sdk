@@ -9,10 +9,7 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiElementFinder
 import com.intellij.psi.PsiMethod
-import com.intellij.psi.PsiType
-import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.uast.UCallExpression
 
 class ThreadPoolDetector : Detector(), SourceCodeScanner {
