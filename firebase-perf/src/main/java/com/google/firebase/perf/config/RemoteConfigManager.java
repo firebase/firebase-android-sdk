@@ -78,7 +78,18 @@ public class RemoteConfigManager {
             new LinkedBlockingQueue<Runnable>()),
         /* firebaseRemoteConfig= */ null, // set once FirebaseRemoteConfig is initialized
         MIN_APP_START_CONFIG_FETCH_DELAY_MS
-            + new Random().nextInt(RANDOM_APP_START_CONFIG_FETCH_DELAY_MS));
+            + new Random().nextInt(RANDOM_APP_START_CONFIG_FETCH_DELAY_MS),
+        getInitialStartupMillis());
+  }
+
+  @VisibleForTesting
+  static long getInitialStartupMillis() {
+    StartupTime startupTime = FirebaseApp.getInstance().get(StartupTime.class);
+    if (startupTime != null) {
+      return startupTime.getEpochMillis();
+    } else {
+      return System.currentTimeMillis();
+    }
   }
 
   @VisibleForTesting
@@ -86,7 +97,8 @@ public class RemoteConfigManager {
       DeviceCacheManager cache,
       Executor executor,
       FirebaseRemoteConfig firebaseRemoteConfig,
-      long appStartConfigFetchDelayInMs) {
+      long appStartConfigFetchDelayInMs,
+      long appStartTimeInMs) {
     this.cache = cache;
     this.executor = executor;
     this.firebaseRemoteConfig = firebaseRemoteConfig;
@@ -94,12 +106,7 @@ public class RemoteConfigManager {
         firebaseRemoteConfig == null
             ? new ConcurrentHashMap<>()
             : new ConcurrentHashMap<>(firebaseRemoteConfig.getAll());
-    StartupTime startupTime = FirebaseApp.getInstance().get(StartupTime.class);
-    if (startupTime != null) {
-      this.appStartTimeInMs = startupTime.getEpochMillis();
-    } else {
-      this.appStartTimeInMs = System.currentTimeMillis();
-    }
+    this.appStartTimeInMs = appStartTimeInMs;
     this.appStartConfigFetchDelayInMs = appStartConfigFetchDelayInMs;
   }
 
