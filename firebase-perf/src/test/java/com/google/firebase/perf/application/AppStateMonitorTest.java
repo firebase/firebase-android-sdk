@@ -672,7 +672,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     Map<Integer, ApplicationProcessState> subscriberState = new HashMap<>();
 
     // Register callbacks, but note that each callback is saved in a local variable. Otherwise
-    // WeakReference can get garbage collected, causing the test to flake.
+    // WeakReference can get garbage collected, making this test flaky.
     final int subscriber1 = 1;
     AppStateCallback callback1 = newState -> subscriberState.put(subscriber1, newState);
     monitor.registerForAppState(new WeakReference<>(callback1));
@@ -692,7 +692,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     Map<Integer, ApplicationProcessState> subscriberState = new HashMap<>();
 
     // Register callbacks, but note that each callback is saved in a local variable. Otherwise
-    // WeakReference can get garbage collected, causing the test to flake.
+    // WeakReference can get garbage collected, making this test flaky.
     final int subscriber1 = 1;
     AppStateCallback callback1 = newState -> subscriberState.put(subscriber1, newState);
     monitor.registerForAppState(new WeakReference<>(callback1));
