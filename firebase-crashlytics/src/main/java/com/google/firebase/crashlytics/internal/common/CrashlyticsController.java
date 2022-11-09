@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.crashlytics.internal.common;
 
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
@@ -734,6 +735,9 @@ class CrashlyticsController {
       return Tasks.forResult(null);
     }
     Logger.getLogger().d("Logging app exception event to Firebase Analytics");
+
+    // TODO(b/258263226): Migrate to go/firebase-android-executors
+    @SuppressLint("ThreadPoolCreation")
     final ThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
     return Tasks.call(
         executor,

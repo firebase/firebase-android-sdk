@@ -14,6 +14,7 @@
 
 package com.google.firebase.remoteconfig;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.GuardedBy;
@@ -87,6 +88,8 @@ public class RemoteConfigComponent {
   private Map<String, String> customHeaders = new HashMap<>();
 
   /** Firebase Remote Config Component constructor. */
+  // TODO(b/258275481): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   RemoteConfigComponent(
       Context context,
       FirebaseApp firebaseApp,
@@ -211,6 +214,8 @@ public class RemoteConfigComponent {
     this.customHeaders = customHeaders;
   }
 
+  // TODO(b/258275481): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   private ConfigCacheClient getCacheClient(String namespace, String configStoreType) {
     String fileName =
         String.format(

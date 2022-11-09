@@ -14,6 +14,7 @@
 
 package com.google.firebase.ml.modeldownloader.internal;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.text.TextUtils;
@@ -93,6 +94,8 @@ public class CustomModelDownloadService {
   private final Context context;
   private String downloadHost = FIREBASE_DOWNLOAD_HOST;
 
+  // TODO(b/258424267): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   public CustomModelDownloadService(
       FirebaseApp firebaseApp, FirebaseInstallationsApi installationsApi) {
     context = firebaseApp.getApplicationContext();

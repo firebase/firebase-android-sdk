@@ -9,7 +9,10 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiClass
+import com.intellij.psi.PsiElementFinder
 import com.intellij.psi.PsiMethod
+import com.intellij.psi.PsiType
+import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 import org.jetbrains.uast.UCallExpression
 
 class ThreadPoolDetector : Detector(), SourceCodeScanner {
@@ -19,7 +22,15 @@ class ThreadPoolDetector : Detector(), SourceCodeScanner {
         "newScheduledThreadPool",
         "newSingleThreadExecutor",
         "newSingleThreadScheduledExecutor",
-        "newWorkStealingPool"
+        "newWorkStealingPool",
+        "<init>"
+    )
+
+    override fun getApplicableConstructorTypes(): List<String> = listOf(
+        "java.lang.Thread",
+        "java.util.concurrent.ForkJoinPool",
+        "java.util.concurrent.ThreadPoolExecutor",
+        "java.util.concurrent.ScheduledThreadPoolExecutor"
     )
 
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
@@ -30,7 +41,20 @@ class ThreadPoolDetector : Detector(), SourceCodeScanner {
         context.report(
             THREAD_POOL_CREATION,
             context.getCallLocation(node, includeReceiver = false, includeArguments = true),
-            "Creating thread pools is not allowed.")
+            "Creating thread pools is not allowed."
+        )
+    }
+
+    override fun visitConstructor(
+        context: JavaContext,
+        node: UCallExpression,
+        constructor: PsiMethod
+    ) {
+        context.report(
+            THREAD_POOL_CREATION,
+            context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+            "Creating threads or thread pools is not allowed."
+        )
     }
 
     private fun isExecutorMethod(method: PsiMethod): Boolean {

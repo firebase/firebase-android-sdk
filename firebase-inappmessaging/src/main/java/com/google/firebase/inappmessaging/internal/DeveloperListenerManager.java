@@ -14,6 +14,7 @@
 
 package com.google.firebase.inappmessaging.internal;
 
+import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener;
@@ -56,6 +57,9 @@ public class DeveloperListenerManager {
       registeredImpressionListeners = new HashMap<>();
 
   private static BlockingQueue<Runnable> mCallbackQueue = new LinkedBlockingQueue<>();
+
+  // TODO(b/258280977): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   private static final ThreadPoolExecutor CALLBACK_QUEUE_EXECUTOR =
       new ThreadPoolExecutor(
           POOL_SIZE,
@@ -182,6 +186,8 @@ public class DeveloperListenerManager {
 
     @SuppressWarnings("ThreadPriorityCheck")
     @Override
+    // TODO(b/258280977): Migrate to go/firebase-android-executors
+    @SuppressLint("ThreadPoolCreation")
     public Thread newThread(@NonNull Runnable r) {
       Thread t = new Thread(r, "FIAM-" + mNameSuffix + threadNumber.getAndIncrement());
       t.setDaemon(false);
