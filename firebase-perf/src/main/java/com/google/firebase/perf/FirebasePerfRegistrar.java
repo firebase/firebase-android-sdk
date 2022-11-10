@@ -75,6 +75,8 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
   }
 
   private static FirebasePerformance providesFirebasePerformance(ComponentContainer container) {
+    // Ensure FirebasePerfEarly was initialized
+    container.get(FirebasePerfEarly.class);
     FirebasePerformanceComponent component =
         DaggerFirebasePerformanceComponent.builder()
             .firebasePerformanceModule(
