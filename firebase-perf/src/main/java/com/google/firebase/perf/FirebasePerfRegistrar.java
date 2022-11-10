@@ -42,6 +42,7 @@ import java.util.List;
 @Keep
 public class FirebasePerfRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-perf";
+  private static final String EARLY_LIBRARY_NAME = "fire-perf-early";
 
   @Override
   @Keep
@@ -53,10 +54,11 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .add(Dependency.requiredProvider(RemoteConfigComponent.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.requiredProvider(TransportFactory.class))
+            .add(Dependency.required(FirebasePerfEarly.class))
             .factory(FirebasePerfRegistrar::providesFirebasePerformance)
             .build(),
         Component.builder(FirebasePerfEarly.class)
-            .name(LIBRARY_NAME)
+            .name(EARLY_LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.optionalProvider(StartupTime.class))
             .eagerInDefaultApp()
