@@ -21,6 +21,9 @@ import javax.inject.Qualifier;
 /**
  * An executor/coroutine dispatcher for long running tasks including disk IO, heavy CPU
  * computations.
+ *
+ * <p>For operations that can block for long periods of time, like network requests, use the {@link
+ * Blocking} executor.
  */
 @Qualifier
 @Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD})

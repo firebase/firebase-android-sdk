@@ -19,7 +19,7 @@ import java.lang.annotation.Target;
 import javax.inject.Qualifier;
 
 /**
- * An executor/coroutine dispatcher for lightweight tasks that never block(on IO or other tasks).
+ * An executor/coroutine dispatcher for lightweight tasks that never block (on IO or other tasks).
  */
 @Qualifier
 @Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD})

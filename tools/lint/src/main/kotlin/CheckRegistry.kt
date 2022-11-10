@@ -29,7 +29,7 @@ class CheckRegistry : IssueRegistry() {
                 NonAndroidxNullabilityDetector.NON_ANDROIDX_NULLABILITY,
                 DeferredApiDetector.INVALID_DEFERRED_API_USE,
                 ProviderAssignmentDetector.INVALID_PROVIDER_ASSIGNMENT
-                // TODO(vkryachko): enable the check after migration.
+                // TODO(vkryachko): enable the check after suppressing current violations.
                 // ThreadPoolDetector.THREAD_POOL_CREATION
         )
 
