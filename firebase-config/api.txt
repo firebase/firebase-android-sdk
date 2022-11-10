@@ -2,7 +2,7 @@
 package com.google.firebase.remoteconfig {
 
   public interface ConfigUpdateListener {
-    method public void onError(@NonNull FirebaseRemoteConfigException);
+    method public void onError(@NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigException);
     method public void onEvent();
   }
 
