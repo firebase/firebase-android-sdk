@@ -1139,7 +1139,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
     configAutoFetch.listenForNotifications();
 
-    verify(mockListener).onError(any(FirebaseRemoteConfigRealtimeUpdateFetchException.class));
+    verify(mockListener).onError(any(FirebaseRemoteConfigClientException.class));
   }
 
   @Test
@@ -1202,7 +1202,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     configAutoFetch.listenForNotifications();
 
-    verify(mockRetryListener).onError(any(FirebaseRemoteConfigRealtimeUpdateStreamException.class));
+    verify(mockRetryListener).onError(any(FirebaseRemoteConfigServerException.class));
     verify(mockFetchHandler, never()).fetch(0);
   }
 
@@ -1218,8 +1218,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(mockListener, never())
-        .onError(any(FirebaseRemoteConfigRealtimeUpdateStreamException.class));
+    verify(mockListener, never()).onError(any(FirebaseRemoteConfigServerException.class));
     verify(mockFetchHandler).getTemplateVersionNumber();
   }
 
@@ -1231,7 +1230,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(mockListener).onError(any(FirebaseRemoteConfigRealtimeUpdateFetchException.class));
+    verify(mockListener).onError(any(FirebaseRemoteConfigClientException.class));
   }
 
   @Test
@@ -1249,7 +1248,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.fetchLatestConfig(1, 1000);
 
-    verify(mockListener).onError(any(FirebaseRemoteConfigRealtimeUpdateFetchException.class));
+    verify(mockListener).onError(any(FirebaseRemoteConfigServerException.class));
   }
 
   private static void loadCacheWithConfig(
@@ -1335,7 +1334,7 @@ public final class FirebaseRemoteConfigTest {
       public void onEvent() {}
 
       @Override
-      public void onError(@NonNull Exception error) {}
+      public void onError(@NonNull FirebaseRemoteConfigException error) {}
     };
   }
 }
