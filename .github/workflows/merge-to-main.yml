@@ -4,6 +4,10 @@ on:
   pull_request:
     branches:
       - master
+    types:
+      - opened
+      - labeled
+      - unlabeled
 
 jobs:
   pr-message:
@@ -21,3 +25,7 @@ jobs:
           this change to see the light of the day just yet, consider
           using a feature branch first, and only merge into the main
           branch when the code complete and ready to be released.
+
+    - name: Label checker
+      if: !contains( github.event.pull_request.labels.*.name, 'main-merge-ack')
+      run: exit 1
