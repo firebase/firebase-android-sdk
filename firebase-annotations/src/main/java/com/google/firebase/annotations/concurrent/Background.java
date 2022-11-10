@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,24 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-plugins {
-    id 'firebase-java-library'
-}
+package com.google.firebase.annotations.concurrent;
 
-firebaseLibrary {
-    publishSources = true
-    publishJavadoc = false
-}
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+import javax.inject.Qualifier;
 
-java {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
-}
-
-tasks.withType(JavaCompile) {
-    options.compilerArgs << "-Werror"
-}
-
-dependencies {
-    implementation 'javax.inject:javax.inject:1'
-}
+/**
+ * An executor/coroutine dispatcher for long running tasks including disk IO, heavy CPU
+ * computations.
+ *
+ * <p>For operations that can block for long periods of time, like network requests, use the {@link
+ * Blocking} executor.
+ */
+@Qualifier
+@Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD})
+public @interface Background {}

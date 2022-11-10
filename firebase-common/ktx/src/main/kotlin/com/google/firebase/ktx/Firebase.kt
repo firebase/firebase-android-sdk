@@ -17,9 +17,18 @@ import android.content.Context
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
+import com.google.firebase.annotations.concurrent.Background
+import com.google.firebase.annotations.concurrent.Blocking
+import com.google.firebase.annotations.concurrent.Lightweight
+import com.google.firebase.annotations.concurrent.UiThread
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
+import com.google.firebase.components.Dependency
+import com.google.firebase.components.Qualified
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import java.util.concurrent.Executor
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
 
 /**
  * Single access point to all firebase SDKs from Kotlin.
@@ -40,11 +49,11 @@ fun Firebase.initialize(context: Context): FirebaseApp? = FirebaseApp.initialize
 
 /** Initializes and returns a FirebaseApp. */
 fun Firebase.initialize(context: Context, options: FirebaseOptions): FirebaseApp =
-        FirebaseApp.initializeApp(context, options)
+    FirebaseApp.initializeApp(context, options)
 
 /** Initializes and returns a FirebaseApp. */
 fun Firebase.initialize(context: Context, options: FirebaseOptions, name: String): FirebaseApp =
-        FirebaseApp.initializeApp(context, options, name)
+    FirebaseApp.initializeApp(context, options, name)
 
 /** Returns options of default FirebaseApp */
 val Firebase.options: FirebaseOptions
@@ -57,6 +66,27 @@ internal const val LIBRARY_NAME: String = "fire-core-ktx"
 class FirebaseCommonKtxRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> {
         return listOf(
-                LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+            LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
+            coroutineDispatcher<Background>(),
+            coroutineDispatcher<Lightweight>(),
+            coroutineDispatcher<Blocking>(),
+            coroutineDispatcher<UiThread>()
+        )
     }
 }
+
+private inline fun <reified T : Annotation> coroutineDispatcher(): Component<CoroutineDispatcher> =
+    Component.builder(
+        Qualified.qualified(T::class.java, CoroutineDispatcher::class.java)
+    ).add(
+        Dependency.required(
+            Qualified.qualified(
+                T::class.java,
+                Executor::class.java
+            )
+        )
+    ).factory { c ->
+        c.get(
+            Qualified.qualified(T::class.java, Executor::class.java)
+        ).asCoroutineDispatcher()
+    }.build()

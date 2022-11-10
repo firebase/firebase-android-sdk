@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,24 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-plugins {
-    id 'firebase-java-library'
-}
+package com.google.firebase.concurrent;
 
-firebaseLibrary {
-    publishSources = true
-    publishJavadoc = false
-}
+import android.os.Handler;
+import android.os.Looper;
+import java.util.concurrent.Executor;
 
-java {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
-}
+/** @hide */
+public enum UiExecutor implements Executor {
+  INSTANCE;
 
-tasks.withType(JavaCompile) {
-    options.compilerArgs << "-Werror"
-}
+  private static final Handler HANDLER = new Handler(Looper.getMainLooper());
 
-dependencies {
-    implementation 'javax.inject:javax.inject:1'
+  @Override
+  public void execute(Runnable command) {
+    HANDLER.post(command);
+  }
 }
