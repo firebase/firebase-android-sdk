@@ -61,6 +61,8 @@ public class FirebaseRemoteConfigException extends FirebaseException {
 
     /** The Realtime service is unavailable. */
     CONFIG_UPDATE_UNAVAILABLE(3),
+
+    /** Unknown code value. */
     UNKNOWN(4);
 
     private final int value;

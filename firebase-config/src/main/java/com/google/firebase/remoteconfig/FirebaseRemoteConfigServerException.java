@@ -64,6 +64,16 @@ public class FirebaseRemoteConfigServerException extends FirebaseRemoteConfigExc
   }
 
   /**
+   * Creates a Firebase Remote Config server exception with the given message, exception cause, and
+   * FirebaseRemoteConfigException code.
+   */
+  public FirebaseRemoteConfigServerException(
+      @NonNull String detailMessage, @Nullable Throwable cause, @NonNull Code code) {
+    super(detailMessage, cause, code);
+    this.httpStatusCode = -1;
+  }
+
+  /**
    * Creates a Firebase Remote Config server exception with the HTTP status code, given message,
    * exception cause, and FirebaseRemoteConfigException code.
    */
