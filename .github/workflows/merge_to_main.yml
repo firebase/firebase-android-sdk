@@ -1,15 +1,11 @@
-name: Changelog
+name: Merge to main
 
 on:
   pull_request
 
-concurrency:
-    group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
-    cancel-in-progress: true
-
 jobs:
   danger:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     env:
       BUNDLE_GEMFILE: ./ci/danger/Gemfile
     steps:
@@ -22,8 +18,8 @@ jobs:
         ruby-version: '2.7'
     - name: Setup Bundler
       run: ./ci/danger/setup_bundler.sh
-    - name: Danger CHANGELOG verifier
+    - name: Danger check for merging to main
       env:
         DANGER_GITHUB_API_TOKEN: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
       run:
-        '[ ! -z $DANGER_GITHUB_API_TOKEN ] && bundle exec danger --dangerfile=./ci/danger/changelog || echo "Skipping Danger for External Contributor"'
+        '[ ! -z $DANGER_GITHUB_API_TOKEN ] && bundle exec danger --dangerfile=./ci/danger/merge_to_main || echo "Skipping for External Contributor"'
