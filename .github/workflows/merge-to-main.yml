@@ -26,6 +26,14 @@ jobs:
           using a feature branch first, and only merge into the main
           branch when the code complete and ready to be released.
 
+          **Add the 'main-merge-ack' label to your PR to confirm
+          merging into the main branch is intended.**
+
     - name: Label checker
-      if: !contains( github.event.pull_request.labels.*.name, 'main-merge-ack')
-      run: exit 1
+      if: "!contains( github.event.pull_request.labels.*.name, 'main-merge-ack')"
+      run: |
+        echo Missing 'main-merge-ack' label. Read the comment about merging to master in your PR for more information.
+        exit 1
+
+    - name: Success
+      run: exit 0
