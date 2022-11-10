@@ -13,3 +13,5 @@
 ## limitations under the License.
 
 warn("You are merging into master") if github.branch_for_base == "master"
+
+message "You are merging into master" if github.branch_for_base == "master"
