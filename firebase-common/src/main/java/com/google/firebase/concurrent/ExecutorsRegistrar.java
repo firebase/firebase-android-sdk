@@ -32,7 +32,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
-/** @hide */
 @SuppressLint("ThreadPoolCreation")
 public class ExecutorsRegistrar implements ComponentRegistrar {
   private static final Lazy<ScheduledExecutorService> BG_EXECUTOR =
