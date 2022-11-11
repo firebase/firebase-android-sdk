@@ -29,7 +29,9 @@ abstract class NdkBinaryFixTask : DefaultTask() {
 
     @get:OutputFile
     val outputFile: File
-        get() = File("${inputFile.get().asFile.absolutePath}.so")
+        get() = inputFile.get().asFile.let {
+            File(it.parentFile, "lib${it.name}.so")
+        }
 
     @get:Internal
     val into: String
@@ -39,7 +41,7 @@ abstract class NdkBinaryFixTask : DefaultTask() {
     fun run() {
         Files.copy(
             inputFile.get().asFile.toPath(),
-            File("${inputFile.get().asFile.absolutePath}.so").toPath(),
+            outputFile.toPath(),
             StandardCopyOption.REPLACE_EXISTING
         )
     }
