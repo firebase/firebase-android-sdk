@@ -82,7 +82,7 @@ public class ConfigMetadataClient {
     this.frcMetadata = frcMetadata;
     this.frcInfoLock = new Object();
     this.backoffMetadataLock = new Object();
-    realtimeBackoffMetadataLock = new Object();
+    this.realtimeBackoffMetadataLock = new Object();
   }
 
   public long getFetchTimeoutInSeconds() {

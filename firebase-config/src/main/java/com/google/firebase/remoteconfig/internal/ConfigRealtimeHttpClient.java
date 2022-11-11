@@ -112,7 +112,7 @@ public class ConfigRealtimeHttpClient {
 
     // Retry parameters
     this.random = new Random();
-    resetRetryParameters();
+    httpRetriesRemaining = ORIGINAL_RETRIES;
     clock = DefaultClock.getInstance();
 
     this.firebaseApp = firebaseApp;
@@ -256,15 +256,6 @@ public class ConfigRealtimeHttpClient {
     this.isRealtimeDisabled = true;
   }
 
-  private synchronized int getRetryMultiplier() {
-    // Return retry multiplier between range of 5 and 2.
-    return random.nextInt(3) + 2;
-  }
-
-  private synchronized void resetRetryParameters() {
-    httpRetriesRemaining = ORIGINAL_RETRIES;
-  }
-
   private synchronized boolean canMakeHttpStreamConnection() {
     return !listeners.isEmpty() && httpURLConnection == null && !isRealtimeDisabled;
   }
@@ -401,7 +392,7 @@ public class ConfigRealtimeHttpClient {
       // If the connection returned a 200 response code, start listening for messages.
       if (responseCode == HttpURLConnection.HTTP_OK) {
         // Reset the retries remaining if we opened the connection without an exception.
-        resetRetryParameters();
+        httpRetriesRemaining = ORIGINAL_RETRIES;
         metadataClient.resetRealtimeBackoff();
 
         // Start listening for realtime notifications.

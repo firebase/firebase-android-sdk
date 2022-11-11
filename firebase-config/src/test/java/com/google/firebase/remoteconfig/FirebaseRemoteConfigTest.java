@@ -173,6 +173,7 @@ public final class FirebaseRemoteConfigTest {
   private ConfigContainer realtimeFetchedContainer;
   private ConfigAutoFetch configAutoFetch;
   private ConfigRealtimeHttpClient configRealtimeHttpClient;
+  private ConfigMetadataClient realtimeMetadataClient;
 
   private FetchResponse firstFetchedContainerResponse;
 
@@ -277,6 +278,9 @@ public final class FirebaseRemoteConfigTest {
     listeners.add(mockListener);
     configAutoFetch =
         new ConfigAutoFetch(mockHttpURLConnection, mockFetchHandler, listeners, mockRetryListener);
+
+    realtimeMetadataClient =
+        new ConfigMetadataClient(context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
     configRealtimeHttpClient =
         new ConfigRealtimeHttpClient(
             firebaseApp,
@@ -285,7 +289,7 @@ public final class FirebaseRemoteConfigTest {
             context,
             "firebase",
             listeners,
-            metadataClient);
+            realtimeMetadataClient);
   }
 
   @Test
