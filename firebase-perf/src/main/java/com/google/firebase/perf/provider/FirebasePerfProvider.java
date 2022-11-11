@@ -66,7 +66,7 @@ public class FirebasePerfProvider extends ContentProvider {
     appStateMonitor.registerActivityLifecycleCallbacks(getContext());
     appStateMonitor.registerForAppColdStart(new FirebasePerformanceInitializer());
 
-    AppStartTrace appStartTrace = AppStartTrace.getInstance();
+    AppStartTrace appStartTrace = new AppStartTrace();
     appStartTrace.registerActivityLifecycleCallbacks(getContext());
 
     mainHandler.post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
