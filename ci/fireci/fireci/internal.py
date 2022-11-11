@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import click
+import contextlib
 import functools
 import glob
 import itertools
@@ -20,7 +21,6 @@ import logging
 import os
 import shutil
 
-from contextlib import contextmanager, nullcontext
 
 _logger = logging.getLogger('fireci')
 
@@ -30,7 +30,7 @@ def _ensure_dir(directory):
     os.makedirs(directory)
 
 
-@contextmanager
+@contextlib.contextmanager
 def _artifact_handler(target_directory, artifact_patterns):
   _logger.debug(
       'Artifacts will be searched for in directories matching {} patterns and placed in {}'
@@ -45,7 +45,7 @@ def _artifact_handler(target_directory, artifact_patterns):
       target_name = os.path.join(target_directory, "_".join(path.split('/')))
       _logger.debug('Copying artifact {} to {}'.format(path, target_name))
       if os.path.isdir(path):
-        shutil.copytree(path, target_name, dirs_exist_ok=True)
+        shutil.copytree(path, target_name)
       else:
         shutil.copyfile(path, target_name)
 
@@ -68,8 +68,8 @@ _pass_options = click.make_pass_decorator(_CommonOptions, ensure=True)
     '--artifact-patterns',
     default=('**/build/test-results', '**/build/reports'),
     help=
-    'Shell-style artifact patterns that are copied into `artifact-target-dir`. '
-    'Can be specified multiple times.',
+    'Shell-style artifact patterns that are copied into `artifact-target-dir`.'\
+        'Can be specified multiple times.',
     multiple=True,
     type=str,
 )
@@ -83,33 +83,29 @@ def main(options, **kwargs):
     setattr(options, k, v)
 
 
-def ci_command(name=None, cls=click.Command, group=main):
+def ci_command(name=None):
   """Decorator to use for CI commands.
 
        The differences from the standard @click.command are:
 
        * Allows configuration of artifacts that are uploaded for later viewing in CI.
-       * Registers the command automatically.
+       * Registers the command automatically
 
-       :param name:  Optional name of the task. Defaults to the function name that is decorated with this decorator.
-       :param cls:   Specifies whether the func is a command or a command group. Defaults to `click.Command`.
-       :param group: Specifies the group the command belongs to. Defaults to the `main` command group.
+       :param name: Optional name of the task. Defaults to the function name that is decorated with
+                    this decorator.
     """
 
   def ci_command(f):
     actual_name = f.__name__ if name is None else name
 
-    @click.command(name=actual_name, cls=cls, help=f.__doc__)
+    @main.command(name=actual_name, help=f.__doc__)
     @_pass_options
     @click.pass_context
     def new_func(ctx, options, *args, **kwargs):
       with _artifact_handler(
           options.artifact_target_dir,
-          options.artifact_patterns,
-      ) if cls is click.Command else nullcontext():
+          options.artifact_patterns):
         return ctx.invoke(f, *args, **kwargs)
-
-    group.add_command(new_func)
 
     return functools.update_wrapper(new_func, f)
 
