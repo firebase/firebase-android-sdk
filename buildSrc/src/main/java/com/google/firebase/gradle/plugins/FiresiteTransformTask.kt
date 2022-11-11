@@ -21,6 +21,7 @@ import org.gradle.api.tasks.TaskAction
  *  - Deletes unnecessary files
  *  - Removes Class and Index headers from _toc.yaml files
  *  - Changes links to be appropriate for Firesite versus normal Devsite behavior
+ *  - Fixes broken hyperlinks in `@see` blocks
  *  - Removes the prefix path from book_path
  *  - Removes the google groupId for Javadocs
  *  - Changes the path for _reference-head-tags at the top of html files
@@ -73,7 +74,7 @@ abstract class FiresiteTransformTask : DefaultTask() {
     }
 
     private fun File.fixHTMLFile() {
-        val fixedContent = readText().fixBookPath().fixReferenceHeadTagsPath().fixLinks()
+        val fixedContent = readText().fixBookPath().fixReferenceHeadTagsPath().fixLinks().fixHyperlinksInSeeBlocks()
         writeText(fixedContent)
     }
 
@@ -92,15 +93,47 @@ abstract class FiresiteTransformTask : DefaultTask() {
      * groupId. This makes the output look weird, as not all SDKs line up. So this method exists
      * to correct Javadoc nav files, so that they align with internally generated docs.
      *
+     * Example input:
+     * ```
+     * "com.google.firebase.appcheck"
+     * ```
      * Example output:
      * ```
-     * removeGoogleGroupId("com.google.firebase.appcheck")
-     * --> "firebase.appcheck"
+     * "firebase.appcheck"
      * ```
      */
     // TODO(b/257293594): Remove when dackka exposes configuration for this
     private fun String.removeGoogleGroupId() =
         remove(Regex("(?<=\")com.google.(?=firebase.)"))
+
+    /**
+     * Fixes broken hyperlinks in the rendered HTML
+     *
+     * Links in Dockka are currently broken in `@see` tags. This transform destructures those
+     * broken links and reconstructs them as they're expected to be.
+     *
+     * Example input:
+     * ```
+     * // Generated from @see <a href="git.page.link/timestamp-proto">Timestamp</a>The ref timestamp definition
+     * <code>&lt;a href=&quot;git.page.link/timestamp-proto&quot;&gt;Timestamp&lt;/a&gt;The ref timestamp definition</code></td>
+     * <td></td>
+     * ```
+     * Example output:
+     * ```
+     * <code><a href="git.page.link/timestamp-proto">Timestamp</a></code></td>
+     * <td>The ref timestamp definition</td>
+     * ```
+     */
+    // TODO(go/dokka-upstream-bug/2665): Remove when Dockka fixes this issue
+    private fun String.fixHyperlinksInSeeBlocks() =
+        replace(Regex("<code>&lt;a href=&quot;(?<href>.*)&quot;&gt;(?<link>.*)&lt;/a&gt;(?<text>.*)</code></td>\\s*<td></td>")) {
+            val (href, link, text) = it.destructured
+
+            """
+                <code><a href="$href">$link</a></code></td>
+                <td>$text</td>
+            """.trimIndent()
+        }
 
     // Our documentation does not live under the standard path expected by Dackka, especially
     // between Kotlin + Javadocs
