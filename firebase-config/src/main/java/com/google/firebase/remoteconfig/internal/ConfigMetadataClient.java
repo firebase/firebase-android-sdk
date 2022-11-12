@@ -304,7 +304,7 @@ public class ConfigMetadataClient {
   }
 
   /**
-   * Container for backoff metadata values such as the number of failed fetches and the backoff end
+   * Container for backoff metadata values such as the number of failed streams and the backoff end
    * time.
    *
    * <p>The purpose of this class is to avoid race conditions when retrieving backoff metadata
