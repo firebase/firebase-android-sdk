@@ -338,21 +338,14 @@ abstract class DackkaPlugin : Plugin<Project> {
     outputDirectory: Provider<File>
   ) =
     project.tasks.register<Copy>("copyJavaDocToCommonDirectory") {
-      /**
-       * This is not currently cache compliant. The need for this property is temporary while we
-       * test it alongside the current javaDoc task. Since it's such a temporary behavior, losing
-       * cache compliance is fine for now.
-       */
-      if (project.rootProject.findProperty("dackkaJavadoc") == "true") {
-        mustRunAfter("firesiteTransform")
+      mustRunAfter("firesiteTransform")
 
-        val outputFolder = project.rootProject.fileFromBuildDir("firebase-kotlindoc/android")
-        val javaFolder = project.childFile(outputDirectory, "android")
+      val outputFolder = project.rootProject.fileFromBuildDir("firebase-kotlindoc")
+      val javaFolder = project.childFile(outputDirectory, "android")
 
-        fromDirectory(javaFolder)
+      fromDirectory(javaFolder)
 
-        into(outputFolder)
-      }
+      into(outputFolder)
     }
 
   // TODO(b/246593212): Migrate doc files to single directory
