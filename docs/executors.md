@@ -79,11 +79,13 @@ Used to schedule tasks on application's UI thread, internally it uses a Handler 
 Example:
 
 ```java
-Qualified<Executor> uiExecutor = Qualified.qualified(UiThread.class, Executor.class);
+// Java
+Qualified<Executor> uiExecutor = qualified(UiThread.class, Executor.class);
 ```
 
 ```kotlin
-Qualified<CoroutineDispatcher> dispatcher = Qualified.qualified(UiThread.class, CoroutineDispatcher.class);
+// Kotlin
+Qualified<CoroutineDispatcher> dispatcher = qualified(UiThread::class.java, CoroutineDispatcher::class.java);
 ```
 
 ## Lightweight
@@ -94,11 +96,13 @@ where N is the amount of parallelism available on the device(number of CPU cores
 Example:
 
 ```java
-Qualified<Executor> liteExecutor = Qualified.qualified(Lightweight.class, Executor.class);
+// Java
+Qualified<Executor> liteExecutor = qualified(Lightweight.class, Executor.class);
 ```
 
 ```kotlin
-Qualified<CoroutineDispatcher> dispatcher = Qualified.qualified(Lightweight.class, CoroutineDispatcher.class);
+// Kotlin
+Qualified<CoroutineDispatcher> dispatcher = qualified(Lightweight::class.java, CoroutineDispatcher::class.java);
 ```
 
 ## Background
@@ -109,11 +113,13 @@ Backed by 4 threads.
 Example:
 
 ```java
-Qualified<Executor> bgExecutor = Qualified.qualified(Background.class, Executor.class);
+// Java
+Qualified<Executor> bgExecutor = qualified(Background.class, Executor.class);
 ```
 
 ```kotlin
-Qualified<CoroutineDispatcher> dispatcher = Qualified.qualified(Background.class, CoroutineDispatcher.class);
+// Kotlin
+Qualified<CoroutineDispatcher> dispatcher = qualified(Background::class.java, CoroutineDispatcher::class.java);
 ```
 
 ## Blocking
@@ -123,9 +129,39 @@ Use for tasks that can block for arbitrary amounts of time, this includes networ
 Example:
 
 ```java
-Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
+// Java
+Qualified<Executor> blockingExecutor = qualified(Blocking.class, Executor.class);
 ```
 
 ```kotlin
-Qualified<CoroutineDispatcher> dispatcher = Qualified.qualified(Blocking.class, CoroutineDispatcher.class);
+// Kotlin
+Qualified<CoroutineDispatcher> dispatcher = qualified(Blocking::class.java, CoroutineDispatcher::class.java);
+```
+
+## Other executors
+
+### Direct executor
+
+> **Warning**
+> Prefer `@Lightweight` instead of using direct executor as it could cause dead locks and stack overflows
+
+For any trivial tasks that don't need to run asynchronously
+
+Example:
+
+```kotlin
+FirebaseExecutors.directExecutor()
+```
+
+### Sequential Executor
+
+When you need an executor that runs tasks sequentially and guarantees any memory access is synchronized prefer to use a sequential executor instead of creating a `newSingleThreadedExecutor()`.
+
+Example:
+
+```java
+// Pick the appropriate underlying executor using the chart above
+Qualified<Executor> bgExecutor = qualified(Background.class, Executor.class);
+// ...
+Executor sequentialExecutor = FirebaseExecutors.newSequentialExecutor(c.get(bgExecutor));
 ```
