@@ -35,96 +35,101 @@ import org.jetbrains.uast.UMethod
 private val NULLABLE_ANNOTATIONS = listOf("Nullable", "CheckForNull")
 private val NOT_NULL_ANNOTATIONS = listOf("NonNull", "NotNull", "Nonnull")
 
-private val ANDROIDX_ANNOTATIONS = listOf(
-        "androidx.annotation.Nullable",
-        "androidx.annotation.NonNull",
-        "android.support.annotation.Nullable",
-        "android.support.annotation.NonNull")
+private val ANDROIDX_ANNOTATIONS =
+  listOf(
+    "androidx.annotation.Nullable",
+    "androidx.annotation.NonNull",
+    "android.support.annotation.Nullable",
+    "android.support.annotation.NonNull"
+  )
 
 class NonAndroidxNullabilityDetector : Detector(), SourceCodeScanner {
-    companion object Issues {
-        private val IMPLEMENTATION = Implementation(
-                NonAndroidxNullabilityDetector::class.java,
-                Scope.JAVA_FILE_SCOPE
-        )
+  companion object Issues {
+    private val IMPLEMENTATION =
+      Implementation(NonAndroidxNullabilityDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
-        @JvmField
-        val NON_ANDROIDX_NULLABILITY = Issue.create(
-                id = "FirebaseNonAndroidxNullability",
-                briefDescription = "Use androidx nullability annotations.",
+    @JvmField
+    val NON_ANDROIDX_NULLABILITY =
+      Issue.create(
+        id = "FirebaseNonAndroidxNullability",
+        briefDescription = "Use androidx nullability annotations.",
+        explanation = "Use androidx nullability annotations instead.",
+        category = Category.COMPLIANCE,
+        priority = 1,
+        severity = Severity.ERROR,
+        enabledByDefault = false,
+        implementation = IMPLEMENTATION
+      )
+  }
 
-                explanation = "Use androidx nullability annotations instead.",
-                category = Category.COMPLIANCE,
-                priority = 1,
-                severity = Severity.ERROR,
-                enabledByDefault = false,
-                implementation = IMPLEMENTATION
-        )
+  override fun getApplicableUastTypes(): List<Class<out UElement>>? {
+    return listOf(UClass::class.java, UMethod::class.java, UField::class.java)
+  }
+
+  override fun createUastHandler(context: JavaContext): UElementHandler? {
+    // using deprecated psi field here instead of sourcePsi because the IDE
+    // still uses older version of UAST
+    if (isKotlin(context.uastFile?.sourcePsi)) {
+      // These checks apply only to Java code
+      return null
+    }
+    return Visitor(context)
+  }
+
+  class Visitor(private val context: JavaContext) : UElementHandler() {
+    override fun visitClass(node: UClass) {
+      doVisit(node)
     }
 
-    override fun getApplicableUastTypes(): List<Class<out UElement>>? {
-        return listOf(UClass::class.java, UMethod::class.java, UField::class.java)
+    override fun visitMethod(node: UMethod) {
+      doVisit(node)
+      for (parameter in node.uastParameters) {
+        doVisit(parameter)
+      }
     }
 
-    override fun createUastHandler(context: JavaContext): UElementHandler? {
-        // using deprecated psi field here instead of sourcePsi because the IDE
-        // still uses older version of UAST
-        if (isKotlin(context.uastFile?.sourcePsi)) {
-            // These checks apply only to Java code
-            return null
-        }
-        return Visitor(context)
+    override fun visitField(node: UField) {
+      doVisit(node)
     }
 
-    class Visitor(private val context: JavaContext) : UElementHandler() {
-        override fun visitClass(node: UClass) {
-            doVisit(node)
-        }
-
-        override fun visitMethod(node: UMethod) {
-            doVisit(node)
-            for (parameter in node.uastParameters) {
-                doVisit(parameter)
-            }
-        }
-
-        override fun visitField(node: UField) {
-            doVisit(node)
-        }
-
-        private fun doVisit(node: UDeclaration) {
-            for (annotation in node.uAnnotations) {
-                ensureAndroidNullability(context, annotation)
-            }
-        }
-
-        private fun ensureAndroidNullability(context: JavaContext, annotation: UAnnotation) {
-            val name = annotation.qualifiedName ?: return
-
-            val simpleName = name.split('.').last()
-
-            if (!isNullabilityAnnotation(simpleName) || name in ANDROIDX_ANNOTATIONS) {
-                return
-            }
-
-            val replacement = if (simpleName in NOT_NULL_ANNOTATIONS) "NonNull" else "Nullable"
-            val replacementAnnotation = "@androidx.annotation.$replacement"
-
-            val fix = LintFix.create()
-                    .replace()
-                    .name("Replace with $replacementAnnotation")
-                    .range(context.getLocation(annotation))
-                    .all()
-                    .shortenNames()
-                    .reformat(true)
-                    .with(replacementAnnotation)
-                    .build()
-
-            context.report(NON_ANDROIDX_NULLABILITY, context.getLocation(annotation),
-                    "Use androidx nullability annotations.", fix)
-        }
-
-        private fun isNullabilityAnnotation(name: String): Boolean =
-                name in NULLABLE_ANNOTATIONS || name in NOT_NULL_ANNOTATIONS
+    private fun doVisit(node: UDeclaration) {
+      for (annotation in node.uAnnotations) {
+        ensureAndroidNullability(context, annotation)
+      }
     }
+
+    private fun ensureAndroidNullability(context: JavaContext, annotation: UAnnotation) {
+      val name = annotation.qualifiedName ?: return
+
+      val simpleName = name.split('.').last()
+
+      if (!isNullabilityAnnotation(simpleName) || name in ANDROIDX_ANNOTATIONS) {
+        return
+      }
+
+      val replacement = if (simpleName in NOT_NULL_ANNOTATIONS) "NonNull" else "Nullable"
+      val replacementAnnotation = "@androidx.annotation.$replacement"
+
+      val fix =
+        LintFix.create()
+          .replace()
+          .name("Replace with $replacementAnnotation")
+          .range(context.getLocation(annotation))
+          .all()
+          .shortenNames()
+          .reformat(true)
+          .with(replacementAnnotation)
+          .build()
+
+      context.report(
+        NON_ANDROIDX_NULLABILITY,
+        context.getLocation(annotation),
+        "Use androidx nullability annotations.",
+        fix
+      )
+    }
+
+    private fun isNullabilityAnnotation(name: String): Boolean =
+      name in NULLABLE_ANNOTATIONS || name in NOT_NULL_ANNOTATIONS
+  }
 }
