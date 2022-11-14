@@ -24,25 +24,22 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 abstract class NdkBinaryFixTask : DefaultTask() {
-    @get:InputFile
-    abstract val inputFile: RegularFileProperty
+  @get:InputFile abstract val inputFile: RegularFileProperty
 
-    @get:OutputFile
-    val outputFile: File
-        get() = inputFile.get().asFile.let {
-            File(it.parentFile, "lib${it.name}.so")
-        }
+  @get:OutputFile
+  val outputFile: File
+    get() = inputFile.get().asFile.let { File(it.parentFile, "lib${it.name}.so") }
 
-    @get:Internal
-    val into: String
-        get() = "jni/${outputFile.parentFile.name}"
+  @get:Internal
+  val into: String
+    get() = "jni/${outputFile.parentFile.name}"
 
-    @TaskAction
-    fun run() {
-        Files.copy(
-            inputFile.get().asFile.toPath(),
-            outputFile.toPath(),
-            StandardCopyOption.REPLACE_EXISTING
-        )
-    }
+  @TaskAction
+  fun run() {
+    Files.copy(
+      inputFile.get().asFile.toPath(),
+      outputFile.toPath(),
+      StandardCopyOption.REPLACE_EXISTING
+    )
+  }
 }
