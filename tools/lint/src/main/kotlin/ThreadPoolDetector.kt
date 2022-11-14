@@ -19,8 +19,7 @@ class ThreadPoolDetector : Detector(), SourceCodeScanner {
         "newScheduledThreadPool",
         "newSingleThreadExecutor",
         "newSingleThreadScheduledExecutor",
-        "newWorkStealingPool",
-        "<init>"
+        "newWorkStealingPool"
     )
 
     override fun getApplicableConstructorTypes(): List<String> = listOf(
