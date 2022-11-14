@@ -15,7 +15,10 @@
 package com.google.firebase.concurrent;
 
 import android.annotation.SuppressLint;
+import android.os.Build;
 import android.os.Process;
+import android.os.StrictMode;
+import com.google.firebase.BuildConfig;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
@@ -32,7 +35,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
-/** @hide */
 @SuppressLint("ThreadPoolCreation")
 public class ExecutorsRegistrar implements ComponentRegistrar {
   private static final Lazy<ScheduledExecutorService> BG_EXECUTOR =
@@ -40,7 +42,9 @@ public class ExecutorsRegistrar implements ComponentRegistrar {
           () ->
               scheduled(
                   Executors.newFixedThreadPool(
-                      4, factory("Firebase Background", Process.THREAD_PRIORITY_BACKGROUND))));
+                      4,
+                      factory(
+                          "Firebase Background", Process.THREAD_PRIORITY_BACKGROUND, bgPolicy()))));
 
   private static final Lazy<ScheduledExecutorService> LITE_EXECUTOR =
       new Lazy<>(
@@ -48,7 +52,7 @@ public class ExecutorsRegistrar implements ComponentRegistrar {
               scheduled(
                   Executors.newFixedThreadPool(
                       Math.max(2, Runtime.getRuntime().availableProcessors()),
-                      factory("Firebase Lite", Process.THREAD_PRIORITY_DEFAULT))));
+                      factory("Firebase Lite", Process.THREAD_PRIORITY_DEFAULT, litePolicy()))));
 
   private static final Lazy<ScheduledExecutorService> BLOCKING_EXECUTOR =
       new Lazy<>(
@@ -97,6 +101,33 @@ public class ExecutorsRegistrar implements ComponentRegistrar {
   }
 
   private static ThreadFactory factory(String threadPrefix, int priority) {
-    return new CustomThreadFactory(threadPrefix, priority);
+    return new CustomThreadFactory(threadPrefix, priority, null);
+  }
+
+  private static ThreadFactory factory(
+      String threadPrefix, int priority, StrictMode.ThreadPolicy policy) {
+    return new CustomThreadFactory(threadPrefix, priority, policy);
+  }
+
+  private static StrictMode.ThreadPolicy bgPolicy() {
+    StrictMode.ThreadPolicy.Builder builder = new StrictMode.ThreadPolicy.Builder().detectNetwork();
+    if (Build.VERSION.SDK_INT >= 23) {
+      builder.detectResourceMismatches();
+      if (Build.VERSION.SDK_INT >= 26) {
+        builder.detectUnbufferedIo();
+      }
+    }
+    if (BuildConfig.DEBUG) {
+      builder.penaltyDeath();
+    }
+    return builder.penaltyLog().build();
+  }
+
+  private static StrictMode.ThreadPolicy litePolicy() {
+    StrictMode.ThreadPolicy.Builder builder = new StrictMode.ThreadPolicy.Builder().detectAll();
+    if (BuildConfig.DEBUG) {
+      builder.penaltyDeath();
+    }
+    return builder.penaltyLog().build();
   }
 }
