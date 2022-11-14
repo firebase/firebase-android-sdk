@@ -28,9 +28,8 @@ class CheckRegistry : IssueRegistry() {
                 KotlinInteropDetector.PLATFORM_NULLNESS,
                 NonAndroidxNullabilityDetector.NON_ANDROIDX_NULLABILITY,
                 DeferredApiDetector.INVALID_DEFERRED_API_USE,
-                ProviderAssignmentDetector.INVALID_PROVIDER_ASSIGNMENT
-                // TODO(vkryachko): enable the check after suppressing current violations.
-                // ThreadPoolDetector.THREAD_POOL_CREATION
+                ProviderAssignmentDetector.INVALID_PROVIDER_ASSIGNMENT,
+                ThreadPoolDetector.THREAD_POOL_CREATION
         )
 
     override val api: Int

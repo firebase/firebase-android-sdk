@@ -14,6 +14,7 @@
 
 package com.google.firebase.perf.metrics;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
@@ -133,6 +134,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     return instance != null ? instance : getInstance(TransportManager.getInstance(), new Clock());
   }
 
+  // TODO(b/258263016): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   static AppStartTrace getInstance(TransportManager transportManager, Clock clock) {
     if (instance == null) {
       synchronized (AppStartTrace.class) {

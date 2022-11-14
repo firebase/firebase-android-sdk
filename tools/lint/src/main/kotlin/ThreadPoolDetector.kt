@@ -22,6 +22,13 @@ class ThreadPoolDetector : Detector(), SourceCodeScanner {
         "newWorkStealingPool"
     )
 
+    override fun getApplicableConstructorTypes(): List<String> = listOf(
+        "java.lang.Thread",
+        "java.util.concurrent.ForkJoinPool",
+        "java.util.concurrent.ThreadPoolExecutor",
+        "java.util.concurrent.ScheduledThreadPoolExecutor"
+    )
+
     override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
         if (!isExecutorMethod(method)) {
             return
@@ -30,7 +37,20 @@ class ThreadPoolDetector : Detector(), SourceCodeScanner {
         context.report(
             THREAD_POOL_CREATION,
             context.getCallLocation(node, includeReceiver = false, includeArguments = true),
-            "Creating thread pools is not allowed.")
+            "Creating thread pools is not allowed."
+        )
+    }
+
+    override fun visitConstructor(
+        context: JavaContext,
+        node: UCallExpression,
+        constructor: PsiMethod
+    ) {
+        context.report(
+            THREAD_POOL_CREATION,
+            context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+            "Creating threads or thread pools is not allowed."
+        )
     }
 
     private fun isExecutorMethod(method: PsiMethod): Boolean {
