@@ -36,83 +36,83 @@ const val API_KEY = "AIzaSyDOCAbC123dEf456GhI789jKl012-MnO"
 const val EXISTING_APP = "existing"
 
 abstract class BaseTestCase {
-    @Before
-    fun setUp() {
-        Firebase.initialize(
-                RuntimeEnvironment.application,
-                FirebaseOptions.Builder()
-                        .setApplicationId(APP_ID)
-                        .setApiKey(API_KEY)
-                        .setProjectId("123")
-                        .build()
-        )
-        Firebase.initialize(
-                RuntimeEnvironment.application,
-                FirebaseOptions.Builder()
-                        .setApplicationId(APP_ID)
-                        .setApiKey(API_KEY)
-                        .setProjectId("123")
-                        .build(),
-                EXISTING_APP
-        )
-    }
+  @Before
+  fun setUp() {
+    Firebase.initialize(
+      RuntimeEnvironment.application,
+      FirebaseOptions.Builder()
+        .setApplicationId(APP_ID)
+        .setApiKey(API_KEY)
+        .setProjectId("123")
+        .build()
+    )
+    Firebase.initialize(
+      RuntimeEnvironment.application,
+      FirebaseOptions.Builder()
+        .setApplicationId(APP_ID)
+        .setApiKey(API_KEY)
+        .setProjectId("123")
+        .build(),
+      EXISTING_APP
+    )
+  }
 
-    @After
-    fun cleanUp() {
-        FirebaseApp.clearInstancesForTest()
-    }
+  @After
+  fun cleanUp() {
+    FirebaseApp.clearInstancesForTest()
+  }
 }
 
 @RunWith(RobolectricTestRunner::class)
 class ModelDownloaderTests : BaseTestCase() {
 
-    @Test
-    fun `modelDownloader should delegate to FirebaseModelDownloader#getInstance()`() {
-        assertThat(Firebase.modelDownloader).isSameInstanceAs(FirebaseModelDownloader.getInstance())
+  @Test
+  fun `modelDownloader should delegate to FirebaseModelDownloader#getInstance()`() {
+    assertThat(Firebase.modelDownloader).isSameInstanceAs(FirebaseModelDownloader.getInstance())
+  }
+
+  @Test
+  fun `Firebase#modelDownloader(FirebaseApp) should delegate to FirebaseModelDownloader#getInstance(FirebaseApp)`() {
+    val app = Firebase.app(EXISTING_APP)
+    assertThat(Firebase.modelDownloader(app))
+      .isSameInstanceAs(FirebaseModelDownloader.getInstance(app))
+  }
+
+  @Test
+  fun `CustomModelDownloadConditions builder works`() {
+    val conditions = customModelDownloadConditions {
+      requireCharging()
+      requireDeviceIdle()
     }
 
-    @Test
-    fun `Firebase#modelDownloader(FirebaseApp) should delegate to FirebaseModelDownloader#getInstance(FirebaseApp)`() {
-        val app = Firebase.app(EXISTING_APP)
-        assertThat(Firebase.modelDownloader(app))
-                .isSameInstanceAs(FirebaseModelDownloader.getInstance(app))
-    }
+    assertThat(conditions.isChargingRequired).isEqualTo(true)
+    assertThat(conditions.isWifiRequired).isEqualTo(false)
+    assertThat(conditions.isDeviceIdleRequired).isEqualTo(true)
+  }
 
-    @Test
-    fun `CustomModelDownloadConditions builder works`() {
-        val conditions = customModelDownloadConditions {
-            requireCharging()
-            requireDeviceIdle()
-        }
+  @Test
+  fun `CustomModel destructuring declarations work`() {
+    val modelName = "myModel"
+    val modelHash = "someHash"
+    val fileSize = 200L
+    val downloadId = 258L
 
-        assertThat(conditions.isChargingRequired).isEqualTo(true)
-        assertThat(conditions.isWifiRequired).isEqualTo(false)
-        assertThat(conditions.isDeviceIdleRequired).isEqualTo(true)
-    }
+    val customModel = CustomModel(modelName, modelHash, fileSize, downloadId)
 
-    @Test
-    fun `CustomModel destructuring declarations work`() {
-        val modelName = "myModel"
-        val modelHash = "someHash"
-        val fileSize = 200L
-        val downloadId = 258L
+    val (file, size, id, hash, name) = customModel
 
-        val customModel = CustomModel(modelName, modelHash, fileSize, downloadId)
-
-        val (file, size, id, hash, name) = customModel
-
-        assertThat(name).isEqualTo(customModel.name)
-        assertThat(hash).isEqualTo(customModel.modelHash)
-        assertThat(size).isEqualTo(customModel.size)
-        assertThat(id).isEqualTo(customModel.downloadId)
-    }
+    assertThat(name).isEqualTo(customModel.name)
+    assertThat(hash).isEqualTo(customModel.modelHash)
+    assertThat(size).isEqualTo(customModel.size)
+    assertThat(id).isEqualTo(customModel.downloadId)
+  }
 }
 
 @RunWith(RobolectricTestRunner::class)
 class LibraryVersionTest : BaseTestCase() {
-    @Test
-    fun `library version should be registered with runtime`() {
-        val publisher = Firebase.app.get(UserAgentPublisher::class.java)
-        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
-    }
+  @Test
+  fun `library version should be registered with runtime`() {
+    val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+    assertThat(publisher.userAgent).contains(LIBRARY_NAME)
+  }
 }

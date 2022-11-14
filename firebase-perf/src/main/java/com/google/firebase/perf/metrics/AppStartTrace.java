@@ -36,6 +36,7 @@ import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.FirstDrawDoneListener;
+import com.google.firebase.perf.util.PreDrawListener;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
@@ -76,6 +77,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   private final TransportManager transportManager;
   private final Clock clock;
   private final ConfigResolver configResolver;
+  private final TraceMetric.Builder experimentTtid;
   private Context appContext;
   /**
    * The first time onCreate() of any activity is called, the activity is saved as launchActivity.
@@ -97,6 +99,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   private Timer onStartTime = null;
   private Timer onResumeTime = null;
   private Timer firstDrawDone = null;
+  private Timer preDraw = null;
 
   private PerfSession startSession;
   private boolean isStartedFromBackground = false;
@@ -166,6 +169,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     this.clock = clock;
     this.configResolver = configResolver;
     this.executorService = executorService;
+    this.experimentTtid = TraceMetric.newBuilder().setName("_experiment_app_start_ttid");
   }
 
   /** Called from FirebasePerfProvider to register this callback. */
@@ -199,7 +203,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
    */
   private static Timer getStartTimer() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-      return Timer.ofElapsedRealtime(Process.getStartElapsedRealtime());
+      return Timer.ofElapsedRealtime(
+          Process.getStartElapsedRealtime(), Process.getStartUptimeMillis());
     }
     return FirebasePerfProvider.getAppStartTime();
   }
@@ -208,14 +213,71 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     if (firstDrawDone != null) {
       return;
     }
+    Timer start = getStartTimer();
     this.firstDrawDone = clock.getTime();
-    executorService.execute(
-        () -> this.logColdStart(getStartTimer(), this.firstDrawDone, this.startSession));
+    this.experimentTtid
+        .setClientStartTimeUs(start.getMicros())
+        .setDurationUs(start.getDurationMicros(this.firstDrawDone));
 
-    if (isRegisteredForLifecycleCallbacks) {
-      // After AppStart trace is queued to be logged, we can unregister this callback.
-      unregisterActivityLifecycleCallbacks();
+    TraceMetric.Builder subtrace =
+        TraceMetric.newBuilder()
+            .setName("_experiment_classLoadTime")
+            .setClientStartTimeUs(FirebasePerfProvider.getAppStartTime().getMicros())
+            .setDurationUs(
+                FirebasePerfProvider.getAppStartTime().getDurationMicros(this.firstDrawDone));
+    this.experimentTtid.addSubtraces(subtrace.build());
+
+    subtrace = TraceMetric.newBuilder();
+    subtrace
+        .setName("_experiment_uptimeMillis")
+        .setClientStartTimeUs(start.getMicros())
+        .setDurationUs(start.getDurationUptimeMicros(this.firstDrawDone));
+    this.experimentTtid.addSubtraces(subtrace.build());
+
+    this.experimentTtid.addPerfSessions(this.startSession.build());
+
+    if (isExperimentTraceDone()) {
+      executorService.execute(() -> this.logExperimentTtid(this.experimentTtid));
+
+      if (isRegisteredForLifecycleCallbacks) {
+        // After AppStart trace is queued to be logged, we can unregister this callback.
+        unregisterActivityLifecycleCallbacks();
+      }
     }
+  }
+
+  private void recordFirstDrawDonePreDraw() {
+    if (preDraw != null) {
+      return;
+    }
+    Timer start = getStartTimer();
+    this.preDraw = clock.getTime();
+    TraceMetric.Builder subtrace =
+        TraceMetric.newBuilder()
+            .setName("_experiment_preDraw")
+            .setClientStartTimeUs(start.getMicros())
+            .setDurationUs(start.getDurationMicros(this.preDraw));
+    this.experimentTtid.addSubtraces(subtrace.build());
+
+    subtrace = TraceMetric.newBuilder();
+    subtrace
+        .setName("_experiment_preDraw_uptimeMillis")
+        .setClientStartTimeUs(start.getMicros())
+        .setDurationUs(start.getDurationUptimeMicros(this.preDraw));
+    this.experimentTtid.addSubtraces(subtrace.build());
+
+    if (isExperimentTraceDone()) {
+      executorService.execute(() -> this.logExperimentTtid(this.experimentTtid));
+
+      if (isRegisteredForLifecycleCallbacks) {
+        // After AppStart trace is queued to be logged, we can unregister this callback.
+        unregisterActivityLifecycleCallbacks();
+      }
+    }
+  }
+
+  private boolean isExperimentTraceDone() {
+    return this.preDraw != null && this.firstDrawDone != null;
   }
 
   @Override
@@ -255,6 +317,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     if (isExperimentTTIDEnabled) {
       View rootView = activity.findViewById(android.R.id.content);
       FirstDrawDoneListener.registerForNextDraw(rootView, this::recordFirstDrawDone);
+      PreDrawListener.registerForNextDraw(rootView, this::recordFirstDrawDonePreDraw);
     }
 
     if (onResumeTime != null) { // An activity already called onResume()
@@ -283,21 +346,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     }
   }
 
-  private void logColdStart(Timer start, Timer end, PerfSession session) {
-    TraceMetric.Builder metric =
-        TraceMetric.newBuilder()
-            .setName("_experiment_app_start_ttid")
-            .setClientStartTimeUs(start.getMicros())
-            .setDurationUs(start.getDurationMicros(end));
-
-    TraceMetric.Builder subtrace =
-        TraceMetric.newBuilder()
-            .setName("_experiment_classLoadTime")
-            .setClientStartTimeUs(FirebasePerfProvider.getAppStartTime().getMicros())
-            .setDurationUs(FirebasePerfProvider.getAppStartTime().getDurationMicros(end));
-
-    metric.addSubtraces(subtrace).addPerfSessions(this.startSession.build());
-
+  private void logExperimentTtid(TraceMetric.Builder metric) {
     transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
   }
 
@@ -336,10 +385,32 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   }
 
   @Override
-  public void onActivityPaused(Activity activity) {}
+  public void onActivityPaused(Activity activity) {
+    if (isExperimentTraceDone()) {
+      return;
+    }
+    Timer onPauseTime = clock.getTime();
+    TraceMetric.Builder subtrace =
+        TraceMetric.newBuilder()
+            .setName("_experiment_onPause")
+            .setClientStartTimeUs(onPauseTime.getMicros())
+            .setDurationUs(getStartTimer().getDurationMicros(onPauseTime));
+    this.experimentTtid.addSubtraces(subtrace.build());
+  }
 
   @Override
-  public synchronized void onActivityStopped(Activity activity) {}
+  public void onActivityStopped(Activity activity) {
+    if (isExperimentTraceDone()) {
+      return;
+    }
+    Timer onStopTime = clock.getTime();
+    TraceMetric.Builder subtrace =
+        TraceMetric.newBuilder()
+            .setName("_experiment_onStop")
+            .setClientStartTimeUs(onStopTime.getMicros())
+            .setDurationUs(getStartTimer().getDurationMicros(onStopTime));
+    this.experimentTtid.addSubtraces(subtrace.build());
+  }
 
   @Override
   public void onActivityDestroyed(Activity activity) {}

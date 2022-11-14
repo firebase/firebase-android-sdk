@@ -13,72 +13,73 @@ import com.intellij.psi.PsiMethod
 import org.jetbrains.uast.UCallExpression
 
 class ThreadPoolDetector : Detector(), SourceCodeScanner {
-    override fun getApplicableMethodNames(): List<String> = listOf(
-        "newCachedThreadPool",
-        "newFixedThreadPool",
-        "newScheduledThreadPool",
-        "newSingleThreadExecutor",
-        "newSingleThreadScheduledExecutor",
-        "newWorkStealingPool"
+  override fun getApplicableMethodNames(): List<String> =
+    listOf(
+      "newCachedThreadPool",
+      "newFixedThreadPool",
+      "newScheduledThreadPool",
+      "newSingleThreadExecutor",
+      "newSingleThreadScheduledExecutor",
+      "newWorkStealingPool"
     )
 
-    override fun getApplicableConstructorTypes(): List<String> = listOf(
-        "java.lang.Thread",
-        "java.util.concurrent.ForkJoinPool",
-        "java.util.concurrent.ThreadPoolExecutor",
-        "java.util.concurrent.ScheduledThreadPoolExecutor"
+  override fun getApplicableConstructorTypes(): List<String> =
+    listOf(
+      "java.lang.Thread",
+      "java.util.concurrent.ForkJoinPool",
+      "java.util.concurrent.ThreadPoolExecutor",
+      "java.util.concurrent.ScheduledThreadPoolExecutor"
     )
 
-    override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
-        if (!isExecutorMethod(method)) {
-            return
-        }
-
-        context.report(
-            THREAD_POOL_CREATION,
-            context.getCallLocation(node, includeReceiver = false, includeArguments = true),
-            "Creating thread pools is not allowed."
-        )
+  override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
+    if (!isExecutorMethod(method)) {
+      return
     }
 
-    override fun visitConstructor(
-        context: JavaContext,
-        node: UCallExpression,
-        constructor: PsiMethod
-    ) {
-        context.report(
-            THREAD_POOL_CREATION,
-            context.getCallLocation(node, includeReceiver = false, includeArguments = true),
-            "Creating threads or thread pools is not allowed."
-        )
+    context.report(
+      THREAD_POOL_CREATION,
+      context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+      "Creating thread pools is not allowed."
+    )
+  }
+
+  override fun visitConstructor(
+    context: JavaContext,
+    node: UCallExpression,
+    constructor: PsiMethod
+  ) {
+    context.report(
+      THREAD_POOL_CREATION,
+      context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+      "Creating threads or thread pools is not allowed."
+    )
+  }
+
+  private fun isExecutorMethod(method: PsiMethod): Boolean {
+    (method.parent as? PsiClass)?.let {
+      return it.qualifiedName == "java.util.concurrent.Executors"
     }
+    return false
+  }
 
-    private fun isExecutorMethod(method: PsiMethod): Boolean {
-        (method.parent as? PsiClass)?.let {
-            return it.qualifiedName == "java.util.concurrent.Executors"
-        }
-        return false
-    }
+  companion object {
+    private val IMPLEMENTATION =
+      Implementation(ThreadPoolDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
-    companion object {
-        private val IMPLEMENTATION = Implementation(
-            ThreadPoolDetector::class.java,
-            Scope.JAVA_FILE_SCOPE
-        )
-
-        /** Calling methods on the wrong thread  */
-        @JvmField
-        val THREAD_POOL_CREATION = Issue.create(
-            id = "ThreadPoolCreation",
-            briefDescription = "Creating thread pools is not allowed.",
-
-            explanation = """
+    /** Calling methods on the wrong thread */
+    @JvmField
+    val THREAD_POOL_CREATION =
+      Issue.create(
+        id = "ThreadPoolCreation",
+        briefDescription = "Creating thread pools is not allowed.",
+        explanation =
+          """
                     Please use one of the executors provided by firebase-common
                 """,
-            category = Category.CORRECTNESS,
-            priority = 6,
-            severity = Severity.ERROR,
-            implementation = IMPLEMENTATION
-        )
-    }
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION
+      )
+  }
 }

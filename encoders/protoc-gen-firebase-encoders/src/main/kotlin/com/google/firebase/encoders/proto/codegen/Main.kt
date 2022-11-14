@@ -28,26 +28,22 @@ import java.io.StringWriter
 import javax.inject.Inject
 
 fun driver(input: InputStream, output: OutputStream) {
-    val request = CodeGeneratorRequest.parseFrom(input)
-    if (request.parameter.isEmpty()) {
-        throw InvalidConfigException("Required plugin option is missing. " +
-                "Please specify the config file path via plugin options.")
-    }
-    val cfgFile = File(request.parameter)
-    if (!cfgFile.exists() || !cfgFile.isFile) {
-        throw InvalidConfigException("Config file '$cfgFile' does not exist or is a directory.")
-    }
+  val request = CodeGeneratorRequest.parseFrom(input)
+  if (request.parameter.isEmpty()) {
+    throw InvalidConfigException(
+      "Required plugin option is missing. " +
+        "Please specify the config file path via plugin options."
+    )
+  }
+  val cfgFile = File(request.parameter)
+  if (!cfgFile.exists() || !cfgFile.isFile) {
+    throw InvalidConfigException("Config file '$cfgFile' does not exist or is a directory.")
+  }
 
-    val config = cfgFile.reader().use {
-        ConfigReader.read(it)
-    }
+  val config = cfgFile.reader().use { ConfigReader.read(it) }
 
-    val component: MainComponent = DaggerMainComponent.builder()
-            .config(config)
-            .build()
-    component.plugin
-            .run(request.protoFileList)
-            .writeTo(output)
+  val component: MainComponent = DaggerMainComponent.builder().config(config).build()
+  component.plugin.run(request.protoFileList).writeTo(output)
 }
 
 /**
@@ -58,33 +54,33 @@ fun driver(input: InputStream, output: OutputStream) {
  * `stdout`.
  */
 fun main(args: Array<String>) {
-    runCatching {
-        driver(System.`in`, System.out)
-    }.onFailure {
-        val stringWriter = StringWriter()
-        it.printStackTrace(PrintWriter(stringWriter))
-        CodeGeneratorResponse.newBuilder()
-            .setError(stringWriter.toString())
-            .build()
-            .writeTo(System.out)
+  runCatching { driver(System.`in`, System.out) }
+    .onFailure {
+      val stringWriter = StringWriter()
+      it.printStackTrace(PrintWriter(stringWriter))
+      CodeGeneratorResponse.newBuilder()
+        .setError(stringWriter.toString())
+        .build()
+        .writeTo(System.out)
     }
 }
 
-class Plugin @Inject constructor(private val parser: DescriptorParser, private val generator: CodeGenerator) {
-    fun run(protoFiles: List<FileDescriptorProto>): CodeGeneratorResponse {
-        return generator.generate(parser.parse(protoFiles))
-    }
+class Plugin
+@Inject
+constructor(private val parser: DescriptorParser, private val generator: CodeGenerator) {
+  fun run(protoFiles: List<FileDescriptorProto>): CodeGeneratorResponse {
+    return generator.generate(parser.parse(protoFiles))
+  }
 }
 
 @Component(modules = [ParsingModule::class])
 interface MainComponent {
-    val plugin: Plugin
+  val plugin: Plugin
 
-    @Component.Builder
-    interface Builder {
-        @BindsInstance
-        fun config(config: CodeGenConfig): Builder
+  @Component.Builder
+  interface Builder {
+    @BindsInstance fun config(config: CodeGenConfig): Builder
 
-        fun build(): MainComponent
-    }
+    fun build(): MainComponent
+  }
 }

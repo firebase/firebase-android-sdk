@@ -17,11 +17,11 @@ jobs:
       - name: Create base branch
         uses: peterjgrainger/action-create-branch@v2.2.0
         with:
-          branch: '${{ inputs.name }}'
+          branch: 'releases/${{ inputs.name }}'
       - name: Create release branch
         uses: peterjgrainger/action-create-branch@v2.2.0
         with:
-          branch: '${{ inputs.name }}.release'
+          branch: 'releases/${{ inputs.name }}.release'
 
   create-pull-request:
     runs-on: ubuntu-latest
@@ -44,6 +44,6 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
-          base: '${{ inputs.name }}'
-          branch: '${{ inputs.name }}.release'
+          base: 'releases/${{ inputs.name }}'
+          branch: 'releases/${{ inputs.name }}.release'
           title: '${{ inputs.name}} release'
