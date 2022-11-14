@@ -13,7 +13,7 @@
 // limitations under the License.
 
 plugins {
-    id("org.jlleitschuh.gradle.ktlint") version "9.2.1"
+    id("com.ncorti.ktfmt.gradle") version "0.11.0"
     id("com.github.sherter.google-java-format") version "0.9"
     `kotlin-dsl`
 }
@@ -32,7 +32,11 @@ repositories {
 val perfPluginVersion = System.getenv("FIREBASE_PERF_PLUGIN_VERSION") ?: "1.4.1"
 
 googleJavaFormat {
-    toolVersion = "1.10.0"
+    toolVersion = "1.15.0"
+}
+
+ktfmt {
+    googleStyle()
 }
 
 dependencies {
