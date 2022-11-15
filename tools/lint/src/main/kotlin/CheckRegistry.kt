@@ -29,7 +29,8 @@ class CheckRegistry : IssueRegistry() {
         KotlinInteropDetector.PLATFORM_NULLNESS,
         NonAndroidxNullabilityDetector.NON_ANDROIDX_NULLABILITY,
         DeferredApiDetector.INVALID_DEFERRED_API_USE,
-        ProviderAssignmentDetector.INVALID_PROVIDER_ASSIGNMENT
+        ProviderAssignmentDetector.INVALID_PROVIDER_ASSIGNMENT,
+        ThreadPoolDetector.THREAD_POOL_CREATION
       )
 
   override val api: Int

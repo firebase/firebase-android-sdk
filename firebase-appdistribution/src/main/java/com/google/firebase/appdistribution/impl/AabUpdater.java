@@ -19,6 +19,7 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
@@ -52,6 +53,8 @@ class AabUpdater {
   @GuardedBy("updateAabLock")
   private boolean hasBeenSentToPlayForCurrentTask = false;
 
+  // TODO(b/258264924): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   AabUpdater() {
     this(
         FirebaseAppDistributionLifecycleNotifier.getInstance(),
