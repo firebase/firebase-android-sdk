@@ -19,7 +19,6 @@ import androidx.core.widget.doOnTextChanged
 import com.google.android.gms.tasks.Task
 import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.appdistribution.AppDistributionRelease
-import com.google.firebase.appdistribution.FirebaseAppDistributionException
 import com.google.firebase.appdistribution.InterruptionLevel
 import com.google.firebase.appdistribution.UpdateProgress
 import com.google.firebase.appdistribution.ktx.appDistribution
@@ -73,7 +72,6 @@ class MainActivity : AppCompatActivity() {
         feedbackTriggerMenu = findViewById(R.id.feedbackTriggerMenu)
         val items = listOf(
             FeedbackTrigger.NONE.label,
-            FeedbackTrigger.SDK_NOTIFICATION.label,
             FeedbackTrigger.CUSTOM_NOTIFICATION.label,
             FeedbackTrigger.SHAKE.label,
             FeedbackTrigger.SCREENSHOT.label,
@@ -87,12 +85,6 @@ class MainActivity : AppCompatActivity() {
             when(text.toString()) {
                 FeedbackTrigger.NONE.label -> {
                     disableAllFeedbackTriggers()
-                }
-                FeedbackTrigger.SDK_NOTIFICATION.label -> {
-                    disableAllFeedbackTriggers()
-                    Log.i(TAG, "Enabling notification trigger (SDK)")
-                    firebaseAppDistribution.showFeedbackNotification(
-                        R.string.feedbackInfoText, InterruptionLevel.HIGH)
                 }
                 FeedbackTrigger.CUSTOM_NOTIFICATION.label -> {
                     disableAllFeedbackTriggers()
@@ -109,6 +101,9 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        firebaseAppDistribution.showFeedbackNotification(
+            R.string.feedbackInfoText, InterruptionLevel.HIGH)
     }
 
     override fun onDestroy() {
@@ -118,13 +113,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun disableAllFeedbackTriggers() {
         Log.i(TAG, "Disabling all feedback triggers")
-        firebaseAppDistribution.cancelFeedbackNotification()
         ShakeDetectionFeedbackTrigger.disable(application)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         val inflater: MenuInflater = menuInflater
         inflater.inflate(R.menu.action_menu, menu)
+        if (BuildConfig.FLAVOR == "beta") {
+            menu.findItem(R.id.startFeedbackMenuItem).isVisible = true
+        }
         return true
     }
 
@@ -263,11 +260,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun failureListener(exception: Exception) {
-        val ex = exception as FirebaseAppDistributionException
-        Log.d("FirebaseAppDistribution", "MAINACTIVITY:ERROR ERROR. CODE: " + exception.errorCode)
+        val ex = exception as com.google.firebase.appdistribution.FirebaseAppDistributionException
+        Log.d("MainActivity", "Task failed with an error (${ex.errorCode}): ${ex.message}")
         AlertDialog.Builder(this)
-            .setTitle("Error updating to new release")
-            .setMessage("${ex.message}: ${ex.errorCode}")
+            .setTitle("Task failed")
+            .setMessage("${ex.message}\n\nCode: ${ex.errorCode}")
             .setNeutralButton("Okay") { dialog, _ -> dialog.dismiss() }
             .show()
     }
@@ -323,7 +320,6 @@ class MainActivity : AppCompatActivity() {
             NONE("None"),
             SHAKE("Shake the device"),
             SCREENSHOT("Take a screenshot"),
-            SDK_NOTIFICATION("Tap a notification (SDK)"),
             CUSTOM_NOTIFICATION("Tap a notification (custom)")
         }
     }
