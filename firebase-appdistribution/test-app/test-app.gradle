@@ -25,8 +25,8 @@ android {
         applicationId "com.googletest.firebase.appdistribution.testapp"
         minSdkVersion 23
         targetSdkVersion 33
-        versionName "2.1"
-        versionCode 3
+        versionName "3.1"
+        versionCode 6
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -37,10 +37,22 @@ android {
             // needing to have the app signed.
             initWith debug
         }
+    }
 
-        debug {
+    flavorDimensions.add("environment")
+
+    productFlavors {
+        prod {
+            dimension "environment"
+            versionNameSuffix "-prod"
+        }
+
+        beta {
+            dimension "environment"
+            versionNameSuffix "-beta"
+
             firebaseAppDistribution {
-                releaseNotes "Debug variant of Android SDK test app"
+                releaseNotes "Beta variant of Android SDK test app"
                 // testers "your email here"
             }
         }
@@ -67,8 +79,8 @@ dependencies {
     implementation project(':firebase-common:ktx')
     implementation "com.google.android.gms:play-services-tasks:18.0.2"
 
-    // Debug uses the full implementation
-    debugImplementation project(':firebase-appdistribution')
+    // Beta flavor uses the full implementation
+    betaImplementation project(':firebase-appdistribution')
 
     // Other dependencies
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
