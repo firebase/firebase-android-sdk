@@ -159,7 +159,7 @@ class FirebaseAppDistributionNotificationsManager {
     CharSequence appLabel = packageManager.getApplicationLabel(applicationInfo);
     NotificationCompat.Builder builder =
         new NotificationCompat.Builder(context, Notification.FEEDBACK.channelId)
-            .setSmallIcon(appIconSource.getNonAdaptiveIconOrDefault(context))
+            .setSmallIcon(R.drawable.ic_baseline_rate_review_24)
             .setContentTitle(context.getString(R.string.feedback_notification_title))
             .setContentText(context.getString(R.string.feedback_notification_text, appLabel))
             .setPriority(interruptionLevel.notificationPriority)
