@@ -85,6 +85,12 @@ public class ConfigFetchHandler {
    */
   @VisibleForTesting static final String FIRST_OPEN_TIME_KEY = "_fot";
 
+  /** Custom Http header key to identify the fetch type. */
+  private static final String X_FIREBASE_RC_FETCH_TYPE = "X-Firebase-RC-Fetch-Type";
+
+  private static final String REALTIME_FETCH_TYPE = "Realtime";
+  private static final String BASE_FETCH_TYPE = "BaseFetch";
+
   private final FirebaseInstallationsApi firebaseInstallations;
   private final Provider<AnalyticsConnector> analyticsConnector;
 
@@ -156,13 +162,67 @@ public class ConfigFetchHandler {
    *     updates, the {@link FetchResponse}'s configs will be {@code null}.
    */
   public Task<FetchResponse> fetch(long minimumFetchIntervalInSeconds) {
+
+    // Make a copy to prevent any concurrency issues between Fetches.
+    Map<String, String> copyOfCustomHttpHeaders = new HashMap<>(customHttpHeaders);
+    copyOfCustomHttpHeaders.put(X_FIREBASE_RC_FETCH_TYPE, BASE_FETCH_TYPE + "/" + 1);
+
     return fetchedConfigsCache
         .get()
         .continueWithTask(
             executor,
             (cachedFetchConfigsTask) ->
                 fetchIfCacheExpiredAndNotThrottled(
-                    cachedFetchConfigsTask, minimumFetchIntervalInSeconds));
+                    cachedFetchConfigsTask,
+                    minimumFetchIntervalInSeconds,
+                    copyOfCustomHttpHeaders));
+  }
+
+  /**
+   * Starts fetching configs from the Firebase Remote Config server.
+   *
+   * <p>Guarantees consistency between memory and disk; fetched configs are saved to memory only
+   * after they have been written to disk.
+   *
+   * <p>Fetches even if the read of the fetch cache fails (assumes there are no cached fetched
+   * configs in that case).
+   *
+   * <p>If the fetch request could not be created or there was error connecting to the server, the
+   * returned Task throws a {@link FirebaseRemoteConfigClientException}.
+   *
+   * <p>If the server responds with an error, the returned Task throws a {@link
+   * FirebaseRemoteConfigServerException}.
+   *
+   * <p>If any of the following is true, then the returned Task throws a {@link
+   * FirebaseRemoteConfigFetchThrottledException}:
+   *
+   * <ul>
+   *   <li>The backoff duration from a previous throttled exception has not expired,
+   *   <li>The backend responded with a throttled error, or
+   *   <li>The backend responded with unavailable errors for the last two fetch requests.
+   * </ul>
+   *
+   * @return A {@link Task} representing a Realtime fetch call that returns a {@link FetchResponse}
+   *     with the configs fetched from the backend. If the backend was not called or the backend had
+   *     no updates, the {@link FetchResponse}'s configs will be {@code null}.
+   */
+  public Task<FetchResponse> realtimeFetch(
+      long minimumFetchIntervalInSeconds, int fetchAttemptNumber) {
+
+    // Make a copy to prevent any concurrency issues between Fetches.
+    Map<String, String> copyOfCustomHttpHeaders = new HashMap<>(customHttpHeaders);
+    copyOfCustomHttpHeaders.put(
+        X_FIREBASE_RC_FETCH_TYPE, REALTIME_FETCH_TYPE + "/" + fetchAttemptNumber);
+
+    return fetchedConfigsCache
+        .get()
+        .continueWithTask(
+            executor,
+            (cachedFetchConfigsTask) ->
+                fetchIfCacheExpiredAndNotThrottled(
+                    cachedFetchConfigsTask,
+                    minimumFetchIntervalInSeconds,
+                    copyOfCustomHttpHeaders));
   }
 
   /**
@@ -173,7 +233,9 @@ public class ConfigFetchHandler {
    * fetch time and {@link BackoffMetadata} in {@link ConfigMetadataClient}.
    */
   private Task<FetchResponse> fetchIfCacheExpiredAndNotThrottled(
-      Task<ConfigContainer> cachedFetchConfigsTask, long minimumFetchIntervalInSeconds) {
+      Task<ConfigContainer> cachedFetchConfigsTask,
+      long minimumFetchIntervalInSeconds,
+      Map<String, String> customFetchHeaders) {
     Date currentTime = new Date(clock.currentTimeMillis());
     if (cachedFetchConfigsTask.isSuccessful()
         && areCachedFetchConfigsValid(minimumFetchIntervalInSeconds, currentTime)) {
@@ -218,7 +280,7 @@ public class ConfigFetchHandler {
                     String installationId = installationIdTask.getResult();
                     String installationToken = installationAuthTokenTask.getResult().getToken();
                     return fetchFromBackendAndCacheResponse(
-                        installationId, installationToken, currentTime);
+                        installationId, installationToken, currentTime, customFetchHeaders);
                   });
     }
 
@@ -278,9 +340,13 @@ public class ConfigFetchHandler {
    * {@code fetchedConfigsCache}.
    */
   private Task<FetchResponse> fetchFromBackendAndCacheResponse(
-      String installationId, String installationToken, Date fetchTime) {
+      String installationId,
+      String installationToken,
+      Date fetchTime,
+      Map<String, String> customFetchHeaders) {
     try {
-      FetchResponse fetchResponse = fetchFromBackend(installationId, installationToken, fetchTime);
+      FetchResponse fetchResponse =
+          fetchFromBackend(installationId, installationToken, fetchTime, customFetchHeaders);
       if (fetchResponse.getStatus() != Status.BACKEND_UPDATES_FETCHED) {
         return Tasks.forResult(fetchResponse);
       }
@@ -303,7 +369,10 @@ public class ConfigFetchHandler {
    */
   @WorkerThread
   private FetchResponse fetchFromBackend(
-      String installationId, String installationToken, Date currentTime)
+      String installationId,
+      String installationToken,
+      Date currentTime,
+      Map<String, String> customFetchHeaders)
       throws FirebaseRemoteConfigException {
     try {
       HttpURLConnection urlConnection = frcBackendApiClient.createHttpURLConnection();
@@ -315,7 +384,7 @@ public class ConfigFetchHandler {
               installationToken,
               getUserProperties(),
               frcMetadata.getLastFetchETag(),
-              customHttpHeaders,
+              customFetchHeaders,
               getFirstOpenTime(),
               currentTime);
 

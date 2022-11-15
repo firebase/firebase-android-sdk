@@ -189,7 +189,8 @@ public class ConfigAutoFetch {
 
   @VisibleForTesting
   public synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
-    Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
+    Task<ConfigFetchHandler.FetchResponse> fetchTask =
+        configFetchHandler.realtimeFetch(0L, FETCH_RETRY - remainingAttempts + 1);
     fetchTask.onSuccessTask(
         (fetchResponse) -> {
           long newTemplateVersion = 0;
