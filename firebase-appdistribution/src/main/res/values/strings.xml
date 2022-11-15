@@ -32,8 +32,8 @@
   <string name="app_update_notification_channel_name">App updates</string>
   <string name="app_update_notification_channel_description">Shows progress of in-app updates</string>
   <string name="feedback_launch_failed">Failed to launch feedback</string>
-  <string name="feedback_unidentified_release">Release not found. This app may not have been installed by App Distribution, or you may no longer have access</string>
-  <string name="feedback_no_release">Would have sent feedback</string>
+  <string name="feedback_unidentified_release">Release not found. This app may not have been installed by App Distribution, or you may no longer have access.</string>
+  <string name="feedback_no_release">Would have sent feedback, but did not due to development mode.</string>
   <string name="feedback_notification_channel_name">Feedback</string>
   <string name="feedback_notification_channel_description">Tap to leave feedback</string>
   <string name="feedback_notification_title">We want your feedback!</string>
