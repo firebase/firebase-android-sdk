@@ -15,10 +15,16 @@
 package com.google.firebase.components;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.components.Qualified.qualified;
+import static com.google.firebase.components.Qualified.unqualified;
 
+import javax.inject.Qualifier;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+@Qualifier
+@interface TestQualifier {}
 
 @RunWith(JUnit4.class)
 public class DependencyTest {
@@ -29,7 +35,7 @@ public class DependencyTest {
     assertThat(dependency.isRequired()).isFalse();
     assertThat(dependency.isSet()).isFalse();
     assertThat(dependency.isDirectInjection()).isTrue();
-    assertThat(dependency.getInterface()).isEqualTo(String.class);
+    assertThat(dependency.getInterface()).isEqualTo(unqualified(String.class));
   }
 
   @Test
@@ -39,7 +45,17 @@ public class DependencyTest {
     assertThat(dependency.isRequired()).isTrue();
     assertThat(dependency.isSet()).isFalse();
     assertThat(dependency.isDirectInjection()).isTrue();
-    assertThat(dependency.getInterface()).isEqualTo(String.class);
+    assertThat(dependency.getInterface()).isEqualTo(unqualified(String.class));
+  }
+
+  @Test
+  public void requiredQualified_shouldHaveExpectedInvariants() {
+    Dependency dependency = Dependency.required(qualified(TestQualifier.class, String.class));
+
+    assertThat(dependency.isRequired()).isTrue();
+    assertThat(dependency.isSet()).isFalse();
+    assertThat(dependency.isDirectInjection()).isTrue();
+    assertThat(dependency.getInterface()).isEqualTo(qualified(TestQualifier.class, String.class));
   }
 
   @Test
@@ -49,7 +65,17 @@ public class DependencyTest {
     assertThat(dependency.isRequired()).isFalse();
     assertThat(dependency.isSet()).isTrue();
     assertThat(dependency.isDirectInjection()).isTrue();
-    assertThat(dependency.getInterface()).isEqualTo(String.class);
+    assertThat(dependency.getInterface()).isEqualTo(unqualified(String.class));
+  }
+
+  @Test
+  public void setOfQualified_shouldHaveExpectedInvariants() {
+    Dependency dependency = Dependency.setOf(qualified(TestQualifier.class, String.class));
+
+    assertThat(dependency.isRequired()).isFalse();
+    assertThat(dependency.isSet()).isTrue();
+    assertThat(dependency.isDirectInjection()).isTrue();
+    assertThat(dependency.getInterface()).isEqualTo(qualified(TestQualifier.class, String.class));
   }
 
   @Test
@@ -59,7 +85,18 @@ public class DependencyTest {
     assertThat(dependency.isRequired()).isFalse();
     assertThat(dependency.isSet()).isFalse();
     assertThat(dependency.isDirectInjection()).isFalse();
-    assertThat(dependency.getInterface()).isEqualTo(String.class);
+    assertThat(dependency.getInterface()).isEqualTo(unqualified(String.class));
+  }
+
+  @Test
+  public void optionalProviderQualified_shouldHaveExpectedInvariants() {
+    Dependency dependency =
+        Dependency.optionalProvider(qualified(TestQualifier.class, String.class));
+
+    assertThat(dependency.isRequired()).isFalse();
+    assertThat(dependency.isSet()).isFalse();
+    assertThat(dependency.isDirectInjection()).isFalse();
+    assertThat(dependency.getInterface()).isEqualTo(qualified(TestQualifier.class, String.class));
   }
 
   @Test
@@ -69,7 +106,18 @@ public class DependencyTest {
     assertThat(dependency.isRequired()).isTrue();
     assertThat(dependency.isSet()).isFalse();
     assertThat(dependency.isDirectInjection()).isFalse();
-    assertThat(dependency.getInterface()).isEqualTo(String.class);
+    assertThat(dependency.getInterface()).isEqualTo(unqualified(String.class));
+  }
+
+  @Test
+  public void requiredProviderQualified_shouldHaveExpectedInvariants() {
+    Dependency dependency =
+        Dependency.requiredProvider(qualified(TestQualifier.class, String.class));
+
+    assertThat(dependency.isRequired()).isTrue();
+    assertThat(dependency.isSet()).isFalse();
+    assertThat(dependency.isDirectInjection()).isFalse();
+    assertThat(dependency.getInterface()).isEqualTo(qualified(TestQualifier.class, String.class));
   }
 
   @Test
@@ -79,6 +127,16 @@ public class DependencyTest {
     assertThat(dependency.isRequired()).isFalse();
     assertThat(dependency.isSet()).isTrue();
     assertThat(dependency.isDirectInjection()).isFalse();
-    assertThat(dependency.getInterface()).isEqualTo(String.class);
+    assertThat(dependency.getInterface()).isEqualTo(unqualified(String.class));
+  }
+
+  @Test
+  public void setOfProviderQualified_shouldHaveExpectedInvariants() {
+    Dependency dependency = Dependency.setOfProvider(qualified(TestQualifier.class, String.class));
+
+    assertThat(dependency.isRequired()).isFalse();
+    assertThat(dependency.isSet()).isTrue();
+    assertThat(dependency.isDirectInjection()).isFalse();
+    assertThat(dependency.getInterface()).isEqualTo(qualified(TestQualifier.class, String.class));
   }
 }

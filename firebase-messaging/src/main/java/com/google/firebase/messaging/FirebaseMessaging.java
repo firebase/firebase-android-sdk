@@ -367,6 +367,7 @@ public class FirebaseMessaging {
    * @param enable Whether to enable or disable notification delegation.
    * @return A Task that completes when the notification delegation has been set.
    */
+  @NonNull
   public Task<Void> setNotificationDelegationEnabled(boolean enable) {
     return ProxyNotificationInitializer.setEnableProxyNotification(initExecutor, context, enable);
   }
@@ -548,6 +549,8 @@ public class FirebaseMessaging {
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
+  // TODO(b/258424124): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   void enqueueTaskWithDelaySeconds(Runnable task, long delaySeconds) {
     synchronized (FirebaseMessaging.class) {
       if (syncExecutor == null) {

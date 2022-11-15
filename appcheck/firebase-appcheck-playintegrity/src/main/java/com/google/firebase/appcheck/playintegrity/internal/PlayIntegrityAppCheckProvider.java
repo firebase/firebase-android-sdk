@@ -14,6 +14,7 @@
 
 package com.google.firebase.appcheck.playintegrity.internal;
 
+import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
@@ -41,6 +42,8 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
   private final ExecutorService backgroundExecutor;
   private final RetryManager retryManager;
 
+  // TODO(b/258273630): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   public PlayIntegrityAppCheckProvider(@NonNull FirebaseApp firebaseApp) {
     this(
         firebaseApp.getOptions().getGcmSenderId(),
