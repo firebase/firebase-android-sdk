@@ -112,6 +112,11 @@ public class FeedbackActivity extends AppCompatActivity {
   }
 
   public void submitFeedback(View view) {
+    if (releaseName == null) {
+      Toast.makeText(this, R.string.feedback_no_release, Toast.LENGTH_LONG).show();
+      finish();
+      return;
+    }
     setSubmittingStateEnabled(true);
     EditText feedbackText = findViewById(R.id.feedbackText);
     CheckBox screenshotCheckBox = findViewById(R.id.screenshotCheckBox);

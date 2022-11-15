@@ -26,6 +26,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.widget.Toast;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -313,8 +314,6 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void startFeedback(@StringRes int infoTextResourceId) {
-    // TODO(lkellogg): Once we have the real FeedbackActivity view implemented, we should write a
-    // test that checks that <a> tags are preserved
     startFeedback(firebaseApp.getApplicationContext().getText(infoTextResourceId));
   }
 
@@ -378,15 +377,24 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
             e ->
                 LogWrapper.getInstance()
                     .e("Failed to sign in tester. Could not collect feedback.", e))
-        .onSuccessTask(taskExecutor, unused -> releaseIdentifier.identifyRelease())
-        .onSuccessTask(
-            taskExecutor,
-            releaseName -> launchFeedbackActivity(releaseName, infoText, screenshotUri))
-        .addOnFailureListener(
-            e -> {
-              LogWrapper.getInstance().e("Failed to launch feedback flow", e);
-              feedbackInProgress.set(false);
-            });
+        .onSuccessTask(taskExecutor, unused -> releaseIdentifier.identifyRelease()
+            .addOnFailureListener(
+                e -> {
+                  LogWrapper.getInstance().e("Failed to identify release", e);
+                  feedbackInProgress.set(false);
+                  Toast.makeText(firebaseApp.getApplicationContext(),
+                      R.string.feedback_unidentified_release, Toast.LENGTH_LONG).show();
+                })
+            .onSuccessTask(
+                taskExecutor,
+                releaseName -> launchFeedbackActivity(releaseName, infoText, screenshotUri)
+                    .addOnFailureListener(
+                        e -> {
+                          LogWrapper.getInstance().e("Failed to launch feedback flow", e);
+                          feedbackInProgress.set(false);
+                          Toast.makeText(firebaseApp.getApplicationContext(),
+                              R.string.feedback_launch_failed, Toast.LENGTH_LONG).show();
+                        })));
   }
 
   private Task<Void> launchFeedbackActivity(
