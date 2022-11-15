@@ -46,7 +46,7 @@ public class FeedbackActivity extends AppCompatActivity {
       "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT_URI";
 
   private FeedbackSender feedbackSender;
-  private String releaseName;
+  @Nullable private String releaseName; // in development-mode the releaseName might be null
   private CharSequence infoText;
   @Nullable private Uri screenshotUri;
 
@@ -112,6 +112,12 @@ public class FeedbackActivity extends AppCompatActivity {
   }
 
   public void submitFeedback(View view) {
+    if (releaseName == null) {
+      // Don't actually send feedback in development-mode
+      Toast.makeText(this, R.string.feedback_no_release, Toast.LENGTH_LONG).show();
+      finish();
+      return;
+    }
     setSubmittingStateEnabled(true);
     EditText feedbackText = findViewById(R.id.feedbackText);
     CheckBox screenshotCheckBox = findViewById(R.id.screenshotCheckBox);

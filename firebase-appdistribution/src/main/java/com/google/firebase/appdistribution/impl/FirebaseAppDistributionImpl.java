@@ -27,6 +27,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
+import android.widget.Toast;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -314,8 +315,6 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void startFeedback(@StringRes int infoTextResourceId) {
-    // TODO(lkellogg): Once we have the real FeedbackActivity view implemented, we should write a
-    // test that checks that <a> tags are preserved
     startFeedback(firebaseApp.getApplicationContext().getText(infoTextResourceId));
   }
 
@@ -376,26 +375,51 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         .signInTester()
         .addOnFailureListener(
             taskExecutor,
-            e ->
-                LogWrapper.getInstance()
-                    .e("Failed to sign in tester. Could not collect feedback.", e))
-        .onSuccessTask(taskExecutor, unused -> releaseIdentifier.identifyRelease())
+            e -> {
+              feedbackInProgress.set(false);
+              LogWrapper.getInstance()
+                  .e("Failed to sign in tester. Could not collect feedback.", e);
+            })
         .onSuccessTask(
             taskExecutor,
-            releaseName -> launchFeedbackActivity(releaseName, infoText, screenshotUri))
-        .addOnFailureListener(
-            e -> {
-              LogWrapper.getInstance().e("Failed to launch feedback flow", e);
-              feedbackInProgress.set(false);
-            });
+            unused ->
+                releaseIdentifier
+                    .identifyRelease()
+                    .addOnFailureListener(
+                        e -> {
+                          feedbackInProgress.set(false);
+                          LogWrapper.getInstance().e("Failed to identify release", e);
+                          Toast.makeText(
+                                  firebaseApp.getApplicationContext(),
+                                  R.string.feedback_unidentified_release,
+                                  Toast.LENGTH_LONG)
+                              .show();
+                        })
+                    .onSuccessTask(
+                        taskExecutor,
+                        releaseName ->
+                            // in development-mode the releaseName might be null
+                            launchFeedbackActivity(releaseName, infoText, screenshotUri)
+                                .addOnFailureListener(
+                                    e -> {
+                                      feedbackInProgress.set(false);
+                                      LogWrapper.getInstance()
+                                          .e("Failed to launch feedback flow", e);
+                                      Toast.makeText(
+                                              firebaseApp.getApplicationContext(),
+                                              R.string.feedback_launch_failed,
+                                              Toast.LENGTH_LONG)
+                                          .show();
+                                    })));
   }
 
   private Task<Void> launchFeedbackActivity(
-      String releaseName, CharSequence infoText, @Nullable Uri screenshotUri) {
+      @Nullable String releaseName, CharSequence infoText, @Nullable Uri screenshotUri) {
     return lifecycleNotifier.consumeForegroundActivity(
         activity -> {
           LogWrapper.getInstance().i("Launching feedback activity");
           Intent intent = new Intent(activity, FeedbackActivity.class);
+          // in development-mode the releaseName might be null
           intent.putExtra(FeedbackActivity.RELEASE_NAME_EXTRA_KEY, releaseName);
           intent.putExtra(FeedbackActivity.INFO_TEXT_EXTRA_KEY, infoText);
           if (screenshotUri != null) {
