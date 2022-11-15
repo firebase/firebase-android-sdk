@@ -27,6 +27,7 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -46,8 +47,8 @@ class ReleaseIdentifier {
   static final String IAS_ARTIFACT_ID_METADATA_KEY = "com.android.vending.internal.apk.id";
 
   private final ConcurrentMap<String, String> cachedApkHashes = new ConcurrentHashMap<>();
-  private FirebaseApp firebaseApp;
-  FirebaseAppDistributionTesterApiClient testerApiClient;
+  private final FirebaseApp firebaseApp;
+  private final FirebaseAppDistributionTesterApiClient testerApiClient;
 
   ReleaseIdentifier(
       FirebaseApp firebaseApp, FirebaseAppDistributionTesterApiClient testerApiClient) {
@@ -55,8 +56,17 @@ class ReleaseIdentifier {
     this.testerApiClient = testerApiClient;
   }
 
-  /** Identify the currently installed release, returning the release name. */
+  /**
+   * Identify the currently installed release, returning the release name.
+   *
+   * <p>Will return {@code Task} with a {@code null} result in "developer mode" which allows the UI
+   * to be used, but no actual feedback to be submitted.
+   */
   Task<String> identifyRelease() {
+    if (developmentModeEnabled()) {
+      return Tasks.forResult(null);
+    }
+
     // Attempt to find release using IAS artifact ID, which identifies app bundle releases
     String iasArtifactId = null;
     try {
@@ -192,5 +202,26 @@ class ReleaseIdentifier {
       result[i] = list.get(i);
     }
     return result;
+  }
+
+  private static boolean developmentModeEnabled() {
+    return Boolean.valueOf(getSystemProperty("debug.firebase.appdistro.devmode"));
+  }
+
+  @Nullable
+  @SuppressWarnings({"unchecked", "PrivateApi"})
+  private static String getSystemProperty(String propertyName) {
+    String className = "android.os.SystemProperties";
+    try {
+      Class<?> sysProps = Class.forName(className);
+      Method method = sysProps.getDeclaredMethod("get", String.class);
+      Object result = method.invoke(null, propertyName);
+      if (result != null && String.class.isAssignableFrom(result.getClass())) {
+        return (String) result;
+      }
+    } catch (Exception e) {
+      // do nothing
+    }
+    return null;
   }
 }
