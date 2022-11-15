@@ -397,6 +397,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                     .onSuccessTask(
                         taskExecutor,
                         releaseName ->
+                            // in development-mode the releaseName might be null
                             launchFeedbackActivity(releaseName, infoText, screenshotUri)
                                 .addOnFailureListener(
                                     e -> {
@@ -417,6 +418,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         activity -> {
           LogWrapper.getInstance().i("Launching feedback activity");
           Intent intent = new Intent(activity, FeedbackActivity.class);
+          // in development-mode the releaseName might be null
           intent.putExtra(FeedbackActivity.RELEASE_NAME_EXTRA_KEY, releaseName);
           intent.putExtra(FeedbackActivity.INFO_TEXT_EXTRA_KEY, infoText);
           if (screenshotUri != null) {
