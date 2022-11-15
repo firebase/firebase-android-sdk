@@ -758,7 +758,7 @@ public class FirebaseAppDistributionServiceImplTest {
     TestUtils.awaitAsyncOperations(taskExecutor);
 
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isFalse();
-    assertLoggedError("Failed to launch feedback flow", exception);
+    assertLoggedError("Failed to sign in tester", exception);
   }
 
   @Test
@@ -772,7 +772,7 @@ public class FirebaseAppDistributionServiceImplTest {
     TestUtils.awaitAsyncOperations(taskExecutor);
 
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isFalse();
-    assertLoggedError("Failed to launch feedback flow", exception);
+    assertLoggedError("Failed to identify release", exception);
   }
 
   private static void assertLoggedError(String partialMessage, Throwable e) {
