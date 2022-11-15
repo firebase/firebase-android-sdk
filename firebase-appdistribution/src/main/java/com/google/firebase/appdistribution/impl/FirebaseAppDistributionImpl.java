@@ -374,9 +374,11 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         .signInTester()
         .addOnFailureListener(
             taskExecutor,
-            e ->
-                LogWrapper.getInstance()
-                    .e("Failed to sign in tester. Could not collect feedback.", e))
+            e -> {
+              feedbackInProgress.set(false);
+              LogWrapper.getInstance()
+                  .e("Failed to sign in tester. Could not collect feedback.", e);
+            })
         .onSuccessTask(
             taskExecutor,
             unused ->
@@ -384,8 +386,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                     .identifyRelease()
                     .addOnFailureListener(
                         e -> {
-                          LogWrapper.getInstance().e("Failed to identify release", e);
                           feedbackInProgress.set(false);
+                          LogWrapper.getInstance().e("Failed to identify release", e);
                           Toast.makeText(
                                   firebaseApp.getApplicationContext(),
                                   R.string.feedback_unidentified_release,
@@ -398,9 +400,9 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                             launchFeedbackActivity(releaseName, infoText, screenshotUri)
                                 .addOnFailureListener(
                                     e -> {
+                                      feedbackInProgress.set(false);
                                       LogWrapper.getInstance()
                                           .e("Failed to launch feedback flow", e);
-                                      feedbackInProgress.set(false);
                                       Toast.makeText(
                                               firebaseApp.getApplicationContext(),
                                               R.string.feedback_launch_failed,
