@@ -16,6 +16,7 @@ package com.google.firebase.appcheck.internal;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
+import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -57,6 +58,8 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   private AppCheckProvider appCheckProvider;
   private AppCheckToken cachedToken;
 
+  // TODO(b/258273630): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   public DefaultFirebaseAppCheck(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<HeartBeatController> heartBeatController) {

@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution.impl;
 
 import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
 
+import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -63,6 +64,9 @@ class FirebaseAppDistributionTesterApiClient {
   private final FirebaseApp firebaseApp;
   private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
   private final TesterApiHttpClient testerApiHttpClient;
+
+  // TODO(b/258264924): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   private final Executor taskExecutor = Executors.newSingleThreadExecutor();
 
   FirebaseAppDistributionTesterApiClient(
