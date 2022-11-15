@@ -52,6 +52,9 @@ android {
 dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-components')
+    implementation project(':firebase-installations-interop')
+    runtimeOnly project(':firebase-installations')
+
     implementation project(':appcheck:firebase-appcheck-interop')
     implementation 'com.google.android.gms:play-services-basement:18.1.0'
     implementation 'com.google.android.gms:play-services-base:18.0.1'
