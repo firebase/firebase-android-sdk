@@ -21,52 +21,41 @@ common-plugins: [com.google.gms.google-services]
 common-traces: [Firebase, ComponentDiscovery, Runtime]
 
 test-apps:
-  - sdk: firebase-config
-    name: config
-    dependencies: [com.google.firebase:firebase-config-ktx]
-  - sdk: firebase-common
-    name: common
-    dependencies: [com.google.firebase:firebase-common]
-  - sdk: firebase-crashlytics
-    name: crash
-    dependencies: [com.google.firebase:firebase-crashlytics-ktx]
-    plugins: [com.google.firebase.crashlytics]
-  - sdk: firebase-database
-    name: database
-    dependencies: [com.google.firebase:firebase-database-ktx]
-  - sdk: firebase-dynamic-links
-    name: fdl
-    dependencies: [com.google.firebase:firebase-dynamic-links-ktx]
-  - sdk: firebase-firestore
-    name: firestore
-    dependencies: [com.google.firebase:firebase-firestore-ktx]
-  - sdk: firebase-functions
-    name: functions
-    dependencies: [com.google.firebase:firebase-functions-ktx]
-  # TODO(yifany): disable temporarily due to errors of duplicate class and gradle crash
-  #  - sdk: firebase-inappmessaging-display
-  #    name: fiam
-  #    dependencies:
-  #      - com.google.firebase:firebase-analytics-ktx@18.0.3
-  #      - com.google.firebase:firebase-inappmessaging-ktx
-  #      - com.google.firebase:firebase-inappmessaging-display-ktx
-  - sdk: firebase-messaging
-    name: message
-    dependencies: [com.google.firebase:firebase-messaging-ktx]
-  - sdk: firebase-perf
-    name: perf
-    dependencies: [com.google.firebase:firebase-perf-ktx]
-    plugins: [com.google.firebase.firebase-perf]
-  - sdk: firebase-storage
-    name: stroage
-    dependencies: [com.google.firebase:firebase-storage-ktx]
-
-
-# TODO(yifany): google3 sdks, customizing FTL devices
-# auth
-# analytics
-# combined
-#   - crashlytics + analytics
-#   - crashlytics + fireperf
-#   - auth + firestore
-#   - ...
+  - sdk: N.A.
+    name: all-included
+    dependencies:
+      - com.google.firebase:firebase-abt
+      - com.google.firebase:firebase-appcheck
+      - com.google.firebase:firebase-appdistribution
+      - com.google.firebase:firebase-crashlytics
+      - com.google.firebase:firebase-database
+      - com.google.firebase:firebase-dynamic-links
+      - com.google.firebase:firebase-firestore
+      - com.google.firebase:firebase-functions
+      - com.google.firebase:firebase-inappmessaging
+      - com.google.firebase:firebase-inappmessaging-display
+      - com.google.firebase:firebase-messaging
+      - com.google.firebase:firebase-ml-modeldownloader
+      - com.google.firebase:firebase-perf
+      - com.google.firebase:firebase-storage
+    plugins:
+      - com.google.firebase.crashlytics
+      - com.google.firebase.firebase-perf
+    traces:
+      - fire-abt
+      - fire-app-check
+      - fire-appdistribution
+      - fire-cls
+      - fire-dl
+      - fire-fcm
+      - fire-fiam
+      - fire-fiamd
+      - fire-fn
+      - fire-fst
+      - fire-gcs
+      - fire-installations
+      - firebase-ml-modeldownloader
+      - fire-perf
+      - fire-rc
+      - fire-rtdb
+      - fire-transport
