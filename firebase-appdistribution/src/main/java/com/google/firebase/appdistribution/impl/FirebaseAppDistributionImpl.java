@@ -377,24 +377,36 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
             e ->
                 LogWrapper.getInstance()
                     .e("Failed to sign in tester. Could not collect feedback.", e))
-        .onSuccessTask(taskExecutor, unused -> releaseIdentifier.identifyRelease()
-            .addOnFailureListener(
-                e -> {
-                  LogWrapper.getInstance().e("Failed to identify release", e);
-                  feedbackInProgress.set(false);
-                  Toast.makeText(firebaseApp.getApplicationContext(),
-                      R.string.feedback_unidentified_release, Toast.LENGTH_LONG).show();
-                })
-            .onSuccessTask(
-                taskExecutor,
-                releaseName -> launchFeedbackActivity(releaseName, infoText, screenshotUri)
+        .onSuccessTask(
+            taskExecutor,
+            unused ->
+                releaseIdentifier
+                    .identifyRelease()
                     .addOnFailureListener(
                         e -> {
-                          LogWrapper.getInstance().e("Failed to launch feedback flow", e);
+                          LogWrapper.getInstance().e("Failed to identify release", e);
                           feedbackInProgress.set(false);
-                          Toast.makeText(firebaseApp.getApplicationContext(),
-                              R.string.feedback_launch_failed, Toast.LENGTH_LONG).show();
-                        })));
+                          Toast.makeText(
+                                  firebaseApp.getApplicationContext(),
+                                  R.string.feedback_unidentified_release,
+                                  Toast.LENGTH_LONG)
+                              .show();
+                        })
+                    .onSuccessTask(
+                        taskExecutor,
+                        releaseName ->
+                            launchFeedbackActivity(releaseName, infoText, screenshotUri)
+                                .addOnFailureListener(
+                                    e -> {
+                                      LogWrapper.getInstance()
+                                          .e("Failed to launch feedback flow", e);
+                                      feedbackInProgress.set(false);
+                                      Toast.makeText(
+                                              firebaseApp.getApplicationContext(),
+                                              R.string.feedback_launch_failed,
+                                              Toast.LENGTH_LONG)
+                                          .show();
+                                    })));
   }
 
   private Task<Void> launchFeedbackActivity(
