@@ -56,7 +56,12 @@ class ReleaseIdentifier {
     this.testerApiClient = testerApiClient;
   }
 
-  /** Identify the currently installed release, returning the release name. */
+  /**
+   * Identify the currently installed release, returning the release name.
+   *
+   * <p>Will return {@code Task} with a {@code null} result in "developer mode" which allows the UI
+   * to be used, but no actual feedback to be submitted.
+   */
   Task<String> identifyRelease() {
     if (developmentModeEnabled()) {
       return Tasks.forResult(null);

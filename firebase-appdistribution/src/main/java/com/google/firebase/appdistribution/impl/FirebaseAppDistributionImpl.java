@@ -412,7 +412,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   private Task<Void> launchFeedbackActivity(
-      String releaseName, CharSequence infoText, @Nullable Uri screenshotUri) {
+      @Nullable String releaseName, CharSequence infoText, @Nullable Uri screenshotUri) {
     return lifecycleNotifier.consumeForegroundActivity(
         activity -> {
           LogWrapper.getInstance().i("Launching feedback activity");
