@@ -21,20 +21,20 @@ import com.google.firebase.FirebaseException;
 
 /** Base class for {@link FirebaseRemoteConfig} exceptions. */
 public class FirebaseRemoteConfigException extends FirebaseException {
+  /** Code that specifies the type of exception. */
+  private final Code code;
+
   /** Creates a Firebase Remote Config exception with the given message. */
   public FirebaseRemoteConfigException(@NonNull String detailMessage) {
     super(detailMessage);
-    this.code = null;
+    this.code = Code.UNKNOWN;
   }
 
   /** Creates a Firebase Remote Config exception with the given message and cause. */
   public FirebaseRemoteConfigException(@NonNull String detailMessage, @Nullable Throwable cause) {
     super(detailMessage, cause);
-    this.code = null;
+    this.code = Code.UNKNOWN;
   }
-
-  /** Code that specifies the type of exception. */
-  @Nullable private final Code code;
 
   /** Creates a Firebase Remote Config exception with the given message and Code. */
   public FirebaseRemoteConfigException(@NonNull String detailMessage, @NonNull Code code) {
@@ -88,11 +88,6 @@ public class FirebaseRemoteConfigException extends FirebaseException {
         codes.put(c.value(), c);
       }
       return codes;
-    }
-
-    @NonNull
-    public static Code fromValue(int value) {
-      return CODE_LIST.get(value, Code.UNKNOWN);
     }
   }
 }
