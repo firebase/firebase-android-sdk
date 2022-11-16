@@ -15,43 +15,39 @@
 package com.google.firebase.functions;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
-import java.io.IOException;
+import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
+import com.google.firebase.installations.internal.FidListener;
+import com.google.firebase.installations.internal.FidListenerHandle;
 
-public class TestFirebaseInstanceIdInternal implements FirebaseInstanceIdInternal {
+public class TestFirebaseInstallationsApi implements FirebaseInstallationsApi {
   private final String testToken;
 
-  public TestFirebaseInstanceIdInternal(String testToken) {
+  public TestFirebaseInstallationsApi(String testToken) {
     this.testToken = testToken;
   }
 
   @Override
-  public String getId() {
+  public Task<String> getId() {
     throw new UnsupportedOperationException();
-  }
-
-  @Nullable
-  @Override
-  public String getToken() {
-    return testToken;
   }
 
   @NonNull
   @Override
-  public Task<String> getTokenTask() {
-    return Tasks.forResult(testToken);
+  public Task<InstallationTokenResult> getToken(boolean forceRefresh) {
+    return Tasks.forResult(new TestInstallationTokenResult(testToken));
+  }
+
+  @NonNull
+  @Override
+  public Task<Void> delete() {
+    return null;
   }
 
   @Override
-  public void deleteToken(@NonNull String s, @NonNull String s1) throws IOException {
-    // No-op: We're not using this method in our tests
-  }
-
-  @Override
-  public void addNewTokenListener(NewTokenListener newTokenListener) {
-    // No-op: We're not using this method in our tests
+  public FidListenerHandle registerFidListener(@NonNull FidListener listener) {
+    return null;
   }
 }

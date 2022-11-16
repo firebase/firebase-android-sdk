@@ -22,6 +22,7 @@ import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException;
 import java.util.concurrent.atomic.AtomicReference;
 

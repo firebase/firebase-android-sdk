@@ -53,20 +53,17 @@ dependencies {
     implementation project(':firebase-common')
     implementation project(':firebase-components')
     implementation project(':firebase-installations-interop')
-    runtimeOnly project(':firebase-installations')
+    implementation project(':firebase-installations')
+
 
     implementation project(':appcheck:firebase-appcheck-interop')
     implementation 'com.google.android.gms:play-services-basement:18.1.0'
     implementation 'com.google.android.gms:play-services-base:18.0.1'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation ('com.google.firebase:firebase-iid:21.1.0') {
-        exclude group: "com.google.firebase", module: "firebase-common"
-        exclude group: "com.google.firebase", module: "firebase-components"
-    }
+
     implementation ('com.google.firebase:firebase-auth-interop:18.0.0') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
     }
-    implementation 'com.google.firebase:firebase-iid-interop:17.1.0'
 
     implementation 'com.squareup.okhttp3:okhttp:3.12.1'
 

@@ -20,9 +20,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
-import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException;
 import java.util.concurrent.ExecutionException;
 import org.junit.Test;
@@ -31,7 +31,7 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class FirebaseContextProviderTest {
   private static final String AUTH_TOKEN = "authToken";
-  private static final String IID_TOKEN = "iidToken";
+  private static final String INSTALLATIONS_TOKEN = "installationsToken";
   private static final String APP_CHECK_TOKEN = "appCheckToken";
   private static final String ERROR = "errorString";
 
@@ -42,8 +42,8 @@ public class FirebaseContextProviderTest {
           () -> {
             throw new FirebaseNoSignedInUserException("not signed in");
           });
-  private static final FirebaseInstanceIdInternal fixedIidProvider =
-      new TestFirebaseInstanceIdInternal(IID_TOKEN);
+  private static final FirebaseInstallationsApi fixedInstallationsProvider =
+      new TestFirebaseInstallationsApi(INSTALLATIONS_TOKEN);
   private static final InternalAppCheckTokenProvider fixedAppCheckProvider =
       new TestInternalAppCheckTokenProvider(APP_CHECK_TOKEN);
   private static final InternalAppCheckTokenProvider errorAppCheckProvider =
@@ -54,12 +54,12 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
-            absentProvider(), providerOf(fixedIidProvider), absentDeferred());
+            absentProvider(), providerOf(fixedInstallationsProvider), absentDeferred());
 
     HttpsCallableContext context = Tasks.await(contextProvider.getContext());
     assertThat(context.getAuthToken()).isNull();
     assertThat(context.getAppCheckToken()).isNull();
-    assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
+    assertThat(context.getInstallationsToken()).isEqualTo(INSTALLATIONS_TOKEN);
   }
 
   @Test
@@ -67,12 +67,12 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
-            providerOf(fixedAuthProvider), providerOf(fixedIidProvider), absentDeferred());
+            providerOf(fixedAuthProvider), providerOf(fixedInstallationsProvider), absentDeferred());
 
     HttpsCallableContext context = Tasks.await(contextProvider.getContext());
     assertThat(context.getAuthToken()).isEqualTo(AUTH_TOKEN);
     assertThat(context.getAppCheckToken()).isNull();
-    assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
+    assertThat(context.getInstallationsToken()).isEqualTo(INSTALLATIONS_TOKEN);
   }
 
   @Test
@@ -80,12 +80,12 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
-            absentProvider(), providerOf(fixedIidProvider), deferredOf(fixedAppCheckProvider));
+            absentProvider(), providerOf(fixedInstallationsProvider), deferredOf(fixedAppCheckProvider));
 
     HttpsCallableContext context = Tasks.await(contextProvider.getContext());
     assertThat(context.getAuthToken()).isNull();
     assertThat(context.getAppCheckToken()).isEqualTo(APP_CHECK_TOKEN);
-    assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
+    assertThat(context.getInstallationsToken()).isEqualTo(INSTALLATIONS_TOKEN);
   }
 
   @Test
@@ -93,12 +93,12 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
-            providerOf(anonymousAuthProvider), providerOf(fixedIidProvider), absentDeferred());
+            providerOf(anonymousAuthProvider), providerOf(fixedInstallationsProvider), absentDeferred());
 
     HttpsCallableContext context = Tasks.await(contextProvider.getContext());
     assertThat(context.getAuthToken()).isNull();
     assertThat(context.getAppCheckToken()).isNull();
-    assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
+    assertThat(context.getInstallationsToken()).isEqualTo(INSTALLATIONS_TOKEN);
   }
 
   @Test
@@ -106,11 +106,11 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
-            absentProvider(), providerOf(fixedIidProvider), deferredOf(errorAppCheckProvider));
+            absentProvider(), providerOf(fixedInstallationsProvider), deferredOf(errorAppCheckProvider));
 
     HttpsCallableContext context = Tasks.await(contextProvider.getContext());
     assertThat(context.getAuthToken()).isNull();
-    assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
+    assertThat(context.getInstallationsToken()).isEqualTo(INSTALLATIONS_TOKEN);
     assertThat(context.getAppCheckToken()).isNull();
   }
 
@@ -120,13 +120,13 @@ public class FirebaseContextProviderTest {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
             providerOf(fixedAuthProvider),
-            providerOf(fixedIidProvider),
+            providerOf(fixedInstallationsProvider),
             deferredOf(fixedAppCheckProvider));
 
     HttpsCallableContext context = Tasks.await(contextProvider.getContext());
     assertThat(context.getAuthToken()).isEqualTo(AUTH_TOKEN);
     assertThat(context.getAppCheckToken()).isEqualTo(APP_CHECK_TOKEN);
-    assertThat(context.getInstanceIdToken()).isEqualTo(IID_TOKEN);
+    assertThat(context.getInstallationsToken()).isEqualTo(INSTALLATIONS_TOKEN);
   }
 
   private static <T> Provider<T> absentProvider() {
