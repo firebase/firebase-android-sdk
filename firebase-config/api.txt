@@ -60,7 +60,6 @@ package com.google.firebase.remoteconfig {
   }
 
   public enum FirebaseRemoteConfigException.Code {
-    method @NonNull public static com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code fromValue(int);
     method public int value();
     enum_constant public static final com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code CONFIG_UPDATE_MESSAGE_UNAVAILABLE;
     enum_constant public static final com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code CONFIG_UPDATE_NOT_FETCHED;
