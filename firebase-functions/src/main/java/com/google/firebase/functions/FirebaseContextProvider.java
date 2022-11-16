@@ -19,9 +19,9 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
-import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -58,7 +58,7 @@ class FirebaseContextProvider implements ContextProvider {
     Task<String> authToken = getAuthToken();
     Task<String> appCheckToken = getAppCheckToken();
     Task<InstallationTokenResult> installationAuthTokenTask =
-            installationsApiProvider.get().getToken(false);
+        installationsApiProvider.get().getToken(false);
     return Tasks.whenAll(authToken, appCheckToken, installationAuthTokenTask)
         .onSuccessTask(
             v ->
