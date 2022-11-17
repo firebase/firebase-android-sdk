@@ -420,7 +420,7 @@ public class FirebaseApp {
     FirebaseTrace.popTrace(); // ComponentDiscovery
 
     FirebaseTrace.pushTrace("Runtime");
-    componentRuntime =
+    ComponentRuntime.Builder builder =
         ComponentRuntime.builder(com.google.firebase.concurrent.UiExecutor.INSTANCE)
             .addLazyComponentRegistrars(registrars)
             .addComponentRegistrar(new FirebaseCommonRegistrar())

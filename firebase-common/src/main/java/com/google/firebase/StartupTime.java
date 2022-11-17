@@ -32,16 +32,20 @@ public abstract class StartupTime {
   /** @return The number of milliseconds from boot to when Firebase began initializing */
   public abstract long getElapsedRealtime();
 
+  /** @return The number of milliseconds of uptime measured by SystemClock.uptimeMillis() */
+  public abstract long getUptimeMillis();
+
   /**
    * @param epochMillis Time in milliseconds since epoch
    * @param elapsedRealtime Time in milliseconds since boot
    */
-  public static StartupTime create(long epochMillis, long elapsedRealtime) {
-    return new AutoValue_StartupTime(epochMillis, elapsedRealtime);
+  public static StartupTime create(long epochMillis, long elapsedRealtime, long uptimeMillis) {
+    return new AutoValue_StartupTime(epochMillis, elapsedRealtime, uptimeMillis);
   }
 
   /** @return A StartupTime represented by the current epoch time and JVM nano time */
   public static StartupTime now() {
-    return create(System.currentTimeMillis(), SystemClock.elapsedRealtime());
+    return create(
+        System.currentTimeMillis(), SystemClock.elapsedRealtime(), SystemClock.uptimeMillis());
   }
 }

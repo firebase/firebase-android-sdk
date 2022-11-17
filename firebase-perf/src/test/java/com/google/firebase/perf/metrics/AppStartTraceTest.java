@@ -95,9 +95,9 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
         .getTime();
     transportManager = mock(TransportManager.class);
     traceArgumentCaptor = ArgumentCaptor.forClass(TraceMetric.class);
+    StartupTime startupTime = FirebaseApp.getInstance().get(StartupTime.class);
     appStart =
-        Timer.ofElapsedRealtime(
-            FirebaseApp.getInstance().get(StartupTime.class).getElapsedRealtime());
+        Timer.ofElapsedRealtime(startupTime.getElapsedRealtime(), startupTime.getUptimeMillis());
   }
 
   @After

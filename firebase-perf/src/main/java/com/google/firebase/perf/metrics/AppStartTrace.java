@@ -177,7 +177,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     if (startupTime == null) {
       firebaseStartupTime = new Timer();
     }
-    firebaseStartupTime = Timer.ofElapsedRealtime(startupTime.getElapsedRealtime());
+    firebaseStartupTime =
+        Timer.ofElapsedRealtime(startupTime.getElapsedRealtime(), startupTime.getUptimeMillis());
     this.experimentTtid = TraceMetric.newBuilder().setName("_experiment_app_start_ttid");
   }
 
@@ -231,9 +232,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     TraceMetric.Builder subtrace =
         TraceMetric.newBuilder()
             .setName("_experiment_classLoadTime")
-            .setClientStartTimeUs(FirebasePerfProvider.getAppStartTime().getMicros())
-            .setDurationUs(
-                FirebasePerfProvider.getAppStartTime().getDurationMicros(this.firstDrawDone));
+            .setClientStartTimeUs(firebaseStartupTime.getMicros())
+            .setDurationUs(firebaseStartupTime.getDurationMicros(this.firstDrawDone));
     this.experimentTtid.addSubtraces(subtrace.build());
 
     subtrace = TraceMetric.newBuilder();
