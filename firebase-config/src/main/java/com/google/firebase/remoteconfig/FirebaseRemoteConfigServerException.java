@@ -16,6 +16,7 @@ package com.google.firebase.remoteconfig;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import javax.annotation.Nonnull;
 
 /**
  * A Firebase Remote Config internal issue caused by an interaction with the Firebase Remote Config
@@ -40,6 +41,48 @@ public class FirebaseRemoteConfigServerException extends FirebaseRemoteConfigExc
   public FirebaseRemoteConfigServerException(
       int httpStatusCode, @NonNull String detailMessage, @Nullable Throwable cause) {
     super(detailMessage, cause);
+    this.httpStatusCode = httpStatusCode;
+  }
+
+  /**
+   * Creates a Firebase Remote Config server exception with the given message and
+   * FirebaseRemoteConfigException code.
+   */
+  public FirebaseRemoteConfigServerException(@NonNull String detailMessage, @Nonnull Code code) {
+    super(detailMessage, code);
+    this.httpStatusCode = -1;
+  }
+
+  /**
+   * Creates a Firebase Remote Config server exception with the HTTP status code, given message, and
+   * FirebaseRemoteConfigException code.
+   */
+  public FirebaseRemoteConfigServerException(
+      int httpStatusCode, @NonNull String detailMessage, @Nonnull Code code) {
+    super(detailMessage, code);
+    this.httpStatusCode = httpStatusCode;
+  }
+
+  /**
+   * Creates a Firebase Remote Config server exception with the given message, exception cause, and
+   * FirebaseRemoteConfigException code.
+   */
+  public FirebaseRemoteConfigServerException(
+      @NonNull String detailMessage, @Nullable Throwable cause, @NonNull Code code) {
+    super(detailMessage, cause, code);
+    this.httpStatusCode = -1;
+  }
+
+  /**
+   * Creates a Firebase Remote Config server exception with the HTTP status code, given message,
+   * exception cause, and FirebaseRemoteConfigException code.
+   */
+  public FirebaseRemoteConfigServerException(
+      int httpStatusCode,
+      @NonNull String detailMessage,
+      @Nullable Throwable cause,
+      @NonNull Code code) {
+    super(detailMessage, cause, code);
     this.httpStatusCode = httpStatusCode;
   }
 
