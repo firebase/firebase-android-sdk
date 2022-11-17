@@ -105,7 +105,7 @@ public class ConfigAutoFetch {
             new FirebaseRemoteConfigClientException(
                 "Unable to parse config update message.",
                 ex.getCause(),
-                FirebaseRemoteConfigException.Code.CONFIG_UPDATE_MESSAGE_UNAVAILABLE));
+                FirebaseRemoteConfigException.Code.CONFIG_UPDATE_MESSAGE_INVALID));
       } finally {
         httpURLConnection.disconnect();
       }

@@ -14,7 +14,6 @@
 
 package com.google.firebase.remoteconfig;
 
-import android.util.SparseArray;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseException;
@@ -54,7 +53,7 @@ public class FirebaseRemoteConfigException extends FirebaseException {
     CONFIG_UPDATE_STREAM_ERROR(0),
 
     /** The stream invalidation message was unparsable. */
-    CONFIG_UPDATE_MESSAGE_UNAVAILABLE(1),
+    CONFIG_UPDATE_MESSAGE_INVALID(1),
 
     /** Unable to fetch the latest config. */
     CONFIG_UPDATE_NOT_FETCHED(2),
@@ -74,20 +73,10 @@ public class FirebaseRemoteConfigException extends FirebaseException {
     public int value() {
       return value;
     }
+  }
 
-    private static final SparseArray<Code> CODE_LIST = buildCodeList();
-
-    private static SparseArray<Code> buildCodeList() {
-      SparseArray<Code> codes = new SparseArray<>();
-      for (Code c : Code.values()) {
-        Code existingValue = codes.get(c.value());
-        if (existingValue != null) {
-          throw new IllegalStateException(
-              "Code value duplication between " + existingValue + "&" + c.name());
-        }
-        codes.put(c.value(), c);
-      }
-      return codes;
-    }
+  @NonNull
+  public Code getCode() {
+    return code;
   }
 }

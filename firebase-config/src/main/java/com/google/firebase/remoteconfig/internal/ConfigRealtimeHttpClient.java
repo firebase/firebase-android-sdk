@@ -299,10 +299,7 @@ public class ConfigRealtimeHttpClient {
           @Override
           public void onError(@NonNull FirebaseRemoteConfigException error) {
             enableBackoff();
-            propagateErrors(
-                new FirebaseRemoteConfigServerException(
-                    "The server is temporarily unavailable. Try again in a few minutes.",
-                    FirebaseRemoteConfigException.Code.CONFIG_UPDATE_UNAVAILABLE));
+            propagateErrors(error);
           }
         };
 

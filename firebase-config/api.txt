@@ -57,11 +57,12 @@ package com.google.firebase.remoteconfig {
     ctor public FirebaseRemoteConfigException(@NonNull String, @Nullable Throwable);
     ctor public FirebaseRemoteConfigException(@NonNull String, @NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code);
     ctor public FirebaseRemoteConfigException(@NonNull String, @Nullable Throwable, @NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code);
+    method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code getCode();
   }
 
   public enum FirebaseRemoteConfigException.Code {
     method public int value();
-    enum_constant public static final com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code CONFIG_UPDATE_MESSAGE_UNAVAILABLE;
+    enum_constant public static final com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code CONFIG_UPDATE_MESSAGE_INVALID;
     enum_constant public static final com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code CONFIG_UPDATE_NOT_FETCHED;
     enum_constant public static final com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code CONFIG_UPDATE_STREAM_ERROR;
     enum_constant public static final com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code CONFIG_UPDATE_UNAVAILABLE;
