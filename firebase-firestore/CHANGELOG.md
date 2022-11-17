@@ -1,8 +1,16 @@
 # Unreleased
+- [fixed] Fix FAILED_PRECONDITION when writing to a deleted document in a transaction.
+  ([Issue #5871](//github.com/firebase/firebase-android-sdk/issues/5871))
+- [fixed] Fixed Firestore failing to raise initial snapshot from empty local cache result. ([PR](https://github.com/firebase/firebase-android-sdk/pull/4207))
+- [fixed] Removed invalid suggestions to use `GenericTypeIndicator` from error messages. ([Issue 222](https://github.com/firebase/firebase-android-sdk/issues/222))
+- [changed] Updated dependency of `io.grpc.*` to its latest
+  version (v1.50.2).
 
 # 24.4.0
-* [unchanged] Updated to accommodate the release of the updated
-  [firestore] Kotlin extensions library.
+* [feature] Added
+  [`Query.count()`](/docs/reference/android/com/google/firebase/firestore/Query#count()),
+  which fetches the number of documents in the result set without actually
+  downloading the documents.
 
 
 ## Kotlin
@@ -26,7 +34,6 @@ The Kotlin extensions library transitively includes the updated
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library.
-
 # 24.3.0
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).

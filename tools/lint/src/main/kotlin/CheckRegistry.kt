@@ -19,20 +19,22 @@ import com.android.tools.lint.detector.api.CURRENT_API
 import com.android.tools.lint.detector.api.Issue
 
 class CheckRegistry : IssueRegistry() {
-    override val issues: List<Issue>
-        get() = listOf(
-                ManifestElementHasNoExportedAttributeDetector.EXPORTED_MISSING_ISSUE,
-                KotlinInteropDetector.KOTLIN_PROPERTY,
-                KotlinInteropDetector.LAMBDA_LAST,
-                KotlinInteropDetector.NO_HARD_KOTLIN_KEYWORDS,
-                KotlinInteropDetector.PLATFORM_NULLNESS,
-                NonAndroidxNullabilityDetector.NON_ANDROIDX_NULLABILITY,
-                DeferredApiDetector.INVALID_DEFERRED_API_USE,
-                ProviderAssignmentDetector.INVALID_PROVIDER_ASSIGNMENT
-        )
+  override val issues: List<Issue>
+    get() =
+      listOf(
+        ManifestElementHasNoExportedAttributeDetector.EXPORTED_MISSING_ISSUE,
+        KotlinInteropDetector.KOTLIN_PROPERTY,
+        KotlinInteropDetector.LAMBDA_LAST,
+        KotlinInteropDetector.NO_HARD_KOTLIN_KEYWORDS,
+        KotlinInteropDetector.PLATFORM_NULLNESS,
+        NonAndroidxNullabilityDetector.NON_ANDROIDX_NULLABILITY,
+        DeferredApiDetector.INVALID_DEFERRED_API_USE,
+        ProviderAssignmentDetector.INVALID_PROVIDER_ASSIGNMENT,
+        ThreadPoolDetector.THREAD_POOL_CREATION
+      )
 
-    override val api: Int
-        get() = CURRENT_API
-    override val minApi: Int
-        get() = 2
+  override val api: Int
+    get() = CURRENT_API
+  override val minApi: Int
+    get() = 2
 }

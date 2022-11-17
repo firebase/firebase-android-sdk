@@ -14,8 +14,10 @@
 
 package com.google.firebase.ml.modeldownloader.internal;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.text.TextUtils;
 import android.util.JsonReader;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -92,6 +94,8 @@ public class CustomModelDownloadService {
   private final Context context;
   private String downloadHost = FIREBASE_DOWNLOAD_HOST;
 
+  // TODO(b/258424267): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   public CustomModelDownloadService(
       FirebaseApp firebaseApp, FirebaseInstallationsApi installationsApi) {
     context = firebaseApp.getApplicationContext();
@@ -148,6 +152,12 @@ public class CustomModelDownloadService {
   public Task<CustomModel> getCustomModelDetails(
       String projectNumber, String modelName, String modelHash) {
     try {
+
+      if (TextUtils.isEmpty(modelName))
+        throw new FirebaseMlException(
+            "Error cannot retrieve model from reading an empty modelName",
+            FirebaseMlException.INVALID_ARGUMENT);
+
       URL url =
           new URL(String.format(DOWNLOAD_MODEL_REGEX, downloadHost, projectNumber, modelName));
       HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -206,6 +216,8 @@ public class CustomModelDownloadService {
           new FirebaseMlException(
               "Error reading custom model from download service: " + e.getMessage(),
               FirebaseMlException.INVALID_ARGUMENT));
+    } catch (FirebaseMlException e) {
+      return Tasks.forException(e);
     }
   }
 

@@ -16,6 +16,7 @@ package com.google.firebase.perf.config;
 
 import static com.google.firebase.perf.config.ConfigurationConstants.ExperimentTTID;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -67,6 +68,8 @@ public class RemoteConfigManager {
   @Nullable private Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
   @Nullable private FirebaseRemoteConfig firebaseRemoteConfig;
 
+  // TODO(b/258263016): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   private RemoteConfigManager() {
     this(
         DeviceCacheManager.getInstance(),

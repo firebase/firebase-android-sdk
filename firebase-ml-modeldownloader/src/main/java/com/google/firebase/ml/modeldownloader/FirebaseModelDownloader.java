@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.ml.modeldownloader;
 
+import android.annotation.SuppressLint;
 import android.os.Build.VERSION_CODES;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -51,6 +52,8 @@ public class FirebaseModelDownloader {
   private final FirebaseMlLogger eventLogger;
 
   @RequiresApi(api = VERSION_CODES.KITKAT)
+  // TODO(b/258424267): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   FirebaseModelDownloader(
       FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi) {
     this.firebaseOptions = firebaseApp.getOptions();

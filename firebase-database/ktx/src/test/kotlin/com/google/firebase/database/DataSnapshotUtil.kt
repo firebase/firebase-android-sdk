@@ -20,22 +20,22 @@ import com.google.firebase.database.snapshot.NodeUtilities
 /**
  * Creates a custom DataSnapshot.
  *
- * This method is a workaround that enables the creation of a custom
- * DataSnapshot using package-private methods.
+ * This method is a workaround that enables the creation of a custom DataSnapshot using
+ * package-private methods.
  */
 fun createDataSnapshot(data: Any?, db: FirebaseDatabase): DataSnapshot {
-    var ref = DatabaseReference("https://test.firebaseio.com", db.config)
-    val node = NodeUtilities.NodeFromJSON(data)
-    return DataSnapshot(ref, IndexedNode.from(node))
+  var ref = DatabaseReference("https://test.firebaseio.com", db.config)
+  val node = NodeUtilities.NodeFromJSON(data)
+  return DataSnapshot(ref, IndexedNode.from(node))
 }
 
 /**
  * Creates a custom MutableData.
  *
- * This method is a workaround that enables the creation of a custom
- * MutableData using package-private methods.
+ * This method is a workaround that enables the creation of a custom MutableData using
+ * package-private methods.
  */
 fun createMutableData(data: Any?): MutableData {
-    val node = NodeUtilities.NodeFromJSON(data)
-    return MutableData(node)
+  val node = NodeUtilities.NodeFromJSON(data)
+  return MutableData(node)
 }
