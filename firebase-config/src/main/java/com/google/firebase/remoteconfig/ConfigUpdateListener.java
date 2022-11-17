@@ -33,5 +33,5 @@ public interface ConfigUpdateListener {
    *
    * @param error
    */
-  void onError(@Nonnull Exception error);
+  void onError(@Nonnull FirebaseRemoteConfigException error);
 }
