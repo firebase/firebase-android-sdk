@@ -108,9 +108,7 @@ final class WakeLockHolder {
         wakeLock.acquire(WAKE_LOCK_ACQUIRE_TIMEOUT_MILLIS);
       }
 
-      connection
-          .sendIntent(intent)
-          .addOnCompleteListener(Runnable::run, t -> completeWakefulIntent(intent));
+      connection.sendIntent(intent).addOnCompleteListener(t -> completeWakefulIntent(intent));
     }
   }
 
