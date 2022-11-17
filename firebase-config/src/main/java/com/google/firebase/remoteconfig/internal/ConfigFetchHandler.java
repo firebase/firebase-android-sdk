@@ -90,7 +90,7 @@ public class ConfigFetchHandler {
   /** Fetch identifier for Realtime. */
   private static final String REALTIME_FETCH_TYPE = "Realtime";
   /** Fetch identifier for Base. */
-  private static final String BASE_FETCH_TYPE = "BaseFetch";
+  private static final String BASE_FETCH_TYPE = "Base";
 
   private final FirebaseInstallationsApi firebaseInstallations;
   private final Provider<AnalyticsConnector> analyticsConnector;
