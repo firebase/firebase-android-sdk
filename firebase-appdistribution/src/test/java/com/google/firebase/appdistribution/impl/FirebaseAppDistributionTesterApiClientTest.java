@@ -35,6 +35,7 @@ import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.File;
+import java.util.concurrent.Executors;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -102,7 +103,10 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     firebaseAppDistributionTesterApiClient =
         new FirebaseAppDistributionTesterApiClient(
-            firebaseApp, mockFirebaseInstallationsProvider, mockTesterApiHttpClient);
+            firebaseApp,
+            mockFirebaseInstallationsProvider,
+            mockTesterApiHttpClient,
+            Executors.newSingleThreadExecutor());
   }
 
   @Test
