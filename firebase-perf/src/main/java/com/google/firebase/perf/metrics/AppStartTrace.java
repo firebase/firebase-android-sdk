@@ -27,7 +27,6 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;

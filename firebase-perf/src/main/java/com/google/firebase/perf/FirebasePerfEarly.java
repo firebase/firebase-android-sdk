@@ -17,10 +17,8 @@ package com.google.firebase.perf;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
 import com.google.firebase.perf.application.AppStateMonitor;
@@ -34,8 +32,7 @@ import com.google.firebase.perf.session.SessionManager;
  * <p>Responsible for initializing the AppStartTrace, and early initialization of ConfigResolver
  */
 public class FirebasePerfEarly {
-  @NonNull
-  private final Handler mainHandler = new Handler(Looper.getMainLooper());
+  @NonNull private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
   public FirebasePerfEarly(@NonNull FirebaseApp app, @Nullable StartupTime startupTime) {
     Context context = app.getApplicationContext();

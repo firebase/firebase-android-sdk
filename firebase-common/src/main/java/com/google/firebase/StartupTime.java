@@ -15,11 +15,8 @@
 package com.google.firebase;
 
 import android.os.SystemClock;
-
 import androidx.annotation.NonNull;
-
 import com.google.auto.value.AutoValue;
-
 import javax.annotation.Nullable;
 
 /**
@@ -48,7 +45,8 @@ public abstract class StartupTime {
    * @param epochMillis Time in milliseconds since epoch
    * @param elapsedRealtime Time in milliseconds since boot
    */
-  public static @NonNull StartupTime create(long epochMillis, long elapsedRealtime, long uptimeMillis) {
+  public static @NonNull StartupTime create(
+      long epochMillis, long elapsedRealtime, long uptimeMillis) {
     return new AutoValue_StartupTime(epochMillis, elapsedRealtime, uptimeMillis);
   }
 

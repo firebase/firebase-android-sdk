@@ -91,6 +91,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
   }
 
   private static FirebasePerfEarly providesFirebasePerformanceEarly(ComponentContainer container) {
-    return new FirebasePerfEarly(container.get(FirebaseApp.class), container.get(StartupTime.class));
+    return new FirebasePerfEarly(
+        container.get(FirebaseApp.class), container.get(StartupTime.class));
   }
 }
