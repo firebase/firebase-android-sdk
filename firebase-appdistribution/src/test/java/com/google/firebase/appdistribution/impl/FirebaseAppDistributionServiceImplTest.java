@@ -684,8 +684,7 @@ public class FirebaseAppDistributionServiceImplTest {
     assertThat(actualIntent.getStringExtra(RELEASE_NAME_KEY)).isEqualTo("release-name");
     assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_KEY))
         .isEqualTo(TEST_SCREENSHOT_URI.toString());
-    assertThat(actualIntent.getStringExtra(INFO_TEXT_KEY))
-        .isEqualTo("Some terms and conditions");
+    assertThat(actualIntent.getStringExtra(INFO_TEXT_KEY)).isEqualTo("Some terms and conditions");
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isTrue();
   }
 
@@ -713,10 +712,8 @@ public class FirebaseAppDistributionServiceImplTest {
     Intent actualIntent = shadowOf(RuntimeEnvironment.getApplication()).getNextStartedActivity();
     assertEquals(expectedIntent.getComponent(), actualIntent.getComponent());
     assertThat(actualIntent.getStringExtra(RELEASE_NAME_KEY)).isEqualTo("release-name");
-    assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_KEY))
-        .isEqualTo(providedUri.toString());
-    assertThat(actualIntent.getStringExtra(INFO_TEXT_KEY))
-        .isEqualTo("Some terms and conditions");
+    assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_KEY)).isEqualTo(providedUri.toString());
+    assertThat(actualIntent.getStringExtra(INFO_TEXT_KEY)).isEqualTo("Some terms and conditions");
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isTrue();
   }
 
@@ -738,7 +735,13 @@ public class FirebaseAppDistributionServiceImplTest {
     firebaseAppDistribution.startFeedback("Some terms and conditions");
     TestUtils.awaitAsyncOperations(taskExecutor);
     // Simulate destroying the feedback activity
-    firebaseAppDistribution.onActivityDestroyed(new FeedbackActivity());
+    firebaseAppDistribution.onActivityDestroyed(
+        new FeedbackActivity() {
+          @Override
+          public boolean isFinishing() {
+            return true;
+          }
+        });
 
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isFalse();
   }
@@ -760,8 +763,7 @@ public class FirebaseAppDistributionServiceImplTest {
     assertEquals(expectedIntent.getComponent(), actualIntent.getComponent());
     assertThat(actualIntent.getStringExtra(RELEASE_NAME_KEY)).isEqualTo("release-name");
     assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_KEY)).isNull();
-    assertThat(actualIntent.getStringExtra(INFO_TEXT_KEY))
-        .isEqualTo("Some terms and conditions");
+    assertThat(actualIntent.getStringExtra(INFO_TEXT_KEY)).isEqualTo("Some terms and conditions");
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isTrue();
   }
 
