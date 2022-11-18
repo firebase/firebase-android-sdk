@@ -16,7 +16,6 @@ package com.google.firebase.appdistribution.impl;
 
 import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
 
-import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -29,7 +28,6 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.File;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -64,18 +62,17 @@ class FirebaseAppDistributionTesterApiClient {
   private final FirebaseApp firebaseApp;
   private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
   private final TesterApiHttpClient testerApiHttpClient;
-
-  // TODO(b/258264924): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
-  private final Executor taskExecutor = Executors.newSingleThreadExecutor();
+  private final Executor blockingExecutor;
 
   FirebaseAppDistributionTesterApiClient(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
-      @NonNull TesterApiHttpClient testerApiHttpClient) {
+      @NonNull TesterApiHttpClient testerApiHttpClient,
+      @NonNull Executor blockingExecutor) {
     this.firebaseApp = firebaseApp;
     this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.testerApiHttpClient = testerApiHttpClient;
+    this.blockingExecutor = blockingExecutor;
   }
 
   /**
@@ -265,9 +262,9 @@ class FirebaseAppDistributionTesterApiClient {
         firebaseInstallationsApiProvider.get().getToken(/* forceRefresh= */ false);
 
     return Tasks.whenAllSuccess(installationIdTask, installationAuthTokenTask)
-        .continueWithTask(taskExecutor, TaskUtils::handleTaskFailure)
+        .continueWithTask(blockingExecutor, TaskUtils::handleTaskFailure)
         .onSuccessTask(
-            taskExecutor,
+            blockingExecutor,
             resultsList -> {
               // Tasks.whenAllSuccess combines task results into a list
               if (resultsList.size() != 2) {
@@ -276,7 +273,7 @@ class FirebaseAppDistributionTesterApiClient {
               }
               String fid = (String) resultsList.get(0);
               InstallationTokenResult tokenResult = (InstallationTokenResult) resultsList.get(1);
-              return runAsyncInTask(taskExecutor, () -> job.run(fid, tokenResult.getToken()));
+              return runAsyncInTask(blockingExecutor, () -> job.run(fid, tokenResult.getToken()));
             });
   }
 }
