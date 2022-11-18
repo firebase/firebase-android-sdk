@@ -27,9 +27,9 @@ import static com.google.firebase.appdistribution.impl.ErrorMessages.JSON_PARSIN
 import static com.google.firebase.appdistribution.impl.ErrorMessages.NETWORK_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.RELEASE_NOT_FOUND_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.UPDATE_CANCELED;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.INFO_TEXT_EXTRA_KEY;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_EXTRA_KEY;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_URI_EXTRA_KEY;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.INFO_TEXT_KEY;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_KEY;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_URI_KEY;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitAsyncOperations;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTask;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTaskFailure;
@@ -681,10 +681,10 @@ public class FirebaseAppDistributionServiceImplTest {
     Intent expectedIntent = new Intent(activity, FeedbackActivity.class);
     Intent actualIntent = shadowOf(RuntimeEnvironment.getApplication()).getNextStartedActivity();
     assertEquals(expectedIntent.getComponent(), actualIntent.getComponent());
-    assertThat(actualIntent.getStringExtra(RELEASE_NAME_EXTRA_KEY)).isEqualTo("release-name");
-    assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_EXTRA_KEY))
+    assertThat(actualIntent.getStringExtra(RELEASE_NAME_KEY)).isEqualTo("release-name");
+    assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_KEY))
         .isEqualTo(TEST_SCREENSHOT_URI.toString());
-    assertThat(actualIntent.getStringExtra(INFO_TEXT_EXTRA_KEY))
+    assertThat(actualIntent.getStringExtra(INFO_TEXT_KEY))
         .isEqualTo("Some terms and conditions");
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isTrue();
   }
@@ -712,10 +712,10 @@ public class FirebaseAppDistributionServiceImplTest {
     Intent expectedIntent = new Intent(activity, FeedbackActivity.class);
     Intent actualIntent = shadowOf(RuntimeEnvironment.getApplication()).getNextStartedActivity();
     assertEquals(expectedIntent.getComponent(), actualIntent.getComponent());
-    assertThat(actualIntent.getStringExtra(RELEASE_NAME_EXTRA_KEY)).isEqualTo("release-name");
-    assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_EXTRA_KEY))
+    assertThat(actualIntent.getStringExtra(RELEASE_NAME_KEY)).isEqualTo("release-name");
+    assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_KEY))
         .isEqualTo(providedUri.toString());
-    assertThat(actualIntent.getStringExtra(INFO_TEXT_EXTRA_KEY))
+    assertThat(actualIntent.getStringExtra(INFO_TEXT_KEY))
         .isEqualTo("Some terms and conditions");
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isTrue();
   }
@@ -758,9 +758,9 @@ public class FirebaseAppDistributionServiceImplTest {
     Intent expectedIntent = new Intent(activity, FeedbackActivity.class);
     Intent actualIntent = shadowOf(RuntimeEnvironment.getApplication()).getNextStartedActivity();
     assertEquals(expectedIntent.getComponent(), actualIntent.getComponent());
-    assertThat(actualIntent.getStringExtra(RELEASE_NAME_EXTRA_KEY)).isEqualTo("release-name");
-    assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_EXTRA_KEY)).isNull();
-    assertThat(actualIntent.getStringExtra(INFO_TEXT_EXTRA_KEY))
+    assertThat(actualIntent.getStringExtra(RELEASE_NAME_KEY)).isEqualTo("release-name");
+    assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_KEY)).isNull();
+    assertThat(actualIntent.getStringExtra(INFO_TEXT_KEY))
         .isEqualTo("Some terms and conditions");
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isTrue();
   }
