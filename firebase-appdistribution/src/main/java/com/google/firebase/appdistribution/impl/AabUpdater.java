@@ -19,7 +19,6 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
@@ -31,7 +30,6 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.UpdateStatus;
 import java.io.IOException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import javax.net.ssl.HttpsURLConnection;
 
 /** Class that handles updateApp functionality for AABs in {@link FirebaseAppDistribution}. */
@@ -40,7 +38,7 @@ class AabUpdater {
 
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
   private final HttpsUrlConnectionFactory httpsUrlConnectionFactory;
-  private final Executor executor;
+  private final Executor blockingExecutor;
 
   private final Object updateAabLock = new Object();
 
@@ -53,23 +51,21 @@ class AabUpdater {
   @GuardedBy("updateAabLock")
   private boolean hasBeenSentToPlayForCurrentTask = false;
 
-  // TODO(b/258264924): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
-  AabUpdater() {
+  AabUpdater(@NonNull Executor blockingExecutor) {
     this(
         FirebaseAppDistributionLifecycleNotifier.getInstance(),
         new HttpsUrlConnectionFactory(),
-        Executors.newSingleThreadExecutor());
+        blockingExecutor);
   }
 
   AabUpdater(
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
       @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory,
-      @NonNull Executor executor) {
+      @NonNull Executor blockingExecutor) {
     this.lifecycleNotifier = lifecycleNotifier;
     this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
     lifecycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
-    this.executor = executor;
+    this.blockingExecutor = blockingExecutor;
   }
 
   @VisibleForTesting
@@ -97,13 +93,13 @@ class AabUpdater {
       hasBeenSentToPlayForCurrentTask = false;
 
       // On a background thread, fetch the redirect URL and open it in the Play app
-      runAsyncInTask(executor, () -> fetchDownloadRedirectUrl(newRelease.getDownloadUrl()))
+      runAsyncInTask(blockingExecutor, () -> fetchDownloadRedirectUrl(newRelease.getDownloadUrl()))
           .onSuccessTask(
-              executor,
+              blockingExecutor,
               redirectUrl ->
                   lifecycleNotifier.consumeForegroundActivity(
                       activity -> openRedirectUrlInPlay(redirectUrl, activity)))
-          .addOnFailureListener(executor, this::setUpdateTaskCompletionError);
+          .addOnFailureListener(blockingExecutor, this::setUpdateTaskCompletionError);
 
       return cachedUpdateTask;
     }

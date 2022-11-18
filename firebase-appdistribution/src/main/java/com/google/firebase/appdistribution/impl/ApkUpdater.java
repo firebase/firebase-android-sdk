@@ -19,7 +19,6 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskResult;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
@@ -38,7 +37,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.jar.JarFile;
 import javax.net.ssl.HttpsURLConnection;
 
@@ -51,7 +49,7 @@ class ApkUpdater {
   private static final String DEFAULT_APK_FILE_NAME = "downloaded_release.apk";
 
   private TaskCompletionSource<File> downloadTaskCompletionSource;
-  private final Executor taskExecutor; // Executor to run task listeners on a background thread
+  private final Executor blockingExecutor; // Executor to run task listeners on a background thread
   private final Context context;
   private final ApkInstaller apkInstaller;
   private final FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager;
@@ -63,11 +61,12 @@ class ApkUpdater {
 
   private final Object updateTaskLock = new Object();
 
-  // TODO(b/258264924): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
-  public ApkUpdater(@NonNull FirebaseApp firebaseApp, @NonNull ApkInstaller apkInstaller) {
+  public ApkUpdater(
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull ApkInstaller apkInstaller,
+      @NonNull Executor blockingExecutor) {
     this(
-        Executors.newSingleThreadExecutor(),
+        blockingExecutor,
         firebaseApp.getApplicationContext(),
         apkInstaller,
         new FirebaseAppDistributionNotificationsManager(firebaseApp.getApplicationContext()),
@@ -77,13 +76,13 @@ class ApkUpdater {
 
   @VisibleForTesting
   public ApkUpdater(
-      @NonNull Executor taskExecutor,
+      @NonNull Executor blockingExecutor,
       @NonNull Context context,
       @NonNull ApkInstaller apkInstaller,
       @NonNull FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager,
       @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier) {
-    this.taskExecutor = taskExecutor;
+    this.blockingExecutor = blockingExecutor;
     this.context = context;
     this.apkInstaller = apkInstaller;
     this.appDistributionNotificationsManager = appDistributionNotificationsManager;
@@ -102,9 +101,9 @@ class ApkUpdater {
     }
 
     downloadApk(newRelease, showNotification)
-        .addOnSuccessListener(taskExecutor, file -> installApk(file, showNotification))
+        .addOnSuccessListener(blockingExecutor, file -> installApk(file, showNotification))
         .addOnFailureListener(
-            taskExecutor,
+            blockingExecutor,
             e -> {
               setUpdateTaskCompletionErrorWithDefault(
                   e, "Failed to download APK", Status.DOWNLOAD_FAILURE);
@@ -120,14 +119,14 @@ class ApkUpdater {
         .applyToForegroundActivityTask(
             activity -> apkInstaller.installApk(file.getPath(), activity))
         .addOnSuccessListener(
-            taskExecutor,
+            blockingExecutor,
             unused -> {
               synchronized (updateTaskLock) {
                 safeSetTaskResult(cachedUpdateTask);
               }
             })
         .addOnFailureListener(
-            taskExecutor,
+            blockingExecutor,
             e -> {
               postUpdateProgress(
                   file.length(),
@@ -151,7 +150,7 @@ class ApkUpdater {
 
     downloadTaskCompletionSource = new TaskCompletionSource<>();
 
-    taskExecutor.execute(
+    blockingExecutor.execute(
         () -> {
           try {
             makeApkDownloadRequest(newRelease, showNotification);
