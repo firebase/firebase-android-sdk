@@ -28,6 +28,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import java.io.IOException;
@@ -38,11 +39,11 @@ public class FeedbackActivity extends AppCompatActivity {
   private static final int SCREENSHOT_TARGET_WIDTH_PX = 600;
   private static final int SCREENSHOT_TARGET_HEIGHT_PX = -1; // scale proportionally
 
-  public static final String RELEASE_NAME_EXTRA_KEY =
+  public static final String RELEASE_NAME_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.RELEASE_NAME";
-  public static final String INFO_TEXT_EXTRA_KEY =
+  public static final String INFO_TEXT_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.INFO_TEXT";
-  public static final String SCREENSHOT_URI_EXTRA_KEY =
+  public static final String SCREENSHOT_URI_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT_URI";
 
   private FeedbackSender feedbackSender;
@@ -53,13 +54,31 @@ public class FeedbackActivity extends AppCompatActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    releaseName = getIntent().getStringExtra(RELEASE_NAME_EXTRA_KEY);
-    infoText = getIntent().getCharSequenceExtra(INFO_TEXT_EXTRA_KEY);
-    if (getIntent().hasExtra(SCREENSHOT_URI_EXTRA_KEY)) {
-      screenshotUri = Uri.parse(getIntent().getStringExtra(SCREENSHOT_URI_EXTRA_KEY));
-    }
+
     feedbackSender = FeedbackSender.getInstance();
+    if (savedInstanceState != null) {
+      releaseName = savedInstanceState.getString(RELEASE_NAME_KEY);
+      infoText = savedInstanceState.getCharSequence(INFO_TEXT_KEY);
+      String screenshotUriString = savedInstanceState.getString(SCREENSHOT_URI_KEY);
+      if (screenshotUriString != null) {
+        screenshotUri = Uri.parse(screenshotUriString);
+      }
+    } else {
+      releaseName = getIntent().getStringExtra(RELEASE_NAME_KEY);
+      infoText = getIntent().getCharSequenceExtra(INFO_TEXT_KEY);
+      if (getIntent().hasExtra(SCREENSHOT_URI_KEY)) {
+        screenshotUri = Uri.parse(getIntent().getStringExtra(SCREENSHOT_URI_KEY));
+      }
+    }
     setupView();
+  }
+
+  @Override
+  protected void onSaveInstanceState(@NonNull Bundle outState) {
+    outState.putString(RELEASE_NAME_KEY, releaseName);
+    outState.putCharSequence(INFO_TEXT_KEY, infoText);
+    outState.putString(SCREENSHOT_URI_KEY, screenshotUri.toString());
+    super.onSaveInstanceState(outState);
   }
 
   private void setupView() {
