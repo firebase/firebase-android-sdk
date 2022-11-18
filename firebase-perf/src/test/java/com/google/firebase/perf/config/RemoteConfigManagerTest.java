@@ -26,8 +26,6 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.StartupTime;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
@@ -841,7 +839,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
                 appStartConfigFetchDelay));
 
     // Simulate time fast forward to some time before fetch time is up
-    long appStartTimeInMs = FirebaseApp.getInstance().get(StartupTime.class).getEpochMillis();
+    long appStartTimeInMs = System.currentTimeMillis();
     when(remoteConfigManagerPartialMock.getCurrentSystemTimeMillis())
         .thenReturn(appStartTimeInMs + appStartConfigFetchDelay - 2000);
 
@@ -867,7 +865,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
                 appStartConfigFetchDelay));
 
     // Simulate time fast forward to 2s after fetch delay time is up
-    long appStartTimeInMs = FirebaseApp.getInstance().get(StartupTime.class).getEpochMillis();
+    long appStartTimeInMs = System.currentTimeMillis();
     when(remoteConfigManagerPartialMock.getCurrentSystemTimeMillis())
         .thenReturn(appStartTimeInMs + appStartConfigFetchDelay + 2000);
 

@@ -176,9 +176,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     StartupTime startupTime = FirebaseApp.getInstance().get(StartupTime.class);
     if (startupTime == null) {
       firebaseStartupTime = new Timer();
+    } else {
+      firebaseStartupTime =
+          Timer.ofElapsedRealtime(startupTime.getElapsedRealtime(), startupTime.getUptimeMillis());
     }
-    firebaseStartupTime =
-        Timer.ofElapsedRealtime(startupTime.getElapsedRealtime(), startupTime.getUptimeMillis());
     this.experimentTtid = TraceMetric.newBuilder().setName("_experiment_app_start_ttid");
   }
 

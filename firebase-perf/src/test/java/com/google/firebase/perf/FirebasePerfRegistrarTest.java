@@ -45,7 +45,8 @@ public class FirebasePerfRegistrarTest {
             Dependency.required(FirebaseApp.class),
             Dependency.requiredProvider(RemoteConfigComponent.class),
             Dependency.required(FirebaseInstallationsApi.class),
-            Dependency.requiredProvider(TransportFactory.class));
+            Dependency.requiredProvider(TransportFactory.class),
+            Dependency.required(FirebasePerfEarly.class));
 
     assertThat(firebasePerfComponent.isLazy()).isTrue();
 
