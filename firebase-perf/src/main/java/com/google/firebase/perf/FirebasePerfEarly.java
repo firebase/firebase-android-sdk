@@ -19,6 +19,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
@@ -36,7 +37,7 @@ public class FirebasePerfEarly {
   @NonNull
   private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-  public FirebasePerfEarly(FirebaseApp app) {
+  public FirebasePerfEarly(@NonNull FirebaseApp app, @Nullable StartupTime startupTime) {
     Context context = app.getApplicationContext();
 
     // Initialize ConfigResolver early for accessing device caching layer.
@@ -47,7 +48,7 @@ public class FirebasePerfEarly {
     appStateMonitor.registerActivityLifecycleCallbacks(context);
     appStateMonitor.registerForAppColdStart(new FirebasePerformanceInitializer());
 
-    if (StartupTime.getInstance() != null) {
+    if (startupTime != null) {
       AppStartTrace appStartTrace = AppStartTrace.getInstance();
       appStartTrace.registerActivityLifecycleCallbacks(context);
       mainHandler.post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
