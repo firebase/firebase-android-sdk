@@ -19,16 +19,19 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * Registers FirebaseAppDistribution.
@@ -39,16 +42,18 @@ import java.util.List;
 public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-appdistribution";
 
-  private static String TAG = "Registrar:";
+  private static String TAG = "FirebaseAppDistributionRegistrar";
 
   @Override
   public @NonNull List<Component<?>> getComponents() {
+    Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
     return Arrays.asList(
         Component.builder(FirebaseAppDistribution.class)
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
-            .factory(this::buildFirebaseAppDistribution)
+            .add(Dependency.required(blockingExecutor))
+            .factory(c -> buildFirebaseAppDistribution(c, c.get(blockingExecutor)))
             // construct FirebaseAppDistribution instance on startup so we can register for
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
@@ -56,14 +61,18 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 
-  private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {
+  private FirebaseAppDistribution buildFirebaseAppDistribution(
+      ComponentContainer container, Executor blockingExecutor) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
     Context context = firebaseApp.getApplicationContext();
     Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
         container.getProvider(FirebaseInstallationsApi.class);
     FirebaseAppDistributionTesterApiClient testerApiClient =
         new FirebaseAppDistributionTesterApiClient(
-            firebaseApp, firebaseInstallationsApiProvider, new TesterApiHttpClient(firebaseApp));
+            firebaseApp,
+            firebaseInstallationsApiProvider,
+            new TesterApiHttpClient(firebaseApp),
+            blockingExecutor);
     SignInStorage signInStorage = new SignInStorage(context);
     FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
         FirebaseAppDistributionLifecycleNotifier.getInstance();
@@ -74,8 +83,8 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             new TesterSignInManager(firebaseApp, firebaseInstallationsApiProvider, signInStorage),
             new NewReleaseFetcher(
                 firebaseApp.getApplicationContext(), testerApiClient, releaseIdentifier),
-            new ApkUpdater(firebaseApp, new ApkInstaller()),
-            new AabUpdater(),
+            new ApkUpdater(firebaseApp, new ApkInstaller(), blockingExecutor),
+            new AabUpdater(blockingExecutor),
             signInStorage,
             lifecycleNotifier);
 
@@ -85,11 +94,11 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
     } else {
       LogWrapper.getInstance()
           .e(
-              TAG
-                  + "Context "
-                  + context
-                  + " was not an Application, can't register for lifecycle callbacks. SDK might not"
-                  + " function correctly.");
+              TAG,
+              String.format(
+                  "Context %s was not an Application, can't register for lifecycle callbacks. SDK"
+                      + " might not function correctly.",
+                  context));
     }
 
     return appDistribution;
