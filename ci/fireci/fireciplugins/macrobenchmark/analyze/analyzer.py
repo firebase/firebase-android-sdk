@@ -65,7 +65,6 @@ def _process(data_points: List[DataPoint], output_dir: Path) -> None:
   with progressbar(trace_device_combinations) as combinations:
     for trace, device in combinations:
       combination_dir = output_dir.joinpath(trace, device)
-      combination_dir.mkdir(parents=True, exist_ok=True)
       subset = _filter_subset(data, trace, device)
       calculate_statistic(trace, device, subset, combination_dir)
       plot_graph(trace, device, subset, combination_dir)
@@ -88,7 +87,6 @@ def _diff(
   with progressbar(trace_device_combinations) as combinations:
     for trace, device in combinations:
       combination_dir = output_dir.joinpath(trace, device)
-      combination_dir.mkdir(parents=True, exist_ok=True)
 
       ctl_subset = _filter_subset(ctl_data, trace, device)
       exp_subset = _filter_subset(exp_data, trace, device)
