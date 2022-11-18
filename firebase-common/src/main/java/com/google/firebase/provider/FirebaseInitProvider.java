@@ -35,6 +35,7 @@ public class FirebaseInitProvider extends ContentProvider {
   private static final String TAG = "FirebaseInitProvider";
   @Nullable
   public static StartupTime startupTime = StartupTime.now();
+  @NonNull
   public static AtomicBoolean currentlyInitializing = new AtomicBoolean(false);
 
   /** Should match the {@link FirebaseInitProvider} authority if $androidId is empty. */
