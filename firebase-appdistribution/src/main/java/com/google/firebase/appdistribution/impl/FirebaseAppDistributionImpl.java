@@ -423,10 +423,10 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
           LogWrapper.getInstance().i("Launching feedback activity");
           Intent intent = new Intent(activity, FeedbackActivity.class);
           // in development-mode the releaseName might be null
-          intent.putExtra(FeedbackActivity.RELEASE_NAME_EXTRA_KEY, releaseName);
-          intent.putExtra(FeedbackActivity.INFO_TEXT_EXTRA_KEY, infoText);
+          intent.putExtra(FeedbackActivity.RELEASE_NAME_KEY, releaseName);
+          intent.putExtra(FeedbackActivity.INFO_TEXT_KEY, infoText);
           if (screenshotUri != null) {
-            intent.putExtra(FeedbackActivity.SCREENSHOT_URI_EXTRA_KEY, screenshotUri.toString());
+            intent.putExtra(FeedbackActivity.SCREENSHOT_URI_KEY, screenshotUri.toString());
           }
           activity.startActivity(intent);
         });
@@ -487,12 +487,14 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
     if (activity instanceof FeedbackActivity) {
       LogWrapper.getInstance().i("FeedbackActivity destroyed");
-      feedbackInProgress.set(false);
+      if (activity.isFinishing()) {
+        feedbackInProgress.set(false);
 
-      // If the feedback activity finishes, clean up the screenshot that was taken before starting
-      // the activity. If this does not happen for some reason it will be cleaned up the next time
-      // before taking a new screenshot.
-      screenshotTaker.deleteScreenshot();
+        // If the feedback activity finishes, clean up the screenshot that was taken before starting
+        // the activity. If this does not happen for some reason it will be cleaned up the next time
+        // before taking a new screenshot.
+        screenshotTaker.deleteScreenshot();
+      }
     }
   }
 
