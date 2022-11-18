@@ -163,14 +163,15 @@ public class ImageUtilsTest {
   }
 
   @Test
-  public void readScaledImage_doesntExist_returnsNull() throws IOException {
-    Bitmap result =
-        ImageUtils.readScaledImage(
-            contentResolver,
-            Uri.fromFile(new File("nonexistent.png")),
-            TEST_SCREENSHOT_WIDTH / 4,
-            TEST_SCREENSHOT_HEIGHT / 4);
-    assertThat(result).isNull();
+  public void readScaledImage_doesntExist_throws() throws IOException {
+    assertThrows(
+        IOException.class,
+        () ->
+            ImageUtils.readScaledImage(
+                contentResolver,
+                Uri.fromFile(new File("nonexistent.png")),
+                TEST_SCREENSHOT_WIDTH / 4,
+                TEST_SCREENSHOT_HEIGHT / 4));
   }
 
   private static byte[] writeBitmapToByteArray() throws IOException {
