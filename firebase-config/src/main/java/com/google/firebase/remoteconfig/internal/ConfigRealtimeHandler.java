@@ -21,6 +21,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -163,6 +164,6 @@ public class ConfigRealtimeHandler {
     public void onUpdate(Set<String> updatedParams) {}
 
     @Override
-    public void onError(@NonNull Exception error) {}
+    public void onError(@NonNull FirebaseRemoteConfigException error) {}
   }
 }

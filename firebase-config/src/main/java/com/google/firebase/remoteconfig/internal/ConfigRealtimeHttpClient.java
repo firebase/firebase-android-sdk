@@ -24,6 +24,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
+import androidx.annotation.NonNull;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.tasks.Task;
@@ -32,8 +33,9 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateStreamException;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -270,8 +272,9 @@ public class ConfigRealtimeHttpClient {
           TimeUnit.SECONDS);
     } else {
       propagateErrors(
-          new FirebaseRemoteConfigRealtimeUpdateStreamException(
-              "Unable to establish Realtime http stream."));
+          new FirebaseRemoteConfigClientException(
+              "Unable to connect to the server. Check your connection and try again.",
+              FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
     }
   }
 
@@ -297,13 +300,9 @@ public class ConfigRealtimeHttpClient {
           // This method will only be called when a realtimeDisabled message is sent down the
           // stream.
           @Override
-          public void onError(Exception error) {
-            if (error != null) {
-              enableBackoff();
-              propagateErrors(
-                  new FirebaseRemoteConfigRealtimeUpdateStreamException(
-                      "Back off is enabled, stopping Realtime until app restarts."));
-            }
+          public void onError(@NonNull FirebaseRemoteConfigException error) {
+            enableBackoff();
+            propagateErrors(error);
           }
         };
 
@@ -326,7 +325,7 @@ public class ConfigRealtimeHttpClient {
    * <p>If the connection is successful, this method will block on its thread while it reads the
    * chunk-encoded HTTP body. When the connection closes, it attempts to reestablish the stream.
    */
-  @SuppressLint("VisibleForTests")
+  @SuppressLint({"VisibleForTests", "DefaultLocale"})
   public synchronized void beginRealtimeHttpStream() {
     if (!canMakeHttpStreamConnection()) {
       return;
@@ -349,6 +348,11 @@ public class ConfigRealtimeHttpClient {
       }
     } catch (IOException e) {
       Log.d(TAG, "Exception connecting to realtime stream. Retrying the connection...");
+      propagateErrors(
+          new FirebaseRemoteConfigServerException(
+              "Unable to connect to the server. Try again in a few minutes.",
+              e.getCause(),
+              FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
     } finally {
       closeRealtimeHttpStream();
 
@@ -360,8 +364,12 @@ public class ConfigRealtimeHttpClient {
         retryHTTPConnection();
       } else {
         propagateErrors(
-            new FirebaseRemoteConfigRealtimeUpdateStreamException(
-                "The server returned a status code that is not retryable. Realtime is shutting down."));
+            new FirebaseRemoteConfigServerException(
+                responseCode,
+                String.format(
+                    "Unable to connect to the server. Try again in a few minutes. Http Status code: %d",
+                    responseCode),
+                FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
       }
     }
   }

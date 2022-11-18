@@ -22,9 +22,9 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateFetchException;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateStreamException;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -106,8 +106,10 @@ public class ConfigAutoFetch {
         inputStream.close();
       } catch (IOException ex) {
         propagateErrors(
-            new FirebaseRemoteConfigRealtimeUpdateFetchException(
-                "Error handling stream messages while fetching.", ex.getCause()));
+            new FirebaseRemoteConfigClientException(
+                "Unable to parse config update message.",
+                ex.getCause(),
+                FirebaseRemoteConfigException.Code.CONFIG_UPDATE_MESSAGE_INVALID));
       } finally {
         httpURLConnection.disconnect();
       }
@@ -148,7 +150,9 @@ public class ConfigAutoFetch {
             if (jsonObject.has(REALTIME_DISABLED_KEY)
                 && jsonObject.getBoolean(REALTIME_DISABLED_KEY)) {
               retryCallback.onError(
-                  new FirebaseRemoteConfigRealtimeUpdateStreamException("Realtime is disabled."));
+                  new FirebaseRemoteConfigServerException(
+                      "The server is temporarily unavailable. Try again in a few minutes.",
+                      FirebaseRemoteConfigException.Code.CONFIG_UPDATE_UNAVAILABLE));
               break;
             }
             if (jsonObject.has(TEMPLATE_VERSION_KEY)) {
@@ -174,7 +178,9 @@ public class ConfigAutoFetch {
   private void autoFetch(int remainingAttempts, long targetVersion) {
     if (remainingAttempts == 0) {
       propagateErrors(
-          new FirebaseRemoteConfigRealtimeUpdateFetchException("Unable to fetch latest version."));
+          new FirebaseRemoteConfigServerException(
+              "Unable to fetch the latest version of the template.",
+              FirebaseRemoteConfigException.Code.CONFIG_UPDATE_NOT_FETCHED));
       return;
     }
 
