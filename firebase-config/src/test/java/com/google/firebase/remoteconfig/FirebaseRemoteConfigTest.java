@@ -51,6 +51,8 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -276,12 +278,13 @@ public final class FirebaseRemoteConfigTest {
     HashSet<ConfigUpdateListener> listeners = new HashSet();
     listeners.add(mockListener);
     configAutoFetch =
-        new ConfigAutoFetch(mockHttpURLConnection, mockFetchHandler, listeners, mockRetryListener);
+        new ConfigAutoFetch(mockHttpURLConnection, mockFetchHandler, mockActivatedCache, listeners, mockRetryListener);
     configRealtimeHttpClient =
         new ConfigRealtimeHttpClient(
             firebaseApp,
             mockFirebaseInstallations,
             mockFetchHandler,
+            mockActivatedCache,
             context,
             "firebase",
             listeners);
@@ -1131,7 +1134,8 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(mockRetryListener).onEvent();
+    Set<String> updatedParams = Sets.newHashSet("string_param", "long_param");
+    verify(mockRetryListener).onUpdate(updatedParams);
   }
 
   @Test
@@ -1238,9 +1242,14 @@ public final class FirebaseRemoteConfigTest {
   public void realtime_stream_autofetch_success() {
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+
+    // Setup activated configs with keys "string_param", "long_param"
+    loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);
+    Set<String> updatedParams = Sets.newHashSet("string_param", "long_param");
+
     configAutoFetch.fetchLatestConfig(1, 1);
 
-    verify(mockListener).onEvent();
+    verify(mockListener).onUpdate(updatedParams);
   }
 
   @Test
@@ -1332,7 +1341,7 @@ public final class FirebaseRemoteConfigTest {
   private ConfigUpdateListener generateEmptyRealtimeListener() {
     return new ConfigUpdateListener() {
       @Override
-      public void onEvent() {}
+      public void onUpdate(Set<String> updatedParams) {}
 
       @Override
       public void onError(@NonNull Exception error) {}

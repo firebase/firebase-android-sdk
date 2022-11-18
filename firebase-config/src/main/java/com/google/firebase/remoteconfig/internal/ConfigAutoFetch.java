@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Executors;
@@ -50,6 +51,7 @@ public class ConfigAutoFetch {
   private final HttpURLConnection httpURLConnection;
 
   private final ConfigFetchHandler configFetchHandler;
+  private final ConfigCacheClient activatedCache;
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
@@ -57,10 +59,12 @@ public class ConfigAutoFetch {
   public ConfigAutoFetch(
       HttpURLConnection httpURLConnection,
       ConfigFetchHandler configFetchHandler,
+      ConfigCacheClient activatedCache,
       Set<ConfigUpdateListener> eventListeners,
       ConfigUpdateListener retryCallback) {
     this.httpURLConnection = httpURLConnection;
     this.configFetchHandler = configFetchHandler;
+    this.activatedCache = activatedCache;
     this.eventListeners = eventListeners;
     this.retryCallback = retryCallback;
     this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
@@ -73,9 +77,9 @@ public class ConfigAutoFetch {
     }
   }
 
-  private synchronized void executeAllListenerCallbacks() {
+  private synchronized void executeAllListenerCallbacks(Set<String> updatedParams) {
     for (ConfigUpdateListener listener : eventListeners) {
-      listener.onEvent();
+      listener.onUpdate(updatedParams);
     }
   }
 
@@ -109,7 +113,7 @@ public class ConfigAutoFetch {
       }
     }
 
-    retryCallback.onEvent();
+    retryCallback.onUpdate(new HashSet<>());
     scheduledExecutorService.shutdownNow();
     try {
       scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
@@ -190,27 +194,38 @@ public class ConfigAutoFetch {
   @VisibleForTesting
   public synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
     Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
-    fetchTask.onSuccessTask(
-        (fetchResponse) -> {
-          long newTemplateVersion = 0;
-          if (fetchResponse.getFetchedConfigs() != null) {
-            newTemplateVersion = fetchResponse.getFetchedConfigs().getTemplateVersionNumber();
-          } else if (fetchResponse.getStatus()
-              == ConfigFetchHandler.FetchResponse.Status.BACKEND_HAS_NO_UPDATES) {
-            newTemplateVersion = targetVersion;
-          }
+    Task<ConfigContainer> activatedConfigsTask = activatedCache.get();
 
-          if (newTemplateVersion >= targetVersion) {
-            executeAllListenerCallbacks();
-          } else {
-            Log.d(
-                TAG,
-                "Fetched template version is the same as SDK's current version."
-                    + " Retrying fetch.");
-            // Continue fetching until template version number if greater then current.
-            autoFetch(remainingAttempts - 1, targetVersion);
-          }
-          return Tasks.forResult(null);
-        });
+    Tasks.whenAllComplete(fetchTask, activatedConfigsTask)
+            .continueWithTask(scheduledExecutorService, (listOfUnusedCompletedTasks) -> {
+              if (!fetchTask.isSuccessful() || !activatedConfigsTask.isSuccessful()) {
+                return Tasks.forResult(null);
+              }
+
+
+              ConfigFetchHandler.FetchResponse fetchResponse = fetchTask.getResult();
+              ConfigContainer activatedConfigs = activatedConfigsTask.getResult();
+
+              long newTemplateVersion = 0;
+              if (fetchResponse.getFetchedConfigs() != null) {
+                newTemplateVersion = fetchResponse.getFetchedConfigs().getTemplateVersionNumber();
+              } else if (fetchResponse.getStatus()
+                      == ConfigFetchHandler.FetchResponse.Status.BACKEND_HAS_NO_UPDATES) {
+                newTemplateVersion = targetVersion;
+              }
+
+              if (newTemplateVersion >= targetVersion) {
+                Set<String> updatedParams = activatedConfigs.getChangedParams(fetchResponse.getFetchedConfigs());
+                executeAllListenerCallbacks(updatedParams);
+              } else {
+                Log.d(
+                        TAG,
+                        "Fetched template version is the same as SDK's current version."
+                                + " Retrying fetch.");
+                // Continue fetching until template version number if greater then current.
+                autoFetch(remainingAttempts - 1, targetVersion);
+              }
+              return Tasks.forResult(null);
+            });
   }
 }

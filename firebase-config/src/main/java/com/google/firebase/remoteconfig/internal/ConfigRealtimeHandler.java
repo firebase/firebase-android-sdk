@@ -38,6 +38,7 @@ public class ConfigRealtimeHandler {
   private final ConfigFetchHandler configFetchHandler;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
+  private final ConfigCacheClient activatedCacheClient;
   private final Context context;
   private final String namespace;
   private final ExecutorService executorService;
@@ -46,6 +47,7 @@ public class ConfigRealtimeHandler {
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       ConfigFetchHandler configFetchHandler,
+      ConfigCacheClient activatedCacheClient,
       Context context,
       String namespace,
       ExecutorService executorService) {
@@ -56,6 +58,7 @@ public class ConfigRealtimeHandler {
     this.firebaseApp = firebaseApp;
     this.configFetchHandler = configFetchHandler;
     this.firebaseInstallations = firebaseInstallations;
+    this.activatedCacheClient = activatedCacheClient;
     this.context = context;
     this.namespace = namespace;
     this.executorService = executorService;
@@ -89,6 +92,7 @@ public class ConfigRealtimeHandler {
               firebaseApp,
               firebaseInstallations,
               configFetchHandler,
+              activatedCacheClient,
               context,
               namespace,
               listeners);
@@ -156,7 +160,7 @@ public class ConfigRealtimeHandler {
   public static class EmptyConfigUpdateListener implements ConfigUpdateListener {
 
     @Override
-    public void onEvent() {}
+    public void onUpdate(Set<String> updatedParams) {}
 
     @Override
     public void onError(@NonNull Exception error) {}

@@ -15,7 +15,11 @@
 package com.google.firebase.remoteconfig.internal;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -136,6 +140,10 @@ public class ConfigContainer {
     return templateVersionNumber;
   }
 
+  public ConfigContainer getCopy() throws JSONException {
+    return ConfigContainer.copyOf(containerJson);
+  }
+
   @Override
   public String toString() {
     return containerJson.toString();
@@ -152,6 +160,69 @@ public class ConfigContainer {
     ConfigContainer that = (ConfigContainer) o;
     // TODO(issues/285): Use an equality comparison that is guaranteed to be deterministic.
     return containerJson.toString().equals(that.toString());
+  }
+
+  /**
+   *
+   * @param other The other {@link ConfigContainer} against which to compute the diff
+   * @return The set of config keys that have changed between the this config and {@code other}
+   * @throws JSONException
+   */
+  public Set<String> getChangedParams(ConfigContainer other) throws JSONException {
+    // Make a copy of the other config before modifying it
+    JSONObject otherConfig = other.getCopy().getConfigs();
+
+    Set<String> changed = new HashSet<>();
+    Iterator<String> keys = this.getConfigs().keys();
+    while (keys.hasNext()) {
+      String key = keys.next();
+
+      // If the other config doesn't have the key
+      if (!other.getConfigs().has(key)) {
+        changed.add(key);
+        continue;
+      }
+
+      // If the other config has a different value for the key
+      if (!this.getConfigs().get(key).equals(other.getConfigs().get(key))) {
+        changed.add(key);
+        continue;
+      }
+
+      // If only one of the configs has PersonalizationMetadata for the key
+      if (this.getPersonalizationMetadata().has(key)
+              && !other.getPersonalizationMetadata().has(key)
+              || !this.getPersonalizationMetadata().has(key)
+              && other.getPersonalizationMetadata().has(key)) {
+        changed.add(key);
+        continue;
+      }
+
+      // If the both configs have PersonalizationMetadata for the key, but the metadata has changed
+      if (this.getPersonalizationMetadata().has(key) && other.getPersonalizationMetadata().has(key)
+              && !this.getPersonalizationMetadata().get(key).equals(other.getPersonalizationMetadata().get(key))) {
+        changed.add(key);
+        continue;
+      }
+
+      // If the ABT Experiments have changed, add all keys since we don't know which keys the ABT
+      // experiments apply to.
+      if (!this.getAbtExperiments().equals(other.getAbtExperiments())) {
+        changed.add(key);
+        continue;
+      }
+
+      // Since the key exists in both configs, remove it from otherConfig.
+      otherConfig.remove(key);
+    }
+
+    // Add all the keys from other that aren't different.
+    Iterator<String> remainingOtherKeys = otherConfig.keys();
+    while (remainingOtherKeys.hasNext()) {
+      changed.add(remainingOtherKeys.next());
+    }
+
+    return changed;
   }
 
   @Override
