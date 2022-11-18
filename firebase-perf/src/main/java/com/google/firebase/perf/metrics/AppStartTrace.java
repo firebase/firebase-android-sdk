@@ -173,7 +173,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     this.configResolver = configResolver;
     this.executorService = executorService;
 
-    StartupTime startupTime = FirebaseApp.getInstance().get(StartupTime.class);
+    StartupTime startupTime = StartupTime.getInstance();
     if (startupTime == null) {
       firebaseStartupTime = new Timer();
     } else {

@@ -43,7 +43,7 @@ public class FirebasePerfEarly {
     appStateMonitor.registerActivityLifecycleCallbacks(context);
     appStateMonitor.registerForAppColdStart(new FirebasePerformanceInitializer());
 
-    if (app.get(StartupTime.class) != null) {
+    if (StartupTime.getInstance() != null) {
       AppStartTrace appStartTrace = AppStartTrace.getInstance();
       appStartTrace.registerActivityLifecycleCallbacks(context);
       mainHandler.post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));

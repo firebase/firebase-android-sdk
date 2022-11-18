@@ -87,7 +87,7 @@ public class RemoteConfigManager {
 
   @VisibleForTesting
   static long getInitialStartupMillis() {
-    StartupTime startupTime = FirebaseApp.getInstance().get(StartupTime.class);
+    StartupTime startupTime = StartupTime.getInstance();
     if (startupTime != null) {
       return startupTime.getEpochMillis();
     } else {
