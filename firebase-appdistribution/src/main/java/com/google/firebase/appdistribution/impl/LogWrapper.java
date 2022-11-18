@@ -84,10 +84,6 @@ class LogWrapper {
     Log.e(LOG_TAG, msg, tr);
   }
 
-  void e(@NonNull String additionalTag, @NonNull String msg) {
-    Log.e(LOG_TAG, prependTag(additionalTag, msg));
-  }
-
   void e(@NonNull String additionalTag, @NonNull String msg, @NonNull Throwable tr) {
     Log.e(LOG_TAG, prependTag(additionalTag, msg), tr);
   }
