@@ -100,7 +100,8 @@
                     android:id="@+id/screenshotImageView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:scaleType="fitXY"
+                    android:scaleType="centerInside"
+                    android:adjustViewBounds="true"
                     android:contentDescription="@string/screenshot_image_description" />
             </LinearLayout>
         </LinearLayout>
