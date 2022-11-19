@@ -1,6 +1,15 @@
 # Unreleased
 
+# 18.3.2
+* [fixed] Fixed an [issue](https://github.com/firebase/firebase-android-sdk/issues/4313){: .external}
+  preventing native crashes from being reported for Android API 29+.
+
 # 18.3.1
+Warning: We're aware of an
+[issue](https://github.com/firebase/firebase-android-sdk/issues/4313){: .external}
+in this version of the [crashlytics] SDK for NDK.<br>**We strongly
+recommend using the latest version of the SDK (v18.3.2+ or [bom] v31.0.3+).**
+
 * [changed] Updated `firebase-crashlytics` dependency to v18.3.1.
 
 # 18.3.0

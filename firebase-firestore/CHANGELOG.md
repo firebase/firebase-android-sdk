@@ -6,6 +6,29 @@
 - [changed] Updated dependency of `io.grpc.*` to its latest
   version (v1.50.2).
 
+
+# 24.4.1
+* [fixed] Fix `FAILED_PRECONDITION` when writing to a deleted document in a
+  transaction.
+  (#5871)
+
+* [fixed] Fixed [firestore] failing to raise initial snapshot from an empty
+  local cache result.
+  (#4207)
+
+* [fixed] Removed invalid suggestions to use `GenericTypeIndicator` from
+  error messages.
+  (#222)
+
+* [changed] Updated dependency of `io.grpc.*` to its latest version
+  (v1.50.2).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
+
 # 24.4.0
 * [feature] Added
   [`Query.count()`](/docs/reference/android/com/google/firebase/firestore/Query#count()),
