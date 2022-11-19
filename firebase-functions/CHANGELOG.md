@@ -1,12 +1,8 @@
 # Unreleased
-* [changed] Updated dependency of `firebase-iid` to its latest
-  version (v21.1.0).
-  
 
 # 20.2.1
 * [changed] Updated dependency of `firebase-iid` to its latest
   version (v21.1.0).
-
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
