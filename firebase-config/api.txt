@@ -3,7 +3,7 @@ package com.google.firebase.remoteconfig {
 
   public interface ConfigUpdateListener {
     method public void onError(@NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigException);
-    method public void onEvent();
+    method public void onUpdate(java.util.Set<java.lang.String>);
   }
 
   public interface ConfigUpdateListenerRegistration {
