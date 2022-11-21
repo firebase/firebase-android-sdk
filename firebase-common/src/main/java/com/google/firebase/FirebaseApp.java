@@ -409,7 +409,7 @@ public class FirebaseApp {
     this.applicationContext = Preconditions.checkNotNull(applicationContext);
     this.name = Preconditions.checkNotEmpty(name);
     this.options = Preconditions.checkNotNull(options);
-    StartupTime startupTime = FirebaseInitProvider.startupTime;
+    StartupTime startupTime = FirebaseInitProvider.getStartupTime();
 
     FirebaseTrace.pushTrace("Firebase");
 
