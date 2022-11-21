@@ -25,6 +25,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,7 +48,7 @@ public class FeedbackSenderTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    feedbackSender = new FeedbackSender(mockTesterApiClient);
+    feedbackSender = new FeedbackSender(mockTesterApiClient, Executors.newSingleThreadExecutor());
   }
 
   @Test
