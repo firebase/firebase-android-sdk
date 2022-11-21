@@ -17,20 +17,18 @@ package com.google.firebase;
 import android.os.SystemClock;
 import androidx.annotation.NonNull;
 import com.google.auto.value.AutoValue;
-import javax.annotation.Nullable;
 
 /**
- * Represents the time at which Firebase began initialization, both in unix time/epoch milliseconds
- * and in milliseconds since boot. The absence of a StartupTime indicates an unreliable or
- * misleading time, such as a launch in direct boot mode. Because of this, StartupTime cannot be
- * guaranteed to be present, and instead should be optionally depended on, and its absence handled.
+ * Represents Firebase's startup time in several timing methods. Represented in unix time/epoch
+ * milliseconds milliseconds since boot, and uptime milliseconds. The absence of a StartupTime
+ * indicates an unreliable or misleading time, such as a launch in direct boot mode. Because of
+ * this, StartupTime cannot be guaranteed to be present, and instead should be optionally depended
+ * on, and its absence handled.
+ *
+ * @hide
  */
 @AutoValue
 public abstract class StartupTime {
-
-  public static @Nullable StartupTime getInstance() {
-    return FirebaseApp.getInstance().get(StartupTime.class);
-  }
 
   /** @return The epoch time that Firebase began initializing, in milliseconds */
   public abstract long getEpochMillis();

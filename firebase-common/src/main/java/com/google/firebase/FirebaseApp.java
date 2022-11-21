@@ -432,7 +432,7 @@ public class FirebaseApp {
 
     // Don't provide StartupTime in direct boot mode or if Firebase was manually started
     if (UserManagerCompat.isUserUnlocked(applicationContext)
-        && FirebaseInitProvider.currentlyInitializing.get()) {
+        && FirebaseInitProvider.isCurrentlyInitializing()) {
       builder.addComponent(Component.of(startupTime, StartupTime.class));
     }
 

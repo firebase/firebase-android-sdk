@@ -27,6 +27,7 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
@@ -162,6 +163,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     return instance;
   }
 
+  @SuppressWarnings("FirebaseUseExplicitDependencies")
   AppStartTrace(
       @NonNull TransportManager transportManager,
       @NonNull Clock clock,
@@ -172,7 +174,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     this.configResolver = configResolver;
     this.executorService = executorService;
 
-    StartupTime startupTime = StartupTime.getInstance();
+    StartupTime startupTime = FirebaseApp.getInstance().get(StartupTime.class);
     if (startupTime == null) {
       firebaseStartupTime = new Timer();
     } else {

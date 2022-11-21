@@ -23,6 +23,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.logging.AndroidLogger;
@@ -85,8 +86,9 @@ public class RemoteConfigManager {
   }
 
   @VisibleForTesting
+  @SuppressWarnings("FirebaseUseExplicitDependencies")
   static long getInitialStartupMillis() {
-    StartupTime startupTime = StartupTime.getInstance();
+    StartupTime startupTime = FirebaseApp.getInstance().get(StartupTime.class);
     if (startupTime != null) {
       return startupTime.getEpochMillis();
     } else {

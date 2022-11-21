@@ -34,7 +34,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class FirebaseInitProvider extends ContentProvider {
   private static final String TAG = "FirebaseInitProvider";
   @Nullable public static StartupTime startupTime = StartupTime.now();
-  @NonNull public static AtomicBoolean currentlyInitializing = new AtomicBoolean(false);
+  @NonNull private static AtomicBoolean currentlyInitializing = new AtomicBoolean(false);
+
+  public static boolean isCurrentlyInitializing() {
+    return currentlyInitializing.get();
+  }
 
   /** Should match the {@link FirebaseInitProvider} authority if $androidId is empty. */
   @VisibleForTesting
