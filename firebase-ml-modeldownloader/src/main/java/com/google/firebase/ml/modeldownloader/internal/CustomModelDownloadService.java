@@ -103,8 +103,8 @@ public class CustomModelDownloadService {
     firebaseInstallations = installationsApi;
     apiKey = firebaseApp.getOptions().getApiKey();
     fingerprintHashForPackage = getFingerprintHashForPackage(context);
-    executorService = executorService;
     this.eventLogger = FirebaseMlLogger.getInstance();
+    this.executorService = executorService;
   }
 
   @VisibleForTesting

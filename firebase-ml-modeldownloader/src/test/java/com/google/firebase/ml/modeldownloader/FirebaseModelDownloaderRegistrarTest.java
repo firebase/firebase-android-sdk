@@ -20,6 +20,8 @@ import static org.junit.Assert.assertNotNull;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.annotations.concurrent.Background;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -53,7 +55,7 @@ public class FirebaseModelDownloaderRegistrarTest {
                 .setProjectId(TEST_PROJECT_ID)
                 .build(),
             "firebase_app_1");
-
+    Background background =
     FirebaseModelDownloader defaultDownloader = FirebaseModelDownloader.getInstance();
     assertNotNull(defaultDownloader);
 

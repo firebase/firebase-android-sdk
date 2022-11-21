@@ -54,7 +54,6 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
     Qualified<ExecutorService> bgExecutorService =
         Qualified.qualified(Background.class, ExecutorService.class);
 
-    Executor sequentialExecutor = FirebaseExecutors.newSequentialExecutor(c.get(bgExecutor));
     return Arrays.asList(
         Component.builder(FirebaseModelDownloader.class)
             .name(LIBRARY_NAME)
@@ -65,7 +64,8 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
                     new FirebaseModelDownloader(
                         c.get(FirebaseApp.class),
                         c.get(FirebaseInstallationsApi.class),
-                        sequentialExecutor))
+                        FirebaseExecutors.newSequentialExecutor(c.get(bgExecutor)),
+                        c.get(bgExecutorService)))
             .build(),
         Component.builder(SharedPreferencesUtil.class)
             .add(Dependency.required(FirebaseApp.class))

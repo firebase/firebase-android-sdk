@@ -37,6 +37,7 @@ import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
 import java.io.File;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 public class FirebaseModelDownloader {
 
@@ -56,13 +57,14 @@ public class FirebaseModelDownloader {
   FirebaseModelDownloader(
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallationsApi,
-      Executor executor) {
+      Executor executor,
+      ExecutorService executorService) {
     this.firebaseOptions = firebaseApp.getOptions();
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
     this.eventLogger = FirebaseMlLogger.getInstance(firebaseApp);
     this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
     this.modelDownloadService =
-        new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi);
+        new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi, executorService);
 
     this.executor = executor;
     fileManager = ModelFileManager.getInstance();
