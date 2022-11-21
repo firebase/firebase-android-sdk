@@ -105,7 +105,7 @@ public class FeedbackActivity extends AppCompatActivity {
               if (screenshot != null) {
                 runOnUiThread(
                     () -> {
-                      ImageView imageView = this.findViewById(R.id.screenshotImageView);
+                      ImageView imageView = findViewById(R.id.screenshotImageView);
                       imageView.setImageBitmap(screenshot);
                       CheckBox checkBox = findViewById(R.id.screenshotCheckBox);
                       checkBox.setChecked(true);
