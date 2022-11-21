@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -42,6 +43,8 @@ class ScreenshotTaker {
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
   private final Executor taskExecutor;
 
+  // TODO(b/258264924): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   ScreenshotTaker(
       FirebaseApp firebaseApp, FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this(firebaseApp, lifecycleNotifier, Executors.newSingleThreadExecutor());
