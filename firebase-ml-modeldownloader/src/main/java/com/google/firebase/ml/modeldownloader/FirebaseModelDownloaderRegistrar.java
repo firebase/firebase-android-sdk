@@ -19,9 +19,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
+import com.google.firebase.concurrent.FirebaseExecutors;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogger;
@@ -31,6 +34,8 @@ import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 /**
  * Registrar for setting up Firebase ML Model Downloader's dependency injections in Firebase Android
@@ -45,6 +50,11 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
   @NonNull
   @RequiresApi(api = VERSION_CODES.KITKAT)
   public List<Component<?>> getComponents() {
+    Qualified<Executor> bgExecutor = Qualified.qualified(Background.class, Executor.class);
+    Qualified<ExecutorService> bgExecutorService =
+        Qualified.qualified(Background.class, ExecutorService.class);
+
+    Executor sequentialExecutor = FirebaseExecutors.newSequentialExecutor(c.get(bgExecutor));
     return Arrays.asList(
         Component.builder(FirebaseModelDownloader.class)
             .name(LIBRARY_NAME)
@@ -53,7 +63,9 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
             .factory(
                 c ->
                     new FirebaseModelDownloader(
-                        c.get(FirebaseApp.class), c.get(FirebaseInstallationsApi.class)))
+                        c.get(FirebaseApp.class),
+                        c.get(FirebaseInstallationsApi.class),
+                        sequentialExecutor))
             .build(),
         Component.builder(SharedPreferencesUtil.class)
             .add(Dependency.required(FirebaseApp.class))
@@ -84,7 +96,9 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
             .factory(
                 c ->
                     new CustomModelDownloadService(
-                        c.get(FirebaseApp.class), c.get(FirebaseInstallationsApi.class)))
+                        c.get(FirebaseApp.class),
+                        c.get(FirebaseInstallationsApi.class),
+                        c.get(bgExecutorService)))
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }

@@ -37,7 +37,6 @@ import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
 import java.io.File;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 public class FirebaseModelDownloader {
 
@@ -55,7 +54,9 @@ public class FirebaseModelDownloader {
   // TODO(b/258424267): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
   FirebaseModelDownloader(
-      FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi) {
+      FirebaseApp firebaseApp,
+      FirebaseInstallationsApi firebaseInstallationsApi,
+      Executor executor) {
     this.firebaseOptions = firebaseApp.getOptions();
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
     this.eventLogger = FirebaseMlLogger.getInstance(firebaseApp);
@@ -63,7 +64,7 @@ public class FirebaseModelDownloader {
     this.modelDownloadService =
         new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi);
 
-    this.executor = Executors.newSingleThreadExecutor();
+    this.executor = executor;
     fileManager = ModelFileManager.getInstance();
   }
 

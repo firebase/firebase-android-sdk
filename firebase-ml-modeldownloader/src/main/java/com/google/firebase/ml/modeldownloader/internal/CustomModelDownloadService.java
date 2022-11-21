@@ -48,7 +48,6 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
 import org.json.JSONObject;
 
@@ -97,12 +96,14 @@ public class CustomModelDownloadService {
   // TODO(b/258424267): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
   public CustomModelDownloadService(
-      FirebaseApp firebaseApp, FirebaseInstallationsApi installationsApi) {
+      FirebaseApp firebaseApp,
+      FirebaseInstallationsApi installationsApi,
+      ExecutorService executorService) {
     context = firebaseApp.getApplicationContext();
     firebaseInstallations = installationsApi;
     apiKey = firebaseApp.getOptions().getApiKey();
     fingerprintHashForPackage = getFingerprintHashForPackage(context);
-    executorService = Executors.newCachedThreadPool();
+    executorService = executorService;
     this.eventLogger = FirebaseMlLogger.getInstance();
   }
 
