@@ -179,7 +179,7 @@ public class ConfigContainer {
       String key = keys.next();
 
       // If the ABT Experiments have changed, add all keys since we don't know which keys the ABT
-      // experiments apply to.
+      // experiments apply to
       if (experimentsChanged) {
         changed.add(key);
         continue;
@@ -215,11 +215,11 @@ public class ConfigContainer {
         continue;
       }
 
-      // Since the key is the same in both configs, remove it from otherConfig.
+      // Since the key is the same in both configs, remove it from otherConfig
       otherConfig.remove(key);
     }
 
-    // Add all the keys from other that aren't different.
+    // Add all the keys from other that are different
     Iterator<String> remainingOtherKeys = otherConfig.keys();
     while (remainingOtherKeys.hasNext()) {
       changed.add(remainingOtherKeys.next());
