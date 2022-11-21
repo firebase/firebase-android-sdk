@@ -62,6 +62,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
         Component.builder(FeedbackSender.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
+            .add(Dependency.required(blockingExecutor))
             .factory(c -> buildFeedbackSender(c, c.get(blockingExecutor)))
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
