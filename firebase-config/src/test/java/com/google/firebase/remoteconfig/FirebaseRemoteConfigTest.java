@@ -1174,9 +1174,9 @@ public final class FirebaseRemoteConfigTest {
   @Test
   public void realtime_fetchesWithoutChangedParams_doesNotCallOnUpdate() throws Exception {
     when(mockHttpURLConnection.getInputStream())
-            .thenReturn(
-                    new ByteArrayInputStream(
-                            "{ \"latestTemplateVersionNumber\": 1 }".getBytes(StandardCharsets.UTF_8)));
+        .thenReturn(
+            new ByteArrayInputStream(
+                "{ \"latestTemplateVersionNumber\": 1 }".getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(firstFetchedContainerResponse));
     configAutoFetch.listenForNotifications();

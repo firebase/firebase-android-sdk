@@ -24,15 +24,17 @@ import javax.annotation.Nonnull;
  */
 public interface ConfigUpdateListener {
   /**
-   * Callback for when a new config has been automatically updated from the backend. Can be used to
-   * activate the new config.
+   * Callback for when a new config has been automatically fetched from the backend and has changed
+   * from the activated config.
    *
-   * @param updatedParams The set of parameter keys whose values or metadata has changed
+   * @param updatedParams The set of parameter keys changed from the currently activated values.
+   *     Includes keys that are: added; deleted; and whose value, value source, or metadata has
+   *     changed.
    */
   void onUpdate(Set<String> updatedParams);
 
   /**
-   * Call back for when an error occurs during Realtime.
+   * Callback for when an error occurs while listening for or fetching a config update.
    *
    * @param error
    */
