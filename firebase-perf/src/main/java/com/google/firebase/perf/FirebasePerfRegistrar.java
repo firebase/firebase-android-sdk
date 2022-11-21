@@ -90,9 +90,8 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
     return component.getFirebasePerformance();
   }
 
-  @SuppressWarnings("FirebaseUseExplicitDependencies")
   private static FirebasePerfEarly providesFirebasePerformanceEarly(ComponentContainer container) {
     return new FirebasePerfEarly(
-        container.get(FirebaseApp.class), container.get(FirebaseApp.class).get(StartupTime.class));
+        container.get(FirebaseApp.class), container.getProvider(StartupTime.class).get());
   }
 }
