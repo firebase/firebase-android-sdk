@@ -59,6 +59,8 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
+            .add(Dependency.required(bgExecutor))
+            .add(Dependency.required(bgExecutorService))
             .factory(
                 c ->
                     new FirebaseModelDownloader(
@@ -93,6 +95,7 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
         Component.builder(CustomModelDownloadService.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
+            .add(Dependency.required(bgExecutorService))
             .factory(
                 c ->
                     new CustomModelDownloadService(
