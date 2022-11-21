@@ -206,34 +206,58 @@ public class ConfigAutoFetch {
         .continueWithTask(
             scheduledExecutorService,
             (listOfUnusedCompletedTasks) -> {
-              if (!fetchTask.isSuccessful() || !activatedConfigsTask.isSuccessful()) {
-                return Tasks.forResult(null);
+              if (!fetchTask.isSuccessful()) {
+                return Tasks.forException(
+                    new FirebaseRemoteConfigClientException(
+                        "Failed to auto-fetch config update.", fetchTask.getException()));
+              }
+
+              if (!activatedConfigsTask.isSuccessful()) {
+                return Tasks.forException(
+                    new FirebaseRemoteConfigClientException(
+                        "Failed to get activated config for auto-fetch",
+                        activatedConfigsTask.getException()));
               }
 
               ConfigFetchHandler.FetchResponse fetchResponse = fetchTask.getResult();
               ConfigContainer activatedConfigs = activatedConfigsTask.getResult();
 
-              long newTemplateVersion = 0;
-              if (fetchResponse.getFetchedConfigs() != null) {
-                newTemplateVersion = fetchResponse.getFetchedConfigs().getTemplateVersionNumber();
-              } else if (fetchResponse.getStatus()
-                  == ConfigFetchHandler.FetchResponse.Status.BACKEND_HAS_NO_UPDATES) {
-                newTemplateVersion = targetVersion;
-              }
-
-              if (newTemplateVersion >= targetVersion) {
-                Set<String> updatedParams =
-                    activatedConfigs.getChangedParams(fetchResponse.getFetchedConfigs());
-                executeAllListenerCallbacks(updatedParams);
-              } else {
+              if (!fetchResponseIsUpToDate(fetchResponse, targetVersion)) {
                 Log.d(
                     TAG,
                     "Fetched template version is the same as SDK's current version."
                         + " Retrying fetch.");
-                // Continue fetching until template version number if greater then current.
+                // Continue fetching until template version number is greater then current.
                 autoFetch(remainingAttempts - 1, targetVersion);
+                return Tasks.forResult(null);
               }
+
+              if (fetchResponse.getFetchedConfigs() == null) {
+                Log.d(TAG, "The fetch succeeded, but the backend had no updates.");
+                return Tasks.forResult(null);
+              }
+
+              Set<String> updatedParams =
+                  activatedConfigs.getChangedParams(fetchResponse.getFetchedConfigs());
+              if (updatedParams.isEmpty()) {
+                Log.d(TAG, "Config was fetched, but no params changed.");
+                return Tasks.forResult(null);
+              }
+
+              executeAllListenerCallbacks(updatedParams);
               return Tasks.forResult(null);
             });
+  }
+
+  private static Boolean fetchResponseIsUpToDate(
+      ConfigFetchHandler.FetchResponse response, long lastKnownVersion) {
+    // If there's a config, make sure its version is >= the last known version.
+    if (response.getFetchedConfigs() != null) {
+      return response.getFetchedConfigs().getTemplateVersionNumber() >= lastKnownVersion;
+    }
+
+    // If there isn't a config, return true if the backend had no update.
+    // Else, it returned an out of date config.
+    return response.getStatus() == ConfigFetchHandler.FetchResponse.Status.BACKEND_HAS_NO_UPDATES;
   }
 }

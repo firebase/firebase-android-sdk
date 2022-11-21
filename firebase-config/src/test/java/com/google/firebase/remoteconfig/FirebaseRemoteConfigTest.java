@@ -37,6 +37,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -1168,6 +1169,19 @@ public final class FirebaseRemoteConfigTest {
 
     Set<String> updatedParams = Sets.newHashSet("string_param", "long_param");
     verify(mockRetryListener).onUpdate(updatedParams);
+  }
+
+  @Test
+  public void realtime_fetchesWithoutChangedParams_doesNotCallOnUpdate() throws Exception {
+    when(mockHttpURLConnection.getInputStream())
+            .thenReturn(
+                    new ByteArrayInputStream(
+                            "{ \"latestTemplateVersionNumber\": 1 }".getBytes(StandardCharsets.UTF_8)));
+    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
+    when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(firstFetchedContainerResponse));
+    configAutoFetch.listenForNotifications();
+
+    verifyZeroInteractions(mockOnEventListener);
   }
 
   @Test

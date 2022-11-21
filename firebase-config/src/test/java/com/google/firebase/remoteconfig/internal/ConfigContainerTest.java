@@ -115,15 +115,15 @@ public class ConfigContainerTest {
   @Test
   public void getChangedParams_changedExperimentsMetadata_returnsAllParamKeys() throws Exception {
     ConfigContainer config =
-            ConfigContainer.newBuilder()
-                    .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
-                    .build();
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .build();
 
     ConfigContainer other =
-            ConfigContainer.newBuilder()
-                    .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
-                    .withAbtExperiments(generateAbtExperiments(1))
-                    .build();
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .withAbtExperiments(generateAbtExperiments(1))
+            .build();
 
     Set<String> changedParams = config.getChangedParams(other);
 
@@ -133,14 +133,14 @@ public class ConfigContainerTest {
   @Test
   public void getChangedParams_noChanges_returnsEmptySet() throws Exception {
     ConfigContainer config =
-            ConfigContainer.newBuilder()
-                    .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
-                    .build();
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .build();
 
     ConfigContainer other =
-            ConfigContainer.newBuilder()
-                    .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
-                    .build();
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .build();
 
     Set<String> changedParams = config.getChangedParams(other);
 
@@ -150,13 +150,22 @@ public class ConfigContainerTest {
   @Test
   public void getChangedParams_multipleChanges_returnsMultipleParamKeys() throws Exception {
     ConfigContainer config =
-            ConfigContainer.newBuilder()
-                    .replaceConfigsWith(ImmutableMap.of("always_on", "true", "string_param", "value_1", "long_param", "1", "bool_param", "true"))
-                    .withPersonalizationMetadata(
-                            new JSONObject(
-                                    ImmutableMap.of(
-                                            "string_param", generateP13nMetadata("p13n-id-1", "0", "id1", "BASELINE"))))
-                    .build();
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(
+                ImmutableMap.of(
+                    "always_on",
+                    "true",
+                    "string_param",
+                    "value_1",
+                    "long_param",
+                    "1",
+                    "bool_param",
+                    "true"))
+            .withPersonalizationMetadata(
+                new JSONObject(
+                    ImmutableMap.of(
+                        "string_param", generateP13nMetadata("p13n-id-1", "0", "id1", "BASELINE"))))
+            .build();
 
     // always_on has NOT changed
     // string_param has changed P13n metadata
@@ -164,17 +173,27 @@ public class ConfigContainerTest {
     // bool_param has been removed
     // feature_1 has been added
     ConfigContainer other =
-            ConfigContainer.newBuilder()
-                    .replaceConfigsWith(ImmutableMap.of("always_on", "true", "string_param", "value_1", "long_param", "2", "feature_1", "true"))
-                    .withPersonalizationMetadata(
-                            new JSONObject(
-                                    ImmutableMap.of(
-                                            "string_param", generateP13nMetadata("p13n-id-1", "1", "id1", "P13N"))))
-                    .build();
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(
+                ImmutableMap.of(
+                    "always_on",
+                    "true",
+                    "string_param",
+                    "value_1",
+                    "long_param",
+                    "2",
+                    "feature_1",
+                    "true"))
+            .withPersonalizationMetadata(
+                new JSONObject(
+                    ImmutableMap.of(
+                        "string_param", generateP13nMetadata("p13n-id-1", "1", "id1", "P13N"))))
+            .build();
 
     Set<String> changedParams = config.getChangedParams(other);
 
-    assertThat(changedParams).containsExactly("string_param", "long_param", "bool_param", "feature_1");
+    assertThat(changedParams)
+        .containsExactly("string_param", "long_param", "bool_param", "feature_1");
   }
 
   private static JSONArray generateAbtExperiments(int numExperiments) throws JSONException {
