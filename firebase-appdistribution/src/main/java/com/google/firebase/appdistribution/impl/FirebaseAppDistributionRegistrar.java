@@ -74,7 +74,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
     FirebaseAppDistributionTesterApiClient testerApiClient =
         new FirebaseAppDistributionTesterApiClient(
             firebaseApp, firebaseInstallationsApiProvider, new TesterApiHttpClient(firebaseApp), blockingExecutor);
-    return new FeedbackSender(testerApiClient);
+    return new FeedbackSender(testerApiClient, blockingExecutor);
   }
 
   private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container, Executor blockingExecutor) {

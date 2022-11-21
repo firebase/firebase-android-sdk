@@ -96,7 +96,7 @@ public class FeedbackActivity extends AppCompatActivity {
   }
 
    private void setupScreenshot() {
-    new Thread(() -> {
+    feedbackSender.getBlockingExecutor().execute(() -> {
       // do I/O on separate thread in order to not block the UI
       Bitmap screenshot = screenshotUri == null ? null : readScreenshot();
       if (screenshot != null) {
@@ -117,7 +117,7 @@ public class FeedbackActivity extends AppCompatActivity {
           checkBox.setChecked(false);
         });
       }
-    }).start();
+    });
   }
 
   @Nullable
