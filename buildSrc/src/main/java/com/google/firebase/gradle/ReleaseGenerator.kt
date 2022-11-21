@@ -17,22 +17,25 @@ open class ReleaseGenerator : DefaultTask() {
     fun generateReleaseConfig() {
         val currentRelease = project.property("currentRelease").toString()
         val pastRelease = project.property("pastRelease").toString()
+        val printReleaseConfig = project.property("printOutput").toString().toBoolean()
         val rootDir = project.rootDir
         val availableModules = parseSubProjects(rootDir)
-        val firebaseLibraries = extractLibraries(availableModules)
+        val firebaseLibraries = extractLibraries(availableModules, rootDir)
 
         val repo = Git.open(rootDir)
         val headRef = repo.repository.resolve(Constants.HEAD)
         val branchRef = getObjectRefForBranchName(repo, pastRelease)
 
-        val changedDirs = getChangedLibraries(repo, branchRef, headRef, firebaseLibraries)
-        writeReleaseConfig(rootDir, changedDirs, currentRelease)
+        val changedLibraries = getChangedLibraries(repo, branchRef, headRef, firebaseLibraries)
+        writeReleaseConfig(rootDir, changedLibraries, currentRelease)
+        if (printReleaseConfig) {
+            println(changedLibraries.joinToString(",", "LIBRARIES TO RELEASE: "))
+        }
     }
 
-    private fun extractLibraries(availableModules: Set<String>): List<FirebaseLibrary> {
+    private fun extractLibraries(availableModules: Set<String>, rootDir: File): List<FirebaseLibrary> {
         val nonKtxModules = availableModules.filter { !it.endsWith("ktx") }.toSet()
         return nonKtxModules
-                .filter { possibleModule -> !nonKtxModules.any { it.startsWith("$possibleModule:") } }
                 .map { moduleName ->
                     val ktxModuleName = "$moduleName:ktx"
 
@@ -40,10 +43,12 @@ open class ReleaseGenerator : DefaultTask() {
                     val directories = moduleNames.map { it.replace(":", "/") }
 
                     FirebaseLibrary(moduleNames, directories)
+                }.filter { firebaseLibrary ->
+                    firebaseLibrary.directories.first().let { File(rootDir, "$it/gradle.properties").exists() }
                 }
     }
 
-    private fun parseSubProjects(rootDir: File) = File(rootDir, "subprojects.cfg").readLines().filter { !it.startsWith("#") }.filter { it.isNotEmpty() }.toSet()
+    private fun parseSubProjects(rootDir: File) = File(rootDir, "subprojects.cfg").readLines().filterNot { it.startsWith("#") || it.isEmpty() }.toSet()
 
     @Throws(GitAPIException::class)
     private fun getObjectRefForBranchName(repo: Git, branchName: String) =
