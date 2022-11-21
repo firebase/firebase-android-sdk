@@ -95,29 +95,34 @@ public class FeedbackActivity extends AppCompatActivity {
     setupScreenshot();
   }
 
-   private void setupScreenshot() {
-    feedbackSender.getBlockingExecutor().execute(() -> {
-      // do I/O on separate thread in order to not block the UI
-      Bitmap screenshot = screenshotUri == null ? null : readScreenshot();
-      if (screenshot != null) {
-        runOnUiThread(() -> {
-          ImageView imageView = this.findViewById(R.id.screenshotImageView);
-          imageView.setImageBitmap(screenshot);
-          CheckBox checkBox = findViewById(R.id.screenshotCheckBox);
-          checkBox.setChecked(true);
-          checkBox.setOnClickListener(
-              v -> imageView.setVisibility(checkBox.isChecked() ? VISIBLE : GONE));
-        });
-      } else {
-        LogWrapper.getInstance().e(TAG, "No screenshot available");
-        runOnUiThread(() -> {
-          CheckBox checkBox = findViewById(R.id.screenshotCheckBox);
-          checkBox.setText(R.string.no_screenshot);
-          checkBox.setClickable(false);
-          checkBox.setChecked(false);
-        });
-      }
-    });
+  private void setupScreenshot() {
+    feedbackSender
+        .getBlockingExecutor()
+        .execute(
+            () -> {
+              // do I/O on separate thread in order to not block the UI
+              Bitmap screenshot = screenshotUri == null ? null : readScreenshot();
+              if (screenshot != null) {
+                runOnUiThread(
+                    () -> {
+                      ImageView imageView = this.findViewById(R.id.screenshotImageView);
+                      imageView.setImageBitmap(screenshot);
+                      CheckBox checkBox = findViewById(R.id.screenshotCheckBox);
+                      checkBox.setChecked(true);
+                      checkBox.setOnClickListener(
+                          v -> imageView.setVisibility(checkBox.isChecked() ? VISIBLE : GONE));
+                    });
+              } else {
+                LogWrapper.getInstance().e(TAG, "No screenshot available");
+                runOnUiThread(
+                    () -> {
+                      CheckBox checkBox = findViewById(R.id.screenshotCheckBox);
+                      checkBox.setText(R.string.no_screenshot);
+                      checkBox.setClickable(false);
+                      checkBox.setChecked(false);
+                    });
+              }
+            });
   }
 
   @Nullable

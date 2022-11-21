@@ -67,17 +67,22 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 
-  private FeedbackSender buildFeedbackSender(ComponentContainer container, Executor blockingExecutor) {
+  private FeedbackSender buildFeedbackSender(
+      ComponentContainer container, Executor blockingExecutor) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
     Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
         container.getProvider(FirebaseInstallationsApi.class);
     FirebaseAppDistributionTesterApiClient testerApiClient =
         new FirebaseAppDistributionTesterApiClient(
-            firebaseApp, firebaseInstallationsApiProvider, new TesterApiHttpClient(firebaseApp), blockingExecutor);
+            firebaseApp,
+            firebaseInstallationsApiProvider,
+            new TesterApiHttpClient(firebaseApp),
+            blockingExecutor);
     return new FeedbackSender(testerApiClient, blockingExecutor);
   }
 
-  private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container, Executor blockingExecutor) {
+  private FirebaseAppDistribution buildFirebaseAppDistribution(
+      ComponentContainer container, Executor blockingExecutor) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
     Context context = firebaseApp.getApplicationContext();
     Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
