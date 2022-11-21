@@ -306,7 +306,8 @@ public class ConfigRealtimeHttpClient {
           }
         };
 
-    return new ConfigAutoFetch(httpURLConnection, configFetchHandler, activatedCache, listeners, retryCallback);
+    return new ConfigAutoFetch(
+        httpURLConnection, configFetchHandler, activatedCache, listeners, retryCallback);
   }
 
   // HTTP status code that the Realtime client should retry on.

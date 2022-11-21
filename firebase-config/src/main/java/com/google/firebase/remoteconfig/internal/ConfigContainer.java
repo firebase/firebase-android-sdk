@@ -19,7 +19,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -163,7 +162,6 @@ public class ConfigContainer {
   }
 
   /**
-   *
    * @param other The other {@link ConfigContainer} against which to compute the diff
    * @return The set of config keys that have changed between the this config and {@code other}
    * @throws JSONException
@@ -172,10 +170,20 @@ public class ConfigContainer {
     // Make a copy of the other config before modifying it
     JSONObject otherConfig = other.getCopy().getConfigs();
 
+    // Experiments aren't associated with params, so we can just compare arrays once
+    Boolean experimentsChanged = !this.getAbtExperiments().equals(other.getAbtExperiments());
+
     Set<String> changed = new HashSet<>();
     Iterator<String> keys = this.getConfigs().keys();
     while (keys.hasNext()) {
       String key = keys.next();
+
+      // If the ABT Experiments have changed, add all keys since we don't know which keys the ABT
+      // experiments apply to.
+      if (experimentsChanged) {
+        changed.add(key);
+        continue;
+      }
 
       // If the other config doesn't have the key
       if (!other.getConfigs().has(key)) {
@@ -190,29 +198,24 @@ public class ConfigContainer {
       }
 
       // If only one of the configs has PersonalizationMetadata for the key
-      if (this.getPersonalizationMetadata().has(key)
-              && !other.getPersonalizationMetadata().has(key)
-              || !this.getPersonalizationMetadata().has(key)
+      if (this.getPersonalizationMetadata().has(key) && !other.getPersonalizationMetadata().has(key)
+          || !this.getPersonalizationMetadata().has(key)
               && other.getPersonalizationMetadata().has(key)) {
         changed.add(key);
         continue;
       }
 
       // If the both configs have PersonalizationMetadata for the key, but the metadata has changed
-      if (this.getPersonalizationMetadata().has(key) && other.getPersonalizationMetadata().has(key)
-              && !this.getPersonalizationMetadata().get(key).equals(other.getPersonalizationMetadata().get(key))) {
+      if (this.getPersonalizationMetadata().has(key)
+          && other.getPersonalizationMetadata().has(key)
+          && !this.getPersonalizationMetadata()
+              .get(key)
+              .equals(other.getPersonalizationMetadata().get(key))) {
         changed.add(key);
         continue;
       }
 
-      // If the ABT Experiments have changed, add all keys since we don't know which keys the ABT
-      // experiments apply to.
-      if (!this.getAbtExperiments().equals(other.getAbtExperiments())) {
-        changed.add(key);
-        continue;
-      }
-
-      // Since the key exists in both configs, remove it from otherConfig.
+      // Since the key is the same in both configs, remove it from otherConfig.
       otherConfig.remove(key);
     }
 

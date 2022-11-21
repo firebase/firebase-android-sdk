@@ -51,7 +51,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
@@ -284,8 +283,8 @@ public final class FirebaseRemoteConfigTest {
     ConfigUpdateListener listener =
         new ConfigUpdateListener() {
           @Override
-          public void onEvent() {
-            mockOnEventListener.onEvent();
+          public void onUpdate(Set<String> changedParams) {
+            mockOnEventListener.onUpdate(new HashSet<>());
           }
 
           @Override
@@ -306,7 +305,12 @@ public final class FirebaseRemoteConfigTest {
 
     listeners.add(listener);
     configAutoFetch =
-        new ConfigAutoFetch(mockHttpURLConnection, mockFetchHandler, mockActivatedCache, listeners, mockRetryListener);
+        new ConfigAutoFetch(
+            mockHttpURLConnection,
+            mockFetchHandler,
+            mockActivatedCache,
+            listeners,
+            mockRetryListener);
     configRealtimeHttpClient =
         new ConfigRealtimeHttpClient(
             firebaseApp,

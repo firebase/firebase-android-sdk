@@ -203,11 +203,12 @@ public class ConfigAutoFetch {
     Task<ConfigContainer> activatedConfigsTask = activatedCache.get();
 
     Tasks.whenAllComplete(fetchTask, activatedConfigsTask)
-            .continueWithTask(scheduledExecutorService, (listOfUnusedCompletedTasks) -> {
+        .continueWithTask(
+            scheduledExecutorService,
+            (listOfUnusedCompletedTasks) -> {
               if (!fetchTask.isSuccessful() || !activatedConfigsTask.isSuccessful()) {
                 return Tasks.forResult(null);
               }
-
 
               ConfigFetchHandler.FetchResponse fetchResponse = fetchTask.getResult();
               ConfigContainer activatedConfigs = activatedConfigsTask.getResult();
@@ -216,18 +217,19 @@ public class ConfigAutoFetch {
               if (fetchResponse.getFetchedConfigs() != null) {
                 newTemplateVersion = fetchResponse.getFetchedConfigs().getTemplateVersionNumber();
               } else if (fetchResponse.getStatus()
-                      == ConfigFetchHandler.FetchResponse.Status.BACKEND_HAS_NO_UPDATES) {
+                  == ConfigFetchHandler.FetchResponse.Status.BACKEND_HAS_NO_UPDATES) {
                 newTemplateVersion = targetVersion;
               }
 
               if (newTemplateVersion >= targetVersion) {
-                Set<String> updatedParams = activatedConfigs.getChangedParams(fetchResponse.getFetchedConfigs());
+                Set<String> updatedParams =
+                    activatedConfigs.getChangedParams(fetchResponse.getFetchedConfigs());
                 executeAllListenerCallbacks(updatedParams);
               } else {
                 Log.d(
-                        TAG,
-                        "Fetched template version is the same as SDK's current version."
-                                + " Retrying fetch.");
+                    TAG,
+                    "Fetched template version is the same as SDK's current version."
+                        + " Retrying fetch.");
                 // Continue fetching until template version number if greater then current.
                 autoFetch(remainingAttempts - 1, targetVersion);
               }
