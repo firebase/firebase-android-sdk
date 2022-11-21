@@ -19,14 +19,17 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import java.util.concurrent.Executor;
 
 /** Sends tester feedback to the Tester API. */
 class FeedbackSender {
-
   private final FirebaseAppDistributionTesterApiClient testerApiClient;
+  private final Executor blockingExecutor;
 
-  FeedbackSender(FirebaseAppDistributionTesterApiClient testerApiClient) {
+  FeedbackSender(
+      FirebaseAppDistributionTesterApiClient testerApiClient, Executor blockingExecutor) {
     this.testerApiClient = testerApiClient;
+    this.blockingExecutor = blockingExecutor;
   }
 
   /** Get an instance of FeedbackSender. */
@@ -40,6 +43,12 @@ class FeedbackSender {
         .createFeedback(releaseName, feedbackText)
         .onSuccessTask(feedbackName -> attachScreenshot(feedbackName, screenshotUri))
         .onSuccessTask(testerApiClient::commitFeedback);
+  }
+
+  // TODO(kbolay): Remove this hack to make the executor available in FeedbackAction and use a more
+  //     sophisticated dependency injection solution.
+  Executor getBlockingExecutor() {
+    return blockingExecutor;
   }
 
   private Task<String> attachScreenshot(String feedbackName, @Nullable Uri screenshotUri) {

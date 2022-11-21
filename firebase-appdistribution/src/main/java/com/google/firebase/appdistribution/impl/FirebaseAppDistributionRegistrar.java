@@ -67,19 +67,24 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
         Component.builder(FeedbackSender.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
+            .add(Dependency.required(blockingExecutor))
             .factory(c -> buildFeedbackSender(c, c.get(blockingExecutor)))
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 
-  private FeedbackSender buildFeedbackSender(ComponentContainer container, Executor blockingExecutor) {
+  private FeedbackSender buildFeedbackSender(
+      ComponentContainer container, Executor blockingExecutor) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
     Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
         container.getProvider(FirebaseInstallationsApi.class);
     FirebaseAppDistributionTesterApiClient testerApiClient =
         new FirebaseAppDistributionTesterApiClient(
-            firebaseApp, firebaseInstallationsApiProvider, new TesterApiHttpClient(firebaseApp), blockingExecutor);
-    return new FeedbackSender(testerApiClient);
+            firebaseApp,
+            firebaseInstallationsApiProvider,
+            new TesterApiHttpClient(firebaseApp),
+            blockingExecutor);
+    return new FeedbackSender(testerApiClient, blockingExecutor);
   }
 
   // TODO(b/258264924): Migrate to go/firebase-android-executors
