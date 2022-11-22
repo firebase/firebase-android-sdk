@@ -41,6 +41,7 @@ public class FirebaseInitProvider extends ContentProvider {
     return startupTime;
   }
 
+  /** @hide */
   public static boolean isCurrentlyInitializing() {
     return currentlyInitializing.get();
   }
