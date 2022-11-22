@@ -57,17 +57,13 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private final AabUpdater aabUpdater;
   private final SignInStorage signInStorage;
 
-  private final Object updateIfNewReleaseTaskLock = new Object();
-
-  @GuardedBy("updateIfNewReleaseTaskLock")
-  private UpdateTaskImpl cachedUpdateIfNewReleaseTask;
-
   private final Object cachedNewReleaseLock = new Object();
 
   @GuardedBy("cachedNewReleaseLock")
   private AppDistributionReleaseInternal cachedNewRelease;
 
-  private Task<AppDistributionRelease> cachedCheckForNewReleaseTask;
+  private TaskCache<UpdateTask> updateIfNewReleaseAvailableTaskCache = new TaskCache<>();
+  private TaskCache<Task<AppDistributionRelease>> checkForNewReleaseTaskCache = new TaskCache<>();
   private AlertDialog updateConfirmationDialog;
   private AlertDialog signInConfirmationDialog;
   @Nullable private Activity dialogHostActivity = null;
@@ -102,55 +98,58 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   @Override
   @NonNull
   public UpdateTask updateIfNewReleaseAvailable() {
-    synchronized (updateIfNewReleaseTaskLock) {
-      if (updateIfNewReleaseAvailableIsTaskInProgress()) {
-        return cachedUpdateIfNewReleaseTask;
-      }
-      cachedUpdateIfNewReleaseTask = new UpdateTaskImpl();
-      remakeSignInConfirmationDialog = false;
-      remakeUpdateConfirmationDialog = false;
-      dialogHostActivity = null;
-    }
+    return updateIfNewReleaseAvailableTaskCache.getOrCreateTask(
+        () -> {
+          UpdateTaskImpl updateTask = new UpdateTaskImpl();
+          remakeSignInConfirmationDialog = false;
+          remakeUpdateConfirmationDialog = false;
+          dialogHostActivity = null;
 
-    lifecycleNotifier
-        .applyToForegroundActivityTask(this::showSignInConfirmationDialog)
-        .onSuccessTask(unused -> signInTester())
-        .onSuccessTask(unused -> checkForNewRelease())
-        .continueWithTask(
-            task -> {
-              if (!task.isSuccessful()) {
-                postProgressToCachedUpdateIfNewReleaseTask(
-                    UpdateProgressImpl.builder()
-                        .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
-                        .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
-                        .setUpdateStatus(UpdateStatus.NEW_RELEASE_CHECK_FAILED)
-                        .build());
-              }
-              // if the task failed, this get() will cause the error to propagate to the handler
-              // below
-              AppDistributionRelease release = task.getResult();
-              if (release == null) {
-                postProgressToCachedUpdateIfNewReleaseTask(
-                    UpdateProgressImpl.builder()
-                        .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
-                        .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
-                        .setUpdateStatus(UpdateStatus.NEW_RELEASE_NOT_AVAILABLE)
-                        .build());
-                setCachedUpdateIfNewReleaseResult();
-                return Tasks.forResult(null);
-              }
-              return lifecycleNotifier.applyToForegroundActivityTask(
-                  activity -> showUpdateConfirmationDialog(activity, release));
-            })
-        .onSuccessTask(
-            unused ->
-                updateApp(true)
-                    .addOnProgressListener(this::postProgressToCachedUpdateIfNewReleaseTask))
-        .addOnFailureListener(this::setCachedUpdateIfNewReleaseCompletionError);
+          lifecycleNotifier
+              .applyToForegroundActivityTask(this::showSignInConfirmationDialog)
+              .onSuccessTask(unused -> signInTester())
+              .onSuccessTask(unused -> checkForNewRelease())
+              .continueWithTask(
+                  task -> {
+                    if (!task.isSuccessful()) {
+                      postProgressToCachedUpdateIfNewReleaseTask(
+                          updateTask,
+                          UpdateProgressImpl.builder()
+                              .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
+                              .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
+                              .setUpdateStatus(UpdateStatus.NEW_RELEASE_CHECK_FAILED)
+                              .build());
+                    }
+                    // if the task failed, this get() will cause the error to propagate to the
+                    // handler
+                    // below
+                    AppDistributionRelease release = task.getResult();
+                    if (release == null) {
+                      postProgressToCachedUpdateIfNewReleaseTask(
+                          updateTask,
+                          UpdateProgressImpl.builder()
+                              .setApkFileTotalBytes(UNKNOWN_RELEASE_FILE_SIZE)
+                              .setApkBytesDownloaded(UNKNOWN_RELEASE_FILE_SIZE)
+                              .setUpdateStatus(UpdateStatus.NEW_RELEASE_NOT_AVAILABLE)
+                              .build());
+                      setCachedUpdateIfNewReleaseResult(updateTask);
+                      return Tasks.forResult(null);
+                    }
+                    return lifecycleNotifier.applyToForegroundActivityTask(
+                        activity -> showUpdateConfirmationDialog(activity, release));
+                  })
+              .onSuccessTask(
+                  unused ->
+                      updateApp(true)
+                          .addOnProgressListener(
+                              updateProgress ->
+                                  postProgressToCachedUpdateIfNewReleaseTask(
+                                      updateTask, updateProgress)))
+              .addOnFailureListener(
+                  exception -> setCachedUpdateIfNewReleaseCompletionError(updateTask, exception));
 
-    synchronized (updateIfNewReleaseTaskLock) {
-      return cachedUpdateIfNewReleaseTask;
-    }
+          return updateTask;
+        });
   }
 
   @NonNull
@@ -220,37 +219,35 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   @Override
   @NonNull
   public synchronized Task<AppDistributionRelease> checkForNewRelease() {
-    if (cachedCheckForNewReleaseTask != null && !cachedCheckForNewReleaseTask.isComplete()) {
-      LogWrapper.getInstance().v("Response in progress");
-      return cachedCheckForNewReleaseTask;
-    }
-    if (!isTesterSignedIn()) {
-      return Tasks.forException(
-          new FirebaseAppDistributionException("Tester is not signed in", AUTHENTICATION_FAILURE));
-    }
+    return checkForNewReleaseTaskCache.getOrCreateTask(
+        () -> {
+          if (!isTesterSignedIn()) {
+            return Tasks.forException(
+                new FirebaseAppDistributionException(
+                    "Tester is not signed in", AUTHENTICATION_FAILURE));
+          }
 
-    cachedCheckForNewReleaseTask =
-        newReleaseFetcher
-            .checkForNewRelease()
-            .onSuccessTask(
-                appDistributionReleaseInternal -> {
-                  setCachedNewRelease(appDistributionReleaseInternal);
-                  return Tasks.forResult(
-                      ReleaseUtils.convertToAppDistributionRelease(appDistributionReleaseInternal));
-                })
-            .addOnFailureListener(
-                e -> {
-                  if (e instanceof FirebaseAppDistributionException
-                      && ((FirebaseAppDistributionException) e).getErrorCode()
-                          == AUTHENTICATION_FAILURE) {
-                    // If CheckForNewRelease returns authentication error, the FID is no longer
-                    // valid or does not have access to the latest release. So sign out the tester
-                    // to force FID re-registration
-                    signOutTester();
-                  }
-                });
-
-    return cachedCheckForNewReleaseTask;
+          return newReleaseFetcher
+              .checkForNewRelease()
+              .onSuccessTask(
+                  appDistributionReleaseInternal -> {
+                    setCachedNewRelease(appDistributionReleaseInternal);
+                    return Tasks.forResult(
+                        ReleaseUtils.convertToAppDistributionRelease(
+                            appDistributionReleaseInternal));
+                  })
+              .addOnFailureListener(
+                  e -> {
+                    if (e instanceof FirebaseAppDistributionException
+                        && ((FirebaseAppDistributionException) e).getErrorCode()
+                            == AUTHENTICATION_FAILURE) {
+                      // If CheckForNewRelease returns authentication error, the FID is no longer
+                      // valid or does not have access to the latest release. So sign out the tester
+                      // to force FID re-registration
+                      signOutTester();
+                    }
+                  });
+        });
   }
 
   @Override
@@ -407,25 +404,20 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     return showUpdateDialogTask.getTask();
   }
 
-  private void setCachedUpdateIfNewReleaseCompletionError(Exception e) {
-    synchronized (updateIfNewReleaseTaskLock) {
-      safeSetTaskException(cachedUpdateIfNewReleaseTask, e);
-    }
+  private void setCachedUpdateIfNewReleaseCompletionError(UpdateTaskImpl updateTask, Exception e) {
+    safeSetTaskException(updateTask, e);
     dismissDialogs();
   }
 
-  private void postProgressToCachedUpdateIfNewReleaseTask(UpdateProgress progress) {
-    synchronized (updateIfNewReleaseTaskLock) {
-      if (cachedUpdateIfNewReleaseTask != null && !cachedUpdateIfNewReleaseTask.isComplete()) {
-        cachedUpdateIfNewReleaseTask.updateProgress(progress);
-      }
+  private void postProgressToCachedUpdateIfNewReleaseTask(
+      UpdateTaskImpl updateTask, UpdateProgress progress) {
+    if (updateTask != null && !updateTask.isComplete()) {
+      updateTask.updateProgress(progress);
     }
   }
 
-  private void setCachedUpdateIfNewReleaseResult() {
-    synchronized (updateIfNewReleaseTaskLock) {
-      safeSetTaskResult(cachedUpdateIfNewReleaseTask);
-    }
+  private void setCachedUpdateIfNewReleaseResult(UpdateTaskImpl updateTask) {
+    safeSetTaskResult(updateTask);
     dismissDialogs();
   }
 
@@ -442,12 +434,6 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
     updateTask.setException(e);
     return updateTask;
-  }
-
-  private boolean updateIfNewReleaseAvailableIsTaskInProgress() {
-    synchronized (updateIfNewReleaseTaskLock) {
-      return cachedUpdateIfNewReleaseTask != null && !cachedUpdateIfNewReleaseTask.isComplete();
-    }
   }
 
   private boolean awaitingSignInDialogConfirmation() {
