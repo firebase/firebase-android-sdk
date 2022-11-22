@@ -40,7 +40,7 @@ import org.json.JSONObject;
 
 public class ConfigAutoFetch {
 
-  private static final int FETCH_RETRY = 3;
+  private static final int MAXIMUM_FETCH_ATTEMPTS = 3;
   private static final String TEMPLATE_VERSION_KEY = "latestTemplateVersionNumber";
   private static final String REALTIME_DISABLED_KEY = "featureDisabled";
 
@@ -155,7 +155,7 @@ public class ConfigAutoFetch {
               long oldTemplateVersion = configFetchHandler.getTemplateVersionNumber();
               long targetTemplateVersion = jsonObject.getLong(TEMPLATE_VERSION_KEY);
               if (targetTemplateVersion > oldTemplateVersion) {
-                autoFetch(FETCH_RETRY, targetTemplateVersion);
+                autoFetch(MAXIMUM_FETCH_ATTEMPTS, targetTemplateVersion);
               }
             }
           } catch (JSONException ex) {
@@ -195,8 +195,13 @@ public class ConfigAutoFetch {
 
   @VisibleForTesting
   public synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
+    int currentAttempts = remainingAttempts - 1;
+
+    // fetchAttemptNumber is calculated by subtracting current attempts from the max number of
+    // possible attempts.
     Task<ConfigFetchHandler.FetchResponse> fetchTask =
-        configFetchHandler.realtimeFetch(0L, FETCH_RETRY - remainingAttempts + 1);
+        configFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, MAXIMUM_FETCH_ATTEMPTS - currentAttempts);
     fetchTask.onSuccessTask(
         (fetchResponse) -> {
           long newTemplateVersion = 0;
@@ -215,7 +220,7 @@ public class ConfigAutoFetch {
                 "Fetched template version is the same as SDK's current version."
                     + " Retrying fetch.");
             // Continue fetching until template version number if greater then current.
-            autoFetch(remainingAttempts - 1, targetVersion);
+            autoFetch(currentAttempts, targetVersion);
           }
           return Tasks.forResult(null);
         });

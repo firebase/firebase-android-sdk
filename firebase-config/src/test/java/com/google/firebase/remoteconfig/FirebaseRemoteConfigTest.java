@@ -1156,7 +1156,8 @@ public final class FirebaseRemoteConfigTest {
             new ByteArrayInputStream(
                 "{ \"latestTemplateVersionNumber\": 1 }".getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.realtimeFetch(0, 1))
+    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, 1))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
@@ -1246,7 +1247,8 @@ public final class FirebaseRemoteConfigTest {
                 "{ \"featureDisabled\": false,  \"latestTemplateVersionNumber\": 2 }"
                     .getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.realtimeFetch(0, 1))
+    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, 1))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
@@ -1260,7 +1262,8 @@ public final class FirebaseRemoteConfigTest {
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.realtimeFetch(0, 1))
+    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, 1))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
@@ -1270,7 +1273,8 @@ public final class FirebaseRemoteConfigTest {
   @Test
   public void realtime_stream_autofetch_success() {
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.realtimeFetch(0, 1))
+    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, 1))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.fetchLatestConfig(3, 1);
 
@@ -1280,7 +1284,8 @@ public final class FirebaseRemoteConfigTest {
   @Test
   public void realtime_stream_autofetch_failure() {
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.realtimeFetch(0, 3))
+    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, 3))
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.fetchLatestConfig(1, 1000);
 

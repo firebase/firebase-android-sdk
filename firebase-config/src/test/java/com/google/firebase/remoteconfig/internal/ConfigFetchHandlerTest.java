@@ -338,8 +338,9 @@ public class ConfigFetchHandlerTest {
   }
 
   @Test
-  public void realtimeFetchWithExpiration_cacheHasNotExpired_doesNotFetchFromBackend()
-      throws Exception {
+  public void
+      fetchNowWithTypeAndAttemptNumberWithExpiration_cacheHasNotExpired_doesNotFetchFromBackend()
+          throws Exception {
     loadCacheAndClockWithConfig(mockFetchedCache, firstFetchedContainer);
 
     // Don't wait long enough for cache to expire.
@@ -347,7 +348,10 @@ public class ConfigFetchHandlerTest {
     mockClock.advance(HOURS.toMillis(cacheExpirationInHours) - 1);
 
     assertWithMessage("Fetch() failed even though cache has not expired!")
-        .that(fetchHandler.realtimeFetch(HOURS.toSeconds(cacheExpirationInHours), 1).isSuccessful())
+        .that(
+            fetchHandler
+                .fetchNowWithTypeAndAttemptNumber(ConfigFetchHandler.FetchType.REALTIME, 1)
+                .isSuccessful())
         .isTrue();
 
     verifyBackendIsNeverCalled();
@@ -370,7 +374,7 @@ public class ConfigFetchHandlerTest {
 
   @Test
   public void
-      realtimeFetchWithExpiration_cacheHasNotExpiredAndEmptyFetchCache_doesNotFetchFromBackend()
+      fetchNowWithTypeAndAttemptNumberWithExpiration_cacheHasNotExpiredAndEmptyFetchCache_doesNotFetchFromBackend()
           throws Exception {
     simulateFetchAndActivate(mockFetchedCache, firstFetchedContainer);
 
@@ -379,7 +383,10 @@ public class ConfigFetchHandlerTest {
     mockClock.advance(HOURS.toMillis(cacheExpirationInHours) - 1);
 
     assertWithMessage("Fetch() failed even though cache has not expired!")
-        .that(fetchHandler.realtimeFetch(HOURS.toSeconds(cacheExpirationInHours), 1).isSuccessful())
+        .that(
+            fetchHandler
+                .fetchNowWithTypeAndAttemptNumber(ConfigFetchHandler.FetchType.REALTIME, 1)
+                .isSuccessful())
         .isTrue();
     verifyBackendIsNeverCalled();
   }
@@ -395,22 +402,6 @@ public class ConfigFetchHandlerTest {
 
     assertWithMessage("Fetch() failed after cache expired!")
         .that(fetchHandler.fetch(HOURS.toSeconds(cacheExpirationInHours)).isSuccessful())
-        .isTrue();
-
-    verifyBackendIsCalled();
-  }
-
-  @Test
-  public void realtimeFetchWithExpiration_cacheHasExpired_fetchesFromBackend() throws Exception {
-    loadCacheAndClockWithConfig(mockFetchedCache, firstFetchedContainer);
-
-    // Wait long enough for cache to expire.
-    long cacheExpirationInHours = 1;
-    mockClock.advance(HOURS.toMillis(cacheExpirationInHours));
-    fetchCallToHttpClientReturnsConfigWithCurrentTime(secondFetchedContainer);
-
-    assertWithMessage("Fetch() failed after cache expired!")
-        .that(fetchHandler.realtimeFetch(HOURS.toSeconds(cacheExpirationInHours), 1).isSuccessful())
         .isTrue();
 
     verifyBackendIsCalled();
@@ -434,8 +425,9 @@ public class ConfigFetchHandlerTest {
   }
 
   @Test
-  public void realtimeFetchWithExpiration_cacheHasExpiredAndEmptyFetchCache_fetchesFromBackend()
-      throws Exception {
+  public void
+      fetchNowWithTypeAndAttemptNumber_withExpiration_cacheHasExpiredAndEmptyFetchCache_fetchesFromBackend()
+          throws Exception {
     simulateFetchAndActivate(mockFetchedCache, firstFetchedContainer);
 
     // Wait long enough for cache to expire.
@@ -444,7 +436,10 @@ public class ConfigFetchHandlerTest {
     fetchCallToHttpClientReturnsConfigWithCurrentTime(secondFetchedContainer);
 
     assertWithMessage("Fetch() failed after cache expired!")
-        .that(fetchHandler.realtimeFetch(HOURS.toSeconds(cacheExpirationInHours), 1).isSuccessful())
+        .that(
+            fetchHandler
+                .fetchNowWithTypeAndAttemptNumber(ConfigFetchHandler.FetchType.REALTIME, 1)
+                .isSuccessful())
         .isTrue();
 
     verifyBackendIsCalled();
@@ -559,15 +554,16 @@ public class ConfigFetchHandlerTest {
   }
 
   @Test
-  public void realtimeFetch_getsThrottledResponseFromServer_backsOffOnSecondCall()
-      throws Exception {
+  public void
+      fetchNowWithTypeAndAttemptNumber_getsThrottledResponseFromServer_backsOffOnSecondCall()
+          throws Exception {
     fetchCallToBackendThrowsException(HTTP_TOO_MANY_REQUESTS);
     long backoffDurationInMillis = loadAndGetNextBackoffDuration(/*numFailedFetches=*/ 1);
 
     FirebaseRemoteConfigFetchThrottledException actualException =
         getThrottledException(
-            fetchHandler.realtimeFetch(
-                /*minimumFetchIntervalInSeconds=*/ 0L, /*fetchAttemptNumber=*/ 1));
+            fetchHandler.fetchNowWithTypeAndAttemptNumber(
+                /*fetchType=*/ ConfigFetchHandler.FetchType.REALTIME, /*fetchAttemptNumber=*/ 1));
 
     assertThat(actualException.getThrottleEndTimeMillis())
         .isEqualTo(mockClock.currentTimeMillis() + backoffDurationInMillis);
@@ -590,15 +586,16 @@ public class ConfigFetchHandlerTest {
   }
 
   @Test
-  public void realtimeFetch_getsMultipleThrottledResponsesFromServer_exponentiallyBacksOff()
-      throws Exception {
+  public void
+      fetchNowWithTypeAndAttemptNumber_getsMultipleThrottledResponsesFromServer_exponentiallyBacksOff()
+          throws Exception {
     for (int numFetch = 1; numFetch <= BACKOFF_TIME_DURATIONS_IN_MINUTES.length; numFetch++) {
       fetchCallToBackendThrowsException(HTTP_TOO_MANY_REQUESTS);
       long backoffDurationInMillis = loadAndGetNextBackoffDuration(numFetch);
 
       assertThrowsThrottledException(
-          fetchHandler.realtimeFetch(
-              /*minimumFetchIntervalInSeconds=*/ 0L, /*fetchAttemptNumber=*/ 1),
+          fetchHandler.fetchNowWithTypeAndAttemptNumber(
+              /*fetchType=*/ ConfigFetchHandler.FetchType.REALTIME, /*fetchAttemptNumber=*/ 1),
           mockClock.currentTimeMillis() + backoffDurationInMillis);
 
       // Wait long enough for throttling to clear.
@@ -627,7 +624,7 @@ public class ConfigFetchHandlerTest {
 
   @Test
   public void
-      realtimeFetch_getsMultipleFailedResponsesFromServer_resetsBackoffAfterSuccessfulFetch()
+      fetchNowWithTypeAndAttemptNumber_getsMultipleFailedResponsesFromServer_resetsBackoffAfterSuccessfulFetch()
           throws Exception {
     callFetchAssertThrottledAndAdvanceClock(HTTP_TOO_MANY_REQUESTS);
     callFetchAssertThrottledAndAdvanceClock(HTTP_BAD_GATEWAY);
@@ -637,8 +634,8 @@ public class ConfigFetchHandlerTest {
     fetchCallToHttpClientReturnsConfigWithCurrentTime(firstFetchedContainer);
 
     Task<FetchResponse> fetchTask =
-        fetchHandler.realtimeFetch(
-            /*minimumFetchIntervalInSeconds=*/ 0L, /*fetchAttemptNumber=*/ 1);
+        fetchHandler.fetchNowWithTypeAndAttemptNumber(
+            /*fetchType=*/ ConfigFetchHandler.FetchType.REALTIME, /*fetchAttemptNumber=*/ 1);
 
     assertWithMessage("Fetch() failed!").that(fetchTask.isSuccessful()).isTrue();
 
@@ -691,8 +688,8 @@ public class ConfigFetchHandlerTest {
 
       FirebaseRemoteConfigFetchThrottledException actualException =
           getThrottledException(
-              fetchHandler.realtimeFetch(
-                  /*minimumFetchIntervalInSeconds=*/ 0L, /*fetchAttemptNumber=*/ 1));
+              fetchHandler.fetchNowWithTypeAndAttemptNumber(
+                  /*fetchType=*/ ConfigFetchHandler.FetchType.REALTIME, /*fetchAttemptNumber=*/ 1));
 
       long actualBackoffDuration =
           actualException.getThrottleEndTimeMillis() - mockClock.currentTimeMillis();
@@ -875,13 +872,15 @@ public class ConfigFetchHandlerTest {
   }
 
   @Test
-  public void getInfo_twoFetchesSucceed_successStatusAndSecondRealtimeFetchTime() throws Exception {
+  public void getInfo_twoFetchesSucceed_successStatusAndSecondFetchNowWithTypeAndAttemptNumber()
+      throws Exception {
     fetchCallToHttpClientUpdatesClockAndReturnsConfig(firstFetchedContainer);
     fetchHandler.fetch();
 
     fetchCallToHttpClientUpdatesClockAndReturnsConfig(secondFetchedContainer);
 
-    fetchHandler.realtimeFetch(/*minimumFetchIntervalInSeconds=*/ 0, /*fetchAttemptNumber=*/ 1);
+    fetchHandler.fetchNowWithTypeAndAttemptNumber(
+        /*fetchType=*/ ConfigFetchHandler.FetchType.REALTIME, /*fetchAttemptNumber=*/ 1);
 
     assertThat(metadataClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_SUCCESS);
     assertThat(metadataClient.getLastSuccessfulFetchTime())
@@ -903,13 +902,15 @@ public class ConfigFetchHandlerTest {
   }
 
   @Test
-  public void getInfo_hitsThrottleLimit_throttledStatus_forSecondRealtimeFetch() throws Exception {
+  public void getInfo_hitsThrottleLimit_throttledStatus_forSecondFetchNowWithTypeAndAttemptNumber()
+      throws Exception {
     fetchCallToHttpClientUpdatesClockAndReturnsConfig(firstFetchedContainer);
     fetchHandler.fetch();
 
     fetchCallToBackendThrowsException(HTTP_TOO_MANY_REQUESTS);
 
-    fetchHandler.realtimeFetch(/*minimumFetchIntervalInSeconds=*/ 0, /*fetchAttemptNumber=*/ 1);
+    fetchHandler.fetchNowWithTypeAndAttemptNumber(
+        /*fetchType=*/ ConfigFetchHandler.FetchType.REALTIME, /*fetchAttemptNumber=*/ 1);
 
     assertThat(metadataClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_THROTTLED);
     assertThat(metadataClient.getLastSuccessfulFetchTime())

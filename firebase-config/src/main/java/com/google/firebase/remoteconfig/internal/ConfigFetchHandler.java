@@ -166,7 +166,7 @@ public class ConfigFetchHandler {
 
     // Make a copy to prevent any concurrency issues between Fetches.
     Map<String, String> copyOfCustomHttpHeaders = new HashMap<>(customHttpHeaders);
-    copyOfCustomHttpHeaders.put(X_FIREBASE_RC_FETCH_TYPE, BASE_FETCH_TYPE + "/" + 1);
+    copyOfCustomHttpHeaders.put(X_FIREBASE_RC_FETCH_TYPE, FetchType.BASE.toString() + "/" + 1);
 
     return fetchedConfigsCache
         .get()
@@ -207,13 +207,13 @@ public class ConfigFetchHandler {
    *     with the configs fetched from the backend. If the backend was not called or the backend had
    *     no updates, the {@link FetchResponse}'s configs will be {@code null}.
    */
-  public Task<FetchResponse> realtimeFetch(
-      long minimumFetchIntervalInSeconds, int fetchAttemptNumber) {
+  public Task<FetchResponse> fetchNowWithTypeAndAttemptNumber(
+      FetchType fetchType, int fetchAttemptNumber) {
 
     // Make a copy to prevent any concurrency issues between Fetches.
     Map<String, String> copyOfCustomHttpHeaders = new HashMap<>(customHttpHeaders);
     copyOfCustomHttpHeaders.put(
-        X_FIREBASE_RC_FETCH_TYPE, REALTIME_FETCH_TYPE + "/" + fetchAttemptNumber);
+        X_FIREBASE_RC_FETCH_TYPE, fetchType.toString() + "/" + fetchAttemptNumber);
 
     return fetchedConfigsCache
         .get()
@@ -221,9 +221,7 @@ public class ConfigFetchHandler {
             executor,
             (cachedFetchConfigsTask) ->
                 fetchIfCacheExpiredAndNotThrottled(
-                    cachedFetchConfigsTask,
-                    minimumFetchIntervalInSeconds,
-                    copyOfCustomHttpHeaders));
+                    cachedFetchConfigsTask, 0, copyOfCustomHttpHeaders));
   }
 
   /**
@@ -694,6 +692,16 @@ public class ConfigFetchHandler {
       int BACKEND_UPDATES_FETCHED = 0;
       int BACKEND_HAS_NO_UPDATES = 1;
       int LOCAL_STORAGE_USED = 2;
+    }
+  }
+
+  public enum FetchType {
+    BASE,
+    REALTIME;
+
+    @Override
+    public String toString() {
+      return name().charAt(0) + name().substring(1).toLowerCase();
     }
   }
 }
