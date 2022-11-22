@@ -87,10 +87,6 @@ public class ConfigFetchHandler {
 
   /** Custom Http header key to identify the fetch type. */
   private static final String X_FIREBASE_RC_FETCH_TYPE = "X-Firebase-RC-Fetch-Type";
-  /** Fetch identifier for Realtime. */
-  private static final String REALTIME_FETCH_TYPE = "Realtime";
-  /** Fetch identifier for Base. */
-  private static final String BASE_FETCH_TYPE = "Base";
 
   private final FirebaseInstallationsApi firebaseInstallations;
   private final Provider<AnalyticsConnector> analyticsConnector;
