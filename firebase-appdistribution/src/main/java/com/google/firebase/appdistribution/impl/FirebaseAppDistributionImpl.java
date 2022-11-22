@@ -121,8 +121,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                               .build());
                     }
                     // if the task failed, this get() will cause the error to propagate to the
-                    // handler
-                    // below
+                    // handler below
                     AppDistributionRelease release = task.getResult();
                     if (release == null) {
                       postProgressToCachedUpdateIfNewReleaseTask(
