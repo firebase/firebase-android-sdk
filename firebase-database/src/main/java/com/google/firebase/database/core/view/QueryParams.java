@@ -41,8 +41,10 @@ public final class QueryParams {
 
   private static final String INDEX_START_VALUE = "sp";
   private static final String INDEX_START_NAME = "sn";
+  private static final String INDEX_START_IS_INCLUSIVE = "sin";
   private static final String INDEX_END_VALUE = "ep";
   private static final String INDEX_END_NAME = "en";
+  private static final String INDEX_END_IS_INCLUSIVE = "sin";
   private static final String LIMIT = "l";
   private static final String VIEW_FROM = "vf";
   private static final String INDEX = "i";
@@ -56,8 +58,10 @@ public final class QueryParams {
   private ViewFrom viewFrom;
   private Node indexStartValue = null;
   private ChildKey indexStartName = null;
+  private boolean indexStartIsInclusive = true;
   private Node indexEndValue = null;
   private ChildKey indexEndName = null;
+  private boolean indexEndIsInclusive = true;
 
   private Index index = PriorityIndex.getInstance();
 
@@ -85,6 +89,10 @@ public final class QueryParams {
     }
   }
 
+  public boolean getIndexStartIsInclusive() {
+    return indexStartIsInclusive;
+  }
+
   public boolean hasEnd() {
     return indexEndValue != null;
   }
@@ -98,13 +106,17 @@ public final class QueryParams {
 
   public ChildKey getIndexEndName() {
     if (!hasEnd()) {
-      throw new IllegalArgumentException("Cannot get index end name if start has not been set");
+      throw new IllegalArgumentException("Cannot get index end name if end has not been set");
     }
     if (indexEndName != null) {
       return indexEndName;
     } else {
       return ChildKey.getMaxName();
     }
+  }
+
+  public boolean getIndexEndIsInclusive() {
+    return indexEndIsInclusive;
   }
 
   public boolean hasLimit() {
@@ -131,8 +143,10 @@ public final class QueryParams {
     params.limit = limit;
     params.indexStartValue = indexStartValue;
     params.indexStartName = indexStartName;
+    params.indexStartIsInclusive = indexStartIsInclusive;
     params.indexEndValue = indexEndValue;
     params.indexEndName = indexEndName;
+    params.indexEndIsInclusive = indexEndIsInclusive;
     params.viewFrom = viewFrom;
     params.index = index;
     return params;
@@ -152,24 +166,42 @@ public final class QueryParams {
     return copy;
   }
 
-  public QueryParams startAt(Node indexStartValue, ChildKey indexStartName) {
+  private QueryParams startAt(Node indexStartValue, ChildKey indexStartName, boolean indexStartIsInclusive) {
     hardAssert(indexStartValue.isLeafNode() || indexStartValue.isEmpty());
     // We can't tolerate longs as query endpoints.  See comment in normalizeValue();
     hardAssert(!(indexStartValue instanceof LongNode));
     QueryParams copy = copy();
     copy.indexStartValue = indexStartValue;
     copy.indexStartName = indexStartName;
+    copy.indexStartIsInclusive = indexStartIsInclusive;
     return copy;
   }
 
-  public QueryParams endAt(Node indexEndValue, ChildKey indexEndName) {
+  public QueryParams startAt(Node indexStartValue, ChildKey indexStartName) {
+    return startAt(indexStartValue, indexStartName, true);
+  }
+
+  public QueryParams startAfter(Node indexStartValue, ChildKey indexStartName) {
+    return startAt(indexStartValue, indexStartName, false);
+  }
+
+  public QueryParams endAt(Node indexEndValue, ChildKey indexEndName, boolean indexEndIsInclusive) {
     hardAssert(indexEndValue.isLeafNode() || indexEndValue.isEmpty());
     // We can't tolerate longs as query endpoints.  See comment in normalizeValue();
     hardAssert(!(indexEndValue instanceof LongNode));
     QueryParams copy = copy();
     copy.indexEndValue = indexEndValue;
     copy.indexEndName = indexEndName;
+    copy.indexEndIsInclusive = indexEndIsInclusive;
     return copy;
+  }
+
+  public QueryParams endAt(Node indexEndValue, ChildKey indexEndName) {
+    return endAt(indexEndValue, indexEndName, true);
+  }
+
+  public QueryParams endBefore(Node indexEndValue, ChildKey indexEndName) {
+    return endAt(indexEndValue, indexEndName, false);
   }
 
   public QueryParams orderBy(Index index) {
@@ -190,12 +222,14 @@ public final class QueryParams {
       if (indexStartName != null) {
         queryObject.put(INDEX_START_NAME, indexStartName.asString());
       }
+      queryObject.put(INDEX_START_IS_INCLUSIVE, indexStartIsInclusive);
     }
     if (hasEnd()) {
       queryObject.put(INDEX_END_VALUE, indexEndValue.getValue());
       if (indexEndName != null) {
         queryObject.put(INDEX_END_NAME, indexEndName.asString());
       }
+      queryObject.put(INDEX_END_IS_INCLUSIVE, indexEndIsInclusive);
     }
     if (limit != null) {
       queryObject.put(LIMIT, limit);
@@ -261,6 +295,7 @@ public final class QueryParams {
       if (indexStartName != null) {
         params.indexStartName = ChildKey.fromString(indexStartName);
       }
+      params.indexStartIsInclusive = (Boolean) map.get(INDEX_START_IS_INCLUSIVE);
     }
 
     if (map.containsKey(INDEX_END_VALUE)) {
@@ -270,6 +305,7 @@ public final class QueryParams {
       if (indexEndName != null) {
         params.indexEndName = ChildKey.fromString(indexEndName);
       }
+      params.indexEndIsInclusive = (Boolean) map.get(INDEX_END_IS_INCLUSIVE);
     }
 
     String viewFrom = (String) map.get(VIEW_FROM);
@@ -337,6 +373,12 @@ public final class QueryParams {
         : that.indexStartValue != null) {
       return false;
     }
+    if (indexStartIsInclusive != that.indexStartIsInclusive) {
+      return false;
+    }
+    if (indexEndIsInclusive != that.indexEndIsInclusive) {
+      return false;
+    }
     // viewFrom might be null, but we really want to compare left vs right
     if (isViewFromLeft() != that.isViewFromLeft()) {
       return false;
@@ -351,8 +393,10 @@ public final class QueryParams {
     result = 31 * result + (isViewFromLeft() ? 1231 : 1237);
     result = 31 * result + (indexStartValue != null ? indexStartValue.hashCode() : 0);
     result = 31 * result + (indexStartName != null ? indexStartName.hashCode() : 0);
+    result = 31 * result + Boolean.valueOf(indexStartIsInclusive).hashCode();
     result = 31 * result + (indexEndValue != null ? indexEndValue.hashCode() : 0);
     result = 31 * result + (indexEndName != null ? indexEndName.hashCode() : 0);
+    result = 31 * result + Boolean.valueOf(indexEndIsInclusive).hashCode();
     result = 31 * result + (index != null ? index.hashCode() : 0);
     return result;
   }

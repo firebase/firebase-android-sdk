@@ -37,12 +37,34 @@ public class LimitedFilter implements NodeFilter {
   private final Index index;
   private final int limit;
   private final boolean reverse;
+  private final boolean indexStartIsInclusive;
+  private final boolean indexEndIsInclusive;
 
   public LimitedFilter(QueryParams params) {
     this.rangedFilter = new RangedFilter(params);
     this.index = params.getIndex();
     this.limit = params.getLimit();
     this.reverse = !params.isViewFromLeft();
+    this.indexStartIsInclusive = params.getIndexStartIsInclusive();
+    this.indexEndIsInclusive = params.getIndexEndIsInclusive();
+  }
+
+  private boolean withinDirectionalStart(NamedNode node) {
+    return reverse ? withinEndPost(node) : this.withinStartPost(node);
+  }
+
+  private boolean withinDirectionalEnd(NamedNode node) {
+    return reverse ? withinStartPost(node) : withinEndPost(node);
+  }
+
+  private boolean withinStartPost(NamedNode node) {
+    int compareRes = index.compare(rangedFilter.getStartPost(), node);
+    return indexStartIsInclusive ? compareRes <= 0 : compareRes < 0;
+  }
+
+  private boolean withinEndPost(NamedNode node) {
+    int compareRes = index.compare(node, rangedFilter.getEndPost());
+    return indexEndIsInclusive ? compareRes <= 0 : compareRes < 0;
   }
 
   @Override
@@ -91,6 +113,7 @@ public class LimitedFilter implements NodeFilter {
         // updated later in the limited filter...
         nextChild = source.getChildAfterChild(this.index, nextChild, this.reverse);
       }
+      // TODO(wyszynski): Do we have to account for inclusive here?
       int compareNext =
           nextChild == null ? 1 : index.compare(nextChild, newChildNamedNode, this.reverse);
       boolean remainsInWindow = inRange && !childSnap.isEmpty() && compareNext >= 0;
@@ -148,37 +171,17 @@ public class LimitedFilter implements NodeFilter {
       filtered = newSnap;
       // Don't support priorities on queries
       filtered = filtered.updatePriority(PriorityUtilities.NullPriority());
-      NamedNode startPost;
-      NamedNode endPost;
-      Iterator<NamedNode> iterator;
-      int sign;
-      if (this.reverse) {
-        iterator = newSnap.reverseIterator();
-        startPost = rangedFilter.getEndPost();
-        endPost = rangedFilter.getStartPost();
-        sign = -1;
-      } else {
-        iterator = newSnap.iterator();
-        startPost = rangedFilter.getStartPost();
-        endPost = rangedFilter.getEndPost();
-        sign = 1;
-      }
-
+      Iterator<NamedNode> iterator = reverse ? newSnap.reverseIterator() : newSnap.iterator();
       int count = 0;
-      boolean foundStartPost = false;
-      while (iterator.hasNext()) {
+      while (iterator.hasNext() && count++ < limit) {
         NamedNode next = iterator.next();
-        if (!foundStartPost && index.compare(startPost, next) * sign <= 0) {
-          // start adding
-          foundStartPost = true;
+        if (!withinDirectionalStart(next)) {
+          continue;
         }
-        boolean inRange =
-            foundStartPost && count < this.limit && index.compare(next, endPost) * sign <= 0;
-        if (inRange) {
-          count++;
-        } else {
-          filtered = filtered.updateChild(next.getName(), EmptyNode.Empty());
+        if (!withinDirectionalEnd(next)) {
+          break;
         }
+        filtered = filtered.updateChild(next.getName(), EmptyNode.Empty());
       }
     }
     return rangedFilter.getIndexedFilter().updateFullNode(oldSnap, filtered, optChangeAccumulator);
