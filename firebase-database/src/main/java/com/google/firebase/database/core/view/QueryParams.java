@@ -44,7 +44,7 @@ public final class QueryParams {
   private static final String INDEX_START_IS_INCLUSIVE = "sin";
   private static final String INDEX_END_VALUE = "ep";
   private static final String INDEX_END_NAME = "en";
-  private static final String INDEX_END_IS_INCLUSIVE = "sin";
+  private static final String INDEX_END_IS_INCLUSIVE = "ein";
   private static final String LIMIT = "l";
   private static final String VIEW_FROM = "vf";
   private static final String INDEX = "i";
