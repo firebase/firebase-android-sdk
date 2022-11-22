@@ -23,6 +23,7 @@ import com.google.android.gms.tasks.Task;
 class TaskCache<T extends Task> {
 
   /** A functional interface for a producer of a new Task. */
+  @FunctionalInterface
   interface TaskProducer<T extends Task> {
 
     /** Produce a new Task. */
