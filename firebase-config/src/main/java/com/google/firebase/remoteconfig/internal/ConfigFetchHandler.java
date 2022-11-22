@@ -199,9 +199,10 @@ public class ConfigFetchHandler {
    *   <li>The backend responded with unavailable errors for the last two fetch requests.
    * </ul>
    *
-   * @return A {@link Task} representing a Realtime fetch call that returns a {@link FetchResponse}
-   *     with the configs fetched from the backend. If the backend was not called or the backend had
-   *     no updates, the {@link FetchResponse}'s configs will be {@code null}.
+   * @return A {@link Task} representing an immediate fetch call that returns a {@link
+   *     FetchResponse} with the configs fetched from the backend. If the backend was not called or
+   *     the backend had no updates, the {@link FetchResponse}'s configs will be {@code null}.
+   *     FetchType and fetchAttemptNumber help detail what started the fetch call.
    */
   public Task<FetchResponse> fetchNowWithTypeAndAttemptNumber(
       FetchType fetchType, int fetchAttemptNumber) {
