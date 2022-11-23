@@ -13,7 +13,6 @@
 // limitations under the License.
 package com.google.firebase.ml.modeldownloader;
 
-import android.annotation.SuppressLint;
 import android.os.Build.VERSION_CODES;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -37,7 +36,6 @@ import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
 import java.io.File;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 public class FirebaseModelDownloader {
 
@@ -47,23 +45,26 @@ public class FirebaseModelDownloader {
   private final ModelFileDownloadService fileDownloadService;
   private final ModelFileManager fileManager;
   private final CustomModelDownloadService modelDownloadService;
-  private final Executor executor;
+  private final Executor bgExecutor;
+  private final Executor blockingExecutor;
 
   private final FirebaseMlLogger eventLogger;
 
   @RequiresApi(api = VERSION_CODES.KITKAT)
-  // TODO(b/258424267): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   FirebaseModelDownloader(
-      FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi) {
+      FirebaseApp firebaseApp,
+      FirebaseInstallationsApi firebaseInstallationsApi,
+      Executor bgExecutor,
+      Executor blockingExecutor) {
     this.firebaseOptions = firebaseApp.getOptions();
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
     this.eventLogger = FirebaseMlLogger.getInstance(firebaseApp);
     this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
     this.modelDownloadService =
-        new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi);
+        new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi, blockingExecutor);
 
-    this.executor = Executors.newSingleThreadExecutor();
+    this.bgExecutor = bgExecutor;
+    this.blockingExecutor = blockingExecutor;
     fileManager = ModelFileManager.getInstance();
   }
 
@@ -82,7 +83,8 @@ public class FirebaseModelDownloader {
     this.modelDownloadService = modelDownloadService;
     this.fileManager = fileManager;
     this.eventLogger = eventLogger;
-    this.executor = executor;
+    this.bgExecutor = executor;
+    this.blockingExecutor = executor;
   }
 
   /**
@@ -217,7 +219,7 @@ public class FirebaseModelDownloader {
 
       if (downloadInProgressTask != null) {
         return downloadInProgressTask.continueWithTask(
-            executor,
+            bgExecutor,
             downloadTask -> {
               if (downloadTask.isSuccessful()) {
                 return finishModelDownload(model.getName());
@@ -241,7 +243,7 @@ public class FirebaseModelDownloader {
     // bad model state - delete all existing model details and return exception
     return deleteDownloadedModel(model.getName())
         .continueWithTask(
-            executor,
+            bgExecutor,
             deletionTask ->
                 Tasks.forException(
                     new FirebaseMlException(
@@ -274,7 +276,7 @@ public class FirebaseModelDownloader {
             firebaseOptions.getProjectId(), modelName, modelHash);
 
     return incomingModelDetails.continueWithTask(
-        executor,
+        bgExecutor,
         incomingModelDetailTask -> {
           if (incomingModelDetailTask.isSuccessful()) {
             // null means we have the latest model or we failed to connect.
@@ -358,7 +360,7 @@ public class FirebaseModelDownloader {
             return fileDownloadService
                 .download(incomingModelDetailTask.getResult(), conditions)
                 .continueWithTask(
-                    executor,
+                    blockingExecutor,
                     downloadTask -> {
                       if (downloadTask.isSuccessful()) {
                         return finishModelDownload(modelName);
@@ -391,14 +393,14 @@ public class FirebaseModelDownloader {
               firebaseOptions.getProjectId(), modelName);
       // no local model - start download.
       return retryModelDetails.continueWithTask(
-          executor,
+          bgExecutor,
           retryModelDetailTask -> {
             if (retryModelDetailTask.isSuccessful()) {
               // start download
               return fileDownloadService
                   .download(retryModelDetailTask.getResult(), conditions)
                   .continueWithTask(
-                      executor,
+                      bgExecutor,
                       retryDownloadTask -> {
                         if (retryDownloadTask.isSuccessful()) {
                           return finishModelDownload(modelName);
@@ -448,7 +450,7 @@ public class FirebaseModelDownloader {
     fileDownloadService.maybeCheckDownloadingComplete();
 
     TaskCompletionSource<Set<CustomModel>> taskCompletionSource = new TaskCompletionSource<>();
-    executor.execute(
+    bgExecutor.execute(
         () -> taskCompletionSource.setResult(sharedPreferencesUtil.listDownloadedModels()));
     return taskCompletionSource.getTask();
   }
@@ -462,7 +464,7 @@ public class FirebaseModelDownloader {
   public Task<Void> deleteDownloadedModel(@NonNull String modelName) {
 
     TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
-    executor.execute(
+    bgExecutor.execute(
         () -> {
           // remove all files associated with this model and then clean up model references.
           boolean isSuccessful = deleteModelDetails(modelName);

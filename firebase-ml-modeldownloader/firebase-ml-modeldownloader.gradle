@@ -62,6 +62,7 @@ dependencies {
     implementation project(':encoders:firebase-encoders')
     implementation project(':encoders:firebase-encoders-json')
     implementation project(':firebase-common')
+    implementation project(':firebase-annotations')
     implementation project(':firebase-components')
     implementation project(':firebase-datatransport')
     implementation project(':firebase-installations-interop')

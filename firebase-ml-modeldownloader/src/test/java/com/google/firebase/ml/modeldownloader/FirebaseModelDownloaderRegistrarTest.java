@@ -53,7 +53,6 @@ public class FirebaseModelDownloaderRegistrarTest {
                 .setProjectId(TEST_PROJECT_ID)
                 .build(),
             "firebase_app_1");
-
     FirebaseModelDownloader defaultDownloader = FirebaseModelDownloader.getInstance();
     assertNotNull(defaultDownloader);
 
