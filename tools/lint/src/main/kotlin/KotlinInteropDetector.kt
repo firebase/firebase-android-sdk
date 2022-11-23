@@ -52,6 +52,7 @@ import org.jetbrains.uast.getContainingUClass
 import org.jetbrains.uast.getContainingUMethod
 import org.jetbrains.uast.getParentOfType
 
+@Suppress("DetectorIsMissingAnnotations")
 class KotlinInteropDetector : Detector(), SourceCodeScanner {
   companion object Issues {
     private val IMPLEMENTATION =
@@ -66,13 +67,13 @@ class KotlinInteropDetector : Detector(), SourceCodeScanner {
         briefDescription = "No Hard Kotlin Keywords",
         explanation =
           """
-            Do not use Kotlin’s hard keywords as the name of methods or fields.
-            These require the use of backticks to escape when calling from Kotlin.
+            Do not use Kotlin’s hard keywords as the name of methods or fields. \
+            These require the use of backticks to escape when calling from Kotlin. \
             Soft keywords, modifier keywords, and special identifiers are allowed.
 
             For example, Mockito’s `when` function requires backticks when used from Kotlin:
 
-                val callable = Mockito.mock(Callable::class.java)
+                val callable = Mockito.mock(Callable::class.java) \
                 Mockito.\`when\`(callable.call()).thenReturn(/* … */)
             """,
         category = Category.INTEROPERABILITY_KOTLIN,
@@ -88,7 +89,7 @@ class KotlinInteropDetector : Detector(), SourceCodeScanner {
         briefDescription = "Lambda Parameters Last",
         explanation =
           """
-            To improve calling this code from Kotlin,
+            To improve calling this code from Kotlin, \
             parameter types eligible for SAM conversion should be last.
             """,
         category = Category.INTEROPERABILITY_KOTLIN,
@@ -104,7 +105,7 @@ class KotlinInteropDetector : Detector(), SourceCodeScanner {
         briefDescription = "Unknown nullness",
         explanation =
           """
-            To improve referencing this code from Kotlin, consider adding
+            To improve referencing this code from Kotlin, consider adding \
             explicit nullness information here with either `@NonNull` or `@Nullable`.
             """,
         category = Category.INTEROPERABILITY_KOTLIN,
@@ -312,7 +313,7 @@ class KotlinInteropDetector : Detector(), SourceCodeScanner {
 
       if (getter == null) {
         // Look for inherited methods
-        cls.superClass?.let { superClass ->
+        cls.javaPsi.superClass?.let { superClass ->
           for (inherited in superClass.findMethodsByName(getterName1, true)) {
             if (inherited.parameterList.parametersCount == 0) {
               getter = inherited
@@ -435,7 +436,7 @@ class KotlinInteropDetector : Detector(), SourceCodeScanner {
       ) {
         val name1 = badGetter!!.name
         if (name1.startsWith("is") && methodName.startsWith("setIs") && name1[2].isUpperCase()) {
-          val newProperty = name1[2].toLowerCase() + name1.substring(3)
+          val newProperty = name1[2].lowercaseChar() + name1.substring(3)
           val message =
             "This method should be called `set${newProperty.capitalize()}` such " +
               "that (along with the `$name1` getter) Kotlin code can access it " +
@@ -462,6 +463,10 @@ class KotlinInteropDetector : Detector(), SourceCodeScanner {
         return false
       }
     }
+
+    private fun String.capitalize() = replaceFirstChar { it.uppercase() }
+
+    private fun String.decapitalize() = replaceFirstChar { it.lowercase() }
 
     /** Returns true if the given class has a (possibly inherited) setter of the given type */
     private fun hasSetter(cls: UClass, type: PsiType?, setterName: String): Boolean {
@@ -570,7 +575,7 @@ class KotlinInteropDetector : Detector(), SourceCodeScanner {
       val replaceLocation =
         if (node is UParameter) {
           location
-        } else if (node is UMethod && node.modifierList != null) {
+        } else if (node is UMethod) {
           // Place the insertion point at the modifiers such that we don't
           // insert the annotation for example after the "public" keyword.
           // We also don't want to place it on the method range itself since

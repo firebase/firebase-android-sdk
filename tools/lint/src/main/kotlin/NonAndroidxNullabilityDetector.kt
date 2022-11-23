@@ -43,6 +43,7 @@ private val ANDROIDX_ANNOTATIONS =
     "android.support.annotation.NonNull"
   )
 
+@Suppress("DetectorIsMissingAnnotations")
 class NonAndroidxNullabilityDetector : Detector(), SourceCodeScanner {
   companion object Issues {
     private val IMPLEMENTATION =
@@ -52,7 +53,7 @@ class NonAndroidxNullabilityDetector : Detector(), SourceCodeScanner {
     val NON_ANDROIDX_NULLABILITY =
       Issue.create(
         id = "FirebaseNonAndroidxNullability",
-        briefDescription = "Use androidx nullability annotations.",
+        briefDescription = "Use androidx nullability annotations",
         explanation = "Use androidx nullability annotations instead.",
         category = Category.COMPLIANCE,
         priority = 1,
@@ -124,7 +125,7 @@ class NonAndroidxNullabilityDetector : Detector(), SourceCodeScanner {
       context.report(
         NON_ANDROIDX_NULLABILITY,
         context.getLocation(annotation),
-        "Use androidx nullability annotations.",
+        "Use androidx nullability annotations",
         fix
       )
     }
