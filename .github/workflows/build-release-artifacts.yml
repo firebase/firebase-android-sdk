@@ -20,6 +20,6 @@ jobs:
       - name: Upload generated artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: release_artifacts.zip
+          name: release_artifacts
           path: build/*.zip
           retention-days: 5
