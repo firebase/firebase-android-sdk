@@ -15,6 +15,7 @@
 package com.google.firebase.lint.checks
 
 import com.android.tools.lint.client.api.IssueRegistry
+import com.android.tools.lint.client.api.Vendor
 import com.android.tools.lint.detector.api.CURRENT_API
 import com.android.tools.lint.detector.api.Issue
 
@@ -37,4 +38,12 @@ class CheckRegistry : IssueRegistry() {
     get() = CURRENT_API
   override val minApi: Int
     get() = 2
+
+  override val vendor: Vendor
+    get() =
+      Vendor(
+        "firebase",
+        identifier = "firebase",
+        feedbackUrl = "https://github.com/firebase/firebase-android-sdk/issues"
+      )
 }
