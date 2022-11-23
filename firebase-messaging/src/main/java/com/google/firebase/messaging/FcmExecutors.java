@@ -100,6 +100,8 @@ class FcmExecutors {
     return Executors.newSingleThreadExecutor(new NamedThreadFactory(THREAD_FILE));
   }
 
+  // TODO(b/258424124): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   static ExecutorService newIntentHandleExecutor() {
     return PoolableExecutors.factory()
         .newSingleThreadExecutor(

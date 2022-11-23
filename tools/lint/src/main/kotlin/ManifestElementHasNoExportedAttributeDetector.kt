@@ -25,6 +25,7 @@ import com.android.tools.lint.detector.api.XmlContext
 import com.android.tools.lint.detector.api.XmlScanner
 import org.w3c.dom.Element
 
+@Suppress("DetectorIsMissingAnnotations")
 class ManifestElementHasNoExportedAttributeDetector : Detector(), XmlScanner {
 
   enum class Component(val xmlName: String) {

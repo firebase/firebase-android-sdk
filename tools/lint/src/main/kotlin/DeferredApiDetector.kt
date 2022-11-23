@@ -14,6 +14,9 @@
 
 package com.google.firebase.lint.checks
 
+import com.android.tools.lint.detector.api.AnnotationInfo
+import com.android.tools.lint.detector.api.AnnotationOrigin
+import com.android.tools.lint.detector.api.AnnotationUsageInfo
 import com.android.tools.lint.detector.api.AnnotationUsageType
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Detector
@@ -24,27 +27,24 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiMethod
-import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
 
+@Suppress("DetectorIsMissingAnnotations")
 class DeferredApiDetector : Detector(), SourceCodeScanner {
   override fun applicableAnnotations(): List<String> = listOf(ANNOTATION)
 
   override fun visitAnnotationUsage(
     context: JavaContext,
-    usage: UElement,
-    type: AnnotationUsageType,
-    annotation: UAnnotation,
-    qualifiedName: String,
-    method: PsiMethod?,
-    annotations: List<UAnnotation>,
-    allMemberAnnotations: List<UAnnotation>,
-    allClassAnnotations: List<UAnnotation>,
-    allPackageAnnotations: List<UAnnotation>
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo
   ) {
-    if (method != null && type == AnnotationUsageType.METHOD_CALL) {
-      check(context, usage as UCallExpression, method)
+    if (
+      usageInfo.type == AnnotationUsageType.METHOD_CALL &&
+        annotationInfo.origin == AnnotationOrigin.METHOD
+    ) {
+      check(context, usageInfo.usage as UCallExpression, annotationInfo.annotated as PsiMethod)
     }
   }
 
@@ -59,7 +59,7 @@ class DeferredApiDetector : Detector(), SourceCodeScanner {
         INVALID_DEFERRED_API_USE,
         usage,
         context.getCallLocation(usage, includeReceiver = false, includeArguments = true),
-        "${method.name} is only safe to call in the context of a Deferred<T> dependency."
+        "${method.name} is only safe to call in the context of a Deferred`<T>` dependency"
       )
   }
 
@@ -75,9 +75,9 @@ class DeferredApiDetector : Detector(), SourceCodeScanner {
         briefDescription = "Invalid use of @DeferredApi",
         explanation =
           """
-                    Ensures that a method which expects to be called in the context of
-                Deferred#whenAvailable(), is actually called this way. This is important for
-                supporting dynamically loaded modules, where certain dependencies become available
+                Ensures that a method which expects to be called in the context of \
+                `Deferred#whenAvailable()`, is actually called this way. This is important for \
+                supporting dynamically loaded modules, where certain dependencies become available \
                 during app's runtime and not available upon app launch.
                 """,
         category = Category.CORRECTNESS,
