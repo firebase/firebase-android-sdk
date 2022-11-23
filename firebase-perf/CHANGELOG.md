@@ -1,9 +1,18 @@
 # Unreleased
-* [fixed] Fixed a `NullPointerException` crash when instrumenting screen traces
-  on Android 7, 8, and 9.
+
+# 20.3.0
+* [fixed] Fixed a `NullPointerException` crash when instrumenting screen
+  traces on Android 7, 8, and 9.
   (#4146)
 
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has the following
+additional updates:
 
+* [feature] Added a
+  [`trace(String, Trace.() -> T)`](/docs/reference/kotlin/com/google/firebase/perf/ktx/package-summary#trace(kotlin.String,kotlin.Function1))
+  extension function to create a custom trace with the specified name.
 # 20.2.0
 * [unchanged] Updated to accommodate the release of the updated
   [perfmon] Kotlin extensions library.
