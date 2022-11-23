@@ -47,7 +47,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.zip.GZIPInputStream;
 import org.json.JSONObject;
 
@@ -85,7 +85,7 @@ public class CustomModelDownloadService {
   @VisibleForTesting
   static final String DOWNLOAD_MODEL_REGEX = "%s/v1beta2/projects/%s/models/%s:download";
 
-  private final ExecutorService executorService;
+  private final Executor executor;
   private final FirebaseInstallationsApi firebaseInstallations;
   private final FirebaseMlLogger eventLogger;
   private final String apiKey;
@@ -96,29 +96,27 @@ public class CustomModelDownloadService {
   // TODO(b/258424267): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
   public CustomModelDownloadService(
-      FirebaseApp firebaseApp,
-      FirebaseInstallationsApi installationsApi,
-      ExecutorService executorService) {
+      FirebaseApp firebaseApp, FirebaseInstallationsApi installationsApi, Executor executor) {
     context = firebaseApp.getApplicationContext();
     firebaseInstallations = installationsApi;
     apiKey = firebaseApp.getOptions().getApiKey();
     fingerprintHashForPackage = getFingerprintHashForPackage(context);
     this.eventLogger = FirebaseMlLogger.getInstance();
-    this.executorService = executorService;
+    this.executor = executor;
   }
 
   @VisibleForTesting
   CustomModelDownloadService(
       Context context,
       FirebaseInstallationsApi firebaseInstallations,
-      ExecutorService executorService,
+      Executor executor,
       String apiKey,
       String fingerprintHashForPackage,
       String downloadHost,
       FirebaseMlLogger eventLogger) {
     this.context = context;
     this.firebaseInstallations = firebaseInstallations;
-    this.executorService = executorService;
+    this.executor = executor;
     this.apiKey = apiKey;
     this.fingerprintHashForPackage = fingerprintHashForPackage;
     this.downloadHost = downloadHost;
@@ -172,7 +170,7 @@ public class CustomModelDownloadService {
       Task<InstallationTokenResult> installationAuthTokenTask =
           firebaseInstallations.getToken(false);
       return installationAuthTokenTask.continueWithTask(
-          executorService,
+          executor,
           (CustomModelTask) -> {
             if (!installationAuthTokenTask.isSuccessful()) {
               ErrorCode errorCode = ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED;

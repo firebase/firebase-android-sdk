@@ -37,7 +37,6 @@ import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
 import java.io.File;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 
 public class FirebaseModelDownloader {
 
@@ -48,6 +47,7 @@ public class FirebaseModelDownloader {
   private final ModelFileManager fileManager;
   private final CustomModelDownloadService modelDownloadService;
   private final Executor executor;
+  private final Executor blockingExecutor;
 
   private final FirebaseMlLogger eventLogger;
 
@@ -58,15 +58,16 @@ public class FirebaseModelDownloader {
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallationsApi,
       Executor executor,
-      ExecutorService executorService) {
+      Executor blockingExecutor) {
     this.firebaseOptions = firebaseApp.getOptions();
     this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
     this.eventLogger = FirebaseMlLogger.getInstance(firebaseApp);
     this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
     this.modelDownloadService =
-        new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi, executorService);
+        new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi, blockingExecutor);
 
     this.executor = executor;
+    this.blockingExecutor = blockingExecutor;
     fileManager = ModelFileManager.getInstance();
   }
 
@@ -86,6 +87,7 @@ public class FirebaseModelDownloader {
     this.fileManager = fileManager;
     this.eventLogger = eventLogger;
     this.executor = executor;
+    this.blockingExecutor = executor;
   }
 
   /**
@@ -361,7 +363,7 @@ public class FirebaseModelDownloader {
             return fileDownloadService
                 .download(incomingModelDetailTask.getResult(), conditions)
                 .continueWithTask(
-                    executor,
+                    blockingExecutor,
                     downloadTask -> {
                       if (downloadTask.isSuccessful()) {
                         return finishModelDownload(modelName);
