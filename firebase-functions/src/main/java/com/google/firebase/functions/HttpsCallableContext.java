@@ -19,15 +19,15 @@ import androidx.annotation.Nullable;
 /** The metadata about the client that should automatically be included in function calls. */
 class HttpsCallableContext {
   @Nullable private final String authToken;
-  @Nullable private final String instanceIdToken;
+  @Nullable private final String installationsToken;
   @Nullable private final String appCheckToken;
 
   HttpsCallableContext(
       @Nullable String authToken,
-      @Nullable String instanceIdToken,
+      @Nullable String installationsToken,
       @Nullable String appCheckToken) {
     this.authToken = authToken;
-    this.instanceIdToken = instanceIdToken;
+    this.installationsToken = installationsToken;
     this.appCheckToken = appCheckToken;
   }
 
@@ -37,8 +37,8 @@ class HttpsCallableContext {
   }
 
   @Nullable
-  public String getInstanceIdToken() {
-    return instanceIdToken;
+  public String getInstallationsToken() {
+    return installationsToken;
   }
 
   @Nullable

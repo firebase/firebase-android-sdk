@@ -330,8 +330,8 @@ public class FirebaseFunctions {
     if (context.getAuthToken() != null) {
       request = request.header("Authorization", "Bearer " + context.getAuthToken());
     }
-    if (context.getInstanceIdToken() != null) {
-      request = request.header("Firebase-Instance-ID-Token", context.getInstanceIdToken());
+    if (context.getInstallationsToken() != null) {
+      request = request.header("Firebase-Instance-ID-Token", context.getInstallationsToken());
     }
     if (context.getAppCheckToken() != null) {
       request = request.header("X-Firebase-AppCheck", context.getAppCheckToken());
