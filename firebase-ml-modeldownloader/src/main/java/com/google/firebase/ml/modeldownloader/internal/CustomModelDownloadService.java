@@ -157,64 +157,66 @@ public class CustomModelDownloadService {
             "Error cannot retrieve model from reading an empty modelName",
             FirebaseMlException.INVALID_ARGUMENT);
 
-      URL url =
-          new URL(String.format(DOWNLOAD_MODEL_REGEX, downloadHost, projectNumber, modelName));
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-      connection.setConnectTimeout(CONNECTION_TIME_OUT_MS);
-      connection.setRequestProperty(ACCEPT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
-      connection.setRequestProperty(CONTENT_TYPE, APPLICATION_JSON);
-      if (modelHash != null && !modelHash.isEmpty()) {
-        connection.setRequestProperty(IF_NONE_MATCH_HEADER_KEY, modelHash);
-      }
-
       Task<InstallationTokenResult> installationAuthTokenTask =
           firebaseInstallations.getToken(false);
       return installationAuthTokenTask.continueWithTask(
           executor,
           (CustomModelTask) -> {
-            if (!installationAuthTokenTask.isSuccessful()) {
-              ErrorCode errorCode = ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED;
-              String errorMessage = "Failed to get model due to authentication error";
-              int exceptionCode = FirebaseMlException.UNAUTHENTICATED;
-              if (installationAuthTokenTask.getException() != null
-                  && (installationAuthTokenTask.getException() instanceof UnknownHostException
-                      || installationAuthTokenTask.getException().getCause()
-                          instanceof UnknownHostException)) {
-                errorCode = ErrorCode.NO_NETWORK_CONNECTION;
-                errorMessage = "Failed to retrieve model info due to no internet connection.";
-                exceptionCode = FirebaseMlException.NO_NETWORK_CONNECTION;
+            try {
+              URL url =
+                  new URL(
+                      String.format(DOWNLOAD_MODEL_REGEX, downloadHost, projectNumber, modelName));
+              HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+              connection.setConnectTimeout(CONNECTION_TIME_OUT_MS);
+              connection.setRequestProperty(ACCEPT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+              connection.setRequestProperty(CONTENT_TYPE, APPLICATION_JSON);
+              if (modelHash != null && !modelHash.isEmpty()) {
+                connection.setRequestProperty(IF_NONE_MATCH_HEADER_KEY, modelHash);
               }
+              if (!installationAuthTokenTask.isSuccessful()) {
+                ErrorCode errorCode = ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED;
+                String errorMessage = "Failed to get model due to authentication error";
+                int exceptionCode = FirebaseMlException.UNAUTHENTICATED;
+                if (installationAuthTokenTask.getException() != null
+                    && (installationAuthTokenTask.getException() instanceof UnknownHostException
+                        || installationAuthTokenTask.getException().getCause()
+                            instanceof UnknownHostException)) {
+                  errorCode = ErrorCode.NO_NETWORK_CONNECTION;
+                  errorMessage = "Failed to retrieve model info due to no internet connection.";
+                  exceptionCode = FirebaseMlException.NO_NETWORK_CONNECTION;
+                }
+                eventLogger.logDownloadFailureWithReason(
+                    new CustomModel(modelName, modelHash != null ? modelHash : "", 0, 0L),
+                    false,
+                    errorCode.getValue());
+                return Tasks.forException(new FirebaseMlException(errorMessage, exceptionCode));
+              }
+
+              connection.setRequestProperty(
+                  INSTALLATIONS_AUTH_TOKEN_HEADER,
+                  installationAuthTokenTask.getResult().getToken());
+              connection.setRequestProperty(API_KEY_HEADER, apiKey);
+
+              // Headers required for Android API Key Restrictions.
+              connection.setRequestProperty(X_ANDROID_PACKAGE_HEADER, context.getPackageName());
+
+              if (fingerprintHashForPackage != null) {
+                connection.setRequestProperty(X_ANDROID_CERT_HEADER, fingerprintHashForPackage);
+              }
+
+              return fetchDownloadDetails(modelName, connection);
+            } catch (IOException e) {
               eventLogger.logDownloadFailureWithReason(
-                  new CustomModel(modelName, modelHash != null ? modelHash : "", 0, 0L),
+                  new CustomModel(modelName, modelHash, 0, 0L),
                   false,
-                  errorCode.getValue());
-              return Tasks.forException(new FirebaseMlException(errorMessage, exceptionCode));
+                  ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED.getValue());
+              return Tasks.forException(
+                  new FirebaseMlException(
+                      "Error reading custom model from download service: " + e.getMessage(),
+                      FirebaseMlException.INVALID_ARGUMENT));
             }
-
-            connection.setRequestProperty(
-                INSTALLATIONS_AUTH_TOKEN_HEADER, installationAuthTokenTask.getResult().getToken());
-            connection.setRequestProperty(API_KEY_HEADER, apiKey);
-
-            // Headers required for Android API Key Restrictions.
-            connection.setRequestProperty(X_ANDROID_PACKAGE_HEADER, context.getPackageName());
-
-            if (fingerprintHashForPackage != null) {
-              connection.setRequestProperty(X_ANDROID_CERT_HEADER, fingerprintHashForPackage);
-            }
-
-            return fetchDownloadDetails(modelName, connection);
           });
 
-    } catch (IOException e) {
-      eventLogger.logDownloadFailureWithReason(
-          new CustomModel(modelName, modelHash, 0, 0L),
-          false,
-          ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED.getValue());
-
-      return Tasks.forException(
-          new FirebaseMlException(
-              "Error reading custom model from download service: " + e.getMessage(),
-              FirebaseMlException.INVALID_ARGUMENT));
     } catch (FirebaseMlException e) {
       return Tasks.forException(e);
     }
