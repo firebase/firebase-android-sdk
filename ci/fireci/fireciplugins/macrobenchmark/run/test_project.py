@@ -83,7 +83,7 @@ class TestProject:
         args += ['--type', 'instrumentation']
         args += ['--app', app_apk_path]
         args += ['--test', test_apk_path]
-        args += ['--device', 'model=oriole,version=32,locale=en,orientation=portrait']
+        args += ['--device', 'model=redfin,version=30,locale=en,orientation=portrait']
         args += ['--directories-to-pull', '/sdcard/Download']
         args += ['--results-bucket', 'fireescape-benchmark-results']
         args += ['--results-dir', run_id]

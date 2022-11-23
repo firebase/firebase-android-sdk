@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import logging
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -27,6 +28,8 @@ sns.set()
 def plot_graph(trace: str, device: str, data: pd.DataFrame, output_dir: Path):
   logger.info(f'Plotting graphs for trace "{trace}" on device "{device}" ...')
 
+  output_dir.mkdir(parents=True, exist_ok=True)
+
   unique_run_ids = len(data['run_id'].unique())
   col_wrap = int(np.ceil(np.sqrt(unique_run_ids)))
 
@@ -34,6 +37,7 @@ def plot_graph(trace: str, device: str, data: pd.DataFrame, output_dir: Path):
   histograms.set_axis_labels(x_var=f'{trace} (ms)')
   histograms.set_titles(f'{device} ({{col_var}} = {{col_name}})')
   histograms.savefig(output_dir.joinpath('histograms.svg'))
+  plt.close(histograms.fig)
 
   distributions = sns.displot(
     data=data, x='duration', kde=True, height=8,
@@ -41,6 +45,7 @@ def plot_graph(trace: str, device: str, data: pd.DataFrame, output_dir: Path):
   )
   distributions.set_axis_labels(x_var=f'{trace} (ms)').set(title=device)
   distributions.savefig(output_dir.joinpath('distributions.svg'))
+  plt.close(distributions.fig)
 
   logger.info(f'Graphs saved in: {output_dir}')
 
@@ -54,6 +59,8 @@ def plot_diff_graph(
 ):
   logger.info(f'Plotting distribution diff graph for trace "{trace}" on device "{device}" ...')
 
+  output_dir.mkdir(parents=True, exist_ok=True)
+
   control_run_ids = control['run_id']
   experimental_run_ids = experimental['run_id']
   all_data = pd.concat([control, experimental])
@@ -66,5 +73,6 @@ def plot_diff_graph(
   )
   distribution_diff.set_axis_labels(x_var=f'{trace} (ms)').set(title=device)
   distribution_diff.savefig(output_dir.joinpath('distribution_diff.svg'))
+  plt.close(distribution_diff.fig)
 
   logger.info(f'Graph saved in: {output_dir}')

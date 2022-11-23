@@ -47,6 +47,7 @@ def calculate_statistic(trace: str, device: str, data: pd.DataFrame, output_dir:
 
   # Optionally save percentiles and dispersions to file
   if output_dir:
+    output_dir.mkdir(parents=True, exist_ok=True)
     percentiles.to_json(output_dir.joinpath('percentiles.json'), orient='index')
     dispersions.to_json(output_dir.joinpath('dispersions.json'), orient='index')
     logger.info(f'Percentiles and dispersions saved in: {output_dir}')
@@ -63,8 +64,8 @@ def calculate_statistic_diff(
 ):
   logger.info(f'Calculating statistic diff for trace "{trace}" on device "{device}" ...')
 
-  ctl_percentiles, _ = calculate_statistic(trace, device, control)
-  exp_percentiles, _ = calculate_statistic(trace, device, experimental)
+  ctl_percentiles, _ = calculate_statistic(trace, device, control, output_dir.joinpath("ctl"))
+  exp_percentiles, _ = calculate_statistic(trace, device, experimental, output_dir.joinpath("exp"))
 
   ctl_mean = ctl_percentiles.mean()
   exp_mean = exp_percentiles.mean()
@@ -74,6 +75,7 @@ def calculate_statistic_diff(
 
   # Optionally save statistics to file
   if output_dir:
+    output_dir.mkdir(parents=True, exist_ok=True)
     delta.to_json(output_dir.joinpath('delta.json'))
     percentage.to_json(output_dir.joinpath('percentage.json'))
     logger.info(f'Percentiles diff saved in: {output_dir}')
