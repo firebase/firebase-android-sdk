@@ -1,12 +1,11 @@
 # Unreleased
 
-# 23.1.1
-
 * [fixed] Fixed deadlock when handling simultaneous messages.
 
 # 23.1.0
 * [unchanged] Updated to accommodate the release of the updated
   [messaging_longer] Kotlin extensions library.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
