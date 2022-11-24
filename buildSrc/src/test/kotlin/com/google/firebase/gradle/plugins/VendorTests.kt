@@ -86,11 +86,11 @@ class VendorPluginTests {
       )
 
     // ImmutableList is not used, so it should be stripped out.
-    assertThat(classes).doesNotContain("com/google/common/collect/ImmutableList.class")
+    assertThat(classes).doesNotContain("com/example/com/google/common/collect/ImmutableList.class")
   }
 
   @Test
-  fun `vendor dagger excluding javax transitive deps and not using it should include dagger`() {
+  fun `vendor dagger excluding javax transitive deps and not using it should not include dagger`() {
     val classes =
       buildWith(
         """
@@ -113,12 +113,7 @@ class VendorPluginTests {
         )
       )
     // expected classes
-    assertThat(classes)
-      .containsAtLeast(
-        "com/example/Hello.class",
-        "com/example/BuildConfig.class",
-        "com/example/dagger/Lazy.class"
-      )
+    assertThat(classes).containsExactly("com/example/Hello.class", "com/example/BuildConfig.class")
   }
 
   @Test
