@@ -15,7 +15,6 @@
 package com.google.firebase.functions;
 
 import android.content.Context;
-import android.os.Handler;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -28,6 +27,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Lightweight;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
 import java.io.IOException;
@@ -94,7 +94,8 @@ public class FirebaseFunctions {
       String projectId,
       String regionOrCustomDomain,
       ContextProvider contextProvider,
-      @Lightweight Executor executor) {
+      @Lightweight Executor executor,
+      @UiThread Executor uiExecutor) {
     this.app = app;
     this.executor = executor;
     this.client = new OkHttpClient();
@@ -118,15 +119,16 @@ public class FirebaseFunctions {
       this.customDomain = regionOrCustomDomain;
     }
 
-    maybeInstallProviders(context);
+    maybeInstallProviders(context, uiExecutor);
   }
 
   /**
    * Runs ProviderInstaller.installIfNeededAsync once per application instance.
    *
    * @param context The application context.
+   * @param uiExecutor
    */
-  private static void maybeInstallProviders(Context context) {
+  private static void maybeInstallProviders(Context context, Executor uiExecutor) {
     // Make sure this only runs once.
     synchronized (providerInstalled) {
       if (providerInstallStarted) {
@@ -137,7 +139,7 @@ public class FirebaseFunctions {
 
     // Package installIfNeededAsync into a Runnable so it can be run on the main thread.
     // installIfNeededAsync checks to make sure it is on the main thread, and throws otherwise.
-    Runnable runnable =
+    uiExecutor.execute(
         () ->
             ProviderInstaller.installIfNeededAsync(
                 context,
@@ -152,10 +154,7 @@ public class FirebaseFunctions {
                     Log.d("FirebaseFunctions", "Failed to update ssl context");
                     providerInstalled.setResult(null);
                   }
-                });
-
-    Handler handler = new Handler(context.getMainLooper());
-    handler.post(runnable);
+                }));
   }
 
   /**

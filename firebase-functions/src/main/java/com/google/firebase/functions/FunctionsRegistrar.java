@@ -18,6 +18,7 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Lightweight;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
@@ -42,11 +43,14 @@ public class FunctionsRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
     Qualified<Executor> liteExecutor = Qualified.qualified(Lightweight.class, Executor.class);
+    Qualified<Executor> uiExecutor = Qualified.qualified(UiThread.class, Executor.class);
     return Arrays.asList(
         Component.builder(ContextProvider.class)
             .add(Dependency.optionalProvider(InternalAuthProvider.class))
             .add(Dependency.requiredProvider(FirebaseInstanceIdInternal.class))
             .add(Dependency.deferred(InternalAppCheckTokenProvider.class))
+            .add(Dependency.required(liteExecutor))
+            .add(Dependency.required(uiExecutor))
             .factory(
                 c ->
                     new FirebaseContextProvider(
@@ -66,7 +70,8 @@ public class FunctionsRegistrar implements ComponentRegistrar {
                         c.get(Context.class),
                         c.get(ContextProvider.class),
                         c.get(FirebaseApp.class),
-                        c.get(liteExecutor)))
+                        c.get(liteExecutor),
+                        c.get(uiExecutor)))
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
