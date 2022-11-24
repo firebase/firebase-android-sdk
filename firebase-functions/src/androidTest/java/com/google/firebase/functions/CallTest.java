@@ -21,10 +21,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import androidx.test.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -91,7 +93,8 @@ public class CallTest {
             () -> {
               HttpsCallableContext context = new HttpsCallableContext("token", null, null);
               return Tasks.forResult(context);
-            });
+            },
+            TestOnlyExecutors.lite());
 
     HttpsCallableReference function = functions.getHttpsCallable("tokenTest");
     Task<HttpsCallableResult> result = function.call(new HashMap<>());
@@ -112,7 +115,8 @@ public class CallTest {
             () -> {
               HttpsCallableContext context = new HttpsCallableContext(null, "iid", null);
               return Tasks.forResult(context);
-            });
+            },
+            TestOnlyExecutors.lite());
 
     HttpsCallableReference function = functions.getHttpsCallable("instanceIdTest");
     Task<HttpsCallableResult> result = function.call(new HashMap<>());
@@ -133,7 +137,8 @@ public class CallTest {
             () -> {
               HttpsCallableContext context = new HttpsCallableContext(null, null, "appCheck");
               return Tasks.forResult(context);
-            });
+            },
+            TestOnlyExecutors.lite());
 
     HttpsCallableReference function = functions.getHttpsCallable("appCheckTest");
     Task<HttpsCallableResult> result = function.call(new HashMap<>());

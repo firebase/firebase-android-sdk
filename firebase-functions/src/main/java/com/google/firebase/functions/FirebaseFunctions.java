@@ -27,6 +27,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
 import java.io.IOException;
@@ -35,6 +36,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -69,6 +71,8 @@ public class FirebaseFunctions {
   // A provider of client metadata to include with calls.
   private final ContextProvider contextProvider;
 
+  private final Executor executor;
+
   // The projectId to use for all functions references.
   private final String projectId;
 
@@ -89,8 +93,10 @@ public class FirebaseFunctions {
       Context context,
       String projectId,
       String regionOrCustomDomain,
-      ContextProvider contextProvider) {
+      ContextProvider contextProvider,
+      @Lightweight Executor executor) {
     this.app = app;
+    this.executor = executor;
     this.client = new OkHttpClient();
     this.serializer = new Serializer();
     this.contextProvider = Preconditions.checkNotNull(contextProvider);
@@ -269,8 +275,9 @@ public class FirebaseFunctions {
   Task<HttpsCallableResult> call(String name, @Nullable Object data, HttpsCallOptions options) {
     return providerInstalled
         .getTask()
-        .continueWithTask(task -> contextProvider.getContext())
+        .continueWithTask(executor, task -> contextProvider.getContext())
         .continueWithTask(
+            executor,
             task -> {
               if (!task.isSuccessful()) {
                 return Tasks.forException(task.getException());
@@ -291,8 +298,9 @@ public class FirebaseFunctions {
   Task<HttpsCallableResult> call(URL url, @Nullable Object data, HttpsCallOptions options) {
     return providerInstalled
         .getTask()
-        .continueWithTask(task -> contextProvider.getContext())
+        .continueWithTask(executor, task -> contextProvider.getContext())
         .continueWithTask(
+            executor,
             task -> {
               if (!task.isSuccessful()) {
                 return Tasks.forException(task.getException());
@@ -305,7 +313,7 @@ public class FirebaseFunctions {
   /**
    * Calls a Callable HTTPS trigger endpoint.
    *
-   * @param name The name of the HTTPS trigger.
+   * @param url The name of the HTTPS trigger.
    * @param data Parameters to pass to the function. Can be anything encodable as JSON.
    * @param context Metadata to supply with the function call.
    * @return A Task that will be completed when the request is complete.

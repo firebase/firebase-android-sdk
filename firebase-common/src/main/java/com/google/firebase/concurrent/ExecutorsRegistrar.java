@@ -37,7 +37,7 @@ import java.util.concurrent.ThreadFactory;
 
 @SuppressLint("ThreadPoolCreation")
 public class ExecutorsRegistrar implements ComponentRegistrar {
-  private static final Lazy<ScheduledExecutorService> BG_EXECUTOR =
+  static final Lazy<ScheduledExecutorService> BG_EXECUTOR =
       new Lazy<>(
           () ->
               scheduled(
@@ -46,7 +46,7 @@ public class ExecutorsRegistrar implements ComponentRegistrar {
                       factory(
                           "Firebase Background", Process.THREAD_PRIORITY_BACKGROUND, bgPolicy()))));
 
-  private static final Lazy<ScheduledExecutorService> LITE_EXECUTOR =
+  static final Lazy<ScheduledExecutorService> LITE_EXECUTOR =
       new Lazy<>(
           () ->
               scheduled(
@@ -54,7 +54,7 @@ public class ExecutorsRegistrar implements ComponentRegistrar {
                       Math.max(2, Runtime.getRuntime().availableProcessors()),
                       factory("Firebase Lite", Process.THREAD_PRIORITY_DEFAULT, litePolicy()))));
 
-  private static final Lazy<ScheduledExecutorService> BLOCKING_EXECUTOR =
+  static final Lazy<ScheduledExecutorService> BLOCKING_EXECUTOR =
       new Lazy<>(
           () ->
               scheduled(

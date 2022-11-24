@@ -17,15 +17,18 @@ package com.google.firebase.functions;
 import android.content.Context;
 import androidx.annotation.Keep;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * Registers {@link FunctionsMultiResourceComponent}.
@@ -38,6 +41,7 @@ public class FunctionsRegistrar implements ComponentRegistrar {
 
   @Override
   public List<Component<?>> getComponents() {
+    Qualified<Executor> liteExecutor = Qualified.qualified(Lightweight.class, Executor.class);
     return Arrays.asList(
         Component.builder(ContextProvider.class)
             .add(Dependency.optionalProvider(InternalAuthProvider.class))
@@ -48,7 +52,8 @@ public class FunctionsRegistrar implements ComponentRegistrar {
                     new FirebaseContextProvider(
                         c.getProvider(InternalAuthProvider.class),
                         c.getProvider(FirebaseInstanceIdInternal.class),
-                        c.getDeferred(InternalAppCheckTokenProvider.class)))
+                        c.getDeferred(InternalAppCheckTokenProvider.class),
+                        c.get(liteExecutor)))
             .build(),
         Component.builder(FunctionsMultiResourceComponent.class)
             .name(LIBRARY_NAME)
@@ -60,7 +65,8 @@ public class FunctionsRegistrar implements ComponentRegistrar {
                     new FunctionsMultiResourceComponent(
                         c.get(Context.class),
                         c.get(ContextProvider.class),
-                        c.get(FirebaseApp.class)))
+                        c.get(FirebaseApp.class),
+                        c.get(liteExecutor)))
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }

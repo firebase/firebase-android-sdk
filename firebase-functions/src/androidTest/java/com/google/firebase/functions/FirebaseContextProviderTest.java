@@ -54,7 +54,10 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
-            absentProvider(), providerOf(fixedIidProvider), absentDeferred());
+            absentProvider(),
+            providerOf(fixedIidProvider),
+            absentDeferred(),
+            TestOnlyExecutors.lite());
 
     HttpsCallableContext context = Tasks.await(contextProvider.getContext());
     assertThat(context.getAuthToken()).isNull();
@@ -67,7 +70,10 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
-            providerOf(fixedAuthProvider), providerOf(fixedIidProvider), absentDeferred());
+            providerOf(fixedAuthProvider),
+            providerOf(fixedIidProvider),
+            absentDeferred(),
+            TestOnlyExecutors.lite());
 
     HttpsCallableContext context = Tasks.await(contextProvider.getContext());
     assertThat(context.getAuthToken()).isEqualTo(AUTH_TOKEN);
@@ -80,7 +86,10 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
-            absentProvider(), providerOf(fixedIidProvider), deferredOf(fixedAppCheckProvider));
+            absentProvider(),
+            providerOf(fixedIidProvider),
+            deferredOf(fixedAppCheckProvider),
+            TestOnlyExecutors.lite());
 
     HttpsCallableContext context = Tasks.await(contextProvider.getContext());
     assertThat(context.getAuthToken()).isNull();
@@ -93,7 +102,10 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
-            providerOf(anonymousAuthProvider), providerOf(fixedIidProvider), absentDeferred());
+            providerOf(anonymousAuthProvider),
+            providerOf(fixedIidProvider),
+            absentDeferred(),
+            TestOnlyExecutors.lite());
 
     HttpsCallableContext context = Tasks.await(contextProvider.getContext());
     assertThat(context.getAuthToken()).isNull();
@@ -106,7 +118,10 @@ public class FirebaseContextProviderTest {
       throws ExecutionException, InterruptedException {
     FirebaseContextProvider contextProvider =
         new FirebaseContextProvider(
-            absentProvider(), providerOf(fixedIidProvider), deferredOf(errorAppCheckProvider));
+            absentProvider(),
+            providerOf(fixedIidProvider),
+            deferredOf(errorAppCheckProvider),
+            TestOnlyExecutors.lite());
 
     HttpsCallableContext context = Tasks.await(contextProvider.getContext());
     assertThat(context.getAuthToken()).isNull();
@@ -121,7 +136,8 @@ public class FirebaseContextProviderTest {
         new FirebaseContextProvider(
             providerOf(fixedAuthProvider),
             providerOf(fixedIidProvider),
-            deferredOf(fixedAppCheckProvider));
+            deferredOf(fixedAppCheckProvider),
+            TestOnlyExecutors.lite());
 
     HttpsCallableContext context = Tasks.await(contextProvider.getContext());
     assertThat(context.getAuthToken()).isEqualTo(AUTH_TOKEN);

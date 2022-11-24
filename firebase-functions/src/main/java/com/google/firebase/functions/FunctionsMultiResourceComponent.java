@@ -17,8 +17,10 @@ package com.google.firebase.functions;
 import android.content.Context;
 import androidx.annotation.GuardedBy;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 /** Multi-resource container for Functions. */
 class FunctionsMultiResourceComponent {
@@ -33,12 +35,17 @@ class FunctionsMultiResourceComponent {
   private final Context applicationContext;
   private final ContextProvider contextProvider;
   private final FirebaseApp app;
+  private final Executor executor;
 
   FunctionsMultiResourceComponent(
-      Context applicationContext, ContextProvider contextProvider, FirebaseApp app) {
+      Context applicationContext,
+      ContextProvider contextProvider,
+      FirebaseApp app,
+      @Lightweight Executor executor) {
     this.applicationContext = applicationContext;
     this.contextProvider = contextProvider;
     this.app = app;
+    this.executor = executor;
   }
 
   synchronized FirebaseFunctions get(String regionOrCustomDomain) {
@@ -48,7 +55,7 @@ class FunctionsMultiResourceComponent {
     if (functions == null) {
       functions =
           new FirebaseFunctions(
-              app, applicationContext, projectId, regionOrCustomDomain, contextProvider);
+              app, applicationContext, projectId, regionOrCustomDomain, contextProvider, executor);
       instances.put(regionOrCustomDomain, functions);
     }
     return functions;
