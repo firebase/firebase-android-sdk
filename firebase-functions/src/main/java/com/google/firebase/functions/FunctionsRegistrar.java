@@ -50,7 +50,6 @@ public class FunctionsRegistrar implements ComponentRegistrar {
             .add(Dependency.requiredProvider(FirebaseInstanceIdInternal.class))
             .add(Dependency.deferred(InternalAppCheckTokenProvider.class))
             .add(Dependency.required(liteExecutor))
-            .add(Dependency.required(uiExecutor))
             .factory(
                 c ->
                     new FirebaseContextProvider(
@@ -64,6 +63,8 @@ public class FunctionsRegistrar implements ComponentRegistrar {
             .add(Dependency.required(Context.class))
             .add(Dependency.required(ContextProvider.class))
             .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.required(liteExecutor))
+            .add(Dependency.required(uiExecutor))
             .factory(
                 c ->
                     new FunctionsMultiResourceComponent(
