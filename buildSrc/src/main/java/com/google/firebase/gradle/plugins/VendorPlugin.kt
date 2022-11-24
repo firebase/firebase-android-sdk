@@ -33,18 +33,31 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.logging.Logger
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.create
+
+abstract class VendorExtension {
+  /** Controls dead code elimination, enabled if true. */
+  abstract val optimize: Property<Boolean>
+
+  init {
+    optimize.convention(true)
+  }
+}
 
 class VendorPlugin : Plugin<Project> {
   override fun apply(project: Project) {
+    val vendorConfig = project.extensions.create<VendorExtension>("vendor")
     project.plugins.all {
       when (this) {
-        is LibraryPlugin -> configureAndroid(project)
+        is LibraryPlugin -> configureAndroid(project, vendorConfig)
       }
     }
   }
 
-  fun configureAndroid(project: Project) {
+  fun configureAndroid(project: Project, vendorConfig: VendorExtension) {
     project.apply(plugin = "LicenseResolverPlugin")
 
     val vendor = project.configurations.create("vendor")
@@ -71,7 +84,8 @@ class VendorPlugin : Plugin<Project> {
           },
           jarJarProvider = { jarJar.resolve() },
           project = project,
-          logger = project.logger
+          logger = project.logger,
+          optimize = vendorConfig.optimize
         ),
         logger = project.logger
       )
@@ -80,19 +94,35 @@ class VendorPlugin : Plugin<Project> {
 }
 
 interface JarTransformer {
-  fun transform(inputJar: File, outputJar: File, packagesToVendor: Set<String>)
+  fun transform(
+    inputJar: File,
+    outputJar: File,
+    ownPackages: Set<String>,
+    packagesToVendor: Set<String>
+  )
 }
 
 class JarJarTransformer(
   private val parentPackageProvider: () -> String,
   private val jarJarProvider: () -> Collection<File>,
   private val project: Project,
-  private val logger: Logger
+  private val logger: Logger,
+  private val optimize: Provider<Boolean>
 ) : JarTransformer {
-  override fun transform(inputJar: File, outputJar: File, packagesToVendor: Set<String>) {
+  override fun transform(
+    inputJar: File,
+    outputJar: File,
+    ownPackages: Set<String>,
+    packagesToVendor: Set<String>
+  ) {
     val parentPackage = parentPackageProvider()
     val rulesFile = File.createTempFile(parentPackage, ".jarjar")
     rulesFile.printWriter().use {
+      if (optimize.get()) {
+        for (packageName in ownPackages) {
+          it.println("keep $packageName.**")
+        }
+      }
       for (externalPackageName in packagesToVendor) {
         it.println("rule $externalPackageName.** $parentPackage.@0")
       }
@@ -227,7 +257,7 @@ class VendorTransform(
     zipAll(unzippedDir, jar)
     val outputJar = File(workDir, "output.jar")
 
-    jarTransformer.transform(jar, outputJar, externalPackageNames)
+    jarTransformer.transform(jar, outputJar, ownPackageNames, externalPackageNames)
     return outputJar
   }
 
