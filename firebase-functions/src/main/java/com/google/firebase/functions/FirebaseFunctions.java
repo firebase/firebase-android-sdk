@@ -30,6 +30,8 @@ import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.MalformedURLException;
@@ -37,6 +39,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import javax.inject.Named;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -58,9 +61,6 @@ public class FirebaseFunctions {
    * providerInstalled lock.
    */
   private static boolean providerInstallStarted = false;
-
-  // The FirebaseApp instance
-  private final FirebaseApp app;
 
   // The network client to use for HTTPS requests.
   private final OkHttpClient client;
@@ -88,15 +88,14 @@ public class FirebaseFunctions {
   // Emulator settings
   @Nullable private EmulatedServiceSettings emulatorSettings;
 
+  @AssistedInject
   FirebaseFunctions(
-      FirebaseApp app,
       Context context,
-      String projectId,
-      String regionOrCustomDomain,
+      @Named("projectId") String projectId,
+      @Assisted String regionOrCustomDomain,
       ContextProvider contextProvider,
       @Lightweight Executor executor,
       @UiThread Executor uiExecutor) {
-    this.app = app;
     this.executor = executor;
     this.client = new OkHttpClient();
     this.serializer = new Serializer();

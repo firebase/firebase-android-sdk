@@ -14,16 +14,16 @@
 
 package com.google.firebase.functions;
 
-import android.content.Context;
 import androidx.annotation.GuardedBy;
-import androidx.annotation.UiThread;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.annotations.concurrent.Lightweight;
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executor;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /** Multi-resource container for Functions. */
+@Singleton
 class FunctionsMultiResourceComponent {
   /**
    * A static map from instance key to FirebaseFunctions instances. Instance keys region names.
@@ -33,41 +33,24 @@ class FunctionsMultiResourceComponent {
   @GuardedBy("this")
   private final Map<String, FirebaseFunctions> instances = new HashMap<>();
 
-  private final Context applicationContext;
-  private final ContextProvider contextProvider;
-  private final FirebaseApp app;
-  private final Executor liteExecutor;
-  private final Executor uiExecutor;
+  private final FirebaseFunctionsFactory functionsFactory;
 
-  FunctionsMultiResourceComponent(
-      Context applicationContext,
-      ContextProvider contextProvider,
-      FirebaseApp app,
-      @Lightweight Executor liteExecutor,
-      @UiThread Executor uiExecutor) {
-    this.applicationContext = applicationContext;
-    this.contextProvider = contextProvider;
-    this.app = app;
-    this.liteExecutor = liteExecutor;
-    this.uiExecutor = uiExecutor;
+  @Inject
+  FunctionsMultiResourceComponent(FirebaseFunctionsFactory functionsFactory) {
+    this.functionsFactory = functionsFactory;
   }
 
   synchronized FirebaseFunctions get(String regionOrCustomDomain) {
     FirebaseFunctions functions = instances.get(regionOrCustomDomain);
-    String projectId = app.getOptions().getProjectId();
-
     if (functions == null) {
-      functions =
-          new FirebaseFunctions(
-              app,
-              applicationContext,
-              projectId,
-              regionOrCustomDomain,
-              contextProvider,
-              liteExecutor,
-              uiExecutor);
+      functions = functionsFactory.create(regionOrCustomDomain);
       instances.put(regionOrCustomDomain, functions);
     }
     return functions;
+  }
+
+  @AssistedFactory
+  interface FirebaseFunctionsFactory {
+    FirebaseFunctions create(@Assisted String regionOrCustomDomain);
   }
 }
