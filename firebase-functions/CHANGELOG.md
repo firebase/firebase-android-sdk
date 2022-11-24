@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Avoid executing code on the UI thread as much as possible.
 
 # 20.2.1
 * [changed] Updated dependency of `firebase-iid` to its latest
