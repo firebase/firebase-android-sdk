@@ -16,6 +16,7 @@ package com.google.firebase.ml.modeldownloader;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Objects;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
@@ -67,25 +68,6 @@ public class CustomModel {
   }
 
   /**
-   * Use when creating a custom model from a stored model with a new download in the background.
-   *
-   * @param name Model name.
-   * @param modelHash Model hash.
-   * @param fileSize Model file size.
-   * @param downloadId Android Download Manger - download ID.
-   * @hide
-   */
-  public CustomModel(
-      ModelFileDownloadService modelFileDownloadService,
-      String name,
-      String modelHash,
-      long fileSize,
-      long downloadId,
-      String localFilePath) {
-    this(modelFileDownloadService, name, modelHash, fileSize, downloadId, localFilePath, "", 0);
-  }
-
-  /**
    * Use when creating a custom model while the initial download is still in progress.
    *
    * @param name Model name.
@@ -98,6 +80,8 @@ public class CustomModel {
    * @hide
    */
   @AssistedInject
+  @VisibleForTesting
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   public CustomModel(
       ModelFileDownloadService fileDownloadService,
       @Assisted("name") String name,

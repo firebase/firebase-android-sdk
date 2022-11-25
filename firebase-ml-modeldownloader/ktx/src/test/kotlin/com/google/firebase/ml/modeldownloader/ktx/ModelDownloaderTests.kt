@@ -14,13 +14,14 @@
 
 package com.google.firebase.ml.modeldownloader.ktx
 
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
-import com.google.firebase.ml.modeldownloader.CustomModel
 import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader
 import com.google.firebase.platforminfo.UserAgentPublisher
 import org.junit.After
@@ -28,7 +29,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
 
 const val APP_ID = "1:1234567890:android:321abc456def7890"
 const val API_KEY = "AIzaSyDOCAbC123dEf456GhI789jKl012-MnO"
@@ -39,7 +39,7 @@ abstract class BaseTestCase {
   @Before
   fun setUp() {
     Firebase.initialize(
-      RuntimeEnvironment.application,
+      ApplicationProvider.getApplicationContext(),
       FirebaseOptions.Builder()
         .setApplicationId(APP_ID)
         .setApiKey(API_KEY)
@@ -47,7 +47,7 @@ abstract class BaseTestCase {
         .build()
     )
     Firebase.initialize(
-      RuntimeEnvironment.application,
+      ApplicationProvider.getApplicationContext(),
       FirebaseOptions.Builder()
         .setApplicationId(APP_ID)
         .setApiKey(API_KEY)
@@ -63,7 +63,7 @@ abstract class BaseTestCase {
   }
 }
 
-@RunWith(RobolectricTestRunner::class)
+@RunWith(AndroidJUnit4::class)
 class ModelDownloaderTests : BaseTestCase() {
 
   @Test
@@ -92,14 +92,17 @@ class ModelDownloaderTests : BaseTestCase() {
 
   @Test
   fun `CustomModel destructuring declarations work`() {
+    val app = Firebase.app(EXISTING_APP)
+
     val modelName = "myModel"
     val modelHash = "someHash"
     val fileSize = 200L
     val downloadId = 258L
 
-    val customModel = CustomModel(modelName, modelHash, fileSize, downloadId)
+    val customModel =
+      Firebase.modelDownloader(app).modelFactory.create(modelName, modelHash, fileSize, downloadId)
 
-    val (file, size, id, hash, name) = customModel
+    val (_, size, id, hash, name) = customModel
 
     assertThat(name).isEqualTo(customModel.name)
     assertThat(hash).isEqualTo(customModel.modelHash)

@@ -65,6 +65,7 @@ public class ModelFileDownloadService {
   private final ModelFileManager fileManager;
   private final SharedPreferencesUtil sharedPreferencesUtil;
   private final FirebaseMlLogger eventLogger;
+  private final CustomModel.Factory modelFactory;
 
   private boolean isInitialLoad;
 
@@ -87,14 +88,16 @@ public class ModelFileDownloadService {
       Context context,
       FirebaseMlLogger eventLogger,
       ModelFileManager modelFileManager,
-      SharedPreferencesUtil sharedPreferencesUtil) {
+      SharedPreferencesUtil sharedPreferencesUtil,
+      CustomModel.Factory modelFactory) {
     this(
         context,
         (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE),
         modelFileManager,
         sharedPreferencesUtil,
         eventLogger,
-        true);
+        true,
+        modelFactory);
   }
 
   @VisibleForTesting
@@ -104,13 +107,15 @@ public class ModelFileDownloadService {
       ModelFileManager fileManager,
       SharedPreferencesUtil sharedPreferencesUtil,
       FirebaseMlLogger eventLogger,
-      boolean isInitialLoad) {
+      boolean isInitialLoad,
+      CustomModel.Factory modelFactory) {
     this.context = context;
     this.downloadManager = downloadManager;
     this.fileManager = fileManager;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
     this.eventLogger = eventLogger;
     this.isInitialLoad = isInitialLoad;
+    this.modelFactory = modelFactory;
   }
 
   public Task<Void> download(
@@ -286,8 +291,7 @@ public class ModelFileDownloadService {
     // update the custom model to store the download id - do not lose current local file - in case
     // this is a background update.
     CustomModel model =
-        new CustomModel(
-            this,
+        modelFactory.create(
             customModel.getName(),
             customModel.getModelHash(),
             customModel.getSize(),
@@ -425,13 +429,8 @@ public class ModelFileDownloadService {
               + newModelFile.getParent());
       // Successfully moved,  update share preferences
       sharedPreferencesUtil.setLoadedCustomModelDetails(
-          new CustomModel(
-              this,
-              model.getName(),
-              model.getModelHash(),
-              model.getSize(),
-              0,
-              newModelFile.getPath()));
+          modelFactory.create(
+              model.getName(), model.getModelHash(), model.getSize(), 0, newModelFile.getPath()));
 
       maybeCleanUpOldModels();
 

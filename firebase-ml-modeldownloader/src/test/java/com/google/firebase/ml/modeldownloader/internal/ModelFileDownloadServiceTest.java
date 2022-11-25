@@ -138,7 +138,8 @@ public class ModelFileDownloadServiceTest {
             mockFileManager,
             sharedPreferencesUtil,
             mockStatsLogger,
-            false);
+            false,
+            modelFactory);
     serviceRef.set(modelFileDownloadService);
 
     modelFileDownloadServiceInitialLoad =
@@ -148,7 +149,8 @@ public class ModelFileDownloadServiceTest {
             mockFileManager,
             sharedPreferencesUtil,
             mockStatsLogger,
-            true);
+            true,
+            modelFactory);
 
     CUSTOM_MODEL_PREVIOUS_LOADED =
         modelFactory.create(MODEL_NAME, MODEL_HASH + "2", 105, 0, "FakeFile/path.tflite");
