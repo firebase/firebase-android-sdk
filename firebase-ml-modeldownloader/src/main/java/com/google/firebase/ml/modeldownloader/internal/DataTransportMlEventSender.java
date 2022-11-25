@@ -15,10 +15,13 @@
 package com.google.firebase.ml.modeldownloader.internal;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * This class is responsible for sending Firebase ML Log Events to Firebase through Google
@@ -28,21 +31,22 @@ import com.google.android.datatransport.TransportFactory;
  *
  * @hide
  */
+@Singleton
 public class DataTransportMlEventSender {
   private static final String FIREBASE_ML_LOG_SDK_NAME = "FIREBASE_ML_LOG_SDK";
   private final Transport<FirebaseMlLogEvent> transport;
 
-  @NonNull
-  public static DataTransportMlEventSender create(TransportFactory transportFactory) {
-    final Transport<FirebaseMlLogEvent> transport =
+  @Inject
+  DataTransportMlEventSender(TransportFactory transportFactory) {
+    this(
         transportFactory.getTransport(
             FIREBASE_ML_LOG_SDK_NAME,
             FirebaseMlLogEvent.class,
             Encoding.of("json"),
-            FirebaseMlLogEvent.getFirebaseMlJsonTransformer());
-    return new DataTransportMlEventSender(transport);
+            FirebaseMlLogEvent.getFirebaseMlJsonTransformer()));
   }
 
+  @VisibleForTesting
   DataTransportMlEventSender(Transport<FirebaseMlLogEvent> transport) {
     this.transport = transport;
   }

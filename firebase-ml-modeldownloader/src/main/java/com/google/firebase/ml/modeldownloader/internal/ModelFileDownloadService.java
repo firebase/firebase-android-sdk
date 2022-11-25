@@ -36,7 +36,6 @@ import androidx.annotation.WorkerThread;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions;
 import com.google.firebase.ml.modeldownloader.FirebaseMlException;
@@ -47,6 +46,7 @@ import java.io.FileNotFoundException;
 import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.inject.Inject;
 
 /**
  * Calls the Android Download service to copy the model file to device (temp location) and then
@@ -82,40 +82,35 @@ public class ModelFileDownloadService {
   private CustomModelDownloadConditions downloadConditions =
       new CustomModelDownloadConditions.Builder().build();
 
-  public ModelFileDownloadService(@NonNull FirebaseApp firebaseApp) {
-    this.context = firebaseApp.getApplicationContext();
-    downloadManager = (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE);
-    this.fileManager = ModelFileManager.getInstance(firebaseApp);
-    this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
-    this.isInitialLoad = true;
-    this.eventLogger = FirebaseMlLogger.getInstance();
+  @Inject
+  public ModelFileDownloadService(
+      Context context,
+      FirebaseMlLogger eventLogger,
+      ModelFileManager modelFileManager,
+      SharedPreferencesUtil sharedPreferencesUtil) {
+    this(
+        context,
+        (DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE),
+        modelFileManager,
+        sharedPreferencesUtil,
+        eventLogger,
+        true);
   }
 
   @VisibleForTesting
   ModelFileDownloadService(
-      @NonNull FirebaseApp firebaseApp,
+      Context context,
       DownloadManager downloadManager,
       ModelFileManager fileManager,
       SharedPreferencesUtil sharedPreferencesUtil,
       FirebaseMlLogger eventLogger,
       boolean isInitialLoad) {
-    this.context = firebaseApp.getApplicationContext();
+    this.context = context;
     this.downloadManager = downloadManager;
     this.fileManager = fileManager;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
     this.eventLogger = eventLogger;
     this.isInitialLoad = isInitialLoad;
-  }
-
-  /**
-   * Get ModelFileDownloadService instance using the firebase app returned by {@link
-   * FirebaseApp#getInstance()}
-   *
-   * @return ModelFileDownloadService
-   */
-  @NonNull
-  public static ModelFileDownloadService getInstance() {
-    return FirebaseApp.getInstance().get(ModelFileDownloadService.class);
   }
 
   public Task<Void> download(
@@ -292,6 +287,7 @@ public class ModelFileDownloadService {
     // this is a background update.
     CustomModel model =
         new CustomModel(
+            this,
             customModel.getName(),
             customModel.getModelHash(),
             customModel.getSize(),
@@ -430,7 +426,12 @@ public class ModelFileDownloadService {
       // Successfully moved,  update share preferences
       sharedPreferencesUtil.setLoadedCustomModelDetails(
           new CustomModel(
-              model.getName(), model.getModelHash(), model.getSize(), 0, newModelFile.getPath()));
+              this,
+              model.getName(),
+              model.getModelHash(),
+              model.getSize(),
+              0,
+              newModelFile.getPath()));
 
       maybeCleanUpOldModels();
 
