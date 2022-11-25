@@ -434,23 +434,26 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
 
   private List<Action> extractActions(InAppMessage message) {
     List<Action> actions = new ArrayList<>();
-    switch (message.getMessageType()) {
-      case BANNER:
-        actions.add(((BannerMessage) message).getAction());
-        break;
-      case CARD:
-        actions.add(((CardMessage) message).getPrimaryAction());
-        actions.add(((CardMessage) message).getSecondaryAction());
-        break;
-      case IMAGE_ONLY:
-        actions.add(((ImageOnlyMessage) message).getAction());
-        break;
-      case MODAL:
-        actions.add(((ModalMessage) message).getAction());
-        break;
-      default:
-        // An empty action is treated like a dismiss
-        actions.add(Action.builder().build());
+
+    if (message != null) {
+      switch (message.getMessageType()) {
+        case BANNER:
+          actions.add(((BannerMessage) message).getAction());
+          break;
+        case CARD:
+          actions.add(((CardMessage) message).getPrimaryAction());
+          actions.add(((CardMessage) message).getSecondaryAction());
+          break;
+        case IMAGE_ONLY:
+          actions.add(((ImageOnlyMessage) message).getAction());
+          break;
+        case MODAL:
+          actions.add(((ModalMessage) message).getAction());
+          break;
+        default:
+          // An empty action is treated like a dismiss
+          actions.add(Action.builder().build());
+      }
     }
     return actions;
   }
