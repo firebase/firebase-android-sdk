@@ -106,7 +106,7 @@ tasks.withType<Test> {
     val enablePluginTests: String? by rootProject
     enabled = enablePluginTests == "true"
 }
--
+
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     kotlinOptions {
         jvmTarget = "11"
