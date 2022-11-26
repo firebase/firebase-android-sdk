@@ -186,7 +186,7 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            installationsApiMock,
+            () -> installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
@@ -236,7 +236,7 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            installationsApiMock,
+            () -> installationsApiMock,
             directExecutor,
             API_KEY,
             null,
@@ -284,7 +284,7 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            installationsApiMock,
+            () -> installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
@@ -334,7 +334,7 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            installationsApiMock,
+            () -> installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
@@ -384,7 +384,7 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            installationsApiMock,
+            () -> installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
@@ -437,7 +437,7 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            installationsApiMock,
+            () -> installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
@@ -496,7 +496,7 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            installationsApiMock,
+            () -> installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
@@ -555,7 +555,7 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            installationsApiMock,
+            () -> installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
@@ -613,7 +613,7 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            installationsApiMock,
+            () -> installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
@@ -669,7 +669,7 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            installationsApiMock,
+            () -> installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
@@ -717,7 +717,7 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            installationsApiMock,
+            () -> installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
@@ -746,7 +746,7 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            installationsApiMock,
+            () -> installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
@@ -776,7 +776,7 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            installationsApiMock,
+            () -> installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
@@ -805,7 +805,7 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            installationsApiMock,
+            () -> installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,

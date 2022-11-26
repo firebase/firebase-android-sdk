@@ -20,6 +20,7 @@ import android.util.Log;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import dagger.BindsInstance;
 import dagger.Component;
@@ -43,10 +44,10 @@ interface ModelDownloaderComponent {
     Builder setFirebaseApp(FirebaseApp app);
 
     @BindsInstance
-    Builder setFis(FirebaseInstallationsApi fis);
+    Builder setFis(Provider<FirebaseInstallationsApi> fis);
 
     @BindsInstance
-    Builder setTransportFactory(TransportFactory transportFactory);
+    Builder setTransportFactory(Provider<TransportFactory> transportFactory);
 
     ModelDownloaderComponent build();
   }

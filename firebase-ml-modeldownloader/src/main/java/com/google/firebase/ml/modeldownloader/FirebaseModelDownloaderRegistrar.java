@@ -46,15 +46,15 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
             .name(LIBRARY_NAME)
             .add(Dependency.required(Context.class))
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(FirebaseInstallationsApi.class))
-            .add(Dependency.required(TransportFactory.class))
+            .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
+            .add(Dependency.requiredProvider(TransportFactory.class))
             .factory(
                 c ->
                     DaggerModelDownloaderComponent.builder()
                         .setApplicationContext(c.get(Context.class))
                         .setFirebaseApp(c.get(FirebaseApp.class))
-                        .setFis(c.get(FirebaseInstallationsApi.class))
-                        .setTransportFactory(c.get(TransportFactory.class))
+                        .setFis(c.getProvider(FirebaseInstallationsApi.class))
+                        .setTransportFactory(c.getProvider(TransportFactory.class))
                         .build()
                         .getModelDownloader())
             .build(),

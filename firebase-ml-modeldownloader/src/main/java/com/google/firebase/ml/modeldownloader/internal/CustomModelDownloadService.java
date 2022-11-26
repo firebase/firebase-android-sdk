@@ -28,6 +28,7 @@ import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.ml.modeldownloader.CustomModel;
@@ -88,7 +89,7 @@ public class CustomModelDownloadService {
   static final String DOWNLOAD_MODEL_REGEX = "%s/v1beta2/projects/%s/models/%s:download";
 
   private final ExecutorService executorService;
-  private final FirebaseInstallationsApi firebaseInstallations;
+  private final Provider<FirebaseInstallationsApi> firebaseInstallations;
   private final FirebaseMlLogger eventLogger;
   private final String apiKey;
   @Nullable private final String fingerprintHashForPackage;
@@ -102,7 +103,7 @@ public class CustomModelDownloadService {
   public CustomModelDownloadService(
       Context context,
       FirebaseOptions options,
-      FirebaseInstallationsApi installationsApi,
+      Provider<FirebaseInstallationsApi> installationsApi,
       FirebaseMlLogger eventLogger,
       CustomModel.Factory modelFactory) {
     this.context = context;
@@ -117,7 +118,7 @@ public class CustomModelDownloadService {
   @VisibleForTesting
   CustomModelDownloadService(
       Context context,
-      FirebaseInstallationsApi firebaseInstallations,
+      Provider<FirebaseInstallationsApi> firebaseInstallations,
       ExecutorService executorService,
       String apiKey,
       String fingerprintHashForPackage,
@@ -179,7 +180,7 @@ public class CustomModelDownloadService {
       }
 
       Task<InstallationTokenResult> installationAuthTokenTask =
-          firebaseInstallations.getToken(false);
+          firebaseInstallations.get().getToken(false);
       return installationAuthTokenTask.continueWithTask(
           executorService,
           (CustomModelTask) -> {

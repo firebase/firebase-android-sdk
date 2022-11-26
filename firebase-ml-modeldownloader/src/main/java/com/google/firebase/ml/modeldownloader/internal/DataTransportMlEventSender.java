@@ -15,11 +15,12 @@
 package com.google.firebase.ml.modeldownloader.internal;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
+import com.google.firebase.components.Lazy;
+import com.google.firebase.inject.Provider;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -34,24 +35,23 @@ import javax.inject.Singleton;
 @Singleton
 public class DataTransportMlEventSender {
   private static final String FIREBASE_ML_LOG_SDK_NAME = "FIREBASE_ML_LOG_SDK";
-  private final Transport<FirebaseMlLogEvent> transport;
+  private final Provider<Transport<FirebaseMlLogEvent>> transport;
 
   @Inject
-  DataTransportMlEventSender(TransportFactory transportFactory) {
-    this(
-        transportFactory.getTransport(
-            FIREBASE_ML_LOG_SDK_NAME,
-            FirebaseMlLogEvent.class,
-            Encoding.of("json"),
-            FirebaseMlLogEvent.getFirebaseMlJsonTransformer()));
-  }
-
-  @VisibleForTesting
-  DataTransportMlEventSender(Transport<FirebaseMlLogEvent> transport) {
-    this.transport = transport;
+  DataTransportMlEventSender(Provider<TransportFactory> transportFactory) {
+    this.transport =
+        new Lazy<>(
+            () ->
+                transportFactory
+                    .get()
+                    .getTransport(
+                        FIREBASE_ML_LOG_SDK_NAME,
+                        FirebaseMlLogEvent.class,
+                        Encoding.of("json"),
+                        FirebaseMlLogEvent.getFirebaseMlJsonTransformer()));
   }
 
   public void sendEvent(@NonNull FirebaseMlLogEvent firebaseMlLogEvent) {
-    transport.send(Event.ofData(firebaseMlLogEvent));
+    transport.get().send(Event.ofData(firebaseMlLogEvent));
   }
 }
