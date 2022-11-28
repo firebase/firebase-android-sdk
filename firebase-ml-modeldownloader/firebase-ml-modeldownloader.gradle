@@ -14,6 +14,7 @@
 
 plugins {
     id 'firebase-library'
+    id 'firebase-vendor'
     id 'com.google.protobuf'
 }
 
@@ -75,6 +76,12 @@ dependencies {
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation 'com.google.auto.service:auto-service-annotations:1.0-rc6'
     implementation 'javax.inject:javax.inject:1'
+
+    implementation 'javax.inject:javax.inject:1'
+    vendor ('com.google.dagger:dagger:2.43.2') {
+        exclude group: "javax.inject", module: "javax.inject"
+    }
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.43.2'
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"

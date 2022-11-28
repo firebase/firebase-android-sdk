@@ -1,4 +1,5 @@
 # Unreleased
+- [changed] Internal infrastructure improvements.
 
 # 24.1.1
 * [fixed] Fixed an issue where `FirebaseModelDownloader.getModel` was throwing

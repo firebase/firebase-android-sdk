@@ -27,7 +27,8 @@ import com.google.android.gms.common.util.Hex;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.ml.modeldownloader.CustomModel;
@@ -50,6 +51,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
+import javax.inject.Inject;
 import org.json.JSONObject;
 
 /**
@@ -87,34 +89,42 @@ public class CustomModelDownloadService {
   static final String DOWNLOAD_MODEL_REGEX = "%s/v1beta2/projects/%s/models/%s:download";
 
   private final ExecutorService executorService;
-  private final FirebaseInstallationsApi firebaseInstallations;
+  private final Provider<FirebaseInstallationsApi> firebaseInstallations;
   private final FirebaseMlLogger eventLogger;
   private final String apiKey;
   @Nullable private final String fingerprintHashForPackage;
   private final Context context;
+  private final CustomModel.Factory modelFactory;
   private String downloadHost = FIREBASE_DOWNLOAD_HOST;
 
   // TODO(b/258424267): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
+  @Inject
   public CustomModelDownloadService(
-      FirebaseApp firebaseApp, FirebaseInstallationsApi installationsApi) {
-    context = firebaseApp.getApplicationContext();
+      Context context,
+      FirebaseOptions options,
+      Provider<FirebaseInstallationsApi> installationsApi,
+      FirebaseMlLogger eventLogger,
+      CustomModel.Factory modelFactory) {
+    this.context = context;
     firebaseInstallations = installationsApi;
-    apiKey = firebaseApp.getOptions().getApiKey();
+    apiKey = options.getApiKey();
     fingerprintHashForPackage = getFingerprintHashForPackage(context);
     executorService = Executors.newCachedThreadPool();
-    this.eventLogger = FirebaseMlLogger.getInstance();
+    this.eventLogger = eventLogger;
+    this.modelFactory = modelFactory;
   }
 
   @VisibleForTesting
   CustomModelDownloadService(
       Context context,
-      FirebaseInstallationsApi firebaseInstallations,
+      Provider<FirebaseInstallationsApi> firebaseInstallations,
       ExecutorService executorService,
       String apiKey,
       String fingerprintHashForPackage,
       String downloadHost,
-      FirebaseMlLogger eventLogger) {
+      FirebaseMlLogger eventLogger,
+      CustomModel.Factory modelFactory) {
     this.context = context;
     this.firebaseInstallations = firebaseInstallations;
     this.executorService = executorService;
@@ -122,6 +132,7 @@ public class CustomModelDownloadService {
     this.fingerprintHashForPackage = fingerprintHashForPackage;
     this.downloadHost = downloadHost;
     this.eventLogger = eventLogger;
+    this.modelFactory = modelFactory;
   }
 
   /**
@@ -169,7 +180,7 @@ public class CustomModelDownloadService {
       }
 
       Task<InstallationTokenResult> installationAuthTokenTask =
-          firebaseInstallations.getToken(false);
+          firebaseInstallations.get().getToken(false);
       return installationAuthTokenTask.continueWithTask(
           executorService,
           (CustomModelTask) -> {
@@ -186,7 +197,7 @@ public class CustomModelDownloadService {
                 exceptionCode = FirebaseMlException.NO_NETWORK_CONNECTION;
               }
               eventLogger.logDownloadFailureWithReason(
-                  new CustomModel(modelName, modelHash != null ? modelHash : "", 0, 0L),
+                  modelFactory.create(modelName, modelHash != null ? modelHash : "", 0, 0L),
                   false,
                   errorCode.getValue());
               return Tasks.forException(new FirebaseMlException(errorMessage, exceptionCode));
@@ -208,7 +219,7 @@ public class CustomModelDownloadService {
 
     } catch (IOException e) {
       eventLogger.logDownloadFailureWithReason(
-          new CustomModel(modelName, modelHash, 0, 0L),
+          modelFactory.create(modelName, modelHash, 0, 0L),
           false,
           ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED.getValue());
 
@@ -314,7 +325,7 @@ public class CustomModelDownloadService {
         errorMessage = "Failed to retrieve model info due to no internet connection.";
         exceptionCode = FirebaseMlException.NO_NETWORK_CONNECTION;
       }
-      eventLogger.logModelInfoRetrieverFailure(new CustomModel(modelName, "", 0, 0), errorCode);
+      eventLogger.logModelInfoRetrieverFailure(modelFactory.create(modelName, "", 0, 0), errorCode);
       return Tasks.forException(new FirebaseMlException(errorMessage, exceptionCode));
     }
   }
@@ -322,7 +333,7 @@ public class CustomModelDownloadService {
   private Task<CustomModel> setAndLogException(
       String modelName, int httpResponseCode, String errorMessage, @Code int invalidArgument) {
     eventLogger.logModelInfoRetrieverFailure(
-        new CustomModel(modelName, "", 0, 0),
+        modelFactory.create(modelName, "", 0, 0),
         ErrorCode.MODEL_INFO_DOWNLOAD_UNSUCCESSFUL_HTTP_STATUS,
         httpResponseCode);
     return Tasks.forException(new FirebaseMlException(errorMessage, invalidArgument));
@@ -341,7 +352,7 @@ public class CustomModelDownloadService {
 
     if (modelHash == null || modelHash.isEmpty()) {
       eventLogger.logDownloadFailureWithReason(
-          new CustomModel(modelName, modelHash, 0, 0L),
+          modelFactory.create(modelName, modelHash, 0, 0L),
           false,
           ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED.getValue());
       return Tasks.forException(
@@ -375,12 +386,13 @@ public class CustomModelDownloadService {
     inputStream.close();
 
     if (!downloadUrl.isEmpty() && expireTime > 0L) {
-      CustomModel model = new CustomModel(modelName, modelHash, fileSize, downloadUrl, expireTime);
+      CustomModel model =
+          modelFactory.create(modelName, modelHash, fileSize, downloadUrl, expireTime);
       eventLogger.logModelInfoRetrieverSuccess(model);
       return Tasks.forResult(model);
     }
     eventLogger.logDownloadFailureWithReason(
-        new CustomModel(modelName, modelHash, 0, 0L),
+        modelFactory.create(modelName, modelHash, 0, 0L),
         false,
         ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED.getValue());
     return Tasks.forException(
