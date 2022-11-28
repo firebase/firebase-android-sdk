@@ -16,7 +16,7 @@ package com.google.firebase.functions;
 
 import android.content.Context;
 import androidx.annotation.Keep;
-import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
@@ -45,34 +45,27 @@ public class FunctionsRegistrar implements ComponentRegistrar {
     Qualified<Executor> liteExecutor = Qualified.qualified(Lightweight.class, Executor.class);
     Qualified<Executor> uiExecutor = Qualified.qualified(UiThread.class, Executor.class);
     return Arrays.asList(
-        Component.builder(ContextProvider.class)
+        Component.builder(FunctionsMultiResourceComponent.class)
+            .name(LIBRARY_NAME)
+            .add(Dependency.required(Context.class))
+            .add(Dependency.required(FirebaseOptions.class))
             .add(Dependency.optionalProvider(InternalAuthProvider.class))
             .add(Dependency.requiredProvider(FirebaseInstanceIdInternal.class))
             .add(Dependency.deferred(InternalAppCheckTokenProvider.class))
             .add(Dependency.required(liteExecutor))
-            .factory(
-                c ->
-                    new FirebaseContextProvider(
-                        c.getProvider(InternalAuthProvider.class),
-                        c.getProvider(FirebaseInstanceIdInternal.class),
-                        c.getDeferred(InternalAppCheckTokenProvider.class),
-                        c.get(liteExecutor)))
-            .build(),
-        Component.builder(FunctionsMultiResourceComponent.class)
-            .name(LIBRARY_NAME)
-            .add(Dependency.required(Context.class))
-            .add(Dependency.required(ContextProvider.class))
-            .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(liteExecutor))
             .add(Dependency.required(uiExecutor))
             .factory(
                 c ->
-                    new FunctionsMultiResourceComponent(
-                        c.get(Context.class),
-                        c.get(ContextProvider.class),
-                        c.get(FirebaseApp.class),
-                        c.get(liteExecutor),
-                        c.get(uiExecutor)))
+                    DaggerFunctionsComponent.builder()
+                        .setApplicationContext(c.get(Context.class))
+                        .setFirebaseOptions(c.get(FirebaseOptions.class))
+                        .setLiteExecutor(c.get(liteExecutor))
+                        .setUiExecutor(c.get(uiExecutor))
+                        .setAuth(c.getProvider(InternalAuthProvider.class))
+                        .setIid(c.getProvider(FirebaseInstanceIdInternal.class))
+                        .setAppCheck(c.getDeferred(InternalAppCheckTokenProvider.class))
+                        .build()
+                        .getMultiResourceComponent())
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
