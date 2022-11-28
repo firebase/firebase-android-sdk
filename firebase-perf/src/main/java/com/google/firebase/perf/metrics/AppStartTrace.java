@@ -27,9 +27,10 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.StartupTime;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
-import com.google.firebase.perf.provider.FirebasePerfProvider;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
@@ -93,6 +94,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
    * MAX_LATENCY_BEFORE_UI_INIT, set mTooLateToInitUI to true and we don't send AppStart Trace.
    */
   private boolean isTooLateToInitUI = false;
+
+  private static Timer firebaseStartupTime = null;
 
   private Timer appStartTime = null;
   private Timer onCreateTime = null;
@@ -160,6 +163,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     return instance;
   }
 
+  @SuppressWarnings("FirebaseUseExplicitDependencies")
   AppStartTrace(
       @NonNull TransportManager transportManager,
       @NonNull Clock clock,
@@ -169,10 +173,18 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     this.clock = clock;
     this.configResolver = configResolver;
     this.executorService = executorService;
+
+    StartupTime startupTime = FirebaseApp.getInstance().get(StartupTime.class);
+    if (startupTime == null) {
+      firebaseStartupTime = new Timer();
+    } else {
+      firebaseStartupTime =
+          Timer.ofElapsedRealtime(startupTime.getElapsedRealtime(), startupTime.getUptimeMillis());
+    }
     this.experimentTtid = TraceMetric.newBuilder().setName("_experiment_app_start_ttid");
   }
 
-  /** Called from FirebasePerfProvider to register this callback. */
+  /** Called from FirebasePerfEarly to register this callback. */
   public synchronized void registerActivityLifecycleCallbacks(@NonNull Context context) {
     // Make sure the callback is registered only once.
     if (isRegisteredForLifecycleCallbacks) {
@@ -197,7 +209,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
 
   /**
    * Gets the timetamp that marks the beginning of app start, currently defined as the beginning of
-   * BIND_APPLICATION. Fallback to class-load time of {@link FirebasePerfProvider} when API < 24.
+   * BIND_APPLICATION. Fallback to class-load time of {@link StartupTime} when API < 24.
    *
    * @return {@link Timer} at the beginning of app start by Fireperf definition.
    */
@@ -206,7 +218,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
       return Timer.ofElapsedRealtime(
           Process.getStartElapsedRealtime(), Process.getStartUptimeMillis());
     }
-    return FirebasePerfProvider.getAppStartTime();
+    return firebaseStartupTime;
   }
 
   private void recordFirstDrawDone() {
@@ -222,9 +234,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     TraceMetric.Builder subtrace =
         TraceMetric.newBuilder()
             .setName("_experiment_classLoadTime")
-            .setClientStartTimeUs(FirebasePerfProvider.getAppStartTime().getMicros())
-            .setDurationUs(
-                FirebasePerfProvider.getAppStartTime().getDurationMicros(this.firstDrawDone));
+            .setClientStartTimeUs(firebaseStartupTime.getMicros())
+            .setDurationUs(firebaseStartupTime.getDurationMicros(this.firstDrawDone));
     this.experimentTtid.addSubtraces(subtrace.build());
 
     subtrace = TraceMetric.newBuilder();
@@ -290,8 +301,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     launchActivity = new WeakReference<Activity>(activity);
     onCreateTime = clock.getTime();
 
-    if (FirebasePerfProvider.getAppStartTime().getDurationMicros(onCreateTime)
-        > MAX_LATENCY_BEFORE_UI_INIT) {
+    if (firebaseStartupTime.getDurationMicros(onCreateTime) > MAX_LATENCY_BEFORE_UI_INIT) {
       isTooLateToInitUI = true;
     }
   }
@@ -327,7 +337,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     appStartActivity = new WeakReference<Activity>(activity);
 
     onResumeTime = clock.getTime();
-    this.appStartTime = FirebasePerfProvider.getAppStartTime();
+    this.appStartTime = firebaseStartupTime;
     this.startSession = SessionManager.getInstance().perfSession();
     AndroidLogger.getInstance()
         .debug(
@@ -421,8 +431,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   /**
    * We use StartFromBackgroundRunnable to detect if app is started from background or foreground.
    * If app is started from background, we do not generate AppStart trace. This runnable is posted
-   * to main UI thread from FirebasePerfProvider. If app is started from background, this runnable
-   * will be executed before any activity's onCreate() method. If app is started from foreground,
+   * to main UI thread from FirebasePerfEarly. If app is started from background, this runnable will
+   * be executed before any activity's onCreate() method. If app is started from foreground,
    * activity's onCreate() method is executed before this runnable.
    */
   public static class StartFromBackgroundRunnable implements Runnable {

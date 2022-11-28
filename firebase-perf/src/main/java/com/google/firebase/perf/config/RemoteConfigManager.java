@@ -23,9 +23,10 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.StartupTime;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.logging.AndroidLogger;
-import com.google.firebase.perf.provider.FirebasePerfProvider;
 import com.google.firebase.perf.util.Optional;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
@@ -80,7 +81,19 @@ public class RemoteConfigManager {
             new LinkedBlockingQueue<Runnable>()),
         /* firebaseRemoteConfig= */ null, // set once FirebaseRemoteConfig is initialized
         MIN_APP_START_CONFIG_FETCH_DELAY_MS
-            + new Random().nextInt(RANDOM_APP_START_CONFIG_FETCH_DELAY_MS));
+            + new Random().nextInt(RANDOM_APP_START_CONFIG_FETCH_DELAY_MS),
+        getInitialStartupMillis());
+  }
+
+  @VisibleForTesting
+  @SuppressWarnings("FirebaseUseExplicitDependencies")
+  static long getInitialStartupMillis() {
+    StartupTime startupTime = FirebaseApp.getInstance().get(StartupTime.class);
+    if (startupTime != null) {
+      return startupTime.getEpochMillis();
+    } else {
+      return System.currentTimeMillis();
+    }
   }
 
   @VisibleForTesting
@@ -88,7 +101,8 @@ public class RemoteConfigManager {
       DeviceCacheManager cache,
       Executor executor,
       FirebaseRemoteConfig firebaseRemoteConfig,
-      long appStartConfigFetchDelayInMs) {
+      long appStartConfigFetchDelayInMs,
+      long appStartTimeInMs) {
     this.cache = cache;
     this.executor = executor;
     this.firebaseRemoteConfig = firebaseRemoteConfig;
@@ -96,8 +110,7 @@ public class RemoteConfigManager {
         firebaseRemoteConfig == null
             ? new ConcurrentHashMap<>()
             : new ConcurrentHashMap<>(firebaseRemoteConfig.getAll());
-    this.appStartTimeInMs =
-        TimeUnit.MICROSECONDS.toMillis(FirebasePerfProvider.getAppStartTime().getMicros());
+    this.appStartTimeInMs = appStartTimeInMs;
     this.appStartConfigFetchDelayInMs = appStartConfigFetchDelayInMs;
   }
 
