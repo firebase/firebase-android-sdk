@@ -26,8 +26,11 @@ import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /** A ContextProvider that uses FirebaseAuth to get the token. */
+@Singleton
 class FirebaseContextProvider implements ContextProvider {
   private final String TAG = "FirebaseContextProvider";
 
@@ -37,6 +40,7 @@ class FirebaseContextProvider implements ContextProvider {
       new AtomicReference<>();
   private final Executor executor;
 
+  @Inject
   FirebaseContextProvider(
       Provider<InternalAuthProvider> tokenProvider,
       Provider<FirebaseInstanceIdInternal> instanceId,
