@@ -25,6 +25,7 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.ml.modeldownloader.CustomModel;
+import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,14 +40,12 @@ public class SharedPreferencesUtilTest {
   private static final String TEST_PROJECT_ID = "777777777777";
   private static final String MODEL_NAME = "ModelName";
   private static final String MODEL_HASH = "dsf324";
-  private static final CustomModel CUSTOM_MODEL_DOWNLOAD_COMPLETE =
-      new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, "file/path/store/ModelName/1");
-  private static final CustomModel CUSTOM_MODEL_UPDATE_IN_BACKGROUND =
-      new CustomModel(MODEL_NAME, MODEL_HASH, 100, 986, "file/path/store/ModelName/1");
-  private static final CustomModel CUSTOM_MODEL_DOWNLOADING =
-      new CustomModel(MODEL_NAME, MODEL_HASH, 100, 986);
+  private CustomModel CUSTOM_MODEL_DOWNLOAD_COMPLETE;
+  private CustomModel CUSTOM_MODEL_UPDATE_IN_BACKGROUND;
+  private CustomModel CUSTOM_MODEL_DOWNLOADING;
   private SharedPreferencesUtil sharedPreferencesUtil;
   private FirebaseApp app;
+  private CustomModel.Factory modelFactory;
 
   @Before
   public void setUp() {
@@ -60,10 +59,17 @@ public class SharedPreferencesUtilTest {
                 .setProjectId(TEST_PROJECT_ID)
                 .build());
 
+    modelFactory = FirebaseModelDownloader.getInstance(app).getModelFactory();
+
     app.setDataCollectionDefaultEnabled(Boolean.TRUE);
     // default sharedPreferenceUtil
-    sharedPreferencesUtil = new SharedPreferencesUtil(app);
+    sharedPreferencesUtil = new SharedPreferencesUtil(app, modelFactory);
     assertNotNull(sharedPreferencesUtil);
+    CUSTOM_MODEL_DOWNLOAD_COMPLETE =
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0, "file/path/store/ModelName/1");
+    CUSTOM_MODEL_UPDATE_IN_BACKGROUND =
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 986, "file/path/store/ModelName/1");
+    CUSTOM_MODEL_DOWNLOADING = modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 986);
   }
 
   @Test
@@ -158,11 +164,13 @@ public class SharedPreferencesUtilTest {
     sharedPreferencesUtil.setLoadedCustomModelDetails(CUSTOM_MODEL_DOWNLOAD_COMPLETE);
 
     CustomModel model2 =
-        new CustomModel(MODEL_NAME + "2", MODEL_HASH + "2", 102, 0, "file/path/store/ModelName2/1");
+        modelFactory.create(
+            MODEL_NAME + "2", MODEL_HASH + "2", 102, 0, "file/path/store/ModelName2/1");
     sharedPreferencesUtil.setLoadedCustomModelDetails(model2);
 
     CustomModel model3 =
-        new CustomModel(MODEL_NAME + "3", MODEL_HASH + "3", 103, 0, "file/path/store/ModelName3/1");
+        modelFactory.create(
+            MODEL_NAME + "3", MODEL_HASH + "3", 103, 0, "file/path/store/ModelName3/1");
 
     sharedPreferencesUtil.setLoadedCustomModelDetails(model3);
 
@@ -185,7 +193,7 @@ public class SharedPreferencesUtilTest {
   public void getCustomModelStatsCollectionFlag_defaultFirebaseAppFalse() {
     app.setDataCollectionDefaultEnabled(Boolean.FALSE);
     // default sharedPreferenceUtil
-    SharedPreferencesUtil disableLogUtil = new SharedPreferencesUtil(app);
+    SharedPreferencesUtil disableLogUtil = new SharedPreferencesUtil(app, modelFactory);
     assertEquals(
         disableLogUtil.getCustomModelStatsCollectionFlag(), app.isDataCollectionDefaultEnabled());
     assertFalse(disableLogUtil.getCustomModelStatsCollectionFlag());
@@ -195,7 +203,7 @@ public class SharedPreferencesUtilTest {
   public void getCustomModelStatsCollectionFlag_overrideFirebaseAppFalse() {
     app.setDataCollectionDefaultEnabled(Boolean.FALSE);
     // default sharedPreferenceUtil
-    SharedPreferencesUtil sharedPreferencesUtil2 = new SharedPreferencesUtil(app);
+    SharedPreferencesUtil sharedPreferencesUtil2 = new SharedPreferencesUtil(app, modelFactory);
     sharedPreferencesUtil2.setCustomModelStatsCollectionEnabled(true);
     assertEquals(sharedPreferencesUtil2.getCustomModelStatsCollectionFlag(), true);
     assertTrue(sharedPreferencesUtil2.getCustomModelStatsCollectionFlag());
