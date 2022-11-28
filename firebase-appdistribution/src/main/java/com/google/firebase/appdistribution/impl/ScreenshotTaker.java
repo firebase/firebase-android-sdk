@@ -14,14 +14,21 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.net.Uri;
+import android.os.Build;
+import android.os.Handler;
+import android.view.PixelCopy;
 import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
@@ -42,6 +49,8 @@ class ScreenshotTaker {
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
   private final Executor taskExecutor;
 
+  // TODO(b/258264924): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   ScreenshotTaker(
       FirebaseApp firebaseApp, FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
     this(firebaseApp, lifecycleNotifier, Executors.newSingleThreadExecutor());
@@ -81,7 +90,7 @@ class ScreenshotTaker {
 
   @VisibleForTesting
   Task<Bitmap> captureScreenshot() {
-    return lifecycleNotifier.applyToNullableForegroundActivity(
+    return lifecycleNotifier.applyToNullableForegroundActivityTask(
         // Ignore TakeScreenshotAndStartFeedbackActivity class if it's the current activity
         TakeScreenshotAndStartFeedbackActivity.class,
         activity -> {
@@ -93,17 +102,54 @@ class ScreenshotTaker {
           // We only take the screenshot here because this will be called on the main thread, so we
           // want to do as little work as possible
           try {
-            View view = activity.getWindow().getDecorView().getRootView();
-            Bitmap bitmap =
-                Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.RGB_565);
-            Canvas canvas = new Canvas(bitmap);
-            view.draw(canvas);
-            return bitmap;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+              return captureScreenshotOreo(activity);
+            } else {
+              return captureScreenshotLegacy(activity);
+            }
           } catch (Exception | OutOfMemoryError e) {
             throw new FirebaseAppDistributionException(
                 "Failed to take screenshot", Status.UNKNOWN, e);
           }
         });
+  }
+
+  private static Bitmap getBitmapForScreenshot(Activity activity) {
+    View view = activity.getWindow().getDecorView().getRootView();
+    return Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.RGB_565);
+  }
+
+  private static Task<Bitmap> captureScreenshotLegacy(Activity activity) {
+    Bitmap bitmap = getBitmapForScreenshot(activity);
+    Canvas canvas = new Canvas(bitmap);
+    activity.getWindow().getDecorView().getRootView().draw(canvas);
+    return Tasks.forResult(bitmap);
+  }
+
+  @TargetApi(Build.VERSION_CODES.O)
+  private static Task<Bitmap> captureScreenshotOreo(Activity activity) {
+    Bitmap bitmap = getBitmapForScreenshot(activity);
+    TaskCompletionSource<Bitmap> taskCompletionSource = new TaskCompletionSource<>();
+    try {
+      // PixelCopy can handle Bitmaps with Bitmap.Config.HARDWARE
+      PixelCopy.request(
+          activity.getWindow(),
+          bitmap,
+          result -> {
+            if (result == PixelCopy.SUCCESS) {
+              taskCompletionSource.setResult(bitmap);
+            } else {
+              taskCompletionSource.setException(
+                  new FirebaseAppDistributionException(
+                      String.format("PixelCopy request failed: %s", result), Status.UNKNOWN));
+            }
+          },
+          new Handler());
+    } catch (IllegalArgumentException e) {
+      taskCompletionSource.setException(
+          new FirebaseAppDistributionException("Bad PixelCopy request", Status.UNKNOWN, e));
+    }
+    return taskCompletionSource.getTask();
   }
 
   private Task<Uri> writeToFile(@Nullable Bitmap bitmap) {

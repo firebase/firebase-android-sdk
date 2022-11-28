@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import androidx.annotation.Keep;
@@ -82,6 +83,8 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
     return new FeedbackSender(testerApiClient, blockingExecutor);
   }
 
+  // TODO(b/258264924): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   private FirebaseAppDistribution buildFirebaseAppDistribution(
       ComponentContainer container, Executor blockingExecutor) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
