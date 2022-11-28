@@ -15,7 +15,6 @@
 package com.google.firebase.perf.metrics;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.perf.util.TimerTest.getElapsedRealtimeMicros;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -26,7 +25,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
-import android.content.pm.ProviderInfo;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.Process;
@@ -35,7 +33,6 @@ import android.view.View;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.config.ConfigResolver;
-import com.google.firebase.perf.provider.FirebasePerfProvider;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
@@ -78,9 +75,6 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   // a mocked current wall-clock time in microseconds.
   private long currentTime = 0;
 
-  // Timer at the beginning of app startup
-  private Timer appStart;
-
   @Before
   public void setUp() {
     initMocks(this);
@@ -95,7 +89,6 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
         .getTime();
     transportManager = mock(TransportManager.class);
     traceArgumentCaptor = ArgumentCaptor.forClass(TraceMetric.class);
-    appStart = FirebasePerfProvider.getAppStartTime();
   }
 
   @After
@@ -156,15 +149,10 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     TraceMetric metric = traceArgumentCaptor.getValue();
 
     Assert.assertEquals(Constants.TraceNames.APP_START_TRACE_NAME.toString(), metric.getName());
-    Assert.assertEquals(appStart.getMicros(), metric.getClientStartTimeUs());
-    Assert.assertEquals(resumeTime - getElapsedRealtimeMicros(appStart), metric.getDurationUs());
 
     Assert.assertEquals(3, metric.getSubtracesCount());
     Assert.assertEquals(
         Constants.TraceNames.ON_CREATE_TRACE_NAME.toString(), metric.getSubtraces(0).getName());
-    Assert.assertEquals(appStart.getMicros(), metric.getSubtraces(0).getClientStartTimeUs());
-    Assert.assertEquals(
-        createTime - getElapsedRealtimeMicros(appStart), metric.getSubtraces(0).getDurationUs());
 
     Assert.assertEquals(
         Constants.TraceNames.ON_START_TRACE_NAME.toString(), metric.getSubtraces(1).getName());
@@ -225,7 +213,10 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     AppStartTrace trace =
         new AppStartTrace(transportManager, clock, configResolver, fakeExecutorService);
     // Delays activity creation after 1 minute from app start time.
-    currentTime = appStart.getMicros() + TimeUnit.MINUTES.toMicros(1) + 1;
+    currentTime =
+        TimeUnit.MILLISECONDS.toMicros(SystemClock.elapsedRealtime())
+            + TimeUnit.MINUTES.toMicros(1)
+            + 1;
     trace.onActivityCreated(activity1, bundle);
     Assert.assertEquals(currentTime, trace.getOnCreateTime().getMicros());
     ++currentTime;
@@ -260,24 +251,6 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
         .log(
             traceArgumentCaptor.capture(),
             ArgumentMatchers.nullable(ApplicationProcessState.class));
-  }
-
-  @Test
-  public void testFirebasePerfProviderOnAttachInfo_initializesGaugeCollection() {
-    com.google.firebase.perf.session.PerfSession mockPerfSession =
-        mock(com.google.firebase.perf.session.PerfSession.class);
-    when(mockPerfSession.sessionId()).thenReturn("sessionId");
-    when(mockPerfSession.isGaugeAndEventCollectionEnabled()).thenReturn(true);
-
-    SessionManager.getInstance().setPerfSession(mockPerfSession);
-    String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
-    Assert.assertEquals(oldSessionId, SessionManager.getInstance().perfSession().sessionId());
-
-    FirebasePerfProvider provider = new FirebasePerfProvider();
-    provider.attachInfo(ApplicationProvider.getApplicationContext(), new ProviderInfo());
-
-    Assert.assertEquals(oldSessionId, SessionManager.getInstance().perfSession().sessionId());
-    verify(mockPerfSession, times(2)).isGaugeAndEventCollectionEnabled();
   }
 
   @Test
