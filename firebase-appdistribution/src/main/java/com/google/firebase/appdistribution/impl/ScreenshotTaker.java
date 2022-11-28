@@ -127,14 +127,12 @@ class ScreenshotTaker {
   private static Task<Bitmap> captureScreenshotOreo(Activity activity) {
     Bitmap bitmap = getBitmapForScreenshot(activity);
     TaskCompletionSource<Bitmap> taskCompletionSource = new TaskCompletionSource<>();
-    LogWrapper.getInstance().e("LKELLOGG: NEW PATH HERE");
     try {
-      // PixelCopy can handle Bitmaps with Bitmap.Config.HARDWARE and is the recommended way of
-      // capturing screens moving forward
+      // PixelCopy can handle Bitmaps with Bitmap.Config.HARDWARE
       PixelCopy.request(
           activity.getWindow(),
           bitmap,
-          (result) -> {
+          result -> {
             if (result == PixelCopy.SUCCESS) {
               taskCompletionSource.setResult(bitmap);
             } else {
