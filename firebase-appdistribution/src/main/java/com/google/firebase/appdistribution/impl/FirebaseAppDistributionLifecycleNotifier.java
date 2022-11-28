@@ -160,6 +160,33 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
             });
   }
 
+  /**
+   * Apply a function to a foreground activity, when one is available, returning a {@link Task} that
+   * will complete with the result of the Task returned by that function.
+   *
+   * <p>If the foreground activity is of type {@code classToIgnore}, the previously active activity
+   * will be passed to the function, which may be null if there was no previously active activity or
+   * the activity has been destroyed.
+   *
+   * <p>The continuation function will be called immediately once the activity is available. This
+   * may be on the main thread or the calling thread, depending on whether or not there is already a
+   * foreground activity available when this method is called.
+   */
+  <T, A extends Activity> Task<T> applyToNullableForegroundActivityTask(
+      Class<A> classToIgnore, SuccessContinuation<Activity, T> continuation) {
+    return getForegroundActivity(classToIgnore)
+        .onSuccessTask(
+            // Use direct executor to ensure the consumer is called while Activity is in foreground
+            DIRECT_EXECUTOR,
+            activity -> {
+              try {
+                return continuation.then(activity);
+              } catch (Throwable t) {
+                return Tasks.forException(FirebaseAppDistributionExceptions.wrap(t));
+              }
+            });
+  }
+
   /** A version of {@link #applyToForegroundActivity} that does not produce a value. */
   Task<Void> consumeForegroundActivity(ActivityConsumer consumer) {
     return getForegroundActivity()
