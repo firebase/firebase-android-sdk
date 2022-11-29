@@ -97,7 +97,7 @@ class ScreenshotTaker {
           if (activity == null) {
             // TakeScreenshotAndStartFeedbackActivity was the current activity and there was no
             // active previous activity
-            return null;
+            return Tasks.forResult(null);
           }
           // We only take the screenshot here because this will be called on the main thread, so we
           // want to do as little work as possible
