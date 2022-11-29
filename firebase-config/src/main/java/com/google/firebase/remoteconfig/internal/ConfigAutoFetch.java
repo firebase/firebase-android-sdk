@@ -33,7 +33,7 @@ import java.net.HttpURLConnection;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
@@ -53,7 +53,7 @@ public class ConfigAutoFetch {
   private final ConfigFetchHandler configFetchHandler;
   private final ConfigCacheClient activatedCache;
   private final ConfigUpdateListener retryCallback;
-  private final ScheduledExecutorService scheduledExecutorService;
+  private final ScheduledExecutorService executorService;
   private final Random random;
 
   public ConfigAutoFetch(
@@ -61,13 +61,14 @@ public class ConfigAutoFetch {
       ConfigFetchHandler configFetchHandler,
       ConfigCacheClient activatedCache,
       Set<ConfigUpdateListener> eventListeners,
-      ConfigUpdateListener retryCallback) {
+      ConfigUpdateListener retryCallback,
+      ScheduledExecutorService executorService) {
     this.httpURLConnection = httpURLConnection;
     this.configFetchHandler = configFetchHandler;
     this.activatedCache = activatedCache;
     this.eventListeners = eventListeners;
     this.retryCallback = retryCallback;
-    this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+    this.executorService = executorService;
     this.random = new Random();
   }
 
@@ -117,9 +118,9 @@ public class ConfigAutoFetch {
 
     // TODO: Factor ConfigUpdateListener out of internal retry logic.
     retryCallback.onUpdate(new HashSet<>());
-    scheduledExecutorService.shutdownNow();
+    executorService.shutdownNow();
     try {
-      scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
+      executorService.awaitTermination(3L, TimeUnit.SECONDS);
     } catch (InterruptedException ex) {
       Log.d(TAG, "Thread Interrupted.");
     }
@@ -188,7 +189,7 @@ public class ConfigAutoFetch {
 
     // Needs fetch to occur between 0 - 4 seconds. Randomize to not cause ddos alerts in backend
     int timeTillFetch = random.nextInt(4);
-    scheduledExecutorService.schedule(
+    executorService.schedule(
         new Runnable() {
           @Override
           public void run() {
@@ -206,7 +207,7 @@ public class ConfigAutoFetch {
 
     return Tasks.whenAllComplete(fetchTask, activatedConfigsTask)
         .continueWithTask(
-            scheduledExecutorService,
+                executorService,
             (listOfUnusedCompletedTasks) -> {
               if (!fetchTask.isSuccessful()) {
                 return Tasks.forException(

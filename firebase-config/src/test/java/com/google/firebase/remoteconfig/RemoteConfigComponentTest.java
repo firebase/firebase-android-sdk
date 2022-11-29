@@ -41,6 +41,9 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -76,6 +79,7 @@ public class RemoteConfigComponentTest {
 
   private Context context;
   private ExecutorService directExecutor;
+  private ScheduledExecutorService scheduledExecutorService;
   private FirebaseApp defaultApp;
 
   @Before
@@ -84,6 +88,7 @@ public class RemoteConfigComponentTest {
 
     context = ApplicationProvider.getApplicationContext();
     directExecutor = MoreExecutors.newDirectExecutorService();
+    scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
     defaultApp = initializeFirebaseApp(context);
 
@@ -172,6 +177,7 @@ public class RemoteConfigComponentTest {
     return new RemoteConfigComponent(
         context,
         directExecutor,
+scheduledExecutorService,
         mockFirebaseApp,
         mockFirebaseInstallations,
         mockFirebaseAbt,
@@ -183,6 +189,7 @@ public class RemoteConfigComponentTest {
     return new RemoteConfigComponent(
         context,
         directExecutor,
+        scheduledExecutorService,
         mockFirebaseApp,
         mockFirebaseInstallations,
         mockFirebaseAbt,
