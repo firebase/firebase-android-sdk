@@ -115,6 +115,7 @@ public class ConfigAutoFetch {
       }
     }
 
+    // TODO: Factor ConfigUpdateListener out of internal retry logic.
     retryCallback.onUpdate(new HashSet<>());
     scheduledExecutorService.shutdownNow();
     try {
@@ -141,6 +142,7 @@ public class ConfigAutoFetch {
       if (partialConfigUpdateMessage.contains("}")) {
         // Strip beginning and ending of message. If there is not an open and closing bracket,
         // parseMessage will return an empty message.
+        Log.d(TAG, currentConfigUpdateMessage);
         currentConfigUpdateMessage =
             parseAndValidateConfigUpdateMessage(currentConfigUpdateMessage);
         if (!currentConfigUpdateMessage.isEmpty()) {
@@ -198,11 +200,11 @@ public class ConfigAutoFetch {
   }
 
   @VisibleForTesting
-  public synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
+  public synchronized Task<Void> fetchLatestConfig(int remainingAttempts, long targetVersion) {
     Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
     Task<ConfigContainer> activatedConfigsTask = activatedCache.get();
 
-    Tasks.whenAllComplete(fetchTask, activatedConfigsTask)
+    return Tasks.whenAllComplete(fetchTask, activatedConfigsTask)
         .continueWithTask(
             scheduledExecutorService,
             (listOfUnusedCompletedTasks) -> {
@@ -235,6 +237,12 @@ public class ConfigAutoFetch {
               if (fetchResponse.getFetchedConfigs() == null) {
                 Log.d(TAG, "The fetch succeeded, but the backend had no updates.");
                 return Tasks.forResult(null);
+              }
+
+              // Activate hasn't been called yet, so use an empty container for comparison.
+              // See ConfigCacheClient#get() for details on the async operation.
+              if (activatedConfigs == null) {
+                activatedConfigs = ConfigContainer.newBuilder().build();
               }
 
               Set<String> updatedParams =

@@ -263,6 +263,7 @@ public final class FirebaseRemoteConfigTest {
     firstFetchedContainer =
         ConfigContainer.newBuilder()
             .replaceConfigsWith(ImmutableMap.of("long_param", "1L", "string_param", "string_value"))
+            .withTemplateVersionNumber(1L)
             .withFetchTime(new Date(1000L))
             .build();
 
@@ -270,22 +271,34 @@ public final class FirebaseRemoteConfigTest {
         ConfigContainer.newBuilder()
             .replaceConfigsWith(
                 ImmutableMap.of("string_param", "string_value", "double_param", "0.1"))
+            .withTemplateVersionNumber(1L)
             .withFetchTime(new Date(5000L))
             .build();
 
     firstFetchedContainerResponse =
         FetchResponse.forBackendUpdatesFetched(firstFetchedContainer, ETAG);
 
-    realtimeFetchedContainer = ConfigContainer.newBuilder().withTemplateVersionNumber(1L).build();
+    realtimeFetchedContainer =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(
+                ImmutableMap.of(
+                    "long_param",
+                    "1L",
+                    "string_param",
+                    "string_value",
+                    "realtime_param",
+                    "realtime_value"))
+            .withTemplateVersionNumber(1L)
+            .build();
     realtimeFetchedContainerResponse =
         FetchResponse.forBackendUpdatesFetched(realtimeFetchedContainer, ETAG);
-    HashSet<ConfigUpdateListener> listeners = new HashSet();
 
+    HashSet<ConfigUpdateListener> listeners = new HashSet();
     ConfigUpdateListener listener =
         new ConfigUpdateListener() {
           @Override
           public void onUpdate(Set<String> changedParams) {
-            mockOnEventListener.onUpdate(new HashSet<>());
+            mockOnEventListener.onUpdate(changedParams);
           }
 
           @Override
@@ -1167,8 +1180,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    Set<String> updatedParams = Sets.newHashSet("string_param", "long_param");
-    verify(mockRetryListener).onUpdate(updatedParams);
+    verify(mockRetryListener).onUpdate(new HashSet<>());
   }
 
   @Test
@@ -1287,26 +1299,52 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void realtime_stream_autofetch_success() {
+  public void realtime_stream_autofetch_success() throws Exception {
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+    when(mockFetchHandler.fetch(0L)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
 
     // Setup activated configs with keys "string_param", "long_param"
     loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);
-    Set<String> updatedParams = Sets.newHashSet("string_param", "long_param");
+    Set<String> updatedParams = Sets.newHashSet("realtime_param");
 
-    configAutoFetch.fetchLatestConfig(1, 1);
+    configAutoFetch
+        .fetchLatestConfig(1, 1)
+        .addOnCompleteListener(
+            unused -> {
+              verify(mockOnEventListener).onUpdate(updatedParams);
+            });
+  }
 
-    verify(mockOnEventListener).onUpdate(updatedParams);
+  @Test
+  public void realtime_autofetchBeforeActivate_callsOnUpdateWithAllFetchedParams() {
+    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
+    when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+
+    // The first call to get() returns null while the cache is loading.
+    loadCacheWithConfig(mockActivatedCache, null);
+
+    Set<String> updatedParams = Sets.newHashSet("string_param", "long_param", "realtime_param");
+
+    configAutoFetch
+        .fetchLatestConfig(1, 1)
+        .addOnCompleteListener(
+            unused -> {
+              verify(mockOnEventListener).onUpdate(updatedParams);
+            });
   }
 
   @Test
   public void realtime_stream_autofetch_failure() {
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
-    configAutoFetch.fetchLatestConfig(1, 1000);
 
-    verify(mockNotFetchedEventListener).onError(any(FirebaseRemoteConfigServerException.class));
+    configAutoFetch
+        .fetchLatestConfig(1, 1000)
+        .addOnCompleteListener(
+            unused -> {
+              verify(mockNotFetchedEventListener)
+                  .onError(any(FirebaseRemoteConfigServerException.class));
+            });
   }
 
   private static void loadCacheWithConfig(
