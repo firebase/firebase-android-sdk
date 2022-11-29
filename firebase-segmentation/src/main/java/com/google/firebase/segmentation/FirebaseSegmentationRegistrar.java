@@ -16,29 +16,38 @@ package com.google.firebase.segmentation;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /** @hide */
 public class FirebaseSegmentationRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-segmentation";
 
   @Override
   @NonNull
   public List<Component<?>> getComponents() {
+    Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
     return Arrays.asList(
         Component.builder(FirebaseSegmentation.class)
+            .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
+            .add(Dependency.required(blockingExecutor))
             .factory(
                 c ->
                     new FirebaseSegmentation(
-                        c.get(FirebaseApp.class), c.get(FirebaseInstallationsApi.class)))
+                        c.get(FirebaseApp.class),
+                        c.get(FirebaseInstallationsApi.class),
+                        c.get(blockingExecutor)))
             .build(),
-        LibraryVersionComponent.create("fire-segmentation", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }

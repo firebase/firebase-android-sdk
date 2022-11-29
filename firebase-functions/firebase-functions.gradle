@@ -14,6 +14,7 @@
 
 plugins {
     id 'firebase-library'
+    id 'firebase-vendor'
 }
 
 firebaseLibrary {
@@ -50,21 +51,29 @@ android {
 }
 
 dependencies {
+    implementation project(':firebase-annotations')
     implementation project(':firebase-common')
     implementation project(':firebase-components')
     implementation project(':appcheck:firebase-appcheck-interop')
     implementation 'com.google.android.gms:play-services-basement:18.1.0'
     implementation 'com.google.android.gms:play-services-base:18.0.1'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation ('com.google.firebase:firebase-iid:20.0.1') {
-        exclude group: 'com.google.firebase', module: 'firebase-common'
+    implementation ('com.google.firebase:firebase-iid:21.1.0') {
+        exclude group: "com.google.firebase", module: "firebase-common"
+        exclude group: "com.google.firebase", module: "firebase-components"
     }
     implementation ('com.google.firebase:firebase-auth-interop:18.0.0') {
         exclude group: 'com.google.firebase', module: 'firebase-common'
     }
-    implementation 'com.google.firebase:firebase-iid-interop:17.0.0'
+    implementation 'com.google.firebase:firebase-iid-interop:17.1.0'
 
     implementation 'com.squareup.okhttp3:okhttp:3.12.1'
+
+    implementation 'javax.inject:javax.inject:1'
+    vendor ('com.google.dagger:dagger:2.43.2') {
+        exclude group: "javax.inject", module: "javax.inject"
+    }
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.43.2'
 
     annotationProcessor 'com.google.auto.value:auto-value:1.6.2'
 
@@ -72,6 +81,7 @@ dependencies {
     javadocClasspath 'org.codehaus.mojo:animal-sniffer-annotations:1.19'
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
 
+    androidTestImplementation project(":integ-testing")
     androidTestImplementation 'junit:junit:4.13.2'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'androidx.test:runner:1.3.0'

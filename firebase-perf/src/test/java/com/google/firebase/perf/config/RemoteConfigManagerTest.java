@@ -25,9 +25,9 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
-import com.google.firebase.perf.provider.FirebasePerfProvider;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
@@ -48,11 +48,16 @@ import org.robolectric.RobolectricTestRunner;
 public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
 
   private static final String FIREPERF_FRC_NAMESPACE_NAME = "fireperf";
+  private static final FirebaseRemoteConfigValue TRUE_VALUE =
+      new RemoteConfigValueImplForTest("true");
+  private static final FirebaseRemoteConfigValue FALSE_VALUE =
+      new RemoteConfigValueImplForTest("false");
 
   @Mock private FirebaseRemoteConfig mockFirebaseRemoteConfig;
   @Mock private RemoteConfigComponent mockFirebaseRemoteConfigComponent;
   @Mock private Provider<RemoteConfigComponent> mockFirebaseRemoteConfigProvider;
 
+  private DeviceCacheManager cacheManager;
   private FakeScheduledExecutorService fakeExecutor;
 
   @Before
@@ -60,6 +65,8 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     initMocks(this);
 
     fakeExecutor = new FakeScheduledExecutorService();
+    // DeviceCacheManager initialization requires immediate blocking task execution in its executor
+    cacheManager = new DeviceCacheManager(MoreExecutors.newDirectExecutorService());
 
     when(mockFirebaseRemoteConfigProvider.get()).thenReturn(mockFirebaseRemoteConfigComponent);
     when(mockFirebaseRemoteConfigComponent.get(FIREPERF_FRC_NAMESPACE_NAME))
@@ -228,6 +235,29 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     assertThat(testRemoteConfigManager.getString("some_key2").get()).isEqualTo("newKey2");
     assertThat(testRemoteConfigManager.getString("some_key4").get()).isEqualTo("key4");
     assertThat(testRemoteConfigManager.getString("some_key3").isAvailable()).isFalse();
+  }
+
+  @Test
+  public void syncConfigValues_savesNewlyFetchedValueToDeviceCache() {
+    Map<String, FirebaseRemoteConfigValue> configs = new HashMap<>();
+    ConfigurationConstants.ExperimentTTID flag =
+        ConfigurationConstants.ExperimentTTID.getInstance();
+    configs.put(flag.getRemoteConfigFlag(), TRUE_VALUE);
+    RemoteConfigManager testRemoteConfigManager = setupTestRemoteConfigManager(configs);
+
+    assertThat(cacheManager.getBoolean(flag.getDeviceCacheFlag()).isAvailable()).isFalse();
+
+    configs.put(flag.getRemoteConfigFlag(), FALSE_VALUE);
+    testRemoteConfigManager.syncConfigValues(configs);
+
+    assertThat(cacheManager.getBoolean(flag.getDeviceCacheFlag()).isAvailable()).isTrue();
+    assertThat(cacheManager.getBoolean(flag.getDeviceCacheFlag()).get()).isFalse();
+
+    configs.put(flag.getRemoteConfigFlag(), TRUE_VALUE);
+    testRemoteConfigManager.syncConfigValues(configs);
+
+    assertThat(cacheManager.getBoolean(flag.getDeviceCacheFlag()).isAvailable()).isTrue();
+    assertThat(cacheManager.getBoolean(flag.getDeviceCacheFlag()).get()).isTrue();
   }
 
   @Test
@@ -809,8 +839,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
                 appStartConfigFetchDelay));
 
     // Simulate time fast forward to some time before fetch time is up
-    long appStartTimeInMs =
-        TimeUnit.MICROSECONDS.toMillis(FirebasePerfProvider.getAppStartTime().getMicros());
+    long appStartTimeInMs = System.currentTimeMillis();
     when(remoteConfigManagerPartialMock.getCurrentSystemTimeMillis())
         .thenReturn(appStartTimeInMs + appStartConfigFetchDelay - 2000);
 
@@ -836,8 +865,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
                 appStartConfigFetchDelay));
 
     // Simulate time fast forward to 2s after fetch delay time is up
-    long appStartTimeInMs =
-        TimeUnit.MICROSECONDS.toMillis(FirebasePerfProvider.getAppStartTime().getMicros());
+    long appStartTimeInMs = System.currentTimeMillis();
     when(remoteConfigManagerPartialMock.getCurrentSystemTimeMillis())
         .thenReturn(appStartTimeInMs + appStartConfigFetchDelay + 2000);
 
@@ -889,10 +917,18 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     when(mockFirebaseRemoteConfig.getAll()).thenReturn(configs);
     if (initializeFrc) {
       return new RemoteConfigManager(
-          fakeExecutor, mockFirebaseRemoteConfig, appStartConfigFetchDelayInMs);
+          cacheManager,
+          fakeExecutor,
+          mockFirebaseRemoteConfig,
+          appStartConfigFetchDelayInMs,
+          RemoteConfigManager.getInitialStartupMillis());
     } else {
       return new RemoteConfigManager(
-          fakeExecutor, /* firebaseRemoteConfig= */ null, appStartConfigFetchDelayInMs);
+          cacheManager,
+          fakeExecutor,
+          /* firebaseRemoteConfig= */ null,
+          appStartConfigFetchDelayInMs,
+          RemoteConfigManager.getInitialStartupMillis());
     }
   }
 

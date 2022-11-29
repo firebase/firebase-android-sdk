@@ -44,9 +44,9 @@ import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.nullable
 import org.mockito.Captor
 import org.mockito.Mock
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.verify
+import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations.initMocks
 import org.robolectric.RobolectricTestRunner
 
@@ -56,109 +56,101 @@ const val API_KEY = "API_KEY"
 const val EXISTING_APP = "existing"
 
 abstract class BaseTestCase {
-    @Before
-    open fun setUp() {
-        Firebase.initialize(
-                ApplicationProvider.getApplicationContext(),
-                FirebaseOptions.Builder()
-                        .setApplicationId(APP_ID)
-                        .setApiKey(API_KEY)
-                        .setProjectId("123")
-                        .build()
-        )
+  @Before
+  open fun setUp() {
+    Firebase.initialize(
+      ApplicationProvider.getApplicationContext(),
+      FirebaseOptions.Builder()
+        .setApplicationId(APP_ID)
+        .setApiKey(API_KEY)
+        .setProjectId("123")
+        .build()
+    )
 
-        Firebase.initialize(
-                ApplicationProvider.getApplicationContext(),
-                FirebaseOptions.Builder()
-                        .setApplicationId(APP_ID)
-                        .setApiKey(API_KEY)
-                        .setProjectId("123")
-                        .build(),
-                EXISTING_APP
-        )
-    }
+    Firebase.initialize(
+      ApplicationProvider.getApplicationContext(),
+      FirebaseOptions.Builder()
+        .setApplicationId(APP_ID)
+        .setApiKey(API_KEY)
+        .setProjectId("123")
+        .build(),
+      EXISTING_APP
+    )
+  }
 
-    @After
-    fun cleanUp() {
-        FirebaseApp.clearInstancesForTest()
-    }
+  @After
+  fun cleanUp() {
+    FirebaseApp.clearInstancesForTest()
+  }
 }
 
 @RunWith(RobolectricTestRunner::class)
 class PerformanceTests : BaseTestCase() {
 
-    @Mock
-    lateinit var transportManagerMock: TransportManager
+  @Mock lateinit var transportManagerMock: TransportManager
 
-    @Mock
-    lateinit var timerMock: Timer
+  @Mock lateinit var timerMock: Timer
 
-    @Mock
-    lateinit var mockTransportManager: TransportManager
+  @Mock lateinit var mockTransportManager: TransportManager
 
-    @Mock
-    lateinit var mockClock: Clock
+  @Mock lateinit var mockClock: Clock
 
-    @Mock
-    lateinit var mockAppStateMonitor: AppStateMonitor
+  @Mock lateinit var mockAppStateMonitor: AppStateMonitor
 
-    @Captor
-    lateinit var argMetricCaptor: ArgumentCaptor<NetworkRequestMetric>
+  @Captor lateinit var argMetricCaptor: ArgumentCaptor<NetworkRequestMetric>
 
-    @Captor
-    lateinit var argumentsCaptor: ArgumentCaptor<TraceMetric>
+  @Captor lateinit var argumentsCaptor: ArgumentCaptor<TraceMetric>
 
-    var currentTime: Long = 1
+  var currentTime: Long = 1
 
-    @Before
-    override fun setUp() {
-        super.setUp()
-        initMocks(this)
+  @Before
+  override fun setUp() {
+    super.setUp()
+    initMocks(this)
 
-        `when`(timerMock.getMicros()).thenReturn(1000L)
-        `when`(timerMock.getDurationMicros()).thenReturn(2000L).thenReturn(3000L)
-        doAnswer {
-            Timer(currentTime)
-        }.`when`(mockClock).getTime()
-    }
+    `when`(timerMock.getMicros()).thenReturn(1000L)
+    `when`(timerMock.getDurationMicros()).thenReturn(2000L).thenReturn(3000L)
+    doAnswer { Timer(currentTime) }.`when`(mockClock).getTime()
+  }
 
-    @Test
-    fun `performance should delegate to FirebasePerformance#getInstance()`() {
-        assertThat(Firebase.performance).isSameInstanceAs(FirebasePerformance.getInstance())
-    }
+  @Test
+  fun `performance should delegate to FirebasePerformance#getInstance()`() {
+    assertThat(Firebase.performance).isSameInstanceAs(FirebasePerformance.getInstance())
+  }
 
-    @Test
-    fun `httpMetric wrapper test `() {
-        val metric = HttpMetric("https://www.google.com/", HttpMethod.GET, transportManagerMock, timerMock)
-        metric.trace {
-            setHttpResponseCode(200)
-        }
+  @Test
+  fun `httpMetric wrapper test `() {
+    val metric =
+      HttpMetric("https://www.google.com/", HttpMethod.GET, transportManagerMock, timerMock)
+    metric.trace { setHttpResponseCode(200) }
 
-        verify(transportManagerMock)
-            .log(argMetricCaptor.capture(), ArgumentMatchers.nullable(ApplicationProcessState::class.java))
+    verify(transportManagerMock)
+      .log(
+        argMetricCaptor.capture(),
+        ArgumentMatchers.nullable(ApplicationProcessState::class.java)
+      )
 
-        val metricValue = argMetricCaptor.getValue()
-        assertThat(metricValue.getHttpResponseCode()).isEqualTo(200)
-    }
+    val metricValue = argMetricCaptor.getValue()
+    assertThat(metricValue.getHttpResponseCode()).isEqualTo(200)
+  }
 
-    @Test
-    fun `trace wrapper test`() {
-        val trace = Trace("trace_1", mockTransportManager, mockClock, mockAppStateMonitor)
-        trace.trace {
-            incrementMetric("metric_1", 5)
-        }
+  @Test
+  fun `trace wrapper test`() {
+    val trace = Trace("trace_1", mockTransportManager, mockClock, mockAppStateMonitor)
+    trace.trace { incrementMetric("metric_1", 5) }
 
-        assertThat(getTraceCounter(trace)).hasSize(1)
-        assertThat(getTraceCounterCount(trace, "metric_1")).isEqualTo(5)
-        verify(mockTransportManager).log(argumentsCaptor.capture(), nullable(ApplicationProcessState::class.java))
-    }
+    assertThat(getTraceCounter(trace)).hasSize(1)
+    assertThat(getTraceCounterCount(trace, "metric_1")).isEqualTo(5)
+    verify(mockTransportManager)
+      .log(argumentsCaptor.capture(), nullable(ApplicationProcessState::class.java))
+  }
 }
 
 @RunWith(RobolectricTestRunner::class)
 class LibraryVersionTest : BaseTestCase() {
-    @Test
-    fun `library version should be registered with runtime`() {
-        val publisher = Firebase.app.get(UserAgentPublisher::class.java)
-        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
-    }
+  @Test
+  fun `library version should be registered with runtime`() {
+    val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+    assertThat(publisher.userAgent).contains(LIBRARY_NAME)
+  }
 }

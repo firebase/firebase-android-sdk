@@ -16,6 +16,7 @@ package com.google.firebase.appcheck.debug.internal;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
+import android.annotation.SuppressLint;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -45,6 +46,8 @@ public class DebugAppCheckProvider implements AppCheckProvider {
   private final RetryManager retryManager;
   private final Task<String> debugSecretTask;
 
+  // TODO(b/258273630): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   public DebugAppCheckProvider(@NonNull FirebaseApp firebaseApp, @Nullable String debugSecret) {
     checkNotNull(firebaseApp);
     this.networkClient = new NetworkClient(firebaseApp);

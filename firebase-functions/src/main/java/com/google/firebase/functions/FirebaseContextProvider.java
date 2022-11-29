@@ -17,15 +17,20 @@ package com.google.firebase.functions;
 import android.util.Log;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.api.FirebaseNoSignedInUserException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /** A ContextProvider that uses FirebaseAuth to get the token. */
+@Singleton
 class FirebaseContextProvider implements ContextProvider {
   private final String TAG = "FirebaseContextProvider";
 
@@ -33,13 +38,17 @@ class FirebaseContextProvider implements ContextProvider {
   private final Provider<FirebaseInstanceIdInternal> instanceId;
   private final AtomicReference<InternalAppCheckTokenProvider> appCheckRef =
       new AtomicReference<>();
+  private final Executor executor;
 
+  @Inject
   FirebaseContextProvider(
       Provider<InternalAuthProvider> tokenProvider,
       Provider<FirebaseInstanceIdInternal> instanceId,
-      Deferred<InternalAppCheckTokenProvider> appCheckDeferred) {
+      Deferred<InternalAppCheckTokenProvider> appCheckDeferred,
+      @Lightweight Executor executor) {
     this.tokenProvider = tokenProvider;
     this.instanceId = instanceId;
+    this.executor = executor;
     appCheckDeferred.whenAvailable(
         p -> {
           InternalAppCheckTokenProvider appCheck = p.get();
@@ -59,6 +68,7 @@ class FirebaseContextProvider implements ContextProvider {
     Task<String> appCheckToken = getAppCheckToken();
     return Tasks.whenAll(authToken, appCheckToken)
         .onSuccessTask(
+            executor,
             v ->
                 Tasks.forResult(
                     new HttpsCallableContext(
@@ -74,6 +84,7 @@ class FirebaseContextProvider implements ContextProvider {
     }
     return auth.getAccessToken(false)
         .continueWith(
+            executor,
             task -> {
               String authToken = null;
               if (!task.isSuccessful()) {
@@ -98,6 +109,7 @@ class FirebaseContextProvider implements ContextProvider {
     return appCheck
         .getToken(false)
         .onSuccessTask(
+            executor,
             result -> {
               if (result.getError() != null) {
                 // If there was an error getting the App Check token, do NOT send the placeholder

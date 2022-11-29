@@ -120,6 +120,14 @@ public class FirebaseLibraryExtension {
       releaseWithLibrary.librariesToCoRelease.add(this);
       this.project.setVersion(releaseWithProject.getVersion());
 
+      LibraryExtension android = project.getExtensions().findByType(LibraryExtension.class);
+      if (android != null) {
+        android.defaultConfig(
+            cfg -> {
+              cfg.buildConfigField("String", "VERSION_NAME", "\"" + project.getVersion() + "\"");
+            });
+      }
+
       String latestRelease = "latestReleasedVersion";
       if (releaseWithProject.hasProperty(latestRelease)) {
         this.project

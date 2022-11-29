@@ -1,0 +1,61 @@
+# Configurations for tracing test apps construction.
+#
+# Note:
+#   - One SDK may contain multiple test apps
+#   - Common plugins and traces are applied to all test apps during runtime
+#   - Test apps can also define their additional gradle plugins and custom traces, e.g.
+#
+#     test-apps:
+#       - sdk: firebase-crashlytics
+#         name: crashlytics-1
+#         plugins: [com.google.firebase.<crashlytics-custom-plugin>]
+#         traces: [crashlytics-custom-trace]
+#
+#       - sdk: firebase-crashlytics
+#         name: crashlytics-2
+#         ......
+#
+
+common-plugins: [com.google.gms.google-services]
+
+common-traces: [Firebase, ComponentDiscovery, Runtime]
+
+test-apps:
+  - sdk: N.A.
+    name: all-included
+    dependencies:
+      - com.google.firebase:firebase-abt
+      - com.google.firebase:firebase-appcheck
+      - com.google.firebase:firebase-appdistribution
+      - com.google.firebase:firebase-crashlytics
+      - com.google.firebase:firebase-database
+      - com.google.firebase:firebase-dynamic-links
+      - com.google.firebase:firebase-firestore
+      - com.google.firebase:firebase-functions
+      - com.google.firebase:firebase-inappmessaging
+      - com.google.firebase:firebase-inappmessaging-display
+      - com.google.firebase:firebase-messaging
+      - com.google.firebase:firebase-ml-modeldownloader
+      - com.google.firebase:firebase-perf
+      - com.google.firebase:firebase-storage
+    plugins:
+      - com.google.firebase.crashlytics
+      - com.google.firebase.firebase-perf
+    traces:
+      - fire-abt
+      - fire-app-check
+      - fire-appdistribution
+      - fire-cls
+      - fire-dl
+      - fire-fcm
+      - fire-fiam
+      - fire-fiamd
+      - fire-fn
+      - fire-fst
+      - fire-gcs
+      - fire-installations
+      - firebase-ml-modeldownloader
+      - fire-perf
+      - fire-rc
+      - fire-rtdb
+      - fire-transport

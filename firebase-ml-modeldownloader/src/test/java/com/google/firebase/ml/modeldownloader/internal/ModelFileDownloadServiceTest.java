@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -54,15 +55,16 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.LooperMode;
 
 @RunWith(RobolectricTestRunner.class)
+@LooperMode(LooperMode.Mode.LEGACY)
 public class ModelFileDownloadServiceTest {
 
   private static final String TEST_PROJECT_ID = "777777777777";
@@ -81,16 +83,11 @@ public class ModelFileDownloadServiceTest {
   private static final long URL_EXPIRATION_FUTURE = (new Date()).getTime() + 600000;
   private static final Long DOWNLOAD_ID = 987923L;
 
-  private static final CustomModel CUSTOM_MODEL_PREVIOUS_LOADED =
-      new CustomModel(MODEL_NAME, MODEL_HASH + "2", 105, 0, "FakeFile/path.tflite");
-  private static final CustomModel CUSTOM_MODEL_NO_URL =
-      new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
-  private static final CustomModel CUSTOM_MODEL_URL =
-      new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION_FUTURE);
-  private static final CustomModel CUSTOM_MODEL_EXPIRED_URL =
-      new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION_OLD);
-  private static final CustomModel CUSTOM_MODEL_DOWNLOADING =
-      new CustomModel(MODEL_NAME, MODEL_HASH, 100, DOWNLOAD_ID);
+  private CustomModel CUSTOM_MODEL_PREVIOUS_LOADED;
+  private CustomModel CUSTOM_MODEL_NO_URL;
+  private CustomModel CUSTOM_MODEL_URL;
+  private CustomModel CUSTOM_MODEL_EXPIRED_URL;
+  private CustomModel CUSTOM_MODEL_DOWNLOADING;
   CustomModel customModelDownloadComplete;
 
   private static final CustomModelDownloadConditions DOWNLOAD_CONDITIONS_CHARGING_IDLE =
@@ -99,52 +96,77 @@ public class ModelFileDownloadServiceTest {
   File testTempModelFile;
   File testAppModelFile;
 
+  private final DownloadManager mockDownloadManager = mock(DownloadManager.class);
+  private final ModelFileManager mockFileManager = mock(ModelFileManager.class);
+  private final FirebaseMlLogger mockStatsLogger = mock(FirebaseMlLogger.class);
+
+  private final ExecutorService executor = Executors.newSingleThreadExecutor();
+
   private ModelFileDownloadService modelFileDownloadService;
 
   private ModelFileDownloadService modelFileDownloadServiceInitialLoad;
   private SharedPreferencesUtil sharedPreferencesUtil;
-  @Mock DownloadManager mockDownloadManager;
-  @Mock ModelFileManager mockFileManager;
-  @Mock FirebaseMlLogger mockStatsLogger;
+  private CustomModel.Factory modelFactory;
 
-  ExecutorService executor;
   private MatrixCursor matrixCursor;
   FirebaseApp app;
 
   @Before
   public void setUp() throws IOException {
-    MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
     app = FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), FIREBASE_OPTIONS);
 
-    executor = Executors.newSingleThreadExecutor();
-    sharedPreferencesUtil = new SharedPreferencesUtil(app);
+    AtomicReference<ModelFileDownloadService> serviceRef = new AtomicReference<>();
+    modelFactory =
+        (name, modelHash, fileSize, downloadId, localFilePath, downloadUrl, downloadUrlExpiry) ->
+            new CustomModel(
+                serviceRef.get(),
+                name,
+                modelHash,
+                fileSize,
+                downloadId,
+                localFilePath,
+                downloadUrl,
+                downloadUrlExpiry);
+    sharedPreferencesUtil = new SharedPreferencesUtil(app, modelFactory);
     sharedPreferencesUtil.clearModelDetails(MODEL_NAME);
 
     modelFileDownloadService =
         new ModelFileDownloadService(
-            app,
+            ApplicationProvider.getApplicationContext(),
             mockDownloadManager,
             mockFileManager,
             sharedPreferencesUtil,
             mockStatsLogger,
-            false);
+            false,
+            modelFactory);
+    serviceRef.set(modelFileDownloadService);
 
     modelFileDownloadServiceInitialLoad =
         new ModelFileDownloadService(
-            app,
+            ApplicationProvider.getApplicationContext(),
             mockDownloadManager,
             mockFileManager,
             sharedPreferencesUtil,
             mockStatsLogger,
-            true);
+            true,
+            modelFactory);
+
+    CUSTOM_MODEL_PREVIOUS_LOADED =
+        modelFactory.create(MODEL_NAME, MODEL_HASH + "2", 105, 0, "FakeFile/path.tflite");
+    CUSTOM_MODEL_NO_URL = modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0);
+    CUSTOM_MODEL_URL =
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION_FUTURE);
+    CUSTOM_MODEL_EXPIRED_URL =
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION_OLD);
+    CUSTOM_MODEL_DOWNLOADING = modelFactory.create(MODEL_NAME, MODEL_HASH, 100, DOWNLOAD_ID);
 
     matrixCursor = new MatrixCursor(new String[] {DownloadManager.COLUMN_STATUS});
     testTempModelFile = File.createTempFile("fakeTempFile", ".tflite");
 
     testAppModelFile = File.createTempFile("fakeAppFile", ".tflite");
     customModelDownloadComplete =
-        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, testAppModelFile.getPath());
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0, testAppModelFile.getPath());
   }
 
   @After
@@ -410,7 +432,7 @@ public class ModelFileDownloadServiceTest {
     when(mockDownloadManager.query(any())).thenReturn(matrixCursor);
 
     CustomModel justAboutToExpireModel =
-        new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, (new Date()).getTime() + 3);
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, (new Date()).getTime() + 3);
 
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
     Task<Void> task = modelFileDownloadService.ensureModelDownloaded(justAboutToExpireModel);
@@ -609,7 +631,7 @@ public class ModelFileDownloadServiceTest {
 
     // set up the first request
     CustomModel justAboutToExpireModel =
-        new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, (new Date()).getTime() + 30);
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, (new Date()).getTime() + 30);
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
     Task<Void> task = modelFileDownloadService.ensureModelDownloaded(justAboutToExpireModel);
     task.addOnCompleteListener(executor, onCompleteListener);
@@ -818,7 +840,8 @@ public class ModelFileDownloadServiceTest {
   public void maybeCheckDownloadingComplete_multipleDownloads() throws Exception {
     sharedPreferencesUtil.setDownloadingCustomModelDetails(CUSTOM_MODEL_DOWNLOADING);
     String secondModelName = "secondModelName";
-    CustomModel downloading2 = new CustomModel(secondModelName, MODEL_HASH, 100, DOWNLOAD_ID + 1);
+    CustomModel downloading2 =
+        modelFactory.create(secondModelName, MODEL_HASH, 100, DOWNLOAD_ID + 1);
     sharedPreferencesUtil.setDownloadingCustomModelDetails(downloading2);
 
     assertNull(modelFileDownloadService.getDownloadingModelStatusCode(0L));
@@ -837,7 +860,7 @@ public class ModelFileDownloadServiceTest {
         sharedPreferencesUtil.getCustomModelDetails(MODEL_NAME), customModelDownloadComplete);
     assertEquals(
         sharedPreferencesUtil.getCustomModelDetails(secondModelName),
-        new CustomModel(secondModelName, MODEL_HASH, 100, 0, testAppModelFile.getPath()));
+        modelFactory.create(secondModelName, MODEL_HASH, 100, 0, testAppModelFile.getPath()));
     verify(mockDownloadManager, times(5)).query(any());
     verify(mockDownloadManager, times(2)).remove(anyLong());
   }

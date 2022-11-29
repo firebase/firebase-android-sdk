@@ -28,10 +28,13 @@ import java.util.List;
 
 @Keep
 public class TransportRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-transport";
+
   @Override
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(TransportFactory.class)
+            .name(LIBRARY_NAME)
             .add(Dependency.required(Context.class))
             .factory(
                 c -> {
@@ -39,6 +42,6 @@ public class TransportRegistrar implements ComponentRegistrar {
                   return TransportRuntime.getInstance().newFactory(CCTDestination.LEGACY_INSTANCE);
                 })
             .build(),
-        LibraryVersionComponent.create("fire-transport", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }

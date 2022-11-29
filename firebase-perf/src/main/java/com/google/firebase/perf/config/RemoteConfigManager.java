@@ -14,15 +14,19 @@
 
 package com.google.firebase.perf.config;
 
+import static com.google.firebase.perf.config.ConfigurationConstants.ExperimentTTID;
+
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.StartupTime;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.logging.AndroidLogger;
-import com.google.firebase.perf.provider.FirebasePerfProvider;
 import com.google.firebase.perf.util.Optional;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
@@ -53,6 +57,7 @@ public class RemoteConfigManager {
   private static final long MIN_APP_START_CONFIG_FETCH_DELAY_MS = 5000;
   private static final int RANDOM_APP_START_CONFIG_FETCH_DELAY_MS = 25000;
 
+  private final DeviceCacheManager cache;
   private final ConcurrentHashMap<String, FirebaseRemoteConfigValue> allRcConfigMap;
   private final Executor executor;
   private final long appStartTimeInMs;
@@ -63,39 +68,49 @@ public class RemoteConfigManager {
   @Nullable private Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
   @Nullable private FirebaseRemoteConfig firebaseRemoteConfig;
 
+  // TODO(b/258263016): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   private RemoteConfigManager() {
     this(
+        DeviceCacheManager.getInstance(),
         new ThreadPoolExecutor(
             /* corePoolSize= */ 0,
             /* maximumPoolSize= */ 1,
             /* keepAliveTime= */ 0L,
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<Runnable>()),
-        /* firebaseRemoteConfig= */ null // set once FirebaseRemoteConfig is initialized
-        );
+        /* firebaseRemoteConfig= */ null, // set once FirebaseRemoteConfig is initialized
+        MIN_APP_START_CONFIG_FETCH_DELAY_MS
+            + new Random().nextInt(RANDOM_APP_START_CONFIG_FETCH_DELAY_MS),
+        getInitialStartupMillis());
   }
 
-  RemoteConfigManager(Executor executor, FirebaseRemoteConfig firebaseRemoteConfig) {
-    this(
-        executor,
-        firebaseRemoteConfig,
-        MIN_APP_START_CONFIG_FETCH_DELAY_MS
-            + new Random().nextInt(RANDOM_APP_START_CONFIG_FETCH_DELAY_MS));
+  @VisibleForTesting
+  @SuppressWarnings("FirebaseUseExplicitDependencies")
+  static long getInitialStartupMillis() {
+    StartupTime startupTime = FirebaseApp.getInstance().get(StartupTime.class);
+    if (startupTime != null) {
+      return startupTime.getEpochMillis();
+    } else {
+      return System.currentTimeMillis();
+    }
   }
 
   @VisibleForTesting
   RemoteConfigManager(
+      DeviceCacheManager cache,
       Executor executor,
       FirebaseRemoteConfig firebaseRemoteConfig,
-      long appStartConfigFetchDelayInMs) {
+      long appStartConfigFetchDelayInMs,
+      long appStartTimeInMs) {
+    this.cache = cache;
     this.executor = executor;
     this.firebaseRemoteConfig = firebaseRemoteConfig;
     this.allRcConfigMap =
         firebaseRemoteConfig == null
             ? new ConcurrentHashMap<>()
             : new ConcurrentHashMap<>(firebaseRemoteConfig.getAll());
-    this.appStartTimeInMs =
-        TimeUnit.MICROSECONDS.toMillis(FirebasePerfProvider.getAppStartTime().getMicros());
+    this.appStartTimeInMs = appStartTimeInMs;
     this.appStartConfigFetchDelayInMs = appStartConfigFetchDelayInMs;
   }
 
@@ -315,7 +330,7 @@ public class RemoteConfigManager {
       return;
     }
     if (allRcConfigMap.isEmpty()) { // Initial fetch.
-      syncConfigValues(firebaseRemoteConfig.getAll());
+      allRcConfigMap.putAll(firebaseRemoteConfig.getAll());
     }
     if (shouldFetchAndActivateRemoteConfigValues()) {
       triggerFirebaseRemoteConfigFetchAndActivateOnSuccessfulFetch();
@@ -341,6 +356,21 @@ public class RemoteConfigManager {
       if (!newlyFetchedMap.containsKey(existingKey)) {
         allRcConfigMap.remove(existingKey);
       }
+    }
+
+    // TODO: remove after experiment is over and experiment RC flag is no longer needed
+    // Save ExperimentTTID flag to device cache upon successful RC fetchAndActivate, because reading
+    // is done quite early and it is possible that RC isn't initialized yet.
+    ExperimentTTID flag = ExperimentTTID.getInstance();
+    FirebaseRemoteConfigValue rcValue = allRcConfigMap.get(flag.getRemoteConfigFlag());
+    if (rcValue != null) {
+      try {
+        cache.setValue(flag.getDeviceCacheFlag(), rcValue.asBoolean());
+      } catch (Exception exception) {
+        logger.debug("ExperimentTTID remote config flag has invalid value, expected boolean.");
+      }
+    } else {
+      logger.debug("ExperimentTTID remote config flag does not exist.");
     }
   }
 

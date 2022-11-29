@@ -45,6 +45,7 @@ android {
 
     lintOptions {
         abortOnError true
+        baseline file("lint-baseline.xml")
     }
 
     defaultConfig {
@@ -118,9 +119,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.28.2'
     testImplementation 'org.mockito:mockito-inline:2.13.0'
-    testImplementation ("org.robolectric:robolectric:$robolectricVersion") {
-        exclude group: 'com.google.protobuf', module: 'protobuf-java'
-    }
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
     testImplementation 'androidx.test:core:1.2.0'

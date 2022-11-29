@@ -29,3 +29,7 @@ java {
 tasks.withType(JavaCompile) {
     options.compilerArgs << "-Werror"
 }
+
+dependencies {
+    implementation 'javax.inject:javax.inject:1'
+}

@@ -14,20 +14,25 @@
 
 package com.google.firebase.perf.metrics;
 
-import static com.google.firebase.perf.util.TimerTest.getElapsedRealtimeMicros;
+import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
+import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
-import android.content.pm.ProviderInfo;
 import android.os.Bundle;
+import android.os.Looper;
+import android.os.Process;
+import android.os.SystemClock;
+import android.view.View;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
-import com.google.firebase.perf.provider.FirebasePerfProvider;
+import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
@@ -36,6 +41,7 @@ import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.TraceMetric;
 import com.google.testing.timing.FakeScheduledExecutorService;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Assert;
@@ -48,13 +54,18 @@ import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
+import org.robolectric.shadows.ShadowSystemClock;
 
 /** Unit tests for {@link AppStartTrace}. */
 @RunWith(RobolectricTestRunner.class)
+@LooperMode(LooperMode.Mode.PAUSED)
 public class AppStartTraceTest extends FirebasePerformanceTestBase {
 
   @Mock private Clock clock;
   @Mock private TransportManager transportManager;
+  @Mock private ConfigResolver configResolver;
   @Mock private Activity activity1;
   @Mock private Activity activity2;
   @Mock private Bundle bundle;
@@ -63,9 +74,6 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
 
   // a mocked current wall-clock time in microseconds.
   private long currentTime = 0;
-
-  // Timer at the beginning of app startup
-  private Timer appStart;
 
   @Before
   public void setUp() {
@@ -81,7 +89,6 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
         .getTime();
     transportManager = mock(TransportManager.class);
     traceArgumentCaptor = ArgumentCaptor.forClass(TraceMetric.class);
-    appStart = FirebasePerfProvider.getAppStartTime();
   }
 
   @After
@@ -94,7 +101,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   @Test
   public void testLaunchActivity() {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
-    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService);
+    AppStartTrace trace =
+        new AppStartTrace(transportManager, clock, configResolver, fakeExecutorService);
     // first activity goes through onCreate()->onStart()->onResume() state change.
     currentTime = 1;
     trace.onActivityCreated(activity1, bundle);
@@ -141,15 +149,10 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     TraceMetric metric = traceArgumentCaptor.getValue();
 
     Assert.assertEquals(Constants.TraceNames.APP_START_TRACE_NAME.toString(), metric.getName());
-    Assert.assertEquals(appStart.getMicros(), metric.getClientStartTimeUs());
-    Assert.assertEquals(resumeTime - getElapsedRealtimeMicros(appStart), metric.getDurationUs());
 
     Assert.assertEquals(3, metric.getSubtracesCount());
     Assert.assertEquals(
         Constants.TraceNames.ON_CREATE_TRACE_NAME.toString(), metric.getSubtraces(0).getName());
-    Assert.assertEquals(appStart.getMicros(), metric.getSubtraces(0).getClientStartTimeUs());
-    Assert.assertEquals(
-        createTime - getElapsedRealtimeMicros(appStart), metric.getSubtraces(0).getDurationUs());
 
     Assert.assertEquals(
         Constants.TraceNames.ON_START_TRACE_NAME.toString(), metric.getSubtraces(1).getName());
@@ -171,7 +174,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   @Test
   public void testInterleavedActivity() {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
-    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService);
+    AppStartTrace trace =
+        new AppStartTrace(transportManager, clock, configResolver, fakeExecutorService);
     // first activity onCreate()
     currentTime = 1;
     trace.onActivityCreated(activity1, bundle);
@@ -206,9 +210,13 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   @Test
   public void testDelayedAppStart() {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
-    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService);
+    AppStartTrace trace =
+        new AppStartTrace(transportManager, clock, configResolver, fakeExecutorService);
     // Delays activity creation after 1 minute from app start time.
-    currentTime = appStart.getMicros() + TimeUnit.MINUTES.toMicros(1) + 1;
+    currentTime =
+        TimeUnit.MILLISECONDS.toMicros(SystemClock.elapsedRealtime())
+            + TimeUnit.MINUTES.toMicros(1)
+            + 1;
     trace.onActivityCreated(activity1, bundle);
     Assert.assertEquals(currentTime, trace.getOnCreateTime().getMicros());
     ++currentTime;
@@ -227,7 +235,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   @Test
   public void testStartFromBackground() {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
-    AppStartTrace trace = new AppStartTrace(transportManager, clock, fakeExecutorService);
+    AppStartTrace trace =
+        new AppStartTrace(transportManager, clock, configResolver, fakeExecutorService);
     trace.setIsStartFromBackground();
     trace.onActivityCreated(activity1, bundle);
     Assert.assertNull(trace.getOnCreateTime());
@@ -245,20 +254,48 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void testFirebasePerfProviderOnAttachInfo_initializesGaugeCollection() {
-    com.google.firebase.perf.session.PerfSession mockPerfSession =
-        mock(com.google.firebase.perf.session.PerfSession.class);
-    when(mockPerfSession.sessionId()).thenReturn("sessionId");
-    when(mockPerfSession.isGaugeAndEventCollectionEnabled()).thenReturn(true);
+  @Config(sdk = 26)
+  public void timeToInitialDisplay_isLogged() {
+    // Test setup
+    when(clock.getTime()).thenCallRealMethod(); // Use robolectric shadows to manipulate time
+    View testView = new View(ApplicationProvider.getApplicationContext());
+    when(activity1.findViewById(android.R.id.content)).thenReturn(testView);
+    when(configResolver.getIsExperimentTTIDEnabled()).thenReturn(true);
+    FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
+    AppStartTrace trace =
+        new AppStartTrace(transportManager, clock, configResolver, fakeExecutorService);
 
-    SessionManager.getInstance().setPerfSession(mockPerfSession);
-    String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
-    Assert.assertEquals(oldSessionId, SessionManager.getInstance().perfSession().sessionId());
+    // Simulate resume and manually stepping time forward
+    ShadowSystemClock.advanceBy(Duration.ofMillis(1000));
+    long resumeTime = TimeUnit.NANOSECONDS.toMicros(SystemClock.elapsedRealtimeNanos());
+    trace.onActivityCreated(activity1, bundle);
+    trace.onActivityStarted(activity1);
+    trace.onActivityResumed(activity1);
+    // Experiment: simulate backgrounding before draw
+    trace.onActivityPaused(activity1);
+    trace.onActivityStopped(activity1);
+    trace.onActivityStarted(activity1);
+    trace.onActivityResumed(activity1);
+    fakeExecutorService.runAll();
+    verify(transportManager, times(1))
+        .log(isA(TraceMetric.class), isA(ApplicationProcessState.class));
 
-    FirebasePerfProvider provider = new FirebasePerfProvider();
-    provider.attachInfo(ApplicationProvider.getApplicationContext(), new ProviderInfo());
+    // Simulate draw and manually stepping time forward
+    ShadowSystemClock.advanceBy(Duration.ofMillis(1000));
+    long drawTime = TimeUnit.NANOSECONDS.toMicros(SystemClock.elapsedRealtimeNanos());
+    testView.getViewTreeObserver().dispatchOnPreDraw();
+    testView.getViewTreeObserver().dispatchOnDraw();
+    shadowOf(Looper.getMainLooper()).idle();
+    fakeExecutorService.runNext();
+    verify(transportManager, times(2))
+        .log(traceArgumentCaptor.capture(), isA(ApplicationProcessState.class));
 
-    Assert.assertEquals(oldSessionId, SessionManager.getInstance().perfSession().sessionId());
-    verify(mockPerfSession, times(2)).isGaugeAndEventCollectionEnabled();
+    // Verify ttid trace is being logged
+    TraceMetric ttid = traceArgumentCaptor.getValue();
+    long appStartTime = TimeUnit.MILLISECONDS.toMicros(Process.getStartElapsedRealtime());
+    assertThat(ttid.getName()).isEqualTo("_experiment_app_start_ttid");
+    assertThat(ttid.getDurationUs()).isNotEqualTo(resumeTime - appStartTime);
+    assertThat(ttid.getDurationUs()).isEqualTo(drawTime - appStartTime);
+    assertThat(ttid.getSubtracesCount()).isEqualTo(6);
   }
 }

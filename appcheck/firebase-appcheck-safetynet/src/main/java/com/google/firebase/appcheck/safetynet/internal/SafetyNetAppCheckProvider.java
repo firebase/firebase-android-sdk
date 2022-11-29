@@ -17,6 +17,7 @@ package com.google.firebase.appcheck.safetynet.internal;
 import static com.google.android.gms.common.internal.Preconditions.checkNotEmpty;
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
@@ -56,6 +57,8 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
   private final String apiKey;
 
   /** @param firebaseApp the FirebaseApp to which this Factory is tied. */
+  // TODO(b/258273630): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   public SafetyNetAppCheckProvider(@NonNull FirebaseApp firebaseApp) {
     this(
         firebaseApp,

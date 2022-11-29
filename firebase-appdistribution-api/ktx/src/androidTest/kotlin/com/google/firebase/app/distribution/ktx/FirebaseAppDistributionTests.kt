@@ -40,86 +40,88 @@ const val EXISTING_APP = "existing"
 
 @RunWith(AndroidJUnit4ClassRunner::class)
 abstract class BaseTestCase {
-    @Before
-    fun setUp() {
-        Firebase.initialize(
-                ApplicationProvider.getApplicationContext(),
-                FirebaseOptions.Builder()
-                        .setApplicationId(APP_ID)
-                        .setApiKey(API_KEY)
-                        .setProjectId("123")
-                        .build()
-        )
+  @Before
+  fun setUp() {
+    Firebase.initialize(
+      ApplicationProvider.getApplicationContext(),
+      FirebaseOptions.Builder()
+        .setApplicationId(APP_ID)
+        .setApiKey(API_KEY)
+        .setProjectId("123")
+        .build()
+    )
 
-        Firebase.initialize(
-                ApplicationProvider.getApplicationContext(),
-                FirebaseOptions.Builder()
-                        .setApplicationId(APP_ID)
-                        .setApiKey(API_KEY)
-                        .setProjectId("123")
-                        .build(),
-                EXISTING_APP
-        )
-    }
+    Firebase.initialize(
+      ApplicationProvider.getApplicationContext(),
+      FirebaseOptions.Builder()
+        .setApplicationId(APP_ID)
+        .setApiKey(API_KEY)
+        .setProjectId("123")
+        .build(),
+      EXISTING_APP
+    )
+  }
 
-    @After
-    fun cleanUp() {
-        FirebaseApp.clearInstancesForTest()
-    }
+  @After
+  fun cleanUp() {
+    FirebaseApp.clearInstancesForTest()
+  }
 }
 
 @RunWith(AndroidJUnit4ClassRunner::class)
 class FirebaseAppDistributionTests : BaseTestCase() {
-    @Test
-    fun appDistribution_default_callsDefaultGetInstance() {
-        assertThat(Firebase.appDistribution).isSameInstanceAs(FirebaseAppDistribution.getInstance())
-    }
+  @Test
+  fun appDistribution_default_callsDefaultGetInstance() {
+    assertThat(Firebase.appDistribution).isSameInstanceAs(FirebaseAppDistribution.getInstance())
+  }
 
-    @Test
-    fun appDistributionReleaseDestructuringDeclarationsWork() {
-        val mockAppDistributionRelease = object : AppDistributionRelease {
-            override fun getDisplayVersion(): String = "1.0.0"
+  @Test
+  fun appDistributionReleaseDestructuringDeclarationsWork() {
+    val mockAppDistributionRelease =
+      object : AppDistributionRelease {
+        override fun getDisplayVersion(): String = "1.0.0"
 
-            override fun getVersionCode(): Long = 1L
+        override fun getVersionCode(): Long = 1L
 
-            override fun getReleaseNotes(): String = "Changelog..."
+        override fun getReleaseNotes(): String = "Changelog..."
 
-            override fun getBinaryType(): BinaryType = BinaryType.AAB
-        }
+        override fun getBinaryType(): BinaryType = BinaryType.AAB
+      }
 
-        val (type, displayVersion, versionCode, notes) = mockAppDistributionRelease
+    val (type, displayVersion, versionCode, notes) = mockAppDistributionRelease
 
-        assertThat(type).isEqualTo(mockAppDistributionRelease.binaryType)
-        assertThat(displayVersion).isEqualTo(mockAppDistributionRelease.displayVersion)
-        assertThat(versionCode).isEqualTo(mockAppDistributionRelease.versionCode)
-        assertThat(notes).isEqualTo(mockAppDistributionRelease.releaseNotes)
-    }
+    assertThat(type).isEqualTo(mockAppDistributionRelease.binaryType)
+    assertThat(displayVersion).isEqualTo(mockAppDistributionRelease.displayVersion)
+    assertThat(versionCode).isEqualTo(mockAppDistributionRelease.versionCode)
+    assertThat(notes).isEqualTo(mockAppDistributionRelease.releaseNotes)
+  }
 
-    @Test
-    fun updateProgressDestructuringDeclarationsWork() {
-        val mockUpdateProgress = object : UpdateProgress {
-            override fun getApkBytesDownloaded(): Long = 1200L
+  @Test
+  fun updateProgressDestructuringDeclarationsWork() {
+    val mockUpdateProgress =
+      object : UpdateProgress {
+        override fun getApkBytesDownloaded(): Long = 1200L
 
-            override fun getApkFileTotalBytes(): Long = 9000L
+        override fun getApkFileTotalBytes(): Long = 9000L
 
-            override fun getUpdateStatus(): UpdateStatus = UpdateStatus.DOWNLOADING
-        }
+        override fun getUpdateStatus(): UpdateStatus = UpdateStatus.DOWNLOADING
+      }
 
-        val (downloaded, total, status) = mockUpdateProgress
+    val (downloaded, total, status) = mockUpdateProgress
 
-        assertThat(downloaded).isEqualTo(mockUpdateProgress.apkBytesDownloaded)
-        assertThat(total).isEqualTo(mockUpdateProgress.apkFileTotalBytes)
-        assertThat(status).isEqualTo(mockUpdateProgress.updateStatus)
-    }
+    assertThat(downloaded).isEqualTo(mockUpdateProgress.apkBytesDownloaded)
+    assertThat(total).isEqualTo(mockUpdateProgress.apkFileTotalBytes)
+    assertThat(status).isEqualTo(mockUpdateProgress.updateStatus)
+  }
 }
 
 internal const val LIBRARY_NAME: String = "fire-appdistribution-ktx"
 
 @RunWith(AndroidJUnit4ClassRunner::class)
 class LibraryVersionTest : BaseTestCase() {
-    @Test
-    fun libraryRegistrationAtRuntime() {
-        val publisher = Firebase.app.get(UserAgentPublisher::class.java)
-        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
-    }
+  @Test
+  fun libraryRegistrationAtRuntime() {
+    val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+    assertThat(publisher.userAgent).contains(LIBRARY_NAME)
+  }
 }

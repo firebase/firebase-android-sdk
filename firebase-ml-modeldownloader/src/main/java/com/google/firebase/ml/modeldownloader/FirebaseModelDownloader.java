@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.ml.modeldownloader;
 
+import android.annotation.SuppressLint;
 import android.os.Build.VERSION_CODES;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -25,7 +26,6 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
@@ -37,6 +37,7 @@ import java.io.File;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import javax.inject.Inject;
 
 public class FirebaseModelDownloader {
 
@@ -49,19 +50,29 @@ public class FirebaseModelDownloader {
   private final Executor executor;
 
   private final FirebaseMlLogger eventLogger;
+  private final CustomModel.Factory modelFactory;
 
+  @Inject
   @RequiresApi(api = VERSION_CODES.KITKAT)
+  // TODO(b/258424267): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   FirebaseModelDownloader(
-      FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi) {
-    this.firebaseOptions = firebaseApp.getOptions();
-    this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
-    this.eventLogger = FirebaseMlLogger.getInstance(firebaseApp);
-    this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
-    this.modelDownloadService =
-        new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi);
-
-    this.executor = Executors.newSingleThreadExecutor();
-    fileManager = ModelFileManager.getInstance();
+      FirebaseOptions firebaseOptions,
+      SharedPreferencesUtil sharedPreferencesUtil,
+      ModelFileDownloadService fileDownloadService,
+      CustomModelDownloadService modelDownloadService,
+      ModelFileManager fileManager,
+      FirebaseMlLogger eventLogger,
+      CustomModel.Factory modelFactory) {
+    this(
+        firebaseOptions,
+        sharedPreferencesUtil,
+        fileDownloadService,
+        modelDownloadService,
+        fileManager,
+        eventLogger,
+        Executors.newSingleThreadExecutor(),
+        modelFactory);
   }
 
   @VisibleForTesting
@@ -72,7 +83,8 @@ public class FirebaseModelDownloader {
       CustomModelDownloadService modelDownloadService,
       ModelFileManager fileManager,
       FirebaseMlLogger eventLogger,
-      Executor executor) {
+      Executor executor,
+      CustomModel.Factory modelFactory) {
     this.firebaseOptions = firebaseOptions;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
     this.fileDownloadService = fileDownloadService;
@@ -80,6 +92,7 @@ public class FirebaseModelDownloader {
     this.fileManager = fileManager;
     this.eventLogger = eventLogger;
     this.executor = executor;
+    this.modelFactory = modelFactory;
   }
 
   /**
@@ -535,5 +548,11 @@ public class FirebaseModelDownloader {
   @VisibleForTesting
   String getApplicationId() {
     return firebaseOptions.getApplicationId();
+  }
+
+  /** @hide */
+  @VisibleForTesting
+  public CustomModel.Factory getModelFactory() {
+    return modelFactory;
   }
 }
