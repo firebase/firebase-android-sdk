@@ -27,6 +27,7 @@ android {
         timeOutInMs 60 * 1000
     }
 
+    ndkVersion "25.1.8937393"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16
