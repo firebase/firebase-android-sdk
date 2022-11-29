@@ -152,7 +152,7 @@ public final class FirebaseRemoteConfigTest {
   @Mock private ConfigUpdateListenerRegistration mockRealtimeRegistration;
   @Mock private HttpURLConnection mockHttpURLConnection;
   @Mock private ConfigUpdateListener mockRetryListener;
-  @Mock private ConfigUpdateListener mockOnEventListener;
+  @Mock private ConfigUpdateListener mockOnUpdateListener;
   @Mock private ConfigUpdateListener mockStreamErrorEventListener;
   @Mock private ConfigUpdateListener mockInvalidMessageEventListener;
   @Mock private ConfigUpdateListener mockNotFetchedEventListener;
@@ -298,7 +298,7 @@ public final class FirebaseRemoteConfigTest {
         new ConfigUpdateListener() {
           @Override
           public void onUpdate(Set<String> changedParams) {
-            mockOnEventListener.onUpdate(changedParams);
+            mockOnUpdateListener.onUpdate(changedParams);
           }
 
           @Override
@@ -1193,7 +1193,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(firstFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verifyZeroInteractions(mockOnEventListener);
+    verifyZeroInteractions(mockOnUpdateListener);
   }
 
   @Test
@@ -1311,7 +1311,7 @@ public final class FirebaseRemoteConfigTest {
         .fetchLatestConfig(1, 1)
         .addOnCompleteListener(
             unused -> {
-              verify(mockOnEventListener).onUpdate(updatedParams);
+              verify(mockOnUpdateListener).onUpdate(updatedParams);
             });
   }
 
@@ -1329,7 +1329,7 @@ public final class FirebaseRemoteConfigTest {
         .fetchLatestConfig(1, 1)
         .addOnCompleteListener(
             unused -> {
-              verify(mockOnEventListener).onUpdate(updatedParams);
+              verify(mockOnUpdateListener).onUpdate(updatedParams);
             });
   }
 
