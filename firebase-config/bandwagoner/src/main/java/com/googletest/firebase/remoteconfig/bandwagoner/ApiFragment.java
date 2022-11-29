@@ -90,7 +90,6 @@ public class ApiFragment extends Fragment {
 
     ToggleButton devModeButton = rootView.findViewById(R.id.dev_mode_toggle_button);
     devModeButton.setOnCheckedChangeListener((unusedView, isChecked) -> onDevModeToggle(isChecked));
-    devModeButton.toggle();
 
     TextView sdkVersionText = rootView.findViewById(R.id.sdk_version_text);
 

@@ -16,9 +16,10 @@
 
 apply plugin: 'com.android.application'
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+apply plugin: 'com.google.gms.google-services'
 
 android {
-    compileSdkVersion project.targetSdkVersion
+    compileSdk project.targetSdkVersion
     lintOptions {
         abortOnError false
     }
@@ -26,7 +27,7 @@ android {
 
     defaultConfig {
         applicationId "com.googletest.firebase.remoteconfig.bandwagoner"
-        minSdkVersion 16
+        minSdkVersion 19
         targetSdkVersion project.targetSdkVersion
         versionCode 1
         versionName "1.0"
@@ -68,6 +69,13 @@ dependencies {
 
     implementation project(":firebase-installations-interop")
     runtimeOnly project(":firebase-installations")
+
+    implementation('com.google.firebase:firebase-analytics:21.2.0') {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+        exclude group: 'com.google.firebase', module: 'firebase-installations'
+        exclude group: 'com.google.firebase', module: 'firebase-installations-interop'
+    }
 
     implementation 'com.google.android.gms:play-services-basement:18.1.0'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
