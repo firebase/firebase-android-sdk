@@ -82,6 +82,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -179,6 +181,9 @@ public final class FirebaseRemoteConfigTest {
   private ConfigRealtimeHttpClient configRealtimeHttpClient;
 
   private FetchResponse firstFetchedContainerResponse;
+
+  private final ScheduledExecutorService scheduledExecutorService =
+      Executors.newSingleThreadScheduledExecutor();
 
   @Before
   public void setUp() throws Exception {
@@ -304,7 +309,12 @@ public final class FirebaseRemoteConfigTest {
 
     listeners.add(listener);
     configAutoFetch =
-        new ConfigAutoFetch(mockHttpURLConnection, mockFetchHandler, listeners, mockRetryListener);
+        new ConfigAutoFetch(
+            mockHttpURLConnection,
+            mockFetchHandler,
+            listeners,
+            mockRetryListener,
+            scheduledExecutorService);
     configRealtimeHttpClient =
         new ConfigRealtimeHttpClient(
             firebaseApp,
@@ -312,7 +322,8 @@ public final class FirebaseRemoteConfigTest {
             mockFetchHandler,
             context,
             "firebase",
-            listeners);
+            listeners,
+            scheduledExecutorService);
   }
 
   @Test

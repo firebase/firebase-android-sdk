@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class ConfigRealtimeHandler {
 
@@ -42,6 +43,7 @@ public class ConfigRealtimeHandler {
   private final Context context;
   private final String namespace;
   private final ExecutorService executorService;
+  private final ScheduledExecutorService scheduledExecutorService;
 
   public ConfigRealtimeHandler(
       FirebaseApp firebaseApp,
@@ -49,7 +51,8 @@ public class ConfigRealtimeHandler {
       ConfigFetchHandler configFetchHandler,
       Context context,
       String namespace,
-      ExecutorService executorService) {
+      ExecutorService executorService,
+      ScheduledExecutorService scheduledExecutorService) {
 
     this.listeners = new LinkedHashSet<>();
     this.realtimeHttpClientTask = null;
@@ -60,6 +63,7 @@ public class ConfigRealtimeHandler {
     this.context = context;
     this.namespace = namespace;
     this.executorService = executorService;
+    this.scheduledExecutorService = scheduledExecutorService;
   }
 
   private synchronized boolean canCreateRealtimeHttpClientTask() {
@@ -92,7 +96,8 @@ public class ConfigRealtimeHandler {
               configFetchHandler,
               context,
               namespace,
-              listeners);
+              listeners,
+              scheduledExecutorService);
       this.realtimeHttpClientTask =
           this.executorService.submit(
               new RealtimeHttpClientFutureTask(
