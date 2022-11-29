@@ -14,6 +14,8 @@
 
 package com.google.firebase.remoteconfig;
 
+import androidx.annotation.NonNull;
+
 import java.util.Set;
 import javax.annotation.Nonnull;
 
@@ -31,7 +33,7 @@ public interface ConfigUpdateListener {
    *     Includes keys that are: added; deleted; and whose value, value source, or metadata has
    *     changed.
    */
-  void onUpdate(Set<String> updatedParams);
+  void onUpdate(@NonNull Set<String> updatedParams);
 
   /**
    * Callback for when an error occurs while listening for or fetching a config update.
