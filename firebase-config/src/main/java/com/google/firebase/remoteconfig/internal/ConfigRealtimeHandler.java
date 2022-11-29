@@ -97,7 +97,7 @@ public class ConfigRealtimeHandler {
               context,
               namespace,
               listeners,
-                  scheduledExecutorService);
+              scheduledExecutorService);
       this.realtimeHttpClientTask =
           this.scheduledExecutorService.submit(
               new RealtimeHttpClientFutureTask(

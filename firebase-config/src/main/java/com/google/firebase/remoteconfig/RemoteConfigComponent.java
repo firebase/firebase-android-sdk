@@ -285,8 +285,7 @@ public class RemoteConfigComponent {
         activatedCacheClient,
         context,
         namespace,
-            scheduledExecutorService
-        );
+        scheduledExecutorService);
   }
 
   private ConfigGetParameterHandler getGetHandler(

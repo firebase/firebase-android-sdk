@@ -149,14 +149,12 @@ public class ConfigContainerTest {
 
   @Test
   public void getChangedParams_emptyConfig_returnsAllOtherParams() throws Exception {
-    ConfigContainer config =
-            ConfigContainer.newBuilder()
-                    .build();
+    ConfigContainer config = ConfigContainer.newBuilder().build();
 
     ConfigContainer other =
-            ConfigContainer.newBuilder()
-                    .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
-                    .build();
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .build();
 
     Set<String> changedParams = config.getChangedParams(other);
 

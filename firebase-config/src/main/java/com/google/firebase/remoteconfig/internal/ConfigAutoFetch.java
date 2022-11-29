@@ -33,7 +33,6 @@ import java.net.HttpURLConnection;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
@@ -207,7 +206,7 @@ public class ConfigAutoFetch {
 
     return Tasks.whenAllComplete(fetchTask, activatedConfigsTask)
         .continueWithTask(
-                executorService,
+            executorService,
             (listOfUnusedCompletedTasks) -> {
               if (!fetchTask.isSuccessful()) {
                 return Tasks.forException(
