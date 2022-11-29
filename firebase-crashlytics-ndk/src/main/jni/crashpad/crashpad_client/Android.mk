@@ -9,6 +9,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../libchrome/include \
     $(LOCAL_PATH)/$(THIRD_PARTY_PATH)/.. \
     $(LOCAL_PATH)/$(THIRD_PARTY_PATH)/crashpad \
+    $(LOCAL_PATH)/$(THIRD_PARTY_PATH)/crashpad/compat/linux \
 
 LOCAL_CPPFLAGS := \
     -D_FILE_OFFSET_BITS=64 \

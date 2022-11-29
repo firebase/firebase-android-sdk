@@ -74,7 +74,7 @@ LOCAL_SRC_FILES := \
     $(THIRD_PARTY_PATH)/crashpad/util/posix/close_multiple.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/posix/close_stdio.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/posix/drop_privileges.cc \
-    $(THIRD_PARTY_PATH)/crashpad/util/posix/double_fork_and_exec.cc \
+    $(THIRD_PARTY_PATH)/crashpad/util/posix/spawn_subprocess.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/posix/process_info_linux.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/posix/scoped_dir.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/posix/scoped_mmap.cc \

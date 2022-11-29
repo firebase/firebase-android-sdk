@@ -30,7 +30,7 @@ android {
     ndkVersion "25.1.8937393"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 21
         targetSdkVersion project.targetSdkVersion
         versionName version
 
