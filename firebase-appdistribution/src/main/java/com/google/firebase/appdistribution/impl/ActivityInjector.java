@@ -28,6 +28,7 @@ class ActivityInjector {
     this.installActivityInjector = installActivityInjector;
   }
 
+  @SuppressWarnings("FirebaseUseExplicitDependencies")
   static void injectForApp(@Nullable String firebaseAppName, InstallActivity activity) {
     getApp(firebaseAppName)
         .get(ActivityInjector.class)
