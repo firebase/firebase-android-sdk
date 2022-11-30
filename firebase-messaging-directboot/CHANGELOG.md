@@ -1,5 +1,8 @@
 # Unreleased
 
+# 23.1.1
+* [changed] Removed unused classes.
+
 # 23.1.0
 * [changed] Internal changes to ensure functionality alignment with other
   SDK releases.
