@@ -20,7 +20,6 @@ import android.os.Bundle;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -29,7 +28,10 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Executor;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
+@Singleton
 class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLifecycleCallbacks {
 
   /** An {@link Executor} that runs tasks on the current thread. */
@@ -45,7 +47,6 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
     T apply(Activity activity) throws FirebaseAppDistributionException;
   }
 
-  private static FirebaseAppDistributionLifecycleNotifier instance;
   private final Object lock = new Object();
 
   @GuardedBy("lock")
@@ -71,15 +72,8 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   @GuardedBy("lock")
   private final Queue<OnActivityDestroyedListener> onDestroyedListeners = new ArrayDeque<>();
 
-  @VisibleForTesting
+  @Inject
   FirebaseAppDistributionLifecycleNotifier() {}
-
-  static synchronized FirebaseAppDistributionLifecycleNotifier getInstance() {
-    if (instance == null) {
-      instance = new FirebaseAppDistributionLifecycleNotifier();
-    }
-    return instance;
-  }
 
   interface OnActivityCreatedListener {
     void onCreated(Activity activity);

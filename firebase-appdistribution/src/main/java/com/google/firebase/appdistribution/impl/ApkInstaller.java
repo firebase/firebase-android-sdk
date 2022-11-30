@@ -24,10 +24,13 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
+import javax.inject.Inject;
+import javax.inject.Named;
 
 /** Class that handles installing APKs in {@link FirebaseAppDistribution}. */
 class ApkInstaller {
   private static final String TAG = "ApkInstaller:";
+  private final String appName;
   private final FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier;
 
   @GuardedBy("installTaskLock")
@@ -35,14 +38,14 @@ class ApkInstaller {
 
   private final Object installTaskLock = new Object();
 
-  ApkInstaller(FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier) {
+  @Inject
+  ApkInstaller(
+      @Named("appName") String appName,
+      FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier) {
+    this.appName = appName;
     this.lifeCycleNotifier = lifeCycleNotifier;
     lifeCycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
     lifeCycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
-  }
-
-  ApkInstaller() {
-    this(FirebaseAppDistributionLifecycleNotifier.getInstance());
   }
 
   void onActivityStarted(@Nullable Activity activity) {
@@ -78,6 +81,7 @@ class ApkInstaller {
   private void startInstallActivity(String path, Activity currentActivity) {
     Intent intent = new Intent(currentActivity, InstallActivity.class);
     intent.putExtra("INSTALL_PATH", path);
+    intent.putExtra("FIREBASE_APP_NAME", appName);
     currentActivity.startActivity(intent);
     LogWrapper.getInstance().v(TAG + "Prompting tester with install activity ");
   }

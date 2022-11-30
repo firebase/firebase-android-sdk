@@ -25,11 +25,13 @@ import android.net.Uri;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.UpdateStatus;
 import java.io.IOException;
 import java.util.concurrent.Executor;
+import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 
 /** Class that handles updateApp functionality for AABs in {@link FirebaseAppDistribution}. */
@@ -51,17 +53,11 @@ class AabUpdater {
   @GuardedBy("updateAabLock")
   private boolean hasBeenSentToPlayForCurrentTask = false;
 
-  AabUpdater(@NonNull Executor blockingExecutor) {
-    this(
-        FirebaseAppDistributionLifecycleNotifier.getInstance(),
-        new HttpsUrlConnectionFactory(),
-        blockingExecutor);
-  }
-
+  @Inject
   AabUpdater(
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
       @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory,
-      @NonNull Executor blockingExecutor) {
+      @NonNull @Blocking Executor blockingExecutor) {
     this.lifecycleNotifier = lifecycleNotifier;
     this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
     lifecycleNotifier.addOnActivityStartedListener(this::onActivityStarted);

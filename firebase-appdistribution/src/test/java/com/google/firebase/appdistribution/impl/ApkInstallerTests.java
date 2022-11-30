@@ -41,10 +41,9 @@ public class ApkInstallerTests {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
-    apkInstaller = new ApkInstaller(mockLifecycleNotifier);
+    apkInstaller = new ApkInstaller("apkInstall", mockLifecycleNotifier);
   }
 
   @Test

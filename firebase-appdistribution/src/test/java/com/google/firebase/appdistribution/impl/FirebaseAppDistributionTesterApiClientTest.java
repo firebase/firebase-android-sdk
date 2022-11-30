@@ -103,7 +103,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     firebaseAppDistributionTesterApiClient =
         new FirebaseAppDistributionTesterApiClient(
-            firebaseApp,
+            firebaseApp.getOptions(),
             mockFirebaseInstallationsProvider,
             mockTesterApiHttpClient,
             Executors.newSingleThreadExecutor());

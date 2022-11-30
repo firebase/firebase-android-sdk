@@ -27,7 +27,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.Executor;
 import java.util.jar.JarFile;
+import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 
 /** Class that handles updateApp functionality for APKs in {@link FirebaseAppDistribution}. */
@@ -61,22 +62,9 @@ class ApkUpdater {
 
   private final Object updateTaskLock = new Object();
 
+  @Inject
   public ApkUpdater(
-      @NonNull FirebaseApp firebaseApp,
-      @NonNull ApkInstaller apkInstaller,
-      @NonNull Executor blockingExecutor) {
-    this(
-        blockingExecutor,
-        firebaseApp.getApplicationContext(),
-        apkInstaller,
-        new FirebaseAppDistributionNotificationsManager(firebaseApp.getApplicationContext()),
-        new HttpsUrlConnectionFactory(),
-        FirebaseAppDistributionLifecycleNotifier.getInstance());
-  }
-
-  @VisibleForTesting
-  public ApkUpdater(
-      @NonNull Executor blockingExecutor,
+      @NonNull @Blocking Executor blockingExecutor,
       @NonNull Context context,
       @NonNull ApkInstaller apkInstaller,
       @NonNull FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager,
