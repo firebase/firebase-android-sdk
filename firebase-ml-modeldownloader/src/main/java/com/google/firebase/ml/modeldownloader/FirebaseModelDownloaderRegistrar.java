@@ -20,13 +20,17 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * Registrar for setting up Firebase ML Model Downloader's dependency injections in Firebase Android
@@ -41,6 +45,8 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
   @NonNull
   @RequiresApi(api = VERSION_CODES.KITKAT)
   public List<Component<?>> getComponents() {
+    Qualified<Executor> bgExecutor = Qualified.qualified(Background.class, Executor.class);
+    Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
     return Arrays.asList(
         Component.builder(FirebaseModelDownloader.class)
             .name(LIBRARY_NAME)
@@ -48,12 +54,16 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
             .add(Dependency.requiredProvider(TransportFactory.class))
+            .add(Dependency.required(bgExecutor))
+            .add(Dependency.required(blockingExecutor))
             .factory(
                 c ->
                     DaggerModelDownloaderComponent.builder()
                         .setApplicationContext(c.get(Context.class))
                         .setFirebaseApp(c.get(FirebaseApp.class))
                         .setFis(c.getProvider(FirebaseInstallationsApi.class))
+                        .setBlockingExecutor(c.get(blockingExecutor))
+                        .setBgExecutor(c.get(bgExecutor))
                         .setTransportFactory(c.getProvider(TransportFactory.class))
                         .build()
                         .getModelDownloader())

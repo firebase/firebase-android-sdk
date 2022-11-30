@@ -138,6 +138,7 @@ public class FirebaseModelDownloaderTest {
             mockFileManager,
             mockEventLogger,
             executor,
+            executor,
             modelFactory);
     setUpTestingFiles(app);
 

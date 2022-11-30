@@ -48,8 +48,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 import java.util.zip.GZIPInputStream;
 import javax.inject.Inject;
 import org.json.JSONObject;
@@ -88,7 +87,6 @@ public class CustomModelDownloadService {
   @VisibleForTesting
   static final String DOWNLOAD_MODEL_REGEX = "%s/v1beta2/projects/%s/models/%s:download";
 
-  private final ExecutorService executorService;
   private final Provider<FirebaseInstallationsApi> firebaseInstallations;
   private final FirebaseMlLogger eventLogger;
   private final String apiKey;
@@ -96,6 +94,7 @@ public class CustomModelDownloadService {
   private final Context context;
   private final CustomModel.Factory modelFactory;
   private String downloadHost = FIREBASE_DOWNLOAD_HOST;
+  private final Executor blockingExecutor;
 
   // TODO(b/258424267): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
@@ -105,12 +104,13 @@ public class CustomModelDownloadService {
       FirebaseOptions options,
       Provider<FirebaseInstallationsApi> installationsApi,
       FirebaseMlLogger eventLogger,
-      CustomModel.Factory modelFactory) {
+      CustomModel.Factory modelFactory,
+      Executor blockingExecutor) {
     this.context = context;
     firebaseInstallations = installationsApi;
     apiKey = options.getApiKey();
     fingerprintHashForPackage = getFingerprintHashForPackage(context);
-    executorService = Executors.newCachedThreadPool();
+    this.blockingExecutor = blockingExecutor;
     this.eventLogger = eventLogger;
     this.modelFactory = modelFactory;
   }
@@ -119,7 +119,7 @@ public class CustomModelDownloadService {
   CustomModelDownloadService(
       Context context,
       Provider<FirebaseInstallationsApi> firebaseInstallations,
-      ExecutorService executorService,
+      Executor blockingExecutor,
       String apiKey,
       String fingerprintHashForPackage,
       String downloadHost,
@@ -127,7 +127,7 @@ public class CustomModelDownloadService {
       CustomModel.Factory modelFactory) {
     this.context = context;
     this.firebaseInstallations = firebaseInstallations;
-    this.executorService = executorService;
+    this.blockingExecutor = blockingExecutor;
     this.apiKey = apiKey;
     this.fingerprintHashForPackage = fingerprintHashForPackage;
     this.downloadHost = downloadHost;
@@ -169,64 +169,67 @@ public class CustomModelDownloadService {
             "Error cannot retrieve model from reading an empty modelName",
             FirebaseMlException.INVALID_ARGUMENT);
 
-      URL url =
-          new URL(String.format(DOWNLOAD_MODEL_REGEX, downloadHost, projectNumber, modelName));
-      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-      connection.setConnectTimeout(CONNECTION_TIME_OUT_MS);
-      connection.setRequestProperty(ACCEPT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
-      connection.setRequestProperty(CONTENT_TYPE, APPLICATION_JSON);
-      if (modelHash != null && !modelHash.isEmpty()) {
-        connection.setRequestProperty(IF_NONE_MATCH_HEADER_KEY, modelHash);
-      }
-
       Task<InstallationTokenResult> installationAuthTokenTask =
           firebaseInstallations.get().getToken(false);
       return installationAuthTokenTask.continueWithTask(
-          executorService,
+          blockingExecutor,
           (CustomModelTask) -> {
-            if (!installationAuthTokenTask.isSuccessful()) {
-              ErrorCode errorCode = ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED;
-              String errorMessage = "Failed to get model due to authentication error";
-              int exceptionCode = FirebaseMlException.UNAUTHENTICATED;
-              if (installationAuthTokenTask.getException() != null
-                  && (installationAuthTokenTask.getException() instanceof UnknownHostException
-                      || installationAuthTokenTask.getException().getCause()
-                          instanceof UnknownHostException)) {
-                errorCode = ErrorCode.NO_NETWORK_CONNECTION;
-                errorMessage = "Failed to retrieve model info due to no internet connection.";
-                exceptionCode = FirebaseMlException.NO_NETWORK_CONNECTION;
+            try {
+              URL url =
+                  new URL(
+                      String.format(DOWNLOAD_MODEL_REGEX, downloadHost, projectNumber, modelName));
+              HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+              connection.setConnectTimeout(CONNECTION_TIME_OUT_MS);
+              connection.setRequestProperty(ACCEPT_ENCODING_HEADER_KEY, GZIP_CONTENT_ENCODING);
+              connection.setRequestProperty(CONTENT_TYPE, APPLICATION_JSON);
+              if (modelHash != null && !modelHash.isEmpty()) {
+                connection.setRequestProperty(IF_NONE_MATCH_HEADER_KEY, modelHash);
               }
+              if (!installationAuthTokenTask.isSuccessful()) {
+                ErrorCode errorCode = ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED;
+                String errorMessage = "Failed to get model due to authentication error";
+                int exceptionCode = FirebaseMlException.UNAUTHENTICATED;
+                if (installationAuthTokenTask.getException() != null
+                    && (installationAuthTokenTask.getException() instanceof UnknownHostException
+                        || installationAuthTokenTask.getException().getCause()
+                            instanceof UnknownHostException)) {
+                  errorCode = ErrorCode.NO_NETWORK_CONNECTION;
+                  errorMessage = "Failed to retrieve model info due to no internet connection.";
+                  exceptionCode = FirebaseMlException.NO_NETWORK_CONNECTION;
+                }
+                eventLogger.logDownloadFailureWithReason(
+                    modelFactory.create(modelName, modelHash != null ? modelHash : "", 0, 0L),
+                    false,
+                    errorCode.getValue());
+                return Tasks.forException(new FirebaseMlException(errorMessage, exceptionCode));
+              }
+
+              connection.setRequestProperty(
+                  INSTALLATIONS_AUTH_TOKEN_HEADER,
+                  installationAuthTokenTask.getResult().getToken());
+              connection.setRequestProperty(API_KEY_HEADER, apiKey);
+
+              // Headers required for Android API Key Restrictions.
+              connection.setRequestProperty(X_ANDROID_PACKAGE_HEADER, context.getPackageName());
+
+              if (fingerprintHashForPackage != null) {
+                connection.setRequestProperty(X_ANDROID_CERT_HEADER, fingerprintHashForPackage);
+              }
+
+              return fetchDownloadDetails(modelName, connection);
+            } catch (IOException e) {
               eventLogger.logDownloadFailureWithReason(
-                  modelFactory.create(modelName, modelHash != null ? modelHash : "", 0, 0L),
+                  modelFactory.create(modelName, modelHash, 0, 0L),
                   false,
-                  errorCode.getValue());
-              return Tasks.forException(new FirebaseMlException(errorMessage, exceptionCode));
+                  ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED.getValue());
+
+              return Tasks.forException(
+                  new FirebaseMlException(
+                      "Error reading custom model from download service: " + e.getMessage(),
+                      FirebaseMlException.INVALID_ARGUMENT));
             }
-
-            connection.setRequestProperty(
-                INSTALLATIONS_AUTH_TOKEN_HEADER, installationAuthTokenTask.getResult().getToken());
-            connection.setRequestProperty(API_KEY_HEADER, apiKey);
-
-            // Headers required for Android API Key Restrictions.
-            connection.setRequestProperty(X_ANDROID_PACKAGE_HEADER, context.getPackageName());
-
-            if (fingerprintHashForPackage != null) {
-              connection.setRequestProperty(X_ANDROID_CERT_HEADER, fingerprintHashForPackage);
-            }
-
-            return fetchDownloadDetails(modelName, connection);
           });
 
-    } catch (IOException e) {
-      eventLogger.logDownloadFailureWithReason(
-          modelFactory.create(modelName, modelHash, 0, 0L),
-          false,
-          ErrorCode.MODEL_INFO_DOWNLOAD_CONNECTION_FAILED.getValue());
-
-      return Tasks.forException(
-          new FirebaseMlException(
-              "Error reading custom model from download service: " + e.getMessage(),
-              FirebaseMlException.INVALID_ARGUMENT));
     } catch (FirebaseMlException e) {
       return Tasks.forException(e);
     }

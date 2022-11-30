@@ -20,12 +20,15 @@ import android.util.Log;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import dagger.BindsInstance;
 import dagger.Component;
 import dagger.Module;
 import dagger.Provides;
+import java.util.concurrent.Executor;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
@@ -49,11 +52,18 @@ interface ModelDownloaderComponent {
     @BindsInstance
     Builder setTransportFactory(Provider<TransportFactory> transportFactory);
 
+    @BindsInstance
+    Builder setBlockingExecutor(@Blocking Executor blockingExecutor);
+
+    @BindsInstance
+    Builder setBgExecutor(@Background Executor bgExecutor);
+
     ModelDownloaderComponent build();
   }
 
   @Module
   interface MainModule {
+    
     @Provides
     @Named("persistenceKey")
     static String persistenceKey(FirebaseApp app) {
