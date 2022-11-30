@@ -79,7 +79,9 @@ public class ReleaseIdentifierTest {
 
     shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
-    releaseIdentifier = Mockito.spy(new ReleaseIdentifier(firebaseApp, mockTesterApiClient));
+    releaseIdentifier =
+        Mockito.spy(
+            new ReleaseIdentifier(firebaseApp.getApplicationContext(), mockTesterApiClient));
   }
 
   @Test

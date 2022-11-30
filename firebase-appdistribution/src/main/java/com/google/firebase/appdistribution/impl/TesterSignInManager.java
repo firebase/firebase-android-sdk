@@ -31,12 +31,13 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
+import javax.inject.Inject;
 
 /** Class that handles signing in the tester. */
 class TesterSignInManager {
@@ -44,7 +45,8 @@ class TesterSignInManager {
   private static final String SIGNIN_REDIRECT_URL =
       "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s&newRedirectScheme=true";
 
-  private final FirebaseApp firebaseApp;
+  private final Context applicationContext;
+  private final FirebaseOptions firebaseOptions;
   private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
   private final SignInStorage signInStorage;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
@@ -57,24 +59,15 @@ class TesterSignInManager {
   @GuardedBy("signInTaskLock")
   private TaskCompletionSource<Void> signInTaskCompletionSource = null;
 
+  @Inject
   TesterSignInManager(
-      @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
-      @NonNull final SignInStorage signInStorage) {
-    this(
-        firebaseApp,
-        firebaseInstallationsApiProvider,
-        signInStorage,
-        FirebaseAppDistributionLifecycleNotifier.getInstance());
-  }
-
-  @VisibleForTesting
-  TesterSignInManager(
-      @NonNull FirebaseApp firebaseApp,
+      Context applicationContext,
+      FirebaseOptions firebaseOptions,
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull final SignInStorage signInStorage,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
-    this.firebaseApp = firebaseApp;
+    this.applicationContext = applicationContext;
+    this.firebaseOptions = firebaseOptions;
     this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
@@ -197,12 +190,12 @@ class TesterSignInManager {
   }
 
   private void openSignInFlowInBrowser(String fid, Activity activity) {
-    Context context = firebaseApp.getApplicationContext();
+    Context context = applicationContext;
     Uri uri =
         Uri.parse(
             String.format(
                 SIGNIN_REDIRECT_URL,
-                firebaseApp.getOptions().getApplicationId(),
+                firebaseOptions.getApplicationId(),
                 fid,
                 getApplicationName(context),
                 context.getPackageName()));

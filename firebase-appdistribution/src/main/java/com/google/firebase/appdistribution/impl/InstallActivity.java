@@ -34,9 +34,15 @@ public class InstallActivity extends AppCompatActivity {
   private boolean installInProgress = false;
   private AlertDialog enableUnknownSourcesDialog;
 
+  // Will get injected in onCreate().
+  //  @Inject
+  //  Whatever whatever;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+
+    ActivityInjector.injectForApp(getIntent().getStringExtra("FIREBASE_APP_NAME"), this);
     enableUnknownSourcesDialog = new AlertDialog.Builder(this).create();
   }
 

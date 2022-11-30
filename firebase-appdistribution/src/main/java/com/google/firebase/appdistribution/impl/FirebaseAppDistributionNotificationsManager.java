@@ -23,6 +23,7 @@ import android.os.Build;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationCompat;
+import javax.inject.Inject;
 
 class FirebaseAppDistributionNotificationsManager {
   private static final String TAG = "NotificationsManager:";
@@ -35,6 +36,7 @@ class FirebaseAppDistributionNotificationsManager {
   private final Context context;
   private final AppIconSource appIconSource;
 
+  @Inject
   FirebaseAppDistributionNotificationsManager(Context context) {
     this(context, new AppIconSource());
   }

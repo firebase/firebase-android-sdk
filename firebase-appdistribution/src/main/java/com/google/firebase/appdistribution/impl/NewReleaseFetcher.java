@@ -25,6 +25,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import javax.inject.Inject;
 
 /**
  * Class that handles fetching the latest release from App Distribution and determining if it is a
@@ -39,6 +40,7 @@ class NewReleaseFetcher {
 
   Task<AppDistributionReleaseInternal> cachedCheckForNewRelease = null;
 
+  @Inject
   NewReleaseFetcher(
       @NonNull Context applicationContext,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,

@@ -19,7 +19,8 @@ import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
@@ -28,6 +29,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.File;
 import java.util.concurrent.Executor;
+import javax.inject.Inject;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -59,17 +61,18 @@ class FirebaseAppDistributionTesterApiClient {
   private static final String COMMIT_FEEDBACK_TAG = "Committing feedback";
   private static final String UPLOAD_SCREENSHOT_TAG = "Uploading screenshot";
 
-  private final FirebaseApp firebaseApp;
+  private final FirebaseOptions firebaseOptions;
   private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
   private final TesterApiHttpClient testerApiHttpClient;
   private final Executor blockingExecutor;
 
+  @Inject
   FirebaseAppDistributionTesterApiClient(
-      @NonNull FirebaseApp firebaseApp,
+      @NonNull FirebaseOptions firebaseOptions,
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull TesterApiHttpClient testerApiHttpClient,
-      @NonNull Executor blockingExecutor) {
-    this.firebaseApp = firebaseApp;
+      @NonNull @Blocking Executor blockingExecutor) {
+    this.firebaseOptions = firebaseOptions;
     this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.testerApiHttpClient = testerApiHttpClient;
     this.blockingExecutor = blockingExecutor;
@@ -86,7 +89,7 @@ class FirebaseAppDistributionTesterApiClient {
           String path =
               String.format(
                   "v1alpha/devices/-/testerApps/%s/installations/%s/releases",
-                  firebaseApp.getOptions().getApplicationId(), fid);
+                  firebaseOptions.getApplicationId(), fid);
           JSONObject responseBody =
               testerApiHttpClient.makeGetRequest(FETCH_NEW_RELEASE_TAG, path, token);
           return parseNewRelease(responseBody);
@@ -123,7 +126,7 @@ class FirebaseAppDistributionTesterApiClient {
     String path =
         String.format(
             "v1alpha/projects/%s/installations/%s/releases:find?%s=%s",
-            firebaseApp.getOptions().getGcmSenderId(), // Project number
+            firebaseOptions.getGcmSenderId(), // Project number
             fid,
             binaryIdParam,
             binaryIdValue);

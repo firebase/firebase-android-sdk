@@ -148,7 +148,7 @@ public class FirebaseAppDistributionServiceImplTest {
     firebaseAppDistribution =
         spy(
             new FirebaseAppDistributionImpl(
-                firebaseApp,
+                firebaseApp.getApplicationContext(),
                 mockTesterSignInManager,
                 mockNewReleaseFetcher,
                 mockApkUpdater,

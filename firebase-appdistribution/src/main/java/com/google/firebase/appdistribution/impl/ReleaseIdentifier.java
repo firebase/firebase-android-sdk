@@ -16,13 +16,13 @@ package com.google.firebase.appdistribution.impl;
 
 import static com.google.firebase.appdistribution.impl.PackageInfoUtils.getPackageInfoWithMetadata;
 
+import android.content.Context;
 import android.content.pm.PackageInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.File;
@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import javax.inject.Inject;
 
 /** Identifies the installed release using binary identifiers. */
 class ReleaseIdentifier {
@@ -46,12 +47,13 @@ class ReleaseIdentifier {
   static final String IAS_ARTIFACT_ID_METADATA_KEY = "com.android.vending.internal.apk.id";
 
   private final ConcurrentMap<String, String> cachedApkHashes = new ConcurrentHashMap<>();
-  private FirebaseApp firebaseApp;
+  private final Context applicationContext;
   FirebaseAppDistributionTesterApiClient testerApiClient;
 
+  @Inject
   ReleaseIdentifier(
-      FirebaseApp firebaseApp, FirebaseAppDistributionTesterApiClient testerApiClient) {
-    this.firebaseApp = firebaseApp;
+      Context applicationContext, FirebaseAppDistributionTesterApiClient testerApiClient) {
+    this.applicationContext = applicationContext;
     this.testerApiClient = testerApiClient;
   }
 
@@ -88,7 +90,7 @@ class ReleaseIdentifier {
    */
   @Nullable
   String extractInternalAppSharingArtifactId() throws FirebaseAppDistributionException {
-    PackageInfo packageInfo = getPackageInfoWithMetadata(firebaseApp.getApplicationContext());
+    PackageInfo packageInfo = getPackageInfoWithMetadata(applicationContext);
     if (packageInfo.applicationInfo.metaData == null) {
       throw new FirebaseAppDistributionException("Missing package info metadata", Status.UNKNOWN);
     }
@@ -101,8 +103,7 @@ class ReleaseIdentifier {
    * <p>The result is stored in an in-memory cache to avoid computing it repeatedly.
    */
   String extractApkHash() throws FirebaseAppDistributionException {
-    PackageInfo metadataPackageInfo =
-        getPackageInfoWithMetadata(firebaseApp.getApplicationContext());
+    PackageInfo metadataPackageInfo = getPackageInfoWithMetadata(applicationContext);
     String installedReleaseApkHash = extractApkHash(metadataPackageInfo);
     if (installedReleaseApkHash == null || installedReleaseApkHash.isEmpty()) {
       throw new FirebaseAppDistributionException(

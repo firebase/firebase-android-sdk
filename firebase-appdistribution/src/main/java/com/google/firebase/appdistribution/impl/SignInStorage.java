@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution.impl;
 import android.content.Context;
 import android.content.SharedPreferences;
 import com.google.firebase.components.Lazy;
+import javax.inject.Inject;
 
 /** Class that handles storage for App Distribution SignIn persistence. */
 class SignInStorage {
@@ -26,6 +27,7 @@ class SignInStorage {
 
   private final Lazy<SharedPreferences> signInSharedPreferences;
 
+  @Inject
   SignInStorage(Context applicationContext) {
     this.signInSharedPreferences =
         new Lazy(

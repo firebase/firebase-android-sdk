@@ -16,11 +16,9 @@ package com.google.firebase.appdistribution.impl;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import androidx.annotation.NonNull;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
-import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.ByteArrayOutputStream;
@@ -32,6 +30,7 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -65,18 +64,17 @@ class TesterApiHttpClient {
   private static final String TAG = "TesterApiClient:";
   private static final int DEFAULT_BUFFER_SIZE = 8192;
 
-  private final FirebaseApp firebaseApp;
+  private final FirebaseOptions firebaseOptions;
+  private final Context applicationContext;
   private final HttpsUrlConnectionFactory httpsUrlConnectionFactory;
 
-  TesterApiHttpClient(@NonNull FirebaseApp firebaseApp) {
-    this(firebaseApp, new HttpsUrlConnectionFactory());
-  }
-
-  @VisibleForTesting
+  @Inject
   TesterApiHttpClient(
-      @NonNull FirebaseApp firebaseApp,
-      @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory) {
-    this.firebaseApp = firebaseApp;
+      FirebaseOptions firebaseOptions,
+      Context applicationContext,
+      HttpsUrlConnectionFactory httpsUrlConnectionFactory) {
+    this.firebaseOptions = firebaseOptions;
+    this.applicationContext = applicationContext;
     this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
   }
 
@@ -219,13 +217,13 @@ class TesterApiHttpClient {
   private HttpsURLConnection openHttpsUrlConnection(String url, String authToken)
       throws IOException {
     LogWrapper.getInstance().v("Opening connection to " + url);
-    Context context = firebaseApp.getApplicationContext();
     HttpsURLConnection httpsURLConnection;
     httpsURLConnection = httpsUrlConnectionFactory.openConnection(url);
     httpsURLConnection.setRequestMethod(REQUEST_METHOD_GET);
-    httpsURLConnection.setRequestProperty(API_KEY_HEADER, firebaseApp.getOptions().getApiKey());
+    httpsURLConnection.setRequestProperty(API_KEY_HEADER, firebaseOptions.getApiKey());
     httpsURLConnection.setRequestProperty(INSTALLATION_AUTH_HEADER, authToken);
-    httpsURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
+    httpsURLConnection.addRequestProperty(
+        X_ANDROID_PACKAGE_HEADER_KEY, applicationContext.getPackageName());
     httpsURLConnection.addRequestProperty(
         X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
     httpsURLConnection.addRequestProperty(
@@ -293,18 +291,19 @@ class TesterApiHttpClient {
 
   /** Gets the Android package's SHA-1 fingerprint. */
   private String getFingerprintHashForPackage() {
-    Context context = firebaseApp.getApplicationContext();
     byte[] hash;
 
     try {
-      hash = AndroidUtilsLight.getPackageCertificateHashBytes(context, context.getPackageName());
+      hash =
+          AndroidUtilsLight.getPackageCertificateHashBytes(
+              applicationContext, applicationContext.getPackageName());
 
       if (hash == null) {
         LogWrapper.getInstance()
             .e(
                 TAG
                     + "Could not get fingerprint hash for X-Android-Cert header. Package is not signed: "
-                    + context.getPackageName());
+                    + applicationContext.getPackageName());
         return null;
       } else {
         return Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
@@ -314,7 +313,7 @@ class TesterApiHttpClient {
           .e(
               TAG
                   + "Could not get fingerprint hash for X-Android-Cert header. No such package: "
-                  + context.getPackageName(),
+                  + applicationContext.getPackageName(),
               e);
       return null;
     }
