@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.perf.util;
 
+import android.annotation.SuppressLint;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -25,7 +26,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * 16+ implementation is an approximation of the initial-display-time defined by Android Vitals.
  */
 public class FirstDrawDoneListener implements ViewTreeObserver.OnDrawListener {
+  // TODO(b/258263016): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   private final Handler mainThreadHandler = new Handler(Looper.getMainLooper());
+
   private final AtomicReference<View> viewReference;
   private final Runnable callback;
 
