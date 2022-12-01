@@ -1165,7 +1165,7 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void realtime_stream_listen_and_retry_success() throws Exception {
+  public void realtime_stream_listen_and_end_connection() throws Exception {
     when(mockHttpURLConnection.getInputStream())
         .thenReturn(
             new ByteArrayInputStream(
@@ -1176,7 +1176,7 @@ public final class FirebaseRemoteConfigTest {
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(mockRetryListener).onEvent();
+    verify(mockHttpURLConnection).disconnect();
   }
 
   @Test

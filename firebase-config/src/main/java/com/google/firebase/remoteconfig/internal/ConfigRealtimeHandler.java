@@ -100,8 +100,7 @@ public class ConfigRealtimeHandler {
               context,
               namespace,
               listeners,
-              metadataClient);
-              listeners,
+              metadataClient,
               scheduledExecutorService);
       this.realtimeHttpClientTask =
           this.executorService.submit(
