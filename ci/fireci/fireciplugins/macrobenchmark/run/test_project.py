@@ -83,12 +83,13 @@ class TestProject:
         args += ['--type', 'instrumentation']
         args += ['--app', app_apk_path]
         args += ['--test', test_apk_path]
+        args += ['--device', 'model=oriole,version=32,locale=en,orientation=portrait']
         args += ['--device', 'model=redfin,version=30,locale=en,orientation=portrait']
         args += ['--directories-to-pull', '/sdcard/Download']
         args += ['--results-bucket', 'fireescape-benchmark-results']
         args += ['--results-dir', run_id]
         args += ['--environment-variables', ','.join(ftl_environment_variables)]
-        args += ['--timeout', '30m']
+        args += ['--timeout', '45m']
         args += ['--project', 'fireescape-c4819']
         await execute_async(executable, *args, logger=run_logger)
         return run_id

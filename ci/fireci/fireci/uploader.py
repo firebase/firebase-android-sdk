@@ -17,7 +17,6 @@ import logging
 import os
 import requests
 import subprocess
-import urllib.parse
 
 
 _logger = logging.getLogger('fireci.uploader')
@@ -61,6 +60,7 @@ def _construct_request_endpoint_for_github_actions(metric_type):
     endpoint += f'?branch={branch}'
 
   return endpoint
+
 
 def _construct_request_endpoint_for_prow(metric_type):
   repo_owner = os.getenv('REPO_OWNER')
