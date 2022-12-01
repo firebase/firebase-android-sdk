@@ -15,7 +15,6 @@
 package com.google.firebase.appdistribution.impl;
 
 import static android.view.View.GONE;
-import static android.view.View.INVISIBLE;
 import static android.view.View.VISIBLE;
 
 import android.graphics.Bitmap;
@@ -147,13 +146,13 @@ public class FeedbackActivity extends AppCompatActivity {
   }
 
   public void submitFeedback(View view) {
+    setSubmittingStateEnabled(true);
     if (releaseName == null) {
       // Don't actually send feedback in development-mode
       Toast.makeText(this, R.string.feedback_no_release, Toast.LENGTH_LONG).show();
       finish();
       return;
     }
-    setSubmittingStateEnabled(true);
     EditText feedbackText = findViewById(R.id.feedbackText);
     CheckBox screenshotCheckBox = findViewById(R.id.screenshotCheckBox);
     feedbackSender
@@ -176,7 +175,8 @@ public class FeedbackActivity extends AppCompatActivity {
   }
 
   public void setSubmittingStateEnabled(boolean loading) {
-    findViewById(R.id.sendButton).setVisibility(loading ? INVISIBLE : VISIBLE);
+    findViewById(R.id.sendButton).setVisibility(loading ? GONE : VISIBLE);
+    findViewById(R.id.sendSpinner).setVisibility(loading ? VISIBLE : GONE);
     findViewById(R.id.feedbackText).setEnabled(!loading);
     findViewById(R.id.feedbackText).setFocusable(!loading);
   }
