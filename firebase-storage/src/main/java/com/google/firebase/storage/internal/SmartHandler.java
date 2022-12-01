@@ -14,6 +14,7 @@
 
 package com.google.firebase.storage.internal;
 
+import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.NonNull;
@@ -43,6 +44,8 @@ public class SmartHandler {
   /*package*/ static boolean testMode = false;
 
   /** Constructs a SmartHandler */
+  // TODO(b/258426744): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   public SmartHandler(@Nullable Executor executor) {
     this.executor = executor;
     if (this.executor == null) {

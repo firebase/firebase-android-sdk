@@ -30,7 +30,8 @@ class ThreadPoolDetector : Detector(), SourceCodeScanner {
       "java.lang.Thread",
       "java.util.concurrent.ForkJoinPool",
       "java.util.concurrent.ThreadPoolExecutor",
-      "java.util.concurrent.ScheduledThreadPoolExecutor"
+      "java.util.concurrent.ScheduledThreadPoolExecutor",
+      "android.os.Handler"
     )
 
   override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
@@ -50,11 +51,23 @@ class ThreadPoolDetector : Detector(), SourceCodeScanner {
     node: UCallExpression,
     constructor: PsiMethod
   ) {
-    context.report(
-      THREAD_POOL_CREATION,
-      context.getCallLocation(node, includeReceiver = false, includeArguments = true),
-      "Creating threads or thread pools is not allowed"
-    )
+    val cls = (constructor.parent as? PsiClass) ?: return
+    if(cls.qualifiedName == "android.os.Handler") {
+      if(node.valueArgumentCount == 0) return
+      if(node.valueArguments[0].toString().endsWith("getMainLooper()")) {
+        context.report(
+                THREAD_POOL_CREATION,
+                context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+                "Creating Ui thread loopers is not allowed, use a `@UiThread Executor` instead"
+        )
+      }
+    } else {
+      context.report(
+              THREAD_POOL_CREATION,
+              context.getCallLocation(node, includeReceiver = false, includeArguments = true),
+              "Creating threads or thread pools is not allowed"
+      )
+    }
   }
 
   private fun isExecutorMethod(method: PsiMethod): Boolean {

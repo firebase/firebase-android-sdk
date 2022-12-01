@@ -14,6 +14,7 @@
 
 package com.google.firebase.database.android;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
@@ -88,6 +89,8 @@ public class AndroidPlatform implements Platform {
         // Rethrow on main thread, so the application will crash
         // The exception might indicate that there is something seriously wrong and better crash,
         // than continue run in an undefined state...
+        // TODO(b/258277572): Migrate to go/firebase-android-executors
+        @SuppressLint("ThreadPoolCreation")
         Handler handler = new Handler(applicationContext.getMainLooper());
         handler.post(
             new Runnable() {

@@ -14,6 +14,7 @@
 
 package com.google.firebase.concurrent;
 
+import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Looper;
 import java.util.concurrent.Executor;
@@ -22,6 +23,8 @@ import java.util.concurrent.Executor;
 public enum UiExecutor implements Executor {
   INSTANCE;
 
+  // This is the only UI handler that is allowed in Firebase SDK.
+  @SuppressLint("ThreadPoolCreation")
   private static final Handler HANDLER = new Handler(Looper.getMainLooper());
 
   @Override

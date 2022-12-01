@@ -522,6 +522,9 @@ public class AsyncQueue {
    */
   public void panic(Throwable t) {
     executor.shutdownNow();
+
+    // TODO(b/258277574): Migrate to go/firebase-android-executors
+    @SuppressLint("ThreadPoolCreation")
     Handler handler = new Handler(Looper.getMainLooper());
     handler.post(
         () -> {

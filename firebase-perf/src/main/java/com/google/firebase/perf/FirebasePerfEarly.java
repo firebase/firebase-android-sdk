@@ -15,9 +15,6 @@
 package com.google.firebase.perf;
 
 import android.content.Context;
-import android.os.Handler;
-import android.os.Looper;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
@@ -25,16 +22,19 @@ import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.metrics.AppStartTrace;
 import com.google.firebase.perf.session.SessionManager;
+import java.util.concurrent.Executor;
 
 /**
  * The Firebase Performance early initialization.
  *
  * <p>Responsible for initializing the AppStartTrace, and early initialization of ConfigResolver
+ *
+ * @hide
  */
 public class FirebasePerfEarly {
-  @NonNull private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-  public FirebasePerfEarly(@NonNull FirebaseApp app, @Nullable StartupTime startupTime) {
+  public FirebasePerfEarly(
+      FirebaseApp app, @Nullable StartupTime startupTime, Executor uiExecutor) {
     Context context = app.getApplicationContext();
 
     // Initialize ConfigResolver early for accessing device caching layer.
@@ -48,7 +48,7 @@ public class FirebasePerfEarly {
     if (startupTime != null) {
       AppStartTrace appStartTrace = AppStartTrace.getInstance();
       appStartTrace.registerActivityLifecycleCallbacks(context);
-      mainHandler.post(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
+      uiExecutor.execute(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
     }
 
     // In the case of cold start, we create a session and start collecting gauges as early as

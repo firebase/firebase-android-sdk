@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.perf.util;
 
+import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
@@ -24,7 +25,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * OnPreDraw. This is an approximation of the initial-display time defined by Android Vitals.
  */
 public class PreDrawListener implements ViewTreeObserver.OnPreDrawListener {
+  // TODO(b/258263016): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   private final Handler mainThreadHandler = new Handler(Looper.getMainLooper());
+
   private final AtomicReference<View> viewReference;
   private final Runnable callback;
 
