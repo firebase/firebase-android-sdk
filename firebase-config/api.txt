@@ -1,9 +1,14 @@
 // Signature format: 2.0
 package com.google.firebase.remoteconfig {
 
+  @com.google.auto.value.AutoValue public abstract class ConfigUpdate {
+    ctor public ConfigUpdate();
+    method @NonNull public static com.google.firebase.remoteconfig.ConfigUpdate create(@NonNull java.util.Set<java.lang.String>);
+  }
+
   public interface ConfigUpdateListener {
     method public void onError(@NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigException);
-    method public void onUpdate(@NonNull java.util.Set<java.lang.String>);
+    method public void onUpdate(@NonNull com.google.firebase.remoteconfig.ConfigUpdate);
   }
 
   public interface ConfigUpdateListenerRegistration {

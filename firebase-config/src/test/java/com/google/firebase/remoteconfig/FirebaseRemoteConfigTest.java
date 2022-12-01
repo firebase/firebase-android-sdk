@@ -28,6 +28,7 @@ import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL
 import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_PERSONALIZATION_ID_PARAM;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -304,8 +305,8 @@ public final class FirebaseRemoteConfigTest {
     ConfigUpdateListener listener =
         new ConfigUpdateListener() {
           @Override
-          public void onUpdate(Set<String> changedParams) {
-            mockOnUpdateListener.onUpdate(changedParams);
+          public void onUpdate(ConfigUpdate configUpdate) {
+            mockOnUpdateListener.onUpdate(configUpdate);
           }
 
           @Override
@@ -332,7 +333,7 @@ public final class FirebaseRemoteConfigTest {
             mockActivatedCache,
             listeners,
             mockRetryListener,
-                scheduledExecutorService);
+            scheduledExecutorService);
     configRealtimeHttpClient =
         new ConfigRealtimeHttpClient(
             firebaseApp,
@@ -342,7 +343,7 @@ public final class FirebaseRemoteConfigTest {
             context,
             "firebase",
             listeners,
-                scheduledExecutorService);
+            scheduledExecutorService);
   }
 
   @Test
@@ -1189,7 +1190,7 @@ public final class FirebaseRemoteConfigTest {
     when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(mockRetryListener).onUpdate(new HashSet<>());
+    verify(mockRetryListener).onUpdate(any());
   }
 
   @Test
@@ -1318,7 +1319,8 @@ public final class FirebaseRemoteConfigTest {
     flushScheduledTasks();
 
     Set<String> updatedParams = Sets.newHashSet("realtime_param");
-    verify(mockOnUpdateListener).onUpdate(updatedParams);
+    verify(mockOnUpdateListener)
+        .onUpdate(argThat(configUpdate -> configUpdate.getUpdatedParams().equals(updatedParams)));
   }
 
   @Test
@@ -1333,7 +1335,8 @@ public final class FirebaseRemoteConfigTest {
     flushScheduledTasks();
 
     Set<String> updatedParams = Sets.newHashSet("string_param", "long_param", "realtime_param");
-    verify(mockOnUpdateListener).onUpdate(updatedParams);
+    verify(mockOnUpdateListener)
+        .onUpdate(argThat(configUpdate -> configUpdate.getUpdatedParams().equals(updatedParams)));
   }
 
   @Test
@@ -1441,7 +1444,7 @@ public final class FirebaseRemoteConfigTest {
   private ConfigUpdateListener generateEmptyRealtimeListener() {
     return new ConfigUpdateListener() {
       @Override
-      public void onUpdate(Set<String> updatedParams) {}
+      public void onUpdate(ConfigUpdate configUpdate) {}
 
       @Override
       public void onError(@NonNull FirebaseRemoteConfigException error) {}

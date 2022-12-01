@@ -21,6 +21,7 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.remoteconfig.ConfigUpdate;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
@@ -77,9 +78,9 @@ public class ConfigAutoFetch {
     }
   }
 
-  private synchronized void executeAllListenerCallbacks(Set<String> updatedParams) {
+  private synchronized void executeAllListenerCallbacks(ConfigUpdate configUpdate) {
     for (ConfigUpdateListener listener : eventListeners) {
-      listener.onUpdate(updatedParams);
+      listener.onUpdate(configUpdate);
     }
   }
 
@@ -116,7 +117,7 @@ public class ConfigAutoFetch {
     }
 
     // TODO: Factor ConfigUpdateListener out of internal retry logic.
-    retryCallback.onUpdate(new HashSet<>());
+    retryCallback.onUpdate(ConfigUpdate.create(new HashSet<>()));
     executorService.shutdownNow();
     try {
       executorService.awaitTermination(3L, TimeUnit.SECONDS);
@@ -252,7 +253,8 @@ public class ConfigAutoFetch {
                 return Tasks.forResult(null);
               }
 
-              executeAllListenerCallbacks(updatedParams);
+              ConfigUpdate configUpdate = ConfigUpdate.create(updatedParams);
+              executeAllListenerCallbacks(configUpdate);
               return Tasks.forResult(null);
             });
   }
