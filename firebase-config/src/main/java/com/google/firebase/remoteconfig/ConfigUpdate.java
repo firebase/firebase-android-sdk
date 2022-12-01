@@ -20,5 +20,5 @@ public abstract class ConfigUpdate {
    * keys that are added, deleted, and whose value, value source, or metadata has changed.
    */
   @NonNull
-  abstract Set<String> getUpdatedParams();
+  public abstract Set<String> getUpdatedParams();
 }
