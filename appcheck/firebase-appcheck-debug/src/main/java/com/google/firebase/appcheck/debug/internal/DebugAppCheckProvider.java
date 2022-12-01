@@ -21,14 +21,12 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckToken;
-import com.google.firebase.appcheck.internal.AppCheckTokenResponse;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
@@ -95,35 +93,31 @@ public class DebugAppCheckProvider implements AppCheckProvider {
     return taskCompletionSource.getTask();
   }
 
+  // TODO(b/261013814): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<AppCheckToken> getToken() {
     return debugSecretTask
         .continueWithTask(
-            new Continuation<String, Task<AppCheckTokenResponse>>() {
-              @Override
-              public Task<AppCheckTokenResponse> then(@NonNull Task<String> task) throws Exception {
-                ExchangeDebugTokenRequest request = new ExchangeDebugTokenRequest(task.getResult());
-                return Tasks.call(
-                    backgroundExecutor,
-                    () ->
-                        networkClient.exchangeAttestationForAppCheckToken(
-                            request.toJsonString().getBytes(UTF_8),
-                            NetworkClient.DEBUG,
-                            retryManager));
-              }
+            task -> {
+              ExchangeDebugTokenRequest request = new ExchangeDebugTokenRequest(task.getResult());
+              return Tasks.call(
+                  backgroundExecutor,
+                  () ->
+                      networkClient.exchangeAttestationForAppCheckToken(
+                          request.toJsonString().getBytes(UTF_8),
+                          NetworkClient.DEBUG,
+                          retryManager));
             })
         .continueWithTask(
-            new Continuation<AppCheckTokenResponse, Task<AppCheckToken>>() {
-              @Override
-              public Task<AppCheckToken> then(@NonNull Task<AppCheckTokenResponse> task) {
-                if (task.isSuccessful()) {
-                  return Tasks.forResult(
-                      DefaultAppCheckToken.constructFromAppCheckTokenResponse(task.getResult()));
-                }
-                // TODO: Surface more error details.
-                return Tasks.forException(task.getException());
+            task -> {
+              if (task.isSuccessful()) {
+                return Tasks.forResult(
+                    DefaultAppCheckToken.constructFromAppCheckTokenResponse(task.getResult()));
               }
+              // TODO: Surface more error details.
+              return Tasks.forException(task.getException());
             });
   }
 }

@@ -63,7 +63,7 @@ class ApkUpdater {
 
   private final Object updateTaskLock = new Object();
 
-  // TODO(b/258264924): Migrate to go/firebase-android-executors
+  // TODO(b/261014422): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
   public ApkUpdater(@NonNull FirebaseApp firebaseApp, @NonNull ApkInstaller apkInstaller) {
     this(

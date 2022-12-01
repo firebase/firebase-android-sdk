@@ -20,7 +20,6 @@ import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -176,6 +175,8 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
         appCheckTokenListenerList.size() + appCheckListenerList.size());
   }
 
+  // TODO(b/261013814): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<AppCheckTokenResult> getToken(boolean forceRefresh) {
@@ -210,6 +211,8 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
         });
   }
 
+  // TODO(b/261013814): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<AppCheckToken> getAppCheckToken(boolean forceRefresh) {
@@ -226,27 +229,26 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   }
 
   /** Fetches an {@link AppCheckToken} via the installed {@link AppCheckProvider}. */
+  // TODO(b/261013814): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   Task<AppCheckToken> fetchTokenFromProvider() {
     return appCheckProvider
         .getToken()
         .continueWithTask(
-            new Continuation<AppCheckToken, Task<AppCheckToken>>() {
-              @Override
-              public Task<AppCheckToken> then(@NonNull Task<AppCheckToken> task) {
-                if (task.isSuccessful()) {
-                  AppCheckToken token = task.getResult();
-                  updateStoredToken(token);
-                  for (AppCheckListener listener : appCheckListenerList) {
-                    listener.onAppCheckTokenChanged(token);
-                  }
-                  AppCheckTokenResult tokenResult =
-                      DefaultAppCheckTokenResult.constructFromAppCheckToken(token);
-                  for (AppCheckTokenListener listener : appCheckTokenListenerList) {
-                    listener.onAppCheckTokenChanged(tokenResult);
-                  }
+            task -> {
+              if (task.isSuccessful()) {
+                AppCheckToken token = task.getResult();
+                updateStoredToken(token);
+                for (AppCheckListener listener : appCheckListenerList) {
+                  listener.onAppCheckTokenChanged(token);
                 }
-                return task;
+                AppCheckTokenResult tokenResult =
+                    DefaultAppCheckTokenResult.constructFromAppCheckToken(token);
+                for (AppCheckTokenListener listener : appCheckTokenListenerList) {
+                  listener.onAppCheckTokenChanged(tokenResult);
+                }
               }
+              return task;
             });
   }
 

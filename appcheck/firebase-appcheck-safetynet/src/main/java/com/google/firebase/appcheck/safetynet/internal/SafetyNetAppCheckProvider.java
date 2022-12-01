@@ -26,7 +26,6 @@ import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.safetynet.SafetyNet;
 import com.google.android.gms.safetynet.SafetyNetApi;
 import com.google.android.gms.safetynet.SafetyNetClient;
-import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -140,39 +139,35 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
     return safetyNetClientTask;
   }
 
+  // TODO(b/261013814): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<AppCheckToken> getToken() {
     return safetyNetClientTask
         .continueWithTask(
-            new Continuation<SafetyNetClient, Task<SafetyNetApi.AttestationResponse>>() {
-              @Override
-              public Task<SafetyNetApi.AttestationResponse> then(
-                  @NonNull Task<SafetyNetClient> task) {
-                if (task.isSuccessful()) {
-                  return task.getResult().attest(NONCE.getBytes(), apiKey);
-                }
-                return Tasks.forException(task.getException());
+            task -> {
+              if (task.isSuccessful()) {
+                return task.getResult().attest(NONCE.getBytes(), apiKey);
               }
+              return Tasks.forException(task.getException());
             })
         .continueWithTask(
-            new Continuation<SafetyNetApi.AttestationResponse, Task<AppCheckToken>>() {
-              @Override
-              public Task<AppCheckToken> then(
-                  @NonNull Task<SafetyNetApi.AttestationResponse> task) {
-                if (!task.isSuccessful()) {
-                  // Proxies errors to the client directly; need to wrap to get the
-                  // types right.
-                  // TODO: more specific error mapping to help clients debug more
-                  //       easily.
-                  return Tasks.forException(task.getException());
-                } else {
-                  return exchangeSafetyNetAttestationResponseForToken(task.getResult());
-                }
+            task -> {
+              if (!task.isSuccessful()) {
+                // Proxies errors to the client directly; need to wrap to get the
+                // types right.
+                // TODO: more specific error mapping to help clients debug more
+                //       easily.
+                return Tasks.forException(task.getException());
+              } else {
+                return exchangeSafetyNetAttestationResponseForToken(task.getResult());
               }
             });
   }
 
+  // TODO(b/261013814): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   Task<AppCheckToken> exchangeSafetyNetAttestationResponseForToken(
       @NonNull SafetyNetApi.AttestationResponse attestationResponse) {
@@ -191,16 +186,13 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
                     NetworkClient.SAFETY_NET,
                     retryManager));
     return networkTask.continueWithTask(
-        new Continuation<AppCheckTokenResponse, Task<AppCheckToken>>() {
-          @Override
-          public Task<AppCheckToken> then(@NonNull Task<AppCheckTokenResponse> task) {
-            if (task.isSuccessful()) {
-              return Tasks.forResult(
-                  DefaultAppCheckToken.constructFromAppCheckTokenResponse(task.getResult()));
-            }
-            // TODO: Surface more error details.
-            return Tasks.forException(task.getException());
+        task -> {
+          if (task.isSuccessful()) {
+            return Tasks.forResult(
+                DefaultAppCheckToken.constructFromAppCheckTokenResponse(task.getResult()));
           }
+          // TODO: Surface more error details.
+          return Tasks.forException(task.getException());
         });
   }
 }

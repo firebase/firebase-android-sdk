@@ -21,7 +21,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.OnFailureListener;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -93,16 +92,12 @@ public class DefaultTokenRefresher {
     }
   }
 
+  // TODO(b/261013814): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   private void onRefresh() {
     firebaseAppCheck
         .fetchTokenFromProvider()
-        .addOnFailureListener(
-            new OnFailureListener() {
-              @Override
-              public void onFailure(@NonNull Exception e) {
-                scheduleRefreshAfterFailure();
-              }
-            });
+        .addOnFailureListener(e -> scheduleRefreshAfterFailure());
   }
 
   /** Cancels the in-flight scheduled refresh. */

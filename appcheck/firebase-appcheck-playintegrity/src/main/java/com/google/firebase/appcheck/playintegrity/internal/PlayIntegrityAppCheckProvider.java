@@ -67,6 +67,8 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
     this.retryManager = retryManager;
   }
 
+  // TODO(b/261013814): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<AppCheckToken> getToken() {
@@ -90,6 +92,8 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
             });
   }
 
+  // TODO(b/261013814): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   private Task<IntegrityTokenResponse> getPlayIntegrityAttestation() {
     GeneratePlayIntegrityChallengeRequest generateChallengeRequest =

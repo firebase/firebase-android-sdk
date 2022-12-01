@@ -65,7 +65,7 @@ class FirebaseAppDistributionTesterApiClient {
   private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
   private final TesterApiHttpClient testerApiHttpClient;
 
-  // TODO(b/258264924): Migrate to go/firebase-android-executors
+  // TODO(b/261014422): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
   private final Executor taskExecutor = Executors.newSingleThreadExecutor();
 
