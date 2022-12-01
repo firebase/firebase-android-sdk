@@ -162,7 +162,7 @@ public class ConfigFetchHandler {
 
     // Make a copy to prevent any concurrency issues between Fetches.
     Map<String, String> copyOfCustomHttpHeaders = new HashMap<>(customHttpHeaders);
-    copyOfCustomHttpHeaders.put(X_FIREBASE_RC_FETCH_TYPE, FetchType.BASE.toString() + "/" + 1);
+    copyOfCustomHttpHeaders.put(X_FIREBASE_RC_FETCH_TYPE, FetchType.BASE.getValue() + "/" + 1);
 
     return fetchedConfigsCache
         .get()
@@ -199,10 +199,10 @@ public class ConfigFetchHandler {
    *   <li>The backend responded with unavailable errors for the last two fetch requests.
    * </ul>
    *
+   * @param {@link FetchType} and fetchAttemptNumber help detail what started the fetch call.
    * @return A {@link Task} representing an immediate fetch call that returns a {@link
    *     FetchResponse} with the configs fetched from the backend. If the backend was not called or
    *     the backend had no updates, the {@link FetchResponse}'s configs will be {@code null}.
-   *     FetchType and fetchAttemptNumber help detail what started the fetch call.
    */
   public Task<FetchResponse> fetchNowWithTypeAndAttemptNumber(
       FetchType fetchType, int fetchAttemptNumber) {
@@ -210,7 +210,7 @@ public class ConfigFetchHandler {
     // Make a copy to prevent any concurrency issues between Fetches.
     Map<String, String> copyOfCustomHttpHeaders = new HashMap<>(customHttpHeaders);
     copyOfCustomHttpHeaders.put(
-        X_FIREBASE_RC_FETCH_TYPE, fetchType.toString() + "/" + fetchAttemptNumber);
+        X_FIREBASE_RC_FETCH_TYPE, fetchType.getValue() + "/" + fetchAttemptNumber);
 
     return fetchedConfigsCache
         .get()
@@ -693,12 +693,17 @@ public class ConfigFetchHandler {
   }
 
   public enum FetchType {
-    BASE,
-    REALTIME;
+    BASE("Base"),
+    REALTIME("Realtime");
 
-    @Override
-    public String toString() {
-      return name().charAt(0) + name().substring(1).toLowerCase();
+    private final String value;
+
+    FetchType(String value) {
+      this.value = value;
+    }
+
+    String getValue() {
+      return value;
     }
   }
 }
