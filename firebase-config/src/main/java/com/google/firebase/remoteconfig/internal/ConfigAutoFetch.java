@@ -22,9 +22,9 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateFetchException;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigRealtimeUpdateStreamException;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,7 +40,7 @@ import org.json.JSONObject;
 
 public class ConfigAutoFetch {
 
-  private static final int FETCH_RETRY = 3;
+  private static final int MAXIMUM_FETCH_ATTEMPTS = 3;
   private static final String TEMPLATE_VERSION_KEY = "latestTemplateVersionNumber";
   private static final String REALTIME_DISABLED_KEY = "featureDisabled";
 
@@ -102,8 +102,10 @@ public class ConfigAutoFetch {
         inputStream.close();
       } catch (IOException ex) {
         propagateErrors(
-            new FirebaseRemoteConfigRealtimeUpdateFetchException(
-                "Error handling stream messages while fetching.", ex.getCause()));
+            new FirebaseRemoteConfigClientException(
+                "Unable to parse config update message.",
+                ex.getCause(),
+                FirebaseRemoteConfigException.Code.CONFIG_UPDATE_MESSAGE_INVALID));
       } finally {
         httpURLConnection.disconnect();
       }
@@ -144,14 +146,16 @@ public class ConfigAutoFetch {
             if (jsonObject.has(REALTIME_DISABLED_KEY)
                 && jsonObject.getBoolean(REALTIME_DISABLED_KEY)) {
               retryCallback.onError(
-                  new FirebaseRemoteConfigRealtimeUpdateStreamException("Realtime is disabled."));
+                  new FirebaseRemoteConfigServerException(
+                      "The server is temporarily unavailable. Try again in a few minutes.",
+                      FirebaseRemoteConfigException.Code.CONFIG_UPDATE_UNAVAILABLE));
               break;
             }
             if (jsonObject.has(TEMPLATE_VERSION_KEY)) {
               long oldTemplateVersion = configFetchHandler.getTemplateVersionNumber();
               long targetTemplateVersion = jsonObject.getLong(TEMPLATE_VERSION_KEY);
               if (targetTemplateVersion > oldTemplateVersion) {
-                autoFetch(FETCH_RETRY, targetTemplateVersion);
+                autoFetch(MAXIMUM_FETCH_ATTEMPTS, targetTemplateVersion);
               }
             }
           } catch (JSONException ex) {
@@ -170,7 +174,9 @@ public class ConfigAutoFetch {
   private void autoFetch(int remainingAttempts, long targetVersion) {
     if (remainingAttempts == 0) {
       propagateErrors(
-          new FirebaseRemoteConfigRealtimeUpdateFetchException("Unable to fetch latest version."));
+          new FirebaseRemoteConfigServerException(
+              "Unable to fetch the latest version of the template.",
+              FirebaseRemoteConfigException.Code.CONFIG_UPDATE_NOT_FETCHED));
       return;
     }
 
@@ -189,7 +195,13 @@ public class ConfigAutoFetch {
 
   @VisibleForTesting
   public synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
-    Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
+    int currentAttempts = remainingAttempts - 1;
+
+    // fetchAttemptNumber is calculated by subtracting current attempts from the max number of
+    // possible attempts.
+    Task<ConfigFetchHandler.FetchResponse> fetchTask =
+        configFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, MAXIMUM_FETCH_ATTEMPTS - currentAttempts);
     fetchTask.onSuccessTask(
         (fetchResponse) -> {
           long newTemplateVersion = 0;
@@ -208,7 +220,7 @@ public class ConfigAutoFetch {
                 "Fetched template version is the same as SDK's current version."
                     + " Retrying fetch.");
             // Continue fetching until template version number if greater then current.
-            autoFetch(remainingAttempts - 1, targetVersion);
+            autoFetch(currentAttempts, targetVersion);
           }
           return Tasks.forResult(null);
         });
