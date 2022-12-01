@@ -14,6 +14,7 @@
 
 package com.google.firebase.remoteconfig;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -279,6 +280,8 @@ public class FirebaseRemoteConfig {
    *
    * @return {@link Task} representing the {@code fetch} call.
    */
+  // TODO(b/258275481): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   public Task<Void> fetch() {
     Task<FetchResponse> fetchTask = fetchHandler.fetch();
@@ -306,6 +309,8 @@ public class FirebaseRemoteConfig {
    *     this many seconds ago, configs are served from the backend instead of local storage.
    * @return {@link Task} representing the {@code fetch} call.
    */
+  // TODO(b/258275481): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   public Task<Void> fetch(long minimumFetchIntervalInSeconds) {
     Task<FetchResponse> fetchTask = fetchHandler.fetch(minimumFetchIntervalInSeconds);
@@ -584,6 +589,8 @@ public class FirebaseRemoteConfig {
    *
    * @return A task with result {@code null} on failure.
    */
+  // TODO(b/258275481): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   private Task<Void> setDefaultsWithStringsMapAsync(Map<String, String> defaultsStringMap) {
     ConfigContainer defaultConfigs = null;
     try {

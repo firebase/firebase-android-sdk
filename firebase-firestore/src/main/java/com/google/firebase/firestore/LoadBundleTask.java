@@ -16,6 +16,7 @@ package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
@@ -136,6 +137,8 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
    *
    * @return this {@code Task}
    */
+  // TODO(b/261013682): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnSuccessListener(
@@ -172,6 +175,8 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
    *     removed.
    * @return this {@code Task}
    */
+  // TODO(b/261013682): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnSuccessListener(
@@ -189,6 +194,8 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
    *
    * @return this {@code Task}
    */
+  // TODO(b/261013682): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnFailureListener(
@@ -222,6 +229,8 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
    *     removed.
    * @return this {@code Task}
    */
+  // TODO(b/261013682): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnFailureListener(
@@ -238,6 +247,8 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
    *
    * @return this {@code Task}
    */
+  // TODO(b/261013682): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnCompleteListener(
@@ -272,6 +283,8 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
    *     removed.
    * @return this {@code Task}
    */
+  // TODO(b/261013682): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnCompleteListener(
@@ -289,6 +302,8 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
    *
    * @return this {@code Task}
    */
+  // TODO(b/261013682): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnCanceledListener(
@@ -323,6 +338,8 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
    *
    * @return this Task
    */
+  // TODO(b/261013682): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<LoadBundleTaskProgress> addOnCanceledListener(
@@ -338,6 +355,8 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
    *
    * @see Continuation#then(Task)
    */
+  // TODO(b/261013682): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public <TContinuationResult> Task<TContinuationResult> continueWith(
@@ -368,6 +387,8 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
    *
    * @see Continuation#then(Task)
    */
+  // TODO(b/261013682): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public <TContinuationResult> Task<TContinuationResult> continueWithTask(
@@ -403,6 +424,8 @@ public class LoadBundleTask extends Task<LoadBundleTaskProgress> {
    *
    * @see SuccessContinuation#then(ResultT)
    */
+  // TODO(b/261013682): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public <TContinuationResult> Task<TContinuationResult> onSuccessTask(

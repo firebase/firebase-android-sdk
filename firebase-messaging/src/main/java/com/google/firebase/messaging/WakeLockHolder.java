@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.messaging;
 
+import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -95,6 +96,8 @@ final class WakeLockHolder {
    * @param connection ServiceConnection to send the Intent to.
    * @param intent Intent for starting the service.
    */
+  // TODO(b/261013992): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   static void sendWakefulServiceIntent(
       Context context, WithinAppServiceConnection connection, Intent intent) {
     synchronized (syncObject) {

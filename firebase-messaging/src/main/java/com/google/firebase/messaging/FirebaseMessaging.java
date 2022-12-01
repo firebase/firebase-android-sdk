@@ -456,6 +456,8 @@ public class FirebaseMessaging {
    *     "[a-zA-Z0-9-_.~%]{1,900}".
    * @return A task that will be completed when the topic has been successfully subscribed to.
    */
+  // TODO(b/261013992): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   public Task<Void> subscribeToTopic(@NonNull String topic) {
     return topicsSubscriberTask.onSuccessTask(
@@ -471,6 +473,8 @@ public class FirebaseMessaging {
    *     expression: "[a-zA-Z0-9-_.~%]{1,900}".
    * @return A task that will be completed when the topic has been successfully unsubscribed from.
    */
+  // TODO(b/261013992): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   public Task<Void> unsubscribeFromTopic(@NonNull String topic) {
     return topicsSubscriberTask.onSuccessTask(
