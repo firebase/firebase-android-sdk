@@ -129,6 +129,7 @@ public class RemoteConfigComponent {
     this.firebaseInstallations = firebaseInstallations;
     this.firebaseAbt = firebaseAbt;
     this.analyticsConnector = analyticsConnector;
+    this.scheduledExecutorService = scheduledExecutorService;
 
     this.appId = firebaseApp.getOptions().getApplicationId();
     GlobalBackgroundListener.ensureBackgroundListenerIsRegistered(context);
