@@ -26,37 +26,35 @@ import com.google.firebase.ktx.Firebase
 
 class SecondActivity : AppCompatActivity() {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_second)
-    }
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(savedInstanceState)
+    setContentView(R.layout.activity_second)
+  }
 
-    override fun onResume() {
-        super.onResume()
-        val mainActivityButton = findViewById<AppCompatButton>(R.id.main_activity_button)
-        mainActivityButton.setOnClickListener {
-            startMainActivity()
-        }
-    }
+  override fun onResume() {
+    super.onResume()
+    val mainActivityButton = findViewById<AppCompatButton>(R.id.main_activity_button)
+    mainActivityButton.setOnClickListener { startMainActivity() }
+  }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        val inflater: MenuInflater = menuInflater
-        inflater.inflate(R.menu.action_menu, menu)
-        return true
-    }
+  override fun onCreateOptionsMenu(menu: Menu): Boolean {
+    val inflater: MenuInflater = menuInflater
+    inflater.inflate(R.menu.action_menu, menu)
+    return true
+  }
 
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.startFeedbackMenuItem -> {
-                Firebase.appDistribution.startFeedback(R.string.feedbackInfoText)
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
+  override fun onOptionsItemSelected(item: MenuItem): Boolean {
+    return when (item.itemId) {
+      R.id.startFeedbackMenuItem -> {
+        Firebase.appDistribution.startFeedback(R.string.feedbackInfoText)
+        true
+      }
+      else -> super.onOptionsItemSelected(item)
     }
+  }
 
-    private fun startMainActivity() {
-        val intent = Intent(this, MainActivity::class.java)
-        startActivity(intent)
-    }
+  private fun startMainActivity() {
+    val intent = Intent(this, MainActivity::class.java)
+    startActivity(intent)
+  }
 }
