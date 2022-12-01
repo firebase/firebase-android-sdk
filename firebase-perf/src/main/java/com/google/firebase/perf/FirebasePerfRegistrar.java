@@ -15,10 +15,10 @@
 package com.google.firebase.perf;
 
 import androidx.annotation.Keep;
-import androidx.annotation.UiThread;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
