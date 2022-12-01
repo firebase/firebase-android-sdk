@@ -317,7 +317,7 @@ public final class FirebaseRemoteConfigTest {
             mockRetryListener,
             scheduledExecutorService);
     realtimeMetadataClient =
-            new ConfigMetadataClient(context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
+        new ConfigMetadataClient(context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
     configRealtimeHttpClient =
         new ConfigRealtimeHttpClient(
             firebaseApp,
