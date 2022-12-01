@@ -49,6 +49,16 @@
             android:minHeight="48dp"
             app:srcCompat="@drawable/ic_baseline_send_24" />
 
+        <ProgressBar
+            android:id="@+id/sendSpinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="0"
+            android:minWidth="48dp"
+            android:minHeight="48dp"
+            android:visibility="gone"/>
+
     </LinearLayout>
 
     <View
