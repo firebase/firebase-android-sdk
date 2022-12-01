@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
@@ -34,6 +35,8 @@ import com.google.firebase.appdistribution.UpdateTask;
 import java.util.concurrent.Executor;
 
 /** Implementation of UpdateTask, the return type of updateApp. */
+// TODO(b/261013814): Use an explicit executor in continuations.
+@SuppressLint("TaskMainThread")
 class UpdateTaskImpl extends UpdateTask {
   @Nullable
   @GuardedBy("lock")

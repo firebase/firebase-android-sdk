@@ -14,6 +14,7 @@
 
 package com.google.firebase.inappmessaging;
 
+import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.util.VisibleForTesting;
@@ -61,6 +62,8 @@ public class FirebaseInAppMessaging {
   private boolean areMessagesSuppressed;
   private FirebaseInAppMessagingDisplay fiamDisplay;
 
+  // TODO(b/261014173): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @VisibleForTesting
   @Inject
   FirebaseInAppMessaging(

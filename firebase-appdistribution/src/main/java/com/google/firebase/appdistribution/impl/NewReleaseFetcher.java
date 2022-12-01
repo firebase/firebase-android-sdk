@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution.impl;
 
 import static com.google.firebase.appdistribution.impl.PackageInfoUtils.getPackageInfo;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
@@ -48,6 +49,8 @@ class NewReleaseFetcher {
     this.releaseIdentifier = releaseIdentifier;
   }
 
+  // TODO(b/261014422): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   public synchronized Task<AppDistributionReleaseInternal> checkForNewRelease() {
     if (cachedCheckForNewRelease != null && !cachedCheckForNewRelease.isComplete()) {
