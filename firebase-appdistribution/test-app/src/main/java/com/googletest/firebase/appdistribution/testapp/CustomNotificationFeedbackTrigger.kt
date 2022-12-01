@@ -31,7 +31,6 @@ object CustomNotificationFeedbackTrigger {
 
   var activityToScreenshot: Activity? = null
 
-
   /**
    * Show an ongoing notification that the user can tap to take a screenshot of the current activity
    * and send feedback to the developer.
@@ -57,9 +56,7 @@ object CustomNotificationFeedbackTrigger {
         )
       channel.description =
         activity.getString(R.string.feedbackTriggerNotificationChannelDescription)
-      activity
-        .getSystemService(NotificationManager::class.java)
-        .createNotificationChannel(channel)
+      activity.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
     val intent = Intent(activity, CustomNotificationTakeScreenshotActivity::class.java)
