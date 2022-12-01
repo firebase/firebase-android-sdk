@@ -33,6 +33,7 @@ import android.content.pm.ServiceInfo;
 import android.os.Binder;
 import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
+import android.os.Looper;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -53,6 +54,7 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -112,6 +114,11 @@ public final class FirebaseMessagingRoboTest {
 
     // To make sure proxy initialization happens before test execution.
     ProxyNotificationInitializer.initialize(context);
+  }
+
+  @After
+  public void tearDown() {
+    shadowOf(Looper.getMainLooper()).idle();
   }
 
   private void clearTopicOperations() {
