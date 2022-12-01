@@ -82,6 +82,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -180,6 +182,9 @@ public final class FirebaseRemoteConfigTest {
   private ConfigMetadataClient realtimeMetadataClient;
 
   private FetchResponse firstFetchedContainerResponse;
+
+  private final ScheduledExecutorService scheduledExecutorService =
+      Executors.newSingleThreadScheduledExecutor();
 
   @Before
   public void setUp() throws Exception {
@@ -305,10 +310,14 @@ public final class FirebaseRemoteConfigTest {
 
     listeners.add(listener);
     configAutoFetch =
-        new ConfigAutoFetch(mockHttpURLConnection, mockFetchHandler, listeners, mockRetryListener);
-
+        new ConfigAutoFetch(
+            mockHttpURLConnection,
+            mockFetchHandler,
+            listeners,
+            mockRetryListener,
+            scheduledExecutorService);
     realtimeMetadataClient =
-        new ConfigMetadataClient(context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
+            new ConfigMetadataClient(context.getSharedPreferences("test_file", Context.MODE_PRIVATE));
     configRealtimeHttpClient =
         new ConfigRealtimeHttpClient(
             firebaseApp,
@@ -317,7 +326,8 @@ public final class FirebaseRemoteConfigTest {
             context,
             "firebase",
             listeners,
-            realtimeMetadataClient);
+            realtimeMetadataClient,
+            scheduledExecutorService);
   }
 
   @Test
