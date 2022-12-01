@@ -13,7 +13,8 @@ import com.squareup.seismic.ShakeDetector
  * Listens to the device accelerometer, and starts App Distribution in-app feedback when the user
  * shakes their device.
  */
-object ShakeDetectionFeedbackTrigger : ShakeDetector.Listener, Application.ActivityLifecycleCallbacks {
+object ShakeDetectionFeedbackTrigger :
+  ShakeDetector.Listener, Application.ActivityLifecycleCallbacks {
   private const val TAG: String = "ShakeDetectionFeedbackTrigger"
 
   private val shakeDetector =
