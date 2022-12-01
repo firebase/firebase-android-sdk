@@ -143,7 +143,6 @@ public class ConfigAutoFetch {
       if (partialConfigUpdateMessage.contains("}")) {
         // Strip beginning and ending of message. If there is not an open and closing bracket,
         // parseMessage will return an empty message.
-        Log.d(TAG, currentConfigUpdateMessage);
         currentConfigUpdateMessage =
             parseAndValidateConfigUpdateMessage(currentConfigUpdateMessage);
         if (!currentConfigUpdateMessage.isEmpty()) {
