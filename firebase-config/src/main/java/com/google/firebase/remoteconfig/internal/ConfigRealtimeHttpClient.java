@@ -333,12 +333,7 @@ public class ConfigRealtimeHttpClient {
     ConfigUpdateListener retryCallback =
         new ConfigUpdateListener() {
           @Override
-          public void onEvent() {
-            closeRealtimeHttpStream();
-            updateBackoffMetadataWithLastFailedStreamConnectionTime(
-                new Date(clock.currentTimeMillis()));
-            retryHTTPConnection();
-          }
+          public void onEvent() {}
 
           // This method will only be called when a realtimeDisabled message is sent down the
           // stream.
