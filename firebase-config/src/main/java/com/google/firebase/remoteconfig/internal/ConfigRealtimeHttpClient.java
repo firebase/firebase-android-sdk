@@ -114,7 +114,10 @@ public class ConfigRealtimeHttpClient {
 
     // Retry parameters
     this.random = new Random();
-    httpRetriesRemaining = ORIGINAL_RETRIES;
+    httpRetriesRemaining =
+        Math.max(
+            ORIGINAL_RETRIES - metadataClient.getRealtimeBackoffMetadata().getNumFailedStreams(),
+            1);
     clock = DefaultClock.getInstance();
 
     this.firebaseApp = firebaseApp;
