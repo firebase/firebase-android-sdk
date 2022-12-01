@@ -32,7 +32,6 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
@@ -58,12 +57,13 @@ public class ConfigAutoFetch {
       HttpURLConnection httpURLConnection,
       ConfigFetchHandler configFetchHandler,
       Set<ConfigUpdateListener> eventListeners,
-      ConfigUpdateListener retryCallback) {
+      ConfigUpdateListener retryCallback,
+      ScheduledExecutorService scheduledExecutorService) {
     this.httpURLConnection = httpURLConnection;
     this.configFetchHandler = configFetchHandler;
     this.eventListeners = eventListeners;
     this.retryCallback = retryCallback;
-    this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+    this.scheduledExecutorService = scheduledExecutorService;
     this.random = new Random();
   }
 

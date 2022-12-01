@@ -44,6 +44,7 @@ import java.util.Random;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -84,7 +85,9 @@ public class RemoteConfigComponent {
       new HashMap<>();
 
   private final Context context;
+  // TODO: Consolidate executors.
   private final ExecutorService executorService;
+  private final ScheduledExecutorService scheduledExecutorService;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
   private final FirebaseABTesting firebaseAbt;
@@ -105,6 +108,7 @@ public class RemoteConfigComponent {
     this(
         context,
         Executors.newCachedThreadPool(),
+        Executors.newSingleThreadScheduledExecutor(),
         firebaseApp,
         firebaseInstallations,
         firebaseAbt,
@@ -117,6 +121,7 @@ public class RemoteConfigComponent {
   protected RemoteConfigComponent(
       Context context,
       ExecutorService executorService,
+      ScheduledExecutorService scheduledExecutorService,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
@@ -128,6 +133,7 @@ public class RemoteConfigComponent {
     this.firebaseInstallations = firebaseInstallations;
     this.firebaseAbt = firebaseAbt;
     this.analyticsConnector = analyticsConnector;
+    this.scheduledExecutorService = scheduledExecutorService;
 
     this.appId = firebaseApp.getOptions().getApplicationId();
     GlobalBackgroundListener.ensureBackgroundListenerIsRegistered(context);
@@ -272,7 +278,8 @@ public class RemoteConfigComponent {
         configFetchHandler,
         context,
         namespace,
-        executorService);
+        executorService,
+        scheduledExecutorService);
   }
 
   private ConfigGetParameterHandler getGetHandler(

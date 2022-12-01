@@ -46,7 +46,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -93,11 +92,12 @@ public class ConfigRealtimeHttpClient {
       ConfigFetchHandler configFetchHandler,
       Context context,
       String namespace,
-      Set<ConfigUpdateListener> listeners) {
+      Set<ConfigUpdateListener> listeners,
+      ScheduledExecutorService scheduledExecutorService) {
 
     this.listeners = listeners;
     this.httpURLConnection = null;
-    this.scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+    this.scheduledExecutorService = scheduledExecutorService;
 
     // Retry parameters
     this.random = new Random();
@@ -303,7 +303,8 @@ public class ConfigRealtimeHttpClient {
           }
         };
 
-    return new ConfigAutoFetch(httpURLConnection, configFetchHandler, listeners, retryCallback);
+    return new ConfigAutoFetch(
+        httpURLConnection, configFetchHandler, listeners, retryCallback, scheduledExecutorService);
   }
 
   // HTTP status code that the Realtime client should retry on.
