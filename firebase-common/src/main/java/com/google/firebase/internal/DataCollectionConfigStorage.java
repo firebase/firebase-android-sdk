@@ -22,14 +22,14 @@ import android.os.Build;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.ContextCompat;
 import com.google.firebase.DataCollectionDefaultChange;
-import com.google.firebase.annotations.AppScope;
 import com.google.firebase.events.Event;
 import com.google.firebase.events.Publisher;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Singleton;
 
 /** Encapsulates data collection configuration. */
-@AppScope
+@Singleton
 public class DataCollectionConfigStorage {
   private static final String FIREBASE_APP_PREFS = "com.google.firebase.common.prefs:";
 

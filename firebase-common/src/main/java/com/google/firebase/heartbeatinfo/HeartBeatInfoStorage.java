@@ -19,7 +19,6 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.annotations.AppScope;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -34,19 +33,16 @@ import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Singleton;
 
 /**
  * Class responsible for storing all heartbeat related information.
  *
  * <p>This exposes functions to store heartbeats and retrieve them in the form of HeartBeatResult.
  */
-@AppScope
+@Singleton
 class HeartBeatInfoStorage {
-  private static HeartBeatInfoStorage instance = null;
-
   private static final String GLOBAL = "fire-global";
-
-  private static final String PREFERENCES_NAME = "FirebaseAppHeartBeat";
 
   private static final String HEARTBEAT_PREFERENCES_NAME = "FirebaseHeartBeat";
 

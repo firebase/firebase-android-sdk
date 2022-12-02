@@ -39,7 +39,6 @@ import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.PlatformVersion;
 import com.google.android.gms.common.util.ProcessUtils;
-import com.google.firebase.annotations.AppScope;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatController;
 import com.google.firebase.internal.DataCollectionConfigStorage;
@@ -53,6 +52,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Singleton;
 
 /**
  * The entry point of Firebase SDKs. It holds common configuration and state for Firebase APIs. Most
@@ -80,7 +80,7 @@ import javax.inject.Named;
  * Use of Firebase in processes other than the main process is not supported and will likely cause
  * problems related to resource contention.
  */
-@AppScope
+@Singleton
 public class FirebaseApp {
 
   private static final String LOG_TAG = "FirebaseApp";

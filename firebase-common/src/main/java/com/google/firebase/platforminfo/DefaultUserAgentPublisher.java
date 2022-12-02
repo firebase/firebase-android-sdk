@@ -14,12 +14,10 @@
 
 package com.google.firebase.platforminfo;
 
-import com.google.firebase.annotations.AppScope;
-import com.google.firebase.components.Component;
-import com.google.firebase.components.Dependency;
 import java.util.Iterator;
 import java.util.Set;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * Provides a user agent string that captures the SDKs and their corresponding versions.
@@ -27,7 +25,7 @@ import javax.inject.Inject;
  * <p>Example user agent string: "firebase-common/16.1.1 firebase-firestore/16.1.2
  * firebase-database/16.1.2"
  */
-@AppScope
+@Singleton
 public class DefaultUserAgentPublisher implements UserAgentPublisher {
   private final String javaSDKVersionUserAgent;
   private final GlobalLibraryVersionRegistrar gamesSDKRegistrar;
@@ -65,16 +63,5 @@ public class DefaultUserAgentPublisher implements UserAgentPublisher {
       }
     }
     return sb.toString();
-  }
-
-  /** Creates a component to codify a user agent string that captures SDK versions. */
-  public static Component<UserAgentPublisher> component() {
-    return Component.builder(UserAgentPublisher.class)
-        .add(Dependency.setOf(LibraryVersion.class))
-        .factory(
-            c ->
-                new DefaultUserAgentPublisher(
-                    c.setOf(LibraryVersion.class), GlobalLibraryVersionRegistrar.getInstance()))
-        .build();
   }
 }
