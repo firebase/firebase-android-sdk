@@ -29,6 +29,14 @@ android {
         minSdk = minSdkVersion
         targetSdk = targetSdkVersion
     }
+    sourceSets {
+        getByName("main") {
+            java.srcDirs("src/main/kotlin")
+        }
+        getByName("test") {
+            java.srcDirs("src/test/kotlin")
+        }
+    }
     testOptions.unitTests.isIncludeAndroidResources = true
 }
 
