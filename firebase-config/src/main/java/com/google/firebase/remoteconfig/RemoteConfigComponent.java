@@ -14,7 +14,6 @@
 
 package com.google.firebase.remoteconfig;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.GuardedBy;
@@ -27,6 +26,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
@@ -40,8 +40,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Component for providing multiple Firebase Remote Config (FRC) instances. Firebase Android
@@ -76,7 +74,7 @@ public class RemoteConfigComponent {
   private final Map<String, FirebaseRemoteConfig> frcNamespaceInstances = new HashMap<>();
 
   private final Context context;
-  private final ExecutorService executorService;
+  private final Executor executor;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
   private final FirebaseABTesting firebaseAbt;
@@ -88,17 +86,16 @@ public class RemoteConfigComponent {
   private Map<String, String> customHeaders = new HashMap<>();
 
   /** Firebase Remote Config Component constructor. */
-  // TODO(b/258275481): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   RemoteConfigComponent(
       Context context,
+      @Background Executor executor,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
       Provider<AnalyticsConnector> analyticsConnector) {
     this(
         context,
-        Executors.newCachedThreadPool(),
+        executor,
         firebaseApp,
         firebaseInstallations,
         firebaseAbt,
@@ -110,14 +107,14 @@ public class RemoteConfigComponent {
   @VisibleForTesting
   protected RemoteConfigComponent(
       Context context,
-      ExecutorService executorService,
+      Executor executor,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
       Provider<AnalyticsConnector> analyticsConnector,
       boolean loadGetDefault) {
     this.context = context;
-    this.executorService = executorService;
+    this.executor = executor;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
     this.firebaseAbt = firebaseAbt;
@@ -130,7 +127,7 @@ public class RemoteConfigComponent {
     // while another test has already cleared the component but hasn't gotten a new one yet.
     if (loadGetDefault) {
       // Loads the default namespace's configs from disk on App startup.
-      Tasks.call(executorService, this::getDefault);
+      Tasks.call(executor, this::getDefault);
     }
   }
 
@@ -167,7 +164,7 @@ public class RemoteConfigComponent {
         namespace,
         firebaseInstallations,
         firebaseAbt,
-        executorService,
+        executor,
         fetchedCacheClient,
         activatedCacheClient,
         defaultsCacheClient,
@@ -214,15 +211,13 @@ public class RemoteConfigComponent {
     this.customHeaders = customHeaders;
   }
 
-  // TODO(b/258275481): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   private ConfigCacheClient getCacheClient(String namespace, String configStoreType) {
     String fileName =
         String.format(
             "%s_%s_%s_%s.json",
             FIREBASE_REMOTE_CONFIG_FILE_NAME_PREFIX, appId, namespace, configStoreType);
     return ConfigCacheClient.getInstance(
-        Executors.newCachedThreadPool(), ConfigStorageClient.getInstance(context, fileName));
+        executor, ConfigStorageClient.getInstance(context, fileName));
   }
 
   @VisibleForTesting
@@ -244,7 +239,7 @@ public class RemoteConfigComponent {
     return new ConfigFetchHandler(
         firebaseInstallations,
         isPrimaryApp(firebaseApp) ? analyticsConnector : () -> null,
-        executorService,
+        executor,
         DEFAULT_CLOCK,
         DEFAULT_RANDOM,
         fetchedCacheClient,
@@ -255,8 +250,7 @@ public class RemoteConfigComponent {
 
   private ConfigGetParameterHandler getGetHandler(
       ConfigCacheClient activatedCacheClient, ConfigCacheClient defaultsCacheClient) {
-    return new ConfigGetParameterHandler(
-        executorService, activatedCacheClient, defaultsCacheClient);
+    return new ConfigGetParameterHandler(executor, activatedCacheClient, defaultsCacheClient);
   }
 
   @VisibleForTesting

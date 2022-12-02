@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -56,7 +55,7 @@ public class ConfigCacheClient {
   @GuardedBy("ConfigCacheClient.class")
   private static final Map<String, ConfigCacheClient> clientInstances = new HashMap<>();
 
-  private final ExecutorService executorService;
+  private final Executor executor;
   private final ConfigStorageClient storageClient;
 
   /**
@@ -71,8 +70,8 @@ public class ConfigCacheClient {
    * Creates a new cache client that executes async calls through {@code executorService} and is
    * backed by {@code storageClient}.
    */
-  private ConfigCacheClient(ExecutorService executorService, ConfigStorageClient storageClient) {
-    this.executorService = executorService;
+  private ConfigCacheClient(Executor executor, ConfigStorageClient storageClient) {
+    this.executor = executor;
     this.storageClient = storageClient;
 
     cachedContainerTask = null;
@@ -126,9 +125,9 @@ public class ConfigCacheClient {
    */
   public Task<ConfigContainer> put(
       ConfigContainer configContainer, boolean shouldUpdateInMemoryContainer) {
-    return Tasks.call(executorService, () -> storageClient.write(configContainer))
+    return Tasks.call(executor, () -> storageClient.write(configContainer))
         .onSuccessTask(
-            executorService,
+            executor,
             (unusedVoid) -> {
               if (shouldUpdateInMemoryContainer) {
                 updateInMemoryConfigContainer(configContainer);
@@ -165,7 +164,7 @@ public class ConfigCacheClient {
      */
     if (cachedContainerTask == null
         || (cachedContainerTask.isComplete() && !cachedContainerTask.isSuccessful())) {
-      cachedContainerTask = Tasks.call(executorService, storageClient::read);
+      cachedContainerTask = Tasks.call(executor, storageClient::read);
     }
     return cachedContainerTask;
   }
@@ -200,10 +199,10 @@ public class ConfigCacheClient {
    * underlying file name.
    */
   public static synchronized ConfigCacheClient getInstance(
-      ExecutorService executorService, ConfigStorageClient storageClient) {
+      Executor executor, ConfigStorageClient storageClient) {
     String fileName = storageClient.getFileName();
     if (!clientInstances.containsKey(fileName)) {
-      clientInstances.put(fileName, new ConfigCacheClient(executorService, storageClient));
+      clientInstances.put(fileName, new ConfigCacheClient(executor, storageClient));
     }
     return clientInstances.get(fileName);
   }
