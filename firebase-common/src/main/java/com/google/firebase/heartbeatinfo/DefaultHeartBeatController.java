@@ -44,12 +44,12 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
 
   private final Provider<UserAgentPublisher> userAgentProvider;
 
-  private final Set<HeartBeatConsumer> consumers;
+  private final Provider<Set<HeartBeatConsumer>> consumers;
 
-  private final Executor backgroundExecutor;
+  private final Provider<Executor> backgroundExecutor;
 
   public Task<Void> registerHeartBeat() {
-    if (consumers.size() <= 0) {
+    if (consumers.get().size() <= 0) {
       return Tasks.forResult(null);
     }
     boolean inDirectBoot = !UserManagerCompat.isUserUnlocked(applicationContext);
@@ -58,7 +58,7 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
     }
 
     return Tasks.call(
-        backgroundExecutor,
+        backgroundExecutor.get(),
         () -> {
           synchronized (DefaultHeartBeatController.this) {
             this.storageProvider
@@ -78,7 +78,7 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
       return Tasks.forResult("");
     }
     return Tasks.call(
-        backgroundExecutor,
+        backgroundExecutor.get(),
         () -> {
           synchronized (DefaultHeartBeatController.this) {
             HeartBeatInfoStorage storage = this.storageProvider.get();
@@ -110,8 +110,8 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
   @Inject
   DefaultHeartBeatController(
       Provider<HeartBeatInfoStorage> testStorage,
-      Set<HeartBeatConsumer> consumers,
-      @Background Executor executor,
+      Provider<Set<HeartBeatConsumer>> consumers,
+      @Background Provider<Executor> executor,
       Provider<UserAgentPublisher> userAgentProvider,
       Context context) {
     storageProvider = testStorage;

@@ -17,6 +17,7 @@ package com.google.firebase.platforminfo;
 import java.util.Iterator;
 import java.util.Set;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 /**
@@ -27,13 +28,14 @@ import javax.inject.Singleton;
  */
 @Singleton
 public class DefaultUserAgentPublisher implements UserAgentPublisher {
-  private final String javaSDKVersionUserAgent;
+  private final Provider<Set<LibraryVersion>> libraryVersions;
   private final GlobalLibraryVersionRegistrar gamesSDKRegistrar;
 
   @Inject
   DefaultUserAgentPublisher(
-      Set<LibraryVersion> libraryVersions, GlobalLibraryVersionRegistrar gamesSDKRegistrar) {
-    this.javaSDKVersionUserAgent = toUserAgent(libraryVersions);
+      Provider<Set<LibraryVersion>> libraryVersions,
+      GlobalLibraryVersionRegistrar gamesSDKRegistrar) {
+    this.libraryVersions = libraryVersions;
     this.gamesSDKRegistrar = gamesSDKRegistrar;
   }
 
@@ -46,10 +48,12 @@ public class DefaultUserAgentPublisher implements UserAgentPublisher {
   @Override
   public String getUserAgent() {
     if (gamesSDKRegistrar.getRegisteredVersions().isEmpty()) {
-      return javaSDKVersionUserAgent;
+      return toUserAgent(libraryVersions.get());
     }
 
-    return javaSDKVersionUserAgent + ' ' + toUserAgent(gamesSDKRegistrar.getRegisteredVersions());
+    return toUserAgent(libraryVersions.get())
+        + ' '
+        + toUserAgent(gamesSDKRegistrar.getRegisteredVersions());
   }
 
   private static String toUserAgent(Set<LibraryVersion> tokens) {
