@@ -25,7 +25,13 @@ import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiClass
 import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiParameter
+import com.intellij.psi.util.InheritanceUtil
 import org.jetbrains.uast.UCallExpression
+import org.jetbrains.uast.UClass
+import org.jetbrains.uast.UMethod
+import org.jetbrains.uast.getParentOfType
+
+internal val GENERICS_PATTERN = Regex("<.*>")
 
 @Suppress("DetectorIsMissingAnnotations")
 class TasksMainThreadDetector : Detector(), SourceCodeScanner {
@@ -46,6 +52,19 @@ class TasksMainThreadDetector : Detector(), SourceCodeScanner {
       return
     }
 
+    // It's ok to call from a subclass of Task as it needs to implement overloads that don't take an
+    // executor.
+    val callingClass = node.getParentOfType<UClass>()
+    if (
+      callingClass != null &&
+        InheritanceUtil.isInheritor(callingClass.javaPsi, "com.google.android.gms.tasks.Task")
+    ) {
+      val callingMethod = node.getParentOfType<UMethod>()?.javaPsi
+      if (method.isSameMethodAs(callingMethod)) {
+        return
+      }
+    }
+
     val firstArgument: PsiParameter = method.parameterList.parameters.firstOrNull() ?: return
     if (!firstArgument.type.equalsToText("java.util.concurrent.Executor")) {
       context.report(
@@ -55,6 +74,12 @@ class TasksMainThreadDetector : Detector(), SourceCodeScanner {
       )
     }
   }
+
+  private fun PsiMethod.isSameMethodAs(other: PsiMethod?): Boolean =
+    other != null &&
+      name == other.name &&
+      parameterList.parameters.map { it.type.toString().replace(GENERICS_PATTERN, "") } ==
+        other.parameterList.parameters.map { it.type.toString().replace(GENERICS_PATTERN, "") }
 
   private fun isTaskMethod(method: PsiMethod): Boolean {
     (method.parent as? PsiClass)?.let {
