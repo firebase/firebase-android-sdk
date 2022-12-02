@@ -22,10 +22,14 @@ import android.os.Build;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.ContextCompat;
 import com.google.firebase.DataCollectionDefaultChange;
+import com.google.firebase.annotations.AppScope;
 import com.google.firebase.events.Event;
 import com.google.firebase.events.Publisher;
+import javax.inject.Inject;
+import javax.inject.Named;
 
 /** Encapsulates data collection configuration. */
+@AppScope
 public class DataCollectionConfigStorage {
   private static final String FIREBASE_APP_PREFS = "com.google.firebase.common.prefs:";
 
@@ -38,8 +42,11 @@ public class DataCollectionConfigStorage {
   private final Publisher publisher;
   private boolean dataCollectionDefaultEnabled;
 
+  @Inject
   public DataCollectionConfigStorage(
-      Context applicationContext, String persistenceKey, Publisher publisher) {
+      Context applicationContext,
+      @Named("persistenceKey") String persistenceKey,
+      Publisher publisher) {
     this.deviceProtectedContext = directBootSafe(applicationContext);
     this.sharedPreferences =
         deviceProtectedContext.getSharedPreferences(

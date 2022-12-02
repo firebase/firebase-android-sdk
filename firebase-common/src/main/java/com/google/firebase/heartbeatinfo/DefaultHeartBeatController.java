@@ -18,26 +18,28 @@ import android.content.Context;
 import android.util.Base64;
 import android.util.Base64OutputStream;
 import androidx.annotation.NonNull;
-import androidx.annotation.VisibleForTesting;
 import androidx.core.os.UserManagerCompat;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.AppScope;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.components.Qualified;
-import com.google.firebase.inject.Provider;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.zip.GZIPOutputStream;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 /** Provides a function to store heartbeats and another function to retrieve stored heartbeats. */
+@AppScope
 public class DefaultHeartBeatController implements HeartBeatController, HeartBeatInfo {
 
   private final Provider<HeartBeatInfoStorage> storageProvider;
@@ -123,11 +125,11 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
         context);
   }
 
-  @VisibleForTesting
+  @Inject
   DefaultHeartBeatController(
       Provider<HeartBeatInfoStorage> testStorage,
       Set<HeartBeatConsumer> consumers,
-      Executor executor,
+      @Background Executor executor,
       Provider<UserAgentPublisher> userAgentProvider,
       Context context) {
     storageProvider = testStorage;
@@ -152,7 +154,7 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
                     c.get(Context.class),
                     c.get(FirebaseApp.class).getPersistenceKey(),
                     c.setOf(HeartBeatConsumer.class),
-                    c.getProvider(UserAgentPublisher.class),
+                    () -> c.getProvider(UserAgentPublisher.class).get(),
                     c.get(backgroundExecutor)))
         .build();
   }
