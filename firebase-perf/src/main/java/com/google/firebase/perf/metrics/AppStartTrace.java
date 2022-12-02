@@ -29,7 +29,6 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.ProcessLifecycleOwner;
-
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
@@ -209,6 +208,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
    * Gets the timestamp that marks the beginning of app start, defined as the beginning of
    * BIND_APPLICATION, when the forked process is about to start loading the app's resources and
    * classes. Fallback to class-load time of a Firebase class below API 24.
+   *
    * @return {@link Timer} at the beginning of app start by Fireperf definition.
    */
   private static Timer getStartTimer() {
@@ -225,6 +225,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
    * loading of a particular Firebase class, the order of which CANNOT be guaranteed to be prior to
    * all other classes of an app, nor prior to resource-loading of an app. Thus this timestamp is
    * NOT PREFERRED to be used as starting-point of app-start.
+   *
    * @return {@link Timer} captured by static-initializer during class-loading of a Firebase class.
    */
   private static Timer getClassLoadTime() {
@@ -419,10 +420,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
       firstBackgroundTime = clock.getTime();
       // TODO: remove this subtrace after the experiment
       TraceMetric.Builder subtrace =
-              TraceMetric.newBuilder()
-                      .setName("_experiment_onStop")
-                      .setClientStartTimeUs(firstBackgroundTime.getMicros())
-                      .setDurationUs(getStartTimer().getDurationMicros(firstBackgroundTime));
+          TraceMetric.newBuilder()
+              .setName("_experiment_onStop")
+              .setClientStartTimeUs(firstBackgroundTime.getMicros())
+              .setDurationUs(getStartTimer().getDurationMicros(firstBackgroundTime));
       this.experimentTtid.addSubtraces(subtrace.build());
     }
   }
