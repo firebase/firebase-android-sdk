@@ -15,6 +15,7 @@ plugins {
     id 'com.android.application'
     id 'kotlin-android'
     id 'com.google.gms.google-services'
+    id 'com.google.firebase.appdistribution'
 }
 
 android {
@@ -35,6 +36,22 @@ android {
         // needing to have the app signed.
         release {
             initWith debug
+        }
+    }
+    flavorDimensions.add("environment")
+    productFlavors {
+        prod {
+            dimension "environment"
+            versionNameSuffix "-prod"
+        }
+        beta {
+            dimension "environment"
+            versionNameSuffix "-beta"
+
+            firebaseAppDistribution {
+                releaseNotes "Beta variant of Android SDK test app"
+                // testers "your email here"
+            }
         }
     }
     compileOptions {
