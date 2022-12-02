@@ -14,7 +14,6 @@
 
 package com.google.firebase.remoteconfig;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -26,6 +25,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.FirebaseABTesting;
+import com.google.firebase.concurrent.FirebaseExecutors;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
@@ -280,14 +280,13 @@ public class FirebaseRemoteConfig {
    *
    * @return {@link Task} representing the {@code fetch} call.
    */
-  // TODO(b/258275481): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   @NonNull
   public Task<Void> fetch() {
     Task<FetchResponse> fetchTask = fetchHandler.fetch();
 
     // Convert Task type to Void.
-    return fetchTask.onSuccessTask((unusedFetchResponse) -> Tasks.forResult(null));
+    return fetchTask.onSuccessTask(
+        FirebaseExecutors.directExecutor(), (unusedFetchResponse) -> Tasks.forResult(null));
   }
 
   /**
@@ -309,14 +308,13 @@ public class FirebaseRemoteConfig {
    *     this many seconds ago, configs are served from the backend instead of local storage.
    * @return {@link Task} representing the {@code fetch} call.
    */
-  // TODO(b/258275481): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   @NonNull
   public Task<Void> fetch(long minimumFetchIntervalInSeconds) {
     Task<FetchResponse> fetchTask = fetchHandler.fetch(minimumFetchIntervalInSeconds);
 
     // Convert Task type to Void.
-    return fetchTask.onSuccessTask((unusedFetchResponse) -> Tasks.forResult(null));
+    return fetchTask.onSuccessTask(
+        FirebaseExecutors.directExecutor(), (unusedFetchResponse) -> Tasks.forResult(null));
   }
 
   /**
@@ -589,8 +587,6 @@ public class FirebaseRemoteConfig {
    *
    * @return A task with result {@code null} on failure.
    */
-  // TODO(b/258275481): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   private Task<Void> setDefaultsWithStringsMapAsync(Map<String, String> defaultsStringMap) {
     ConfigContainer defaultConfigs = null;
     try {
@@ -602,7 +598,8 @@ public class FirebaseRemoteConfig {
 
     Task<ConfigContainer> putTask = defaultConfigsCache.put(defaultConfigs);
     // Convert Task type to Void.
-    return putTask.onSuccessTask((unusedContainer) -> Tasks.forResult(null));
+    return putTask.onSuccessTask(
+        FirebaseExecutors.directExecutor(), (unusedContainer) -> Tasks.forResult(null));
   }
 
   /**
