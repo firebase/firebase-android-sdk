@@ -22,6 +22,7 @@ import com.google.android.gms.common.api.Status;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.storage.internal.ExponentialBackoffSender;
 import com.google.firebase.storage.network.GetNetworkRequest;
 import com.google.firebase.storage.network.NetworkRequest;
@@ -68,6 +69,7 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
    *
    * @param processor the processor of the stream, which will be called on a background thread.
    */
+  @CanIgnoreReturnValue
   /*package*/ StreamDownloadTask setStreamProcessor(@NonNull StreamProcessor processor) {
     Preconditions.checkNotNull(processor);
     Preconditions.checkState(this.processor == null);

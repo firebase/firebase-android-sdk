@@ -33,6 +33,7 @@ import com.google.android.gms.tasks.RuntimeExecutionException;
 import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -463,6 +464,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnPausedListener(
       @NonNull OnPausedListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -478,6 +480,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnPausedListener(
       @NonNull Executor executor, @NonNull OnPausedListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -497,6 +500,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnPausedListener(
       @NonNull Activity activity, @NonNull OnPausedListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -507,6 +511,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @NonNull
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> removeOnPausedListener(
       @NonNull OnPausedListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -521,6 +526,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnProgressListener(
       @NonNull OnProgressListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -536,6 +542,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnProgressListener(
       @NonNull Executor executor, @NonNull OnProgressListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -553,6 +560,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnProgressListener(
       @NonNull Activity activity, @NonNull OnProgressListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -563,6 +571,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @NonNull
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> removeOnProgressListener(
       @NonNull OnProgressListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -580,6 +589,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnSuccessListener(
       @NonNull OnSuccessListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -601,6 +611,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnSuccessListener(
       @NonNull Executor executor, @NonNull OnSuccessListener<? super ResultT> listener) {
     Preconditions.checkNotNull(executor);
@@ -624,6 +635,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnSuccessListener(
       @NonNull Activity activity, @NonNull OnSuccessListener<? super ResultT> listener) {
     Preconditions.checkNotNull(activity);
@@ -634,6 +646,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @NonNull
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> removeOnSuccessListener(
       @NonNull OnSuccessListener<? super ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -654,6 +667,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnFailureListener(@NonNull OnFailureListener listener) {
     Preconditions.checkNotNull(listener);
     failureManager.addListener(null, null, listener);
@@ -673,6 +687,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnFailureListener(
       @NonNull Executor executor, @NonNull OnFailureListener listener) {
     Preconditions.checkNotNull(listener);
@@ -696,6 +711,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnFailureListener(
       @NonNull Activity activity, @NonNull OnFailureListener listener) {
     Preconditions.checkNotNull(listener);
@@ -707,6 +723,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @NonNull
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> removeOnFailureListener(@NonNull OnFailureListener listener) {
     Preconditions.checkNotNull(listener);
     failureManager.removeListener(listener);
@@ -726,6 +743,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnCompleteListener(@NonNull OnCompleteListener<ResultT> listener) {
     Preconditions.checkNotNull(listener);
     completeListener.addListener(null, null, listener);
@@ -745,6 +763,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnCompleteListener(
       @NonNull Executor executor, @NonNull OnCompleteListener<ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -767,6 +786,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @Override
   @NonNull
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnCompleteListener(
       @NonNull Activity activity, @NonNull OnCompleteListener<ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -778,6 +798,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @NonNull
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> removeOnCompleteListener(
       @NonNull OnCompleteListener<ResultT> listener) {
     Preconditions.checkNotNull(listener);
@@ -796,6 +817,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnCanceledListener(@NonNull OnCanceledListener listener) {
     Preconditions.checkNotNull(listener);
     cancelManager.addListener(null, null, listener);
@@ -813,6 +835,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnCanceledListener(
       @NonNull Executor executor, @NonNull OnCanceledListener listener) {
     Preconditions.checkNotNull(listener);
@@ -834,6 +857,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
    */
   @NonNull
   @Override
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> addOnCanceledListener(
       @NonNull Activity activity, @NonNull OnCanceledListener listener) {
     Preconditions.checkNotNull(listener);
@@ -844,6 +868,7 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
 
   /** Removes a listener. */
   @NonNull
+  @CanIgnoreReturnValue
   public StorageTask<ResultT> removeOnCanceledListener(@NonNull OnCanceledListener listener) {
     Preconditions.checkNotNull(listener);
     cancelManager.removeListener(listener);
