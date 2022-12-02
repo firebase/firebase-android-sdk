@@ -16,8 +16,9 @@ import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
 import com.google.firebase.gradle.MultiProjectReleasePlugin
 
 buildscript {
-    ext.kotlinVersion = '1.7.10'
-    ext.coroutinesVersion = '1.6.4'
+    // TODO: remove once all sdks have migrated to version catalog
+    ext.kotlinVersion = libs.versions.kotlin.get()
+    ext.coroutinesVersion = libs.versions.coroutines.get()
 
     repositories {
         google()
@@ -47,13 +48,12 @@ apply from: 'sdkProperties.gradle'
 apply from: "gradle/errorProne.gradle"
 
 ext {
-    playServicesVersion = '16.0.1'
-    supportAnnotationsVersion = '28.0.0'
-    googleTruthVersion = '1.1.2'
-    grpcVersion = '1.50.2'
-    robolectricVersion = '4.9'
-    protocVersion = '3.17.3'
-    javaliteVersion = '3.17.3'
+    // TODO: remove once all sdks have migrated to version catalog
+    googleTruthVersion = libs.versions.truth.get()
+    grpcVersion = libs.versions.grpc.get()
+    robolectricVersion = libs.versions.robolectric.get()
+    protocVersion = libs.versions.protoc.get()
+    javaliteVersion = libs.versions.javalite.get()
 }
 
 apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
