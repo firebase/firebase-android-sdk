@@ -46,7 +46,13 @@ import java.util.concurrent.Executor;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
-/** @hide */
+/**
+ * Main Dagger entry point, used to initialize {@link FirebaseApp}s.
+ *
+ * <p>Use by {@link FirebaseApp#initializeApp(Context, FirebaseOptions, String)}.
+ *
+ * @hide
+ */
 @Component(modules = {AppComponent.MainModule.class, LibraryVersionsModule.class})
 @Singleton
 interface AppComponent {
