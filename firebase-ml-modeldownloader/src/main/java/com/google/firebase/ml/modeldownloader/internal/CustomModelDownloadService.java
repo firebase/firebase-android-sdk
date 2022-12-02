@@ -14,7 +14,6 @@
 
 package com.google.firebase.ml.modeldownloader.internal;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.text.TextUtils;
@@ -28,6 +27,7 @@ import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
@@ -96,8 +96,6 @@ public class CustomModelDownloadService {
   private String downloadHost = FIREBASE_DOWNLOAD_HOST;
   private final Executor blockingExecutor;
 
-  // TODO(b/258424267): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   @Inject
   public CustomModelDownloadService(
       Context context,
@@ -105,7 +103,7 @@ public class CustomModelDownloadService {
       Provider<FirebaseInstallationsApi> installationsApi,
       FirebaseMlLogger eventLogger,
       CustomModel.Factory modelFactory,
-      Executor blockingExecutor) {
+      @Blocking Executor blockingExecutor) {
     this.context = context;
     firebaseInstallations = installationsApi;
     apiKey = options.getApiKey();

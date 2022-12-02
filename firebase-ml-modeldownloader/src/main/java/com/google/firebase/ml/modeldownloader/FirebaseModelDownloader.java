@@ -54,8 +54,8 @@ public class FirebaseModelDownloader {
   private final CustomModel.Factory modelFactory;
 
   @Inject
-  @RequiresApi(api = VERSION_CODES.KITKAT)
   @VisibleForTesting
+  @RequiresApi(api = VERSION_CODES.KITKAT)
   FirebaseModelDownloader(
       FirebaseOptions firebaseOptions,
       SharedPreferencesUtil sharedPreferencesUtil,

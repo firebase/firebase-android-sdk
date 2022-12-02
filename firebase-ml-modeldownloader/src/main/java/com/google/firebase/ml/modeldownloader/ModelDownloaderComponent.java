@@ -63,7 +63,7 @@ interface ModelDownloaderComponent {
 
   @Module
   interface MainModule {
-    
+
     @Provides
     @Named("persistenceKey")
     static String persistenceKey(FirebaseApp app) {
