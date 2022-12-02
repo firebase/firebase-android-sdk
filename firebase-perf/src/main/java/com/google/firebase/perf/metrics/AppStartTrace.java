@@ -26,6 +26,10 @@ import android.view.View;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.ProcessLifecycleOwner;
+
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
@@ -63,8 +67,9 @@ import java.util.concurrent.TimeUnit;
  *
  * @hide
  */
-public class AppStartTrace implements ActivityLifecycleCallbacks {
+public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecycleObserver {
 
+  private static final Timer CLASS_LOAD_TIME = new Clock().getTime();
   private static final long MAX_LATENCY_BEFORE_UI_INIT = TimeUnit.MINUTES.toMicros(1);
 
   // Core pool size 0 allows threads to shut down if they're idle
@@ -101,9 +106,11 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   private Timer onCreateTime = null;
   private Timer onStartTime = null;
   private Timer onResumeTime = null;
+  private Timer firstBackgroundTime = null;
   private Timer firstDrawDone = null;
   private Timer preDraw = null;
 
+  private int backgroundCount = 0;
   private PerfSession startSession;
   private boolean isStartedFromBackground = false;
 
@@ -176,10 +183,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
 
     StartupTime startupTime = FirebaseApp.getInstance().get(StartupTime.class);
     if (startupTime == null) {
-      firebaseStartupTime = new Timer();
+      firebaseStartupTime = CLASS_LOAD_TIME;
     } else {
       firebaseStartupTime =
-          Timer.ofElapsedRealtime(startupTime.getElapsedRealtime(), startupTime.getUptimeMillis());
+          Timer.ofElapsedRealtime(startupTime.getElapsedRealtime());
     }
     this.experimentTtid = TraceMetric.newBuilder().setName("_experiment_app_start_ttid");
   }
@@ -190,6 +197,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     if (isRegisteredForLifecycleCallbacks) {
       return;
     }
+    ProcessLifecycleOwner.get().getLifecycle().addObserver(this);
     Context appContext = context.getApplicationContext();
     if (appContext instanceof Application) {
       ((Application) appContext).registerActivityLifecycleCallbacks(this);
@@ -203,22 +211,28 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     if (!isRegisteredForLifecycleCallbacks) {
       return;
     }
+    ProcessLifecycleOwner.get().getLifecycle().removeObserver(this);
     ((Application) appContext).unregisterActivityLifecycleCallbacks(this);
     isRegisteredForLifecycleCallbacks = false;
   }
 
   /**
    * Gets the timetamp that marks the beginning of app start, currently defined as the beginning of
-   * BIND_APPLICATION. Fallback to class-load time of {@link StartupTime} when API < 24.
+   * BIND_APPLICATION. Fallback to class-load time of the 1st Firebase class {@link FirebaseInitProvider} when API < 24.
    *
    * @return {@link Timer} at the beginning of app start by Fireperf definition.
    */
   private static Timer getStartTimer() {
+    // Android system API provides BIND_APPLICATION time
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-      return Timer.ofElapsedRealtime(
-          Process.getStartElapsedRealtime(), Process.getStartUptimeMillis());
+      return Timer.ofElapsedRealtime(Process.getStartElapsedRealtime());
     }
-    return firebaseStartupTime;
+    // 1st fallback: static initializer time (during class-load) of the 1st Firebase class
+    if (FirebaseApp.getInstance().get(StartupTime.class) != null) {
+      return Timer.ofElapsedRealtime(FirebaseApp.getInstance().get(StartupTime.class).getElapsedRealtime());
+    }
+    // 2nd fallback: static initializer time (during class-load) of this class
+    return CLASS_LOAD_TIME;
   }
 
   private void recordFirstDrawDone() {
@@ -236,13 +250,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
             .setName("_experiment_classLoadTime")
             .setClientStartTimeUs(firebaseStartupTime.getMicros())
             .setDurationUs(firebaseStartupTime.getDurationMicros(this.firstDrawDone));
-    this.experimentTtid.addSubtraces(subtrace.build());
-
-    subtrace = TraceMetric.newBuilder();
-    subtrace
-        .setName("_experiment_uptimeMillis")
-        .setClientStartTimeUs(start.getMicros())
-        .setDurationUs(start.getDurationUptimeMicros(this.firstDrawDone));
     this.experimentTtid.addSubtraces(subtrace.build());
 
     this.experimentTtid.addPerfSessions(this.startSession.build());
@@ -270,13 +277,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
             .setDurationUs(start.getDurationMicros(this.preDraw));
     this.experimentTtid.addSubtraces(subtrace.build());
 
-    subtrace = TraceMetric.newBuilder();
-    subtrace
-        .setName("_experiment_preDraw_uptimeMillis")
-        .setClientStartTimeUs(start.getMicros())
-        .setDurationUs(start.getDurationUptimeMicros(this.preDraw));
-    this.experimentTtid.addSubtraces(subtrace.build());
-
     if (isExperimentTraceDone()) {
       executorService.execute(() -> this.logExperimentTtid(this.experimentTtid));
 
@@ -301,7 +301,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
     launchActivity = new WeakReference<Activity>(activity);
     onCreateTime = clock.getTime();
 
-    if (firebaseStartupTime.getDurationMicros(onCreateTime) > MAX_LATENCY_BEFORE_UI_INIT) {
+    if (getStartTimer().getDurationMicros(onCreateTime) > MAX_LATENCY_BEFORE_UI_INIT) {
       isTooLateToInitUI = true;
     }
   }
@@ -395,31 +395,35 @@ public class AppStartTrace implements ActivityLifecycleCallbacks {
   }
 
   @Override
-  public void onActivityPaused(Activity activity) {
-    if (isExperimentTraceDone()) {
-      return;
-    }
-    Timer onPauseTime = clock.getTime();
-    TraceMetric.Builder subtrace =
-        TraceMetric.newBuilder()
-            .setName("_experiment_onPause")
-            .setClientStartTimeUs(onPauseTime.getMicros())
-            .setDurationUs(getStartTimer().getDurationMicros(onPauseTime));
-    this.experimentTtid.addSubtraces(subtrace.build());
-  }
+  public void onActivityPaused(Activity activity) {}
 
   @Override
-  public void onActivityStopped(Activity activity) {
-    if (isExperimentTraceDone()) {
+  public void onActivityStopped(Activity activity) {}
+
+  /** App is entering foreground */
+  @Override
+  public void onStart(@NonNull LifecycleOwner owner) {
+    DefaultLifecycleObserver.super.onStart(owner);
+  }
+
+  /** App is entering background */
+  @Override
+  public void onStop(@NonNull LifecycleOwner owner) {
+    DefaultLifecycleObserver.super.onStop(owner);
+    if (isStartedFromBackground || isTooLateToInitUI) {
       return;
     }
-    Timer onStopTime = clock.getTime();
-    TraceMetric.Builder subtrace =
-        TraceMetric.newBuilder()
-            .setName("_experiment_onStop")
-            .setClientStartTimeUs(onStopTime.getMicros())
-            .setDurationUs(getStartTimer().getDurationMicros(onStopTime));
-    this.experimentTtid.addSubtraces(subtrace.build());
+    backgroundCount++;
+    if (firstBackgroundTime != null) {
+      firstBackgroundTime = clock.getTime();
+      // TODO: remove this subtrace after the experiment
+      TraceMetric.Builder subtrace =
+              TraceMetric.newBuilder()
+                      .setName("_experiment_onStop")
+                      .setClientStartTimeUs(firstBackgroundTime.getMicros())
+                      .setDurationUs(getStartTimer().getDurationMicros(firstBackgroundTime));
+      this.experimentTtid.addSubtraces(subtrace.build());
+    }
   }
 
   @Override
