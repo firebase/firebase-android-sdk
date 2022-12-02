@@ -100,9 +100,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
    */
   private boolean isTooLateToInitUI = false;
 
-  private static Timer firebaseStartupTime = null;
-
-  private Timer appStartTime = null;
   private Timer onCreateTime = null;
   private Timer onStartTime = null;
   private Timer onResumeTime = null;
@@ -180,14 +177,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
     this.clock = clock;
     this.configResolver = configResolver;
     this.executorService = executorService;
-
-    StartupTime startupTime = FirebaseApp.getInstance().get(StartupTime.class);
-    if (startupTime == null) {
-      firebaseStartupTime = CLASS_LOAD_TIME;
-    } else {
-      firebaseStartupTime =
-          Timer.ofElapsedRealtime(startupTime.getElapsedRealtime());
-    }
     this.experimentTtid = TraceMetric.newBuilder().setName("_experiment_app_start_ttid");
   }
 
@@ -217,21 +206,34 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
   }
 
   /**
-   * Gets the timetamp that marks the beginning of app start, currently defined as the beginning of
-   * BIND_APPLICATION. Fallback to class-load time of the 1st Firebase class {@link FirebaseInitProvider} when API < 24.
-   *
+   * Gets the timestamp that marks the beginning of app start, defined as the beginning of
+   * BIND_APPLICATION, when the forked process is about to start loading the app's resources and
+   * classes. Fallback to class-load time of a Firebase class below API 24.
    * @return {@link Timer} at the beginning of app start by Fireperf definition.
    */
   private static Timer getStartTimer() {
-    // Android system API provides BIND_APPLICATION time
+    // Preferred: Android system API provides BIND_APPLICATION time
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       return Timer.ofElapsedRealtime(Process.getStartElapsedRealtime());
     }
-    // 1st fallback: static initializer time (during class-load) of the 1st Firebase class
-    if (FirebaseApp.getInstance().get(StartupTime.class) != null) {
-      return Timer.ofElapsedRealtime(FirebaseApp.getInstance().get(StartupTime.class).getElapsedRealtime());
+    // Fallback: static initializer time (during class-load) of a Firebase class
+    return getClassLoadTime();
+  }
+
+  /**
+   * Timestamp during class load. This timestamp is captured in a static initializer during class
+   * loading of a particular Firebase class, the order of which CANNOT be guaranteed to be prior to
+   * all other classes of an app, nor prior to resource-loading of an app. Thus this timestamp is
+   * NOT PREFERRED to be used as starting-point of app-start.
+   * @return {@link Timer} captured by static-initializer during class-loading of a Firebase class.
+   */
+  private static Timer getClassLoadTime() {
+    // Prefered: static-initializer time of the 1st Firebase class during init
+    StartupTime firebaseClassLoadTime = FirebaseApp.getInstance().get(StartupTime.class);
+    if (firebaseClassLoadTime != null) {
+      return Timer.ofElapsedRealtime(firebaseClassLoadTime.getElapsedRealtime());
     }
-    // 2nd fallback: static initializer time (during class-load) of this class
+    // Fallback: static-initializer time of the current class
     return CLASS_LOAD_TIME;
   }
 
@@ -248,8 +250,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
     TraceMetric.Builder subtrace =
         TraceMetric.newBuilder()
             .setName("_experiment_classLoadTime")
-            .setClientStartTimeUs(firebaseStartupTime.getMicros())
-            .setDurationUs(firebaseStartupTime.getDurationMicros(this.firstDrawDone));
+            .setClientStartTimeUs(getClassLoadTime().getMicros())
+            .setDurationUs(getClassLoadTime().getDurationMicros(this.firstDrawDone));
     this.experimentTtid.addSubtraces(subtrace.build());
 
     this.experimentTtid.addPerfSessions(this.startSession.build());
@@ -337,14 +339,13 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
     appStartActivity = new WeakReference<Activity>(activity);
 
     onResumeTime = clock.getTime();
-    this.appStartTime = firebaseStartupTime;
     this.startSession = SessionManager.getInstance().perfSession();
     AndroidLogger.getInstance()
         .debug(
             "onResume(): "
                 + activity.getClass().getName()
                 + ": "
-                + this.appStartTime.getDurationMicros(onResumeTime)
+                + getClassLoadTime().getDurationMicros(onResumeTime)
                 + " microseconds");
 
     // Log the app start trace in a non-main thread.
@@ -364,15 +365,15 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
     TraceMetric.Builder metric =
         TraceMetric.newBuilder()
             .setName(Constants.TraceNames.APP_START_TRACE_NAME.toString())
-            .setClientStartTimeUs(getappStartTime().getMicros())
-            .setDurationUs(getappStartTime().getDurationMicros(onResumeTime));
+            .setClientStartTimeUs(getClassLoadTime().getMicros())
+            .setDurationUs(getClassLoadTime().getDurationMicros(onResumeTime));
     List<TraceMetric> subtraces = new ArrayList<>(/* initialCapacity= */ 3);
 
     TraceMetric.Builder traceMetricBuilder =
         TraceMetric.newBuilder()
             .setName(Constants.TraceNames.ON_CREATE_TRACE_NAME.toString())
-            .setClientStartTimeUs(getappStartTime().getMicros())
-            .setDurationUs(getappStartTime().getDurationMicros(onCreateTime));
+            .setClientStartTimeUs(getClassLoadTime().getMicros())
+            .setDurationUs(getClassLoadTime().getDurationMicros(onCreateTime));
     subtraces.add(traceMetricBuilder.build());
 
     traceMetricBuilder = TraceMetric.newBuilder();
@@ -465,11 +466,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
   @Nullable
   Activity getAppStartActivity() {
     return appStartActivity.get();
-  }
-
-  @VisibleForTesting
-  Timer getappStartTime() {
-    return appStartTime;
   }
 
   @VisibleForTesting
