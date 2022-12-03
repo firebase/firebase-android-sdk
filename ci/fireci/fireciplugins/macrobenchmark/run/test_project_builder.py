@@ -21,7 +21,7 @@ from .log_decorator import LogDecorator
 from .test_project import TestProject
 from .utils import execute
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 
 logger = logging.getLogger('fireci.macrobenchmark')
@@ -33,13 +33,15 @@ class TestProjectBuilder:
       test_config: Any,
       test_dir: Path,
       template_project_dir: Path,
-      product_versions: Dict[str, str]
+      product_versions: Dict[str, str],
+      changed_modules: List[str],
   ):
     self.test_config = test_config
     self.template_project_dir = template_project_dir
     self.product_versions = product_versions
+    self.changed_modules = changed_modules
 
-    self.name = test_config['name']
+    self.name = 'test-changed' if changed_modules else 'test-all'
     self.logger = LogDecorator(logger, self.name)
     self.project_dir = test_dir.joinpath(self.name)
 
@@ -77,7 +79,8 @@ class TestProjectBuilder:
           dependency = {'key': key, 'version': version}
         else:
           dependency = {'key': dep, 'version': self.product_versions[dep]}
-        mustache_context['dependencies'].append(dependency)
+        if not self.changed_modules or dep in self.changed_modules:
+          mustache_context['dependencies'].append(dependency)
 
     renderer = pystache.Renderer()
     mustaches = self.project_dir.rglob('**/*.mustache')

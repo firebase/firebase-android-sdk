@@ -22,18 +22,25 @@ import yaml
 from .test_project_builder import TestProjectBuilder
 from .utils import execute
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 
 logger = logging.getLogger('fireci.macrobenchmark')
 
 
-async def start(build_only: bool, local: bool, repeat: int, output: Path):
+async def start(
+    build_only: bool,
+    local: bool,
+    repeat: int,
+    output: Path,
+    changed_modules_file: Path = None
+):
   logger.info('Starting macrobenchmark test ...')
 
   config = _process_config_yaml()
   product_versions = _assemble_all_products()
   test_dir = _prepare_test_directory()
+  changed_modules = _process_changed_modules(changed_modules_file)
   template_project_dir = Path('health-metrics/benchmark/template')
 
   test_projects = [
@@ -42,6 +49,7 @@ async def start(build_only: bool, local: bool, repeat: int, output: Path):
       test_dir,
       template_project_dir,
       product_versions,
+      changed_modules,
     ).build() for test_config in config['test-apps']]
 
   if not build_only:
@@ -99,3 +107,17 @@ def _prepare_test_directory() -> Path:
   test_dir = tempfile.mkdtemp(prefix='benchmark-test-')
   logger.info(f'Temporary test directory created at: {test_dir}')
   return Path(test_dir)
+
+
+def _process_changed_modules(path: Path) -> List[str]:
+  results = []
+  if path:
+    with open(path) as changed_modules_file:
+      changed_modules = json.load(changed_modules_file)
+      for module in changed_modules:
+        names = module.split(':')
+        for name in names:
+          if name.startswith('firebase-'):
+            results.append(f'com.google.firebase:{name}')
+  logger.info(f"Extracted changed modules {results} from {path}")
+  return results
