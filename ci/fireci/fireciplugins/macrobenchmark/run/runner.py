@@ -22,7 +22,7 @@ import yaml
 from .test_project_builder import TestProjectBuilder
 from .utils import execute
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Set
 
 
 logger = logging.getLogger('fireci.macrobenchmark')
@@ -40,7 +40,7 @@ async def start(
   config = _process_config_yaml()
   product_versions = _assemble_all_products()
   test_dir = _prepare_test_directory()
-  changed_modules = _process_changed_modules(changed_modules_file)
+  changed_traces = _process_changed_modules(changed_modules_file)
   template_project_dir = Path('health-metrics/benchmark/template')
 
   test_projects = [
@@ -49,7 +49,7 @@ async def start(
       test_dir,
       template_project_dir,
       product_versions,
-      changed_modules,
+      changed_traces,
     ).build() for test_config in config['test-apps']]
 
   if not build_only:
@@ -110,14 +110,39 @@ def _prepare_test_directory() -> Path:
 
 
 def _process_changed_modules(path: Path) -> List[str]:
-  results = []
+  trace_names = {
+    ":appcheck": ["fire-app-check"],
+    ":firebase-abt": ["fire-abt"],
+    ":firebase-appdistribution": ["fire-appdistribution"],
+    ":firebase-config": ["fire-rc"],
+    ":firebase-common": ["Firebase", "ComponentDiscovery", "Runtime"],
+    ":firebase-components": ["Firebase", "ComponentDiscovery", "Runtime"],
+    ":firebase-database": ["fire-rtdb"],
+    ":firebase-datatransport": ["fire-transport"],
+    ":firebase-dynamic-links": ["fire-dl"],
+    ":firebase-crashlytics": ["fire-cls"],
+    ":firebase-crashlytics-ndk": ["fire-cls"],
+    ":firebase-firestore": ["fire-fst"],
+    ":firebase-functions": ["fire-fn"],
+    ":firebase-inappmessaging": ["fire-fiam"],
+    ":firebase-inappmessaging-display": ["fire-fiamd"],
+    ":firebase-installations": ["fire-installations"],
+    ":firebase-installations-interop": ["fire-installations"],
+    ":firebase-messaging": ["fire-fcm"],
+    ":firebase-messaging-directboot": ["fire-fcm"],
+    ":firebase-ml-modeldownloader": ["firebase-ml-modeldownloader"],
+    ":firebase-perf": ["fire-perf"],
+    ":firebase-storage": ["fire-gcs"],
+    ":transport": ["fire-transport"],
+  }
+
+  results: Set[str] = set()
   if path:
     with open(path) as changed_modules_file:
       changed_modules = json.load(changed_modules_file)
       for module in changed_modules:
-        names = module.split(':')
-        for name in names:
-          if name.startswith('firebase-'):
-            results.append(f'com.google.firebase:{name}')
-  logger.info(f"Extracted changed modules {results} from {path}")
-  return results
+        for product in trace_names:
+          if module.startswith(product):
+            results.update(trace_names[product])
+  logger.info(f"Extracted changed traces {results} from {path}")
+  return list(results)
