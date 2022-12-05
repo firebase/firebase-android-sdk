@@ -1450,7 +1450,7 @@ public final class FirebaseRemoteConfigTest {
     // When the existing tasks have been executed, the countdown will execute and release the latch.
     CountDownLatch latch = new CountDownLatch(1);
     scheduledExecutorService.execute(latch::countDown);
-    assertTrue("Task didn't finish.", latch.await(10, TimeUnit.MILLISECONDS));
+    assertTrue("Task didn't finish.", latch.await(1000, TimeUnit.MILLISECONDS));
   }
 
   private ConfigUpdateListener generateEmptyRealtimeListener() {
