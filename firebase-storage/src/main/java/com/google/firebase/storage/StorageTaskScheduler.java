@@ -50,7 +50,7 @@ public class StorageTaskScheduler {
   @SuppressLint("ThreadPoolCreation")
   private static final ThreadPoolExecutor UPLOAD_QUEUE_EXECUTOR =
       new ThreadPoolExecutor(
-          2, 2, 5, TimeUnit.SECONDS, mUploadQueue, new StorageThreadFactory("Upload-"));
+          20, 20, 5, TimeUnit.SECONDS, mUploadQueue, new StorageThreadFactory("Upload-"));
 
   private static BlockingQueue<Runnable> mDownloadQueue = new LinkedBlockingQueue<>();
 
