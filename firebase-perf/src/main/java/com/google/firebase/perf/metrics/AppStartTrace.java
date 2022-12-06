@@ -261,10 +261,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
             .setDurationUs(getClassLoadTime().getDurationMicros(this.firstDrawDone));
     this.experimentTtid.addSubtraces(subtrace.build());
     this.experimentTtid.putCounters("count_background_before_draw", backgroundCount);
-    if (firstBackgroundTime != null && firstBackgroundTime.getDurationMicros(firstDrawDone) <= 0) {
-      this.experimentTtid.putCustomAttributes("backgrounded_before_draw", "false");
-    } else {
+    if (firstBackgroundTime != null && firstBackgroundTime.getDurationMicros(firstDrawDone) > 0) {
       this.experimentTtid.putCustomAttributes("backgrounded_before_draw", "true");
+    } else {
+      this.experimentTtid.putCustomAttributes("backgrounded_before_draw", "false");
     }
 
     this.experimentTtid.addPerfSessions(this.startSession.build());
@@ -292,10 +292,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
             .setDurationUs(start.getDurationMicros(this.preDraw));
     this.experimentTtid.addSubtraces(subtrace.build());
     this.experimentTtid.putCounters("count_background_before_predraw", backgroundCount);
-    if (firstBackgroundTime != null && firstBackgroundTime.getDurationMicros(preDraw) <= 0) {
-      this.experimentTtid.putCustomAttributes("backgrounded_before_predraw", "false");
-    } else {
+    if (firstBackgroundTime != null && firstBackgroundTime.getDurationMicros(preDraw) > 0) {
       this.experimentTtid.putCustomAttributes("backgrounded_before_predraw", "true");
+    } else {
+      this.experimentTtid.putCustomAttributes("backgrounded_before_predraw", "false");
     }
 
     if (isExperimentTraceDone()) {
