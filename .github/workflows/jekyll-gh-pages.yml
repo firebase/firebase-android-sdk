@@ -7,7 +7,7 @@ on:
     paths:
       - '.github/workflows/jekyll-gh-pages.yml'
       - 'contributor-docs/**'
-  pull-request:
+  pull_request:
     paths:
       - '.github/workflows/jekyll-gh-pages.yml'
       - 'contributor-docs/**'
