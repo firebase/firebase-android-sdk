@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="com.google.firebase.firestore">
+  package="com.google.firebase.firestore.test">
   <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
   <!--<uses-sdk android:minSdkVersion="15" android:targetSdkVersion="23" />-->
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -9,8 +9,4 @@
     <activity android:name="com.google.firebase.firestore.ListenerRegistrationTest$TestActivity"/>
     <activity android:name="com.google.firebase.firestore.ListenerRegistrationTest$TestFragmentActivity"/>
   </application>
-
-  <instrumentation
-    android:name="androidx.test.runner.AndroidJUnitRunner"
-    android:targetPackage="com.google.firebase.firestore" />
 </manifest>

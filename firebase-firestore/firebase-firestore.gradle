@@ -62,6 +62,12 @@ android {
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'proguard.txt'
+
+        if (findProperty("useProdBackendForTests")) {
+            buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "false")
+        } else {
+            buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "true")
+        }
     }
 
     sourceSets {
@@ -94,21 +100,6 @@ android {
 
 tasks.withType(Test) {
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
-}
-
-android.libraryVariants.all { variant ->
-    if (findProperty("useProdBackendForTests")) {
-        variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "false")
-    } else {
-        variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "true")
-    }
-
-    def localProps = new Properties()
-
-    try {
-    file("local.properties").withInputStream { localProps.load(it) }
-    } catch (FileNotFoundException e) {
-    }
 }
 
 googleJavaFormat {
