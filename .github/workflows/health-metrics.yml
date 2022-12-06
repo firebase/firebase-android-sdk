@@ -122,7 +122,12 @@ jobs:
           echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > $BENCHMARK_APP_LOCATION
       - name: Run startup-time tests (presubmit)
         if: ${{ github.event_name == 'pull_request' }}
-        run: fireci macrobenchmark ci --pull-request
+        run: |
+          git diff --name-only HEAD~1 | \
+            xargs printf -- '--changed-git-paths %s\n' | \
+            xargs ./gradlew writeChangedProjects --output-file-path=modules.json
+          fireci macrobenchmark ci --pull-request --changed-modules-file modules.json
       - name: Run startup-time tests (post-submit)
         if: ${{ github.event_name == 'push' }}
-        run: fireci macrobenchmark ci --push
+        run: |
+          fireci macrobenchmark ci --push
