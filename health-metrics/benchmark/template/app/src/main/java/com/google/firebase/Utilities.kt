@@ -1,4 +1,4 @@
-// Copyright 2021 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.benchmark
 
-import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
+package com.google.firebase
+
 import com.google.firebase.FirebaseApp
-import com.google.firebase.initializeAllComponentsForBenchmark
 
-class MainActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        val app = FirebaseApp.getInstance()
-        initializeAllComponentsForBenchmark(app)
-    }
+internal fun initializeAllComponentsForBenchmark(app: FirebaseApp) {
+  app.initializeAllComponents()
 }
+

@@ -472,7 +472,7 @@ public class FirebaseApp {
   /** @hide */
   @VisibleForTesting
   @RestrictTo(Scope.TESTS)
-  public void initializeAllComponents() {
+  void initializeAllComponents() {
     componentRuntime.initializeAllComponentsForTests();
   }
 
