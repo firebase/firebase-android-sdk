@@ -99,14 +99,20 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
    */
   private boolean isTooLateToInitUI = false;
 
+  /**
+   * Critical timestamps during app-start, on the main-thread. IMPORTANT: these must all be captured
+   * or modified on the main thread. Without this invariant, we cannot guarantee that null means "it
+   * hasn't happened".
+   */
   private Timer onCreateTime = null;
+
   private Timer onStartTime = null;
   private Timer onResumeTime = null;
   private Timer firstBackgroundTime = null;
   private Timer firstDrawDone = null;
   private Timer preDraw = null;
-
   private int backgroundCount = 0;
+
   private PerfSession startSession;
   private boolean isStartedFromBackground = false;
 
@@ -254,6 +260,12 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
             .setClientStartTimeUs(getClassLoadTime().getMicros())
             .setDurationUs(getClassLoadTime().getDurationMicros(this.firstDrawDone));
     this.experimentTtid.addSubtraces(subtrace.build());
+    this.experimentTtid.putCounters("count_background_before_draw", backgroundCount);
+    if (firstBackgroundTime != null && firstBackgroundTime.getDurationMicros(firstDrawDone) <= 0) {
+      this.experimentTtid.putCustomAttributes("backgrounded_before_draw", "false");
+    } else {
+      this.experimentTtid.putCustomAttributes("backgrounded_before_draw", "true");
+    }
 
     this.experimentTtid.addPerfSessions(this.startSession.build());
 
@@ -279,6 +291,12 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
             .setClientStartTimeUs(start.getMicros())
             .setDurationUs(start.getDurationMicros(this.preDraw));
     this.experimentTtid.addSubtraces(subtrace.build());
+    this.experimentTtid.putCounters("count_background_before_predraw", backgroundCount);
+    if (firstBackgroundTime != null && firstBackgroundTime.getDurationMicros(preDraw) <= 0) {
+      this.experimentTtid.putCustomAttributes("backgrounded_before_predraw", "false");
+    } else {
+      this.experimentTtid.putCustomAttributes("backgrounded_before_predraw", "true");
+    }
 
     if (isExperimentTraceDone()) {
       executorService.execute(() -> this.logExperimentTtid(this.experimentTtid));
@@ -421,7 +439,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
       // TODO: remove this subtrace after the experiment
       TraceMetric.Builder subtrace =
           TraceMetric.newBuilder()
-              .setName("_experiment_onStop")
+              .setName("_experiment_firstBackgrounding")
               .setClientStartTimeUs(firstBackgroundTime.getMicros())
               .setDurationUs(getStartTimer().getDurationMicros(firstBackgroundTime));
       this.experimentTtid.addSubtraces(subtrace.build());
