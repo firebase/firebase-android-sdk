@@ -206,4 +206,4 @@ public class FirebaseFooRegistrar implements ComponentRegistrar {
 ```
 </details>
 
-Continue to [How Firebase works]({{ site.baseurl }}{% link in_depth/how_firebase_works.md %}).
+Continue to [How Firebase works]({{ site.baseurl }}{% link how_firebase_works.md %}).
