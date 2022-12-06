@@ -62,7 +62,8 @@ class VendorPlugin : Plugin<Project> {
     val vendor = project.configurations.create("vendor")
     project.configurations.all {
       when (name) {
-        "compileOnly",
+        "releaseCompileOnly",
+        "debugImplementation",
         "testImplementation",
         "androidTestImplementation" -> extendsFrom(vendor)
       }
