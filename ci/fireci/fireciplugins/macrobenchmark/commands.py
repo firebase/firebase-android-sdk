@@ -163,7 +163,13 @@ def ci(pull_request, repeat):
     if ftl_results:
       metric_service_url = 'https://api.firebase-sdk-health-metrics.com'
       access_token = ci_utils.gcloud_identity_token()
-      uploader.post_report(startup_time_data, metric_service_url, access_token, 'startup-time')
+      uploader.post_report(
+        test_report=startup_time_data,
+        metrics_service_url=metric_service_url,
+        access_token=access_token,
+        metric_type='startup-time',
+        asynchronous=True
+      )
 
   if exception:
     raise exception

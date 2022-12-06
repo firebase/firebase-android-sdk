@@ -22,7 +22,7 @@ import subprocess
 _logger = logging.getLogger('fireci.uploader')
 
 
-def post_report(test_report, metrics_service_url, access_token, metric_type):
+def post_report(test_report, metrics_service_url, access_token, metric_type, asynchronous=False):
   """Post a report to the metrics service backend."""
 
   endpoint = ''
@@ -30,6 +30,9 @@ def post_report(test_report, metrics_service_url, access_token, metric_type):
     endpoint = _construct_request_endpoint_for_github_actions(metric_type)
   elif os.getenv('PROW_JOB_ID'):
     endpoint = _construct_request_endpoint_for_prow(metric_type)
+
+  if asynchronous:
+    endpoint += '&async=true'
 
   headers = {'Authorization': f'Bearer {access_token}', 'Content-Type': 'application/json'}
   data = json.dumps(test_report)
