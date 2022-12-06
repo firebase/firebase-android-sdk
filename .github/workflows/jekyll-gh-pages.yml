@@ -3,7 +3,7 @@ name: Jekyll with GitHub Pages
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches: ["master"]
+    branches: ["vk_contrib_docs"]
     paths:
       - '.github/workflows/jekyll-gh-pages.yml'
       - 'contributor-docs/**'
