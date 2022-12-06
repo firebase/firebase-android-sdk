@@ -56,6 +56,7 @@ test-apps:
       - fire-installations
       - firebase-ml-modeldownloader
       - fire-perf
+      - fire-perf-early
       - fire-rc
       - fire-rtdb
       - fire-transport
