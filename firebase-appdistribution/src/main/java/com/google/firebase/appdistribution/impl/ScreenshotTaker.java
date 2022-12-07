@@ -14,7 +14,6 @@
 
 package com.google.firebase.appdistribution.impl;
 
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
