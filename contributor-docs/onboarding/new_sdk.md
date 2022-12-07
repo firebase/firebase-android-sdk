@@ -25,7 +25,7 @@ firebase-android-sdk
 │   └── firebase-appcheck-playintegrity
 ├── firebase-annotations
 ├── firebase-common
-│   └── firebase-common.gradle # note the name of the guild file
+│   └── firebase-common.gradle # note the name of the build file
 │   └── ktx
 │      └── ktx.gradle.kts # it can also be kts
 └── build.gradle # root project build file.
