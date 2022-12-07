@@ -82,7 +82,7 @@ android {
   compileSdk = targetSdkVersion
   defaultConfig {
     namespace = "com.google.firebase.foo"
-    // change this is you have custom needs.
+    // change this if you have custom needs.
     minSdk = minSdkVersion
     targetSdk = targetSdkVersion
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
