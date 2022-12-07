@@ -1,6 +1,5 @@
 package com.google.firebase.appdistribution.impl;
 
-import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.appdistribution.UpdateTask;
@@ -48,7 +47,8 @@ class SequentialReference<T> {
     return taskCompletionSource.getTask();
   }
 
-  <U> Task<U> setAndTransform(SequentialReferenceProducer<T> producer, SequentialReferenceTransformer<T, U> transformer) {
+  <U> Task<U> setAndTransform(
+      SequentialReferenceProducer<T> producer, SequentialReferenceTransformer<T, U> transformer) {
     TaskCompletionSource<U> taskCompletionSource = new TaskCompletionSource<>();
     sequentialExecutor.execute(
         () -> {
