@@ -5,14 +5,14 @@ parent: Onboarding
 # Creating a new Firebase SDK
 
 Want to create a new SDK in
-[Firebase/firebase-android-sdk](https://github.com/firebase/firebase-android-sdk)?
+[firebase/firebase-android-sdk](https://github.com/firebase/firebase-android-sdk)?
 Read on.
 
 {:toc}
 
 ## Repository layout and Gradle
 
-[Firebase/firebase-android-sdk](https://github.com/firebase/firebase-android-sdk)
+[firebase/firebase-android-sdk](https://github.com/firebase/firebase-android-sdk)
 uses a multi-project Gradle build to organize the different libraries it hosts.
 As a consequence, each project/product within this repo is hosted under its own
 subdirectory with its respective build file(s).
