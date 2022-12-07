@@ -21,6 +21,8 @@ import com.google.firebase.appdistribution.BinaryType;
 
 /**
  * This class represents the AppDistributionRelease object returned by the App Distribution backend.
+ *
+ * TODO(lkellogg): Combine this with AppDistributionReleaseImpl
  */
 @AutoValue
 abstract class AppDistributionReleaseInternal {

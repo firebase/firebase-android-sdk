@@ -1,5 +1,6 @@
 package com.google.firebase.appdistribution.impl;
 
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.appdistribution.UpdateTask;
@@ -8,16 +9,16 @@ import java.util.concurrent.Executor;
 
 class SequentialReference<T> {
 
+  interface SequentialReferenceProducer<T> {
+    T produce();
+  }
+
   interface SequentialReferenceConsumer<T> {
     void consume(T value);
   }
 
-  interface SequentialReferenceTransformer<T> {
-    T transform(T value);
-  }
-
-  interface SequentialReferenceTaskTransformer<T, U> {
-    Task<U> transform(T value);
+  interface SequentialReferenceTransformer<T, U> {
+    U transform(T value);
   }
 
   interface SequentialReferenceUpdateTaskTransformer<T> {
@@ -37,51 +38,33 @@ class SequentialReference<T> {
     value = initialValue;
   }
 
-  T get() {
-    return value;
-  }
-
-  void set(T newValue) {
+  Task<T> set(SequentialReferenceProducer<T> producer) {
+    TaskCompletionSource<T> taskCompletionSource = new TaskCompletionSource<>();
     sequentialExecutor.execute(
         () -> {
-          value = newValue;
+          value = producer.produce();
+          taskCompletionSource.setResult(value);
         });
-  }
-
-  void consume(SequentialReferenceConsumer<T> listener) {
-    sequentialExecutor.execute(
-        () -> {
-          listener.consume(value);
-        });
-  }
-
-  void transform(SequentialReferenceTransformer<T> transformer) {
-    sequentialExecutor.execute(
-        () -> {
-          value = transformer.transform(value);
-        });
-  }
-
-  <U> Task<U> applyTask(SequentialReferenceTaskTransformer<T, U> transformer) {
-    TaskCompletionSource<U> taskCompletionSource = new TaskCompletionSource<>();
-    sequentialExecutor.execute(
-        () ->
-            transformer
-                .transform(value)
-                .addOnSuccessListener(sequentialExecutor, taskCompletionSource::setResult)
-                .addOnFailureListener(sequentialExecutor, taskCompletionSource::setException));
     return taskCompletionSource.getTask();
   }
 
-  UpdateTask applyUpdateTask(SequentialReferenceUpdateTaskTransformer<T> transformer) {
-    UpdateTaskImpl updateTask = new UpdateTaskImpl();
+  <U> Task<U> setAndTransform(SequentialReferenceProducer<T> producer, SequentialReferenceTransformer<T, U> transformer) {
+    TaskCompletionSource<U> taskCompletionSource = new TaskCompletionSource<>();
     sequentialExecutor.execute(
-        () ->
-            transformer
-                .transform(value)
-                .addOnProgressListener(sequentialExecutor, updateTask::updateProgress)
-                .addOnSuccessListener(sequentialExecutor, result -> updateTask.setResult())
-                .addOnFailureListener(sequentialExecutor, updateTask::setException));
+        () -> {
+          value = producer.produce();
+          taskCompletionSource.setResult(transformer.transform(value));
+        });
+    return taskCompletionSource.getTask();
+  }
+
+  void get(SequentialReferenceConsumer<T> consumer) {
+    sequentialExecutor.execute(() -> consumer.consume(value));
+  }
+
+  UpdateTask getAndTransform(SequentialReferenceUpdateTaskTransformer<T> transformer) {
+    UpdateTaskImpl updateTask = new UpdateTaskImpl();
+    sequentialExecutor.execute(() -> updateTask.shadow(transformer.transform(value)));
     return updateTask;
   }
 }

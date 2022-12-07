@@ -217,8 +217,10 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void signOutTester() {
-    cachedNewRelease.set(null);
-    signInStorage.setSignInStatus(false);
+    cachedNewRelease.set(() -> {
+      signInStorage.setSignInStatus(false);
+      return null;
+    });
   }
 
   @Override
@@ -226,37 +228,34 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   // TODO(b/261014422): Use an explicit executor in continuations.
   @SuppressLint("TaskMainThread")
   public synchronized Task<AppDistributionRelease> checkForNewRelease() {
-    return checkForNewReleaseTaskCache.getOrCreateTask(
-        () -> {
-          if (!isTesterSignedIn()) {
-            return Tasks.forException(
-                new FirebaseAppDistributionException(
-                    "Tester is not signed in", AUTHENTICATION_FAILURE));
-          }
+    if (!isTesterSignedIn()) {
+      return Tasks.forException(
+          new FirebaseAppDistributionException(
+              "Tester is not signed in", AUTHENTICATION_FAILURE));
+    }
 
-          return newReleaseFetcher
-              .checkForNewRelease()
-              .onSuccessTask(
-                  lightweightExecutor,
-                  appDistributionReleaseInternal -> {
-                    cachedNewRelease.set(appDistributionReleaseInternal);
-                    return Tasks.forResult(
-                        ReleaseUtils.convertToAppDistributionRelease(
-                            appDistributionReleaseInternal));
-                  })
-              .addOnFailureListener(
-                  lightweightExecutor,
-                  e -> {
-                    if (e instanceof FirebaseAppDistributionException
-                        && ((FirebaseAppDistributionException) e).getErrorCode()
-                            == AUTHENTICATION_FAILURE) {
-                      // If CheckForNewRelease returns authentication error, the FID is no longer
-                      // valid or does not have access to the latest release. So sign out the tester
-                      // to force FID re-registration
-                      signOutTester();
-                    }
-                  });
-        });
+    return checkForNewReleaseTaskCache.getOrCreateTask(
+        () ->
+            newReleaseFetcher
+                .checkForNewRelease()
+                .onSuccessTask(
+                    lightweightExecutor,
+                    release ->
+                        cachedNewRelease.setAndTransform(
+                            () -> release,
+                            ReleaseUtils::convertToAppDistributionRelease))
+                .addOnFailureListener(
+                    lightweightExecutor,
+                    e -> {
+                      if (e instanceof FirebaseAppDistributionException
+                          && ((FirebaseAppDistributionException) e).getErrorCode()
+                              == AUTHENTICATION_FAILURE) {
+                        // If CheckForNewRelease returns authentication error, the FID is no longer
+                        // valid or does not have access to the latest release. So sign out the tester
+                        // to force FID re-registration
+                        signOutTester();
+                      }
+                    }));
   }
 
   @Override
@@ -270,15 +269,15 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
    * basic configuration and false for advanced configuration.
    */
   private UpdateTask updateApp(boolean showDownloadInNotificationManager) {
-    return cachedNewRelease.applyUpdateTask(
+    if (!isTesterSignedIn()) {
+      UpdateTaskImpl updateTask = new UpdateTaskImpl();
+      updateTask.setException(
+          new FirebaseAppDistributionException(
+              "Tester is not signed in", AUTHENTICATION_FAILURE));
+      return updateTask;
+    }
+    return cachedNewRelease.getAndTransform(
         release -> {
-          if (!isTesterSignedIn()) {
-            UpdateTaskImpl updateTask = new UpdateTaskImpl();
-            updateTask.setException(
-                new FirebaseAppDistributionException(
-                    "Tester is not signed in", AUTHENTICATION_FAILURE));
-            return updateTask;
-          }
           if (release == null) {
             LogWrapper.getInstance().v("New release not found.");
             return getErrorUpdateTask(
@@ -319,8 +318,10 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
             new FirebaseAppDistributionException(
                 ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
       } else {
-        showUpdateConfirmationDialog(
-            activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease.get()));
+        cachedNewRelease.get(
+            release ->
+                showUpdateConfirmationDialog(
+                    activity, ReleaseUtils.convertToAppDistributionRelease(release)));
       }
     }
   }
