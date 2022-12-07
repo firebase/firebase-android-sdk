@@ -20,6 +20,7 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
@@ -34,10 +35,9 @@ import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 /**
- * Registers FirebaseAppDistribution.
+ * Registers FirebaseAppDistribution and related components.
  *
  * @hide
  */
@@ -49,6 +49,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
 
   @Override
   public @NonNull List<Component<?>> getComponents() {
+    Qualified<Executor> backgroundExecutor = Qualified.qualified(Background.class, Executor.class);
     Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
     Qualified<Executor> lightweightExecutor =
         Qualified.qualified(Lightweight.class, Executor.class);
@@ -57,9 +58,10 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
+            .add(Dependency.required(backgroundExecutor))
             .add(Dependency.required(blockingExecutor))
             .add(Dependency.required(lightweightExecutor))
-            .factory(c -> buildFirebaseAppDistribution(c, blockingExecutor, lightweightExecutor))
+            .factory(c -> buildFirebaseAppDistribution(c, backgroundExecutor, blockingExecutor, lightweightExecutor))
             // construct FirebaseAppDistribution instance on startup so we can register for
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
@@ -67,6 +69,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
         Component.builder(FeedbackSender.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
+            .add(Dependency.required(backgroundExecutor))
             .add(Dependency.required(blockingExecutor))
             .factory(c -> buildFeedbackSender(c, c.get(blockingExecutor)))
             .build(),
@@ -87,13 +90,13 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
     return new FeedbackSender(testerApiClient, blockingExecutor);
   }
 
-  // TODO(b/258264924): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   private FirebaseAppDistribution buildFirebaseAppDistribution(
       ComponentContainer container,
+      Qualified<Executor> backgroundExecutorType,
       Qualified<Executor> blockingExecutorType,
       Qualified<Executor> lightweightExecutorType) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
+    Executor backgroundExecutor = container.get(backgroundExecutorType);
     Executor blockingExecutor = container.get(blockingExecutorType);
     Executor lightweightExecutor = container.get(lightweightExecutorType);
     Context context = firebaseApp.getApplicationContext();
@@ -120,9 +123,9 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             signInStorage,
             lifecycleNotifier,
             releaseIdentifier,
-            new ScreenshotTaker(firebaseApp, lifecycleNotifier),
+            new ScreenshotTaker(firebaseApp, lifecycleNotifier, backgroundExecutor),
             lightweightExecutor,
-            Executors.newSingleThreadExecutor());
+            blockingExecutor);
 
     if (context instanceof Application) {
       Application firebaseApplication = (Application) context;

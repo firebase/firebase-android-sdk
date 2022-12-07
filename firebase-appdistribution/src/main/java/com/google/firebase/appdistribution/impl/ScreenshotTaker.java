@@ -14,7 +14,6 @@
 
 package com.google.firebase.appdistribution.impl;
 
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
@@ -37,7 +36,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 /** A class that takes screenshots of the host app. */
 class ScreenshotTaker {
@@ -47,23 +45,15 @@ class ScreenshotTaker {
 
   private final FirebaseApp firebaseApp;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
-  private final Executor taskExecutor;
+  private final Executor backgroundExecutor;
 
-  // TODO(b/258264924): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
-  ScreenshotTaker(
-      FirebaseApp firebaseApp, FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
-    this(firebaseApp, lifecycleNotifier, Executors.newSingleThreadExecutor());
-  }
-
-  @VisibleForTesting
   ScreenshotTaker(
       FirebaseApp firebaseApp,
       FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
-      Executor taskExecutor) {
+      Executor backgroundExecutor) {
     this.firebaseApp = firebaseApp;
     this.lifecycleNotifier = lifecycleNotifier;
-    this.taskExecutor = taskExecutor;
+    this.backgroundExecutor = backgroundExecutor;
   }
 
   /**
@@ -83,7 +73,7 @@ class ScreenshotTaker {
   /** Deletes any previously taken screenshot. */
   Task<Void> deleteScreenshot() {
     return TaskUtils.runAsyncInTask(
-        taskExecutor,
+        backgroundExecutor,
         () -> {
           firebaseApp.getApplicationContext().deleteFile(SCREENSHOT_FILE_NAME);
           return null;
@@ -159,7 +149,7 @@ class ScreenshotTaker {
       return Tasks.forResult(null);
     }
     return TaskUtils.runAsyncInTask(
-        taskExecutor,
+        backgroundExecutor,
         () -> {
           try (FileOutputStream outputStream = openFileOutputStream()) {
             // PNG is a lossless format, the compression factor (100) is ignored
