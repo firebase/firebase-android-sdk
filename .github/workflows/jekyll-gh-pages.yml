@@ -3,14 +3,14 @@ name: Jekyll with GitHub Pages
 on:
   # Runs on pushes targeting the default branch
   push:
-    branches: ["vk_contrib_docs"]
+    branches: ["master"]
     paths:
       - '.github/workflows/jekyll-gh-pages.yml'
       - 'contributor-docs/**'
-  #pull_request:
-  #  paths:
-  #    - '.github/workflows/jekyll-gh-pages.yml'
-  #    - 'contributor-docs/**'
+  pull_request:
+    paths:
+      - '.github/workflows/jekyll-gh-pages.yml'
+      - 'contributor-docs/**'
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -27,7 +27,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Build job
   build:
     runs-on: ubuntu-latest
     steps:
@@ -43,7 +42,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
 
-  # Deployment job
   deploy:
     if: ${{ github.event_name == 'push' && github.repository == 'firebase/firebase-android-sdk' }}
     environment:

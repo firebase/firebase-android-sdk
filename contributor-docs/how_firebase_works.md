@@ -31,7 +31,7 @@ During initialization, `FirebaseApp` discovers all Firebase SDKs present in the 
 
 ### Firebase Configuration
 
-It contains Firebase configuration for all products to use, namely `FirebaseOptions`, which tells Firebase which `Firebase` project to talk to, which real-time database to use, etc.
+`FirebaseApp` contains Firebase configuration for all products to use, namely `FirebaseOptions`, which tells Firebase which `Firebase` project to talk to, which real-time database to use, etc.
 
 ### Additional Services/Components
 

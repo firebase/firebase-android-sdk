@@ -42,7 +42,7 @@ After that configure github keys as usual using this
 
 ## Importing the repository
 
-1. Clone the repository with `git clone
+1. Clone the repository with `git clone --recurse-submodules
     git@github.com:firebase/firebase-android-sdk.git`.
 1. Open Android Studio and click "Open an existing project".
     ![Open an existing project](as_open_project.png)
