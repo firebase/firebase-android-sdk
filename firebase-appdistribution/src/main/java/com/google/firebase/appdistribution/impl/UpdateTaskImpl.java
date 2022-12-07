@@ -31,7 +31,6 @@ import com.google.android.gms.tasks.TaskExecutors;
 import com.google.firebase.appdistribution.OnProgressListener;
 import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateTask;
-import com.google.firebase.concurrent.FirebaseExecutors;
 import java.util.concurrent.Executor;
 
 /** Implementation of UpdateTask, the return type of updateApp. */
@@ -65,11 +64,11 @@ class UpdateTaskImpl extends UpdateTask {
     }
   }
 
-  void shadow(UpdateTask updateTask) {
+  void shadow(Executor executor, UpdateTask updateTask) {
     updateTask
-        .addOnProgressListener(FirebaseExecutors.directExecutor(), this::updateProgress)
-        .addOnSuccessListener(FirebaseExecutors.directExecutor(), unused -> this.setResult())
-        .addOnFailureListener(FirebaseExecutors.directExecutor(), this::setException);
+        .addOnProgressListener(executor, this::updateProgress)
+        .addOnSuccessListener(executor, unused -> this.setResult())
+        .addOnFailureListener(executor, this::setException);
   }
 
   private Task<Void> getTask() {

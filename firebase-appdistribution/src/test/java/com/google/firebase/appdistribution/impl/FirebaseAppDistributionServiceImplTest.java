@@ -224,7 +224,7 @@ public class FirebaseAppDistributionServiceImplTest {
     assertEquals(TEST_RELEASE_NEWER_AAB, task.getResult());
     assertEquals(
         TEST_RELEASE_NEWER_AAB_INTERNAL.build(),
-        firebaseAppDistribution.getCachedNewRelease().get());
+        firebaseAppDistribution.getCachedNewRelease().getSnapshot());
   }
 
   @Test
@@ -401,6 +401,7 @@ public class FirebaseAppDistributionServiceImplTest {
     AlertDialog updateDialog = assertAlertDialogShown();
     updateDialog.onBackPressed(); // cancels the dialog
     TestUtils.awaitAsyncOperations(testExecutor);
+    TestUtils.awaitAsyncOperations(testExecutor);
 
     assertFalse(updateDialog.isShowing());
 
@@ -465,7 +466,9 @@ public class FirebaseAppDistributionServiceImplTest {
     AlertDialog dialog = assertAlertDialogShown();
     dialog.onBackPressed(); // cancel dialog
     TestUtils.awaitAsyncOperations(testExecutor);
+    TestUtils.awaitAsyncOperations(testExecutor);
 
+    assertTrue(signInTask.isComplete());
     assertFalse(signInTask.isSuccessful());
     Exception e = signInTask.getException();
     assertTrue(e instanceof FirebaseAppDistributionException);
@@ -511,7 +514,6 @@ public class FirebaseAppDistributionServiceImplTest {
     AlertDialog updateDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
     updateDialog.getButton(Dialog.BUTTON_POSITIVE).performClick();
     TestUtils.awaitAsyncOperations(testExecutor);
-    //    TestUtils.awaitAsyncOperations(testExecutor);
 
     // Update flow
     assertEquals(1, progressEvents.size());
@@ -617,7 +619,7 @@ public class FirebaseAppDistributionServiceImplTest {
   }
 
   @Test
-  public void updateApp_withAabReleaseAvailable_returnsSameAabTask() {
+  public void updateApp_withAabReleaseAvailable_returnsSameAabTask() throws InterruptedException {
     AppDistributionReleaseInternal release = TEST_RELEASE_NEWER_AAB_INTERNAL.build();
     firebaseAppDistribution.getCachedNewRelease().set(release);
     UpdateTaskImpl updateTaskToReturn = new UpdateTaskImpl();
@@ -625,12 +627,18 @@ public class FirebaseAppDistributionServiceImplTest {
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
 
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
+    assertFalse(updateTask.isComplete());
 
-    assertEquals(updateTask, updateTaskToReturn);
+    // Complete original task
+    updateTaskToReturn.setResult();
+    TestUtils.awaitAsyncOperations(testExecutor);
+
+    // Returned task is complete
+    assertTrue(updateTask.isSuccessful());
   }
 
   @Test
-  public void updateApp_withApkReleaseAvailable_returnsSameApkTask() {
+  public void updateApp_withApkReleaseAvailable_returnsSameApkTask() throws InterruptedException {
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
     AppDistributionReleaseInternal release = TEST_RELEASE_NEWER_APK_INTERNAL.build();
     firebaseAppDistribution.getCachedNewRelease().set(release);
@@ -638,7 +646,13 @@ public class FirebaseAppDistributionServiceImplTest {
     doReturn(updateTaskToReturn).when(mockApkUpdater).updateApk(release, false);
 
     UpdateTask updateTask = firebaseAppDistribution.updateApp();
+    assertFalse(updateTask.isComplete());
 
-    assertEquals(updateTask, updateTaskToReturn);
+    // Complete original task
+    updateTaskToReturn.setResult();
+    TestUtils.awaitAsyncOperations(testExecutor);
+
+    // Returned task is complete
+    assertTrue(updateTask.isSuccessful());
   }
 }

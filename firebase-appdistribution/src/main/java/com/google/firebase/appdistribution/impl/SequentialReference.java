@@ -1,5 +1,6 @@
 package com.google.firebase.appdistribution.impl;
 
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.appdistribution.UpdateTask;
@@ -37,14 +38,8 @@ class SequentialReference<T> {
     value = initialValue;
   }
 
-  Task<T> set(SequentialReferenceProducer<T> producer) {
-    TaskCompletionSource<T> taskCompletionSource = new TaskCompletionSource<>();
-    sequentialExecutor.execute(
-        () -> {
-          value = producer.produce();
-          taskCompletionSource.setResult(value);
-        });
-    return taskCompletionSource.getTask();
+  void set(T newValue) {
+    sequentialExecutor.execute(() -> value = newValue);
   }
 
   <U> Task<U> setAndTransform(
@@ -64,7 +59,13 @@ class SequentialReference<T> {
 
   UpdateTask getAndTransform(SequentialReferenceUpdateTaskTransformer<T> transformer) {
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
-    sequentialExecutor.execute(() -> updateTask.shadow(transformer.transform(value)));
+    sequentialExecutor.execute(
+        () -> updateTask.shadow(sequentialExecutor, transformer.transform(value)));
     return updateTask;
+  }
+
+  @VisibleForTesting
+  T getSnapshot() {
+    return value;
   }
 }
