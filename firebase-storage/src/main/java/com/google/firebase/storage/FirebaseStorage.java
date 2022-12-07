@@ -55,7 +55,7 @@ public class FirebaseStorage {
   private long sMaxUploadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
   private long sMaxChunkUploadRetry = DateUtils.MINUTE_IN_MILLIS; //  60 * 1000
   private long sMaxDownloadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
-  private long sMaxQueryRetry = 2 * DateUtils.MINUTE_IN_MILLIS; //  2 * 60 * 1000
+  private long sMaxQueryRetry = 2 * DateUtils.MINUTE_IN_MILLIS;
 
   @Nullable private EmulatedServiceSettings emulatorSettings;
 
@@ -265,6 +265,44 @@ public class FirebaseStorage {
   @SuppressWarnings("unused")
   public void setMaxOperationRetryTimeMillis(long maxTransferRetryMillis) {
     sMaxQueryRetry = maxTransferRetryMillis;
+  }
+
+  /**
+   * Returns the number of executors configured for upload operations
+   *
+   * @return the integer number for the upload executors.
+   */
+  public long getsMaxUploadExecutors() {
+    return StorageTaskScheduler.maxUploadExecutors;
+  }
+
+  /**
+   * Sets the maximum number of parallel executors on upload operations.
+   *
+   * @param maxUploadExecutors the maximum number of parallel executors. Defaults to 2
+   */
+  @SuppressWarnings("unused")
+  public void setMaxUploadExecutors(int maxUploadExecutors) {
+    StorageTaskScheduler.maxUploadExecutors = maxUploadExecutors;
+  }
+
+  /**
+   * Returns the number of executors configured for download operations
+   *
+   * @return the integer number for the download executors.
+   */
+  public long getsMaxDownloadExecutors() {
+    return StorageTaskScheduler.maxDownloadExecutors;
+  }
+
+  /**
+   * Sets the maximum number of parallel executors on download operations.
+   *
+   * @param maxDownloadExecutors the maximum number of parallel executors. Defaults to 3
+   */
+  @SuppressWarnings("unused")
+  public void setMaxDownloadExecutors(int maxDownloadExecutors) {
+    StorageTaskScheduler.maxDownloadExecutors = maxDownloadExecutors;
   }
 
   @Nullable

@@ -38,6 +38,9 @@ public class StorageTaskScheduler {
 
   private static BlockingQueue<Runnable> mCommandQueue = new LinkedBlockingQueue<>();
 
+  public static int maxDownloadExecutors = 3;
+  public static int maxUploadExecutors = 2;
+
   // TODO(b/258426744): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
   private static final ThreadPoolExecutor COMMAND_POOL_EXECUTOR =
@@ -50,7 +53,7 @@ public class StorageTaskScheduler {
   @SuppressLint("ThreadPoolCreation")
   private static final ThreadPoolExecutor UPLOAD_QUEUE_EXECUTOR =
       new ThreadPoolExecutor(
-          20, 20, 5, TimeUnit.SECONDS, mUploadQueue, new StorageThreadFactory("Upload-"));
+              2, 2, 5, TimeUnit.SECONDS, mUploadQueue, new StorageThreadFactory("Upload-"));
 
   private static BlockingQueue<Runnable> mDownloadQueue = new LinkedBlockingQueue<>();
 
@@ -58,7 +61,7 @@ public class StorageTaskScheduler {
   @SuppressLint("ThreadPoolCreation")
   private static final ThreadPoolExecutor DOWNLOAD_QUEUE_EXECUTOR =
       new ThreadPoolExecutor(
-          3, 3, 5, TimeUnit.SECONDS, mDownloadQueue, new StorageThreadFactory("Download-"));
+              3, 3, 5, TimeUnit.SECONDS, mDownloadQueue, new StorageThreadFactory("Download-"));
 
   private static BlockingQueue<Runnable> mCallbackQueue = new LinkedBlockingQueue<>();
 
@@ -88,10 +91,22 @@ public class StorageTaskScheduler {
   }
 
   public void scheduleUpload(Runnable task) {
+    int corePoolSize = UPLOAD_QUEUE_EXECUTOR.getCorePoolSize();
+    int maxPoolSize = UPLOAD_QUEUE_EXECUTOR.getMaximumPoolSize();
+    if (corePoolSize != maxUploadExecutors && maxPoolSize != maxUploadExecutors) {
+      UPLOAD_QUEUE_EXECUTOR.setCorePoolSize(maxUploadExecutors);
+      UPLOAD_QUEUE_EXECUTOR.setMaximumPoolSize(maxUploadExecutors);
+    }
     UPLOAD_QUEUE_EXECUTOR.execute(task);
   }
 
   public void scheduleDownload(Runnable task) {
+    int corePoolSize = DOWNLOAD_QUEUE_EXECUTOR.getCorePoolSize();
+    int maxPoolSize = DOWNLOAD_QUEUE_EXECUTOR.getMaximumPoolSize();
+    if (corePoolSize != maxDownloadExecutors && maxPoolSize != maxDownloadExecutors) {
+      DOWNLOAD_QUEUE_EXECUTOR.setCorePoolSize(maxDownloadExecutors);
+      DOWNLOAD_QUEUE_EXECUTOR.setMaximumPoolSize(maxDownloadExecutors);
+    }
     DOWNLOAD_QUEUE_EXECUTOR.execute(task);
   }
 
