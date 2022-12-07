@@ -6,7 +6,7 @@ remote_theme: just-the-docs/just-the-docs@v0.4.0.rc3
 plugins:
 - jekyll-remote-theme
 
-color_scheme: dark
+color_scheme: light
 
 # Aux links for the upper right navigation
 aux_links:
