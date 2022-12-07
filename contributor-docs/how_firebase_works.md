@@ -44,4 +44,38 @@ In addition to `FirebaseOptions`, `FirebaseApp` registers additional components 
 
 ## Discovery and Dependency Injection
 
-TODO
+There are multiple considerations that lead to the current design of how Firebase SDKs initialize.
+
+1. Certain SDKs need to initialize at app startup.
+2. SDKs have optional dependencies on other products that get enabled when the developer adds the dependency to their app.
+
+To enable this functionality, Firebase uses a runtime discovery and dependency injection framework [firebase-components](https://github.com/firebase/firebase-android-sdk/tree/master/firebase-components).
+
+To integrate with this framework SDKs register the components they provide via a `ComponentRegistrar` and declare any dependencies they need to initialize, e.g.
+
+```java
+public class MyRegistrar implements ComponentRegistrar {
+  @Override
+  public List<Component<?>> getComponents() {
+    return Arrays.asList(
+        // declare the component
+        Component.builder(MyComponent.class)
+            // declare dependencies
+            .add(Dependency.required(Context.class))
+            .add(Dependency.required(FirebaseOptions.class))
+            .add(Dependency.optionalProvider(InternalAuthProvider.class))
+            // let the runtime know how to create your component.
+            .factory(
+                diContainer ->
+                    new MyComponent(
+                        diContainer.get(Context.class),
+                        diContainer.get(FirebaseOptions.class),
+                        diContainer.get(InternalAuthProvider.class)))
+            .build());
+  }
+}
+```
+
+This registrar is then registered in `AndroidManifest.xml` of the SDK and is used by `FirebaseApp` to discover all components and construct the dependency graph.
+
+More details in [Firebase Components]({{ site.baseurl }}{% link id_depth/components.md %})).

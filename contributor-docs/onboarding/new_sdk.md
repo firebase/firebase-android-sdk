@@ -4,7 +4,7 @@ parent: Onboarding
 
 # Creating a new Firebase SDK
 
-Want to create a new SDK in 
+Want to create a new SDK in
 [Firebase/firebase-android-sdk](https://github.com/firebase/firebase-android-sdk)?
 Read on.
 
@@ -51,11 +51,12 @@ choice.
 
 Let's say you want to create an SDK named `firebase-foo`
 
-1.  Create a directory called `firebase-foo`.
-1.  Create a file `firebase-foo/firebase-foo.gradle.kts`.
-1.  Add `firebase-foo` line to `subprojects.cfg` at the root of the tree.
+1. Create a directory called `firebase-foo`.
+1. Create a file `firebase-foo/firebase-foo.gradle.kts`.
+1. Add `firebase-foo` line to `subprojects.cfg` at the root of the tree.
 
-### Update `firebase-foo.gradle.kts` with the following content:
+### Update `firebase-foo.gradle.kts` with the following content
+
 <details open markdown="block">
   <summary>
     firebase-foo.gradle.kts
@@ -94,6 +95,7 @@ dependencies {
   implementation(project(":firebase-common"))
   implementation(project(":firebase-components"))
 }
+
 ```
 </details>
 
@@ -130,6 +132,7 @@ dependencies {
   </application>
 </manifest>
 ```
+
 </details>
 
 ### Create `com.google.firebase.foo.FirebaseFoo`
@@ -151,6 +154,7 @@ class FirebaseFoo {
   }
 }
 ```
+
 </details>
 
 For Java
@@ -169,6 +173,7 @@ public class FirebaseFoo {
   }
 }
 ```
+
 </details>
 
 ### Create `com.google.firebase.foo.FirebaseFooRegistrar`
@@ -187,6 +192,7 @@ class FirebaseFooRegistrar : ComponentRegistrar {
     )
 }
 ```
+
 </details>
 
 For Java
@@ -204,6 +210,7 @@ public class FirebaseFooRegistrar implements ComponentRegistrar {
   }
 }
 ```
+
 </details>
 
 Continue to [How Firebase works]({{ site.baseurl }}{% link how_firebase_works.md %}).
