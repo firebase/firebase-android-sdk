@@ -78,4 +78,4 @@ public class MyRegistrar implements ComponentRegistrar {
 
 This registrar is then registered in `AndroidManifest.xml` of the SDK and is used by `FirebaseApp` to discover all components and construct the dependency graph.
 
-More details in [Firebase Components]({{ site.baseurl }}{% link id_depth/components.md %})).
+More details in [Firebase Components]({{ site.baseurl }}{% link in_depth/components.md %})).
