@@ -43,7 +43,7 @@ A Firebase Component is an entity that:
 
 * Implements one or more interfaces
 * Has a list of dependencies(required or optional). See [Dependencies]({{ site.baseurl }}{% link components/dependencies.md %})
-* Has initialization requirements(e.g. eager in default app and direct boot aware)
+* Has initialization requirements(e.g. eager in default app)
 * Defines a factory creates an instance of the component’s interface given it's dependencies.
   (In other words describes how to create the given component.)
 
