@@ -100,14 +100,14 @@ To declare a required dependency use the following in your `ComponentRegistrar`:
 The provider will return `null` if the dependency is not present in the app.
 
 {: .warning }
-When the app uses [Play's dynamic feature delivery](https://developer.android.com/guide/playcore/feature-delivery),
-`provider.get()` can return your dependency when it becomes available, so be prepared for that.
-And don't store references to the result of `provider.get()` calls.
+> When the app uses [Play's dynamic feature delivery](https://developer.android.com/guide/playcore/feature-delivery),
+> `provider.get()` can return your dependency when it becomes available, so be prepared for that.
+> And don't store references to the result of `provider.get()` calls.
 
 See [Dynamic Module Support]({{ site.baseurl }}{% link components/dynamic_modules.md %}) for details
 
 {: .warning }
-See Deferred dependencies if you your dependency has a callback based apis
+> See Deferred dependencies if you your dependency has a callback based apis
 
 ## Deferred Dependencies
 
@@ -169,10 +169,10 @@ To consume such a set the interested `Component` needs to declare a special kind
   set will get initialized.
 
 {: .warning }
-Similar to optional `Provider` dependencies, where an optional dependency can become available at runtime due to
-[Play's dynamic feature delivery](https://developer.android.com/guide/playcore/feature-delivery),
-`Set` dependencies can change at runtime by new elements getting added to the set.
-So make sure to hold on to the original `Set` to be able to observe new values in it as they are added.
+> Similar to optional `Provider` dependencies, where an optional dependency can become available at runtime due to
+> [Play's dynamic feature delivery](https://developer.android.com/guide/playcore/feature-delivery),
+> `Set` dependencies can change at runtime by new elements getting added to the set.
+> So make sure to hold on to the original `Set` to be able to observe new values in it as they are added.
 
 Example:
 

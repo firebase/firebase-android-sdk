@@ -41,9 +41,9 @@ the library will have once released. e.g. `firebase-common` directory
 hosts code for the `com.google.firebase:firebase-common` SDK.
 
 {: .warning }
-Note that the build file name for any given SDK is not `build.gradle` or `build.gradle.kts`
-but rather mirrors the name of the sdk, e.g.
-`firebase-common/firebase-common.gradle` or `firebase-common/firebase-common.gradle.kts`.
+> Note that the build file name for any given SDK is not `build.gradle` or `build.gradle.kts`
+> but rather mirrors the name of the sdk, e.g.
+> `firebase-common/firebase-common.gradle` or `firebase-common/firebase-common.gradle.kts`.
 
 All of the core Gradle build logic lives in `buildSrc` and is used by all
 SDKs.
