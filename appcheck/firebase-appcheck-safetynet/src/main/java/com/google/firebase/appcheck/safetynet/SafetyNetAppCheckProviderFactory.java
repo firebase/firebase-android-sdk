@@ -43,6 +43,6 @@ public class SafetyNetAppCheckProviderFactory implements AppCheckProviderFactory
   @NonNull
   @Override
   public AppCheckProvider create(@NonNull FirebaseApp firebaseApp) {
-    return new SafetyNetAppCheckProvider(firebaseApp);
+    return firebaseApp.get(SafetyNetAppCheckProvider.class);
   }
 }
