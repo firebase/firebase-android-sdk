@@ -154,7 +154,7 @@ Qualified<CoroutineDispatcher> dispatcher = qualified(Blocking::class.java, Coro
 #### Direct executor
 
 {: .warning }
-> Prefer `@Lightweight` instead of using direct executor as it could cause dead locks and stack overflows.
+Prefer `@Lightweight` instead of using direct executor as it could cause dead locks and stack overflows.
 
 For any trivial tasks that don't need to run asynchronously
 
