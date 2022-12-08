@@ -8,7 +8,7 @@ This page gives an overview of various different dependency types supported by t
 
 ## Background
 
-As discussed in [Firebase Components]({{site.baseurl}{%link components/components.md %}}), in order
+As discussed in [Firebase Components]({{ site.baseurl }}{% link components/components.md %}), in order
 for a `Component` to be injected with the things it needs to function, it needs to declare dependencies.
 These dependencies are then made available and injected into `Components` at runtime.
 
@@ -66,7 +66,7 @@ See [Dynamic Module Support]({{ site.baseurl }}{% link components/dynamic_module
 This type of dependency informs the `ComponentRuntime` that a given `Component` cannot function without a dependency.
 When the dependency is missing during initialization, `ComponentRuntime` will throw a `DependencyMissingDependency`.
 This type of dependency is useful for built-in components that are always present like `Context`, `FirebaseApp`,
-`FirebaseOptions`, [Executors]({{site.baseurl}}{%link components/executors.md%}).
+`FirebaseOptions`, [Executors]({{ site.baseurl }}{% link components/executors.md %}).
 
 To declare a required dependency use one of the following in your `ComponentRegistrar`:
 
