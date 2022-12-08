@@ -95,14 +95,14 @@ To declare a required dependency use the following in your `ComponentRegistrar`:
 
 The provider will return `null` if the dependency is not present in the app.
 
-{: warning }
+{: .warning }
 When the app uses [Play's dynamic feature delivery](https://developer.android.com/guide/playcore/feature-delivery),
 `provider.get()` can return your dependency when it becomes available, so be prepared for that.
 And don't store references to the result of `provider.get()` calls.
 
 See [Dynamic Module Support]({{ site.baseurl }}{% link components/dynamic_modules.md %}) for details
 
-{: warning }
+{: .warning }
 See Deferred dependencies if you your dependency has a callback based apis
 
 ## Deferred Dependencies
@@ -166,7 +166,7 @@ To consume such a set the interested `Component` needs to declare a special kind
   is that the `Set` is not initialized until the first call to `provider.get()` at which point all elements of the
   set will get initialized.
 
-{: warning }
+{: .warning }
 Similar to optional `Provider` dependencies, where an optional dependency can become available at runtime due to
 [Play's dynamic feature delivery](https://developer.android.com/guide/playcore/feature-delivery),
 `Set` dependencies can change at runtime by new elements getting added to the set.

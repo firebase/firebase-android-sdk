@@ -188,7 +188,8 @@ For Kotlin
 class FirebaseFooRegistrar : ComponentRegistrar {
   override fun getComponents() =
     listOf(
-      Component.builder(FirebaseFoo::class.java).factory { container -> FirebaseFoo() }.build()
+      Component.builder(FirebaseFoo::class.java).factory { container -> FirebaseFoo() }.build(),
+      LibraryVersionComponent.create("fire-foo", BuildConfig.VERSION_NAME)
     )
 }
 ```
@@ -205,8 +206,10 @@ For Java
 public class FirebaseFooRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
-    return Collections.singletonList(
-        Component.builder(FirebaseFoo.class).factory(c -> new FirebaseFoo()).build());
+    return Arrays.asList(
+        Component.builder(FirebaseFoo.class).factory(c -> new FirebaseFoo()).build(),
+        LibraryVersionComponent.create("fire-foo", BuildConfig.VERSION_NAME));
+
   }
 }
 ```
