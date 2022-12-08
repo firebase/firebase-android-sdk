@@ -1,5 +1,6 @@
 ---
 has_children: true
+permalink: /components
 ---
 
 # Firebase Components
