@@ -5,6 +5,8 @@ permalink: /components
 
 # Firebase Components
 
+{:toc}
+
 Firebase is known for being easy to use and requiring no/minimal configuration at runtime.
 Just adding SDKs to the app makes them discover each other to provide additional functionality,
 e.g. `Firestore` automatically integrates with `Auth` if present in the app.
@@ -127,7 +129,7 @@ At this point `FirebaseApp` will instantiate them and use the `ComponentRuntime`
 
 * **Component A depends on Component B** if `B` depends on an `interface` that `A` implements.
 * **For any Interface I, only one component is allowed to implement I**(with the exception of
-  [Multibindings]({{ site.baseurl }}{% link components/multibindings.md %})). If this invariant is violated, the container will
+  [Set Dependencies]({{ site.baseurl }}{% link components/dependencies.md %}#set-dependencies)). If this invariant is violated, the container will
   fail to start at runtime.
 * **There must not be any dependency cycles** among components. See Dependency Cycle Resolution on how this limitation can
   be mitigated

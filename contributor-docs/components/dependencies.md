@@ -4,6 +4,8 @@ parent: Firebase Components
 
 # Dependencies
 
+{:toc}
+
 This page gives an overview of various different dependency types supported by the Components Framework.
 
 ## Background
@@ -142,9 +144,7 @@ See [Dynamic Module Support]({{ site.baseurl }}{% link components/dynamic_module
 
 ## Set Dependencies
 
-[Multibindings]({{ site.baseurl }}{% link components/multibindings.md %}) support in the Components Framework allows
-registering components to be part of a set, such components are registered explicitly to be a part of a `Set<T>`
-as opposed to be a unique value of `T`:
+The Components Framework allows registering components to be part of a set, such components are registered explicitly to be a part of a `Set<T>` as opposed to be a unique value of `T`:
 
 ```java
 // Sdk 1
@@ -185,5 +185,3 @@ Component.builder(MyClass.class)
     .factory(c -> MyClass(c.setOf(SomeType.class), c.setOfProvider(SomeOtherType.class)))
     .build();
 ```
-
-See [Multibindings]({{ site.baseurl }}{% link components/multibindings.md %}) for more details.
