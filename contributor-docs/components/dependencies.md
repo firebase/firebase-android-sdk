@@ -18,7 +18,7 @@ These dependencies are then made available and injected into `Components` at run
 
 Firebase Components provide different types of dependencies
 
-### Lazy vs Eager dependencies
+## Lazy vs Eager dependencies
 
 When it comes to initializing a given component, there are 2 ways to provide its dependencies to it.
 
