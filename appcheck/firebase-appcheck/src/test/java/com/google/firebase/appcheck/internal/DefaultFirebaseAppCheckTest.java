@@ -17,6 +17,7 @@ package com.google.firebase.appcheck.internal;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,6 +34,7 @@ import com.google.firebase.appcheck.AppCheckTokenResult;
 import com.google.firebase.appcheck.FirebaseAppCheck.AppCheckListener;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
 import com.google.firebase.heartbeatinfo.HeartBeatController;
+import java.util.concurrent.ScheduledExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -80,7 +82,8 @@ public class DefaultFirebaseAppCheckTest {
         new DefaultFirebaseAppCheck(
             mockFirebaseApp,
             () -> mockHeartBeatController,
-            MoreExecutors.newDirectExecutorService());
+            MoreExecutors.newDirectExecutorService(),
+            mock(ScheduledExecutorService.class));
   }
 
   @Test
@@ -88,7 +91,11 @@ public class DefaultFirebaseAppCheckTest {
     assertThrows(
         NullPointerException.class,
         () -> {
-          new DefaultFirebaseAppCheck(null, () -> mockHeartBeatController);
+          new DefaultFirebaseAppCheck(
+              null,
+              () -> mockHeartBeatController,
+              MoreExecutors.newDirectExecutorService(),
+              mock(ScheduledExecutorService.class));
         });
   }
 
@@ -97,7 +104,11 @@ public class DefaultFirebaseAppCheckTest {
     assertThrows(
         NullPointerException.class,
         () -> {
-          new DefaultFirebaseAppCheck(mockFirebaseApp, null);
+          new DefaultFirebaseAppCheck(
+              mockFirebaseApp,
+              null,
+              MoreExecutors.newDirectExecutorService(),
+              mock(ScheduledExecutorService.class));
         });
   }
 

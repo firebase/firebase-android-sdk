@@ -25,6 +25,8 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
 import com.google.firebase.appcheck.AppCheckToken;
@@ -37,7 +39,7 @@ import com.google.firebase.inject.Provider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
 
@@ -50,6 +52,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   private final StorageHelper storageHelper;
   private final TokenRefreshManager tokenRefreshManager;
   private final ExecutorService backgroundExecutor;
+  private final ScheduledExecutorService scheduledExecutorService;
   private final Task<Void> retrieveStoredTokenTask;
   private final Clock clock;
 
@@ -57,22 +60,11 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   private AppCheckProvider appCheckProvider;
   private AppCheckToken cachedToken;
 
-  // TODO(b/258273630): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   public DefaultFirebaseAppCheck(
       @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<HeartBeatController> heartBeatController) {
-    this(
-        checkNotNull(firebaseApp),
-        checkNotNull(heartBeatController),
-        Executors.newCachedThreadPool());
-  }
-
-  @VisibleForTesting
-  DefaultFirebaseAppCheck(
-      @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<HeartBeatController> heartBeatController,
-      @NonNull ExecutorService backgroundExecutor) {
+      @Background ExecutorService backgroundExecutor,
+      @Blocking ScheduledExecutorService scheduledExecutorService) {
     checkNotNull(firebaseApp);
     checkNotNull(heartBeatController);
     this.firebaseApp = firebaseApp;
@@ -84,6 +76,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
     this.tokenRefreshManager =
         new TokenRefreshManager(firebaseApp.getApplicationContext(), /* firebaseAppCheck= */ this);
     this.backgroundExecutor = backgroundExecutor;
+    this.scheduledExecutorService = scheduledExecutorService;
     this.retrieveStoredTokenTask = retrieveStoredAppCheckTokenInBackground(backgroundExecutor);
     this.clock = new Clock.DefaultClock();
   }
@@ -255,6 +248,11 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   @NonNull
   Provider<HeartBeatController> getHeartbeatControllerProvider() {
     return heartbeatControllerProvider;
+  }
+
+  @NonNull
+  ScheduledExecutorService getScheduledExecutorService() {
+    return scheduledExecutorService;
   }
 
   /** Sets the in-memory cached {@link AppCheckToken}. */

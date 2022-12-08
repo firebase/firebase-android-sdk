@@ -16,16 +16,21 @@ package com.google.firebase.appcheck;
 
 import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.appcheck.internal.DefaultFirebaseAppCheck;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
 import com.google.firebase.heartbeatinfo.HeartBeatConsumerComponent;
 import com.google.firebase.heartbeatinfo.HeartBeatController;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * {@link ComponentRegistrar} for setting up FirebaseAppCheck's dependency injections in Firebase
@@ -39,16 +44,25 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
 
   @Override
   public List<Component<?>> getComponents() {
+    Qualified<ExecutorService> backgroundExecutorService =
+        Qualified.qualified(Background.class, ExecutorService.class);
+    Qualified<ScheduledExecutorService> blockingScheduledExecutorService =
+        Qualified.qualified(Blocking.class, ScheduledExecutorService.class);
+
     return Arrays.asList(
         Component.builder(FirebaseAppCheck.class, (InternalAppCheckTokenProvider.class))
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.required(backgroundExecutorService))
+            .add(Dependency.required(blockingScheduledExecutorService))
             .add(Dependency.optionalProvider(HeartBeatController.class))
             .factory(
                 (container) ->
                     new DefaultFirebaseAppCheck(
                         container.get(FirebaseApp.class),
-                        container.getProvider(HeartBeatController.class)))
+                        container.getProvider(HeartBeatController.class),
+                        container.get(backgroundExecutorService),
+                        container.get(blockingScheduledExecutorService)))
             .alwaysEager()
             .build(),
         HeartBeatConsumerComponent.create(),

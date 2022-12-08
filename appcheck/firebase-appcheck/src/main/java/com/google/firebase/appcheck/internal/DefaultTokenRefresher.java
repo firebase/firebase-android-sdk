@@ -21,7 +21,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
@@ -41,10 +40,8 @@ public class DefaultTokenRefresher {
   private volatile ScheduledFuture<?> refreshFuture;
   private volatile long delayAfterFailureSeconds;
 
-  // TODO(b/258273630): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   DefaultTokenRefresher(@NonNull DefaultFirebaseAppCheck firebaseAppCheck) {
-    this(checkNotNull(firebaseAppCheck), Executors.newScheduledThreadPool(/* corePoolSize= */ 1));
+    this(checkNotNull(firebaseAppCheck), firebaseAppCheck.getScheduledExecutorService());
   }
 
   @VisibleForTesting
