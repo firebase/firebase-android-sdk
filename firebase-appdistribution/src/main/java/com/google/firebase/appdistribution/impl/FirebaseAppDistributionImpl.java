@@ -239,7 +239,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                     lightweightExecutor,
                     release ->
                         cachedNewRelease.setAndTransform(
-                            () -> release, ReleaseUtils::convertToAppDistributionRelease))
+                            release, ReleaseUtils::convertToAppDistributionRelease))
                 .addOnFailureListener(
                     lightweightExecutor,
                     e -> {
@@ -248,8 +248,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                               == AUTHENTICATION_FAILURE) {
                         // If CheckForNewRelease returns authentication error, the FID is no longer
                         // valid or does not have access to the latest release. So sign out the
-                        // tester
-                        // to force FID re-registration
+                        // tester to force FID re-registration
                         signOutTester();
                       }
                     }));
