@@ -42,6 +42,7 @@ public class SafetyNetAppCheckProviderFactory implements AppCheckProviderFactory
 
   @NonNull
   @Override
+  @SuppressWarnings("FirebaseUseExplicitDependencies")
   public AppCheckProvider create(@NonNull FirebaseApp firebaseApp) {
     return firebaseApp.get(SafetyNetAppCheckProvider.class);
   }
