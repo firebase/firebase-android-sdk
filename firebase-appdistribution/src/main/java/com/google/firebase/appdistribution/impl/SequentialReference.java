@@ -15,9 +15,9 @@
 package com.google.firebase.appdistribution.impl;
 
 import androidx.annotation.VisibleForTesting;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
-import com.google.firebase.appdistribution.UpdateTask;
 import com.google.firebase.concurrent.FirebaseExecutors;
 import java.util.concurrent.Executor;
 
@@ -27,64 +27,52 @@ import java.util.concurrent.Executor;
  */
 class SequentialReference<T> {
 
-  interface SequentialReferenceConsumer<T> {
-    void consume(T value);
-  }
-
-  interface SequentialReferenceTransformer<T, U> {
-    U transform(T value);
-  }
-
-  interface SequentialReferenceUpdateTaskTransformer<T> {
-    UpdateTask transform(T value);
-  }
-
   private final Executor sequentialExecutor;
-
   private T value;
 
-  SequentialReference(Executor baseExecutor) {
-    this(baseExecutor, null);
-  }
-
-  SequentialReference(Executor baseExecutor, T initialValue) {
-    sequentialExecutor = FirebaseExecutors.newSequentialExecutor(baseExecutor);
-    value = initialValue;
-  }
-
-  /** Enqueues a value to be set. */
-  void set(T newValue) {
-    sequentialExecutor.execute(() -> value = newValue);
+  /** Get a {@link SequentialReference} that controls access uses the given sequential executor. */
+  static SequentialReference withSequentialExecutor(Executor sequentialExecutor) {
+    return new SequentialReference(sequentialExecutor);
   }
 
   /**
-   * Enqueues a new value to be set, and returns a {@link Task} that resolves with the result of
-   * applying the given {@code transformer} to the value.
+   * Get a {@link SequentialReference} that controls access using its own sequential executor backed
+   * by the given base executor.
    */
-  <U> Task<U> setAndTransform(T newValue, SequentialReferenceTransformer<T, U> transformer) {
-    TaskCompletionSource<U> taskCompletionSource = new TaskCompletionSource<>();
+  static SequentialReference withBaseExecutor(Executor baseExecutor) {
+    return new SequentialReference(FirebaseExecutors.newSequentialExecutor(baseExecutor));
+  }
+
+  private SequentialReference(Executor sequentialExecutor) {
+    this.sequentialExecutor = sequentialExecutor;
+  }
+
+  /**
+   * Sets the value, returning a {@link Task} will complete once it is set.
+   *
+   * <p>For convenience when chaining tasks together, the result of the returned task is the value.
+   */
+  Task<T> set(T newValue) {
+    TaskCompletionSource<T> taskCompletionSource = new TaskCompletionSource<>();
     sequentialExecutor.execute(
         () -> {
           value = newValue;
-          taskCompletionSource.setResult(transformer.transform(value));
+          taskCompletionSource.setResult(value);
         });
     return taskCompletionSource.getTask();
   }
 
-  /** Gets the value, passing it to the given {@code consumer}. */
-  void get(SequentialReferenceConsumer<T> consumer) {
-    sequentialExecutor.execute(() -> consumer.consume(value));
-  }
-
   /**
-   * Gets the value, returning an {@link UpdateTask} produced by applying the {@code transformer}
-   * function to the value.
+   * Gets a {@link Task} that will complete with the value.
+   *
+   * <p>Unless a direct executer is passed to {@link Task#addOnSuccessListener(Executor,
+   * OnSuccessListener)} or similar methods, be aware that the value may have changed by the time it
+   * is used.
    */
-  UpdateTask getAndTransform(SequentialReferenceUpdateTaskTransformer<T> transformer) {
-    UpdateTaskImpl updateTask = new UpdateTaskImpl();
-    sequentialExecutor.execute(
-        () -> updateTask.shadow(sequentialExecutor, transformer.transform(value)));
-    return updateTask;
+  Task<T> get() {
+    TaskCompletionSource<T> taskCompletionSource = new TaskCompletionSource<>();
+    sequentialExecutor.execute(() -> taskCompletionSource.setResult(value));
+    return taskCompletionSource.getTask();
   }
 
   @VisibleForTesting

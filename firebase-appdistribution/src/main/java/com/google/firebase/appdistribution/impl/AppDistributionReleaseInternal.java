@@ -67,6 +67,9 @@ abstract class AppDistributionReleaseInternal {
   @Nullable
   abstract String getDownloadUrl();
 
+  @NonNull
+  abstract Builder toBuilder();
+
   /** Builder for {@link AppDistributionReleaseInternal}. */
   @AutoValue.Builder
   abstract static class Builder {

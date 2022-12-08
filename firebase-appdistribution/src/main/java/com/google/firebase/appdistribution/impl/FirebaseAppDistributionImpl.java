@@ -40,6 +40,7 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
+import com.google.firebase.concurrent.FirebaseExecutors;
 import java.util.concurrent.Executor;
 
 /**
@@ -88,7 +89,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     this.aabUpdater = aabUpdater;
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
-    this.cachedNewRelease = new SequentialReference<>(lightweightExecutor);
+    this.cachedNewRelease = SequentialReference.withBaseExecutor(lightweightExecutor);
     this.lightweightExecutor = lightweightExecutor;
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
     lifecycleNotifier.addOnActivityPausedListener(this::onActivityPaused);
@@ -217,8 +218,10 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void signOutTester() {
-    cachedNewRelease.set(null);
-    signInStorage.setSignInStatus(false);
+    cachedNewRelease
+        .set(null)
+        .addOnSuccessListener(
+            FirebaseExecutors.directExecutor(), unused -> signInStorage.setSignInStatus(false));
   }
 
   @Override
@@ -235,11 +238,11 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         () ->
             newReleaseFetcher
                 .checkForNewRelease()
+                .onSuccessTask(lightweightExecutor, release -> cachedNewRelease.set(release))
                 .onSuccessTask(
-                    lightweightExecutor,
+                    FirebaseExecutors.directExecutor(),
                     release ->
-                        cachedNewRelease.setAndTransform(
-                            release, ReleaseUtils::convertToAppDistributionRelease))
+                        Tasks.forResult(ReleaseUtils.convertToAppDistributionRelease(release)))
                 .addOnFailureListener(
                     lightweightExecutor,
                     e -> {
@@ -271,7 +274,9 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
           new FirebaseAppDistributionException("Tester is not signed in", AUTHENTICATION_FAILURE));
       return updateTask;
     }
-    return cachedNewRelease.getAndTransform(
+    return TaskUtils.onSuccessUpdateTask(
+        cachedNewRelease.get(),
+        lightweightExecutor,
         release -> {
           if (release == null) {
             LogWrapper.getInstance().v("New release not found.");
@@ -313,10 +318,12 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
             new FirebaseAppDistributionException(
                 ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
       } else {
-        cachedNewRelease.get(
-            release ->
-                showUpdateConfirmationDialog(
-                    activity, ReleaseUtils.convertToAppDistributionRelease(release)));
+        cachedNewRelease
+            .get()
+            .addOnSuccessListener(
+                release ->
+                    showUpdateConfirmationDialog(
+                        activity, ReleaseUtils.convertToAppDistributionRelease(release)));
       }
     }
   }
