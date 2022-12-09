@@ -33,6 +33,7 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
@@ -55,7 +56,6 @@ import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCa
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
 import io.reactivex.Maybe;
-import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -153,7 +153,7 @@ public class FirebaseInAppMessagingTest {
 
   @Mock
   DeveloperListenerManager developerListenerManager =
-      new DeveloperListenerManager(Executors.newSingleThreadExecutor());
+      new DeveloperListenerManager(TestOnlyExecutors.background());
 
   FirebaseApp firebaseApp1;
   FirebaseOptions options;
