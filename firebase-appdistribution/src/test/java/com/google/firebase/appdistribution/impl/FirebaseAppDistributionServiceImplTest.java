@@ -65,6 +65,7 @@ import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
 import com.google.firebase.concurrent.FirebaseExecutors;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.util.ArrayList;
 import java.util.List;
@@ -119,7 +120,7 @@ public class FirebaseAppDistributionServiceImplTest {
           .setDownloadUrl(TEST_URL)
           .build();
 
-  private final ExecutorService testExecutor = Executors.newSingleThreadExecutor();
+  private final ExecutorService lightweightExecutor = TestOnlyExecutors.lite();
 
   private FirebaseAppDistributionImpl firebaseAppDistribution;
   private TestActivity activity;
@@ -161,7 +162,7 @@ public class FirebaseAppDistributionServiceImplTest {
                 mockAabUpdater,
                 mockSignInStorage,
                 mockLifecycleNotifier,
-                testExecutor));
+                lightweightExecutor));
 
     when(mockTesterSignInManager.signInTester()).thenReturn(Tasks.forResult(null));
     when(mockSignInStorage.getSignInStatus()).thenReturn(true);
@@ -236,7 +237,7 @@ public class FirebaseAppDistributionServiceImplTest {
     Task<AppDistributionRelease> task = firebaseAppDistribution.checkForNewRelease();
 
     awaitTaskFailure(task, AUTHENTICATION_FAILURE, "Test");
-    awaitTermination(testExecutor);
+    awaitTermination(lightweightExecutor);
     verify(mockSignInStorage, times(1)).setSignInStatus(false);
   }
 
@@ -256,7 +257,7 @@ public class FirebaseAppDistributionServiceImplTest {
         .thenReturn(Tasks.forResult((TEST_RELEASE_NEWER_AAB_INTERNAL)));
 
     firebaseAppDistribution.updateIfNewReleaseAvailable();
-    awaitAsyncOperations(testExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     AlertDialog dialog = assertAlertDialogShown();
     assertEquals(
@@ -290,7 +291,7 @@ public class FirebaseAppDistributionServiceImplTest {
                 (TEST_RELEASE_NEWER_AAB_INTERNAL.toBuilder().setReleaseNotes("").build())));
 
     firebaseAppDistribution.updateIfNewReleaseAvailable();
-    awaitAsyncOperations(testExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     AlertDialog dialog = assertAlertDialogShown();
     assertEquals(
@@ -309,7 +310,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     List<UpdateProgress> progressEvents = new ArrayList<>();
     task.addOnProgressListener(FirebaseExecutors.directExecutor(), progressEvents::add);
-    awaitTermination(testExecutor);
+    awaitTermination(lightweightExecutor);
 
     assertEquals(1, progressEvents.size());
     assertEquals(UpdateStatus.NEW_RELEASE_NOT_AVAILABLE, progressEvents.get(0).getUpdateStatus());
@@ -325,7 +326,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     List<UpdateProgress> progressEvents = new ArrayList<>();
     task.addOnProgressListener(FirebaseExecutors.directExecutor(), progressEvents::add);
-    awaitTermination(testExecutor);
+    awaitTermination(lightweightExecutor);
 
     assertEquals(1, progressEvents.size());
     assertEquals(UpdateStatus.NEW_RELEASE_NOT_AVAILABLE, progressEvents.get(0).getUpdateStatus());
@@ -375,7 +376,7 @@ public class FirebaseAppDistributionServiceImplTest {
         .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL));
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
-    awaitAsyncOperations(testExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     AlertDialog updateDialog = assertAlertDialogShown();
     updateDialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick(); // dismiss dialog
@@ -393,7 +394,7 @@ public class FirebaseAppDistributionServiceImplTest {
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
     // Task callbacks happen on the executor
-    awaitTermination(testExecutor);
+    awaitTermination(lightweightExecutor);
 
     // Show update confirmation dialog happens on the UI thread
     shadowOf(getMainLooper()).idle();
@@ -469,7 +470,7 @@ public class FirebaseAppDistributionServiceImplTest {
   @Test
   public void signOutTester_setsSignInStatusFalse() throws InterruptedException {
     firebaseAppDistribution.signOutTester();
-    awaitTermination(testExecutor);
+    awaitTermination(lightweightExecutor);
     verify(mockSignInStorage).setSignInStatus(false);
   }
 
@@ -491,12 +492,12 @@ public class FirebaseAppDistributionServiceImplTest {
 
     List<UpdateProgress> progressEvents = new ArrayList<>();
     updateTask.addOnProgressListener(FirebaseExecutors.directExecutor(), progressEvents::add);
-    awaitAsyncOperations(testExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     // Clicking the update button.
     AlertDialog updateDialog = (AlertDialog) ShadowAlertDialog.getLatestDialog();
     updateDialog.getButton(Dialog.BUTTON_POSITIVE).performClick();
-    awaitAsyncOperations(testExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     // Update flow
     assertEquals(1, progressEvents.size());
@@ -541,7 +542,7 @@ public class FirebaseAppDistributionServiceImplTest {
     when(activity.isChangingConfigurations()).thenReturn(true);
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
-    awaitAsyncOperations(testExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     // Mimic activity recreation due to a configuration change
     firebaseAppDistribution.onActivityDestroyed(activity);
@@ -576,7 +577,7 @@ public class FirebaseAppDistributionServiceImplTest {
     when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(newRelease));
 
     UpdateTask updateTask = firebaseAppDistribution.updateIfNewReleaseAvailable();
-    awaitAsyncOperations(testExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     // Mimic different activity getting resumed
     firebaseAppDistribution.onActivityPaused(activity);

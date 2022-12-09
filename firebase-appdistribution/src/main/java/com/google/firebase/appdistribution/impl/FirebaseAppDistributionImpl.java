@@ -320,6 +320,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         cachedNewRelease
             .get()
             .addOnSuccessListener(
+                lightweightExecutor,
                 release ->
                     showUpdateConfirmationDialog(
                         activity, ReleaseUtils.convertToAppDistributionRelease(release)));
