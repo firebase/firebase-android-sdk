@@ -20,12 +20,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.robolectric.Shadows.shadowOf;
 
-import android.os.Looper;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
@@ -49,7 +48,7 @@ import org.robolectric.annotation.LooperMode.Mode;
 /** Tests for {@link DefaultFirebaseAppCheck}. */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-@LooperMode(Mode.PAUSED)
+@LooperMode(Mode.LEGACY)
 public class DefaultFirebaseAppCheckTest {
 
   private static final String EXCEPTION_TEXT = "exceptionText";
@@ -79,14 +78,14 @@ public class DefaultFirebaseAppCheckTest {
     when(mockAppCheckProviderFactory.create(any())).thenReturn(mockAppCheckProvider);
     when(mockAppCheckProvider.getToken()).thenReturn(Tasks.forResult(validDefaultAppCheckToken));
 
+    // TODO(b/258273630): Use TestOnlyExecutors.background() instead of
+    // MoreExecutors.directExecutor().
     defaultFirebaseAppCheck =
         new DefaultFirebaseAppCheck(
             mockFirebaseApp,
             () -> mockHeartBeatController,
-            TestOnlyExecutors.background(),
+            MoreExecutors.directExecutor(),
             TestOnlyExecutors.blocking());
-
-    shadowOf(Looper.getMainLooper()).idle();
   }
 
   @Test
@@ -343,7 +342,6 @@ public class DefaultFirebaseAppCheckTest {
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
 
     defaultFirebaseAppCheck.getToken(/* forceRefresh= */ true);
-    shadowOf(Looper.getMainLooper()).idle();
 
     verify(mockAppCheckProvider).getToken();
   }
