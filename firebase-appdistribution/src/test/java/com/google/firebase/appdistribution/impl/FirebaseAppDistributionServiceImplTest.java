@@ -221,7 +221,9 @@ public class FirebaseAppDistributionServiceImplTest {
     awaitTask(task);
 
     assertEquals(TEST_RELEASE_NEWER_AAB, task.getResult());
-    assertEquals(internalRelease, firebaseAppDistribution.getCachedNewRelease().getSnapshot());
+    AppDistributionReleaseInternal cachedNewRelease =
+        awaitTask(firebaseAppDistribution.getCachedNewRelease().get());
+    assertEquals(internalRelease, cachedNewRelease);
   }
 
   @Test

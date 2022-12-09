@@ -32,6 +32,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
@@ -40,7 +41,6 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
-import com.google.firebase.concurrent.FirebaseExecutors;
 import java.util.concurrent.Executor;
 
 /**
@@ -61,7 +61,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private final SequentialReference<AppDistributionReleaseInternal> cachedNewRelease;
   private TaskCache<UpdateTask> updateIfNewReleaseAvailableTaskCache = new TaskCache<>();
   private TaskCache<Task<AppDistributionRelease>> checkForNewReleaseTaskCache = new TaskCache<>();
-  private Executor lightweightExecutor;
+  @Lightweight private Executor lightweightExecutor;
   private AlertDialog updateConfirmationDialog;
   private AlertDialog signInConfirmationDialog;
   @Nullable private Activity dialogHostActivity = null;
@@ -81,7 +81,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       @NonNull AabUpdater aabUpdater,
       @NonNull SignInStorage signInStorage,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
-      @NonNull Executor lightweightExecutor) {
+      @NonNull @Lightweight Executor lightweightExecutor) {
     this.firebaseApp = firebaseApp;
     this.testerSignInManager = testerSignInManager;
     this.newReleaseFetcher = newReleaseFetcher;
@@ -89,7 +89,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     this.aabUpdater = aabUpdater;
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
-    this.cachedNewRelease = SequentialReference.withBaseExecutor(lightweightExecutor);
+    this.cachedNewRelease = new SequentialReference<>(lightweightExecutor);
     this.lightweightExecutor = lightweightExecutor;
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
     lifecycleNotifier.addOnActivityPausedListener(this::onActivityPaused);
@@ -220,8 +220,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   public void signOutTester() {
     cachedNewRelease
         .set(null)
-        .addOnSuccessListener(
-            FirebaseExecutors.directExecutor(), unused -> signInStorage.setSignInStatus(false));
+        .addOnSuccessListener(lightweightExecutor, unused -> signInStorage.setSignInStatus(false));
   }
 
   @Override
@@ -240,7 +239,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                 .checkForNewRelease()
                 .onSuccessTask(lightweightExecutor, release -> cachedNewRelease.set(release))
                 .onSuccessTask(
-                    FirebaseExecutors.directExecutor(),
+                    lightweightExecutor,
                     release ->
                         Tasks.forResult(ReleaseUtils.convertToAppDistributionRelease(release)))
                 .addOnFailureListener(

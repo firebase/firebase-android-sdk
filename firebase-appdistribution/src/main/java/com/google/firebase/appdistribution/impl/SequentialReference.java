@@ -14,8 +14,6 @@
 
 package com.google.firebase.appdistribution.impl;
 
-import androidx.annotation.VisibleForTesting;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.concurrent.FirebaseExecutors;
@@ -30,21 +28,12 @@ class SequentialReference<T> {
   private final Executor sequentialExecutor;
   private T value;
 
-  /** Get a {@link SequentialReference} that controls access uses the given sequential executor. */
-  static SequentialReference withSequentialExecutor(Executor sequentialExecutor) {
-    return new SequentialReference(sequentialExecutor);
-  }
-
   /**
-   * Get a {@link SequentialReference} that controls access using its own sequential executor backed
-   * by the given base executor.
+   * Constructor for a {@link SequentialReference} that controls access using its own sequential
+   * executor backed by the given base executor.
    */
-  static SequentialReference withBaseExecutor(Executor baseExecutor) {
-    return new SequentialReference(FirebaseExecutors.newSequentialExecutor(baseExecutor));
-  }
-
-  private SequentialReference(Executor sequentialExecutor) {
-    this.sequentialExecutor = sequentialExecutor;
+  SequentialReference(Executor baseExecutor) {
+    this.sequentialExecutor = FirebaseExecutors.newSequentialExecutor(baseExecutor);
   }
 
   /**
@@ -65,18 +54,12 @@ class SequentialReference<T> {
   /**
    * Gets a {@link Task} that will complete with the value.
    *
-   * <p>Unless a direct executer is passed to {@link Task#addOnSuccessListener(Executor,
-   * OnSuccessListener)} or similar methods, be aware that the value may have changed by the time it
-   * is used.
+   * <p>In some cases the value may have changed by the time any callbacks attached to the returned
+   * {@link Task} are called.
    */
   Task<T> get() {
     TaskCompletionSource<T> taskCompletionSource = new TaskCompletionSource<>();
     sequentialExecutor.execute(() -> taskCompletionSource.setResult(value));
     return taskCompletionSource.getTask();
-  }
-
-  @VisibleForTesting
-  T getSnapshot() {
-    return value;
   }
 }
