@@ -24,6 +24,7 @@ public class ExecutorsModule {
   @Provides
   @Singleton
   @Background
+  @NonNull
   public Executor providesBackgroundExecutor() {
     return backgroundExecutor;
   }
@@ -31,6 +32,7 @@ public class ExecutorsModule {
   @Provides
   @Singleton
   @Blocking
+  @NonNull
   public Executor providesBlockingExecutor() {
     return blockingExecutor;
   }
