@@ -1,4 +1,4 @@
-name: PR Javadoc Diff
+name: Diff Javadoc
 
 on:
   pull_request:
@@ -39,7 +39,7 @@ jobs:
 
       - name: Diff docs
         run: >
-          `# Recusively diff directoies, including new files, git style, with 3 lines of context`
+          `# Recursively diff directories, including new files, git style, with 3 lines of context`
           diff -wEburN ~/diff/original ~/diff/modified
           `# Remove the first line and new file signifier of the output`
           | tail -n +2
