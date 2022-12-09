@@ -57,10 +57,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
             .add(Dependency.required(blockingExecutor))
             .add(Dependency.required(lightweightExecutor))
-            .factory(
-                c ->
-                    buildFirebaseAppDistribution(
-                        c, c.get(blockingExecutor), c.get(lightweightExecutor)))
+            .factory(c -> buildFirebaseAppDistribution(c, blockingExecutor, lightweightExecutor))
             // construct FirebaseAppDistribution instance on startup so we can register for
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
@@ -69,8 +66,12 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
   }
 
   private FirebaseAppDistribution buildFirebaseAppDistribution(
-      ComponentContainer container, Executor blockingExecutor, Executor lightweightExecutor) {
+      ComponentContainer container,
+      Qualified<Executor> blockingExecutorType,
+      Qualified<Executor> lightweightExecutorType) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
+    Executor blockingExecutor = container.get(blockingExecutorType);
+    Executor lightweightExecutor = container.get(lightweightExecutorType);
     Context context = firebaseApp.getApplicationContext();
     Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
         container.getProvider(FirebaseInstallationsApi.class);
