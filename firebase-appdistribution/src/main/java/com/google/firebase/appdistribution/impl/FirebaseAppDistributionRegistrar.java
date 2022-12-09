@@ -20,6 +20,7 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
@@ -47,13 +48,16 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
   @Override
   public @NonNull List<Component<?>> getComponents() {
     Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
+    Qualified<Executor> lightweightExecutor =
+        Qualified.qualified(Lightweight.class, Executor.class);
     return Arrays.asList(
         Component.builder(FirebaseAppDistribution.class)
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
             .add(Dependency.required(blockingExecutor))
-            .factory(c -> buildFirebaseAppDistribution(c, c.get(blockingExecutor)))
+            .add(Dependency.required(lightweightExecutor))
+            .factory(c -> buildFirebaseAppDistribution(c, blockingExecutor, lightweightExecutor))
             // construct FirebaseAppDistribution instance on startup so we can register for
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
@@ -62,8 +66,12 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
   }
 
   private FirebaseAppDistribution buildFirebaseAppDistribution(
-      ComponentContainer container, Executor blockingExecutor) {
+      ComponentContainer container,
+      Qualified<Executor> blockingExecutorType,
+      Qualified<Executor> lightweightExecutorType) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
+    Executor blockingExecutor = container.get(blockingExecutorType);
+    Executor lightweightExecutor = container.get(lightweightExecutorType);
     Context context = firebaseApp.getApplicationContext();
     Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
         container.getProvider(FirebaseInstallationsApi.class);
@@ -86,7 +94,8 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             new ApkUpdater(firebaseApp, new ApkInstaller(), blockingExecutor),
             new AabUpdater(blockingExecutor),
             signInStorage,
-            lifecycleNotifier);
+            lifecycleNotifier,
+            lightweightExecutor);
 
     if (context instanceof Application) {
       Application firebaseApplication = (Application) context;
