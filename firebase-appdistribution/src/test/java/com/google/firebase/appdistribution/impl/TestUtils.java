@@ -82,9 +82,13 @@ final class TestUtils {
     return onCompleteListener.await();
   }
 
+  static void awaitTermination(ExecutorService executorService) throws InterruptedException {
+    executorService.awaitTermination(100, TimeUnit.MILLISECONDS);
+  }
+
   static void awaitAsyncOperations(ExecutorService executorService) throws InterruptedException {
     // Await anything enqueued to the executor
-    executorService.awaitTermination(100, TimeUnit.MILLISECONDS);
+    awaitTermination(executorService);
 
     // Idle the main looper, which is also running these tests, so any Task or lifecycle callbacks
     // can be handled. See http://robolectric.org/blog/2019/06/04/paused-looper/ for more info.
