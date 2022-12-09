@@ -38,7 +38,7 @@ import com.google.firebase.heartbeatinfo.HeartBeatController;
 import com.google.firebase.inject.Provider;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
@@ -51,7 +51,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   private final List<AppCheckListener> appCheckListenerList;
   private final StorageHelper storageHelper;
   private final TokenRefreshManager tokenRefreshManager;
-  private final ExecutorService backgroundExecutor;
+  private final Executor backgroundExecutor;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Task<Void> retrieveStoredTokenTask;
   private final Clock clock;
@@ -63,7 +63,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   public DefaultFirebaseAppCheck(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<HeartBeatController> heartBeatController,
-      @Background ExecutorService backgroundExecutor,
+      @Background Executor backgroundExecutor,
       @Blocking ScheduledExecutorService scheduledExecutorService) {
     checkNotNull(firebaseApp);
     checkNotNull(heartBeatController);
@@ -81,7 +81,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
     this.clock = new Clock.DefaultClock();
   }
 
-  private Task<Void> retrieveStoredAppCheckTokenInBackground(@NonNull ExecutorService executor) {
+  private Task<Void> retrieveStoredAppCheckTokenInBackground(@NonNull Executor executor) {
     TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
     executor.execute(
         () -> {

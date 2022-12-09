@@ -29,7 +29,7 @@ import com.google.firebase.heartbeatinfo.HeartBeatController;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -44,8 +44,7 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
 
   @Override
   public List<Component<?>> getComponents() {
-    Qualified<ExecutorService> backgroundExecutorService =
-        Qualified.qualified(Background.class, ExecutorService.class);
+    Qualified<Executor> backgroundExecutor = Qualified.qualified(Background.class, Executor.class);
     Qualified<ScheduledExecutorService> blockingScheduledExecutorService =
         Qualified.qualified(Blocking.class, ScheduledExecutorService.class);
 
@@ -53,7 +52,7 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
         Component.builder(FirebaseAppCheck.class, (InternalAppCheckTokenProvider.class))
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(backgroundExecutorService))
+            .add(Dependency.required(backgroundExecutor))
             .add(Dependency.required(blockingScheduledExecutorService))
             .add(Dependency.optionalProvider(HeartBeatController.class))
             .factory(
@@ -61,7 +60,7 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
                     new DefaultFirebaseAppCheck(
                         container.get(FirebaseApp.class),
                         container.getProvider(HeartBeatController.class),
-                        container.get(backgroundExecutorService),
+                        container.get(backgroundExecutor),
                         container.get(blockingScheduledExecutorService)))
             .alwaysEager()
             .build(),

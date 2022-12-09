@@ -17,15 +17,15 @@ package com.google.firebase.appcheck.internal;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
+import android.os.Looper;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
@@ -33,8 +33,8 @@ import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.AppCheckTokenResult;
 import com.google.firebase.appcheck.FirebaseAppCheck.AppCheckListener;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.heartbeatinfo.HeartBeatController;
-import java.util.concurrent.ScheduledExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,11 +44,12 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
+import org.robolectric.annotation.LooperMode.Mode;
 
 /** Tests for {@link DefaultFirebaseAppCheck}. */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-@LooperMode(LooperMode.Mode.LEGACY)
+@LooperMode(Mode.PAUSED)
 public class DefaultFirebaseAppCheckTest {
 
   private static final String EXCEPTION_TEXT = "exceptionText";
@@ -82,8 +83,10 @@ public class DefaultFirebaseAppCheckTest {
         new DefaultFirebaseAppCheck(
             mockFirebaseApp,
             () -> mockHeartBeatController,
-            MoreExecutors.newDirectExecutorService(),
-            mock(ScheduledExecutorService.class));
+            TestOnlyExecutors.background(),
+            TestOnlyExecutors.blocking());
+
+    shadowOf(Looper.getMainLooper()).idle();
   }
 
   @Test
@@ -94,8 +97,8 @@ public class DefaultFirebaseAppCheckTest {
           new DefaultFirebaseAppCheck(
               null,
               () -> mockHeartBeatController,
-              MoreExecutors.newDirectExecutorService(),
-              mock(ScheduledExecutorService.class));
+              TestOnlyExecutors.background(),
+              TestOnlyExecutors.blocking());
         });
   }
 
@@ -105,10 +108,7 @@ public class DefaultFirebaseAppCheckTest {
         NullPointerException.class,
         () -> {
           new DefaultFirebaseAppCheck(
-              mockFirebaseApp,
-              null,
-              MoreExecutors.newDirectExecutorService(),
-              mock(ScheduledExecutorService.class));
+              mockFirebaseApp, null, TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
         });
   }
 
@@ -343,6 +343,7 @@ public class DefaultFirebaseAppCheckTest {
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
 
     defaultFirebaseAppCheck.getToken(/* forceRefresh= */ true);
+    shadowOf(Looper.getMainLooper()).idle();
 
     verify(mockAppCheckProvider).getToken();
   }
