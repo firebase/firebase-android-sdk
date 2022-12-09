@@ -14,11 +14,13 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import com.google.firebase.appdistribution.UpdateTask;
 import java.util.concurrent.Executor;
 
 class TaskUtils {
@@ -30,6 +32,14 @@ class TaskUtils {
    */
   interface Operation<TResult> {
     TResult run() throws FirebaseAppDistributionException;
+  }
+
+  /**
+   * A function that is called to continue execution when a {@link Task} succeeds, and returns an
+   * {@link UpdateTask}.
+   */
+  interface UpdateTaskContinuation<TResult> {
+    UpdateTask then(TResult result) throws FirebaseAppDistributionException;
   }
 
   /**
@@ -109,6 +119,28 @@ class TaskUtils {
     if (task != null && !task.isComplete()) {
       task.setResult();
     }
+  }
+
+  /**
+   * Returns an {@link UpdateTask} that will be completed with the result of applying the specified
+   * {@link UpdateTaskContinuation} to the given {@link Task} when the task completes successfully.
+   *
+   * <p>This is equivalent to {@link Task#onSuccessTask(Executor, SuccessContinuation)} but for a
+   * continuation that returns an {@link UpdateTask}.
+   */
+  static <T> UpdateTask onSuccessUpdateTask(
+      Task<T> task, Executor executor, UpdateTaskContinuation<T> continuation) {
+    UpdateTaskImpl updateTask = new UpdateTaskImpl();
+    task.addOnSuccessListener(
+        executor,
+        result -> {
+          try {
+            updateTask.shadow(continuation.then(result));
+          } catch (Throwable t) {
+            updateTask.setException(FirebaseAppDistributionExceptions.wrap(t));
+          }
+        });
+    return updateTask;
   }
 
   private TaskUtils() {}
