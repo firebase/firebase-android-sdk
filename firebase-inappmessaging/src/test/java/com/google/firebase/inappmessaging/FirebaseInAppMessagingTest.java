@@ -55,6 +55,7 @@ import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCa
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
 import io.reactivex.Maybe;
+import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -149,7 +150,11 @@ public class FirebaseInAppMessagingTest {
   @Mock private DisplayCallbacksFactory displayCallbacksFactory;
   @Mock private FirebaseInAppMessagingDisplayCallbacks displayCallbacks;
   @Mock private ProgramaticContextualTriggers programaticContextualTriggers;
-  @Mock DeveloperListenerManager developerListenerManager = new DeveloperListenerManager();
+
+  @Mock
+  DeveloperListenerManager developerListenerManager =
+      new DeveloperListenerManager(Executors.newSingleThreadExecutor());
+
   FirebaseApp firebaseApp1;
   FirebaseOptions options;
 

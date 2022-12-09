@@ -26,6 +26,7 @@ import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayErrorListener;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingImpressionListener;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,7 +52,7 @@ public class DeveloperListenerManagerTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    developerListenerManager = new DeveloperListenerManager();
+    developerListenerManager = new DeveloperListenerManager(Executors.newSingleThreadExecutor());
   }
 
   @Test
