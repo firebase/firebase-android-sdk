@@ -21,6 +21,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.annotations.concurrent.Blocking;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
@@ -40,14 +41,10 @@ public class DefaultTokenRefresher {
   private volatile ScheduledFuture<?> refreshFuture;
   private volatile long delayAfterFailureSeconds;
 
-  DefaultTokenRefresher(@NonNull DefaultFirebaseAppCheck firebaseAppCheck) {
-    this(checkNotNull(firebaseAppCheck), firebaseAppCheck.getScheduledExecutorService());
-  }
-
-  @VisibleForTesting
   DefaultTokenRefresher(
-      DefaultFirebaseAppCheck firebaseAppCheck, ScheduledExecutorService scheduledExecutorService) {
-    this.firebaseAppCheck = firebaseAppCheck;
+      @NonNull DefaultFirebaseAppCheck firebaseAppCheck,
+      @Blocking ScheduledExecutorService scheduledExecutorService) {
+    this.firebaseAppCheck = checkNotNull(firebaseAppCheck);
     this.scheduledExecutorService = scheduledExecutorService;
     this.delayAfterFailureSeconds = UNSET_DELAY;
   }

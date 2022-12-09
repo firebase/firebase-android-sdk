@@ -52,7 +52,6 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   private final StorageHelper storageHelper;
   private final TokenRefreshManager tokenRefreshManager;
   private final Executor backgroundExecutor;
-  private final ScheduledExecutorService scheduledExecutorService;
   private final Task<Void> retrieveStoredTokenTask;
   private final Clock clock;
 
@@ -74,9 +73,11 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
     this.storageHelper =
         new StorageHelper(firebaseApp.getApplicationContext(), firebaseApp.getPersistenceKey());
     this.tokenRefreshManager =
-        new TokenRefreshManager(firebaseApp.getApplicationContext(), /* firebaseAppCheck= */ this);
+        new TokenRefreshManager(
+            firebaseApp.getApplicationContext(),
+            /* firebaseAppCheck= */ this,
+            scheduledExecutorService);
     this.backgroundExecutor = backgroundExecutor;
-    this.scheduledExecutorService = scheduledExecutorService;
     this.retrieveStoredTokenTask = retrieveStoredAppCheckTokenInBackground(backgroundExecutor);
     this.clock = new Clock.DefaultClock();
   }
@@ -248,11 +249,6 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   @NonNull
   Provider<HeartBeatController> getHeartbeatControllerProvider() {
     return heartbeatControllerProvider;
-  }
-
-  @NonNull
-  ScheduledExecutorService getScheduledExecutorService() {
-    return scheduledExecutorService;
   }
 
   /** Sets the in-memory cached {@link AppCheckToken}. */
