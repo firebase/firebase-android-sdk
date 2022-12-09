@@ -25,7 +25,6 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
-import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -33,6 +32,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
@@ -41,6 +41,7 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
+import java.util.concurrent.Executor;
 
 /**
  * This class is the "real" implementation of the Firebase App Distribution API which should only be
@@ -57,14 +58,10 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private final ApkUpdater apkUpdater;
   private final AabUpdater aabUpdater;
   private final SignInStorage signInStorage;
-
-  private final Object cachedNewReleaseLock = new Object();
-
-  @GuardedBy("cachedNewReleaseLock")
-  private AppDistributionReleaseInternal cachedNewRelease;
-
+  private final SequentialReference<AppDistributionReleaseInternal> cachedNewRelease;
   private TaskCache<UpdateTask> updateIfNewReleaseAvailableTaskCache = new TaskCache<>();
   private TaskCache<Task<AppDistributionRelease>> checkForNewReleaseTaskCache = new TaskCache<>();
+  @Lightweight private Executor lightweightExecutor;
   private AlertDialog updateConfirmationDialog;
   private AlertDialog signInConfirmationDialog;
   @Nullable private Activity dialogHostActivity = null;
@@ -83,7 +80,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       @NonNull ApkUpdater apkUpdater,
       @NonNull AabUpdater aabUpdater,
       @NonNull SignInStorage signInStorage,
-      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier) {
+      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
+      @NonNull @Lightweight Executor lightweightExecutor) {
     this.firebaseApp = firebaseApp;
     this.testerSignInManager = testerSignInManager;
     this.newReleaseFetcher = newReleaseFetcher;
@@ -91,6 +89,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     this.aabUpdater = aabUpdater;
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
+    this.cachedNewRelease = new SequentialReference<>(lightweightExecutor);
+    this.lightweightExecutor = lightweightExecutor;
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
     lifecycleNotifier.addOnActivityPausedListener(this::onActivityPaused);
     lifecycleNotifier.addOnActivityResumedListener(this::onActivityResumed);
@@ -110,9 +110,10 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
           lifecycleNotifier
               .applyToForegroundActivityTask(this::showSignInConfirmationDialog)
-              .onSuccessTask(unused -> signInTester())
-              .onSuccessTask(unused -> checkForNewRelease())
+              .onSuccessTask(lightweightExecutor, unused -> signInTester())
+              .onSuccessTask(lightweightExecutor, unused -> checkForNewRelease())
               .continueWithTask(
+                  lightweightExecutor,
                   task -> {
                     if (!task.isSuccessful()) {
                       postProgressToCachedUpdateIfNewReleaseTask(
@@ -141,13 +142,16 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                         activity -> showUpdateConfirmationDialog(activity, release));
                   })
               .onSuccessTask(
+                  lightweightExecutor,
                   unused ->
                       updateApp(true)
                           .addOnProgressListener(
+                              lightweightExecutor,
                               updateProgress ->
                                   postProgressToCachedUpdateIfNewReleaseTask(
                                       updateTask, updateProgress)))
               .addOnFailureListener(
+                  lightweightExecutor,
                   exception -> setCachedUpdateIfNewReleaseCompletionError(updateTask, exception));
 
           return updateTask;
@@ -214,8 +218,9 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void signOutTester() {
-    setCachedNewRelease(null);
-    signInStorage.setSignInStatus(false);
+    cachedNewRelease
+        .set(null)
+        .addOnSuccessListener(lightweightExecutor, unused -> signInStorage.setSignInStatus(false));
   }
 
   @Override
@@ -223,35 +228,32 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   // TODO(b/261014422): Use an explicit executor in continuations.
   @SuppressLint("TaskMainThread")
   public synchronized Task<AppDistributionRelease> checkForNewRelease() {
-    return checkForNewReleaseTaskCache.getOrCreateTask(
-        () -> {
-          if (!isTesterSignedIn()) {
-            return Tasks.forException(
-                new FirebaseAppDistributionException(
-                    "Tester is not signed in", AUTHENTICATION_FAILURE));
-          }
+    if (!isTesterSignedIn()) {
+      return Tasks.forException(
+          new FirebaseAppDistributionException("Tester is not signed in", AUTHENTICATION_FAILURE));
+    }
 
-          return newReleaseFetcher
-              .checkForNewRelease()
-              .onSuccessTask(
-                  appDistributionReleaseInternal -> {
-                    setCachedNewRelease(appDistributionReleaseInternal);
-                    return Tasks.forResult(
-                        ReleaseUtils.convertToAppDistributionRelease(
-                            appDistributionReleaseInternal));
-                  })
-              .addOnFailureListener(
-                  e -> {
-                    if (e instanceof FirebaseAppDistributionException
-                        && ((FirebaseAppDistributionException) e).getErrorCode()
-                            == AUTHENTICATION_FAILURE) {
-                      // If CheckForNewRelease returns authentication error, the FID is no longer
-                      // valid or does not have access to the latest release. So sign out the tester
-                      // to force FID re-registration
-                      signOutTester();
-                    }
-                  });
-        });
+    return checkForNewReleaseTaskCache.getOrCreateTask(
+        () ->
+            newReleaseFetcher
+                .checkForNewRelease()
+                .onSuccessTask(lightweightExecutor, release -> cachedNewRelease.set(release))
+                .onSuccessTask(
+                    lightweightExecutor,
+                    release ->
+                        Tasks.forResult(ReleaseUtils.convertToAppDistributionRelease(release)))
+                .addOnFailureListener(
+                    lightweightExecutor,
+                    e -> {
+                      if (e instanceof FirebaseAppDistributionException
+                          && ((FirebaseAppDistributionException) e).getErrorCode()
+                              == AUTHENTICATION_FAILURE) {
+                        // If CheckForNewRelease returns authentication error, the FID is no longer
+                        // valid or does not have access to the latest release. So sign out the
+                        // tester to force FID re-registration
+                        signOutTester();
+                      }
+                    }));
   }
 
   @Override
@@ -265,34 +267,36 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
    * basic configuration and false for advanced configuration.
    */
   private UpdateTask updateApp(boolean showDownloadInNotificationManager) {
-    synchronized (cachedNewReleaseLock) {
-      if (!isTesterSignedIn()) {
-        UpdateTaskImpl updateTask = new UpdateTaskImpl();
-        updateTask.setException(
-            new FirebaseAppDistributionException(
-                "Tester is not signed in", AUTHENTICATION_FAILURE));
-        return updateTask;
-      }
-      if (cachedNewRelease == null) {
-        LogWrapper.getInstance().v("New release not found.");
-        return getErrorUpdateTask(
-            new FirebaseAppDistributionException(
-                ErrorMessages.RELEASE_NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
-      }
-      if (cachedNewRelease.getDownloadUrl() == null) {
-        LogWrapper.getInstance().v("Download failed to execute.");
-        return getErrorUpdateTask(
-            new FirebaseAppDistributionException(
-                ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
-                FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
-      }
-
-      if (cachedNewRelease.getBinaryType() == BinaryType.AAB) {
-        return aabUpdater.updateAab(cachedNewRelease);
-      } else {
-        return apkUpdater.updateApk(cachedNewRelease, showDownloadInNotificationManager);
-      }
+    if (!isTesterSignedIn()) {
+      UpdateTaskImpl updateTask = new UpdateTaskImpl();
+      updateTask.setException(
+          new FirebaseAppDistributionException("Tester is not signed in", AUTHENTICATION_FAILURE));
+      return updateTask;
     }
+    return TaskUtils.onSuccessUpdateTask(
+        cachedNewRelease.get(),
+        lightweightExecutor,
+        release -> {
+          if (release == null) {
+            LogWrapper.getInstance().v("New release not found.");
+            return getErrorUpdateTask(
+                new FirebaseAppDistributionException(
+                    ErrorMessages.RELEASE_NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
+          }
+          if (release.getDownloadUrl() == null) {
+            LogWrapper.getInstance().v("Download failed to execute.");
+            return getErrorUpdateTask(
+                new FirebaseAppDistributionException(
+                    ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
+                    FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
+          }
+
+          if (release.getBinaryType() == BinaryType.AAB) {
+            return aabUpdater.updateAab(release);
+          } else {
+            return apkUpdater.updateApk(release, showDownloadInNotificationManager);
+          }
+        });
   }
 
   @VisibleForTesting
@@ -313,10 +317,13 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
             new FirebaseAppDistributionException(
                 ErrorMessages.HOST_ACTIVITY_INTERRUPTED, HOST_ACTIVITY_INTERRUPTED));
       } else {
-        synchronized (cachedNewReleaseLock) {
-          showUpdateConfirmationDialog(
-              activity, ReleaseUtils.convertToAppDistributionRelease(cachedNewRelease));
-        }
+        cachedNewRelease
+            .get()
+            .addOnSuccessListener(
+                lightweightExecutor,
+                release ->
+                    showUpdateConfirmationDialog(
+                        activity, ReleaseUtils.convertToAppDistributionRelease(release)));
       }
     }
   }
@@ -342,17 +349,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   @VisibleForTesting
-  void setCachedNewRelease(@Nullable AppDistributionReleaseInternal newRelease) {
-    synchronized (cachedNewReleaseLock) {
-      cachedNewRelease = newRelease;
-    }
-  }
-
-  @VisibleForTesting
-  AppDistributionReleaseInternal getCachedNewRelease() {
-    synchronized (cachedNewReleaseLock) {
-      return cachedNewRelease;
-    }
+  SequentialReference<AppDistributionReleaseInternal> getCachedNewRelease() {
+    return cachedNewRelease;
   }
 
   private Task<Void> showUpdateConfirmationDialog(
