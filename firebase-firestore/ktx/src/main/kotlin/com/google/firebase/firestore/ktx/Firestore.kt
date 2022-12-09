@@ -16,8 +16,10 @@ package com.google.firebase.firestore.ktx
 
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
+import com.google.firebase.FirebaseOptions
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
+import com.google.firebase.components.Dependency
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldPath
@@ -27,6 +29,7 @@ import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QueryDocumentSnapshot
 import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.ktx.config.FirestoreConfiguration
 import com.google.firebase.firestore.util.Executors.BACKGROUND_EXECUTOR
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
@@ -189,7 +192,19 @@ internal const val LIBRARY_NAME: String = "fire-fst-ktx"
 @Keep
 class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> =
-    listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+    listOf(
+      Component.builder(NewFirestore::class.java)
+        .add(Dependency.optional(FirestoreConfiguration::class.java))
+        .add(Dependency.required(FirebaseOptions::class.java))
+        .factory { c ->
+          NewFirestore(
+            c.get(FirestoreConfiguration::class.java),
+            c.get(FirebaseOptions::class.java)
+          )
+        }
+        .build(),
+      LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME)
+    )
 }
 
 /**
@@ -238,5 +253,19 @@ fun Query.snapshots(
         }
       }
     awaitClose { registration.remove() }
+  }
+}
+
+class NewFirestore
+internal constructor(
+  private val config: FirestoreConfiguration?,
+  private val options: FirebaseOptions
+) {
+  init {
+    // reconcile firebaseOptions and firestore config
+  }
+
+  companion object {
+    fun getInstance(app: FirebaseApp): NewFirestore = app.get(NewFirestore::class.java)
   }
 }

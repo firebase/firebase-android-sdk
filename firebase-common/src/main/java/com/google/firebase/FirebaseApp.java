@@ -430,6 +430,10 @@ public class FirebaseApp {
             .addComponent(Component.of(options, FirebaseOptions.class))
             .setProcessor(new ComponentMonitor());
 
+    for (Component<?> component : discoverConfigComponents()) {
+      builder.addComponent(component);
+    }
+
     // Don't provide StartupTime in direct boot mode or if Firebase was manually started
     if (UserManagerCompat.isUserUnlocked(applicationContext)
         && FirebaseInitProvider.isCurrentlyInitializing()) {
@@ -456,6 +460,21 @@ public class FirebaseApp {
         });
 
     FirebaseTrace.popTrace(); // Firebase
+  }
+
+  private static List<Component<?>> discoverConfigComponents() {
+    String configClassName = getConfigClassName();
+    if (configClassName == null) {
+      return Collections.emptyList();
+    }
+    // TODO: load configClassName class and return configClass.configure().getConfigs()
+    return Collections.emptyList();
+  }
+
+  @Nullable
+  private static String getConfigClassName() {
+    // TODO: not implemented
+    return null;
   }
 
   private void checkNotDeleted() {
