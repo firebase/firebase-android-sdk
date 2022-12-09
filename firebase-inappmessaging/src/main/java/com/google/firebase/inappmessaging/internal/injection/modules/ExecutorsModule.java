@@ -1,5 +1,6 @@
 package com.google.firebase.inappmessaging.internal.injection.modules;
 
+import androidx.annotation.NonNull;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
 import dagger.Module;
@@ -13,7 +14,9 @@ public class ExecutorsModule {
   private final Executor backgroundExecutor;
   private final Executor blockingExecutor;
 
-  public ExecutorsModule(Executor backgroundExecutor, Executor blockingExecutor) {
+  public ExecutorsModule(
+      @NonNull @Background Executor backgroundExecutor,
+      @NonNull @Blocking Executor blockingExecutor) {
     this.backgroundExecutor = backgroundExecutor;
     this.blockingExecutor = blockingExecutor;
   }

@@ -14,6 +14,7 @@
 
 package com.google.firebase.inappmessaging.internal;
 
+import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
@@ -44,7 +45,7 @@ public class DeveloperListenerManager {
   private Map<FirebaseInAppMessagingImpressionListener, ImpressionExecutorAndListener>
       registeredImpressionListeners = new HashMap<>();
 
-  public DeveloperListenerManager(Executor backgroundExecutor) {
+  public DeveloperListenerManager(@Background Executor backgroundExecutor) {
     this.backgroundExecutor = backgroundExecutor;
   }
 
