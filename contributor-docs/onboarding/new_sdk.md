@@ -188,6 +188,10 @@ For Kotlin
     src/main/kotlin/com/google/firebase/foo/FirebaseFooRegistrar.kt
   </summary>
 
+{: .warning }
+You should strongly consider using [Dependency Injection]({{ site.baseurl }}{% link best_practices/dependency_injection.md %})
+to instantiate your sdk instead of manually constructing its instance in the `factory()` below.
+
 ```kotlin
 class FirebaseFooRegistrar : ComponentRegistrar {
   override fun getComponents() =

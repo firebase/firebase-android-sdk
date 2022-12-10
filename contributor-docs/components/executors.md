@@ -187,6 +187,8 @@ all of Firebase by using the wrong one.
 
 To do that, you should prefer relying on Components to inject the right executor even in tests. This will ensure
 your tests are always using the executor that is actually used in your SDK build.
+If your SDK uses Dagger, see [Dependency Injection]({{ site.baseurl }}{% link best_practices/dependency_injection.md %})
+and [Dagger's testing guide](https://dagger.dev/dev-guide/testing).
 
 When the above is not an option, you can use `TestOnlyExecutors`, but make sure you're testing your code with
 the same executor that is used in production code:
