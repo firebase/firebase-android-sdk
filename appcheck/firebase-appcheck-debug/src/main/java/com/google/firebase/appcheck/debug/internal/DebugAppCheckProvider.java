@@ -19,7 +19,6 @@ import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 import android.annotation.SuppressLint;
 import android.util.Log;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -27,9 +26,11 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckToken;
+import com.google.firebase.appcheck.debug.InternalDebugSecretProvider;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
+import com.google.firebase.inject.Provider;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,11 +47,18 @@ public class DebugAppCheckProvider implements AppCheckProvider {
 
   // TODO(b/258273630): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
-  public DebugAppCheckProvider(@NonNull FirebaseApp firebaseApp, @Nullable String debugSecret) {
+  public DebugAppCheckProvider(
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull Provider<InternalDebugSecretProvider> debugSecretProvider) {
     checkNotNull(firebaseApp);
     this.networkClient = new NetworkClient(firebaseApp);
     this.backgroundExecutor = Executors.newCachedThreadPool();
     this.retryManager = new RetryManager();
+
+    String debugSecret = null;
+    if (debugSecretProvider.get() != null) {
+      debugSecret = debugSecretProvider.get().getDebugSecret();
+    }
     this.debugSecretTask =
         debugSecret == null
             ? determineDebugSecret(firebaseApp, this.backgroundExecutor)

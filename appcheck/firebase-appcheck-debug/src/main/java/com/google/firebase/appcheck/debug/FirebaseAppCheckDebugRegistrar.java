@@ -15,8 +15,11 @@
 package com.google.firebase.appcheck.debug;
 
 import com.google.android.gms.common.annotation.KeepForSdk;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.appcheck.debug.internal.DebugAppCheckProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
+import com.google.firebase.components.Dependency;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
@@ -33,6 +36,17 @@ public class FirebaseAppCheckDebugRegistrar implements ComponentRegistrar {
 
   @Override
   public List<Component<?>> getComponents() {
-    return Arrays.asList(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
+    return Arrays.asList(
+        Component.builder(DebugAppCheckProvider.class)
+            .name(LIBRARY_NAME)
+            .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.optionalProvider(InternalDebugSecretProvider.class))
+            .factory(
+                (container) ->
+                    new DebugAppCheckProvider(
+                        container.get(FirebaseApp.class),
+                        container.getProvider(InternalDebugSecretProvider.class)))
+            .build(),
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }
