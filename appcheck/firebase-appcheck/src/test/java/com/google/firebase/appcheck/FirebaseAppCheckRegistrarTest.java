@@ -17,10 +17,15 @@ package com.google.firebase.appcheck;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
 import com.google.firebase.heartbeatinfo.HeartBeatController;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -39,6 +44,9 @@ public class FirebaseAppCheckRegistrarTest {
     assertThat(firebaseAppCheckComponent.getDependencies())
         .containsExactly(
             Dependency.required(FirebaseApp.class),
+            Dependency.required(Qualified.qualified(Background.class, Executor.class)),
+            Dependency.required(
+                Qualified.qualified(Blocking.class, ScheduledExecutorService.class)),
             Dependency.optionalProvider(HeartBeatController.class));
     assertThat(firebaseAppCheckComponent.isAlwaysEager()).isTrue();
   }
