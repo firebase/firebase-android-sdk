@@ -1,3 +1,7 @@
+---
+nav_order: 1
+---
+
 # Contributor documentation
 
 This site is a collection of docs and best practices for contributors to Firebase Android SDKs.

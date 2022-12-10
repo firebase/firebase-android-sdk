@@ -1,3 +1,7 @@
+---
+nav_order: 3
+---
+
 # How Firebase Works
 
 ## Background

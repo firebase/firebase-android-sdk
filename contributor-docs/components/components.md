@@ -1,6 +1,7 @@
 ---
 has_children: true
 permalink: /components
+nav_order: 4
 ---
 
 # Firebase Components
