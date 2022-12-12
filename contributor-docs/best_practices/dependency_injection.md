@@ -6,7 +6,7 @@ parent: Best Practices
 
 While [Firebase Components]({{ site.baseurl }}{% link components/components.md %}) provides basic
 Dependency Injection capabilities for interop between Firebase SDKs, it's not ideal as a general purpose
-DI framework or a couple of reasons, to name a few:
+DI framework for a few reasons, to name some:
 
 * It's verbose, i.e. requires manually specifying dependencies and constructing instances of components in Component
   definitions.
@@ -15,8 +15,8 @@ DI framework or a couple of reasons, to name a few:
 As a result using [Firebase Components]({{ site.baseurl }}{% link components/components.md %}) is appropriate only
 for inter-SDK injection and scoping instances per `FirebaseApp`.
 
-On the other hand, manually instantiating SDKs is often tedious, errorprone, and often leads to code smells
-that make code less testable and coulpes it to implementation rather than the interface. For more context see
+On the other hand, manually instantiating SDKs is often tedious, errorprone, and leads to code smells
+that make code less testable and couples it to the implementation rather than the interface. For more context see
 [Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection) and  [Motivation](https://github.com/google/guice/wiki/Motivation).
 
 {: .important }
@@ -29,13 +29,13 @@ See: [Dagger docs](https://dagger.dev)
 See: [Dagger tutorial](https://dagger.dev/tutorial/)
 
 {: .highlight }
-While Hilt is the recommended way to use dagger in Android `applications, it's not suitable for SDK/library development.
+While Hilt is the recommended way to use dagger in Android applications, it's not suitable for SDK/library development.
 
 ## How to get started
 
-Since [Dagger](https://dagger.dev) does not strictly follow semver and requires the dagger-compiler version to match with the dagger library version,
+Since [Dagger](https://dagger.dev) does not strictly follow semver and requires the dagger-compiler version to match the dagger library version,
 it's not safe to depend on it via a pom level dependency, see [This comment](https://github.com/firebase/firebase-android-sdk/issues/1677#issuecomment-645669608) for context. For this reason in Firebase SDKs we "vendor/repackage" Dagger into the SDK itself under
-`com.google.firebase.{sdkname}.dagger`, while it incurs a size increase, it's usually on the order of a couple of KB and is considered
+`com.google.firebase.{sdkname}.dagger`. While it incurs in a size increase, it's usually on the order of a couple of KB and is considered
 negligible.
 
 To use Dagger in your SDK use the following in your Gradle build file:
@@ -82,7 +82,7 @@ Here's a simple way to define the dagger component:
 @Component(modules = MySdkComponent.MainModule::class)
 @Singleton
 interface MySdkComponent {
-  // Informs dagger that this is one of the type that we want to be able to create
+  // Informs dagger that this is one of the types we want to be able to create
   // In this example we only care about MySdk
   fun getMySdk() : MySdk
 
@@ -122,7 +122,7 @@ class MySdkInteropAdapter @Inject constructor(private val interop: com.google.fi
 
 ## Scope
 
-Unline Component, Dagger does not use singleton scope by default and instead injects a new instance of a type at each injection point,
+Unlike Component, Dagger does not use singleton scope by default and instead injects a new instance of a type at each injection point,
 in the example above we want `MySdk` and `MySdkInteropAdapter` to be singletons so they are are annotated with `@Singleton`.
 
 See [Scoped bindings](https://dagger.dev/dev-guide/#singletons-and-scoped-bindings) for more details.
