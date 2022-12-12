@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import android.app.ActivityManager;
@@ -39,8 +40,12 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution;
+import com.google.firebase.crashlytics.internal.settings.Settings;
+import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
+import com.google.firebase.crashlytics.internal.settings.TestSettings;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,6 +64,7 @@ public class CrashlyticsReportDataCaptureTest {
   private String eventType;
   private int eventThreadImportance;
   private int maxChainedExceptions;
+  private SettingsProvider testSettingsProvider;
 
   @Mock private DevelopmentPlatformProvider developmentPlatformProvider;
 
@@ -83,14 +89,21 @@ public class CrashlyticsReportDataCaptureTest {
     eventType = "crash";
     eventThreadImportance = 4;
     maxChainedExceptions = 8;
+
+    Settings testSettings = new TestSettings(3);
+    testSettingsProvider = mock(SettingsProvider.class);
+    when(testSettingsProvider.getSettingsSync()).thenReturn(testSettings);
+    when(testSettingsProvider.getSettingsAsync()).thenReturn(Tasks.forResult(testSettings));
     initDataCapture();
   }
 
   private void initDataCapture() throws Exception {
+    List<BuildIdInfo> buildIdInfoList = new ArrayList<>();
+    buildIdInfoList.add(new BuildIdInfo("lib.so", "x86", "aabb"));
     AppData appData =
-        AppData.create(context, idManager, "googleAppId", "buildId", developmentPlatformProvider);
+        AppData.create(context, idManager, "googleAppId", "buildId", buildIdInfoList, developmentPlatformProvider);
     dataCapture =
-        new CrashlyticsReportDataCapture(context, idManager, appData, stackTraceTrimmingStrategy);
+        new CrashlyticsReportDataCapture(context, idManager, appData, stackTraceTrimmingStrategy, testSettingsProvider);
   }
 
   @Test

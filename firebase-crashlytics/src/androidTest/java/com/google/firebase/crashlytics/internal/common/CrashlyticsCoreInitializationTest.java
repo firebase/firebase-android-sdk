@@ -41,6 +41,8 @@ import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
@@ -256,10 +258,13 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
   }
 
   private void setupAppData(String buildId) {
+    List<BuildIdInfo> buildIdInfoList = new ArrayList<>();
+    buildIdInfoList.add(new BuildIdInfo("lib.so", "x86", "aabb"));
     appData =
         new AppData(
             GOOGLE_APP_ID,
             buildId,
+            buildIdInfoList,
             "installerPackageName",
             "packageName",
             "versionCode",

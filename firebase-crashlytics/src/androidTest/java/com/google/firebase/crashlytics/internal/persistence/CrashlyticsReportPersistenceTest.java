@@ -56,7 +56,7 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     Settings.SessionData sessionData =
         new Settings.SessionData(maxCustomExceptionEvents, maxCompleteSessionsCount);
     Settings settings =
-        new Settings(0, sessionData, new FeatureFlagData(true, false), 3, 0, 1.0, 1.0, 1);
+        new Settings(0, sessionData, new FeatureFlagData(true, false, false), 3, 0, 1.0, 1.0, 1);
 
     when(settingsProvider.getSettingsSync()).thenReturn(settings);
     return settingsProvider;
@@ -293,9 +293,9 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     Settings.SessionData sessionData2 = new Settings.SessionData(VERY_LARGE_UPPER_LIMIT, 8);
 
     Settings settings1 =
-        new Settings(0, sessionData1, new FeatureFlagData(true, true), 3, 0, 1.0, 1.0, 1);
+        new Settings(0, sessionData1, new FeatureFlagData(true, true, false), 3, 0, 1.0, 1.0, 1);
     Settings settings2 =
-        new Settings(0, sessionData2, new FeatureFlagData(true, true), 3, 0, 1.0, 1.0, 1);
+        new Settings(0, sessionData2, new FeatureFlagData(true, true, false), 3, 0, 1.0, 1.0, 1);
 
     when(settingsProvider.getSettingsSync()).thenReturn(settings1);
     reportPersistence = new CrashlyticsReportPersistence(fileStore, settingsProvider);
@@ -558,9 +558,9 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     Settings.SessionData sessionData2 = new Settings.SessionData(8, VERY_LARGE_UPPER_LIMIT);
 
     Settings settings1 =
-        new Settings(0, sessionData1, new FeatureFlagData(true, true), 3, 0, 1.0, 1.0, 1);
+        new Settings(0, sessionData1, new FeatureFlagData(true, true, false), 3, 0, 1.0, 1.0, 1);
     Settings settings2 =
-        new Settings(0, sessionData2, new FeatureFlagData(true, true), 3, 0, 1.0, 1.0, 1);
+        new Settings(0, sessionData2, new FeatureFlagData(true, true, false), 3, 0, 1.0, 1.0, 1);
 
     when(settingsProvider.getSettingsSync()).thenReturn(settings1);
     reportPersistence = new CrashlyticsReportPersistence(fileStore, settingsProvider);

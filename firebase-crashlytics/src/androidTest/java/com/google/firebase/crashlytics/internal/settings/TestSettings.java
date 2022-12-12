@@ -29,7 +29,7 @@ public class TestSettings extends Settings {
   }
 
   private static Settings.FeatureFlagData buildFeatureFlagData() {
-    return new Settings.FeatureFlagData(true, false);
+    return new Settings.FeatureFlagData(true, false, false);
   }
 
   private static Settings.SessionData buildSettingsData() {
