@@ -101,9 +101,16 @@ public class CrashlyticsReportDataCaptureTest {
     List<BuildIdInfo> buildIdInfoList = new ArrayList<>();
     buildIdInfoList.add(new BuildIdInfo("lib.so", "x86", "aabb"));
     AppData appData =
-        AppData.create(context, idManager, "googleAppId", "buildId", buildIdInfoList, developmentPlatformProvider);
+        AppData.create(
+            context,
+            idManager,
+            "googleAppId",
+            "buildId",
+            buildIdInfoList,
+            developmentPlatformProvider);
     dataCapture =
-        new CrashlyticsReportDataCapture(context, idManager, appData, stackTraceTrimmingStrategy, testSettingsProvider);
+        new CrashlyticsReportDataCapture(
+            context, idManager, appData, stackTraceTrimmingStrategy, testSettingsProvider);
   }
 
   @Test
