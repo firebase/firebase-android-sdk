@@ -207,6 +207,7 @@ Examples:
 ```kotlin
 val rtdbOne = Firebase.database(app) // uses default database
 val rtdbTwo = Firebase.database(app, "dbName")
+```
 
 * Firestore, functions, and others support the same usage pattern
 
