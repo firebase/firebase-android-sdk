@@ -17,9 +17,12 @@ package com.google.firebase.appcheck.playintegrity;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
 import java.util.List;
+import java.util.concurrent.Executor;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -35,7 +38,9 @@ public class FirebaseAppCheckPlayIntegrityRegistrarTest {
     assertThat(components).hasSize(2);
     Component<?> appCheckPlayIntegrityComponent = components.get(0);
     assertThat(appCheckPlayIntegrityComponent.getDependencies())
-        .containsExactly(Dependency.required(FirebaseApp.class));
+        .containsExactly(
+            Dependency.required(FirebaseApp.class),
+            Dependency.required(Qualified.qualified(Blocking.class, Executor.class)));
     assertThat(appCheckPlayIntegrityComponent.isLazy()).isTrue();
   }
 }

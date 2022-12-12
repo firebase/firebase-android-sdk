@@ -205,8 +205,7 @@ public class SafetyNetAppCheckProviderTest {
     when(mockAppCheckTokenResponse.getToken()).thenReturn(APP_CHECK_TOKEN);
     when(mockAppCheckTokenResponse.getTimeToLive()).thenReturn(TIME_TO_LIVE);
 
-    // TODO(b/258273630): Use TestOnlyExecutors.background() instead of
-    // MoreExecutors.directExecutor().
+    // TODO(b/258273630): Use TestOnlyExecutors instead of MoreExecutors.directExecutor().
     SafetyNetAppCheckProvider provider =
         new SafetyNetAppCheckProvider(
             firebaseApp,
@@ -234,8 +233,7 @@ public class SafetyNetAppCheckProviderTest {
             any(), eq(NetworkClient.SAFETY_NET), eq(mockRetryManager)))
         .thenThrow(new IOException());
 
-    // TODO(b/258273630): Use TestOnlyExecutors.background() instead of
-    // MoreExecutors.directExecutor().
+    // TODO(b/258273630): Use TestOnlyExecutors instead of MoreExecutors.directExecutor().
     SafetyNetAppCheckProvider provider =
         new SafetyNetAppCheckProvider(
             firebaseApp,
