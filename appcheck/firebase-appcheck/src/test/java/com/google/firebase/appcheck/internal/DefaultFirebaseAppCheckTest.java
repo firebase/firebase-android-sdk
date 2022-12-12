@@ -32,6 +32,7 @@ import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.AppCheckTokenResult;
 import com.google.firebase.appcheck.FirebaseAppCheck.AppCheckListener;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.heartbeatinfo.HeartBeatController;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,11 +77,14 @@ public class DefaultFirebaseAppCheckTest {
     when(mockAppCheckProviderFactory.create(any())).thenReturn(mockAppCheckProvider);
     when(mockAppCheckProvider.getToken()).thenReturn(Tasks.forResult(validDefaultAppCheckToken));
 
+    // TODO(b/258273630): Use TestOnlyExecutors.background() instead of
+    // MoreExecutors.directExecutor().
     defaultFirebaseAppCheck =
         new DefaultFirebaseAppCheck(
             mockFirebaseApp,
             () -> mockHeartBeatController,
-            MoreExecutors.newDirectExecutorService());
+            MoreExecutors.directExecutor(),
+            TestOnlyExecutors.blocking());
   }
 
   @Test
@@ -88,7 +92,11 @@ public class DefaultFirebaseAppCheckTest {
     assertThrows(
         NullPointerException.class,
         () -> {
-          new DefaultFirebaseAppCheck(null, () -> mockHeartBeatController);
+          new DefaultFirebaseAppCheck(
+              null,
+              () -> mockHeartBeatController,
+              TestOnlyExecutors.background(),
+              TestOnlyExecutors.blocking());
         });
   }
 
@@ -97,7 +105,8 @@ public class DefaultFirebaseAppCheckTest {
     assertThrows(
         NullPointerException.class,
         () -> {
-          new DefaultFirebaseAppCheck(mockFirebaseApp, null);
+          new DefaultFirebaseAppCheck(
+              mockFirebaseApp, null, TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
         });
   }
 

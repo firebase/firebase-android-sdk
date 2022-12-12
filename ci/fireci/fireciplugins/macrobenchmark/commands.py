@@ -15,12 +15,15 @@
 import asyncio
 import click
 import json
+import logging
 
 from .analyze import analyzer
 from .run import runner
 from fireci import ci_command, ci_utils, uploader
 from pathlib import Path
 from typing import List
+
+logger = logging.getLogger('fireci.macrobenchmark')
 
 
 @ci_command(cls=click.Group)
@@ -38,7 +41,7 @@ def macrobenchmark():
 )
 @click.option(
   '--local/--remote',
-  required=True,
+  default=True,
   help='Run the test on local devices or Firebase Test Lab.'
 )
 @click.option(
@@ -133,27 +136,44 @@ def analyze(
   help='Whether the test is running for a pull request or a push event.'
 )
 @click.option(
+  '--changed-modules-file',
+  type=click.Path(resolve_path=True, path_type=Path),
+  help='Contains a list of changed modules in the current pull request.'
+)
+@click.option(
   '--repeat',
   default=10,
   show_default=True,
   help='Number of times to repeat the test (for obtaining more data points).'
 )
 @ci_command(group=macrobenchmark)
-def ci(pull_request, repeat):
+def ci(pull_request: bool, changed_modules_file: Path, repeat: int):
   """Run tests in CI and upload results to the metric service."""
-
-  # TODO(yifany): run tests only for affected product in pull requests
 
   output_path = Path("macrobenchmark-test-output.json")
   exception = None
+
   try:
-    asyncio.run(runner.start(build_only=False, local=False, repeat=repeat, output=output_path))
+    if pull_request:
+      asyncio.run(
+        runner.start(
+          build_only=False,
+          local=False,
+          repeat=repeat,
+          output=output_path,
+          changed_modules_file=changed_modules_file,
+        )
+      )
+    else:
+      asyncio.run(runner.start(build_only=False, local=False, repeat=repeat, output=output_path))
   except Exception as e:
+    logger.error(f"Error: {e}")
     exception = e
 
   with open(output_path) as output_file:
     output = json.load(output_file)
-    ftl_dirs = list(filter(lambda x: x['project'] == 'all-included', output))[0]['successful_runs']
+    project_name = 'test-changed' if pull_request else 'test-all'
+    ftl_dirs = list(filter(lambda x: x['project'] == project_name, output))[0]['successful_runs']
     ftl_bucket_name = 'fireescape-benchmark-results'
 
     log = ci_utils.ci_log_link()
@@ -163,7 +183,13 @@ def ci(pull_request, repeat):
     if ftl_results:
       metric_service_url = 'https://api.firebase-sdk-health-metrics.com'
       access_token = ci_utils.gcloud_identity_token()
-      uploader.post_report(startup_time_data, metric_service_url, access_token, 'startup-time')
+      uploader.post_report(
+        test_report=startup_time_data,
+        metrics_service_url=metric_service_url,
+        access_token=access_token,
+        metric_type='startup-time',
+        asynchronous=True
+      )
 
   if exception:
     raise exception

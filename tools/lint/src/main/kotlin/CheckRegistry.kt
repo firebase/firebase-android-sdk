@@ -33,6 +33,7 @@ class CheckRegistry : IssueRegistry() {
         ProviderAssignmentDetector.INVALID_PROVIDER_ASSIGNMENT,
         ThreadPoolDetector.THREAD_POOL_CREATION,
         TasksMainThreadDetector.TASK_MAIN_THREAD,
+        FirebaseAppGetDetector.ISSUE,
       )
 
   override val api: Int

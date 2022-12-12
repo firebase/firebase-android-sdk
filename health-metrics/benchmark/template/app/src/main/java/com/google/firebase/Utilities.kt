@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase;
 
-/** Fake FirebaseApp for testing purposes. */
-public class FirebaseApp {
-  public <T> T get(Class<T> anInterface) {
-    return null;
-  }
+package com.google.firebase
+
+import com.google.firebase.FirebaseApp
+
+internal fun initializeAllComponentsForBenchmark(app: FirebaseApp) {
+  app.initializeAllComponents()
 }
+
