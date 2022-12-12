@@ -29,6 +29,7 @@ import com.google.firebase.database.core.CoreTestHelpers;
 import com.google.firebase.database.core.DatabaseConfig;
 import com.google.firebase.database.core.EventTarget;
 import com.google.firebase.database.core.Path;
+import com.google.firebase.database.core.ThreadInitializer;
 import com.google.firebase.database.core.utilities.DefaultRunLoop;
 import com.google.firebase.database.core.view.QuerySpec;
 import com.google.firebase.database.snapshot.ChildKey;
@@ -42,9 +43,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -102,8 +107,55 @@ public class UnitTestHelpers {
     public void restart() {}
   }
 
-  private static class TestRunLoop extends DefaultRunLoop {
+  public static class TestRunLoop extends DefaultRunLoop {
     AtomicReference<Throwable> caughtException = new AtomicReference<Throwable>(null);
+    private class FirebaseThreadFactory implements ThreadFactory {
+
+      @Override
+      public Thread newThread(Runnable r) {
+        Thread thread = getThreadFactory().newThread(r);
+        ThreadInitializer initializer = getThreadInitializer();
+        initializer.setName(thread, "FirebaseDatabaseWorker");
+        initializer.setDaemon(thread, true);
+        initializer.setUncaughtExceptionHandler(
+                thread,
+                new Thread.UncaughtExceptionHandler() {
+                  @Override
+                  public void uncaughtException(Thread t, Throwable e) {
+                    handleException(e);
+                  }
+                });
+        return thread;
+      }
+    }
+
+    public TestRunLoop() {
+      super();
+      this.setExecutor(new ScheduledThreadPoolExecutor(1, new FirebaseThreadFactory()) {
+        @Override
+        protected void afterExecute(Runnable r, Throwable t) {
+          super.afterExecute(r, t);
+          if (t == null && r instanceof Future<?>) {
+            Future<?> future = (Future<?>) r;
+            try {
+              // Not all Futures will be done, e.g. when used with scheduledAtFixedRate
+              if (future.isDone()) {
+                future.get();
+              }
+            } catch (CancellationException ce) {
+              // Cancellation exceptions are okay, we expect them to happen sometimes
+            } catch (ExecutionException ee) {
+              t = ee.getCause();
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+            }
+          }
+          if (t != null) {
+            handleException(t);
+          }
+        }
+      });
+    }
 
     @Override
     public void handleException(Throwable e) {
@@ -166,7 +218,7 @@ public class UnitTestHelpers {
     DatabaseConfig config = new DatabaseConfig();
     config.setLogLevel(Logger.Level.DEBUG);
     config.setEventTarget(new TestEventTarget());
-    config.setRunLoop(runLoop);
+    config.setExecutorService(runLoop.getExecutorService());
     config.setFirebaseApp(FirebaseApp.getInstance());
     config.setAuthTokenProvider(
         new AndroidAuthTokenProvider(

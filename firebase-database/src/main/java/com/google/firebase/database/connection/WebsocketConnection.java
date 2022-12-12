@@ -190,8 +190,7 @@ class WebsocketConnection {
     extraHeaders.put("X-Firebase-GMPID", connectionContext.getApplicationId());
     extraHeaders.put("X-Firebase-AppCheck", appCheckToken);
     WebSocket ws = new WebSocket(connectionContext, uri, /*protocol=*/ null, extraHeaders);
-    WSClientTubesock client = new WSClientTubesock(ws);
-    return client;
+    return new WSClientTubesock(ws);
   }
 
   public void open() {

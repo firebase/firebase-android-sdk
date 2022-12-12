@@ -51,6 +51,7 @@ public class Context {
   private PersistenceManager forcedPersistenceManager;
   private boolean frozen = false;
   private boolean stopped = false;
+  private ScheduledExecutorService scheduledExecutorService;
 
   private Platform platform;
 
@@ -216,14 +217,16 @@ public class Context {
     return getPlatform().newPersistentConnection(this, this.getConnectionContext(), info, delegate);
   }
 
-  private ScheduledExecutorService getExecutorService() {
-    RunLoop loop = this.getRunLoop();
-    if (!(loop instanceof DefaultRunLoop)) {
-      // TODO: We really need to remove this option from the public DatabaseConfig
-      // object
-      throw new RuntimeException("Custom run loops are not supported!");
-    }
-    return ((DefaultRunLoop) loop).getExecutorService();
+  /**
+   * Sets the current executorService
+   * @param executorService
+   */
+  public void setExecutorService(ScheduledExecutorService executorService) {
+    this.scheduledExecutorService = executorService;
+  }
+
+  public ScheduledExecutorService getExecutorService() {
+    return this.scheduledExecutorService;
   }
 
   private void ensureLogger() {

@@ -42,6 +42,7 @@ import java.io.File;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
 
 public class AndroidPlatform implements Platform {
 
@@ -79,7 +80,7 @@ public class AndroidPlatform implements Platform {
   @Override
   public RunLoop newRunLoop(com.google.firebase.database.core.Context ctx) {
     final LogWrapper logger = ctx.getLogger("RunLoop");
-    return new DefaultRunLoop() {
+    return new DefaultRunLoop(ctx.getExecutorService()) {
       @Override
       public void handleException(final Throwable e) {
         final String message = DefaultRunLoop.messageForException(e);
