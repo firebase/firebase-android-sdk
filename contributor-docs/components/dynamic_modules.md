@@ -2,6 +2,6 @@
 parent: Firebase Components
 ---
 
-# Multibindings
+# Dynamic Module Support
 
 TODO

@@ -49,6 +49,23 @@ mermaid:
 # Enable or disable heading anchors
 heading_anchors: true
 
+callouts_level: quiet
+callouts:
+  highlight:
+    color: yellow
+  important:
+    title: Important
+    color: blue
+  new:
+    title: New
+    color: green
+  note:
+    title: Note
+    color: purple
+  warning:
+    title: Warning
+    color: red
+
 # Back to top link
 back_to_top: true
 back_to_top_text: "Back to top"
