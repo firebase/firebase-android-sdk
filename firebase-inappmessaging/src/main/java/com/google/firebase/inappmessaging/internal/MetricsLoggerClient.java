@@ -96,7 +96,7 @@ public class MetricsLoggerClient {
   }
 
   /** Log impression */
-  // TODO(b/261014173): Use an explicit executor in continuations.
+  // TODO(b/261014173): Use an explicit executor in continuations
   @SuppressLint("TaskMainThread")
   void logImpression(InAppMessage message) {
     if (!isTestCampaign(message)) {
