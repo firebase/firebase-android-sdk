@@ -158,8 +158,13 @@ class LocalDocumentsView {
       Set<DocumentKey> existenceStateChanged) {
     Map<DocumentKey, MutableDocument> recalculateDocuments = new HashMap<>();
     Map<DocumentKey, FieldMask> mutatedFields = new HashMap<>();
+    Set<DocumentKey> keysWithOverlay = new HashSet<>();
     for (MutableDocument doc : docs.values()) {
       Overlay overlay = overlays.get(doc.getKey());
+      if (overlay != null) {
+        keysWithOverlay.add(doc.getKey());
+      }
+
       // Recalculate an overlay if the document's existence state is changed due to a remote
       // event *and* the overlay is a PatchMutation. This is because document existence state
       // can change if some patch mutation's preconditions are met.
@@ -185,7 +190,10 @@ class LocalDocumentsView {
     for (Map.Entry<DocumentKey, MutableDocument> entry : docs.entrySet()) {
       result.put(
           entry.getKey(),
-          new OverlayedDocument(entry.getValue(), mutatedFields.get(entry.getKey())));
+          new OverlayedDocument(
+              entry.getValue(),
+              keysWithOverlay.contains(entry.getKey()),
+              mutatedFields.get(entry.getKey())));
     }
     return result;
   }
