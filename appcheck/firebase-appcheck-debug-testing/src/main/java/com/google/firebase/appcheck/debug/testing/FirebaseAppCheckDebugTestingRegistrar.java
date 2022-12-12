@@ -12,35 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.appcheck.safetynet;
+package com.google.firebase.appcheck.debug.testing;
 
 import com.google.android.gms.common.annotation.KeepForSdk;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.appcheck.safetynet.internal.SafetyNetAppCheckProvider;
+import com.google.firebase.appcheck.debug.BuildConfig;
+import com.google.firebase.appcheck.debug.InternalDebugSecretProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
-import com.google.firebase.components.Dependency;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * {@link ComponentRegistrar} for setting up FirebaseAppCheck safety net's dependency injections in
- * Firebase Android Components.
+ * {@link ComponentRegistrar} for setting up FirebaseAppCheck debug testing's dependency injections
+ * in Firebase Android Components.
  *
  * @hide
  */
 @KeepForSdk
-public class FirebaseAppCheckSafetyNetRegistrar implements ComponentRegistrar {
-  private static final String LIBRARY_NAME = "fire-app-check-safety-net";
+public class FirebaseAppCheckDebugTestingRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-app-check-debug-testing";
 
   @Override
   public List<Component<?>> getComponents() {
     return Arrays.asList(
-        Component.builder(SafetyNetAppCheckProvider.class)
+        Component.builder(DebugSecretProvider.class, (InternalDebugSecretProvider.class))
             .name(LIBRARY_NAME)
-            .add(Dependency.required(FirebaseApp.class))
-            .factory((container) -> new SafetyNetAppCheckProvider(container.get(FirebaseApp.class)))
+            .factory((container) -> new DebugSecretProvider())
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
