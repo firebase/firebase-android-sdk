@@ -30,14 +30,15 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.internal.AppCheckTokenResponse;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 
 public class SafetyNetAppCheckProvider implements AppCheckProvider {
 
@@ -51,19 +52,22 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
   private final Context context;
   private final Task<SafetyNetClient> safetyNetClientTask;
   private final NetworkClient networkClient;
-  private final ExecutorService backgroundExecutor;
+  private final Executor backgroundExecutor;
+  private final Executor blockingExecutor;
   private final RetryManager retryManager;
   private final String apiKey;
 
   /** @param firebaseApp the FirebaseApp to which this Factory is tied. */
-  // TODO(b/258273630): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
-  public SafetyNetAppCheckProvider(@NonNull FirebaseApp firebaseApp) {
+  public SafetyNetAppCheckProvider(
+      @NonNull FirebaseApp firebaseApp,
+      @Background Executor backgroundExecutor,
+      @Blocking Executor blockingExecutor) {
     this(
         firebaseApp,
         new NetworkClient(firebaseApp),
         GoogleApiAvailability.getInstance(),
-        Executors.newCachedThreadPool());
+        backgroundExecutor,
+        blockingExecutor);
   }
 
   @VisibleForTesting
@@ -71,7 +75,8 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
       @NonNull FirebaseApp firebaseApp,
       @NonNull NetworkClient networkClient,
       @NonNull GoogleApiAvailability googleApiAvailability,
-      @NonNull ExecutorService backgroundExecutor) {
+      @NonNull Executor backgroundExecutor,
+      @NonNull Executor blockingExecutor) {
     checkNotNull(firebaseApp);
     checkNotNull(networkClient);
     checkNotNull(googleApiAvailability);
@@ -79,7 +84,9 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
     this.context = firebaseApp.getApplicationContext();
     this.apiKey = firebaseApp.getOptions().getApiKey();
     this.backgroundExecutor = backgroundExecutor;
-    this.safetyNetClientTask = initSafetyNetClient(googleApiAvailability, this.backgroundExecutor);
+    this.blockingExecutor = blockingExecutor;
+    this.safetyNetClientTask =
+        initSafetyNetClient(this.context, googleApiAvailability, this.backgroundExecutor);
     this.networkClient = networkClient;
     this.retryManager = new RetryManager();
   }
@@ -89,18 +96,20 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
       @NonNull FirebaseApp firebaseApp,
       @NonNull SafetyNetClient safetyNetClient,
       @NonNull NetworkClient networkClient,
-      @NonNull ExecutorService backgroundExecutor,
+      @NonNull Executor backgroundExecutor,
+      @NonNull Executor blockingExecutor,
       @NonNull RetryManager retryManager) {
     this.context = firebaseApp.getApplicationContext();
     this.apiKey = firebaseApp.getOptions().getApiKey();
     this.safetyNetClientTask = Tasks.forResult(safetyNetClient);
     this.networkClient = networkClient;
     this.backgroundExecutor = backgroundExecutor;
+    this.blockingExecutor = blockingExecutor;
     this.retryManager = retryManager;
   }
 
-  private Task<SafetyNetClient> initSafetyNetClient(
-      GoogleApiAvailability googleApiAvailability, ExecutorService executor) {
+  private static Task<SafetyNetClient> initSafetyNetClient(
+      Context context, GoogleApiAvailability googleApiAvailability, Executor executor) {
     TaskCompletionSource<SafetyNetClient> taskCompletionSource = new TaskCompletionSource<>();
     executor.execute(
         () -> {
@@ -117,7 +126,7 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
     return taskCompletionSource.getTask();
   }
 
-  private String getGooglePlayServicesConnectionErrorString(int connectionResult) {
+  private static String getGooglePlayServicesConnectionErrorString(int connectionResult) {
     switch (connectionResult) {
       case ConnectionResult.SERVICE_MISSING:
         return "Google Play services is missing on this device.";
@@ -179,7 +188,7 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
 
     Task<AppCheckTokenResponse> networkTask =
         Tasks.call(
-            backgroundExecutor,
+            blockingExecutor,
             () ->
                 networkClient.exchangeAttestationForAppCheckToken(
                     request.toJsonString().getBytes(UTF_8),
