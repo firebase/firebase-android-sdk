@@ -48,7 +48,6 @@ mermaid:
 
 # Enable or disable heading anchors
 heading_anchors: true
-permalink: pretty
 
 callouts_level: quiet
 callouts:
