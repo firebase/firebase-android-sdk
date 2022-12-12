@@ -18,11 +18,13 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
+import java.util.List;
 
 /** Carries static information about the app. */
 public class AppData {
   public final String googleAppId;
   public final String buildId;
+  public final List<BuildIdInfo> buildIdInfoList;
 
   public final String installerPackageName;
 
@@ -37,6 +39,7 @@ public class AppData {
       IdManager idManager,
       String googleAppId,
       String buildId,
+      List<BuildIdInfo> buildIdInfoList,
       DevelopmentPlatformProvider developmentPlatformProvider)
       throws PackageManager.NameNotFoundException {
     final String packageName = context.getPackageName();
@@ -50,6 +53,7 @@ public class AppData {
     return new AppData(
         googleAppId,
         buildId,
+        buildIdInfoList,
         installerPackageName,
         packageName,
         versionCode,
@@ -60,6 +64,7 @@ public class AppData {
   public AppData(
       String googleAppId,
       String buildId,
+      List<BuildIdInfo> buildIdInfoList,
       String installerPackageName,
       String packageName,
       String versionCode,
@@ -67,6 +72,7 @@ public class AppData {
       DevelopmentPlatformProvider developmentPlatformProvider) {
     this.googleAppId = googleAppId;
     this.buildId = buildId;
+    this.buildIdInfoList = buildIdInfoList;
     this.installerPackageName = installerPackageName;
     this.packageName = packageName;
     this.versionCode = versionCode;

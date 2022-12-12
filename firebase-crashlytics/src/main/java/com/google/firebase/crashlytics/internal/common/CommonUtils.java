@@ -66,6 +66,12 @@ public class CommonUtils {
   static final String MAPPING_FILE_ID_RESOURCE_NAME =
       "com.google.firebase.crashlytics.mapping_file_id";
   static final String LEGACY_MAPPING_FILE_ID_RESOURCE_NAME = "com.crashlytics.android.build_id";
+  static final String BUILD_IDS_LIB_NAMES_RESOURCE_NAME =
+      "com.google.firebase.crashlytics.build_ids_lib";
+  static final String BUILD_IDS_ARCH_RESOURCE_NAME =
+      "com.google.firebase.crashlytics.build_ids_arch";
+  static final String BUILD_IDS_BUILD_ID_RESOURCE_NAME =
+      "com.google.firebase.crashlytics.build_ids_build_id";
 
   private static final long UNCALCULATED_TOTAL_RAM = -1;
   static final int BYTES_IN_A_GIGABYTE = 1073741824;
@@ -595,6 +601,42 @@ public class CommonUtils {
       mappingFileId = context.getResources().getString(id);
     }
     return mappingFileId;
+  }
+
+  public static List<BuildIdInfo> getBuildIdInfo(Context context) {
+    // TODO: This functionality should be refactored into an InstanceIdProvider class or similar.
+    List<BuildIdInfo> buildIdInfoList = new ArrayList<>();
+    String[] libNames;
+    String[] arch;
+    String[] buildIds;
+    int libId =
+        CommonUtils.getResourcesIdentifier(context, BUILD_IDS_LIB_NAMES_RESOURCE_NAME, "array");
+    int archId = CommonUtils.getResourcesIdentifier(context, BUILD_IDS_ARCH_RESOURCE_NAME, "array");
+    int buildId =
+        CommonUtils.getResourcesIdentifier(context, BUILD_IDS_BUILD_ID_RESOURCE_NAME, "array");
+
+    if (libId != 0 && archId != 0 && buildId != 0) {
+      libNames = context.getResources().getStringArray(libId);
+      arch = context.getResources().getStringArray(archId);
+      buildIds = context.getResources().getStringArray(buildId);
+
+      if (libNames.length != buildIds.length || arch.length != buildIds.length) {
+        Logger.getLogger()
+            .d(
+                String.format(
+                    "Lengths did not match: %d %d %d",
+                    libNames.length, arch.length, buildIds.length));
+        return buildIdInfoList;
+      }
+
+      for (int i = 0; i < buildIds.length; i++) {
+        buildIdInfoList.add(new BuildIdInfo(libNames[i], arch[i], buildIds[i]));
+      }
+    } else {
+      Logger.getLogger()
+          .d(String.format("Could not find resources: %d %d %d", libId, archId, buildId));
+    }
+    return buildIdInfoList;
   }
 
   public static void closeQuietly(Closeable closeable) {

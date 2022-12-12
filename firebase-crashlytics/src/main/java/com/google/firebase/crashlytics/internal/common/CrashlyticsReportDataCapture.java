@@ -29,6 +29,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.BinaryImage;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
+import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.TrimmedThrowableData;
 import java.util.ArrayList;
@@ -67,16 +68,19 @@ public class CrashlyticsReportDataCapture {
   private final IdManager idManager;
   private final AppData appData;
   private final StackTraceTrimmingStrategy stackTraceTrimmingStrategy;
+  private final SettingsProvider settingsProvider;
 
   public CrashlyticsReportDataCapture(
       Context context,
       IdManager idManager,
       AppData appData,
-      StackTraceTrimmingStrategy stackTraceTrimmingStrategy) {
+      StackTraceTrimmingStrategy stackTraceTrimmingStrategy,
+      SettingsProvider settingsProvider) {
     this.context = context;
     this.idManager = idManager;
     this.appData = appData;
     this.stackTraceTrimmingStrategy = stackTraceTrimmingStrategy;
+    this.settingsProvider = settingsProvider;
   }
 
   public CrashlyticsReport captureReportData(String identifier, long timestampSeconds) {
@@ -119,8 +123,40 @@ public class CrashlyticsReportDataCapture {
     return Event.builder()
         .setType("anr")
         .setTimestamp(applicationExitInfo.getTimestamp())
-        .setApp(populateEventApplicationData(orientation, applicationExitInfo))
+        .setApp(populateEventApplicationData(orientation, addBuildIdInfo(applicationExitInfo)))
         .setDevice(populateEventDeviceData(orientation))
+        .build();
+  }
+
+  private CrashlyticsReport.ApplicationExitInfo addBuildIdInfo(
+      CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+    ImmutableList<CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch>
+        buildIdMappingForArchImmutableList = null;
+    if (settingsProvider.getSettingsSync().featureFlagData.collectBuildIds
+        && appData.buildIdInfoList.size() > 0) {
+      List<CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch> buildIdMappingForArchList =
+          new ArrayList<>();
+      for (BuildIdInfo buildIdInfo : appData.buildIdInfoList) {
+        buildIdMappingForArchList.add(
+            CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch.builder()
+                .setLibraryName(buildIdInfo.getLibraryName())
+                .setArch(buildIdInfo.getArch())
+                .setBuildId(buildIdInfo.getBuildId())
+                .build());
+      }
+      buildIdMappingForArchImmutableList = ImmutableList.from(buildIdMappingForArchList);
+    }
+
+    return CrashlyticsReport.ApplicationExitInfo.builder()
+        .setImportance(applicationExitInfo.getImportance())
+        .setProcessName(applicationExitInfo.getProcessName())
+        .setReasonCode(applicationExitInfo.getReasonCode())
+        .setTimestamp(applicationExitInfo.getTimestamp())
+        .setPid(applicationExitInfo.getPid())
+        .setPss(applicationExitInfo.getPss())
+        .setRss(applicationExitInfo.getRss())
+        .setTraceFile(applicationExitInfo.getTraceFile())
+        .setBuildIdMappingForArch(buildIdMappingForArchImmutableList)
         .build();
   }
 

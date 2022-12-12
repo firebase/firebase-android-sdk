@@ -40,6 +40,7 @@ import com.google.firebase.crashlytics.internal.settings.Settings.FeatureFlagDat
 import com.google.firebase.crashlytics.internal.settings.Settings.SessionData;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.inject.Deferred;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.TreeSet;
@@ -86,7 +87,7 @@ public class CrashlyticsControllerRobolectricTest {
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Collections.singletonList(sessionId)));
-    mockSettingsProvider(true);
+    mockSettingsProvider(true, false);
     controller.doCloseSessions(mockSettingsProvider);
     // Since we haven't added any app exit info to the shadow activity manager, there won't exist a
     // single app exit info, and so this method won't be called.
@@ -107,7 +108,7 @@ public class CrashlyticsControllerRobolectricTest {
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Collections.singletonList(sessionId)));
-    mockSettingsProvider(true);
+    mockSettingsProvider(true, false);
     controller.doCloseSessions(mockSettingsProvider);
     verify(mockSessionReportingCoordinator)
         .persistRelevantAppExitInfoEvent(
@@ -124,26 +125,36 @@ public class CrashlyticsControllerRobolectricTest {
 
     when(mockSessionReportingCoordinator.listSortedOpenSessionIds())
         .thenReturn(new TreeSet<>(Collections.singletonList(sessionId)));
-    mockSettingsProvider(false);
+    mockSettingsProvider(false, false);
     controller.doCloseSessions(mockSettingsProvider);
     verify(mockSessionReportingCoordinator, never())
         .persistRelevantAppExitInfoEvent(
             eq(sessionId), any(), any(LogFileManager.class), any(UserMetadata.class));
   }
 
-  private void mockSettingsProvider(boolean collectAnrs) {
+  private void mockSettingsProvider(boolean collectAnrs, boolean collectBuildIds) {
     Settings settings =
         new Settings(
-            0, new SessionData(4, 4), new FeatureFlagData(true, collectAnrs), 3, 0, 1.0, 1.0, 1);
+            0,
+            new SessionData(4, 4),
+            new FeatureFlagData(true, collectAnrs, collectBuildIds),
+            3,
+            0,
+            1.0,
+            1.0,
+            1);
     when(mockSettingsProvider.getSettingsSync()).thenReturn(settings);
   }
 
   /** Creates a new CrashlyticsController with default options and opens a session. */
   private CrashlyticsController createController() {
+    List<BuildIdInfo> buildIdInfoList = new ArrayList<>();
+    buildIdInfoList.add(new BuildIdInfo("lib.so", "x86", "aabb"));
     AppData appData =
         new AppData(
             GOOGLE_APP_ID,
             "buildId",
+            buildIdInfoList,
             "installerPackageName",
             "packageName",
             "versionCode",

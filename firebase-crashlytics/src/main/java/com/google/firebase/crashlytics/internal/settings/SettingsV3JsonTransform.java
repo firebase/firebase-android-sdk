@@ -77,7 +77,12 @@ class SettingsV3JsonTransform implements SettingsJsonTransform {
             SettingsJsonConstants.FEATURES_COLLECT_ANRS_KEY,
             SettingsJsonConstants.FEATURES_COLLECT_ANRS_DEFAULT);
 
-    return new Settings.FeatureFlagData(collectReports, collectAnrs);
+    final boolean collectBuildIds =
+        json.optBoolean(
+            SettingsJsonConstants.FEATURES_COLLECT_BUILD_IDS_KEY,
+            SettingsJsonConstants.FEATURES_COLLECT_BUILD_IDS_DEFAULT);
+
+    return new Settings.FeatureFlagData(collectReports, collectAnrs, collectBuildIds);
   }
 
   private static Settings.SessionData buildSessionDataFrom(JSONObject json) {

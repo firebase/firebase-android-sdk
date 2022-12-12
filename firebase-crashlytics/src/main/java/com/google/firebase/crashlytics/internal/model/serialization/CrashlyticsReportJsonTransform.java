@@ -19,6 +19,7 @@ import android.util.JsonReader;
 import androidx.annotation.NonNull;
 import com.google.firebase.crashlytics.internal.model.AutoCrashlyticsReportEncoder;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
@@ -233,6 +234,10 @@ public class CrashlyticsReportJsonTransform {
           break;
         case "traceFile":
           builder.setTraceFile(jsonReader.nextString());
+          break;
+        case "buildIdMappingForArch":
+          builder.setBuildIdMappingForArch(
+              parseArray(jsonReader, CrashlyticsReportJsonTransform::parseBuildIdMappingForArch));
           break;
         default:
           jsonReader.skipValue();
@@ -736,6 +741,33 @@ public class CrashlyticsReportJsonTransform {
           break;
         case "value":
           builder.setValue(jsonReader.nextString());
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
+      }
+    }
+    jsonReader.endObject();
+    return builder.build();
+  }
+
+  @NonNull
+  private static BuildIdMappingForArch parseBuildIdMappingForArch(@NonNull JsonReader jsonReader)
+      throws IOException {
+    BuildIdMappingForArch.Builder builder = BuildIdMappingForArch.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "libraryName":
+          builder.setLibraryName(jsonReader.nextString());
+          break;
+        case "arch":
+          builder.setArch(jsonReader.nextString());
+          break;
+        case "buildId":
+          builder.setBuildId(jsonReader.nextString());
           break;
         default:
           jsonReader.skipValue();
