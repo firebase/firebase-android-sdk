@@ -1,6 +1,6 @@
 ---
 has_children: true
-permalink: /components
+permalink: /components/
 nav_order: 4
 ---
 

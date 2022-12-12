@@ -1,6 +1,6 @@
 ---
 has_children: true
-permalink: /onboarding
+permalink: /onboarding/
 nav_order: 2
 ---
 
