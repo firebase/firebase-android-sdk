@@ -55,7 +55,7 @@ public class FirebaseStorage {
   private long sMaxUploadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
   private long sMaxChunkUploadRetry = DateUtils.MINUTE_IN_MILLIS; //  60 * 1000
   private long sMaxDownloadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
-  private long sMaxQueryRetry = 2 * DateUtils.MINUTE_IN_MILLIS;
+  private long sMaxQueryRetry = 2 * DateUtils.MINUTE_IN_MILLIS; // 2 * 60 * 1000
 
   @Nullable private EmulatedServiceSettings emulatorSettings;
 
