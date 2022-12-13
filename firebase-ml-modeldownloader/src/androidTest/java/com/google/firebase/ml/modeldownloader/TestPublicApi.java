@@ -72,7 +72,7 @@ public class TestPublicApi {
     Tasks.await(modelTask);
     assertTrue(modelTask.isSuccessful());
 
-    Task<CustomModel> modelTask =
+    modelTask =
         FirebaseModelDownloader.getInstance()
             .getModel(
                 MODEL_NAME_LOCAL_2,
