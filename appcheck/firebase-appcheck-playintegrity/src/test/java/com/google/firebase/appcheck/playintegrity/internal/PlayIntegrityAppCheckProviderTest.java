@@ -72,7 +72,7 @@ public class PlayIntegrityAppCheckProviderTest {
   @Captor private ArgumentCaptor<byte[]> exchangePlayIntegrityTokenRequestCaptor;
 
   // TODO(b/258273630): Use TestOnlyExecutors instead of MoreExecutors.directExecutor().
-  private Executor backgroundExecutor = MoreExecutors.directExecutor();
+  private Executor executor = MoreExecutors.directExecutor();
 
   @Before
   public void setup() {
@@ -87,7 +87,8 @@ public class PlayIntegrityAppCheckProviderTest {
     assertThrows(
         NullPointerException.class,
         () -> {
-          new PlayIntegrityAppCheckProvider(null, TestOnlyExecutors.blocking());
+          new PlayIntegrityAppCheckProvider(
+              null, TestOnlyExecutors.lite(), TestOnlyExecutors.blocking());
         });
   }
 
@@ -106,7 +107,8 @@ public class PlayIntegrityAppCheckProviderTest {
             PROJECT_NUMBER,
             mockIntegrityManager,
             mockNetworkClient,
-            backgroundExecutor,
+            /* liteExecutor= */ executor,
+            /* blockingExecutor= */ executor,
             mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
@@ -141,7 +143,8 @@ public class PlayIntegrityAppCheckProviderTest {
             PROJECT_NUMBER,
             mockIntegrityManager,
             mockNetworkClient,
-            backgroundExecutor,
+            /* liteExecutor= */ executor,
+            /* blockingExecutor= */ executor,
             mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
@@ -165,7 +168,8 @@ public class PlayIntegrityAppCheckProviderTest {
             PROJECT_NUMBER,
             mockIntegrityManager,
             mockNetworkClient,
-            backgroundExecutor,
+            /* liteExecutor= */ executor,
+            /* blockingExecutor= */ executor,
             mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
@@ -196,7 +200,8 @@ public class PlayIntegrityAppCheckProviderTest {
             PROJECT_NUMBER,
             mockIntegrityManager,
             mockNetworkClient,
-            backgroundExecutor,
+            /* liteExecutor= */ executor,
+            /* blockingExecutor= */ executor,
             mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
