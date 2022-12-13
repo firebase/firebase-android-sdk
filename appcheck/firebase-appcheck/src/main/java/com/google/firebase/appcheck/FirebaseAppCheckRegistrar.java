@@ -45,8 +45,8 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
 
   @Override
   public List<Component<?>> getComponents() {
-    Qualified<Executor> backgroundExecutor = Qualified.qualified(Background.class, Executor.class);
     Qualified<Executor> liteExecutor = Qualified.qualified(Lightweight.class, Executor.class);
+    Qualified<Executor> backgroundExecutor = Qualified.qualified(Background.class, Executor.class);
     Qualified<ScheduledExecutorService> blockingScheduledExecutorService =
         Qualified.qualified(Blocking.class, ScheduledExecutorService.class);
 
@@ -54,8 +54,8 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
         Component.builder(FirebaseAppCheck.class, (InternalAppCheckTokenProvider.class))
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(backgroundExecutor))
             .add(Dependency.required(liteExecutor))
+            .add(Dependency.required(backgroundExecutor))
             .add(Dependency.required(blockingScheduledExecutorService))
             .add(Dependency.optionalProvider(HeartBeatController.class))
             .factory(
@@ -63,8 +63,8 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
                     new DefaultFirebaseAppCheck(
                         container.get(FirebaseApp.class),
                         container.getProvider(HeartBeatController.class),
-                        container.get(backgroundExecutor),
                         container.get(liteExecutor),
+                        container.get(backgroundExecutor),
                         container.get(blockingScheduledExecutorService)))
             .alwaysEager()
             .build(),

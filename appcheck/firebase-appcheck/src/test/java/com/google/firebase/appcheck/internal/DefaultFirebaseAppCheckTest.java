@@ -95,8 +95,8 @@ public class DefaultFirebaseAppCheckTest {
           new DefaultFirebaseAppCheck(
               null,
               () -> mockHeartBeatController,
-              TestOnlyExecutors.background(),
               TestOnlyExecutors.lite(),
+              TestOnlyExecutors.background(),
               TestOnlyExecutors.blocking());
         });
   }
@@ -109,8 +109,8 @@ public class DefaultFirebaseAppCheckTest {
           new DefaultFirebaseAppCheck(
               mockFirebaseApp,
               null,
-              TestOnlyExecutors.background(),
               TestOnlyExecutors.lite(),
+              TestOnlyExecutors.background(),
               TestOnlyExecutors.blocking());
         });
   }

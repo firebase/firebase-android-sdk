@@ -51,8 +51,8 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   private final List<AppCheckListener> appCheckListenerList;
   private final StorageHelper storageHelper;
   private final TokenRefreshManager tokenRefreshManager;
-  private final Executor backgroundExecutor;
   private final Executor liteExecutor;
+  private final Executor backgroundExecutor;
   private final Task<Void> retrieveStoredTokenTask;
   private final Clock clock;
 
@@ -63,8 +63,8 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   public DefaultFirebaseAppCheck(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<HeartBeatController> heartBeatController,
-      @Background Executor backgroundExecutor,
       @Lightweight Executor liteExecutor,
+      @Background Executor backgroundExecutor,
       @Blocking ScheduledExecutorService scheduledExecutorService) {
     checkNotNull(firebaseApp);
     checkNotNull(heartBeatController);
@@ -80,8 +80,8 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
             /* firebaseAppCheck= */ this,
             liteExecutor,
             scheduledExecutorService);
-    this.backgroundExecutor = backgroundExecutor;
     this.liteExecutor = liteExecutor;
+    this.backgroundExecutor = backgroundExecutor;
     this.retrieveStoredTokenTask = retrieveStoredAppCheckTokenInBackground(backgroundExecutor);
     this.clock = new Clock.DefaultClock();
   }

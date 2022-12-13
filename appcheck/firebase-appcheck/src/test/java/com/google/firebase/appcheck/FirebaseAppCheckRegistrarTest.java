@@ -45,8 +45,8 @@ public class FirebaseAppCheckRegistrarTest {
     assertThat(firebaseAppCheckComponent.getDependencies())
         .containsExactly(
             Dependency.required(FirebaseApp.class),
-            Dependency.required(Qualified.qualified(Background.class, Executor.class)),
             Dependency.required(Qualified.qualified(Lightweight.class, Executor.class)),
+            Dependency.required(Qualified.qualified(Background.class, Executor.class)),
             Dependency.required(
                 Qualified.qualified(Blocking.class, ScheduledExecutorService.class)),
             Dependency.optionalProvider(HeartBeatController.class));
