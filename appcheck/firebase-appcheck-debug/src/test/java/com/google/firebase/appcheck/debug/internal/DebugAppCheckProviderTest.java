@@ -103,7 +103,11 @@ public class DebugAppCheckProviderTest {
         NullPointerException.class,
         () -> {
           new DebugAppCheckProvider(
-              null, null, TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
+              null,
+              null,
+              TestOnlyExecutors.lite(),
+              TestOnlyExecutors.background(),
+              TestOnlyExecutors.blocking());
         });
   }
 
@@ -137,7 +141,12 @@ public class DebugAppCheckProviderTest {
     when(mockAppCheckTokenResponse.getTimeToLive()).thenReturn(TIME_TO_LIVE);
 
     DebugAppCheckProvider provider =
-        new DebugAppCheckProvider(DEBUG_SECRET, mockNetworkClient, executor, mockRetryManager);
+        new DebugAppCheckProvider(
+            DEBUG_SECRET,
+            mockNetworkClient,
+            /* liteExecutor= */ executor,
+            /* blockingExecutor= */ executor,
+            mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
     verify(mockNetworkClient)
@@ -155,7 +164,12 @@ public class DebugAppCheckProviderTest {
         .thenThrow(new IOException());
 
     DebugAppCheckProvider provider =
-        new DebugAppCheckProvider(DEBUG_SECRET, mockNetworkClient, executor, mockRetryManager);
+        new DebugAppCheckProvider(
+            DEBUG_SECRET,
+            mockNetworkClient,
+            /* liteExecutor= */ executor,
+            /* blockingExecutor= */ executor,
+            mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
     verify(mockNetworkClient)
