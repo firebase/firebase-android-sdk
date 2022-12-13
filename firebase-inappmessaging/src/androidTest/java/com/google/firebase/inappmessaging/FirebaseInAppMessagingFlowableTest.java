@@ -52,6 +52,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
@@ -65,6 +66,7 @@ import com.google.firebase.inappmessaging.internal.ProgramaticContextualTriggers
 import com.google.firebase.inappmessaging.internal.TestDeviceHelper;
 import com.google.firebase.inappmessaging.internal.injection.modules.AppMeasurementModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ApplicationModule;
+import com.google.firebase.inappmessaging.internal.injection.modules.ExecutorsModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.GrpcClientModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ProgrammaticContextualTriggerFlowableModule;
 import com.google.firebase.inappmessaging.model.BannerMessage;
@@ -270,7 +272,9 @@ public class FirebaseInAppMessagingFlowableTest {
             .testSystemClockModule(new TestSystemClockModule(NOW))
             .programmaticContextualTriggerFlowableModule(
                 new ProgrammaticContextualTriggerFlowableModule(
-                    new ProgramaticContextualTriggers()));
+                    new ProgramaticContextualTriggers()))
+            .executorsModule(
+                new ExecutorsModule(TestOnlyExecutors.background(), TestOnlyExecutors.blocking()));
 
     TestUniversalComponent universalComponent = universalComponentBuilder.build();
 
