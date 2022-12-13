@@ -23,18 +23,19 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
+import org.gradle.kotlin.dsl.findByType
 
 abstract class ChangedModulesTask : DefaultTask() {
   @get:Input
-  @set:Option(option = "changed-git-paths", description = "Hellos")
+  @set:Option(option = "changed-git-paths", description = "The list of changed paths")
   abstract var changedGitPaths: List<String>
 
   @get:Input
-  @set:Option(option = "output-file-path", description = "Hello")
+  @set:Option(option = "output-file-path", description = "The file to output json to")
   abstract var outputFilePath: String
 
   @get:Input
-  @set:Option(option = "only-firebase-sdks", description = "Hello")
+  @set:Option(option = "only-firebase-sdks", description = "Only list Firebase SDKs")
   abstract var onlyFirebaseSDKs: Boolean
 
   @get:OutputFile val outputFile by lazy { File(outputFilePath) }
@@ -50,7 +51,7 @@ abstract class ChangedModulesTask : DefaultTask() {
         .find()
         .filter {
           val ext = it.extensions.findByType(FirebaseLibraryExtension::class.java)
-          !onlyFirebaseSDKs || (ext != null && ext.publishJavadoc)
+          !onlyFirebaseSDKs || it.extensions.findByType<FirebaseLibraryExtension>() != null
         }
         .map { it.path }
         .toSet()
@@ -59,9 +60,13 @@ abstract class ChangedModulesTask : DefaultTask() {
     project.rootProject.subprojects.forEach { p ->
       p.configurations.forEach { c ->
         c.dependencies.filterIsInstance<ProjectDependency>().forEach {
-          val ext = it.dependencyProject.extensions.findByType(FirebaseLibraryExtension::class.java)
-          if (!onlyFirebaseSDKs || (ext != null && ext.publishJavadoc)) {
-            result[it.dependencyProject.path]?.add(p.path)
+          if (
+            !onlyFirebaseSDKs ||
+              it.dependencyProject.extensions.findByType<FirebaseLibraryExtension>() != null
+          ) {
+            if (!onlyFirebaseSDKs || p.extensions.findByType<FirebaseLibraryExtension>() != null) {
+              result[it.dependencyProject.path]?.add(p.path)
+            }
           }
         }
       }

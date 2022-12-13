@@ -23,8 +23,14 @@ jobs:
           distribution: temurin
           cache: gradle
 
+      - name: Changed Modules
+        id: changed-modules
+        run: |
+          git diff --name-only HEAD~1 | xargs printf -- '--changed-git-paths %s\n' | xargs ./gradlew writeChangedProjects --output-file-path=modules.json
+          echo "run=$(cat modules.json | sed "s/[]\"[]//g" | sed "s/,/\n/g" | xargs printf -- "%s:kotlinDoc "))" >> $GITHUB_OUTPUT
+
       - name: Build
-        run: ./gradlew kotlindoc
+        run: ./gradlew ${{ steps.changed-modules.outputs.run }}
 
       - name: Move original docs
         run: mv build ~/diff/original
@@ -32,7 +38,7 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Build
-        run: ./gradlew kotlindoc
+        run: ./gradlew ${{ steps.changed-modules.outputs.run }}
 
       - name: Move modified docs
         run: mv build ~/diff/modified
