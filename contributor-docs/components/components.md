@@ -1,6 +1,7 @@
 ---
 has_children: true
-permalink: /components
+permalink: /components/
+nav_order: 4
 ---
 
 # Firebase Components
@@ -145,6 +146,8 @@ The initialization phase of the FirebaseApp will consist of the following steps:
 3. Store a map of {iface -> ComponentFactory} so that components can be instantiated on demand(Note that component instantiation does not yet happen)
 4. Initialize EAGER components or schedule them to initialize on device unlock, if in direct boot mode.
 
+### Initialization example
+
 Below is an example illustration of the state of the component graph after initialization:
 
 ```mermaid
@@ -192,3 +195,49 @@ eager components depends on it(see Prefer Lazy dependencies to avoid this as mus
 component initializes them by using a Lazy dependency.*
 For example, if the application calls `FirebaseDatabase.getInstance()`, the container will initialize `Auth` and `Database`
 and will return `Database` to the user.
+
+### Support multiple instances of the SDK per `FirebaseApp`(multi-resource)
+
+Some SDKs support multi-resource mode of operation, where it's possible to create more than one instance per `FirebaseApp`.
+
+Examples:
+
+* RTDB allows more than one database in a single Firebase project, so it's possible to instantiate one instance of the sdk per datbase
+
+```kotlin
+val rtdbOne = Firebase.database(app) // uses default database
+val rtdbTwo = Firebase.database(app, "dbName")
+```
+
+* Firestore, functions, and others support the same usage pattern
+
+To allow for that, such SDKs register a singleton "MultiResource" [Firebase component]({{ site.baseurl }}{% link components/components.md %}),
+which creates instances per resource(e.g. db name).
+
+Example
+
+```kotlin
+class DatabaseComponent(private val app: FirebaseApp, private val tokenProvider: InternalTokenProvider) {
+  private val instances: MutableMap<String, FirebaseDatabase> = new HashMap<>();
+
+  @Synchronized
+  fun get(dbName: String) : FirebaseDatabase {
+    if (!instances.containsKey(dbName)) {
+      instances.put(dbName, FirebaseDatabase(app, tokenProvider, dbName))
+    }
+    return instances.get(dbName);
+  }
+}
+
+class FirebaseDatabase(
+    app: FirebaseApp,
+    tokenProvider: InternalTokenProvider,
+    private val String dbName)
+
+    companion object {
+      fun getInstance(app : FirebaseApp) = getInstance("default")
+      fun getInstance(app : FirebaseApp, dbName: String) = 
+        app.get(DatabaseComponent::class.java).get("default")
+    }
+
+```

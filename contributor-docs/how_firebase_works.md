@@ -1,3 +1,7 @@
+---
+nav_order: 3
+---
+
 # How Firebase Works
 
 ## Background
@@ -38,7 +42,7 @@ During initialization, `FirebaseApp` discovers all Firebase SDKs present in the 
 In addition to `FirebaseOptions`, `FirebaseApp` registers additional components that product SDKs can request via dependency injection. To name a few:
 
 * `android.content.Context`(Application context)
-* [Common Executors](https://github.com/firebase/firebase-android-sdk/blob/master/docs/executors.md)
+* [Common Executors]({{ site.baseurl }}{% link components/executors.md %})
 * `FirebaseOptions`
 * Various internal components
 

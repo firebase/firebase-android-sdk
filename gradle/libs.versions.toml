@@ -1,5 +1,6 @@
 [versions]
 coroutines = "1.6.4"
+dagger = "2.43.2"
 grpc = "1.50.2"
 javalite = "3.17.3"
 kotlin = "1.7.10"
@@ -9,6 +10,9 @@ truth = "1.1.2"
 
 [libraries]
 androidx-annotation = { module = "androidx.annotation:annotation", version = "1.5.0" }
+dagger = { module = "com.google.dagger:dagger", version.ref = "dagger"}
+dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
+javax-inject = { module = "javax.inject:javax.inject", version = "1" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-coroutines-tasks = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
 
