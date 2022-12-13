@@ -63,14 +63,14 @@ public class TestPublicApi {
     Tasks.await(modelSetTask);
     assertEquals(modelSetTask.getResult().size(), 0);
 
-//    Task<CustomModel> modelTask =
-//        FirebaseModelDownloader.getInstance()
-//            .getModel(
-//                MODEL_NAME_LOCAL,
-//                DownloadType.LATEST_MODEL,
-//                new CustomModelDownloadConditions.Builder().build());
-//    Tasks.await(modelTask);
-//    assertTrue(modelTask.isSuccessful());
+    Task<CustomModel> modelTask =
+        FirebaseModelDownloader.getInstance()
+            .getModel(
+                MODEL_NAME_LOCAL,
+                DownloadType.LATEST_MODEL,
+                new CustomModelDownloadConditions.Builder().build());
+    Tasks.await(modelTask);
+    assertTrue(modelTask.isSuccessful());
 
     Task<CustomModel> modelTask =
         FirebaseModelDownloader.getInstance()
@@ -83,7 +83,7 @@ public class TestPublicApi {
 
     modelSetTask = FirebaseModelDownloader.getInstance().listDownloadedModels();
     Tasks.await(modelSetTask);
-    assertEquals(modelSetTask.getResult().size(), 1);
+    assertEquals(modelSetTask.getResult().size(), 2);
   }
 
   @Test

@@ -17,7 +17,6 @@ package com.google.firebase.platforminfo;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * In order to allow the C++ and Unity SDKs to publish their versions without the use of the
@@ -29,7 +28,6 @@ import java.util.logging.Logger;
 public class GlobalLibraryVersionRegistrar {
   private final Set<LibraryVersion> infos = new HashSet<>();
   private static volatile GlobalLibraryVersionRegistrar INSTANCE;
-  private static final Logger LOGGER = Logger.getLogger(GlobalLibraryVersionRegistrar.class.getName());
 
   GlobalLibraryVersionRegistrar() {}
 
@@ -41,7 +39,6 @@ public class GlobalLibraryVersionRegistrar {
   public void registerVersion(String sdkName, String version) {
 
     synchronized (infos) {
-      LOGGER.info("Registering version");
       infos.add(LibraryVersion.create(sdkName, version));
     }
   }
