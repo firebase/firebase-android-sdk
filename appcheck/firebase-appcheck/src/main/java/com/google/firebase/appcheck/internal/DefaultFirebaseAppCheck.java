@@ -78,6 +78,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
         new TokenRefreshManager(
             firebaseApp.getApplicationContext(),
             /* firebaseAppCheck= */ this,
+            liteExecutor,
             scheduledExecutorService);
     this.backgroundExecutor = backgroundExecutor;
     this.liteExecutor = liteExecutor;
