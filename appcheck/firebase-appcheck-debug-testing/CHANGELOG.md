@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Integrated the [app_check] Debug Testing SDK with Firebase Components. (#4436)
 
 # 16.1.0
 * [unchanged] Updated to accommodate the release of the updated

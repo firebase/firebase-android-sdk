@@ -17,9 +17,13 @@ package com.google.firebase.appcheck.debug;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
 import java.util.List;
+import java.util.concurrent.Executor;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -37,7 +41,9 @@ public class FirebaseAppCheckDebugRegistrarTest {
     assertThat(appCheckDebugComponent.getDependencies())
         .containsExactly(
             Dependency.required(FirebaseApp.class),
-            Dependency.optionalProvider(InternalDebugSecretProvider.class));
+            Dependency.optionalProvider(InternalDebugSecretProvider.class),
+            Dependency.required(Qualified.qualified(Background.class, Executor.class)),
+            Dependency.required(Qualified.qualified(Blocking.class, Executor.class)));
     assertThat(appCheckDebugComponent.isLazy()).isTrue();
   }
 }

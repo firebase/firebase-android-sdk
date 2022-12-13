@@ -24,13 +24,13 @@ import com.google.android.play.core.integrity.IntegrityManagerFactory;
 import com.google.android.play.core.integrity.IntegrityTokenRequest;
 import com.google.android.play.core.integrity.IntegrityTokenResponse;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 
 public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
 
@@ -39,17 +39,16 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
   private final String projectNumber;
   private final IntegrityManager integrityManager;
   private final NetworkClient networkClient;
-  private final ExecutorService backgroundExecutor;
+  private final Executor blockingExecutor;
   private final RetryManager retryManager;
 
-  // TODO(b/258273630): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
-  public PlayIntegrityAppCheckProvider(@NonNull FirebaseApp firebaseApp) {
+  public PlayIntegrityAppCheckProvider(
+      @NonNull FirebaseApp firebaseApp, @Blocking Executor blockingExecutor) {
     this(
         firebaseApp.getOptions().getGcmSenderId(),
         IntegrityManagerFactory.create(firebaseApp.getApplicationContext()),
         new NetworkClient(firebaseApp),
-        Executors.newCachedThreadPool(),
+        blockingExecutor,
         new RetryManager());
   }
 
@@ -58,12 +57,12 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
       @NonNull String projectNumber,
       @NonNull IntegrityManager integrityManager,
       @NonNull NetworkClient networkClient,
-      @NonNull ExecutorService backgroundExecutor,
+      @NonNull Executor blockingExecutor,
       @NonNull RetryManager retryManager) {
     this.projectNumber = projectNumber;
     this.integrityManager = integrityManager;
     this.networkClient = networkClient;
-    this.backgroundExecutor = backgroundExecutor;
+    this.blockingExecutor = blockingExecutor;
     this.retryManager = retryManager;
   }
 
@@ -78,7 +77,7 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
               ExchangePlayIntegrityTokenRequest request =
                   new ExchangePlayIntegrityTokenRequest(integrityTokenResponse.token());
               return Tasks.call(
-                  backgroundExecutor,
+                  blockingExecutor,
                   () ->
                       networkClient.exchangeAttestationForAppCheckToken(
                           request.toJsonString().getBytes(UTF_8),
@@ -100,7 +99,7 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
         new GeneratePlayIntegrityChallengeRequest();
     Task<GeneratePlayIntegrityChallengeResponse> generateChallengeTask =
         Tasks.call(
-            backgroundExecutor,
+            blockingExecutor,
             () ->
                 GeneratePlayIntegrityChallengeResponse.fromJsonString(
                     networkClient.generatePlayIntegrityChallenge(
