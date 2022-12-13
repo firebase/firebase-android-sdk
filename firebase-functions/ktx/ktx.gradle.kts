@@ -26,11 +26,10 @@ firebaseLibrary {
 
 android {
   val targetSdkVersion : Int by rootProject
-  val minSdkVersion : Int by rootProject
 
   compileSdk = targetSdkVersion
   defaultConfig {
-    minSdk = minSdkVersion
+    minSdk = 16
     targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
