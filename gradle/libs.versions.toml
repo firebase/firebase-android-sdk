@@ -1,4 +1,5 @@
 [versions]
+autovalue = "1.10.1"
 coroutines = "1.6.4"
 dagger = "2.43.2"
 grpc = "1.50.2"
@@ -10,15 +11,28 @@ truth = "1.1.2"
 
 [libraries]
 androidx-annotation = { module = "androidx.annotation:annotation", version = "1.5.0" }
+androidx-core = { module = "androidx.core:core", version = "1.2.0" }
+androidx-futures = { module = "androidx.concurrent:concurrent-futures", version = "1.1.0" }
+autovalue = { module = "com.google.auto.value:auto-value", version.ref = "autovalue" }
+autovalue-annotations = { module = "com.google.auto.value:auto-value-annotations", version.ref = "autovalue" }
 dagger = { module = "com.google.dagger:dagger", version.ref = "dagger"}
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
+errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version = "2.9.0" }
+findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2"}
 javax-inject = { module = "javax.inject:javax.inject", version = "1" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-coroutines-tasks = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
+org-json = { module = "org.json:json", version = "20210307" }
+playservices-basement = { module = "com.google.android.gms:play-services-basement", version = "18.1.0"}
+playservices-tasks = { module = "com.google.android.gms:play-services-tasks", version = "18.0.2"}
 
 # Test libs
 androidx-test-core = { module = "androidx.test:core", version = "1.5.0" }
+androidx-test-junit = { module = "androidx.test.ext:junit", version = "1.1.4" }
+androidx-test-runner = { module = "androidx.test:runner", version = "1.5.1" }
 junit = { module = "junit:junit", version = "4.13.2" }
 kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+mockito-core = { module = "org.mockito:mockito-core", version = "3.6.0"}
+mockito-dexmaker = { module = "com.linkedin.dexmaker:dexmaker-mockito", version = "2.28.3"}
 robolectric = {module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth"}

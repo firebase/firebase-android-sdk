@@ -13,23 +13,22 @@
 // limitations under the License.
 
 plugins {
-    id 'firebase-java-library'
+  id("firebase-java-library")
 }
 
 firebaseLibrary {
-    publishSources = true
-    publishJavadoc = false
+  publishSources = true
+  publishJavadoc = false
 }
 
 java {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
+  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_1_8
 }
-
-tasks.withType(JavaCompile) {
-    options.compilerArgs << "-Werror"
+tasks.withType<JavaCompile> {
+  options.compilerArgs.add("-Werror")
 }
 
 dependencies {
-    implementation 'javax.inject:javax.inject:1'
+  implementation(libs.javax.inject)
 }
