@@ -14,6 +14,7 @@
 
 package com.google.firebase.gradle.plugins.ci
 
+import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import com.google.gson.Gson
 import java.io.File
 import org.gradle.api.DefaultTask
@@ -32,6 +33,10 @@ abstract class ChangedModulesTask : DefaultTask() {
   @set:Option(option = "output-file-path", description = "Hello")
   abstract var outputFilePath: String
 
+  @get:Input
+  @set:Option(option = "only-firebase-sdks", description = "Hello")
+  abstract var onlyFirebaseSDKs: Boolean
+
   @get:OutputFile val outputFile by lazy { File(outputFilePath) }
 
   init {
@@ -43,6 +48,10 @@ abstract class ChangedModulesTask : DefaultTask() {
     val projects =
       AffectedProjectFinder(project, changedGitPaths.toSet(), listOf())
         .find()
+        .filter {
+          val ext = it.extensions.findByType(FirebaseLibraryExtension::class.java)
+          !onlyFirebaseSDKs || (ext != null && ext.publishJavadoc)
+        }
         .map { it.path }
         .toSet()
 
@@ -50,7 +59,10 @@ abstract class ChangedModulesTask : DefaultTask() {
     project.rootProject.subprojects.forEach { p ->
       p.configurations.forEach { c ->
         c.dependencies.filterIsInstance<ProjectDependency>().forEach {
-          result[it.dependencyProject.path]?.add(p.path)
+          val ext = it.dependencyProject.extensions.findByType(FirebaseLibraryExtension::class.java)
+          if (!onlyFirebaseSDKs || (ext != null && ext.publishJavadoc)) {
+            result[it.dependencyProject.path]?.add(p.path)
+          }
         }
       }
     }
