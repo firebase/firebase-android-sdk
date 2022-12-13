@@ -21,13 +21,11 @@ import javax.annotation.Nullable;
 /** Represents a local view (overlay) of a document, and the fields that are locally mutated. */
 public class OverlayedDocument {
   private Document overlayedDocument;
-  private FieldMask mutatedFields;
-  private boolean hasOverlay;
+  @Nullable private FieldMask mutatedFields;
 
-  OverlayedDocument(Document overlayedDocument, boolean hasOverlay, FieldMask mutatedFields) {
+  OverlayedDocument(Document overlayedDocument, FieldMask mutatedFields) {
     this.overlayedDocument = overlayedDocument;
     this.mutatedFields = mutatedFields;
-    this.hasOverlay = hasOverlay;
   }
 
   public Document getDocument() {
@@ -37,12 +35,13 @@ public class OverlayedDocument {
   /**
    * The fields that are locally mutated by patch mutations.
    *
-   * <p>If hasOverlay() is true and the overlayed document is from set or delete mutations, this
-   * returns null. If hasOverlay() is false, this returns FieldMask.EMPTY.
+   * <p>If the overlayed document is from set or delete mutations, returns null.
+   *
+   * <p>If there is no overlay (mutation) for the document, returns FieldMask.EMPTY.
    */
   // TODO(b/262245989): This screams for a proper sum type (Tagged Union) which does not exist in
   // Java (yet).
   public @Nullable FieldMask getMutatedFields() {
-    return hasOverlay ? mutatedFields : FieldMask.EMPTY;
+    return mutatedFields;
   }
 }
