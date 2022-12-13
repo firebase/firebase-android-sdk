@@ -18,6 +18,7 @@ import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appcheck.internal.DefaultFirebaseAppCheck;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.components.Component;
@@ -45,6 +46,7 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
     Qualified<Executor> backgroundExecutor = Qualified.qualified(Background.class, Executor.class);
+    Qualified<Executor> liteExecutor = Qualified.qualified(Lightweight.class, Executor.class);
     Qualified<ScheduledExecutorService> blockingScheduledExecutorService =
         Qualified.qualified(Blocking.class, ScheduledExecutorService.class);
 
@@ -53,6 +55,7 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(backgroundExecutor))
+            .add(Dependency.required(liteExecutor))
             .add(Dependency.required(blockingScheduledExecutorService))
             .add(Dependency.optionalProvider(HeartBeatController.class))
             .factory(
@@ -61,6 +64,7 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
                         container.get(FirebaseApp.class),
                         container.getProvider(HeartBeatController.class),
                         container.get(backgroundExecutor),
+                        container.get(liteExecutor),
                         container.get(blockingScheduledExecutorService)))
             .alwaysEager()
             .build(),

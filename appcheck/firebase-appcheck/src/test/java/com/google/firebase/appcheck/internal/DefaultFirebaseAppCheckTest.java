@@ -77,12 +77,12 @@ public class DefaultFirebaseAppCheckTest {
     when(mockAppCheckProviderFactory.create(any())).thenReturn(mockAppCheckProvider);
     when(mockAppCheckProvider.getToken()).thenReturn(Tasks.forResult(validDefaultAppCheckToken));
 
-    // TODO(b/258273630): Use TestOnlyExecutors.background() instead of
-    // MoreExecutors.directExecutor().
+    // TODO(b/258273630): Use TestOnlyExecutors instead of MoreExecutors.directExecutor().
     defaultFirebaseAppCheck =
         new DefaultFirebaseAppCheck(
             mockFirebaseApp,
             () -> mockHeartBeatController,
+            MoreExecutors.directExecutor(),
             MoreExecutors.directExecutor(),
             TestOnlyExecutors.blocking());
   }
@@ -96,6 +96,7 @@ public class DefaultFirebaseAppCheckTest {
               null,
               () -> mockHeartBeatController,
               TestOnlyExecutors.background(),
+              TestOnlyExecutors.lite(),
               TestOnlyExecutors.blocking());
         });
   }
@@ -106,7 +107,11 @@ public class DefaultFirebaseAppCheckTest {
         NullPointerException.class,
         () -> {
           new DefaultFirebaseAppCheck(
-              mockFirebaseApp, null, TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
+              mockFirebaseApp,
+              null,
+              TestOnlyExecutors.background(),
+              TestOnlyExecutors.lite(),
+              TestOnlyExecutors.blocking());
         });
   }
 
