@@ -319,6 +319,8 @@ public class FirebaseInAppMessagingFlowableTest {
     TestUniversalComponent analyticsLessUniversalComponent =
         universalComponentBuilder
             .appMeasurementModule(new AppMeasurementModule(handler -> {}, firebaseEventSubscriber))
+            .executorsModule(
+                new ExecutorsModule(TestOnlyExecutors.background(), TestOnlyExecutors.blocking()))
             .build();
     TestAppComponent appComponent =
         appComponentBuilder.universalComponent(analyticsLessUniversalComponent).build();
