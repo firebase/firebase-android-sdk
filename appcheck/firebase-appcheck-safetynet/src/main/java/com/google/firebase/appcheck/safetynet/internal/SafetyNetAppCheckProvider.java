@@ -49,10 +49,8 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
   private static final String NONCE = "";
   private static final String UTF_8 = "UTF-8";
 
-  private final Context context;
   private final Task<SafetyNetClient> safetyNetClientTask;
   private final NetworkClient networkClient;
-  private final Executor backgroundExecutor;
   private final Executor blockingExecutor;
   private final RetryManager retryManager;
   private final String apiKey;
@@ -81,12 +79,11 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
     checkNotNull(networkClient);
     checkNotNull(googleApiAvailability);
     checkNotNull(backgroundExecutor);
-    this.context = firebaseApp.getApplicationContext();
     this.apiKey = firebaseApp.getOptions().getApiKey();
-    this.backgroundExecutor = backgroundExecutor;
     this.blockingExecutor = blockingExecutor;
     this.safetyNetClientTask =
-        initSafetyNetClient(this.context, googleApiAvailability, this.backgroundExecutor);
+        initSafetyNetClient(
+            firebaseApp.getApplicationContext(), googleApiAvailability, backgroundExecutor);
     this.networkClient = networkClient;
     this.retryManager = new RetryManager();
   }
@@ -96,14 +93,11 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
       @NonNull FirebaseApp firebaseApp,
       @NonNull SafetyNetClient safetyNetClient,
       @NonNull NetworkClient networkClient,
-      @NonNull Executor backgroundExecutor,
       @NonNull Executor blockingExecutor,
       @NonNull RetryManager retryManager) {
-    this.context = firebaseApp.getApplicationContext();
     this.apiKey = firebaseApp.getOptions().getApiKey();
     this.safetyNetClientTask = Tasks.forResult(safetyNetClient);
     this.networkClient = networkClient;
-    this.backgroundExecutor = backgroundExecutor;
     this.blockingExecutor = blockingExecutor;
     this.retryManager = retryManager;
   }

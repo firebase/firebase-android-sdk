@@ -128,7 +128,6 @@ public class SafetyNetAppCheckProviderTest {
             firebaseApp,
             mockSafetyNetClient,
             mockNetworkClient,
-            TestOnlyExecutors.background(),
             TestOnlyExecutors.blocking(),
             mockRetryManager);
     assertThat(provider.getSafetyNetClientTask().getResult()).isEqualTo(mockSafetyNetClient);
@@ -151,7 +150,6 @@ public class SafetyNetAppCheckProviderTest {
             firebaseApp,
             mockSafetyNetClient,
             mockNetworkClient,
-            TestOnlyExecutors.background(),
             TestOnlyExecutors.blocking(),
             mockRetryManager);
     assertThrows(
@@ -170,7 +168,6 @@ public class SafetyNetAppCheckProviderTest {
             firebaseApp,
             mockSafetyNetClient,
             mockNetworkClient,
-            TestOnlyExecutors.background(),
             TestOnlyExecutors.blocking(),
             mockRetryManager);
     assertThrows(
@@ -188,7 +185,6 @@ public class SafetyNetAppCheckProviderTest {
             firebaseApp,
             mockSafetyNetClient,
             mockNetworkClient,
-            TestOnlyExecutors.background(),
             TestOnlyExecutors.blocking(),
             mockRetryManager);
     Task<AppCheckToken> task =
@@ -211,7 +207,6 @@ public class SafetyNetAppCheckProviderTest {
             firebaseApp,
             mockSafetyNetClient,
             mockNetworkClient,
-            MoreExecutors.directExecutor(),
             MoreExecutors.directExecutor(),
             mockRetryManager);
     Task<AppCheckToken> task =
@@ -239,7 +234,6 @@ public class SafetyNetAppCheckProviderTest {
             firebaseApp,
             mockSafetyNetClient,
             mockNetworkClient,
-            MoreExecutors.directExecutor(),
             MoreExecutors.directExecutor(),
             mockRetryManager);
     Task<AppCheckToken> task =
