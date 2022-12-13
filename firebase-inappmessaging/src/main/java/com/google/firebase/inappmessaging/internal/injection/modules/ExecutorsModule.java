@@ -14,37 +14,40 @@
 
 package com.google.firebase.inappmessaging.internal.injection.modules;
 
-import android.app.Application;
+import androidx.annotation.NonNull;
 import com.google.firebase.annotations.concurrent.Background;
-import com.google.firebase.inappmessaging.internal.DeveloperListenerManager;
+import com.google.firebase.annotations.concurrent.Blocking;
 import dagger.Module;
 import dagger.Provides;
 import java.util.concurrent.Executor;
 import javax.inject.Singleton;
 
-/**
- * Bindings for {@link Application}
- *
- * @hide
- */
+/** Provides executors for running tasks. */
 @Module
-public class ApplicationModule {
-  private final Application application;
+public class ExecutorsModule {
+  private final Executor backgroundExecutor;
+  private final Executor blockingExecutor;
 
-  public ApplicationModule(Application application) {
-    this.application = application;
+  public ExecutorsModule(
+      @NonNull @Background Executor backgroundExecutor,
+      @NonNull @Blocking Executor blockingExecutor) {
+    this.backgroundExecutor = backgroundExecutor;
+    this.blockingExecutor = blockingExecutor;
   }
 
   @Provides
   @Singleton
-  public Application providesApplication() {
-    return application;
+  @Background
+  @NonNull
+  public Executor providesBackgroundExecutor() {
+    return backgroundExecutor;
   }
 
   @Provides
   @Singleton
-  public DeveloperListenerManager developerListenerManager(
-      @Background Executor backgroundExecutor) {
-    return new DeveloperListenerManager(backgroundExecutor);
+  @Blocking
+  @NonNull
+  public Executor providesBlockingExecutor() {
+    return blockingExecutor;
   }
 }
