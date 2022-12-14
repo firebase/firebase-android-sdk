@@ -1,5 +1,5 @@
 # Unreleased
-* [changed] Migrated the `firebase-appcheck` library to use standard Firebase executors. (#4431)
+* [changed] Migrated [app_check] SDKs to use standard Firebase executors. (#4431, #4449)
 
 # 16.1.0
 * [unchanged] Updated to accommodate the release of the updated

@@ -27,20 +27,7 @@ public class DebugAppCheckProviderFactory implements AppCheckProviderFactory {
 
   private static final DebugAppCheckProviderFactory instance = new DebugAppCheckProviderFactory();
 
-  private String debugSecret;
-
-  private DebugAppCheckProviderFactory() {
-    this.debugSecret = null;
-  }
-
-  /**
-   * This constructor is package-private in order to prevent debug secrets from being hard-coded in
-   * application logic. This constructor is used by the firebase-appcheck-debug-testing SDK, to
-   * inject debug secrets in integration tests.
-   */
-  DebugAppCheckProviderFactory(String debugSecret) {
-    this.debugSecret = debugSecret;
-  }
+  private DebugAppCheckProviderFactory() {}
 
   /**
    * Gets an instance of this class for installation into a {@link
@@ -55,7 +42,8 @@ public class DebugAppCheckProviderFactory implements AppCheckProviderFactory {
 
   @NonNull
   @Override
+  @SuppressWarnings("FirebaseUseExplicitDependencies")
   public AppCheckProvider create(@NonNull FirebaseApp firebaseApp) {
-    return new DebugAppCheckProvider(firebaseApp, debugSecret);
+    return firebaseApp.get(DebugAppCheckProvider.class);
   }
 }

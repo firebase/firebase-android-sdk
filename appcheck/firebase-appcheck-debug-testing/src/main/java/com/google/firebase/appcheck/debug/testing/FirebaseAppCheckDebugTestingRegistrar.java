@@ -12,44 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.appcheck.playintegrity;
+package com.google.firebase.appcheck.debug.testing;
 
 import com.google.android.gms.common.annotation.KeepForSdk;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.annotations.concurrent.Blocking;
-import com.google.firebase.appcheck.playintegrity.internal.PlayIntegrityAppCheckProvider;
+import com.google.firebase.appcheck.debug.BuildConfig;
+import com.google.firebase.appcheck.debug.InternalDebugSecretProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
-import com.google.firebase.components.Dependency;
-import com.google.firebase.components.Qualified;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Executor;
 
 /**
- * {@link ComponentRegistrar} for setting up FirebaseAppCheck play integrity's dependency injections
+ * {@link ComponentRegistrar} for setting up FirebaseAppCheck debug testing's dependency injections
  * in Firebase Android Components.
  *
  * @hide
  */
 @KeepForSdk
-public class FirebaseAppCheckPlayIntegrityRegistrar implements ComponentRegistrar {
-  private static final String LIBRARY_NAME = "fire-app-check-play-integrity";
+public class FirebaseAppCheckDebugTestingRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-app-check-debug-testing";
 
   @Override
   public List<Component<?>> getComponents() {
-    Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
-
     return Arrays.asList(
-        Component.builder(PlayIntegrityAppCheckProvider.class)
+        Component.builder(DebugSecretProvider.class, (InternalDebugSecretProvider.class))
             .name(LIBRARY_NAME)
-            .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(blockingExecutor))
-            .factory(
-                (container) ->
-                    new PlayIntegrityAppCheckProvider(
-                        container.get(FirebaseApp.class), container.get(blockingExecutor)))
+            .factory((container) -> new DebugSecretProvider())
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }

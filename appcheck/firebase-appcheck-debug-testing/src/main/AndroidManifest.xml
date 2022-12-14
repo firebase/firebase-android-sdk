@@ -17,4 +17,11 @@
     package="com.google.firebase.appcheck.debug.testing">
   <!--Although the *SdkVersion is captured in gradle build files, this is required for non gradle builds-->
   <!--<uses-sdk android:minSdkVersion="16"/>-->
+  <application>
+    <service android:name="com.google.firebase.components.ComponentDiscoveryService"
+        android:exported="false">
+      <meta-data android:name="com.google.firebase.components:com.google.firebase.appcheck.debug.testing.FirebaseAppCheckDebugTestingRegistrar"
+          android:value="com.google.firebase.components.ComponentRegistrar" />
+    </service>
+  </application>
 </manifest>
