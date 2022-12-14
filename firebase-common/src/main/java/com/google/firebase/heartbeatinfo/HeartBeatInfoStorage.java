@@ -31,18 +31,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 
 /**
  * Class responsible for storing all heartbeat related information.
  *
  * <p>This exposes functions to store heartbeats and retrieve them in the form of HeartBeatResult.
  */
+@Singleton
 class HeartBeatInfoStorage {
-  private static HeartBeatInfoStorage instance = null;
-
   private static final String GLOBAL = "fire-global";
-
-  private static final String PREFERENCES_NAME = "FirebaseAppHeartBeat";
 
   private static final String HEARTBEAT_PREFERENCES_NAME = "FirebaseHeartBeat";
 
@@ -55,7 +55,9 @@ class HeartBeatInfoStorage {
 
   private final SharedPreferences firebaseSharedPreferences;
 
-  public HeartBeatInfoStorage(Context applicationContext, String persistenceKey) {
+  @Inject
+  public HeartBeatInfoStorage(
+      Context applicationContext, @Named("persistenceKey") String persistenceKey) {
     this.firebaseSharedPreferences =
         applicationContext.getSharedPreferences(
             HEARTBEAT_PREFERENCES_NAME + persistenceKey, Context.MODE_PRIVATE);

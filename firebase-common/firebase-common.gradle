@@ -14,6 +14,7 @@
 
 plugins {
     id 'firebase-library'
+    id 'firebase-vendor'
 }
 
 firebaseLibrary {
@@ -67,6 +68,12 @@ dependencies {
     implementation 'com.google.android.gms:play-services-basement:18.1.0'
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
     implementation 'androidx.concurrent:concurrent-futures:1.1.0'
+
+    implementation 'javax.inject:javax.inject:1'
+    vendor ('com.google.dagger:dagger:2.43.2') {
+        exclude group: "javax.inject", module: "javax.inject"
+    }
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.43.2'
 
     // FirebaseApp references storage, so storage needs to be on classpath when dokka runs.
     javadocClasspath project(path: ':firebase-storage')

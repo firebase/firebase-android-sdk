@@ -19,8 +19,6 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
-import com.google.firebase.heartbeatinfo.DefaultHeartBeatController;
-import com.google.firebase.platforminfo.DefaultUserAgentPublisher;
 import com.google.firebase.platforminfo.KotlinDetector;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.ArrayList;
@@ -42,8 +40,6 @@ public class FirebaseCommonRegistrar implements ComponentRegistrar {
   @Override
   public List<Component<?>> getComponents() {
     List<Component<?>> result = new ArrayList<>();
-    result.add(DefaultUserAgentPublisher.component());
-    result.add(DefaultHeartBeatController.component());
     result.add(
         LibraryVersionComponent.create(FIREBASE_ANDROID, String.valueOf(Build.VERSION.SDK_INT)));
     result.add(LibraryVersionComponent.create(FIREBASE_COMMON, BuildConfig.VERSION_NAME));

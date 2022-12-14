@@ -66,14 +66,18 @@ public class DefaultHeartBeatControllerTest {
     when(publisher.getUserAgent()).thenReturn(DEFAULT_USER_AGENT);
     heartBeatController =
         new DefaultHeartBeatController(
-            () -> storage, logSources, executor, () -> publisher, applicationContext);
+            () -> storage, () -> logSources, () -> executor, () -> publisher, applicationContext);
   }
 
   @Test
   public void whenNoSource_dontStoreHeartBeat() throws InterruptedException, TimeoutException {
     DefaultHeartBeatController controller =
         new DefaultHeartBeatController(
-            () -> storage, new HashSet<>(), executor, () -> publisher, applicationContext);
+            () -> storage,
+            Collections::emptySet,
+            () -> executor,
+            () -> publisher,
+            applicationContext);
     await(controller.registerHeartBeat());
     verify(storage, times(0)).storeHeartBeat(anyLong(), anyString());
   }
@@ -117,7 +121,7 @@ public class DefaultHeartBeatControllerTest {
         new HeartBeatInfoStorage(heartBeatSharedPreferences);
     DefaultHeartBeatController controller =
         new DefaultHeartBeatController(
-            () -> heartBeatInfoStorage, logSources, executor, () -> publisher, context);
+            () -> heartBeatInfoStorage, () -> logSources, () -> executor, () -> publisher, context);
     String emptyString =
         Base64.getUrlEncoder()
             .withoutPadding()
@@ -140,7 +144,7 @@ public class DefaultHeartBeatControllerTest {
         new HeartBeatInfoStorage(heartBeatSharedPreferences);
     DefaultHeartBeatController controller =
         new DefaultHeartBeatController(
-            () -> heartBeatInfoStorage, logSources, executor, () -> publisher, context);
+            () -> heartBeatInfoStorage, () -> logSources, () -> executor, () -> publisher, context);
     String emptyString = compress("{\"heartbeats\":[],\"version\":\"2\"}");
     await(controller.registerHeartBeat());
     int heartBeatCode = controller.getHeartBeatCode("test").getCode();

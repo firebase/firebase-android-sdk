@@ -39,20 +39,9 @@ import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.PlatformVersion;
 import com.google.android.gms.common.util.ProcessUtils;
-import com.google.firebase.components.Component;
-import com.google.firebase.components.ComponentDiscovery;
-import com.google.firebase.components.ComponentDiscoveryService;
-import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
-import com.google.firebase.components.Lazy;
-import com.google.firebase.concurrent.ExecutorsRegistrar;
-import com.google.firebase.events.Publisher;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatController;
-import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
-import com.google.firebase.provider.FirebaseInitProvider;
-import com.google.firebase.tracing.ComponentMonitor;
-import com.google.firebase.tracing.FirebaseTrace;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,6 +50,9 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 
 /**
  * The entry point of Firebase SDKs. It holds common configuration and state for Firebase APIs. Most
@@ -88,6 +80,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * Use of Firebase in processes other than the main process is not supported and will likely cause
  * problems related to resource contention.
  */
+@Singleton
 public class FirebaseApp {
 
   private static final String LOG_TAG = "FirebaseApp";
@@ -109,8 +102,8 @@ public class FirebaseApp {
   // enabled is a backwards incompatible change.
   private final AtomicBoolean automaticResourceManagementEnabled = new AtomicBoolean(false);
   private final AtomicBoolean deleted = new AtomicBoolean();
-  private final Lazy<DataCollectionConfigStorage> dataCollectionConfigStorage;
-  private final Provider<DefaultHeartBeatController> defaultHeartBeatController;
+  private final javax.inject.Provider<DataCollectionConfigStorage> dataCollectionConfigStorage;
+  private final javax.inject.Provider<DefaultHeartBeatController> defaultHeartBeatController;
   private final List<BackgroundStateChangeListener> backgroundStateChangeListeners =
       new CopyOnWriteArrayList<>();
   private final List<FirebaseAppLifecycleListener> lifecycleListeners =
@@ -293,7 +286,14 @@ public class FirebaseApp {
           "FirebaseApp name " + normalizedName + " already exists!");
 
       Preconditions.checkNotNull(applicationContext, "Application context cannot be null.");
-      firebaseApp = new FirebaseApp(applicationContext, normalizedName, options);
+
+      firebaseApp =
+          DaggerAppComponent.builder()
+              .setApplicationContext(applicationContext)
+              .setName(name)
+              .setOptions(options)
+              .build()
+              .getApp();
       INSTANCES.put(normalizedName, firebaseApp);
     }
 
@@ -401,61 +401,24 @@ public class FirebaseApp {
   }
 
   /**
-   * Default constructor.
+   * Default constructor
    *
    * @hide
    */
-  protected FirebaseApp(Context applicationContext, String name, FirebaseOptions options) {
-    this.applicationContext = Preconditions.checkNotNull(applicationContext);
-    this.name = Preconditions.checkNotEmpty(name);
-    this.options = Preconditions.checkNotNull(options);
-    StartupTime startupTime = FirebaseInitProvider.getStartupTime();
-
-    FirebaseTrace.pushTrace("Firebase");
-
-    FirebaseTrace.pushTrace("ComponentDiscovery");
-    List<Provider<ComponentRegistrar>> registrars =
-        ComponentDiscovery.forContext(applicationContext, ComponentDiscoveryService.class)
-            .discoverLazy();
-    FirebaseTrace.popTrace(); // ComponentDiscovery
-
-    FirebaseTrace.pushTrace("Runtime");
-    ComponentRuntime.Builder builder =
-        ComponentRuntime.builder(com.google.firebase.concurrent.UiExecutor.INSTANCE)
-            .addLazyComponentRegistrars(registrars)
-            .addComponentRegistrar(new FirebaseCommonRegistrar())
-            .addComponentRegistrar(new ExecutorsRegistrar())
-            .addComponent(Component.of(applicationContext, Context.class))
-            .addComponent(Component.of(this, FirebaseApp.class))
-            .addComponent(Component.of(options, FirebaseOptions.class))
-            .setProcessor(new ComponentMonitor());
-
-    // Don't provide StartupTime in direct boot mode or if Firebase was manually started
-    if (UserManagerCompat.isUserUnlocked(applicationContext)
-        && FirebaseInitProvider.isCurrentlyInitializing()) {
-      builder.addComponent(Component.of(startupTime, StartupTime.class));
-    }
-
-    componentRuntime = builder.build();
-    FirebaseTrace.popTrace(); // Runtime
-
-    dataCollectionConfigStorage =
-        new Lazy<>(
-            () ->
-                new DataCollectionConfigStorage(
-                    applicationContext,
-                    getPersistenceKey(),
-                    componentRuntime.get(Publisher.class)));
-    defaultHeartBeatController = componentRuntime.getProvider(DefaultHeartBeatController.class);
-
-    addBackgroundStateChangeListener(
-        background -> {
-          if (!background) {
-            defaultHeartBeatController.get().registerHeartBeat();
-          }
-        });
-
-    FirebaseTrace.popTrace(); // Firebase
+  @Inject
+  protected FirebaseApp(
+      Context applicationContext,
+      @Named("appName") String name,
+      FirebaseOptions options,
+      ComponentRuntime componentRuntime,
+      javax.inject.Provider<DataCollectionConfigStorage> dataCollectionConfigStorage,
+      javax.inject.Provider<DefaultHeartBeatController> heartBeatController) {
+    this.applicationContext = applicationContext;
+    this.name = name;
+    this.options = options;
+    this.componentRuntime = componentRuntime;
+    this.dataCollectionConfigStorage = dataCollectionConfigStorage;
+    this.defaultHeartBeatController = heartBeatController;
   }
 
   private void checkNotDeleted() {
@@ -522,10 +485,7 @@ public class FirebaseApp {
    */
   @KeepForSdk
   public String getPersistenceKey() {
-    return encodeUrlSafeNoPadding(getName().getBytes(Charset.defaultCharset()))
-        + "+"
-        + encodeUrlSafeNoPadding(
-            getOptions().getApplicationId().getBytes(Charset.defaultCharset()));
+    return getPersistenceKey(getName(), getOptions());
   }
 
   /**

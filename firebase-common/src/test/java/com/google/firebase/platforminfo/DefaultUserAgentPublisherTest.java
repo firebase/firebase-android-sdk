@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.junit.Before;
@@ -43,7 +44,7 @@ public class DefaultUserAgentPublisherTest {
     when(globalLibraryVersionRegistrar.getRegisteredVersions()).thenReturn(new HashSet<>());
 
     userAgentPublisher =
-        new DefaultUserAgentPublisher(libraryVersions, globalLibraryVersionRegistrar);
+        new DefaultUserAgentPublisher(() -> libraryVersions, globalLibraryVersionRegistrar);
   }
 
   @Test
@@ -59,7 +60,7 @@ public class DefaultUserAgentPublisherTest {
   @Test
   public void getUserAgent_returnsEmptyString_whenVersionSetIsEmpty() {
     userAgentPublisher =
-        new DefaultUserAgentPublisher(new HashSet<>(), globalLibraryVersionRegistrar);
+        new DefaultUserAgentPublisher(Collections::emptySet, globalLibraryVersionRegistrar);
 
     assertThat(userAgentPublisher.getUserAgent()).isEqualTo("");
   }
@@ -73,7 +74,7 @@ public class DefaultUserAgentPublisherTest {
     gamesLibraryVersions.add(LibraryVersion.create("buzz", "2"));
     when(globalLibraryVersionRegistrar.getRegisteredVersions()).thenReturn(gamesLibraryVersions);
     userAgentPublisher =
-        new DefaultUserAgentPublisher(libraryVersions, globalLibraryVersionRegistrar);
+        new DefaultUserAgentPublisher(() -> libraryVersions, globalLibraryVersionRegistrar);
 
     String[] actualUserAgent = userAgentPublisher.getUserAgent().split(" ");
     Arrays.sort(actualUserAgent);

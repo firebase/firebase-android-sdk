@@ -18,26 +18,24 @@ import android.content.Context;
 import android.util.Base64;
 import android.util.Base64OutputStream;
 import androidx.annotation.NonNull;
-import androidx.annotation.VisibleForTesting;
 import androidx.core.os.UserManagerCompat;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
-import com.google.firebase.components.Component;
-import com.google.firebase.components.Dependency;
-import com.google.firebase.components.Qualified;
-import com.google.firebase.inject.Provider;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.zip.GZIPOutputStream;
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 /** Provides a function to store heartbeats and another function to retrieve stored heartbeats. */
+@Singleton
 public class DefaultHeartBeatController implements HeartBeatController, HeartBeatInfo {
 
   private final Provider<HeartBeatInfoStorage> storageProvider;
@@ -46,12 +44,12 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
 
   private final Provider<UserAgentPublisher> userAgentProvider;
 
-  private final Set<HeartBeatConsumer> consumers;
+  private final Provider<Set<HeartBeatConsumer>> consumers;
 
-  private final Executor backgroundExecutor;
+  private final Provider<Executor> backgroundExecutor;
 
   public Task<Void> registerHeartBeat() {
-    if (consumers.size() <= 0) {
+    if (consumers.get().size() <= 0) {
       return Tasks.forResult(null);
     }
     boolean inDirectBoot = !UserManagerCompat.isUserUnlocked(applicationContext);
@@ -60,7 +58,7 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
     }
 
     return Tasks.call(
-        backgroundExecutor,
+        backgroundExecutor.get(),
         () -> {
           synchronized (DefaultHeartBeatController.this) {
             this.storageProvider
@@ -80,7 +78,7 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
       return Tasks.forResult("");
     }
     return Tasks.call(
-        backgroundExecutor,
+        backgroundExecutor.get(),
         () -> {
           synchronized (DefaultHeartBeatController.this) {
             HeartBeatInfoStorage storage = this.storageProvider.get();
@@ -109,25 +107,11 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
         });
   }
 
-  private DefaultHeartBeatController(
-      Context context,
-      String persistenceKey,
-      Set<HeartBeatConsumer> consumers,
-      Provider<UserAgentPublisher> userAgentProvider,
-      Executor backgroundExecutor) {
-    this(
-        () -> new HeartBeatInfoStorage(context, persistenceKey),
-        consumers,
-        backgroundExecutor,
-        userAgentProvider,
-        context);
-  }
-
-  @VisibleForTesting
+  @Inject
   DefaultHeartBeatController(
       Provider<HeartBeatInfoStorage> testStorage,
-      Set<HeartBeatConsumer> consumers,
-      Executor executor,
+      Provider<Set<HeartBeatConsumer>> consumers,
+      @Background Provider<Executor> executor,
       Provider<UserAgentPublisher> userAgentProvider,
       Context context) {
     storageProvider = testStorage;
@@ -135,26 +119,6 @@ public class DefaultHeartBeatController implements HeartBeatController, HeartBea
     this.backgroundExecutor = executor;
     this.userAgentProvider = userAgentProvider;
     this.applicationContext = context;
-  }
-
-  public static @NonNull Component<DefaultHeartBeatController> component() {
-    Qualified<Executor> backgroundExecutor = Qualified.qualified(Background.class, Executor.class);
-    return Component.builder(
-            DefaultHeartBeatController.class, HeartBeatController.class, HeartBeatInfo.class)
-        .add(Dependency.required(Context.class))
-        .add(Dependency.required(FirebaseApp.class))
-        .add(Dependency.setOf(HeartBeatConsumer.class))
-        .add(Dependency.requiredProvider(UserAgentPublisher.class))
-        .add(Dependency.required(backgroundExecutor))
-        .factory(
-            c ->
-                new DefaultHeartBeatController(
-                    c.get(Context.class),
-                    c.get(FirebaseApp.class).getPersistenceKey(),
-                    c.setOf(HeartBeatConsumer.class),
-                    c.getProvider(UserAgentPublisher.class),
-                    c.get(backgroundExecutor)))
-        .build();
   }
 
   @Override

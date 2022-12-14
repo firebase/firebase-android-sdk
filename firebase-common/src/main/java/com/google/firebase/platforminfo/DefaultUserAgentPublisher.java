@@ -14,10 +14,11 @@
 
 package com.google.firebase.platforminfo;
 
-import com.google.firebase.components.Component;
-import com.google.firebase.components.Dependency;
 import java.util.Iterator;
 import java.util.Set;
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 
 /**
  * Provides a user agent string that captures the SDKs and their corresponding versions.
@@ -25,13 +26,16 @@ import java.util.Set;
  * <p>Example user agent string: "firebase-common/16.1.1 firebase-firestore/16.1.2
  * firebase-database/16.1.2"
  */
+@Singleton
 public class DefaultUserAgentPublisher implements UserAgentPublisher {
-  private final String javaSDKVersionUserAgent;
+  private final Provider<Set<LibraryVersion>> libraryVersions;
   private final GlobalLibraryVersionRegistrar gamesSDKRegistrar;
 
+  @Inject
   DefaultUserAgentPublisher(
-      Set<LibraryVersion> libraryVersions, GlobalLibraryVersionRegistrar gamesSDKRegistrar) {
-    this.javaSDKVersionUserAgent = toUserAgent(libraryVersions);
+      Provider<Set<LibraryVersion>> libraryVersions,
+      GlobalLibraryVersionRegistrar gamesSDKRegistrar) {
+    this.libraryVersions = libraryVersions;
     this.gamesSDKRegistrar = gamesSDKRegistrar;
   }
 
@@ -44,10 +48,12 @@ public class DefaultUserAgentPublisher implements UserAgentPublisher {
   @Override
   public String getUserAgent() {
     if (gamesSDKRegistrar.getRegisteredVersions().isEmpty()) {
-      return javaSDKVersionUserAgent;
+      return toUserAgent(libraryVersions.get());
     }
 
-    return javaSDKVersionUserAgent + ' ' + toUserAgent(gamesSDKRegistrar.getRegisteredVersions());
+    return toUserAgent(libraryVersions.get())
+        + ' '
+        + toUserAgent(gamesSDKRegistrar.getRegisteredVersions());
   }
 
   private static String toUserAgent(Set<LibraryVersion> tokens) {
@@ -61,16 +67,5 @@ public class DefaultUserAgentPublisher implements UserAgentPublisher {
       }
     }
     return sb.toString();
-  }
-
-  /** Creates a component to codify a user agent string that captures SDK versions. */
-  public static Component<UserAgentPublisher> component() {
-    return Component.builder(UserAgentPublisher.class)
-        .add(Dependency.setOf(LibraryVersion.class))
-        .factory(
-            c ->
-                new DefaultUserAgentPublisher(
-                    c.setOf(LibraryVersion.class), GlobalLibraryVersionRegistrar.getInstance()))
-        .build();
   }
 }
