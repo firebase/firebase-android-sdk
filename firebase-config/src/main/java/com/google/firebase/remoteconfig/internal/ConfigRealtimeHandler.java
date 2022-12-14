@@ -14,20 +14,25 @@
 
 package com.google.firebase.remoteconfig.internal;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import java.util.LinkedHashSet;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class ConfigRealtimeHandler {
 
@@ -37,6 +42,15 @@ public class ConfigRealtimeHandler {
   @GuardedBy("this")
   private Future<?> realtimeHttpClientTask;
 
+  @GuardedBy("this")
+  private int httpRetriesRemaining;
+
+  @GuardedBy("this")
+  private long httpRetrySeconds;
+
+  @GuardedBy("this")
+  private boolean isRealtimeDisabled;
+
   private final ConfigFetchHandler configFetchHandler;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
@@ -44,6 +58,9 @@ public class ConfigRealtimeHandler {
   private final String namespace;
   private final ExecutorService executorService;
   private final ScheduledExecutorService scheduledExecutorService;
+  private final Random random;
+
+  private final int ORIGINAL_RETRIES = 7;
 
   public ConfigRealtimeHandler(
       FirebaseApp firebaseApp,
@@ -64,10 +81,30 @@ public class ConfigRealtimeHandler {
     this.namespace = namespace;
     this.executorService = executorService;
     this.scheduledExecutorService = scheduledExecutorService;
+    this.random = new Random();
+    this.isRealtimeDisabled = false;
+  }
+
+  private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
+    for (ConfigUpdateListener listener : listeners) {
+      listener.onError(exception);
+    }
+  }
+
+  private synchronized void resetRetryParameters() {
+    httpRetrySeconds = random.nextInt(5) + 1;
+    httpRetriesRemaining = ORIGINAL_RETRIES;
+  }
+
+  private synchronized int getRetryMultiplier() {
+    // Return retry multiplier between range of 5 and 2.
+    return random.nextInt(3) + 2;
   }
 
   private synchronized boolean canCreateRealtimeHttpClientTask() {
-    return !listeners.isEmpty() && realtimeHttpClientTask == null;
+    return !listeners.isEmpty()
+        && realtimeHttpClientTask == null
+        && !isRealtimeDisabled;
   }
 
   private synchronized Runnable createRealtimeHttpClientTask(
@@ -76,14 +113,38 @@ public class ConfigRealtimeHandler {
       @Override
       public void run() {
         configRealtimeHttpClient.beginRealtimeHttpStream();
-        boolean isRealtimeClientRunning = true;
-        while (isRealtimeClientRunning) {
-          if (Thread.currentThread().isInterrupted()) {
-            isRealtimeClientRunning = false;
-          }
-        }
       }
     };
+  }
+
+  /** Retries HTTP stream connection asyncly in random time intervals. */
+  @SuppressLint("VisibleForTests")
+  public synchronized void retryHTTPConnection() {
+    if (httpRetriesRemaining > 0) {
+      if (httpRetriesRemaining < ORIGINAL_RETRIES) {
+        httpRetrySeconds *= getRetryMultiplier();
+      }
+      httpRetriesRemaining--;
+      ConfigRealtimeHttpClient realtimeHttpClient =
+          new ConfigRealtimeHttpClient(
+              firebaseApp,
+              firebaseInstallations,
+              configFetchHandler,
+              context,
+              namespace,
+              listeners,
+              scheduledExecutorService);
+      scheduledExecutorService.schedule(
+          new RealtimeHttpClientFutureTask(
+              createRealtimeHttpClientTask(realtimeHttpClient), realtimeHttpClient),
+          httpRetrySeconds,
+          TimeUnit.SECONDS);
+    } else {
+      propagateErrors(
+          new FirebaseRemoteConfigClientException(
+              "Unable to connect to the server. Check your connection and try again.",
+              FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
+    }
   }
 
   // Kicks off Http stream listening and autofetch
@@ -99,7 +160,7 @@ public class ConfigRealtimeHandler {
               listeners,
               scheduledExecutorService);
       this.realtimeHttpClientTask =
-          this.executorService.submit(
+          this.scheduledExecutorService.submit(
               new RealtimeHttpClientFutureTask(
                   createRealtimeHttpClientTask(realtimeHttpClient), realtimeHttpClient));
     }
@@ -142,7 +203,14 @@ public class ConfigRealtimeHandler {
 
     @Override
     protected void done() {
-      this.configRealtimeHttpClient.stopRealtime();
+      realtimeHttpClientTask = null;
+      isRealtimeDisabled = configRealtimeHttpClient.getRealtimeDisabledState();
+      if (configRealtimeHttpClient.getWasLastAttemptSuccessful()) {
+        resetRetryParameters();
+      }
+      if (configRealtimeHttpClient.canRetryHttpConnection()) {
+        retryHTTPConnection();
+      }
     }
   }
 
