@@ -108,7 +108,7 @@ public class RemoteConfigComponent {
     this(
         context,
         Executors.newCachedThreadPool(),
-        Executors.newSingleThreadScheduledExecutor(),
+        Executors.newScheduledThreadPool(3),
         firebaseApp,
         firebaseInstallations,
         firebaseAbt,
