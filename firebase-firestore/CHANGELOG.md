@@ -1,4 +1,5 @@
 # Unreleased
+* [fixed] Fix an issue that stops some performance optimization being applied.
 
 # 24.4.1
 * [fixed] Fix `FAILED_PRECONDITION` when writing to a deleted document in a

@@ -254,6 +254,14 @@ public class TestUtil {
     return keySet;
   }
 
+  public static <T> Map<DocumentKey, T> keyMap(Object... entries) {
+    Map<DocumentKey, T> res = new LinkedHashMap<>();
+    for (int i = 0; i < entries.length; i += 2) {
+      res.put(DocumentKey.fromPathString((String) entries[i]), (T) entries[i + 1]);
+    }
+    return res;
+  }
+
   public static FieldFilter filter(String key, String operator, Object value) {
     return FieldFilter.create(field(key), operatorFromString(operator), wrap(value));
   }
