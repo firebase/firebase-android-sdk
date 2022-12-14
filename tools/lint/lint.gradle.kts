@@ -1,4 +1,4 @@
-// Copyright 2020 Google LLC
+// Copyright 2022 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,23 +13,22 @@
 // limitations under the License.
 
 plugins {
-    id 'firebase-java-library'
-}
-
-firebaseLibrary {
-    publishSources = true
-    publishJavadoc = false
-}
-
-java {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
-}
-
-tasks.withType(JavaCompile) {
-    options.compilerArgs << "-Werror"
+  id("org.jetbrains.kotlin.jvm")
 }
 
 dependencies {
-    implementation 'javax.inject:javax.inject:1'
+  compileOnly(libs.kotlin.stdlib)
+  compileOnly(libs.android.lint.api)
+  compileOnly(libs.android.lint.checks)
+
+  testImplementation(libs.junit)
+  testImplementation(libs.android.lint)
+  testImplementation(libs.android.lint.tests)
+  testImplementation(libs.android.lint.testutils)
+}
+
+tasks.jar {
+  manifest {
+    attributes("Lint-Registry-v2" to "com.google.firebase.lint.checks.CheckRegistry")
+  }
 }

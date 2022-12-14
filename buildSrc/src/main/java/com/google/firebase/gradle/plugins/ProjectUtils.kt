@@ -32,7 +32,15 @@ fun toBoolean(value: Any?): Boolean {
 
 /** Finds or creates the javadocClasspath [Configuration]. */
 val Project.javadocConfig: Configuration
-  get() = configurations.findByName("javadocClasspath") ?: configurations.create("javadocClasspath")
+  get() =
+    configurations.findByName("javadocClasspath")
+      ?: configurations.create("javadocClasspath").also { javadocClasspath ->
+        configurations.all {
+          if (name == "compileOnly") {
+            javadocClasspath.extendsFrom(this)
+          }
+        }
+      }
 
 /**
  * Finds or creates the dackkaArtifacts [Configuration].

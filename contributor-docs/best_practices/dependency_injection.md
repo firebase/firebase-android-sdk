@@ -47,7 +47,7 @@ plugins {
 
 dependencies {
     implementation(libs.javax.inject)
-    vendor(libs.dagger) {
+    vendor(libs.dagger.dagger) {
         exclude group: "javax.inject", module: "javax.inject"
     }
     annotationProcessor(libs.dagger.compiler)

@@ -29,6 +29,7 @@ android {
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
+        multiDexEnabled = true
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
