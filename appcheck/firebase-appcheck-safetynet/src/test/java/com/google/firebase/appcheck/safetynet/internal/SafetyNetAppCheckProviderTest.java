@@ -134,7 +134,7 @@ public class SafetyNetAppCheckProviderTest {
             firebaseApp,
             mockSafetyNetClient,
             mockNetworkClient,
-            MoreExecutors.directExecutor(),
+            /* liteExecutor= */ MoreExecutors.directExecutor(),
             TestOnlyExecutors.blocking(),
             mockRetryManager);
     assertThat(provider.getSafetyNetClientTask().getResult()).isEqualTo(mockSafetyNetClient);
@@ -245,8 +245,8 @@ public class SafetyNetAppCheckProviderTest {
             firebaseApp,
             mockSafetyNetClient,
             mockNetworkClient,
-            TestOnlyExecutors.lite(),
-            MoreExecutors.directExecutor(),
+            /* liteExecutor= */ MoreExecutors.directExecutor(),
+            /* blockingExecutor= */ MoreExecutors.directExecutor(),
             mockRetryManager);
     Task<AppCheckToken> task =
         provider.exchangeSafetyNetAttestationResponseForToken(mockSafetyNetAttestationResponse);
