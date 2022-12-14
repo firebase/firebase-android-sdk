@@ -33,7 +33,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
 import java.io.BufferedOutputStream;
@@ -44,10 +43,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.json.JSONObject;
@@ -68,15 +65,13 @@ public class ConfigRealtimeHttpClient {
   private HttpURLConnection httpURLConnection;
 
   @GuardedBy("this")
-  private int httpRetriesRemaining;
-
-  @GuardedBy("this")
-  private long httpRetrySeconds;
-
-  @GuardedBy("this")
   private boolean isRealtimeDisabled;
 
-  private final int ORIGINAL_RETRIES = 7;
+  @GuardedBy("this")
+  private boolean isHttpConnectionRetryable;
+
+  @GuardedBy("this")
+  private boolean wasLastHttpConnectionAttemptSuccessful;
 
   private final ScheduledExecutorService scheduledExecutorService;
   private final ConfigFetchHandler configFetchHandler;
@@ -84,7 +79,6 @@ public class ConfigRealtimeHttpClient {
   private final FirebaseInstallationsApi firebaseInstallations;
   private final Context context;
   private final String namespace;
-  private final Random random;
 
   public ConfigRealtimeHttpClient(
       FirebaseApp firebaseApp,
@@ -99,16 +93,26 @@ public class ConfigRealtimeHttpClient {
     this.httpURLConnection = null;
     this.scheduledExecutorService = scheduledExecutorService;
 
-    // Retry parameters
-    this.random = new Random();
-    resetRetryParameters();
-
     this.firebaseApp = firebaseApp;
     this.configFetchHandler = configFetchHandler;
     this.firebaseInstallations = firebaseInstallations;
     this.context = context;
     this.namespace = namespace;
     this.isRealtimeDisabled = false;
+    this.isHttpConnectionRetryable = false;
+    this.wasLastHttpConnectionAttemptSuccessful = false;
+  }
+
+  synchronized boolean getWasLastAttemptSuccessful() {
+    return wasLastHttpConnectionAttemptSuccessful;
+  }
+
+  synchronized boolean canRetryHttpConnection() {
+    return isHttpConnectionRetryable;
+  }
+
+  synchronized boolean getRealtimeDisabledState() {
+    return isRealtimeDisabled;
   }
 
   /**
@@ -207,16 +211,6 @@ public class ConfigRealtimeHttpClient {
     this.isRealtimeDisabled = true;
   }
 
-  private synchronized int getRetryMultiplier() {
-    // Return retry multiplier between range of 5 and 2.
-    return random.nextInt(3) + 2;
-  }
-
-  private synchronized void resetRetryParameters() {
-    httpRetrySeconds = random.nextInt(5) + 1;
-    httpRetriesRemaining = ORIGINAL_RETRIES;
-  }
-
   private synchronized boolean canMakeHttpStreamConnection() {
     return !listeners.isEmpty() && httpURLConnection == null && !isRealtimeDisabled;
   }
@@ -250,36 +244,6 @@ public class ConfigRealtimeHttpClient {
     return httpURLConnection;
   }
 
-  /** Retries HTTP stream connection asyncly in random time intervals. */
-  @SuppressLint("VisibleForTests")
-  public synchronized void retryHTTPConnection() {
-    if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
-      if (httpRetriesRemaining < ORIGINAL_RETRIES) {
-        httpRetrySeconds *= getRetryMultiplier();
-      }
-      httpRetriesRemaining--;
-      scheduledExecutorService.schedule(
-          new Runnable() {
-            @Override
-            public void run() {
-              beginRealtimeHttpStream();
-            }
-          },
-          httpRetrySeconds,
-          TimeUnit.SECONDS);
-    } else {
-      propagateErrors(
-          new FirebaseRemoteConfigClientException(
-              "Unable to connect to the server. Check your connection and try again.",
-              FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
-    }
-  }
-
-  synchronized void stopRealtime() {
-    closeRealtimeHttpStream();
-    scheduledExecutorService.shutdownNow();
-  }
-
   /**
    * Create Autofetch class that listens on HTTP stream for ConfigUpdate messages and calls Fetch
    * accordingly.
@@ -289,10 +253,7 @@ public class ConfigRealtimeHttpClient {
     ConfigUpdateListener retryCallback =
         new ConfigUpdateListener() {
           @Override
-          public void onEvent() {
-            closeRealtimeHttpStream();
-            retryHTTPConnection();
-          }
+          public void onEvent() {}
 
           // This method will only be called when a realtimeDisabled message is sent down the
           // stream.
@@ -330,6 +291,7 @@ public class ConfigRealtimeHttpClient {
     }
 
     Integer responseCode = null;
+    wasLastHttpConnectionAttemptSuccessful = false;
     try {
       // Create the open the connection.
       httpURLConnection = createRealtimeConnection();
@@ -337,9 +299,7 @@ public class ConfigRealtimeHttpClient {
 
       // If the connection returned a 200 response code, start listening for messages.
       if (responseCode == HttpURLConnection.HTTP_OK) {
-        // Reset the retries remaining if we opened the connection without an exception.
-        resetRetryParameters();
-
+        wasLastHttpConnectionAttemptSuccessful = true;
         // Start listening for realtime notifications.
         ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
         configAutoFetch.listenForNotifications();
@@ -359,7 +319,7 @@ public class ConfigRealtimeHttpClient {
       if (responseCode == null
           || responseCode == HttpURLConnection.HTTP_OK
           || isStatusCodeRetryable(responseCode)) {
-        retryHTTPConnection();
+        isHttpConnectionRetryable = true;
       } else {
         propagateErrors(
             new FirebaseRemoteConfigServerException(
@@ -380,11 +340,14 @@ public class ConfigRealtimeHttpClient {
       // Explicitly close the input stream due to a bug in the Android okhttp implementation.
       // See github.com/firebase/firebase-android-sdk/pull/808.
       try {
-        this.httpURLConnection.getInputStream().close();
-        this.httpURLConnection.getErrorStream().close();
+        httpURLConnection.getInputStream().close();
+        if (httpURLConnection.getErrorStream() != null) {
+          httpURLConnection.getErrorStream().close();
+        }
+
       } catch (IOException e) {
       }
-      this.httpURLConnection = null;
+      httpURLConnection = null;
     }
   }
 }
