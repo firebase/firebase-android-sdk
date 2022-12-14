@@ -110,14 +110,6 @@ public class ConfigAutoFetch {
         httpURLConnection.disconnect();
       }
     }
-
-    retryCallback.onEvent();
-    scheduledExecutorService.shutdownNow();
-    try {
-      scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
-    } catch (InterruptedException ex) {
-      Log.d(TAG, "Thread Interrupted.");
-    }
   }
 
   // Auto-fetch new config and execute callbacks on each new message
