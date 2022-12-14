@@ -16,7 +16,8 @@ android-lint-api = { module = "com.android.tools.lint:lint-api", version.ref = "
 android-lint-checks = { module = "com.android.tools.lint:lint-checks", version.ref = "android-lint"}
 android-lint-tests = { module = "com.android.tools.lint:lint-tests", version.ref = "android-lint"}
 android-lint-testutils = { module = "com.android.tools:testutils", version.ref = "android-lint"}
-androidx-annotation = { module = "androidx.annotation:annotation", version = "1.5.0" }
+# Don't upgrade further as 1.4.0+ is written in Kotlin and has size implications
+androidx-annotation = { module = "androidx.annotation:annotation", version = "1.3.0" }
 androidx-core = { module = "androidx.core:core", version = "1.2.0" }
 androidx-futures = { module = "androidx.concurrent:concurrent-futures", version = "1.1.0" }
 autovalue = { module = "com.google.auto.value:auto-value", version.ref = "autovalue" }
