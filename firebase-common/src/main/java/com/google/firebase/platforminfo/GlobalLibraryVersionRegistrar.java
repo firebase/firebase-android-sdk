@@ -37,7 +37,6 @@ public class GlobalLibraryVersionRegistrar {
    * <p>It is the responsibility of the caller to register the version at app launch.
    */
   public void registerVersion(String sdkName, String version) {
-
     synchronized (infos) {
       infos.add(LibraryVersion.create(sdkName, version));
     }
