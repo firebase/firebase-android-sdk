@@ -39,8 +39,6 @@ public class OverlayedDocument {
    *
    * <p>If there is no overlay (mutation) for the document, returns FieldMask.EMPTY.
    */
-  // TODO(b/262245989): This screams for a proper sum type (Tagged Union) which does not exist in
-  // Java (yet).
   public @Nullable FieldMask getMutatedFields() {
     return mutatedFields;
   }
