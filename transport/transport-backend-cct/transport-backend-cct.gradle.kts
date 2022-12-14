@@ -26,7 +26,7 @@ firebaseLibrary{
 protobuf {
     // Configure the protoc executable
     protobuf.protoc {
-        val protocVersion = libs.versions.protoc
+        val protocVersion = libs.versions.protoc.get()
         artifact = "com.google.protobuf:protoc:$protocVersion"
     }
 }
