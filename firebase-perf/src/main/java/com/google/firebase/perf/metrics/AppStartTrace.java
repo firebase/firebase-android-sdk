@@ -108,10 +108,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
 
   private Timer onStartTime = null;
   private Timer onResumeTime = null;
+  private Timer firstForegroundTime = null;
   private Timer firstBackgroundTime = null;
-  private Timer firstDrawDone = null;
-  private Timer preDraw = null;
-  private int backgroundCount = 0;
+  private Timer onDrawPostAtFrontOfQueueTime = null;
+  private Timer preDrawPostTime = null;
 
   private PerfSession startSession;
   private boolean isStartedFromBackground = false;
@@ -244,28 +244,45 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
     return CLASS_LOAD_TIME;
   }
 
-  private void recordFirstDrawDone() {
-    if (firstDrawDone != null) {
+  private void recordPreDraw() {
+    if (preDrawPostTime != null) {
       return;
     }
     Timer start = getStartTimer();
-    this.firstDrawDone = clock.getTime();
+    this.preDrawPostTime = clock.getTime();
     this.experimentTtid
         .setClientStartTimeUs(start.getMicros())
-        .setDurationUs(start.getDurationMicros(this.firstDrawDone));
+        .setDurationUs(start.getDurationMicros(this.preDrawPostTime));
 
-    TraceMetric.Builder subtrace =
-        TraceMetric.newBuilder()
-            .setName("_experiment_classLoadTime")
-            .setClientStartTimeUs(getClassLoadTime().getMicros())
-            .setDurationUs(getClassLoadTime().getDurationMicros(this.firstDrawDone));
-    this.experimentTtid.addSubtraces(subtrace.build());
-    this.experimentTtid.putCounters("count_background_before_draw", backgroundCount);
-    if (firstBackgroundTime != null && firstBackgroundTime.getDurationMicros(firstDrawDone) > 0) {
-      this.experimentTtid.putCustomAttributes("backgrounded_before_draw", "true");
-    } else {
-      this.experimentTtid.putCustomAttributes("backgrounded_before_draw", "false");
+    if (isExperimentTraceDone()) {
+      executorService.execute(() -> this.logExperimentTtid(this.experimentTtid));
+
+      if (isRegisteredForLifecycleCallbacks) {
+        // After AppStart trace is queued to be logged, we can unregister this callback.
+        unregisterActivityLifecycleCallbacks();
+      }
     }
+  }
+
+  private void recordOnDrawFrontOfQueue() {
+    if (onDrawPostAtFrontOfQueueTime != null) {
+      return;
+    }
+    Timer start = getStartTimer();
+    this.onDrawPostAtFrontOfQueueTime = clock.getTime();
+
+    this.experimentTtid.addSubtraces(
+        TraceMetric.newBuilder()
+            .setName("_experiment_onDraw_postAtFrontOfQueue")
+            .setClientStartTimeUs(start.getMicros())
+            .setDurationUs(start.getDurationMicros(this.onDrawPostAtFrontOfQueueTime))
+            .build());
+    this.experimentTtid.addSubtraces(
+        TraceMetric.newBuilder()
+            .setName("_experiment_classLoad_to_onDraw")
+            .setClientStartTimeUs(getClassLoadTime().getMicros())
+            .setDurationUs(getClassLoadTime().getDurationMicros(this.onDrawPostAtFrontOfQueueTime))
+            .build());
 
     this.experimentTtid.addPerfSessions(this.startSession.build());
 
@@ -279,37 +296,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
     }
   }
 
-  private void recordFirstDrawDonePreDraw() {
-    if (preDraw != null) {
-      return;
-    }
-    Timer start = getStartTimer();
-    this.preDraw = clock.getTime();
-    TraceMetric.Builder subtrace =
-        TraceMetric.newBuilder()
-            .setName("_experiment_preDraw")
-            .setClientStartTimeUs(start.getMicros())
-            .setDurationUs(start.getDurationMicros(this.preDraw));
-    this.experimentTtid.addSubtraces(subtrace.build());
-    this.experimentTtid.putCounters("count_background_before_predraw", backgroundCount);
-    if (firstBackgroundTime != null && firstBackgroundTime.getDurationMicros(preDraw) > 0) {
-      this.experimentTtid.putCustomAttributes("backgrounded_before_predraw", "true");
-    } else {
-      this.experimentTtid.putCustomAttributes("backgrounded_before_predraw", "false");
-    }
-
-    if (isExperimentTraceDone()) {
-      executorService.execute(() -> this.logExperimentTtid(this.experimentTtid));
-
-      if (isRegisteredForLifecycleCallbacks) {
-        // After AppStart trace is queued to be logged, we can unregister this callback.
-        unregisterActivityLifecycleCallbacks();
-      }
-    }
-  }
-
   private boolean isExperimentTraceDone() {
-    return this.preDraw != null && this.firstDrawDone != null;
+    return this.preDrawPostTime != null && this.onDrawPostAtFrontOfQueueTime != null;
   }
 
   @Override
@@ -347,8 +335,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
     final boolean isExperimentTTIDEnabled = configResolver.getIsExperimentTTIDEnabled();
     if (isExperimentTTIDEnabled) {
       View rootView = activity.findViewById(android.R.id.content);
-      FirstDrawDoneListener.registerForNextDraw(rootView, this::recordFirstDrawDone);
-      PreDrawListener.registerForNextDraw(rootView, this::recordFirstDrawDonePreDraw);
+      FirstDrawDoneListener.registerForNextDraw(rootView, this::recordOnDrawFrontOfQueue);
+      PreDrawListener.registerForNextDraw(rootView, this::recordPreDraw);
     }
 
     if (onResumeTime != null) { // An activity already called onResume()
@@ -424,26 +412,33 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
   @Override
   public void onStart(@NonNull LifecycleOwner owner) {
     DefaultLifecycleObserver.super.onStart(owner);
+    if (isStartedFromBackground || isTooLateToInitUI || firstForegroundTime != null) {
+      return;
+    }
+    firstForegroundTime = clock.getTime();
+    this.experimentTtid.addSubtraces(
+        TraceMetric.newBuilder()
+            .setName("_experiment_firstForegrounding")
+            .setClientStartTimeUs(getStartTimer().getMicros())
+            .setDurationUs(getStartTimer().getDurationMicros(firstForegroundTime))
+            .build());
   }
 
   /** App is entering background */
   @Override
   public void onStop(@NonNull LifecycleOwner owner) {
     DefaultLifecycleObserver.super.onStop(owner);
-    if (isStartedFromBackground || isTooLateToInitUI) {
+    if (isStartedFromBackground || isTooLateToInitUI || firstBackgroundTime != null) {
       return;
     }
-    backgroundCount++;
-    if (firstBackgroundTime != null) {
-      firstBackgroundTime = clock.getTime();
-      // TODO: remove this subtrace after the experiment
-      TraceMetric.Builder subtrace =
-          TraceMetric.newBuilder()
-              .setName("_experiment_firstBackgrounding")
-              .setClientStartTimeUs(firstBackgroundTime.getMicros())
-              .setDurationUs(getStartTimer().getDurationMicros(firstBackgroundTime));
-      this.experimentTtid.addSubtraces(subtrace.build());
-    }
+    firstBackgroundTime = clock.getTime();
+    // TODO: remove this subtrace after the experiment
+    this.experimentTtid.addSubtraces(
+        TraceMetric.newBuilder()
+            .setName("_experiment_firstBackgrounding")
+            .setClientStartTimeUs(getStartTimer().getMicros())
+            .setDurationUs(getStartTimer().getDurationMicros(firstBackgroundTime))
+            .build());
   }
 
   @Override
