@@ -82,8 +82,9 @@ public class DefaultFirebaseAppCheckTest {
         new DefaultFirebaseAppCheck(
             mockFirebaseApp,
             () -> mockHeartBeatController,
-            MoreExecutors.directExecutor(),
-            MoreExecutors.directExecutor(),
+            TestOnlyExecutors.ui(),
+            /* liteExecutor= */ MoreExecutors.directExecutor(),
+            /* backgroundExecutor= */ MoreExecutors.directExecutor(),
             TestOnlyExecutors.blocking());
   }
 
@@ -95,6 +96,7 @@ public class DefaultFirebaseAppCheckTest {
           new DefaultFirebaseAppCheck(
               null,
               () -> mockHeartBeatController,
+              TestOnlyExecutors.ui(),
               TestOnlyExecutors.lite(),
               TestOnlyExecutors.background(),
               TestOnlyExecutors.blocking());
@@ -109,6 +111,7 @@ public class DefaultFirebaseAppCheckTest {
           new DefaultFirebaseAppCheck(
               mockFirebaseApp,
               null,
+              TestOnlyExecutors.ui(),
               TestOnlyExecutors.lite(),
               TestOnlyExecutors.background(),
               TestOnlyExecutors.blocking());

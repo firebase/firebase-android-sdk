@@ -20,6 +20,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.components.Qualified;
@@ -45,6 +46,7 @@ public class FirebaseAppCheckRegistrarTest {
     assertThat(firebaseAppCheckComponent.getDependencies())
         .containsExactly(
             Dependency.required(FirebaseApp.class),
+            Dependency.required(Qualified.qualified(UiThread.class, Executor.class)),
             Dependency.required(Qualified.qualified(Lightweight.class, Executor.class)),
             Dependency.required(Qualified.qualified(Background.class, Executor.class)),
             Dependency.required(

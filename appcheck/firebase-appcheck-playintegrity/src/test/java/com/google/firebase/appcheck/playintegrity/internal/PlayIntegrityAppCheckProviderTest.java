@@ -72,7 +72,8 @@ public class PlayIntegrityAppCheckProviderTest {
   @Captor private ArgumentCaptor<byte[]> exchangePlayIntegrityTokenRequestCaptor;
 
   // TODO(b/258273630): Use TestOnlyExecutors instead of MoreExecutors.directExecutor().
-  private Executor executor = MoreExecutors.directExecutor();
+  private Executor liteExecutor = MoreExecutors.directExecutor();
+  private Executor blockingExecutor = MoreExecutors.directExecutor();
 
   @Before
   public void setup() {
@@ -107,8 +108,8 @@ public class PlayIntegrityAppCheckProviderTest {
             PROJECT_NUMBER,
             mockIntegrityManager,
             mockNetworkClient,
-            /* liteExecutor= */ executor,
-            /* blockingExecutor= */ executor,
+            liteExecutor,
+            blockingExecutor,
             mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
@@ -143,8 +144,8 @@ public class PlayIntegrityAppCheckProviderTest {
             PROJECT_NUMBER,
             mockIntegrityManager,
             mockNetworkClient,
-            /* liteExecutor= */ executor,
-            /* blockingExecutor= */ executor,
+            liteExecutor,
+            blockingExecutor,
             mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
@@ -168,8 +169,8 @@ public class PlayIntegrityAppCheckProviderTest {
             PROJECT_NUMBER,
             mockIntegrityManager,
             mockNetworkClient,
-            /* liteExecutor= */ executor,
-            /* blockingExecutor= */ executor,
+            liteExecutor,
+            blockingExecutor,
             mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
@@ -200,8 +201,8 @@ public class PlayIntegrityAppCheckProviderTest {
             PROJECT_NUMBER,
             mockIntegrityManager,
             mockNetworkClient,
-            /* liteExecutor= */ executor,
-            /* blockingExecutor= */ executor,
+            liteExecutor,
+            blockingExecutor,
             mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 

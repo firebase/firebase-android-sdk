@@ -27,6 +27,7 @@ import com.google.firebase.FirebaseException;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
 import com.google.firebase.appcheck.AppCheckToken;
@@ -51,6 +52,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   private final List<AppCheckListener> appCheckListenerList;
   private final StorageHelper storageHelper;
   private final TokenRefreshManager tokenRefreshManager;
+  private final Executor uiExecutor;
   private final Executor liteExecutor;
   private final Executor backgroundExecutor;
   private final Task<Void> retrieveStoredTokenTask;
@@ -63,6 +65,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   public DefaultFirebaseAppCheck(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<HeartBeatController> heartBeatController,
+      @UiThread Executor uiExecutor,
       @Lightweight Executor liteExecutor,
       @Background Executor backgroundExecutor,
       @Blocking ScheduledExecutorService scheduledExecutorService) {
@@ -80,6 +83,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
             /* firebaseAppCheck= */ this,
             liteExecutor,
             scheduledExecutorService);
+    this.uiExecutor = uiExecutor;
     this.liteExecutor = liteExecutor;
     this.backgroundExecutor = backgroundExecutor;
     this.retrieveStoredTokenTask = retrieveStoredAppCheckTokenInBackground(backgroundExecutor);
@@ -230,7 +234,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
     return appCheckProvider
         .getToken()
         .onSuccessTask(
-            liteExecutor,
+            uiExecutor,
             token -> {
               updateStoredToken(token);
               for (AppCheckListener listener : appCheckListenerList) {
