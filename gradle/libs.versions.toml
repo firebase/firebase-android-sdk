@@ -36,12 +36,15 @@ playservices-tasks = { module = "com.google.android.gms:play-services-tasks", ve
 
 # Test libs
 androidx-test-core = { module = "androidx.test:core", version = "1.5.0" }
+androidx-test-espresso = { module = "androidx.test.espresso:espresso-core", version = "3.5.0" }
 androidx-test-junit = { module = "androidx.test.ext:junit", version = "1.1.4" }
 androidx-test-rules = { module = "androidx.test:rules", version = "1.5.0" }
 androidx-test-runner = { module = "androidx.test:runner", version = "1.5.1" }
 junit = { module = "junit:junit", version = "4.13.2" }
 kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+
 mockito-core = { module = "org.mockito:mockito-core", version = "2.28.2"}
 mockito-dexmaker = { module = "com.linkedin.dexmaker:dexmaker-mockito", version = "2.28.3"}
+mockito-inline = { module = "org.mockito:mockito-inline", version = "2.28.2"}
 robolectric = {module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth"}

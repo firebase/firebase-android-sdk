@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2019 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,25 +13,28 @@
 // limitations under the License.
 
 plugins {
-    id 'com.android.library'
+    id("firebase-java-library")
 }
 
-android {
-    compileSdkVersion project.targetSdkVersion
-    defaultConfig {
-        minSdkVersion project.minSdkVersion
-        targetSdkVersion project.targetSdkVersion
-    }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
-    }
+firebaseLibrary {
+    publishSources = true
+    publishJavadoc = false
 }
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 
 dependencies {
-    implementation project(":firebase-common")
-    implementation project(":firebase-components")
-    implementation 'junit:junit:4.13'
-    implementation 'androidx.test:runner:1.3.0'
+    implementation(libs.androidx.annotation)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+
+}
+
+tasks.withType<JavaCompile> {
+    options.compilerArgs.add("-Werror")
 }
