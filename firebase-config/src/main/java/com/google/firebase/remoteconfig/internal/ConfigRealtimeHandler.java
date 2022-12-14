@@ -16,7 +16,6 @@ package com.google.firebase.remoteconfig.internal;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
@@ -102,9 +101,7 @@ public class ConfigRealtimeHandler {
   }
 
   private synchronized boolean canCreateRealtimeHttpClientTask() {
-    return !listeners.isEmpty()
-        && realtimeHttpClientTask == null
-        && !isRealtimeDisabled;
+    return !listeners.isEmpty() && realtimeHttpClientTask == null && !isRealtimeDisabled;
   }
 
   private synchronized Runnable createRealtimeHttpClientTask(
