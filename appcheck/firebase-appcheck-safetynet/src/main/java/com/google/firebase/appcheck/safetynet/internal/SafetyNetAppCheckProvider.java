@@ -17,7 +17,6 @@ package com.google.firebase.appcheck.safetynet.internal;
 import static com.google.android.gms.common.internal.Preconditions.checkNotEmpty;
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
@@ -32,9 +31,9 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckToken;
-import com.google.firebase.appcheck.internal.AppCheckTokenResponse;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
@@ -51,6 +50,7 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
 
   private final Task<SafetyNetClient> safetyNetClientTask;
   private final NetworkClient networkClient;
+  private final Executor liteExecutor;
   private final Executor blockingExecutor;
   private final RetryManager retryManager;
   private final String apiKey;
@@ -58,12 +58,14 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
   /** @param firebaseApp the FirebaseApp to which this Factory is tied. */
   public SafetyNetAppCheckProvider(
       @NonNull FirebaseApp firebaseApp,
+      @Lightweight Executor liteExecutor,
       @Background Executor backgroundExecutor,
       @Blocking Executor blockingExecutor) {
     this(
         firebaseApp,
         new NetworkClient(firebaseApp),
         GoogleApiAvailability.getInstance(),
+        liteExecutor,
         backgroundExecutor,
         blockingExecutor);
   }
@@ -73,6 +75,7 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
       @NonNull FirebaseApp firebaseApp,
       @NonNull NetworkClient networkClient,
       @NonNull GoogleApiAvailability googleApiAvailability,
+      @NonNull Executor liteExecutor,
       @NonNull Executor backgroundExecutor,
       @NonNull Executor blockingExecutor) {
     checkNotNull(firebaseApp);
@@ -80,6 +83,7 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
     checkNotNull(googleApiAvailability);
     checkNotNull(backgroundExecutor);
     this.apiKey = firebaseApp.getOptions().getApiKey();
+    this.liteExecutor = liteExecutor;
     this.blockingExecutor = blockingExecutor;
     this.safetyNetClientTask =
         initSafetyNetClient(
@@ -93,11 +97,13 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
       @NonNull FirebaseApp firebaseApp,
       @NonNull SafetyNetClient safetyNetClient,
       @NonNull NetworkClient networkClient,
+      @NonNull Executor liteExecutor,
       @NonNull Executor blockingExecutor,
       @NonNull RetryManager retryManager) {
     this.apiKey = firebaseApp.getOptions().getApiKey();
     this.safetyNetClientTask = Tasks.forResult(safetyNetClient);
     this.networkClient = networkClient;
+    this.liteExecutor = liteExecutor;
     this.blockingExecutor = blockingExecutor;
     this.retryManager = retryManager;
   }
@@ -142,35 +148,15 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
     return safetyNetClientTask;
   }
 
-  // TODO(b/261013814): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<AppCheckToken> getToken() {
     return safetyNetClientTask
-        .continueWithTask(
-            task -> {
-              if (task.isSuccessful()) {
-                return task.getResult().attest(NONCE.getBytes(), apiKey);
-              }
-              return Tasks.forException(task.getException());
-            })
-        .continueWithTask(
-            task -> {
-              if (!task.isSuccessful()) {
-                // Proxies errors to the client directly; need to wrap to get the
-                // types right.
-                // TODO: more specific error mapping to help clients debug more
-                //       easily.
-                return Tasks.forException(task.getException());
-              } else {
-                return exchangeSafetyNetAttestationResponseForToken(task.getResult());
-              }
-            });
+        .onSuccessTask(
+            liteExecutor, safetyNetClient -> safetyNetClient.attest(NONCE.getBytes(), apiKey))
+        .onSuccessTask(liteExecutor, this::exchangeSafetyNetAttestationResponseForToken);
   }
 
-  // TODO(b/261013814): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   @NonNull
   Task<AppCheckToken> exchangeSafetyNetAttestationResponseForToken(
       @NonNull SafetyNetApi.AttestationResponse attestationResponse) {
@@ -180,22 +166,14 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
 
     ExchangeSafetyNetTokenRequest request = new ExchangeSafetyNetTokenRequest(safetyNetJwsResult);
 
-    Task<AppCheckTokenResponse> networkTask =
-        Tasks.call(
+    return Tasks.call(
             blockingExecutor,
             () ->
                 networkClient.exchangeAttestationForAppCheckToken(
-                    request.toJsonString().getBytes(UTF_8),
-                    NetworkClient.SAFETY_NET,
-                    retryManager));
-    return networkTask.continueWithTask(
-        task -> {
-          if (task.isSuccessful()) {
-            return Tasks.forResult(
-                DefaultAppCheckToken.constructFromAppCheckTokenResponse(task.getResult()));
-          }
-          // TODO: Surface more error details.
-          return Tasks.forException(task.getException());
-        });
+                    request.toJsonString().getBytes(UTF_8), NetworkClient.SAFETY_NET, retryManager))
+        .onSuccessTask(
+            liteExecutor,
+            response ->
+                Tasks.forResult(DefaultAppCheckToken.constructFromAppCheckTokenResponse(response)));
   }
 }

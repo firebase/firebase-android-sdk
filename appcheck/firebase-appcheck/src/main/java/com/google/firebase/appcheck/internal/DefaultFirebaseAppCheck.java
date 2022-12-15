@@ -16,7 +16,6 @@ package com.google.firebase.appcheck.internal;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
-import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -27,6 +26,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
 import com.google.firebase.appcheck.AppCheckToken;
@@ -51,6 +52,8 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   private final List<AppCheckListener> appCheckListenerList;
   private final StorageHelper storageHelper;
   private final TokenRefreshManager tokenRefreshManager;
+  private final Executor uiExecutor;
+  private final Executor liteExecutor;
   private final Executor backgroundExecutor;
   private final Task<Void> retrieveStoredTokenTask;
   private final Clock clock;
@@ -62,6 +65,8 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   public DefaultFirebaseAppCheck(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<HeartBeatController> heartBeatController,
+      @UiThread Executor uiExecutor,
+      @Lightweight Executor liteExecutor,
       @Background Executor backgroundExecutor,
       @Blocking ScheduledExecutorService scheduledExecutorService) {
     checkNotNull(firebaseApp);
@@ -76,7 +81,10 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
         new TokenRefreshManager(
             firebaseApp.getApplicationContext(),
             /* firebaseAppCheck= */ this,
+            liteExecutor,
             scheduledExecutorService);
+    this.uiExecutor = uiExecutor;
+    this.liteExecutor = liteExecutor;
     this.backgroundExecutor = backgroundExecutor;
     this.retrieveStoredTokenTask = retrieveStoredAppCheckTokenInBackground(backgroundExecutor);
     this.clock = new Clock.DefaultClock();
@@ -169,12 +177,11 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
         appCheckTokenListenerList.size() + appCheckListenerList.size());
   }
 
-  // TODO(b/261013814): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<AppCheckTokenResult> getToken(boolean forceRefresh) {
     return retrieveStoredTokenTask.continueWithTask(
+        liteExecutor,
         unused -> {
           if (!forceRefresh && hasValidToken()) {
             return Tasks.forResult(
@@ -188,6 +195,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
           // TODO: Cache the in-flight task.
           return fetchTokenFromProvider()
               .continueWithTask(
+                  liteExecutor,
                   appCheckTokenTask -> {
                     if (appCheckTokenTask.isSuccessful()) {
                       return Tasks.forResult(
@@ -205,12 +213,11 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
         });
   }
 
-  // TODO(b/261013814): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<AppCheckToken> getAppCheckToken(boolean forceRefresh) {
     return retrieveStoredTokenTask.continueWithTask(
+        liteExecutor,
         unused -> {
           if (!forceRefresh && hasValidToken()) {
             return Tasks.forResult(cachedToken);
@@ -223,26 +230,22 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   }
 
   /** Fetches an {@link AppCheckToken} via the installed {@link AppCheckProvider}. */
-  // TODO(b/261013814): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   Task<AppCheckToken> fetchTokenFromProvider() {
     return appCheckProvider
         .getToken()
-        .continueWithTask(
-            task -> {
-              if (task.isSuccessful()) {
-                AppCheckToken token = task.getResult();
-                updateStoredToken(token);
-                for (AppCheckListener listener : appCheckListenerList) {
-                  listener.onAppCheckTokenChanged(token);
-                }
-                AppCheckTokenResult tokenResult =
-                    DefaultAppCheckTokenResult.constructFromAppCheckToken(token);
-                for (AppCheckTokenListener listener : appCheckTokenListenerList) {
-                  listener.onAppCheckTokenChanged(tokenResult);
-                }
+        .onSuccessTask(
+            uiExecutor,
+            token -> {
+              updateStoredToken(token);
+              for (AppCheckListener listener : appCheckListenerList) {
+                listener.onAppCheckTokenChanged(token);
               }
-              return task;
+              AppCheckTokenResult tokenResult =
+                  DefaultAppCheckTokenResult.constructFromAppCheckToken(token);
+              for (AppCheckTokenListener listener : appCheckTokenListenerList) {
+                listener.onAppCheckTokenChanged(tokenResult);
+              }
+              return Tasks.forResult(token);
             });
   }
 

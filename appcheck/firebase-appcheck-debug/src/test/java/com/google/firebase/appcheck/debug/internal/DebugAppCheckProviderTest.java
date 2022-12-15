@@ -74,7 +74,9 @@ public class DebugAppCheckProviderTest {
   private StorageHelper storageHelper;
   private SharedPreferences sharedPreferences;
   // TODO(b/258273630): Use TestOnlyExecutors instead of MoreExecutors.directExecutor().
-  private Executor executor = MoreExecutors.directExecutor();
+  private Executor liteExecutor = MoreExecutors.directExecutor();
+  private Executor backgroundExecutor = MoreExecutors.directExecutor();
+  private Executor blockingExecutor = MoreExecutors.directExecutor();
 
   @Before
   public void setup() {
@@ -103,7 +105,11 @@ public class DebugAppCheckProviderTest {
         NullPointerException.class,
         () -> {
           new DebugAppCheckProvider(
-              null, null, TestOnlyExecutors.background(), TestOnlyExecutors.blocking());
+              null,
+              null,
+              TestOnlyExecutors.lite(),
+              TestOnlyExecutors.background(),
+              TestOnlyExecutors.blocking());
         });
   }
 
@@ -113,7 +119,7 @@ public class DebugAppCheckProviderTest {
     assertThat(storageHelper.retrieveDebugSecret()).isNull();
 
     Task<String> debugSecretTask =
-        DebugAppCheckProvider.determineDebugSecret(mockFirebaseApp, executor);
+        DebugAppCheckProvider.determineDebugSecret(mockFirebaseApp, backgroundExecutor);
     assertThat(storageHelper.retrieveDebugSecret()).isNotNull();
     assertThat(storageHelper.retrieveDebugSecret()).isEqualTo(debugSecretTask.getResult());
   }
@@ -123,7 +129,7 @@ public class DebugAppCheckProviderTest {
     storageHelper.saveDebugSecret(DEBUG_SECRET);
 
     Task<String> debugSecretTask =
-        DebugAppCheckProvider.determineDebugSecret(mockFirebaseApp, executor);
+        DebugAppCheckProvider.determineDebugSecret(mockFirebaseApp, backgroundExecutor);
     assertThat(debugSecretTask.getResult()).isEqualTo(DEBUG_SECRET);
     assertThat(storageHelper.retrieveDebugSecret()).isEqualTo(DEBUG_SECRET);
   }
@@ -137,7 +143,8 @@ public class DebugAppCheckProviderTest {
     when(mockAppCheckTokenResponse.getTimeToLive()).thenReturn(TIME_TO_LIVE);
 
     DebugAppCheckProvider provider =
-        new DebugAppCheckProvider(DEBUG_SECRET, mockNetworkClient, executor, mockRetryManager);
+        new DebugAppCheckProvider(
+            DEBUG_SECRET, mockNetworkClient, liteExecutor, blockingExecutor, mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
     verify(mockNetworkClient)
@@ -155,7 +162,8 @@ public class DebugAppCheckProviderTest {
         .thenThrow(new IOException());
 
     DebugAppCheckProvider provider =
-        new DebugAppCheckProvider(DEBUG_SECRET, mockNetworkClient, executor, mockRetryManager);
+        new DebugAppCheckProvider(
+            DEBUG_SECRET, mockNetworkClient, liteExecutor, blockingExecutor, mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
     verify(mockNetworkClient)
