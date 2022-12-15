@@ -17,10 +17,10 @@ package com.google.firebase.inappmessaging.internal;
 import static com.google.firebase.inappmessaging.EventType.CLICK_EVENT_TYPE;
 import static com.google.firebase.inappmessaging.EventType.IMPRESSION_EVENT_TYPE;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.inappmessaging.BuildConfig;
 import com.google.firebase.inappmessaging.CampaignAnalytics;
 import com.google.firebase.inappmessaging.ClientAppInfo;
@@ -39,6 +39,7 @@ import com.google.firebase.inappmessaging.model.ModalMessage;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import javax.annotation.Nullable;
 
 /**
@@ -79,6 +80,7 @@ public class MetricsLoggerClient {
   private final Clock clock;
   private final AnalyticsConnector analyticsConnector;
   private final DeveloperListenerManager developerListenerManager;
+  @Blocking private final Executor blockingExecutor;
 
   public MetricsLoggerClient(
       EngagementMetricsLoggerInterface engagementMetricsLogger,
@@ -86,24 +88,25 @@ public class MetricsLoggerClient {
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       Clock clock,
-      DeveloperListenerManager developerListenerManager) {
+      DeveloperListenerManager developerListenerManager,
+      @Blocking Executor blockingExecutor) {
     this.engagementMetricsLogger = engagementMetricsLogger;
     this.analyticsConnector = analyticsConnector;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
     this.clock = clock;
     this.developerListenerManager = developerListenerManager;
+    this.blockingExecutor = blockingExecutor;
   }
 
   /** Log impression */
-  // TODO(b/261014173): Use an explicit executor in continuations
-  @SuppressLint("TaskMainThread")
   void logImpression(InAppMessage message) {
     if (!isTestCampaign(message)) {
       // If message is not a test message then log
       firebaseInstallations
           .getId()
           .addOnSuccessListener(
+              blockingExecutor,
               id ->
                   engagementMetricsLogger.logEvent(
                       createEventEntry(message, id, IMPRESSION_EVENT_TYPE).toByteArray()));
@@ -118,14 +121,13 @@ public class MetricsLoggerClient {
   }
 
   /** Log click */
-  // TODO(b/261014173): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   void logMessageClick(InAppMessage message, Action action) {
     if (!isTestCampaign(message)) {
       // If message is not a test message then log
       firebaseInstallations
           .getId()
           .addOnSuccessListener(
+              blockingExecutor,
               id ->
                   engagementMetricsLogger.logEvent(
                       createEventEntry(message, id, CLICK_EVENT_TYPE).toByteArray()));
@@ -137,14 +139,13 @@ public class MetricsLoggerClient {
   }
 
   /** Log Rendering error */
-  // TODO(b/261014173): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   void logRenderError(InAppMessage message, InAppMessagingErrorReason errorReason) {
     if (!isTestCampaign(message)) {
       // If message is not a test message then log campaign metrics
       firebaseInstallations
           .getId()
           .addOnSuccessListener(
+              blockingExecutor,
               id ->
                   engagementMetricsLogger.logEvent(
                       createRenderErrorEntry(message, id, errorTransform.get(errorReason))
@@ -155,14 +156,13 @@ public class MetricsLoggerClient {
   }
 
   /** Log dismiss */
-  // TODO(b/261014173): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   void logDismiss(InAppMessage message, InAppMessagingDismissType dismissType) {
     if (!isTestCampaign(message)) {
       // If message is not a test message then log campaign metrics
       firebaseInstallations
           .getId()
           .addOnSuccessListener(
+              blockingExecutor,
               id ->
                   engagementMetricsLogger.logEvent(
                       createDismissEntry(message, id, dismissTransform.get(dismissType))

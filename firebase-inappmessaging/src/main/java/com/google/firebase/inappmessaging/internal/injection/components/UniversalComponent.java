@@ -16,6 +16,7 @@ package com.google.firebase.inappmessaging.internal.injection.components;
 
 import android.app.Application;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.inappmessaging.internal.AnalyticsEventsManager;
@@ -114,4 +115,7 @@ public interface UniversalComponent {
 
   @Lightweight
   Executor lightWeightExecutor();
+
+  @Blocking
+  Executor blockingExecutor();
 }

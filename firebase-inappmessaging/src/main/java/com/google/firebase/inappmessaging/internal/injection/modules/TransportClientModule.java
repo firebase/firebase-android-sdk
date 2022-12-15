@@ -19,6 +19,7 @@ import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.inappmessaging.internal.DeveloperListenerManager;
 import com.google.firebase.inappmessaging.internal.MetricsLoggerClient;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
@@ -26,6 +27,7 @@ import com.google.firebase.inappmessaging.internal.time.Clock;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import dagger.Module;
 import dagger.Provides;
+import java.util.concurrent.Executor;
 
 /**
  * Bindings for engagementMetrics
@@ -44,7 +46,8 @@ public class TransportClientModule {
       AnalyticsConnector analyticsConnector,
       FirebaseInstallationsApi firebaseInstallations,
       Clock clock,
-      DeveloperListenerManager developerListenerManager) {
+      DeveloperListenerManager developerListenerManager,
+      @Blocking Executor blockingExecutor) {
     Transport<byte[]> transport =
         transportFactory.getTransport(TRANSPORT_NAME, byte[].class, b -> b);
     return new MetricsLoggerClient(
@@ -53,6 +56,7 @@ public class TransportClientModule {
         app,
         firebaseInstallations,
         clock,
-        developerListenerManager);
+        developerListenerManager,
+        blockingExecutor);
   }
 }

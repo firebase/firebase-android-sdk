@@ -35,6 +35,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.inappmessaging.CampaignAnalytics;
 import com.google.firebase.inappmessaging.DismissType;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingDismissType;
@@ -46,6 +47,7 @@ import com.google.firebase.inappmessaging.internal.MetricsLoggerClient.Engagemen
 import com.google.firebase.inappmessaging.internal.time.FakeClock;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -68,6 +70,7 @@ public class MetricsLoggerClientTest {
   private static final String INSTALLATION_ID = "instance_id";
   private static final String INSTALLATION_TOKEN = "instance_token";
   private static final String PROJECT_NUMBER = "project_number";
+  private static final long BLOCKING_EXECUTOR_TIMEOUT = 100;
 
   private final FirebaseOptions firebaseOptions =
       new FirebaseOptions.Builder()
@@ -103,11 +106,12 @@ public class MetricsLoggerClientTest {
             firebaseApp,
             firebaseInstallations,
             clock,
-            developerListenerManager);
+            developerListenerManager,
+            TestOnlyExecutors.blocking());
   }
 
   @Test
-  public void logImpression_proxiesRequestToEngagementMetricsClient() {
+  public void logImpression_proxiesRequestToEngagementMetricsClient() throws InterruptedException {
     metricsLoggerClient =
         new MetricsLoggerClient(
             engagementMetricsLoggerInterface,
@@ -115,14 +119,17 @@ public class MetricsLoggerClientTest {
             firebaseApp,
             firebaseInstallations,
             clock,
-            developerListenerManager);
+            developerListenerManager,
+            TestOnlyExecutors.blocking());
 
     metricsLoggerClient.logImpression(BANNER_MESSAGE_MODEL);
+    waitForBlockingExecutor();
+
     verify(engagementMetricsLoggerInterface).logEvent(anyObject());
   }
 
   @Test
-  public void logImpression_alertsImpressionListeners() {
+  public void logImpression_alertsImpressionListeners() throws InterruptedException {
     metricsLoggerClient =
         new MetricsLoggerClient(
             engagementMetricsLoggerInterface,
@@ -130,14 +137,18 @@ public class MetricsLoggerClientTest {
             firebaseApp,
             firebaseInstallations,
             clock,
-            developerListenerManager);
+            developerListenerManager,
+            TestOnlyExecutors.blocking());
 
     metricsLoggerClient.logImpression(BANNER_MESSAGE_MODEL);
+    waitForBlockingExecutor();
+
     verify(developerListenerManager, times(1)).impressionDetected(BANNER_MESSAGE_MODEL);
   }
 
   @Test
-  public void logImpression_alertsImpressionListenerAndSetsConversionPropWithoutActions() {
+  public void logImpression_alertsImpressionListenerAndSetsConversionPropWithoutActions()
+      throws InterruptedException {
     metricsLoggerClient =
         new MetricsLoggerClient(
             engagementMetricsLoggerInterface,
@@ -145,9 +156,12 @@ public class MetricsLoggerClientTest {
             firebaseApp,
             firebaseInstallations,
             clock,
-            developerListenerManager);
+            developerListenerManager,
+            TestOnlyExecutors.blocking());
 
     metricsLoggerClient.logImpression(CARD_MESSAGE_WITHOUT_ACTIONS);
+    waitForBlockingExecutor();
+
     verify(developerListenerManager, times(1)).impressionDetected(CARD_MESSAGE_WITHOUT_ACTIONS);
     // sets conversion user prop
     verify(analyticsConnector, times(1))
@@ -158,15 +172,18 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logImpression_failsGracefullyWithNoAnalytics() {
+  public void logImpression_failsGracefullyWithNoAnalytics() throws InterruptedException {
     metricsLoggerClient.logImpression(BANNER_MESSAGE_MODEL);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(anyObject());
   }
 
   @Test
-  public void logImpression_setsCampaignId() throws InvalidProtocolBufferException {
+  public void logImpression_setsCampaignId()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logImpression(BANNER_MESSAGE_MODEL);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -176,8 +193,10 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logImpression_setsApplicationId() throws InvalidProtocolBufferException {
+  public void logImpression_setsApplicationId()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logImpression(BANNER_MESSAGE_MODEL);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -187,8 +206,10 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logImpression_setsInstanceId() throws InvalidProtocolBufferException {
+  public void logImpression_setsInstanceId()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logImpression(BANNER_MESSAGE_MODEL);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -198,8 +219,10 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logImpression_setsImpressionEventType() throws InvalidProtocolBufferException {
+  public void logImpression_setsImpressionEventType()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logImpression(BANNER_MESSAGE_MODEL);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -209,8 +232,10 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logImpression_setsClientTimestamp() throws InvalidProtocolBufferException {
+  public void logImpression_setsClientTimestamp()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logImpression(BANNER_MESSAGE_MODEL);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -220,23 +245,28 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logMessageClick_proxiesRequestToEngagementMetricsClient() {
+  public void logMessageClick_proxiesRequestToEngagementMetricsClient()
+      throws InterruptedException {
     metricsLoggerClient.logMessageClick(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(anyObject());
   }
 
   @Test
-  public void logMessageClick_notifiesListeners() {
+  public void logMessageClick_notifiesListeners() throws InterruptedException {
     metricsLoggerClient.logMessageClick(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
+    waitForBlockingExecutor();
 
     verify(developerListenerManager, times(1))
         .messageClicked(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
   }
 
   @Test
-  public void logMessageClick_setsCampaignId() throws InvalidProtocolBufferException {
+  public void logMessageClick_setsCampaignId()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logMessageClick(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -246,8 +276,10 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logMessageClick_setsApplicationId() throws InvalidProtocolBufferException {
+  public void logMessageClick_setsApplicationId()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logMessageClick(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -257,8 +289,10 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logMessageClick_setsInstanceId() throws InvalidProtocolBufferException {
+  public void logMessageClick_setsInstanceId()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logMessageClick(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -268,8 +302,10 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logMessageClick_setsClickEventType() throws InvalidProtocolBufferException {
+  public void logMessageClick_setsClickEventType()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logMessageClick(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -279,8 +315,10 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logMessageClick_setsClientTimestamp() throws InvalidProtocolBufferException {
+  public void logMessageClick_setsClientTimestamp()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logMessageClick(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -290,17 +328,19 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logRenderError_proxiesRequestToEngagementMetricsClient() {
+  public void logRenderError_proxiesRequestToEngagementMetricsClient() throws InterruptedException {
     metricsLoggerClient.logRenderError(
         BANNER_MESSAGE_MODEL, InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(anyObject());
   }
 
   @Test
-  public void logRenderError_notifiesListeners() {
+  public void logRenderError_notifiesListeners() throws InterruptedException {
     metricsLoggerClient.logRenderError(
         BANNER_MESSAGE_MODEL, InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+    waitForBlockingExecutor();
 
     verify(developerListenerManager, times(1))
         .displayErrorEncountered(
@@ -308,9 +348,11 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logRenderError_setsCampaignId() throws InvalidProtocolBufferException {
+  public void logRenderError_setsCampaignId()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logRenderError(
         BANNER_MESSAGE_MODEL, InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -320,9 +362,11 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logRenderError_setsApplicationId() throws InvalidProtocolBufferException {
+  public void logRenderError_setsApplicationId()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logRenderError(
         BANNER_MESSAGE_MODEL, InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -332,9 +376,11 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logRenderError_setsInstanceId() throws InvalidProtocolBufferException {
+  public void logRenderError_setsInstanceId()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logRenderError(
         BANNER_MESSAGE_MODEL, InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -345,9 +391,10 @@ public class MetricsLoggerClientTest {
 
   @Test
   public void logRenderError_withGenericRenderErrorReason_setsEquivalentErrorReason()
-      throws InvalidProtocolBufferException {
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logRenderError(
         BANNER_MESSAGE_MODEL, InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -359,9 +406,10 @@ public class MetricsLoggerClientTest {
 
   @Test
   public void logRenderError_withImageFetchRenderError_setsEquivalentErrorReason()
-      throws InvalidProtocolBufferException {
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logRenderError(
         BANNER_MESSAGE_MODEL, InAppMessagingErrorReason.IMAGE_FETCH_ERROR);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -373,9 +421,10 @@ public class MetricsLoggerClientTest {
 
   @Test
   public void logRenderError_withImageDisplayError_setsEquivalentErrorReason()
-      throws InvalidProtocolBufferException {
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logRenderError(
         BANNER_MESSAGE_MODEL, InAppMessagingErrorReason.IMAGE_DISPLAY_ERROR);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -387,9 +436,10 @@ public class MetricsLoggerClientTest {
 
   @Test
   public void logRenderError_withUnsupportedFiam_setsEquivalentErrorReason()
-      throws InvalidProtocolBufferException {
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logRenderError(
         BANNER_MESSAGE_MODEL, InAppMessagingErrorReason.IMAGE_UNSUPPORTED_FORMAT);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -400,9 +450,11 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logRenderError_setsClientTimestamp() throws InvalidProtocolBufferException {
+  public void logRenderError_setsClientTimestamp()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logRenderError(
         BANNER_MESSAGE_MODEL, InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -412,24 +464,28 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logDismiss_proxiesRequestToEngagementMetricsClient() {
+  public void logDismiss_proxiesRequestToEngagementMetricsClient() throws InterruptedException {
     metricsLoggerClient.logDismiss(
         BANNER_MESSAGE_MODEL, InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(anyObject());
   }
 
   @Test
-  public void logDismiss_notifiesListeners() {
+  public void logDismiss_notifiesListeners() throws InterruptedException {
     metricsLoggerClient.logDismiss(BANNER_MESSAGE_MODEL, InAppMessagingDismissType.CLICK);
+    waitForBlockingExecutor();
 
     verify(developerListenerManager, times(1)).messageDismissed(BANNER_MESSAGE_MODEL);
   }
 
   @Test
-  public void logDismiss_setsCampaignId() throws InvalidProtocolBufferException {
+  public void logDismiss_setsCampaignId()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logDismiss(
         BANNER_MESSAGE_MODEL, InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -439,9 +495,11 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logDismiss_setsApplicationId() throws InvalidProtocolBufferException {
+  public void logDismiss_setsApplicationId()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logDismiss(
         BANNER_MESSAGE_MODEL, InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -451,9 +509,11 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logDismiss_setsInstanceId() throws InvalidProtocolBufferException {
+  public void logDismiss_setsInstanceId()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logDismiss(
         BANNER_MESSAGE_MODEL, InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -464,9 +524,10 @@ public class MetricsLoggerClientTest {
 
   @Test
   public void logDismiss_withUnknownDismissType_setsEquivalentDismissType()
-      throws InvalidProtocolBufferException {
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logDismiss(
         BANNER_MESSAGE_MODEL, InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -477,8 +538,9 @@ public class MetricsLoggerClientTest {
 
   @Test
   public void logDismiss_withAutoDismissType_setsEquivalentDismissType()
-      throws InvalidProtocolBufferException {
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logDismiss(BANNER_MESSAGE_MODEL, InAppMessagingDismissType.AUTO);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -489,8 +551,9 @@ public class MetricsLoggerClientTest {
 
   @Test
   public void logDismiss_withClickDismissType_setsEquivalentDismissType()
-      throws InvalidProtocolBufferException {
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logDismiss(BANNER_MESSAGE_MODEL, InAppMessagingDismissType.CLICK);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -501,8 +564,9 @@ public class MetricsLoggerClientTest {
 
   @Test
   public void logDismiss_withSwipeDismissType_setsEquivalentDismissType()
-      throws InvalidProtocolBufferException {
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logDismiss(BANNER_MESSAGE_MODEL, InAppMessagingDismissType.SWIPE);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -512,9 +576,11 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logDismiss_setsClientTimestamp() throws InvalidProtocolBufferException {
+  public void logDismiss_setsClientTimestamp()
+      throws InvalidProtocolBufferException, InterruptedException {
     metricsLoggerClient.logDismiss(
         BANNER_MESSAGE_MODEL, InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface).logEvent(byteArrayCaptor.capture());
 
@@ -524,7 +590,7 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logImpression_sendsCorrectScionEventWithParams() {
+  public void logImpression_sendsCorrectScionEventWithParams() throws InterruptedException {
     FakeAnalyticsConnector analytics = new FakeAnalyticsConnector();
     metricsLoggerClient =
         new MetricsLoggerClient(
@@ -533,9 +599,12 @@ public class MetricsLoggerClientTest {
             firebaseApp,
             firebaseInstallations,
             clock,
-            developerListenerManager);
+            developerListenerManager,
+            TestOnlyExecutors.blocking());
 
     metricsLoggerClient.logImpression(BANNER_MESSAGE_MODEL);
+    waitForBlockingExecutor();
+
     LoggedEvent actual = analytics.getLoggedEvent().get(0);
 
     assertThat(actual.origin).isEqualTo(AnalyticsConstants.ORIGIN_FIAM);
@@ -552,7 +621,7 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logClick_sendsCorrectScionEventName() {
+  public void logClick_sendsCorrectScionEventName() throws InterruptedException {
     metricsLoggerClient =
         new MetricsLoggerClient(
             engagementMetricsLoggerInterface,
@@ -560,9 +629,11 @@ public class MetricsLoggerClientTest {
             firebaseApp,
             firebaseInstallations,
             clock,
-            developerListenerManager);
+            developerListenerManager,
+            TestOnlyExecutors.blocking());
 
     metricsLoggerClient.logMessageClick(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
+    waitForBlockingExecutor();
 
     assertThat(analytics.getLoggedEvent().size()).isEqualTo(1);
     LoggedEvent actual = analytics.getLoggedEvent().get(0);
@@ -572,7 +643,7 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logDismisssendsCorrectScionEventName() {
+  public void logDismisssendsCorrectScionEventName() throws InterruptedException {
     metricsLoggerClient =
         new MetricsLoggerClient(
             engagementMetricsLoggerInterface,
@@ -580,9 +651,11 @@ public class MetricsLoggerClientTest {
             firebaseApp,
             firebaseInstallations,
             clock,
-            developerListenerManager);
+            developerListenerManager,
+            TestOnlyExecutors.blocking());
 
     metricsLoggerClient.logMessageClick(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
+    waitForBlockingExecutor();
 
     assertThat(analytics.getLoggedEvent().size()).isEqualTo(1);
     LoggedEvent actual = analytics.getLoggedEvent().get(0);
@@ -592,7 +665,7 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logEvent_sendsEventParams() {
+  public void logEvent_sendsEventParams() throws InterruptedException {
     metricsLoggerClient =
         new MetricsLoggerClient(
             engagementMetricsLoggerInterface,
@@ -600,9 +673,11 @@ public class MetricsLoggerClientTest {
             firebaseApp,
             firebaseInstallations,
             clock,
-            developerListenerManager);
+            developerListenerManager,
+            TestOnlyExecutors.blocking());
 
     metricsLoggerClient.logImpression(BANNER_MESSAGE_MODEL);
+    waitForBlockingExecutor();
 
     assertThat(analytics.getLoggedEvent().size()).isEqualTo(1);
     LoggedEvent actual = analytics.getLoggedEvent().get(0);
@@ -621,7 +696,7 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logEvent_addsConversionTrackingOnAction() {
+  public void logEvent_addsConversionTrackingOnAction() throws InterruptedException {
     metricsLoggerClient =
         new MetricsLoggerClient(
             engagementMetricsLoggerInterface,
@@ -629,15 +704,18 @@ public class MetricsLoggerClientTest {
             firebaseApp,
             firebaseInstallations,
             clock,
-            developerListenerManager);
+            developerListenerManager,
+            TestOnlyExecutors.blocking());
 
     metricsLoggerClient.logImpression(BANNER_MESSAGE_MODEL);
     metricsLoggerClient.logDismiss(
         BANNER_MESSAGE_MODEL, InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
+    waitForBlockingExecutor();
 
     assertThat(analytics.getSetUserProperty().size()).isEqualTo(0);
 
     metricsLoggerClient.logMessageClick(BANNER_MESSAGE_MODEL, BANNER_MESSAGE_MODEL.getAction());
+    waitForBlockingExecutor();
 
     assertThat(analytics.getSetUserProperty().size()).isEqualTo(1);
     LoggedUserProperty actual = analytics.getSetUserProperty().get(0);
@@ -648,7 +726,7 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void logEvent_addsConversionTrackingOnClickWhenNoAction() {
+  public void logEvent_addsConversionTrackingOnClickWhenNoAction() throws InterruptedException {
     metricsLoggerClient =
         new MetricsLoggerClient(
             engagementMetricsLoggerInterface,
@@ -656,14 +734,17 @@ public class MetricsLoggerClientTest {
             firebaseApp,
             firebaseInstallations,
             clock,
-            developerListenerManager);
+            developerListenerManager,
+            TestOnlyExecutors.blocking());
 
     metricsLoggerClient.logDismiss(
         BANNER_MESSAGE_NO_ACTION_MODEL, InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
+    waitForBlockingExecutor();
 
     assertThat(analytics.getSetUserProperty().size()).isEqualTo(0);
 
     metricsLoggerClient.logImpression(BANNER_MESSAGE_NO_ACTION_MODEL);
+    waitForBlockingExecutor();
 
     assertThat(analytics.getSetUserProperty().size()).isEqualTo(1);
     LoggedUserProperty actual = analytics.getSetUserProperty().get(0);
@@ -674,7 +755,7 @@ public class MetricsLoggerClientTest {
   }
 
   @Test
-  public void metricsLoggerClient_doesNotLogTestCampaigns() {
+  public void metricsLoggerClient_doesNotLogTestCampaigns() throws InterruptedException {
     metricsLoggerClient.logImpression(BANNER_TEST_MESSAGE_MODEL);
     metricsLoggerClient.logMessageClick(
         BANNER_TEST_MESSAGE_MODEL, BANNER_TEST_MESSAGE_MODEL.getAction());
@@ -682,7 +763,12 @@ public class MetricsLoggerClientTest {
         BANNER_TEST_MESSAGE_MODEL, InAppMessagingDismissType.UNKNOWN_DISMISS_TYPE);
     metricsLoggerClient.logRenderError(
         BANNER_TEST_MESSAGE_MODEL, InAppMessagingErrorReason.UNSPECIFIED_RENDER_ERROR);
+    waitForBlockingExecutor();
 
     verify(engagementMetricsLoggerInterface, never()).logEvent(anyObject());
+  }
+
+  private static void waitForBlockingExecutor() throws InterruptedException {
+    TestOnlyExecutors.blocking().awaitTermination(BLOCKING_EXECUTOR_TIMEOUT, TimeUnit.MILLISECONDS);
   }
 }
