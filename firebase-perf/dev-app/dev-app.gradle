@@ -16,6 +16,7 @@ apply plugin: 'com.android.application'
 // Firebase performance plugin, the relevant dependency is specified in the "buildSrc/build-src.gradle"
 apply plugin: 'com.google.firebase.firebase-perf'
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+apply plugin: 'com.google.gms.google-services'
 
 firebaseTestLab {
     device 'model=Pixel2,version=28,locale=en,orientation=portrait'

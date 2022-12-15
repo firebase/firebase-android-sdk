@@ -110,8 +110,9 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private Timer onResumeTime = null;
   private Timer firstForegroundTime = null;
   private Timer firstBackgroundTime = null;
-  private Timer onDrawPostAtFrontOfQueueTime = null;
   private Timer preDrawPostTime = null;
+  private Timer preDrawPostAtFrontOfQueueTime = null;
+  private Timer onDrawPostAtFrontOfQueueTime = null;
 
   private PerfSession startSession;
   private boolean isStartedFromBackground = false;
@@ -258,15 +259,21 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     this.experimentTtid
         .setClientStartTimeUs(getStartTimer().getMicros())
         .setDurationUs(getStartTimer().getDurationMicros(this.preDrawPostTime));
+    logExperimentTrace(this.experimentTtid);
+  }
 
-    if (isExperimentTraceDone()) {
-      executorService.execute(() -> this.logExperimentTtid(this.experimentTtid));
-
-      if (isRegisteredForLifecycleCallbacks) {
-        // After AppStart trace is queued to be logged, we can unregister this callback.
-        unregisterActivityLifecycleCallbacks();
-      }
+  private void recordPreDrawFrontOfQueue() {
+    if (preDrawPostAtFrontOfQueueTime != null) {
+      return;
     }
+    this.preDrawPostAtFrontOfQueueTime = clock.getTime();
+    this.experimentTtid.addSubtraces(
+        TraceMetric.newBuilder()
+            .setName("_experiment_preDrawFoQ")
+            .setClientStartTimeUs(getStartTimer().getMicros())
+            .setDurationUs(getStartTimer().getDurationMicros(this.preDrawPostAtFrontOfQueueTime))
+            .build());
+    logExperimentTrace(this.experimentTtid);
   }
 
   private void recordOnDrawFrontOfQueue() {
@@ -277,7 +284,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
 
     this.experimentTtid.addSubtraces(
         TraceMetric.newBuilder()
-            .setName("_experiment_onDraw_postAtFrontOfQueue")
+            .setName("_experiment_onDrawFoQ")
             .setClientStartTimeUs(getStartTimer().getMicros())
             .setDurationUs(getStartTimer().getDurationMicros(this.onDrawPostAtFrontOfQueueTime))
             .build());
@@ -289,19 +296,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
             .build());
 
     this.experimentTtid.addPerfSessions(this.startSession.build());
-
-    if (isExperimentTraceDone()) {
-      executorService.execute(() -> this.logExperimentTtid(this.experimentTtid));
-
-      if (isRegisteredForLifecycleCallbacks) {
-        // After AppStart trace is queued to be logged, we can unregister this callback.
-        unregisterActivityLifecycleCallbacks();
-      }
-    }
-  }
-
-  private boolean isExperimentTraceDone() {
-    return this.preDrawPostTime != null && this.onDrawPostAtFrontOfQueueTime != null;
+    logExperimentTrace(this.experimentTtid);
   }
 
   @Override
@@ -340,7 +335,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     if (isExperimentTTIDEnabled) {
       View rootView = activity.findViewById(android.R.id.content);
       FirstDrawDoneListener.registerForNextDraw(rootView, this::recordOnDrawFrontOfQueue);
-      PreDrawListener.registerForNextDraw(rootView, this::recordPreDraw);
+      PreDrawListener.registerForNextDraw(
+          rootView, this::recordPreDraw, this::recordPreDrawFrontOfQueue);
     }
 
     if (onResumeTime != null) { // An activity already called onResume()
@@ -362,14 +358,23 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     // Log the app start trace in a non-main thread.
     executorService.execute(this::logAppStartTrace);
 
-    if (!isExperimentTTIDEnabled && isRegisteredForLifecycleCallbacks) {
+    if (!isExperimentTTIDEnabled) {
       // After AppStart trace is logged, we can unregister this callback.
       unregisterActivityLifecycleCallbacks();
     }
   }
 
-  private void logExperimentTtid(TraceMetric.Builder metric) {
-    transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
+  /** Helper for logging all experiments in one trace. */
+  private void logExperimentTrace(TraceMetric.Builder metric) {
+    if (this.preDrawPostTime == null
+        || this.preDrawPostAtFrontOfQueueTime == null
+        || this.onDrawPostAtFrontOfQueueTime == null) {
+      return;
+    }
+    executorService.execute(
+        () -> transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND));
+    // After logging the experiment trace, we can unregister ourself from lifecycle listeners.
+    unregisterActivityLifecycleCallbacks();
   }
 
   private void logAppStartTrace() {

@@ -30,17 +30,21 @@ public class PreDrawListener implements ViewTreeObserver.OnPreDrawListener {
   private final Handler mainThreadHandler = new Handler(Looper.getMainLooper());
 
   private final AtomicReference<View> viewReference;
-  private final Runnable callback;
+  private final Runnable callbackBoQ;
+  private final Runnable callbackFoQ;
 
   /** Registers a post-draw callback for the next draw of a view. */
-  public static void registerForNextDraw(View view, Runnable drawDoneCallback) {
-    final PreDrawListener listener = new PreDrawListener(view, drawDoneCallback);
+  public static void registerForNextDraw(
+      View view, Runnable drawDoneCallbackBoQ, Runnable drawDoneCallbackFoQ) {
+    final PreDrawListener listener =
+        new PreDrawListener(view, drawDoneCallbackBoQ, drawDoneCallbackFoQ);
     view.getViewTreeObserver().addOnPreDrawListener(listener);
   }
 
-  private PreDrawListener(View view, Runnable callback) {
+  private PreDrawListener(View view, Runnable callbackBoQ, Runnable callbackFoQ) {
     this.viewReference = new AtomicReference<>(view);
-    this.callback = callback;
+    this.callbackBoQ = callbackBoQ;
+    this.callbackFoQ = callbackFoQ;
   }
 
   @Override
@@ -51,7 +55,8 @@ public class PreDrawListener implements ViewTreeObserver.OnPreDrawListener {
       return true;
     }
     view.getViewTreeObserver().removeOnPreDrawListener(this);
-    mainThreadHandler.post(callback);
+    mainThreadHandler.post(callbackBoQ);
+    mainThreadHandler.postAtFrontOfQueue(callbackFoQ);
     return true;
   }
 }
