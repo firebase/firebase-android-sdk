@@ -260,6 +260,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     when(clock.getTime()).thenCallRealMethod(); // Use robolectric shadows to manipulate time
     View testView = new View(ApplicationProvider.getApplicationContext());
     when(activity1.findViewById(android.R.id.content)).thenReturn(testView);
+    when(activity2.findViewById(android.R.id.content)).thenReturn(testView);
     when(configResolver.getIsExperimentTTIDEnabled()).thenReturn(true);
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     AppStartTrace trace =
@@ -271,12 +272,14 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     trace.onActivityCreated(activity1, bundle);
     trace.onActivityStarted(activity1);
     trace.onActivityResumed(activity1);
-    // Experiment: simulate backgrounding before draw
+    // Experiment: simulate new activity before draw
+    trace.onActivityStarted(activity2);
+    trace.onActivityResumed(activity2);
     trace.onActivityPaused(activity1);
     trace.onActivityStopped(activity1);
-    trace.onActivityStarted(activity1);
-    trace.onActivityResumed(activity1);
+    trace.onActivityDestroyed(activity1);
     fakeExecutorService.runAll();
+    // only the old original _as should have been sent
     verify(transportManager, times(1))
         .log(isA(TraceMetric.class), isA(ApplicationProcessState.class));
 
@@ -296,6 +299,6 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     assertThat(ttid.getName()).isEqualTo("_experiment_app_start_ttid");
     assertThat(ttid.getDurationUs()).isNotEqualTo(resumeTime - appStartTime);
     assertThat(ttid.getDurationUs()).isEqualTo(drawTime - appStartTime);
-    assertThat(ttid.getSubtracesCount()).isEqualTo(6);
+    assertThat(ttid.getSubtracesCount()).isEqualTo(3);
   }
 }
