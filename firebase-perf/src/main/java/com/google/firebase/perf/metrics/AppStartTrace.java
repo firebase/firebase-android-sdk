@@ -26,8 +26,9 @@ import android.view.View;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.lifecycle.DefaultLifecycleObserver;
-import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.Lifecycle;
+import androidx.lifecycle.LifecycleObserver;
+import androidx.lifecycle.OnLifecycleEvent;
 import androidx.lifecycle.ProcessLifecycleOwner;
 import com.google.android.gms.common.util.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
@@ -66,7 +67,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @hide
  */
-public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecycleObserver {
+public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObserver {
 
   private static final Timer PERF_CLASS_LOAD_TIME = new Clock().getTime();
   private static final long MAX_LATENCY_BEFORE_UI_INIT = TimeUnit.MINUTES.toMicros(1);
@@ -411,10 +412,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
   @Override
   public void onActivityStopped(Activity activity) {}
 
-  /** App is entering foreground */
-  @Override
-  public void onStart(@NonNull LifecycleOwner owner) {
-    DefaultLifecycleObserver.super.onStart(owner);
+  /** App is entering foreground. Keep annotation is required so R8 does not remove this method. */
+  @Keep
+  @OnLifecycleEvent(Lifecycle.Event.ON_START)
+  public void onAppEnteredForeground() {
     if (isStartedFromBackground || isTooLateToInitUI || firstForegroundTime != null) {
       return;
     }
@@ -429,10 +430,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, DefaultLifecyc
             .build());
   }
 
-  /** App is entering background */
-  @Override
-  public void onStop(@NonNull LifecycleOwner owner) {
-    DefaultLifecycleObserver.super.onStop(owner);
+  /** App is entering background. Keep annotation is required so R8 does not remove this method. */
+  @Keep
+  @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+  public void onAppEnteredBackground() {
     if (isStartedFromBackground || isTooLateToInitUI || firstBackgroundTime != null) {
       return;
     }
