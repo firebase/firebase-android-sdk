@@ -37,6 +37,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.FirebaseOptions.Builder;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
@@ -137,8 +138,8 @@ public class FirebaseModelDownloaderTest {
             mockModelDownloadService,
             mockFileManager,
             mockEventLogger,
-            executor,
-            executor,
+            TestOnlyExecutors.background(),
+            TestOnlyExecutors.blocking(),
             modelFactory);
     setUpTestingFiles(app);
 
