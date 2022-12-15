@@ -82,18 +82,18 @@ public class FirebaseInAppMessaging {
     this.developerListenerManager = developerListenerManager;
     this.lightWeightExecutor = lightWeightExecutor;
 
-    lightWeightExecutor.execute(
-        () -> {
-          firebaseInstallations
-              .getId()
-              .addOnSuccessListener(
-                  id -> Logging.logi("Starting InAppMessaging runtime with Installation ID " + id));
+    firebaseInstallations
+        .getId()
+        .addOnSuccessListener(
+            lightWeightExecutor,
+            id -> {
+              Logging.logi("Starting InAppMessaging runtime with Installation ID " + id);
+            });
 
-          Disposable unused =
-              inAppMessageStreamManager
-                  .createFirebaseInAppMessageStream()
-                  .subscribe(FirebaseInAppMessaging.this::triggerInAppMessage);
-        });
+    Disposable unused =
+        inAppMessageStreamManager
+            .createFirebaseInAppMessageStream()
+            .subscribe(FirebaseInAppMessaging.this::triggerInAppMessage);
   }
 
   /**
