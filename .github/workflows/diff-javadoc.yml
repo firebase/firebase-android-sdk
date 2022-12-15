@@ -62,6 +62,6 @@ jobs:
           > diff.md
 
       - name: Add comment
-        uses: mshick/add-pr-comment@v2
+        uses: mshick/add-pr-comment@a65df5f64fc741e91c59b8359a4bc56e57aaf5b1
         with:
           message-path: diff.md
