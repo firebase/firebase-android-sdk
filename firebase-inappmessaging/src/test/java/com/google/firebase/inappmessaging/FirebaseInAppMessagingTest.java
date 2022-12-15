@@ -212,7 +212,8 @@ public class FirebaseInAppMessagingTest {
             dataCollectionHelper,
             firebaseInstallations,
             displayCallbacksFactory,
-            developerListenerManager);
+            developerListenerManager,
+            TestOnlyExecutors.lite());
   }
 
   @Test

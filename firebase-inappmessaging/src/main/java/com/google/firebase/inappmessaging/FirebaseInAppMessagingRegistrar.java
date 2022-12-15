@@ -24,6 +24,7 @@ import com.google.firebase.abt.component.AbtComponent;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
@@ -62,6 +63,8 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
       Qualified.qualified(Background.class, Executor.class);
   private Qualified<Executor> blockingExecutor =
       Qualified.qualified(Blocking.class, Executor.class);
+  private Qualified<Executor> lightWeightExecutor =
+      Qualified.qualified(Lightweight.class, Executor.class);
 
   @Override
   @Keep
@@ -78,6 +81,7 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
             .add(Dependency.required(Subscriber.class))
             .add(Dependency.required(backgroundExecutor))
             .add(Dependency.required(blockingExecutor))
+            .add(Dependency.required(lightWeightExecutor))
             .factory(this::providesFirebaseInAppMessaging)
             .eagerInDefaultApp()
             .build(),
@@ -104,7 +108,9 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
                     new ProgramaticContextualTriggers()))
             .executorsModule(
                 new ExecutorsModule(
-                    container.get(backgroundExecutor), container.get(blockingExecutor)))
+                    container.get(lightWeightExecutor),
+                    container.get(backgroundExecutor),
+                    container.get(blockingExecutor)))
             .build();
 
     AppComponent instance =

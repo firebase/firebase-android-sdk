@@ -274,7 +274,10 @@ public class FirebaseInAppMessagingFlowableTest {
                 new ProgrammaticContextualTriggerFlowableModule(
                     new ProgramaticContextualTriggers()))
             .executorsModule(
-                new ExecutorsModule(TestOnlyExecutors.background(), TestOnlyExecutors.blocking()));
+                new ExecutorsModule(
+                    TestOnlyExecutors.lite(),
+                    TestOnlyExecutors.background(),
+                    TestOnlyExecutors.blocking()));
 
     TestUniversalComponent universalComponent = universalComponentBuilder.build();
 
@@ -320,7 +323,10 @@ public class FirebaseInAppMessagingFlowableTest {
         universalComponentBuilder
             .appMeasurementModule(new AppMeasurementModule(handler -> {}, firebaseEventSubscriber))
             .executorsModule(
-                new ExecutorsModule(TestOnlyExecutors.background(), TestOnlyExecutors.blocking()))
+                new ExecutorsModule(
+                    TestOnlyExecutors.lite(),
+                    TestOnlyExecutors.background(),
+                    TestOnlyExecutors.blocking()))
             .build();
     TestAppComponent appComponent =
         appComponentBuilder.universalComponent(analyticsLessUniversalComponent).build();
