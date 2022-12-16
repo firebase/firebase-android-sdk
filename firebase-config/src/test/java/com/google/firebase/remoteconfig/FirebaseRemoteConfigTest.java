@@ -30,11 +30,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -1181,58 +1178,6 @@ public final class FirebaseRemoteConfigTest {
     configAutoFetch.listenForNotifications();
 
     verify(mockInvalidMessageEventListener).onError(any(FirebaseRemoteConfigClientException.class));
-  }
-
-  @Test
-  public void realtime_redirectStatusCode_noRetries() throws Exception {
-    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
-    doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
-    when(mockHttpURLConnection.getResponseCode()).thenReturn(301);
-    configRealtimeHttpClientSpy.beginRealtimeHttpStream();
-
-    verify(configRealtimeHttpClientSpy, never()).startAutoFetch(any());
-    verify(configRealtimeHttpClientSpy, never()).retryHTTPConnection();
-    verify(mockStreamErrorEventListener).onError(any(FirebaseRemoteConfigServerException.class));
-  }
-
-  @Test
-  public void realtime_okStatusCode_startAutofetchAndRetries() throws Exception {
-    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
-    doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
-    doReturn(mockConfigAutoFetch).when(configRealtimeHttpClientSpy).startAutoFetch(any());
-    doNothing().when(configRealtimeHttpClientSpy).retryHTTPConnection();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
-    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
-
-    configRealtimeHttpClientSpy.beginRealtimeHttpStream();
-    verify(mockConfigAutoFetch).listenForNotifications();
-    verify(configRealtimeHttpClientSpy).retryHTTPConnection();
-  }
-
-  @Test
-  public void realtime_badGatewayStatusCode_noAutofetchButRetries() throws Exception {
-    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
-    doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
-    doNothing().when(configRealtimeHttpClientSpy).retryHTTPConnection();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
-    when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
-
-    configRealtimeHttpClientSpy.beginRealtimeHttpStream();
-    verify(configRealtimeHttpClientSpy, never()).startAutoFetch(any());
-    verify(configRealtimeHttpClientSpy).retryHTTPConnection();
-  }
-
-  @Test
-  public void realtime_exceptionThrown_noAutofetchButRetries() throws Exception {
-    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
-    doThrow(IOException.class).when(configRealtimeHttpClientSpy).createRealtimeConnection();
-    doNothing().when(configRealtimeHttpClientSpy).retryHTTPConnection();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
-
-    configRealtimeHttpClientSpy.beginRealtimeHttpStream();
-    verify(configRealtimeHttpClientSpy, never()).startAutoFetch(any());
-    verify(configRealtimeHttpClientSpy).retryHTTPConnection();
   }
 
   @Test
