@@ -69,7 +69,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObserver {
 
-  private static final Timer PERF_CLASS_LOAD_TIME = new Clock().getTime();
+  private static final @NonNull Timer PERF_CLASS_LOAD_TIME = new Clock().getTime();
   private static final long MAX_LATENCY_BEFORE_UI_INIT = TimeUnit.MINUTES.toMicros(1);
 
   // Core pool size 0 allows threads to shut down if they're idle
@@ -103,13 +103,13 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   // Critical timestamps during app-start, on the main-thread. IMPORTANT: these must all be captured
   // or modified on the main thread. Without this invariant, we cannot guarantee that null means "it
   // hasn't happened".
-  private final Timer processStartTime;
-  private final Timer firebaseClassLoadTime;
+  private final @Nullable Timer processStartTime;
+  private final @Nullable Timer firebaseClassLoadTime;
   private Timer onCreateTime = null;
   private Timer onStartTime = null;
   private Timer onResumeTime = null;
   private Timer firstForegroundTime = null;
-  private Timer firstBackgroundTime = null;
+  private @Nullable Timer firstBackgroundTime = null;
   private Timer preDrawPostTime = null;
   private Timer preDrawPostAtFrontOfQueueTime = null;
   private Timer onDrawPostAtFrontOfQueueTime = null;
@@ -184,10 +184,12 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     this.configResolver = configResolver;
     this.executorService = executorService;
     this.experimentTtid = TraceMetric.newBuilder().setName("_experiment_app_start_ttid");
+    // Set the timestamp for process-start (beginning of BIND_APPLICATION), if available
     this.processStartTime =
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
             ? Timer.ofElapsedRealtime(Process.getStartElapsedRealtime())
             : null;
+    // Set the timestamp for Firebase's first class's class-loading (approx.), if available
     StartupTime firebaseStart = FirebaseApp.getInstance().get(StartupTime.class);
     this.firebaseClassLoadTime =
         firebaseStart != null ? Timer.ofElapsedRealtime(firebaseStart.getElapsedRealtime()) : null;
@@ -221,17 +223,17 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   /**
    * Gets the timestamp that marks the beginning of app start, defined as the beginning of
    * BIND_APPLICATION, when the forked process is about to start loading the app's resources and
-   * classes. Fallback to class-load time of a Firebase class below API 24.
+   * classes. Fallback to class-load time of a Firebase class for compatibility below API 24.
    *
-   * @return {@link Timer} at the beginning of app start by Fireperf definition.
+   * @return {@link Timer} at the beginning of app start by Firebase-Performance definition.
    */
-  private Timer getStartTimer() {
+  private @NonNull Timer getStartTimerCompat() {
     // Preferred: Android system API provides BIND_APPLICATION time
     if (processStartTime != null) {
       return processStartTime;
     }
     // Fallback: static initializer time (during class-load) of a Firebase class
-    return getClassLoadTime();
+    return getClassLoadTimeCompat();
   }
 
   /**
@@ -242,7 +244,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
    *
    * @return {@link Timer} captured by static-initializer during class-loading of a Firebase class.
    */
-  private Timer getClassLoadTime() {
+  private @NonNull Timer getClassLoadTimeCompat() {
     // Prefered: static-initializer time of the 1st Firebase class during init
     if (firebaseClassLoadTime != null) {
       return firebaseClassLoadTime;
@@ -257,8 +259,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     }
     this.preDrawPostTime = clock.getTime();
     this.experimentTtid
-        .setClientStartTimeUs(getStartTimer().getMicros())
-        .setDurationUs(getStartTimer().getDurationMicros(this.preDrawPostTime));
+        .setClientStartTimeUs(getStartTimerCompat().getMicros())
+        .setDurationUs(getStartTimerCompat().getDurationMicros(this.preDrawPostTime));
     logExperimentTrace(this.experimentTtid);
   }
 
@@ -270,8 +272,9 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     this.experimentTtid.addSubtraces(
         TraceMetric.newBuilder()
             .setName("_experiment_preDrawFoQ")
-            .setClientStartTimeUs(getStartTimer().getMicros())
-            .setDurationUs(getStartTimer().getDurationMicros(this.preDrawPostAtFrontOfQueueTime))
+            .setClientStartTimeUs(getStartTimerCompat().getMicros())
+            .setDurationUs(
+                getStartTimerCompat().getDurationMicros(this.preDrawPostAtFrontOfQueueTime))
             .build());
     logExperimentTrace(this.experimentTtid);
   }
@@ -285,14 +288,15 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     this.experimentTtid.addSubtraces(
         TraceMetric.newBuilder()
             .setName("_experiment_onDrawFoQ")
-            .setClientStartTimeUs(getStartTimer().getMicros())
-            .setDurationUs(getStartTimer().getDurationMicros(this.onDrawPostAtFrontOfQueueTime))
+            .setClientStartTimeUs(getStartTimerCompat().getMicros())
+            .setDurationUs(
+                getStartTimerCompat().getDurationMicros(this.onDrawPostAtFrontOfQueueTime))
             .build());
     this.experimentTtid.addSubtraces(
         TraceMetric.newBuilder()
             .setName("_experiment_procStart_to_classLoad")
-            .setClientStartTimeUs(getStartTimer().getMicros())
-            .setDurationUs(getStartTimer().getDurationMicros(getClassLoadTime()))
+            .setClientStartTimeUs(getStartTimerCompat().getMicros())
+            .setDurationUs(getStartTimerCompat().getDurationMicros(getClassLoadTimeCompat()))
             .build());
 
     this.experimentTtid.addPerfSessions(this.startSession.build());
@@ -309,7 +313,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     launchActivity = new WeakReference<Activity>(activity);
     onCreateTime = clock.getTime();
 
-    if (getStartTimer().getDurationMicros(onCreateTime) > MAX_LATENCY_BEFORE_UI_INIT) {
+    if (getStartTimerCompat().getDurationMicros(onCreateTime) > MAX_LATENCY_BEFORE_UI_INIT) {
       isTooLateToInitUI = true;
     }
   }
@@ -352,7 +356,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
             "onResume(): "
                 + activity.getClass().getName()
                 + ": "
-                + getClassLoadTime().getDurationMicros(onResumeTime)
+                + getClassLoadTimeCompat().getDurationMicros(onResumeTime)
                 + " microseconds");
 
     // Log the app start trace in a non-main thread.
@@ -381,15 +385,15 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     TraceMetric.Builder metric =
         TraceMetric.newBuilder()
             .setName(Constants.TraceNames.APP_START_TRACE_NAME.toString())
-            .setClientStartTimeUs(getClassLoadTime().getMicros())
-            .setDurationUs(getClassLoadTime().getDurationMicros(onResumeTime));
+            .setClientStartTimeUs(getClassLoadTimeCompat().getMicros())
+            .setDurationUs(getClassLoadTimeCompat().getDurationMicros(onResumeTime));
     List<TraceMetric> subtraces = new ArrayList<>(/* initialCapacity= */ 3);
 
     TraceMetric.Builder traceMetricBuilder =
         TraceMetric.newBuilder()
             .setName(Constants.TraceNames.ON_CREATE_TRACE_NAME.toString())
-            .setClientStartTimeUs(getClassLoadTime().getMicros())
-            .setDurationUs(getClassLoadTime().getDurationMicros(onCreateTime));
+            .setClientStartTimeUs(getClassLoadTimeCompat().getMicros())
+            .setDurationUs(getClassLoadTimeCompat().getDurationMicros(onCreateTime));
     subtraces.add(traceMetricBuilder.build());
 
     traceMetricBuilder = TraceMetric.newBuilder();
@@ -430,8 +434,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     this.experimentTtid.addSubtraces(
         TraceMetric.newBuilder()
             .setName("_experiment_firstForegrounding")
-            .setClientStartTimeUs(getStartTimer().getMicros())
-            .setDurationUs(getStartTimer().getDurationMicros(firstForegroundTime))
+            .setClientStartTimeUs(getStartTimerCompat().getMicros())
+            .setDurationUs(getStartTimerCompat().getDurationMicros(firstForegroundTime))
             .build());
   }
 
@@ -447,8 +451,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     this.experimentTtid.addSubtraces(
         TraceMetric.newBuilder()
             .setName("_experiment_firstBackgrounding")
-            .setClientStartTimeUs(getStartTimer().getMicros())
-            .setDurationUs(getStartTimer().getDurationMicros(firstBackgroundTime))
+            .setClientStartTimeUs(getStartTimerCompat().getMicros())
+            .setDurationUs(getStartTimerCompat().getDurationMicros(firstBackgroundTime))
             .build());
   }
 
