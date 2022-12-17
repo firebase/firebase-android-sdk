@@ -321,6 +321,10 @@ public class FirebaseDatabase {
     this.emulatorSettings = new EmulatedServiceSettings(host, port);
   }
 
+  public String testMethodNotToBeUsed(@NonNull String valueToReturn) {
+    return valueToReturn.trim();
+  }
+
   /** @return The semver version for this build of the Firebase Database client */
   @NonNull
   public static String getSdkVersion() {
