@@ -27,3 +27,6 @@ information on using pull requests.
 This project follows
 [Google's Open Source Community Guidelines](https://opensource.google.com/conduct/).
 
+## Setting up the development environment
+
+This project is developped with Android Studio. Subprojects like `firebase-crashlytics-ndk` might have [specific requirements](https://github.com/firebase/firebase-android-sdk/blob/master/firebase-crashlytics-ndk/README.md). Refer to the individual README files for more details.
