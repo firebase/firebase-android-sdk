@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>119291120814-6kocri9dp3lbku41c9hdqipl0f3menur.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.119291120814-6kocri9dp3lbku41c9hdqipl0f3menur</string>
+	<key>API_KEY</key>
+	<string>AIzaSyD4mfEiPEtDHlIH4hpHUMHELczPevki3e0</string>
+	<key>GCM_SENDER_ID</key>
+	<string>119291120814</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>upindigital.com.br</string>
+	<key>PROJECT_ID</key>
+	<string>upin-digital</string>
+	<key>STORAGE_BUCKET</key>
+	<string>upin-digital.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:119291120814:ios:5f34d0995bd169e5ac313f</string>
+</dict>
+</plist>
