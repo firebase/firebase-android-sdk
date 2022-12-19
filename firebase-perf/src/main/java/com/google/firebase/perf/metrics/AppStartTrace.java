@@ -16,13 +16,16 @@ package com.google.firebase.perf.metrics;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.Application;
 import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.os.Process;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -117,6 +120,11 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private PerfSession startSession;
   private boolean isStartedFromBackground = false;
 
+  // TODO: remove after experiment
+  private int onDrawCount = 0;
+  private final DrawCounter onDrawCounterListener = new DrawCounter();
+  private boolean systemBackgroundCheck = false;
+
   /**
    * Called from onCreate() method of an activity by instrumented byte code.
    *
@@ -205,6 +213,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     Context appContext = context.getApplicationContext();
     if (appContext instanceof Application) {
       ((Application) appContext).registerActivityLifecycleCallbacks(this);
+      systemBackgroundCheck = systemBackgroundCheck || isAnyAppProcessInForeground(appContext);
       isRegisteredForLifecycleCallbacks = true;
       this.appContext = appContext;
     }
@@ -298,7 +307,9 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
             .setClientStartTimeUs(getStartTimerCompat().getMicros())
             .setDurationUs(getStartTimerCompat().getDurationMicros(getClassLoadTimeCompat()))
             .build());
-
+    this.experimentTtid.putCustomAttributes(
+        "systemDeterminedBackground", systemBackgroundCheck ? "true" : "false");
+    this.experimentTtid.putCounters("onDrawCount", onDrawCount);
     this.experimentTtid.addPerfSessions(this.startSession.build());
     logExperimentTrace(this.experimentTtid);
   }
@@ -310,6 +321,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
       return;
     }
 
+    systemBackgroundCheck = systemBackgroundCheck || isAnyAppProcessInForeground(appContext);
     launchActivity = new WeakReference<Activity>(activity);
     onCreateTime = clock.getTime();
 
@@ -338,6 +350,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     final boolean isExperimentTTIDEnabled = configResolver.getIsExperimentTTIDEnabled();
     if (isExperimentTTIDEnabled) {
       View rootView = activity.findViewById(android.R.id.content);
+      rootView.getViewTreeObserver().addOnDrawListener(onDrawCounterListener);
       FirstDrawDoneListener.registerForNextDraw(rootView, this::recordOnDrawFrontOfQueue);
       PreDrawListener.registerForNextDraw(
           rootView, this::recordPreDraw, this::recordPreDrawFrontOfQueue);
@@ -416,7 +429,15 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   }
 
   @Override
-  public void onActivityPaused(Activity activity) {}
+  public void onActivityPaused(Activity activity) {
+    if (isStartedFromBackground
+        || isTooLateToInitUI
+        || !configResolver.getIsExperimentTTIDEnabled()) {
+      return;
+    }
+    View rootView = activity.findViewById(android.R.id.content);
+    rootView.getViewTreeObserver().removeOnDrawListener(onDrawCounterListener);
+  }
 
   @Override
   public void onActivityStopped(Activity activity) {}
@@ -463,6 +484,67 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   public void onActivitySaveInstanceState(Activity activity, Bundle outState) {}
 
   /**
+   * Returns whether any process corresponding to the package for the provided context is visible
+   * (in other words, whether the app is currently in the foreground).
+   *
+   * @param appContext The application's context.
+   */
+  public static boolean isAnyAppProcessInForeground(Context appContext) {
+    // Do not call ProcessStats.getActivityManger, caching will break tests that indirectly depend
+    // on ProcessStats.
+    ActivityManager activityManager =
+        (ActivityManager) appContext.getSystemService(Context.ACTIVITY_SERVICE);
+    if (activityManager == null) {
+      return true;
+    }
+    List<ActivityManager.RunningAppProcessInfo> appProcesses =
+        activityManager.getRunningAppProcesses();
+    if (appProcesses != null) {
+      String appProcessName = appContext.getPackageName();
+      String allowedAppProcessNamePrefix = appProcessName + ":";
+      for (ActivityManager.RunningAppProcessInfo appProcess : appProcesses) {
+        if (appProcess.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+          continue;
+        }
+        if (appProcess.processName.equals(appProcessName)
+            || appProcess.processName.startsWith(allowedAppProcessNamePrefix)) {
+          boolean isAppInForeground = true;
+
+          // For the case when the app is in foreground and the device transitions to sleep mode,
+          // the importance of the process is set to IMPORTANCE_TOP_SLEEPING. However, this
+          // importance level was introduced in M. Pre M, the process importance is not changed to
+          // IMPORTANCE_TOP_SLEEPING when the display turns off. So we need to rely also on the
+          // state of the display to decide if any app process is really visible.
+          if (Build.VERSION.SDK_INT < 23 /* M */) {
+            isAppInForeground = isScreenOn(appContext);
+          }
+
+          if (isAppInForeground) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Returns whether the device screen is on.
+   *
+   * @param appContext The application's context.
+   */
+  public static boolean isScreenOn(Context appContext) {
+    PowerManager powerManager = (PowerManager) appContext.getSystemService(Context.POWER_SERVICE);
+    if (powerManager == null) {
+      return true;
+    }
+    return (Build.VERSION.SDK_INT >= 20 /* KITKAT_WATCH */)
+        ? powerManager.isInteractive()
+        : powerManager.isScreenOn();
+  }
+
+  /**
    * We use StartFromBackgroundRunnable to detect if app is started from background or foreground.
    * If app is started from background, we do not generate AppStart trace. This runnable is posted
    * to main UI thread from FirebasePerfEarly. If app is started from background, this runnable will
@@ -482,6 +564,13 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
       if (trace.onCreateTime == null) {
         trace.isStartedFromBackground = true;
       }
+    }
+  }
+
+  private final class DrawCounter implements ViewTreeObserver.OnDrawListener {
+    @Override
+    public void onDraw() {
+      onDrawCount++;
     }
   }
 
