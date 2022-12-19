@@ -123,7 +123,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   // TODO: remove after experiment
   private int onDrawCount = 0;
   private final DrawCounter onDrawCounterListener = new DrawCounter();
-  private boolean systemBackgroundCheck = false;
+  private boolean systemForegroundCheck = false;
 
   /**
    * Called from onCreate() method of an activity by instrumented byte code.
@@ -213,7 +213,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     Context appContext = context.getApplicationContext();
     if (appContext instanceof Application) {
       ((Application) appContext).registerActivityLifecycleCallbacks(this);
-      systemBackgroundCheck = systemBackgroundCheck || isAnyAppProcessInForeground(appContext);
+      systemForegroundCheck = systemForegroundCheck || isAnyAppProcessInForeground(appContext);
       isRegisteredForLifecycleCallbacks = true;
       this.appContext = appContext;
     }
@@ -308,7 +308,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
             .setDurationUs(getStartTimerCompat().getDurationMicros(getClassLoadTimeCompat()))
             .build());
     this.experimentTtid.putCustomAttributes(
-        "systemDeterminedBackground", systemBackgroundCheck ? "true" : "false");
+        "systemDeterminedForeground", systemForegroundCheck ? "true" : "false");
     this.experimentTtid.putCounters("onDrawCount", onDrawCount);
     this.experimentTtid.addPerfSessions(this.startSession.build());
     logExperimentTrace(this.experimentTtid);
@@ -321,7 +321,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
       return;
     }
 
-    systemBackgroundCheck = systemBackgroundCheck || isAnyAppProcessInForeground(appContext);
+    systemForegroundCheck = systemForegroundCheck || isAnyAppProcessInForeground(appContext);
     launchActivity = new WeakReference<Activity>(activity);
     onCreateTime = clock.getTime();
 
