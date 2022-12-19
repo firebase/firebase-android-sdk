@@ -49,10 +49,9 @@ public class InstallActivity extends AppCompatActivity {
     // If we re-enter InstallActivity after install is already kicked off, we can assume that either
     // installation failure or tester canceled the install.
     if (installInProgress) {
-      LogWrapper
-          .e(
-              TAG,
-              "Activity resumed when installation was already in progress. Installation was either canceled or failed");
+      LogWrapper.e(
+          TAG,
+          "Activity resumed when installation was already in progress. Installation was either canceled or failed");
       finish();
       return;
     }
@@ -60,10 +59,9 @@ public class InstallActivity extends AppCompatActivity {
     if (!isUnknownSourcesEnabled()) {
       // See comment about install progress above. Same applies to unknown sources UI.
       if (enableUnknownSourcesDialog.isShowing()) {
-        LogWrapper
-            .e(
-                TAG,
-                "Unknown sources enablement was already in progress. It was either canceled or failed");
+        LogWrapper.e(
+            TAG,
+            "Unknown sources enablement was already in progress. It was either canceled or failed");
         enableUnknownSourcesDialog.dismiss();
         finish();
         return;
@@ -80,8 +78,7 @@ public class InstallActivity extends AppCompatActivity {
     super.onDestroy();
     if (enableUnknownSourcesDialog.isShowing()) {
       enableUnknownSourcesDialog.dismiss();
-      LogWrapper
-          .e(TAG, "Unknown sources enablement canceled. Activity was destroyed");
+      LogWrapper.e(TAG, "Unknown sources enablement canceled. Activity was destroyed");
     }
   }
 
@@ -93,10 +90,8 @@ public class InstallActivity extends AppCompatActivity {
         return Settings.Secure.getInt(getContentResolver(), Settings.Secure.INSTALL_NON_MARKET_APPS)
             == 1;
       } catch (Settings.SettingNotFoundException e) {
-        LogWrapper
-            .e(
-                TAG, "Unable to determine if unknown sources is enabled. Assuming it's enabled.",
-                e);
+        LogWrapper.e(
+            TAG, "Unable to determine if unknown sources is enabled. Assuming it's enabled.", e);
         return true;
       }
     }

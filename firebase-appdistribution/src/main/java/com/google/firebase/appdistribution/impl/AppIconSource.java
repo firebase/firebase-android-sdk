@@ -50,8 +50,8 @@ class AppIconSource {
     }
 
     if (isAdaptiveIcon(icon)) {
-      LogWrapper
-          .e(TAG, "Adaptive icons cannot be used in notifications. Ignoring icon id: " + iconId);
+      LogWrapper.e(
+          TAG, "Adaptive icons cannot be used in notifications. Ignoring icon id: " + iconId);
       return DEFAULT_ICON;
     }
 

@@ -119,13 +119,12 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
       Application firebaseApplication = (Application) context;
       firebaseApplication.registerActivityLifecycleCallbacks(lifecycleNotifier);
     } else {
-      LogWrapper
-          .e(
-              TAG,
-              String.format(
-                  "Context %s was not an Application, can't register for lifecycle callbacks. SDK"
-                      + " might not function correctly.",
-                  context));
+      LogWrapper.e(
+          TAG,
+          String.format(
+              "Context %s was not an Application, can't register for lifecycle callbacks. SDK"
+                  + " might not function correctly.",
+              context));
     }
 
     return appDistribution;

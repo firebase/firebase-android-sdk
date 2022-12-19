@@ -237,8 +237,7 @@ class FirebaseAppDistributionTesterApiClient {
     try {
       return responseJson.getString(fieldName);
     } catch (JSONException e) {
-      LogWrapper
-          .e(TAG, String.format("Field '%s' missing from response", fieldName), e);
+      LogWrapper.e(TAG, String.format("Field '%s' missing from response", fieldName), e);
       throw new FirebaseAppDistributionException(
           ErrorMessages.JSON_PARSING_ERROR, Status.UNKNOWN, e);
     }

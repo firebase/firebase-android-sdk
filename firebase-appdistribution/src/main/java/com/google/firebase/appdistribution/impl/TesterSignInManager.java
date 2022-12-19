@@ -127,8 +127,7 @@ class TesterSignInManager {
     synchronized (signInTaskLock) {
       if (signInTaskCompletionSource != null
           && !signInTaskCompletionSource.getTask().isComplete()) {
-        LogWrapper
-            .v(TAG, "Detected In-Progress sign in task. Returning the same task.");
+        LogWrapper.v(TAG, "Detected In-Progress sign in task. Returning the same task.");
         return signInTaskCompletionSource.getTask();
       }
 

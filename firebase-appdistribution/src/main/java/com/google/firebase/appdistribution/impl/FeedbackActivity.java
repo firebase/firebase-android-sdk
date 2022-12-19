@@ -135,8 +135,7 @@ public class FeedbackActivity extends AppCompatActivity {
               SCREENSHOT_TARGET_WIDTH_PX,
               SCREENSHOT_TARGET_HEIGHT_PX);
     } catch (IOException | SecurityException e) {
-      LogWrapper
-          .e(TAG, "Could not read screenshot image from URI: " + screenshotUri, e);
+      LogWrapper.e(TAG, "Could not read screenshot image from URI: " + screenshotUri, e);
       return null;
     }
     if (bitmap == null) {

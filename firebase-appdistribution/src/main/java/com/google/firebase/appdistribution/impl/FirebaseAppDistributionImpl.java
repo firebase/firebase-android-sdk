@@ -54,6 +54,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * included in pre-release builds.
  */
 class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
+
   private static final String TAG = "Impl";
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
 
@@ -321,8 +322,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   @Override
   public void startFeedback(@NonNull CharSequence infoText) {
     if (!feedbackInProgress.compareAndSet(/* expect= */ false, /* update= */ true)) {
-      LogWrapper
-          .i(TAG, "Ignoring startFeedback() call because feedback is already in progress");
+      LogWrapper.i(TAG, "Ignoring startFeedback() call because feedback is already in progress");
       return;
     }
     LogWrapper.i(TAG, "Starting feedback");
@@ -346,8 +346,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   @Override
   public void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri) {
     if (!feedbackInProgress.compareAndSet(/* expect= */ false, /* update= */ true)) {
-      LogWrapper
-          .i(TAG, "Ignoring startFeedback() call because feedback is already in progress");
+      LogWrapper.i(TAG, "Ignoring startFeedback() call because feedback is already in progress");
       return;
     }
     doStartFeedback(infoText, screenshotUri);
@@ -377,8 +376,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
             taskExecutor,
             e -> {
               feedbackInProgress.set(false);
-              LogWrapper
-                  .e(TAG, "Failed to sign in tester. Could not collect feedback.", e);
+              LogWrapper.e(TAG, "Failed to sign in tester. Could not collect feedback.", e);
             })
         .onSuccessTask(
             taskExecutor,
@@ -403,8 +401,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                                 .addOnFailureListener(
                                     e -> {
                                       feedbackInProgress.set(false);
-                                      LogWrapper
-                                          .e(TAG, "Failed to launch feedback flow", e);
+                                      LogWrapper.e(TAG, "Failed to launch feedback flow", e);
                                       Toast.makeText(
                                               firebaseApp.getApplicationContext(),
                                               R.string.feedback_launch_failed,

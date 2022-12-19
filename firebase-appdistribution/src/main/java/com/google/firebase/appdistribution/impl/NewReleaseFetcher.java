@@ -121,8 +121,7 @@ class NewReleaseFetcher {
     }
 
     if (newRelease.getIasArtifactId() == null || newRelease.getIasArtifactId().isEmpty()) {
-      LogWrapper
-          .w(TAG, "AAB release missing IAS Artifact ID. Assuming new release is different.");
+      LogWrapper.w(TAG, "AAB release missing IAS Artifact ID. Assuming new release is different.");
       return false;
     }
 
@@ -130,10 +129,8 @@ class NewReleaseFetcher {
     try {
       installedIasArtifactId = releaseIdentifier.extractInternalAppSharingArtifactId();
     } catch (FirebaseAppDistributionException e) {
-      LogWrapper
-          .w(
-              TAG, "Could not get installed IAS artifact ID. Assuming new release is different.",
-              e);
+      LogWrapper.w(
+          TAG, "Could not get installed IAS artifact ID. Assuming new release is different.", e);
       return false;
     }
 

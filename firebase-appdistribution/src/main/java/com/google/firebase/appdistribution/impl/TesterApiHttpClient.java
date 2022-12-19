@@ -301,22 +301,20 @@ class TesterApiHttpClient {
       hash = AndroidUtilsLight.getPackageCertificateHashBytes(context, context.getPackageName());
 
       if (hash == null) {
-        LogWrapper
-            .e(
-                TAG,
-                    "Could not get fingerprint hash for X-Android-Cert header. Package is not signed: "
-                    + context.getPackageName());
+        LogWrapper.e(
+            TAG,
+            "Could not get fingerprint hash for X-Android-Cert header. Package is not signed: "
+                + context.getPackageName());
         return null;
       } else {
         return Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
       }
     } catch (PackageManager.NameNotFoundException e) {
-      LogWrapper
-          .e(
-              TAG,
-                  "Could not get fingerprint hash for X-Android-Cert header. No such package: "
-                  + context.getPackageName(),
-              e);
+      LogWrapper.e(
+          TAG,
+          "Could not get fingerprint hash for X-Android-Cert header. No such package: "
+              + context.getPackageName(),
+          e);
       return null;
     }
   }

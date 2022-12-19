@@ -270,11 +270,9 @@ class ApkUpdater {
           context.getApplicationInfo().loadLabel(context.getPackageManager()).toString();
       return applicationName + ".apk";
     } catch (Exception e) {
-      LogWrapper
-          .w(
-              TAG,
-              "Unable to retrieve app name. Using generic file name for APK: "
-                  + DEFAULT_APK_FILE_NAME);
+      LogWrapper.w(
+          TAG,
+          "Unable to retrieve app name. Using generic file name for APK: " + DEFAULT_APK_FILE_NAME);
       return DEFAULT_APK_FILE_NAME;
     }
   }

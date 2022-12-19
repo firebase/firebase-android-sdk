@@ -82,8 +82,8 @@ class FirebaseAppDistributionNotificationsManager {
     }
 
     if (!notificationManager.areNotificationsEnabled()) {
-      LogWrapper
-          .w(TAG, "Not showing app update notifications because app notifications are disabled");
+      LogWrapper.w(
+          TAG, "Not showing app update notifications because app notifications are disabled");
       return;
     }
 
@@ -138,8 +138,7 @@ class FirebaseAppDistributionNotificationsManager {
     }
 
     if (!notificationManager.areNotificationsEnabled()) {
-      LogWrapper
-          .w(TAG, "Not showing notification because app notifications are disabled");
+      LogWrapper.w(TAG, "Not showing notification because app notifications are disabled");
       return;
     }
 
