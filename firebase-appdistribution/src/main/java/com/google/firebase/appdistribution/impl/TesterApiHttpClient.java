@@ -37,6 +37,7 @@ import org.json.JSONObject;
 
 /** Client that makes FIS-authenticated GET and POST requests to the App Distribution Tester API. */
 class TesterApiHttpClient {
+  private static final String TAG = "TesterApiHttpClient";
 
   /** Functional interface for a function that writes a request body to an output stream */
   interface RequestBodyWriter {
@@ -61,7 +62,6 @@ class TesterApiHttpClient {
   // StandardCharsets.UTF_8 requires API level 19
   private static final String UTF_8 = "UTF-8";
 
-  private static final String TAG = "TesterApiClient:";
   private static final int DEFAULT_BUFFER_SIZE = 8192;
 
   private final FirebaseApp firebaseApp;
@@ -181,7 +181,7 @@ class TesterApiHttpClient {
       throws IOException, FirebaseAppDistributionException {
     int responseCode = connection.getResponseCode();
     String responseBody = readResponseBody(connection);
-    LogWrapper.getInstance().v(tag, String.format("Response (%d): %s", responseCode, responseBody));
+    LogWrapper.v(tag, String.format("Response (%d): %s", responseCode, responseBody));
     if (!isResponseSuccess(responseCode)) {
       throw getExceptionForHttpResponse(tag, responseCode, responseBody);
     }
@@ -219,7 +219,7 @@ class TesterApiHttpClient {
 
   private HttpsURLConnection openHttpsUrlConnection(String url, String authToken)
       throws IOException {
-    LogWrapper.getInstance().v("Opening connection to " + url);
+    LogWrapper.v(TAG, "Opening connection to " + url);
     Context context = firebaseApp.getApplicationContext();
     HttpsURLConnection httpsURLConnection;
     httpsURLConnection = httpsUrlConnectionFactory.openConnection(url);
@@ -301,22 +301,20 @@ class TesterApiHttpClient {
       hash = AndroidUtilsLight.getPackageCertificateHashBytes(context, context.getPackageName());
 
       if (hash == null) {
-        LogWrapper.getInstance()
-            .e(
-                TAG
-                    + "Could not get fingerprint hash for X-Android-Cert header. Package is not signed: "
-                    + context.getPackageName());
+        LogWrapper.e(
+            TAG,
+            "Could not get fingerprint hash for X-Android-Cert header. Package is not signed: "
+                + context.getPackageName());
         return null;
       } else {
         return Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
       }
     } catch (PackageManager.NameNotFoundException e) {
-      LogWrapper.getInstance()
-          .e(
-              TAG
-                  + "Could not get fingerprint hash for X-Android-Cert header. No such package: "
-                  + context.getPackageName(),
-              e);
+      LogWrapper.e(
+          TAG,
+          "Could not get fingerprint hash for X-Android-Cert header. No such package: "
+              + context.getPackageName(),
+          e);
       return null;
     }
   }
