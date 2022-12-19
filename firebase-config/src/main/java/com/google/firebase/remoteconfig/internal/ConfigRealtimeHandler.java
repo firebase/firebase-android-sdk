@@ -19,12 +19,12 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.remoteconfig.ConfigUpdate;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
@@ -40,18 +40,18 @@ public class ConfigRealtimeHandler {
   private final ConfigFetchHandler configFetchHandler;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
+  private final ConfigCacheClient activatedCacheClient;
   private final Context context;
   private final String namespace;
-  private final ExecutorService executorService;
   private final ScheduledExecutorService scheduledExecutorService;
 
   public ConfigRealtimeHandler(
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       ConfigFetchHandler configFetchHandler,
+      ConfigCacheClient activatedCacheClient,
       Context context,
       String namespace,
-      ExecutorService executorService,
       ScheduledExecutorService scheduledExecutorService) {
 
     this.listeners = new LinkedHashSet<>();
@@ -60,9 +60,9 @@ public class ConfigRealtimeHandler {
     this.firebaseApp = firebaseApp;
     this.configFetchHandler = configFetchHandler;
     this.firebaseInstallations = firebaseInstallations;
+    this.activatedCacheClient = activatedCacheClient;
     this.context = context;
     this.namespace = namespace;
-    this.executorService = executorService;
     this.scheduledExecutorService = scheduledExecutorService;
   }
 
@@ -94,12 +94,13 @@ public class ConfigRealtimeHandler {
               firebaseApp,
               firebaseInstallations,
               configFetchHandler,
+              activatedCacheClient,
               context,
               namespace,
               listeners,
               scheduledExecutorService);
       this.realtimeHttpClientTask =
-          this.executorService.submit(
+          this.scheduledExecutorService.submit(
               new RealtimeHttpClientFutureTask(
                   createRealtimeHttpClientTask(realtimeHttpClient), realtimeHttpClient));
     }
@@ -162,7 +163,7 @@ public class ConfigRealtimeHandler {
   public static class EmptyConfigUpdateListener implements ConfigUpdateListener {
 
     @Override
-    public void onEvent() {}
+    public void onUpdate(ConfigUpdate configUpdate) {}
 
     @Override
     public void onError(@NonNull FirebaseRemoteConfigException error) {}
