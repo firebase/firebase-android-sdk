@@ -42,9 +42,8 @@ import javax.net.ssl.HttpsURLConnection;
 
 /** Class that handles updateApp functionality for APKs in {@link FirebaseAppDistribution}. */
 class ApkUpdater {
-
+  private static final String TAG = "ApkUpdater";
   private static final int UPDATE_INTERVAL_MS = 250;
-  private static final String TAG = "ApkUpdater:";
   private static final String REQUEST_METHOD_GET = "GET";
   private static final String DEFAULT_APK_FILE_NAME = "downloaded_release.apk";
 
@@ -185,7 +184,7 @@ class ApkUpdater {
     postUpdateProgress(
         responseLength, 0, UpdateStatus.PENDING, showNotification, R.string.downloading_app_update);
     String fileName = getApkFileName();
-    LogWrapper.getInstance().v(TAG + "Attempting to download APK to disk");
+    LogWrapper.v(TAG, "Attempting to download APK to disk");
 
     long bytesDownloaded = downloadToDisk(connection, responseLength, fileName, showNotification);
 
@@ -271,11 +270,9 @@ class ApkUpdater {
           context.getApplicationInfo().loadLabel(context.getPackageManager()).toString();
       return applicationName + ".apk";
     } catch (Exception e) {
-      LogWrapper.getInstance()
-          .w(
-              TAG
-                  + "Unable to retrieve app name. Using generic file name for APK: "
-                  + DEFAULT_APK_FILE_NAME);
+      LogWrapper.w(
+          TAG,
+          "Unable to retrieve app name. Using generic file name for APK: " + DEFAULT_APK_FILE_NAME);
       return DEFAULT_APK_FILE_NAME;
     }
   }

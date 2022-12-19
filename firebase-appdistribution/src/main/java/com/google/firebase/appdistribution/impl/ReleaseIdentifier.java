@@ -42,7 +42,8 @@ import java.util.zip.ZipFile;
 /** Identifies the installed release using binary identifiers. */
 class ReleaseIdentifier {
 
-  private static final String TAG = "ApkHashExtractor";
+  private static final String TAG = "ReleaseIdentifier";
+
   private static final int BYTES_IN_LONG = 8;
   static final String IAS_ARTIFACT_ID_METADATA_KEY = "com.android.vending.internal.apk.id";
 
@@ -72,9 +73,9 @@ class ReleaseIdentifier {
     try {
       iasArtifactId = extractInternalAppSharingArtifactId();
     } catch (FirebaseAppDistributionException e) {
-      LogWrapper.getInstance()
-          .w(
-              "Error extracting IAS artifact ID to identify app bundle. Assuming release is an APK.");
+      LogWrapper.w(
+          TAG,
+          "Error extracting IAS artifact ID to identify app bundle. Assuming release is an APK.");
     }
     if (iasArtifactId != null) {
       return testerApiClient.findReleaseUsingIasArtifactId(iasArtifactId);
@@ -136,11 +137,9 @@ class ReleaseIdentifier {
   @VisibleForTesting
   @Nullable
   String calculateApkHash(@NonNull File file) {
-    LogWrapper.getInstance()
-        .v(
-            TAG,
-            String.format(
-                "Calculating release id for %s (%d bytes)", file.getPath(), file.length()));
+    LogWrapper.v(
+        TAG,
+        String.format("Calculating release id for %s (%d bytes)", file.getPath(), file.length()));
 
     long start = System.currentTimeMillis();
     long entries = 0;
@@ -175,16 +174,15 @@ class ReleaseIdentifier {
       zipFingerprint = sb.toString();
 
     } catch (IOException | NoSuchAlgorithmException e) {
-      LogWrapper.getInstance().v(TAG, "id calculation failed for " + file.getPath());
+      LogWrapper.v(TAG, "id calculation failed for " + file.getPath());
       return null;
     } finally {
       long elapsed = System.currentTimeMillis() - start;
-      LogWrapper.getInstance()
-          .v(
-              TAG,
-              String.format(
-                  "Computed hash of %s (%d entries, %d ms elapsed): %s",
-                  file.getPath(), entries, elapsed, zipFingerprint));
+      LogWrapper.v(
+          TAG,
+          String.format(
+              "Computed hash of %s (%d entries, %d ms elapsed): %s",
+              file.getPath(), entries, elapsed, zipFingerprint));
     }
 
     return zipFingerprint;
