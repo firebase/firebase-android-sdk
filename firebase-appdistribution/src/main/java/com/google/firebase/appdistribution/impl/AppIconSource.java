@@ -23,7 +23,7 @@ import android.os.Build.VERSION;
 import androidx.core.content.ContextCompat;
 
 class AppIconSource {
-  private static final String TAG = "AppIconSource: ";
+  private static final String TAG = "AppIconSource";
 
   private static final int DEFAULT_ICON = android.R.drawable.sym_def_app_icon;
 
@@ -50,8 +50,8 @@ class AppIconSource {
     }
 
     if (isAdaptiveIcon(icon)) {
-      LogWrapper.getInstance()
-          .e(TAG + "Adaptive icons cannot be used in notifications. Ignoring icon id: " + iconId);
+      LogWrapper.e(
+          TAG, "Adaptive icons cannot be used in notifications. Ignoring icon id: " + iconId);
       return DEFAULT_ICON;
     }
 

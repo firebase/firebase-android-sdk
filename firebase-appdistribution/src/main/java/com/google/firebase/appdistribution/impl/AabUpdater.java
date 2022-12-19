@@ -34,7 +34,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 /** Class that handles updateApp functionality for AABs in {@link FirebaseAppDistribution}. */
 class AabUpdater {
-  private static final String TAG = "AabUpdater:";
+  private static final String TAG = "AabUpdater";
 
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
   private final HttpsUrlConnectionFactory httpsUrlConnectionFactory;
@@ -152,7 +152,7 @@ class AabUpdater {
     Intent updateIntent = new Intent(Intent.ACTION_VIEW);
     updateIntent.setData(Uri.parse(redirectUrl));
     updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-    LogWrapper.getInstance().v(TAG + "Redirecting to play");
+    LogWrapper.v(TAG, "Redirecting to play");
 
     // Launch the intent before the synchronized block to avoid failing to update in the rare
     // scenario where the activity moves to the background while we're awaiting the lock.
