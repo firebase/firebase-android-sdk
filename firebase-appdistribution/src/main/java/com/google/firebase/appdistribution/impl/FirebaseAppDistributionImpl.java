@@ -523,11 +523,16 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
           StringBuilder message =
               new StringBuilder(
                   String.format(
-                      "Version %s (%s) is available.",
-                      newRelease.getDisplayVersion(), newRelease.getVersionCode()));
+                      context.getString(R.string.update_version_available),
+                      newRelease.getDisplayVersion(),
+                      newRelease.getVersionCode()));
 
           if (newRelease.getReleaseNotes() != null && !newRelease.getReleaseNotes().isEmpty()) {
-            message.append(String.format("\n\nRelease notes: %s", newRelease.getReleaseNotes()));
+            message
+                .append("\n\n")
+                .append(context.getString(R.string.update_release_notes))
+                .append(" ")
+                .append(newRelease.getReleaseNotes());
           }
           updateConfirmationDialog.setMessage(message);
 
