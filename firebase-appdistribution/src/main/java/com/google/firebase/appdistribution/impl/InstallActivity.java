@@ -30,7 +30,8 @@ import java.io.File;
  * finished.
  */
 public class InstallActivity extends AppCompatActivity {
-  private static final String TAG = "InstallActivity: ";
+  private static final String TAG = "InstallActivity";
+
   private boolean installInProgress = false;
   private AlertDialog enableUnknownSourcesDialog;
 
@@ -48,10 +49,9 @@ public class InstallActivity extends AppCompatActivity {
     // If we re-enter InstallActivity after install is already kicked off, we can assume that either
     // installation failure or tester canceled the install.
     if (installInProgress) {
-      LogWrapper.getInstance()
-          .e(
-              TAG
-                  + "Activity resumed when installation was already in progress. Installation was either canceled or failed");
+      LogWrapper.e(
+          TAG,
+          "Activity resumed when installation was already in progress. Installation was either canceled or failed");
       finish();
       return;
     }
@@ -59,10 +59,9 @@ public class InstallActivity extends AppCompatActivity {
     if (!isUnknownSourcesEnabled()) {
       // See comment about install progress above. Same applies to unknown sources UI.
       if (enableUnknownSourcesDialog.isShowing()) {
-        LogWrapper.getInstance()
-            .e(
-                TAG
-                    + "Unknown sources enablement was already in progress. It was either canceled or failed");
+        LogWrapper.e(
+            TAG,
+            "Unknown sources enablement was already in progress. It was either canceled or failed");
         enableUnknownSourcesDialog.dismiss();
         finish();
         return;
@@ -79,8 +78,7 @@ public class InstallActivity extends AppCompatActivity {
     super.onDestroy();
     if (enableUnknownSourcesDialog.isShowing()) {
       enableUnknownSourcesDialog.dismiss();
-      LogWrapper.getInstance()
-          .e(TAG + "Unknown sources enablement canceled. Activity was destroyed");
+      LogWrapper.e(TAG, "Unknown sources enablement canceled. Activity was destroyed");
     }
   }
 
@@ -92,10 +90,8 @@ public class InstallActivity extends AppCompatActivity {
         return Settings.Secure.getInt(getContentResolver(), Settings.Secure.INSTALL_NON_MARKET_APPS)
             == 1;
       } catch (Settings.SettingNotFoundException e) {
-        LogWrapper.getInstance()
-            .e(
-                TAG + "Unable to determine if unknown sources is enabled. Assuming it's enabled.",
-                e);
+        LogWrapper.e(
+            TAG, "Unable to determine if unknown sources is enabled. Assuming it's enabled.", e);
         return true;
       }
     }
@@ -121,7 +117,7 @@ public class InstallActivity extends AppCompatActivity {
   }
 
   private void dismissUnknownSourcesDialogCallback() {
-    LogWrapper.getInstance().v(TAG + "Unknown sources dialog canceled");
+    LogWrapper.v(TAG, "Unknown sources dialog canceled");
     finish();
   }
 
@@ -131,7 +127,7 @@ public class InstallActivity extends AppCompatActivity {
       intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
       intent.setData(Uri.parse("package:" + getPackageName()));
       intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-      LogWrapper.getInstance().v(TAG + "Starting unknown sources in new task");
+      LogWrapper.v(TAG, "Starting unknown sources in new task");
     } else {
       intent = new Intent(Settings.ACTION_SECURITY_SETTINGS);
       intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -157,14 +153,14 @@ public class InstallActivity extends AppCompatActivity {
       intent.setDataAndType(apkUri, APK_MIME_TYPE);
       intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
     } else {
-      LogWrapper.getInstance().d("Requesting a vanilla URI");
+      LogWrapper.d(TAG, "Requesting a vanilla URI");
       intent.setDataAndType(Uri.fromFile(apkFile), APK_MIME_TYPE);
     }
 
     // These flags open the installation activity in a new task and to prevent earlier installation
     // tasks from causing future ones to fail we use the clear task flag
     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-    LogWrapper.getInstance().v("Kicking off install as new activity");
+    LogWrapper.v(TAG, "Kicking off install as new activity");
     startActivity(intent);
   }
 }

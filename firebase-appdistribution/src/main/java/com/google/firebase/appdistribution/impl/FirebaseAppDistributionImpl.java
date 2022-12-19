@@ -55,6 +55,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
+  private static final String TAG = "Impl";
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
 
   private final FirebaseApp firebaseApp;
@@ -295,13 +296,13 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         lightweightExecutor,
         release -> {
           if (release == null) {
-            LogWrapper.getInstance().v("New release not found.");
+            LogWrapper.v(TAG, "New release not found.");
             return getErrorUpdateTask(
                 new FirebaseAppDistributionException(
                     ErrorMessages.RELEASE_NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
           }
           if (release.getDownloadUrl() == null) {
-            LogWrapper.getInstance().v("Download failed to execute.");
+            LogWrapper.v(TAG, "Download failed to execute.");
             return getErrorUpdateTask(
                 new FirebaseAppDistributionException(
                     ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
@@ -324,17 +325,16 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   @Override
   public void startFeedback(@NonNull CharSequence infoText) {
     if (!feedbackInProgress.compareAndSet(/* expect= */ false, /* update= */ true)) {
-      LogWrapper.getInstance()
-          .i("Ignoring startFeedback() call because feedback is already in progress");
+      LogWrapper.i(TAG, "Ignoring startFeedback() call because feedback is already in progress");
       return;
     }
-    LogWrapper.getInstance().i("Starting feedback");
+    LogWrapper.i(TAG, "Starting feedback");
     screenshotTaker
         .takeScreenshot()
         .addOnFailureListener(
             taskExecutor,
             e -> {
-              LogWrapper.getInstance().w("Failed to take screenshot for feedback", e);
+              LogWrapper.w(TAG, "Failed to take screenshot for feedback", e);
               doStartFeedback(infoText, null);
             })
         .addOnSuccessListener(
@@ -349,8 +349,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   @Override
   public void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri) {
     if (!feedbackInProgress.compareAndSet(/* expect= */ false, /* update= */ true)) {
-      LogWrapper.getInstance()
-          .i("Ignoring startFeedback() call because feedback is already in progress");
+      LogWrapper.i(TAG, "Ignoring startFeedback() call because feedback is already in progress");
       return;
     }
     doStartFeedback(infoText, screenshotUri);
@@ -380,8 +379,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
             taskExecutor,
             e -> {
               feedbackInProgress.set(false);
-              LogWrapper.getInstance()
-                  .e("Failed to sign in tester. Could not collect feedback.", e);
+              LogWrapper.e(TAG, "Failed to sign in tester. Could not collect feedback.", e);
             })
         .onSuccessTask(
             taskExecutor,
@@ -391,7 +389,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                     .addOnFailureListener(
                         e -> {
                           feedbackInProgress.set(false);
-                          LogWrapper.getInstance().e("Failed to identify release", e);
+                          LogWrapper.e(TAG, "Failed to identify release", e);
                           Toast.makeText(
                                   firebaseApp.getApplicationContext(),
                                   R.string.feedback_unidentified_release,
@@ -406,8 +404,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                                 .addOnFailureListener(
                                     e -> {
                                       feedbackInProgress.set(false);
-                                      LogWrapper.getInstance()
-                                          .e("Failed to launch feedback flow", e);
+                                      LogWrapper.e(TAG, "Failed to launch feedback flow", e);
                                       Toast.makeText(
                                               firebaseApp.getApplicationContext(),
                                               R.string.feedback_launch_failed,
@@ -420,7 +417,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       @Nullable String releaseName, CharSequence infoText, @Nullable Uri screenshotUri) {
     return lifecycleNotifier.consumeForegroundActivity(
         activity -> {
-          LogWrapper.getInstance().i("Launching feedback activity");
+          LogWrapper.i(TAG, "Launching feedback activity");
           Intent intent = new Intent(activity, FeedbackActivity.class);
           // in development-mode the releaseName might be null
           intent.putExtra(FeedbackActivity.RELEASE_NAME_KEY, releaseName);
@@ -486,7 +483,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     }
 
     if (activity instanceof FeedbackActivity) {
-      LogWrapper.getInstance().i("FeedbackActivity destroyed");
+      LogWrapper.i(TAG, "FeedbackActivity destroyed");
       if (activity.isFinishing()) {
         feedbackInProgress.set(false);
 

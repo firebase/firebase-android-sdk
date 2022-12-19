@@ -27,7 +27,8 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 
 /** Class that handles installing APKs in {@link FirebaseAppDistribution}. */
 class ApkInstaller {
-  private static final String TAG = "ApkInstaller:";
+  private static final String TAG = "ApkInstaller";
+
   private final FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier;
 
   @GuardedBy("installTaskLock")
@@ -79,7 +80,7 @@ class ApkInstaller {
     Intent intent = new Intent(currentActivity, InstallActivity.class);
     intent.putExtra("INSTALL_PATH", path);
     currentActivity.startActivity(intent);
-    LogWrapper.getInstance().v(TAG + "Prompting tester with install activity ");
+    LogWrapper.v(TAG, "Prompting tester with install activity");
   }
 
   void trySetInstallTaskError() {
