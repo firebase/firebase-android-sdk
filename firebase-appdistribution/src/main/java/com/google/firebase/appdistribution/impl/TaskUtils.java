@@ -22,7 +22,7 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import java.util.concurrent.Executor;
 
 class TaskUtils {
-  private static final String TAG = "TaskUtils:";
+  private static final String TAG = "TaskUtils";
 
   /**
    * A functional interface to wrap a function that returns some result of a possibly long-running
@@ -78,7 +78,7 @@ class TaskUtils {
   static <TResult> Task<TResult> handleTaskFailure(Task<TResult> task) {
     if (task.isComplete() && !task.isSuccessful()) {
       Exception e = task.getException();
-      LogWrapper.getInstance().e(TAG + "Task failed to complete due to " + e.getMessage(), e);
+      LogWrapper.e(TAG, "Task failed to complete", e);
       return e instanceof FirebaseAppDistributionException
           ? task
           : Tasks.forException(FirebaseAppDistributionExceptions.wrap(e));

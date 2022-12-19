@@ -44,7 +44,7 @@ import java.util.concurrent.Executors;
 public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-appdistribution";
 
-  private static String TAG = "FirebaseAppDistributionRegistrar";
+  private static String TAG = "Registrar";
 
   @Override
   public @NonNull List<Component<?>> getComponents() {
@@ -119,13 +119,12 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
       Application firebaseApplication = (Application) context;
       firebaseApplication.registerActivityLifecycleCallbacks(lifecycleNotifier);
     } else {
-      LogWrapper.getInstance()
-          .e(
-              TAG,
-              String.format(
-                  "Context %s was not an Application, can't register for lifecycle callbacks. SDK"
-                      + " might not function correctly.",
-                  context));
+      LogWrapper.e(
+          TAG,
+          String.format(
+              "Context %s was not an Application, can't register for lifecycle callbacks. SDK"
+                  + " might not function correctly.",
+              context));
     }
 
     return appDistribution;
