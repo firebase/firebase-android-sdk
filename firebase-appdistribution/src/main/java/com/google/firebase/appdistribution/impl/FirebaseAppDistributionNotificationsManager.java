@@ -31,7 +31,7 @@ import androidx.core.app.NotificationManagerCompat;
 import com.google.firebase.appdistribution.InterruptionLevel;
 
 class FirebaseAppDistributionNotificationsManager {
-  private static final String TAG = "FirebaseAppDistributionNotificationsManager";
+  private static final String TAG = "NotificationsManager";
 
   private static final String PACKAGE_PREFIX = "com.google.firebase.appdistribution";
 
@@ -73,7 +73,7 @@ class FirebaseAppDistributionNotificationsManager {
     // Create the NotificationChannel, but only on API 26+ because
     // the NotificationChannel class is new and not in the support library
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      LogWrapper.getInstance().i(TAG, "Creating app update notification channel group");
+      LogWrapper.i(TAG, "Creating app update notification channel group");
       createChannel(
           Notification.APP_UPDATE,
           R.string.app_update_notification_channel_name,
@@ -82,8 +82,8 @@ class FirebaseAppDistributionNotificationsManager {
     }
 
     if (!notificationManager.areNotificationsEnabled()) {
-      LogWrapper.getInstance()
-          .w("Not showing app update notifications because app notifications are disabled");
+      LogWrapper.w(
+          TAG, "Not showing app update notifications because app notifications are disabled");
       return;
     }
 
@@ -109,7 +109,7 @@ class FirebaseAppDistributionNotificationsManager {
     // Query the package manager for the best launch intent for the app
     Intent intent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
     if (intent == null) {
-      LogWrapper.getInstance().w(TAG, "No activity found to launch app");
+      LogWrapper.w(TAG, "No activity found to launch app");
       return null;
     }
     return getPendingIntent(intent, PendingIntent.FLAG_ONE_SHOT);
@@ -129,7 +129,7 @@ class FirebaseAppDistributionNotificationsManager {
     // Create the NotificationChannel, but only on API 26+ because
     // the NotificationChannel class is new and not in the support library
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-      LogWrapper.getInstance().i(TAG, "Creating feedback notification channel group");
+      LogWrapper.i(TAG, "Creating feedback notification channel group");
       createChannel(
           Notification.FEEDBACK,
           R.string.feedback_notification_channel_name,
@@ -138,8 +138,7 @@ class FirebaseAppDistributionNotificationsManager {
     }
 
     if (!notificationManager.areNotificationsEnabled()) {
-      LogWrapper.getInstance()
-          .w(TAG, "Not showing notification because app notifications are disabled");
+      LogWrapper.w(TAG, "Not showing notification because app notifications are disabled");
       return;
     }
 
@@ -159,13 +158,13 @@ class FirebaseAppDistributionNotificationsManager {
             .setOnlyAlertOnce(true)
             .setAutoCancel(false)
             .setContentIntent(getPendingIntent(intent, /* extraFlags= */ 0));
-    LogWrapper.getInstance().i(TAG, "Showing feedback notification");
+    LogWrapper.i(TAG, "Showing feedback notification");
     notificationManager.notify(
         Notification.FEEDBACK.tag, Notification.FEEDBACK.id, builder.build());
   }
 
   public void cancelFeedbackNotification() {
-    LogWrapper.getInstance().i(TAG, "Cancelling feedback notification");
+    LogWrapper.i(TAG, "Cancelling feedback notification");
     NotificationManagerCompat.from(context)
         .cancel(Notification.FEEDBACK.tag, Notification.FEEDBACK.id);
   }

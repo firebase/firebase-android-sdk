@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class ImageUtils {
+  private static final String TAG = "ImageUtils";
+
   private ImageUtils() {}
 
   @AutoValue
@@ -69,7 +71,7 @@ public class ImageUtils {
     try (InputStream inputStream = contentResolver.openInputStream(uri)) {
       imageSize = ImageSize.read(inputStream);
     }
-    LogWrapper.getInstance().d("Read screenshot image size: " + imageSize);
+    LogWrapper.d(TAG, "Read screenshot image size: " + imageSize);
 
     // Read the actual image, scaled using the actual and target dimensions
     final BitmapFactory.Options options = new BitmapFactory.Options();

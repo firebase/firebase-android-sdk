@@ -34,6 +34,7 @@ import org.json.JSONObject;
 
 /** Client that makes requests to the App Distribution Tester API. */
 class FirebaseAppDistributionTesterApiClient {
+  private static final String TAG = "TesterApiClient";
 
   /** A potentially long-running job that requires a FID and a FIS auth token */
   private interface FidDependentJob<TResult> {
@@ -52,7 +53,6 @@ class FirebaseAppDistributionTesterApiClient {
   private static final String IAS_ARTIFACT_ID_KEY = "iasArtifactId";
   private static final String DOWNLOAD_URL_KEY = "downloadUrl";
 
-  private static final String TAG = "FirebaseAppDistributionTesterApiClient";
   private static final String FETCH_NEW_RELEASE_TAG = "Fetching new release";
   private static final String FIND_RELEASE_TAG = "Finding installed release";
   private static final String CREATE_FEEDBACK_TAG = "Creating feedback";
@@ -136,7 +136,7 @@ class FirebaseAppDistributionTesterApiClient {
   Task<String> createFeedback(String testerReleaseName, String feedbackText) {
     return runWithFidAndToken(
         (unused, token) -> {
-          LogWrapper.getInstance().i("Creating feedback for release: " + testerReleaseName);
+          LogWrapper.i(TAG, "Creating feedback for release: " + testerReleaseName);
           String path = String.format("v1alpha/%s/feedbackReports", testerReleaseName);
           String requestBody = buildCreateFeedbackBody(feedbackText).toString();
           JSONObject responseBody =
@@ -154,7 +154,7 @@ class FirebaseAppDistributionTesterApiClient {
   Task<String> attachScreenshot(String feedbackName, Uri screenshotUri) {
     return runWithFidAndToken(
         (unused, token) -> {
-          LogWrapper.getInstance().i("Uploading screenshot for feedback: " + feedbackName);
+          LogWrapper.i(TAG, "Uploading screenshot for feedback: " + feedbackName);
           String path =
               String.format("upload/v1alpha/%s:uploadArtifact?type=SCREENSHOT", feedbackName);
           testerApiHttpClient.makeUploadRequest(UPLOAD_SCREENSHOT_TAG, path, token, screenshotUri);
@@ -167,7 +167,7 @@ class FirebaseAppDistributionTesterApiClient {
   Task<Void> commitFeedback(String feedbackName) {
     return runWithFidAndToken(
         (unused, token) -> {
-          LogWrapper.getInstance().i("Committing feedback: " + feedbackName);
+          LogWrapper.i(TAG, "Committing feedback: " + feedbackName);
           String path = "v1alpha/" + feedbackName + ":commit";
           testerApiHttpClient.makePostRequest(
               COMMIT_FEEDBACK_TAG, path, token, /* requestBody= */ "");
@@ -223,10 +223,10 @@ class FirebaseAppDistributionTesterApiClient {
               .setDownloadUrl(downloadUrl)
               .build();
 
-      LogWrapper.getInstance().v("Zip hash for the new release " + newRelease.getApkHash());
+      LogWrapper.v(TAG, "Zip hash for the new release " + newRelease.getApkHash());
       return newRelease;
     } catch (JSONException e) {
-      LogWrapper.getInstance().e(TAG, "Error parsing the new release.", e);
+      LogWrapper.e(TAG, "Error parsing the new release.", e);
       throw new FirebaseAppDistributionException(
           ErrorMessages.JSON_PARSING_ERROR, Status.UNKNOWN, e);
     }
@@ -237,8 +237,7 @@ class FirebaseAppDistributionTesterApiClient {
     try {
       return responseJson.getString(fieldName);
     } catch (JSONException e) {
-      LogWrapper.getInstance()
-          .e(TAG, String.format("Field '%s' missing from response", fieldName), e);
+      LogWrapper.e(TAG, String.format("Field '%s' missing from response", fieldName), e);
       throw new FirebaseAppDistributionException(
           ErrorMessages.JSON_PARSING_ERROR, Status.UNKNOWN, e);
     }

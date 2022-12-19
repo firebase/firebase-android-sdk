@@ -32,7 +32,7 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
  * new release.
  */
 class NewReleaseFetcher {
-  private static final String TAG = "CheckForNewReleaseClient:";
+  private static final String TAG = "NewReleaseFetcher";
 
   private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   private final ReleaseIdentifier releaseIdentifier;
@@ -68,14 +68,14 @@ class NewReleaseFetcher {
   private boolean isNewerRelease(AppDistributionReleaseInternal retrievedNewRelease)
       throws FirebaseAppDistributionException {
     if (retrievedNewRelease == null) {
-      LogWrapper.getInstance().v(TAG + "Tester does not have access to any releases");
+      LogWrapper.v(TAG, "Tester does not have access to any releases");
       return false;
     }
 
     long newReleaseBuildVersion = parseBuildVersion(retrievedNewRelease.getBuildVersion());
 
     if (isOlderBuildVersion(newReleaseBuildVersion)) {
-      LogWrapper.getInstance().v(TAG + "New release has lower version code than current release");
+      LogWrapper.v(TAG, "New release has lower version code than current release");
       return false;
     }
 
@@ -84,7 +84,7 @@ class NewReleaseFetcher {
         || hasDifferentAppVersionName(retrievedNewRelease)) {
       return true;
     } else {
-      LogWrapper.getInstance().v(TAG + "New release is older or is currently installed");
+      LogWrapper.v(TAG, "New release is older or is currently installed");
       return false;
     }
   }
@@ -121,8 +121,7 @@ class NewReleaseFetcher {
     }
 
     if (newRelease.getIasArtifactId() == null || newRelease.getIasArtifactId().isEmpty()) {
-      LogWrapper.getInstance()
-          .w(TAG + "AAB release missing IAS Artifact ID. Assuming new release is different.");
+      LogWrapper.w(TAG, "AAB release missing IAS Artifact ID. Assuming new release is different.");
       return false;
     }
 
@@ -130,10 +129,8 @@ class NewReleaseFetcher {
     try {
       installedIasArtifactId = releaseIdentifier.extractInternalAppSharingArtifactId();
     } catch (FirebaseAppDistributionException e) {
-      LogWrapper.getInstance()
-          .w(
-              TAG + "Could not get installed IAS artifact ID. Assuming new release is different.",
-              e);
+      LogWrapper.w(
+          TAG, "Could not get installed IAS artifact ID. Assuming new release is different.", e);
       return false;
     }
 
