@@ -112,7 +112,7 @@ public class FeedbackActivity extends AppCompatActivity {
                           v -> imageView.setVisibility(checkBox.isChecked() ? VISIBLE : GONE));
                     });
               } else {
-                LogWrapper.getInstance().e(TAG, "No screenshot available");
+                LogWrapper.e(TAG, "No screenshot available");
                 runOnUiThread(
                     () -> {
                       CheckBox checkBox = findViewById(R.id.screenshotCheckBox);
@@ -135,12 +135,12 @@ public class FeedbackActivity extends AppCompatActivity {
               SCREENSHOT_TARGET_WIDTH_PX,
               SCREENSHOT_TARGET_HEIGHT_PX);
     } catch (IOException | SecurityException e) {
-      LogWrapper.getInstance()
+      LogWrapper
           .e(TAG, "Could not read screenshot image from URI: " + screenshotUri, e);
       return null;
     }
     if (bitmap == null) {
-      LogWrapper.getInstance().e(TAG, "Could not decode screenshot image: " + screenshotUri);
+      LogWrapper.e(TAG, "Could not decode screenshot image: " + screenshotUri);
     }
     return bitmap;
   }
@@ -162,13 +162,13 @@ public class FeedbackActivity extends AppCompatActivity {
             screenshotCheckBox.isChecked() ? screenshotUri : null)
         .addOnSuccessListener(
             unused -> {
-              LogWrapper.getInstance().i(TAG, "Feedback submitted");
+              LogWrapper.i(TAG, "Feedback submitted");
               Toast.makeText(this, "Feedback submitted", Toast.LENGTH_LONG).show();
               finish();
             })
         .addOnFailureListener(
             e -> {
-              LogWrapper.getInstance().e(TAG, "Failed to submit feedback", e);
+              LogWrapper.e(TAG, "Failed to submit feedback", e);
               Toast.makeText(this, "Error submitting feedback", Toast.LENGTH_LONG).show();
               setSubmittingStateEnabled(false);
             });

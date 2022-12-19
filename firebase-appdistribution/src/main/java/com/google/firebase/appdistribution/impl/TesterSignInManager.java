@@ -41,7 +41,8 @@ import java.util.List;
 
 /** Class that handles signing in the tester. */
 class TesterSignInManager {
-  private static final String TAG = "TesterSignInManager:";
+  private static final String TAG = "TesterSignInManager";
+
   private static final String SIGNIN_REDIRECT_URL =
       "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s&newRedirectScheme=true";
 
@@ -89,7 +90,7 @@ class TesterSignInManager {
     // We call finish() in the onCreate method of the SignInResultActivity, so we must set the
     // result of the signIn Task in the onActivityCreated callback
     if (activity instanceof SignInResultActivity) {
-      LogWrapper.getInstance().v("Sign in completed");
+      LogWrapper.v(TAG, "Sign in completed");
       this.setSuccessfulSignInResult();
       this.signInStorage.setSignInStatus(true);
     }
@@ -105,7 +106,7 @@ class TesterSignInManager {
       // Throw error if app reentered during sign in
       synchronized (signInTaskLock) {
         if (awaitingResultFromBrowser()) {
-          LogWrapper.getInstance().e("App Resumed without sign in flow completing.");
+          LogWrapper.e(TAG, "App Resumed without sign in flow completing.");
           setSignInTaskCompletionError(
               new FirebaseAppDistributionException(
                   ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
@@ -119,15 +120,15 @@ class TesterSignInManager {
   @NonNull
   public Task<Void> signInTester() {
     if (signInStorage.getSignInStatus()) {
-      LogWrapper.getInstance().v(TAG + "Tester is already signed in.");
+      LogWrapper.v(TAG, "Tester is already signed in.");
       return Tasks.forResult(null);
     }
 
     synchronized (signInTaskLock) {
       if (signInTaskCompletionSource != null
           && !signInTaskCompletionSource.getTask().isComplete()) {
-        LogWrapper.getInstance()
-            .v(TAG + "Detected In-Progress sign in task. Returning the same task.");
+        LogWrapper
+            .v(TAG, "Detected In-Progress sign in task. Returning the same task.");
         return signInTaskCompletionSource.getTask();
       }
 
@@ -165,7 +166,7 @@ class TesterSignInManager {
 
   private OnFailureListener handleTaskFailure(String message, Status status) {
     return e -> {
-      LogWrapper.getInstance().e(TAG + message, e);
+      LogWrapper.e(TAG, message, e);
       setSignInTaskCompletionError(new FirebaseAppDistributionException(message, status, e));
     };
   }
@@ -194,7 +195,7 @@ class TesterSignInManager {
     try {
       return context.getApplicationInfo().loadLabel(context.getPackageManager()).toString();
     } catch (Exception e) {
-      LogWrapper.getInstance().e(TAG + "Unable to retrieve App name", e);
+      LogWrapper.e(TAG, "Unable to retrieve App name", e);
       return "";
     }
   }
@@ -209,7 +210,7 @@ class TesterSignInManager {
                 fid,
                 getApplicationName(context),
                 context.getPackageName()));
-    LogWrapper.getInstance().v(TAG + "Opening sign in flow in browser at " + uri);
+    LogWrapper.v(TAG, "Opening sign in flow in browser at " + uri);
     if (supportsCustomTabs(context)) {
       // If we can launch a chrome view, try that.
       CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
