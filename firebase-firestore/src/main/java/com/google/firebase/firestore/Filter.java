@@ -339,7 +339,7 @@ public class Filter {
    * Creates a new filter that is a conjunction of the given filters. A conjunction filter includes
    * a document if it satisfies <em>all</em> of the given filters.
    *
-   * @param filters The list of filters to perform a disjunction for.
+   * @param filters The list of filters to perform a conjunction for.
    * @return The newly created filter.
    */
   @NonNull
