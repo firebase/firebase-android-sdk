@@ -15,27 +15,24 @@
 package com.google.firebase.remoteconfig;
 
 import androidx.annotation.NonNull;
-import javax.annotation.Nonnull;
+import com.google.auto.value.AutoValue;
+import java.util.Set;
 
 /**
- * Event Listener for Realtime config update callbacks.
- *
- * @author Quan Pham
+ * Information about the updated config passed to the {@code onUpdate} callback of {@link
+ * ConfigUpdateListener}.
  */
-public interface ConfigUpdateListener {
-  /**
-   * Callback for when a new config has been automatically fetched from the backend and has changed
-   * from the activated config.
-   *
-   * @param configUpdate A {@link ConfigUpdate} with information about the updated config, including
-   *     the set of updated parameters.
-   */
-  void onUpdate(@NonNull ConfigUpdate configUpdate);
+@AutoValue
+public abstract class ConfigUpdate {
+  @NonNull
+  public static ConfigUpdate create(@NonNull Set<String> updatedParams) {
+    return new AutoValue_ConfigUpdate(updatedParams);
+  }
 
   /**
-   * Callback for when an error occurs while listening for or fetching a config update.
-   *
-   * @param error
+   * Parameter keys whose values have been updated from the currently activated values. Includes
+   * keys that are added, deleted, and whose value, value source, or metadata has changed.
    */
-  void onError(@Nonnull FirebaseRemoteConfigException error);
+  @NonNull
+  public abstract Set<String> getUpdatedParams();
 }

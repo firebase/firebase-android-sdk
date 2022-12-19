@@ -21,6 +21,7 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.remoteconfig.ConfigUpdate;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
@@ -30,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
@@ -49,6 +51,7 @@ public class ConfigAutoFetch {
   private final HttpURLConnection httpURLConnection;
 
   private final ConfigFetchHandler configFetchHandler;
+  private final ConfigCacheClient activatedCache;
   private final ConfigUpdateListener retryCallback;
   private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
@@ -56,11 +59,13 @@ public class ConfigAutoFetch {
   public ConfigAutoFetch(
       HttpURLConnection httpURLConnection,
       ConfigFetchHandler configFetchHandler,
+      ConfigCacheClient activatedCache,
       Set<ConfigUpdateListener> eventListeners,
       ConfigUpdateListener retryCallback,
       ScheduledExecutorService scheduledExecutorService) {
     this.httpURLConnection = httpURLConnection;
     this.configFetchHandler = configFetchHandler;
+    this.activatedCache = activatedCache;
     this.eventListeners = eventListeners;
     this.retryCallback = retryCallback;
     this.scheduledExecutorService = scheduledExecutorService;
@@ -73,9 +78,9 @@ public class ConfigAutoFetch {
     }
   }
 
-  private synchronized void executeAllListenerCallbacks() {
+  private synchronized void executeAllListenerCallbacks(ConfigUpdate configUpdate) {
     for (ConfigUpdateListener listener : eventListeners) {
-      listener.onEvent();
+      listener.onUpdate(configUpdate);
     }
   }
 
@@ -111,7 +116,8 @@ public class ConfigAutoFetch {
       }
     }
 
-    retryCallback.onEvent();
+    // TODO: Factor ConfigUpdateListener out of internal retry logic.
+    retryCallback.onUpdate(ConfigUpdate.create(new HashSet<>()));
     scheduledExecutorService.shutdownNow();
     try {
       scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
@@ -194,35 +200,78 @@ public class ConfigAutoFetch {
   }
 
   @VisibleForTesting
-  public synchronized void fetchLatestConfig(int remainingAttempts, long targetVersion) {
-    int currentAttempts = remainingAttempts - 1;
+  public synchronized Task<Void> fetchLatestConfig(int remainingAttempts, long targetVersion) {
+    int remainingAttemptsAfterFetch = remainingAttempts - 1;
+    int currentAttemptNumber = MAXIMUM_FETCH_ATTEMPTS - remainingAttemptsAfterFetch;
 
-    // fetchAttemptNumber is calculated by subtracting current attempts from the max number of
-    // possible attempts.
     Task<ConfigFetchHandler.FetchResponse> fetchTask =
         configFetchHandler.fetchNowWithTypeAndAttemptNumber(
-            ConfigFetchHandler.FetchType.REALTIME, MAXIMUM_FETCH_ATTEMPTS - currentAttempts);
-    fetchTask.onSuccessTask(
-        (fetchResponse) -> {
-          long newTemplateVersion = 0;
-          if (fetchResponse.getFetchedConfigs() != null) {
-            newTemplateVersion = fetchResponse.getFetchedConfigs().getTemplateVersionNumber();
-          } else if (fetchResponse.getStatus()
-              == ConfigFetchHandler.FetchResponse.Status.BACKEND_HAS_NO_UPDATES) {
-            newTemplateVersion = targetVersion;
-          }
+            ConfigFetchHandler.FetchType.REALTIME, currentAttemptNumber);
+    Task<ConfigContainer> activatedConfigsTask = activatedCache.get();
 
-          if (newTemplateVersion >= targetVersion) {
-            executeAllListenerCallbacks();
-          } else {
-            Log.d(
-                TAG,
-                "Fetched template version is the same as SDK's current version."
-                    + " Retrying fetch.");
-            // Continue fetching until template version number if greater then current.
-            autoFetch(currentAttempts, targetVersion);
-          }
-          return Tasks.forResult(null);
-        });
+    return Tasks.whenAllComplete(fetchTask, activatedConfigsTask)
+        .continueWithTask(
+            scheduledExecutorService,
+            (listOfUnusedCompletedTasks) -> {
+              if (!fetchTask.isSuccessful()) {
+                return Tasks.forException(
+                    new FirebaseRemoteConfigClientException(
+                        "Failed to auto-fetch config update.", fetchTask.getException()));
+              }
+
+              if (!activatedConfigsTask.isSuccessful()) {
+                return Tasks.forException(
+                    new FirebaseRemoteConfigClientException(
+                        "Failed to get activated config for auto-fetch",
+                        activatedConfigsTask.getException()));
+              }
+
+              ConfigFetchHandler.FetchResponse fetchResponse = fetchTask.getResult();
+              ConfigContainer activatedConfigs = activatedConfigsTask.getResult();
+
+              if (!fetchResponseIsUpToDate(fetchResponse, targetVersion)) {
+                Log.d(
+                    TAG,
+                    "Fetched template version is the same as SDK's current version."
+                        + " Retrying fetch.");
+                // Continue fetching until template version number is greater then current.
+                autoFetch(remainingAttemptsAfterFetch, targetVersion);
+                return Tasks.forResult(null);
+              }
+
+              if (fetchResponse.getFetchedConfigs() == null) {
+                Log.d(TAG, "The fetch succeeded, but the backend had no updates.");
+                return Tasks.forResult(null);
+              }
+
+              // Activate hasn't been called yet, so use an empty container for comparison.
+              // See ConfigCacheClient#get() for details on the async operation.
+              if (activatedConfigs == null) {
+                activatedConfigs = ConfigContainer.newBuilder().build();
+              }
+
+              Set<String> updatedParams =
+                  activatedConfigs.getChangedParams(fetchResponse.getFetchedConfigs());
+              if (updatedParams.isEmpty()) {
+                Log.d(TAG, "Config was fetched, but no params changed.");
+                return Tasks.forResult(null);
+              }
+
+              ConfigUpdate configUpdate = ConfigUpdate.create(updatedParams);
+              executeAllListenerCallbacks(configUpdate);
+              return Tasks.forResult(null);
+            });
+  }
+
+  private static Boolean fetchResponseIsUpToDate(
+      ConfigFetchHandler.FetchResponse response, long lastKnownVersion) {
+    // If there's a config, make sure its version is >= the last known version.
+    if (response.getFetchedConfigs() != null) {
+      return response.getFetchedConfigs().getTemplateVersionNumber() >= lastKnownVersion;
+    }
+
+    // If there isn't a config, return true if the backend had no update.
+    // Else, it returned an out of date config.
+    return response.getStatus() == ConfigFetchHandler.FetchResponse.Status.BACKEND_HAS_NO_UPDATES;
   }
 }

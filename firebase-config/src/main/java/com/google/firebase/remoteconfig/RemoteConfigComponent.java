@@ -124,12 +124,16 @@ public class RemoteConfigComponent {
       Provider<AnalyticsConnector> analyticsConnector,
       boolean loadGetDefault) {
     this.context = context;
+<<<<<<< HEAD
     this.executor = executor;
+=======
+    this.executorService = executorService;
+    this.scheduledExecutorService = scheduledExecutorService;
+>>>>>>> e40042abe (Add updated params to the Realtime listener callback. (#4339))
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
     this.firebaseAbt = firebaseAbt;
     this.analyticsConnector = analyticsConnector;
-    this.scheduledExecutorService = scheduledExecutorService;
 
     this.appId = firebaseApp.getOptions().getApplicationId();
     GlobalBackgroundListener.ensureBackgroundListenerIsRegistered(context);
@@ -212,7 +216,13 @@ public class RemoteConfigComponent {
               fetchHandler,
               getHandler,
               metadataClient,
-              getRealtime(firebaseApp, firebaseInstallations, fetchHandler, context, namespace));
+              getRealtime(
+                  firebaseApp,
+                  firebaseInstallations,
+                  fetchHandler,
+                  activatedClient,
+                  context,
+                  namespace));
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
       frcNamespaceInstancesStatic.put(namespace, in);
@@ -266,12 +276,14 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       ConfigFetchHandler configFetchHandler,
+      ConfigCacheClient activatedCacheClient,
       Context context,
       String namespace) {
     return new ConfigRealtimeHandler(
         firebaseApp,
         firebaseInstallations,
         configFetchHandler,
+        activatedCacheClient,
         context,
         namespace,
         executor);
