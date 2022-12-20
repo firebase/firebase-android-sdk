@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution.impl;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
+import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -144,6 +145,8 @@ public class FeedbackActivity extends AppCompatActivity {
     return bitmap;
   }
 
+  // TODO(b/261014422): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   public void submitFeedback(View view) {
     setSubmittingStateEnabled(true);
     if (releaseName == null) {

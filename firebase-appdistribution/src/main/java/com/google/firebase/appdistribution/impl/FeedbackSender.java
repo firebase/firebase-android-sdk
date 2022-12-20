@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import android.annotation.SuppressLint;
 import android.net.Uri;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
@@ -37,6 +38,8 @@ class FeedbackSender {
     return FirebaseApp.getInstance().get(FeedbackSender.class);
   }
 
+  // TODO(b/261014422): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   /** Send feedback text and optionally a screenshot to the Tester API for the given release. */
   Task<Void> sendFeedback(String releaseName, String feedbackText, @Nullable Uri screenshotUri) {
     return testerApiClient
