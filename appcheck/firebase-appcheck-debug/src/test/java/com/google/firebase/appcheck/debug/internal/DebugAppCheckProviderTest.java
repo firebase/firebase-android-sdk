@@ -33,8 +33,9 @@ import com.google.firebase.appcheck.internal.AppCheckTokenResponse;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,7 +73,10 @@ public class DebugAppCheckProviderTest {
 
   private StorageHelper storageHelper;
   private SharedPreferences sharedPreferences;
-  private ExecutorService backgroundExecutor = MoreExecutors.newDirectExecutorService();
+  // TODO(b/258273630): Use TestOnlyExecutors instead of MoreExecutors.directExecutor().
+  private Executor liteExecutor = MoreExecutors.directExecutor();
+  private Executor backgroundExecutor = MoreExecutors.directExecutor();
+  private Executor blockingExecutor = MoreExecutors.directExecutor();
 
   @Before
   public void setup() {
@@ -100,7 +104,12 @@ public class DebugAppCheckProviderTest {
     assertThrows(
         NullPointerException.class,
         () -> {
-          new DebugAppCheckProvider(null, null);
+          new DebugAppCheckProvider(
+              null,
+              null,
+              TestOnlyExecutors.lite(),
+              TestOnlyExecutors.background(),
+              TestOnlyExecutors.blocking());
         });
   }
 
@@ -135,7 +144,7 @@ public class DebugAppCheckProviderTest {
 
     DebugAppCheckProvider provider =
         new DebugAppCheckProvider(
-            DEBUG_SECRET, mockNetworkClient, backgroundExecutor, mockRetryManager);
+            DEBUG_SECRET, mockNetworkClient, liteExecutor, blockingExecutor, mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
     verify(mockNetworkClient)
@@ -154,7 +163,7 @@ public class DebugAppCheckProviderTest {
 
     DebugAppCheckProvider provider =
         new DebugAppCheckProvider(
-            DEBUG_SECRET, mockNetworkClient, backgroundExecutor, mockRetryManager);
+            DEBUG_SECRET, mockNetworkClient, liteExecutor, blockingExecutor, mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
     verify(mockNetworkClient)

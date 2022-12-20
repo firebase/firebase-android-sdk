@@ -27,6 +27,64 @@ val firestore = Firebase.firestore
 val anotherFirestore = Firebase.firestore(Firebase.app("myApp"))
 ```
 
+### Get a document
+
+**Kotlin**
+```kotlin
+firestore.collection("cities")
+    .document("LON")
+    .addSnapshotListener { document: DocumentSnapshot?, error:  ->
+        if (error != null) { 
+            // Handle error
+            return@addSnapshotListener
+        }
+        if (document != null) {
+            // Use document
+        }
+    }
+```
+
+**Kotlin + KTX**
+```kotlin
+firestore.collection("cities")
+    .document("LON")
+    .snapshots()
+    .collect { document: DocumentSnapshot ->
+        // Use document
+    }
+```
+
+### Query documents
+
+**Kotlin**
+```kotlin
+firestore.collection("cities")
+    .whereEqualTo("capital", true)
+    .addSnapshotListener { documents: QuerySnapshot?, error ->
+        if (error != null) {
+            // Handle error
+            return@addSnapshotListener
+        }
+        if (documents != null) {
+            for (document in documents) {
+                // Use document
+            }
+        }
+    }
+```
+
+**Kotlin + KTX**
+```kotlin
+firestore.collection("cities")
+    .whereEqualTo("capital", true)
+    .snapshots()
+    .collect { documents: QuerySnapshot ->
+        for (document in documents) {
+            // Use document
+        }
+    }
+```
+
 ### Convert a DocumentSnapshot field to a POJO
 
 **Kotlin**

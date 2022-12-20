@@ -24,6 +24,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.docMap;
 import static com.google.firebase.firestore.testutil.TestUtil.existenceFilterEvent;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
+import static com.google.firebase.firestore.testutil.TestUtil.keyMap;
 import static com.google.firebase.firestore.testutil.TestUtil.keySet;
 import static com.google.firebase.firestore.testutil.TestUtil.keys;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -82,6 +83,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -330,6 +332,11 @@ public abstract class LocalStoreTestCase {
     assertEquals("Overlays read (by key)", byKey, queryEngine.getOverlaysReadByKey());
     assertEquals(
         "Overlays read (by collection)", byCollection, queryEngine.getOverlaysReadByCollection());
+  }
+
+  /** Asserts the expected overlay types. */
+  protected void assertOverlayTypes(Map<DocumentKey, CountingQueryEngine.OverlayType> expected) {
+    assertEquals("Overlays types", expected, queryEngine.getOverlayTypes());
   }
 
   /**
@@ -975,6 +982,7 @@ public abstract class LocalStoreTestCase {
     localStore.executeQuery(query, /* usePreviousResults= */ true);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
     assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 1);
+    assertOverlayTypes(keyMap("foo/bonk", CountingQueryEngine.OverlayType.Set));
   }
 
   @Test
@@ -1688,5 +1696,22 @@ public abstract class LocalStoreTestCase {
     writeMutation(patchMutation("foo/bar", map("stars", 2)));
     assertChanged(doc("foo/bar", 0, map("likes", 1, "stars", 2)).setHasLocalMutations());
     assertContains(doc("foo/bar", 0, map("likes", 1, "stars", 2)).setHasLocalMutations());
+  }
+
+  @Test
+  public void testUpdateOnRemoteDocLeadsToUpdateOverlay() {
+    Query query = query("foo");
+    allocateQuery(query);
+
+    applyRemoteEvent(updateRemoteEvent(doc("foo/baz", 10, map("a", 1)), asList(2), emptyList()));
+    applyRemoteEvent(updateRemoteEvent(doc("foo/bar", 20, map()), asList(2), emptyList()));
+    writeMutation(patchMutation("foo/baz", map("b", 2)));
+
+    resetPersistenceStats();
+
+    localStore.executeQuery(query, /* usePreviousResults= */ true);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertOverlaysRead(/* byKey= */ 0, /* byCollection= */ 1);
+    assertOverlayTypes(keyMap("foo/baz", CountingQueryEngine.OverlayType.Patch));
   }
 }

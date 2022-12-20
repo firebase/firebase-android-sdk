@@ -27,11 +27,24 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.StartupTime;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Initializes Firebase APIs at app startup time. */
 public class FirebaseInitProvider extends ContentProvider {
-
   private static final String TAG = "FirebaseInitProvider";
+  @Nullable private static StartupTime startupTime = StartupTime.now();
+  @NonNull private static AtomicBoolean currentlyInitializing = new AtomicBoolean(false);
+
+  /** @hide */
+  public static @Nullable StartupTime getStartupTime() {
+    return startupTime;
+  }
+
+  /** @hide */
+  public static boolean isCurrentlyInitializing() {
+    return currentlyInitializing.get();
+  }
 
   /** Should match the {@link FirebaseInitProvider} authority if $androidId is empty. */
   @VisibleForTesting
@@ -48,12 +61,17 @@ public class FirebaseInitProvider extends ContentProvider {
   /** Called before {@link Application#onCreate()}. */
   @Override
   public boolean onCreate() {
-    if (FirebaseApp.initializeApp(getContext()) == null) {
-      Log.i(TAG, "FirebaseApp initialization unsuccessful");
-    } else {
-      Log.i(TAG, "FirebaseApp initialization successful");
+    try {
+      currentlyInitializing.set(true);
+      if (FirebaseApp.initializeApp(getContext()) == null) {
+        Log.i(TAG, "FirebaseApp initialization unsuccessful");
+      } else {
+        Log.i(TAG, "FirebaseApp initialization successful");
+      }
+      return false;
+    } finally {
+      currentlyInitializing.set(false);
     }
-    return false;
   }
 
   /**

@@ -24,27 +24,29 @@ import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class ConfigTests {
-    @Test
-    fun `read() with valid txtpb file should succeed`() {
-        val vendorPackage = "com.example"
-        val myProto = "com.example.proto.MyProto"
-        val config = ConfigReader.read("""
+  @Test
+  fun `read() with valid txtpb file should succeed`() {
+    val vendorPackage = "com.example"
+    val myProto = "com.example.proto.MyProto"
+    val config =
+      ConfigReader.read(
+        """
             vendor_package: "$vendorPackage"
             include: "$myProto"
-        """.trimIndent())
+        """
+          .trimIndent()
+      )
 
-        assertThat(config).isEqualTo(CodeGenConfig.newBuilder()
-                .setVendorPackage(vendorPackage)
-                .addInclude(myProto)
-                .build())
-    }
+    assertThat(config)
+      .isEqualTo(
+        CodeGenConfig.newBuilder().setVendorPackage(vendorPackage).addInclude(myProto).build()
+      )
+  }
 
-    @Test
-    fun `read() with invalid file should fail`() {
-        assertThrows(InvalidConfigException::class.java) {
-            ConfigReader.read("invalid")
-        }
-    }
+  @Test
+  fun `read() with invalid file should fail`() {
+    assertThrows(InvalidConfigException::class.java) { ConfigReader.read("invalid") }
+  }
 }
 
 private fun ConfigReader.read(value: String): CodeGenConfig = read(CharBuffer.wrap(value))

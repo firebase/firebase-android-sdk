@@ -246,10 +246,7 @@ public class CustomClassMapper {
           context.errorPath, "Converting to Arrays is not supported, please use Lists instead");
     } else if (clazz.getTypeParameters().length > 0) {
       throw deserializeError(
-          context.errorPath,
-          "Class "
-              + clazz.getName()
-              + " has generic type parameters, please use GenericTypeIndicator instead");
+          context.errorPath, "Class " + clazz.getName() + " has generic type parameters");
     } else if (clazz.equals(Object.class)) {
       return (T) o;
     } else if (clazz.isEnum()) {

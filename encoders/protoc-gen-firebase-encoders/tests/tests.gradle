@@ -49,7 +49,7 @@ protobuf {
 dependencies {
     testImplementation project(":encoders:firebase-encoders")
     testImplementation project(":encoders:firebase-encoders-proto")
-    testImplementation "com.google.protobuf:protobuf-java:3.14.0"
+    testImplementation "com.google.protobuf:protobuf-java:3.21.9"
     testImplementation 'junit:junit:4.13.1'
     testImplementation "com.google.truth:truth:1.0.1"
 

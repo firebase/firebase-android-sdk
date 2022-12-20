@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics.internal.common;
 
 import static java.util.Objects.requireNonNull;
 
+import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
@@ -34,6 +35,8 @@ public final class Utils {
   private Utils() {}
 
   /** @return A tasks that is resolved when either of the given tasks is resolved. */
+  // TODO(b/261014167): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   public static <T> Task<T> race(Task<T> t1, Task<T> t2) {
     final TaskCompletionSource<T> result = new TaskCompletionSource<>();
     Continuation<T, Void> continuation =
@@ -72,6 +75,8 @@ public final class Utils {
     final TaskCompletionSource<T> tcs = new TaskCompletionSource<T>();
     executor.execute(
         new Runnable() {
+          // TODO(b/261014167): Use an explicit executor in continuations.
+          @SuppressLint("TaskMainThread")
           @Override
           public void run() {
             try {

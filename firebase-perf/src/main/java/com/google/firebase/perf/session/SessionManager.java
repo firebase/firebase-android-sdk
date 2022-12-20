@@ -79,6 +79,8 @@ public class SessionManager extends AppStateUpdateHandler {
     // Get PerfSession in main thread first, because it is possible that app changes fg/bg state
     // which creates a new perfSession, before the following is executed in background thread
     final PerfSession appStartSession = perfSession;
+    // TODO(b/258263016): Migrate to go/firebase-android-executors
+    @SuppressLint("ThreadPoolCreation")
     ExecutorService executorService = Executors.newSingleThreadExecutor();
     syncInitFuture =
         executorService.submit(
