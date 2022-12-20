@@ -110,13 +110,13 @@ final class TestUtils {
         () -> {
           while (progressEvents.size() < count) {
             try {
-              Thread.sleep(100);
+              Thread.sleep(50);
             } catch (InterruptedException e) {
               throw new RuntimeException("Interrupted while waiting for progress events", e);
             }
           }
         });
-    executor.awaitTermination(100, TimeUnit.MILLISECONDS);
+    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
     assertThat(progressEvents).hasSize(count);
     return progressEvents;
   }

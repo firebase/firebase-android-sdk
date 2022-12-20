@@ -124,18 +124,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
           remakeUpdateConfirmationDialog = false;
           dialogHostActivity = null;
 
-          signInStorage
-              .getSignInStatus()
-              .onSuccessTask(
-                  lightweightExecutor,
-                  signedIn -> {
-                    if (signedIn) {
-                      return Tasks.forResult(null);
-                    }
-                    return lifecycleNotifier
-                        .applyToForegroundActivityTask(this::showSignInConfirmationDialog)
-                        .onSuccessTask(lightweightExecutor, unused -> signInTester());
-                  })
+          signInWithConfirmationIfNeeded()
               .onSuccessTask(lightweightExecutor, unused -> checkForNewRelease())
               .continueWithTask(
                   lightweightExecutor,
@@ -181,6 +170,22 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
           return updateTask;
         });
+  }
+
+  @NonNull
+  private Task<Void> signInWithConfirmationIfNeeded() {
+    return signInStorage
+        .getSignInStatus()
+        .onSuccessTask(
+            lightweightExecutor,
+            signedIn -> {
+              if (signedIn) {
+                return Tasks.forResult(null);
+              }
+              return lifecycleNotifier
+                  .applyToForegroundActivityTask(this::showSignInConfirmationDialog)
+                  .onSuccessTask(lightweightExecutor, unused -> signInTester());
+            });
   }
 
   @NonNull
@@ -297,39 +302,33 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
    */
   private UpdateTask updateApp(boolean showDownloadInNotificationManager) {
     return TaskUtils.onSuccessUpdateTask(
-        signInStorage.getSignInStatus(),
+        assertTesterIsSignedIn(),
         lightweightExecutor,
-        signedIn -> {
-          if (!signedIn) {
-            return getErrorUpdateTask(
-                new FirebaseAppDistributionException(
-                    "Tester is not signed in", AUTHENTICATION_FAILURE));
-          }
-          return TaskUtils.onSuccessUpdateTask(
-              cachedNewRelease.get(),
-              lightweightExecutor,
-              release -> {
-                if (release == null) {
-                  LogWrapper.v(TAG, "New release not found.");
-                  return getErrorUpdateTask(
-                      new FirebaseAppDistributionException(
-                          ErrorMessages.RELEASE_NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
-                }
-                if (release.getDownloadUrl() == null) {
-                  LogWrapper.v(TAG, "Download failed to execute.");
-                  return getErrorUpdateTask(
-                      new FirebaseAppDistributionException(
-                          ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
-                          FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
-                }
+        unused ->
+            TaskUtils.onSuccessUpdateTask(
+                cachedNewRelease.get(),
+                lightweightExecutor,
+                release -> {
+                  if (release == null) {
+                    LogWrapper.v(TAG, "New release not found.");
+                    return getErrorUpdateTask(
+                        new FirebaseAppDistributionException(
+                            ErrorMessages.RELEASE_NOT_FOUND_ERROR, UPDATE_NOT_AVAILABLE));
+                  }
+                  if (release.getDownloadUrl() == null) {
+                    LogWrapper.v(TAG, "Download failed to execute.");
+                    return getErrorUpdateTask(
+                        new FirebaseAppDistributionException(
+                            ErrorMessages.DOWNLOAD_URL_NOT_FOUND,
+                            FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE));
+                  }
 
-                if (release.getBinaryType() == BinaryType.AAB) {
-                  return aabUpdater.updateAab(release);
-                } else {
-                  return apkUpdater.updateApk(release, showDownloadInNotificationManager);
-                }
-              });
-        });
+                  if (release.getBinaryType() == BinaryType.AAB) {
+                    return aabUpdater.updateAab(release);
+                  } else {
+                    return apkUpdater.updateApk(release, showDownloadInNotificationManager);
+                  }
+                }));
   }
 
   @Override

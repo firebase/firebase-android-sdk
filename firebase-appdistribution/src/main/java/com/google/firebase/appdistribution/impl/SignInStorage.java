@@ -65,6 +65,7 @@ class SignInStorage {
   }
 
   private SharedPreferences getSharedPreferencesBlocking() {
+    // This may construct a new SharedPreferences object, which requires storage I/O
     return applicationContext.getSharedPreferences(SIGNIN_PREFERENCES_NAME, Context.MODE_PRIVATE);
   }
 }
