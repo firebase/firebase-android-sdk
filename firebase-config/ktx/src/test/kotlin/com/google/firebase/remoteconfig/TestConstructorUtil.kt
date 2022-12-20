@@ -38,7 +38,8 @@ fun createRemoteConfig(
   defaultConfigsCache: ConfigCacheClient,
   fetchHandler: ConfigFetchHandler,
   getHandler: ConfigGetParameterHandler,
-  frcMetadata: ConfigMetadataClient
+  frcMetadata: ConfigMetadataClient,
+  realtimeHandler: ConfigRealtimeHandler
 ): FirebaseRemoteConfig {
   return FirebaseRemoteConfig(
     context,
@@ -51,6 +52,7 @@ fun createRemoteConfig(
     defaultConfigsCache,
     fetchHandler,
     getHandler,
-    frcMetadata
+    frcMetadata,
+    realtimeHandler
   )
 }

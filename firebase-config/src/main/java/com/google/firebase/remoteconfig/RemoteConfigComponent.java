@@ -43,6 +43,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Component for providing multiple Firebase Remote Config (FRC) instances. Firebase Android
@@ -82,7 +84,7 @@ public class RemoteConfigComponent {
       new HashMap<>();
 
   private final Context context;
-  private final Executor executor;
+  private final ScheduledExecutorService executor;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
   private final FirebaseABTesting firebaseAbt;
@@ -96,7 +98,7 @@ public class RemoteConfigComponent {
   /** Firebase Remote Config Component constructor. */
   RemoteConfigComponent(
       Context context,
-      @Blocking Executor executor,
+      @Blocking ScheduledExecutorService executor,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
@@ -115,7 +117,7 @@ public class RemoteConfigComponent {
   @VisibleForTesting
   protected RemoteConfigComponent(
       Context context,
-      Executor executor,
+      ScheduledExecutorService executor,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
@@ -279,7 +281,7 @@ public class RemoteConfigComponent {
         activatedCacheClient,
         context,
         namespace,
-        scheduledExecutorService);
+        executor);
   }
 
   private ConfigGetParameterHandler getGetHandler(
