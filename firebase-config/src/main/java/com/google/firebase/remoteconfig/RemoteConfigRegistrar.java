@@ -29,7 +29,6 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -45,7 +44,8 @@ public class RemoteConfigRegistrar implements ComponentRegistrar {
 
   @Override
   public List<Component<?>> getComponents() {
-    Qualified<ScheduledExecutorService> blockingExecutor = Qualified.qualified(Blocking.class, ScheduledExecutorService.class);
+    Qualified<ScheduledExecutorService> blockingExecutor =
+        Qualified.qualified(Blocking.class, ScheduledExecutorService.class);
     return Arrays.asList(
         Component.builder(RemoteConfigComponent.class)
             .name(LIBRARY_NAME)
