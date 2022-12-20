@@ -45,12 +45,13 @@ public class TestGetModelLocal {
   private static final String MODEL_NAME_LOCAL = "getLocalModel";
   private static final String MODEL_NAME_LOCAL_2 = "getLocalModel2";
   private static final String MODEL_HASH = "origHash324";
-  private final CustomModel SETUP_LOADED_LOCAL_MODEL =
-      new CustomModel(MODEL_NAME_LOCAL, MODEL_HASH, 100, 0);
 
   private FirebaseApp app;
   private File firstDeviceModelFile;
   private File firstLoadTempModelFile;
+
+  private CustomModel.Factory modelFactory;
+  private CustomModel setupLoadedLocalModel;
 
   @Before
   public void before() {
@@ -58,7 +59,11 @@ public class TestGetModelLocal {
     app.setDataCollectionDefaultEnabled(Boolean.FALSE);
     FirebaseModelDownloader firebaseModelDownloader = FirebaseModelDownloader.getInstance(app);
 
-    SharedPreferencesUtil sharedPreferencesUtil = new SharedPreferencesUtil(app);
+    modelFactory = firebaseModelDownloader.getModelFactory();
+
+    setupLoadedLocalModel = modelFactory.create(MODEL_NAME_LOCAL, MODEL_HASH, 100, 0);
+
+    SharedPreferencesUtil sharedPreferencesUtil = new SharedPreferencesUtil(app, modelFactory);
     // reset shared preferences and downloads for models used by this test.
     firebaseModelDownloader.deleteDownloadedModel(MODEL_NAME_LOCAL);
     firebaseModelDownloader.deleteDownloadedModel(MODEL_NAME_LOCAL_2);
@@ -79,7 +84,11 @@ public class TestGetModelLocal {
   }
 
   private void setUpLoadedLocalModelWithFile() throws Exception {
-    ModelFileManager fileManager = ModelFileManager.getInstance();
+    ModelFileManager fileManager =
+        new ModelFileManager(
+            app.getApplicationContext(),
+            app.getPersistenceKey(),
+            new SharedPreferencesUtil(app, modelFactory));
     final File testDir = new File(app.getApplicationContext().getNoBackupFilesDir(), "tmpModels");
     testDir.mkdirs();
     // make sure the directory is empty. Doesn't recurse into subdirs, but that's OK since
@@ -105,14 +114,14 @@ public class TestGetModelLocal {
     ParcelFileDescriptor fd =
         ParcelFileDescriptor.open(firstLoadTempModelFile, ParcelFileDescriptor.MODE_READ_ONLY);
 
-    firstDeviceModelFile = fileManager.moveModelToDestinationFolder(SETUP_LOADED_LOCAL_MODEL, fd);
+    firstDeviceModelFile = fileManager.moveModelToDestinationFolder(setupLoadedLocalModel, fd);
     assertEquals(firstDeviceModelFile, new File(expectedDestinationFolder + "/0"));
     assertTrue(firstDeviceModelFile.exists());
     fd.close();
 
     fakePreloadedCustomModel(
         MODEL_NAME_LOCAL,
-        SETUP_LOADED_LOCAL_MODEL.getModelHash(),
+        setupLoadedLocalModel.getModelHash(),
         99,
         expectedDestinationFolder + "/0");
   }
@@ -228,9 +237,9 @@ public class TestGetModelLocal {
   }
 
   private void fakePreloadedCustomModel(String modelName, String hash, long size, String filePath) {
-    SharedPreferencesUtil sharedPreferencesUtil = new SharedPreferencesUtil(app);
+    SharedPreferencesUtil sharedPreferencesUtil = new SharedPreferencesUtil(app, modelFactory);
     sharedPreferencesUtil.setLoadedCustomModelDetails(
-        new CustomModel(modelName, hash, size, 0L, filePath));
+        modelFactory.create(modelName, hash, size, 0L, filePath));
   }
 
   private Set<CustomModel> getDownloadedModelList()

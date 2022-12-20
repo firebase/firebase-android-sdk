@@ -204,13 +204,12 @@ public final class FirebaseRemoteConfigTest {
 
     MockitoAnnotations.initMocks(this);
 
-    Executor directExecutor = MoreExecutors.directExecutor();
     Context context = ApplicationProvider.getApplicationContext();
     FirebaseApp firebaseApp = initializeFirebaseApp(context);
 
     Personalization personalization = new Personalization(mockAnalyticsConnectorProvider);
     ConfigGetParameterHandler parameterHandler =
-        new ConfigGetParameterHandler(directExecutor, mockActivatedCache, mockDefaultsCache);
+        new ConfigGetParameterHandler(scheduledExecutorService, mockActivatedCache, mockDefaultsCache);
     parameterHandler.addListener(personalization::logArmActive);
 
     // Catch all to avoid NPEs (the getters should never return null).
@@ -225,7 +224,7 @@ public final class FirebaseRemoteConfigTest {
             firebaseApp,
             mockFirebaseInstallations,
             mockFirebaseAbt,
-            directExecutor,
+            scheduledExecutorService,
             mockFetchedCache,
             mockActivatedCache,
             mockDefaultsCache,
@@ -243,7 +242,7 @@ public final class FirebaseRemoteConfigTest {
                 FIREPERF_NAMESPACE,
                 mockFirebaseInstallations,
                 /*firebaseAbt=*/ null,
-                directExecutor,
+                scheduledExecutorService,
                 mockFireperfFetchedCache,
                 mockFireperfActivatedCache,
                 mockFireperfDefaultsCache,
@@ -259,7 +258,7 @@ public final class FirebaseRemoteConfigTest {
                 PERSONALIZATION_NAMESPACE,
                 mockFirebaseInstallations,
                 /*firebaseAbt=*/ null,
-                directExecutor,
+                scheduledExecutorService,
                 mockFetchedCache,
                 mockActivatedCache,
                 mockDefaultsCache,

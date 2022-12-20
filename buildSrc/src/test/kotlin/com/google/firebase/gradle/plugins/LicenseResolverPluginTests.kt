@@ -33,45 +33,46 @@ import org.junit.runners.JUnit4
 @RunWith(JUnit4::class)
 class LicenseResolverPluginTests {
 
-    @Rule
-    @JvmField
-    val testProjectDir = TemporaryFolder()
-    private lateinit var buildFile: File
+  @Rule @JvmField val testProjectDir = TemporaryFolder()
+  private lateinit var buildFile: File
 
-    val idempotentBuild: (taskName: String) -> BuildResult
-        get() = this::build.memoize()
+  val idempotentBuild: (taskName: String) -> BuildResult
+    get() = this::build.memoize()
 
-    @Before
-    fun setup() {
-        buildFile = testProjectDir.newFile("build.gradle")
-        testProjectDir.newFolder("src", "main", "java", "com", "example")
-        testProjectDir.newFile("src/main/java/com/example/Foo.java").writeText("package com.example; class Foo {}")
-        testProjectDir.newFile("src/main/AndroidManifest.xml").writeText(MANIFEST)
+  @Before
+  fun setup() {
+    buildFile = testProjectDir.newFile("build.gradle")
+    testProjectDir.newFolder("src", "main", "java", "com", "example")
+    testProjectDir
+      .newFile("src/main/java/com/example/Foo.java")
+      .writeText("package com.example; class Foo {}")
+    testProjectDir.newFile("src/main/AndroidManifest.xml").writeText(MANIFEST)
 
-        buildFile.writeText(BUILD_CONFIG)
-    }
+    buildFile.writeText(BUILD_CONFIG)
+  }
 
-    @Test
-    fun `Generating licenses`() {
-        val result = idempotentBuild("generateLicenses")
-        assertThat(result.task(":generateLicenses")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+  @Test
+  fun `Generating licenses`() {
+    val result = idempotentBuild("generateLicenses")
+    assertThat(result.task(":generateLicenses")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
 
-        val json = getLicenseJson()
-        val txt = getLicenseText()
+    val json = getLicenseJson()
+    val txt = getLicenseText()
 
-        assertThat(txt).isNotEmpty()
+    assertThat(txt).isNotEmpty()
 
-        assertThat(json).containsKey("customLib1")
+    assertThat(json).containsKey("customLib1")
 
-        assertThat(txt).contains("customLib1")
-        assertThat(txt).contains("Test license")
-        val (start, length) = json["customLib1"]!!
-        assertThat(txt.substring(start, start + length).trim()).isEqualTo("Test license")
-    }
+    assertThat(txt).contains("customLib1")
+    assertThat(txt).contains("Test license")
+    val (start, length) = json["customLib1"]!!
+    assertThat(txt.substring(start, start + length).trim()).isEqualTo("Test license")
+  }
 
-    @Test
-    fun `License tasks throw useful exception if file URI not found`() {
-        buildFile.writeText("""
+  @Test
+  fun `License tasks throw useful exception if file URI not found`() {
+    buildFile.writeText(
+      """
             plugins {
                 id 'com.android.library'
                 id 'LicenseResolverPlugin'
@@ -81,41 +82,49 @@ class LicenseResolverPluginTests {
             thirdPartyLicenses {
                 add 'customLib', "${File("non_existent_path.txt").absolutePath}"
             }
-        """)
+        """
+    )
 
-        val thrown = Assert.assertThrows(UnexpectedBuildFailure::class.java) {
-            build("generateLicenses")
-        }
+    val thrown =
+      Assert.assertThrows(UnexpectedBuildFailure::class.java) { build("generateLicenses") }
 
-        assertThat(thrown.message).contains("License file not found")
-    }
+    assertThat(thrown.message).contains("License file not found")
+  }
 
-    data class FileOffset(val start: Int, val length: Int)
+  data class FileOffset(val start: Int, val length: Int)
 
-    private fun getLicenseJson(): Map<String, FileOffset> =
-            Gson().fromJson(
-                    File("${testProjectDir.root}/build/generated/third_party_licenses/",
-                            "third_party_licenses.json").readText(),
-                    object : TypeToken<Map<String, FileOffset>>() {}.type)
+  private fun getLicenseJson(): Map<String, FileOffset> =
+    Gson()
+      .fromJson(
+        File(
+            "${testProjectDir.root}/build/generated/third_party_licenses/",
+            "third_party_licenses.json"
+          )
+          .readText(),
+        object : TypeToken<Map<String, FileOffset>>() {}.type
+      )
 
-    private fun getLicenseText(): String =
-            File("${testProjectDir.root}/build/generated/third_party_licenses/",
-                    "third_party_licenses.txt").readText()
+  private fun getLicenseText(): String =
+    File("${testProjectDir.root}/build/generated/third_party_licenses/", "third_party_licenses.txt")
+      .readText()
 
-    private fun build(taskName: String): BuildResult = GradleRunner.create()
-            .withProjectDir(testProjectDir.root)
-            .withArguments(taskName, "--stacktrace")
-            .withPluginClasspath()
-            .build()
+  private fun build(taskName: String): BuildResult =
+    GradleRunner.create()
+      .withProjectDir(testProjectDir.root)
+      .withArguments(taskName, "--stacktrace")
+      .withPluginClasspath()
+      .build()
 
-    companion object {
-        const val MANIFEST = """<?xml version="1.0" encoding="utf-8"?>
+  companion object {
+    const val MANIFEST =
+      """<?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android"
                   package="com.example">
             <uses-sdk android:minSdkVersion="14"/>
         </manifest>
     """
-        val BUILD_CONFIG = """
+    val BUILD_CONFIG =
+      """
         buildscript {
             repositories {
                 google()
@@ -144,5 +153,5 @@ class LicenseResolverPluginTests {
             add 'customLib1', "${File("src/test/fixtures/license.txt").absolutePath}"
         }
         """
-    }
+  }
 }

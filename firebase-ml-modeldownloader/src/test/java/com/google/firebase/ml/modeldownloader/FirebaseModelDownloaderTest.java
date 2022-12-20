@@ -23,6 +23,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -36,6 +37,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.FirebaseOptions.Builder;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
@@ -52,8 +54,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
@@ -78,21 +78,32 @@ public class FirebaseModelDownloaderTest {
   private static final CustomModelDownloadConditions DOWNLOAD_CONDITIONS =
       new CustomModelDownloadConditions.Builder().requireWifi().build();
 
-  private final CustomModel CUSTOM_MODEL = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
-  private final CustomModel ORIG_CUSTOM_MODEL_URL =
-      new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION + 10L);
-  private final CustomModel UPDATE_CUSTOM_MODEL_URL =
-      new CustomModel(MODEL_NAME, UPDATE_MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION + 10L);
-  private final CustomModel UPDATE_IN_PROGRESS_CUSTOM_MODEL =
-      new CustomModel(MODEL_NAME, UPDATE_MODEL_HASH, 100, DOWNLOAD_ID);
+  private CustomModel CUSTOM_MODEL;
+  private CustomModel ORIG_CUSTOM_MODEL_URL;
+  private CustomModel UPDATE_CUSTOM_MODEL_URL;
+  private CustomModel UPDATE_IN_PROGRESS_CUSTOM_MODEL;
   private CustomModel customModelUpdateLoaded;
   private CustomModel customModelLoaded;
 
-  private @Mock SharedPreferencesUtil mockPrefs;
-  private @Mock ModelFileDownloadService mockFileDownloadService;
-  private @Mock CustomModelDownloadService mockModelDownloadService;
-  private @Mock ModelFileManager mockFileManager;
-  private @Mock FirebaseMlLogger mockEventLogger;
+  private final SharedPreferencesUtil mockPrefs = mock(SharedPreferencesUtil.class);
+  private final ModelFileDownloadService mockFileDownloadService =
+      mock(ModelFileDownloadService.class);
+  private final CustomModelDownloadService mockModelDownloadService =
+      mock(CustomModelDownloadService.class);
+  private final ModelFileManager mockFileManager = mock(ModelFileManager.class);
+  private final FirebaseMlLogger mockEventLogger = mock(FirebaseMlLogger.class);
+
+  private final CustomModel.Factory modelFactory =
+      (name, modelHash, fileSize, downloadId, localFilePath, downloadUrl, downloadUrlExpiry) ->
+          new CustomModel(
+              mockFileDownloadService,
+              name,
+              modelHash,
+              fileSize,
+              downloadId,
+              localFilePath,
+              downloadUrl,
+              downloadUrlExpiry);
 
   private FirebaseModelDownloader firebaseModelDownloader;
   private ExecutorService executor;
@@ -107,7 +118,14 @@ public class FirebaseModelDownloaderTest {
 
   @Before
   public void setUp() throws Exception {
-    MockitoAnnotations.initMocks(this);
+    CUSTOM_MODEL = modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0);
+    ORIG_CUSTOM_MODEL_URL =
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION + 10L);
+    UPDATE_CUSTOM_MODEL_URL =
+        modelFactory.create(MODEL_NAME, UPDATE_MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION + 10L);
+    UPDATE_IN_PROGRESS_CUSTOM_MODEL =
+        modelFactory.create(MODEL_NAME, UPDATE_MODEL_HASH, 100, DOWNLOAD_ID);
+
     FirebaseApp.clearInstancesForTest();
     FirebaseApp app =
         FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), FIREBASE_OPTIONS);
@@ -120,7 +138,9 @@ public class FirebaseModelDownloaderTest {
             mockModelDownloadService,
             mockFileManager,
             mockEventLogger,
-            executor);
+            TestOnlyExecutors.background(),
+            TestOnlyExecutors.blocking(),
+            modelFactory);
     setUpTestingFiles(app);
 
     doNothing().when(mockEventLogger).logDownloadEventWithExactDownloadTime(any(), any(), any());
@@ -131,7 +151,11 @@ public class FirebaseModelDownloaderTest {
   }
 
   private void setUpTestingFiles(FirebaseApp app) throws Exception {
-    fileManager = new ModelFileManager(app);
+    fileManager =
+        new ModelFileManager(
+            app.getApplicationContext(),
+            app.getPersistenceKey(),
+            new SharedPreferencesUtil(app, modelFactory));
     final File testDir = new File(app.getApplicationContext().getNoBackupFilesDir(), "tmpModels");
     testDir.mkdirs();
     // make sure the directory is empty. Doesn't recurse into subdirs, but that's OK since
@@ -172,9 +196,9 @@ public class FirebaseModelDownloaderTest {
     fd2.close();
 
     customModelLoaded =
-        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, expectedDestinationFolder + "/0");
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0, expectedDestinationFolder + "/0");
     customModelUpdateLoaded =
-        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, expectedDestinationFolder + "/1");
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0, expectedDestinationFolder + "/1");
   }
 
   @After
@@ -210,7 +234,8 @@ public class FirebaseModelDownloaderTest {
   public void getModel_latestModel_localExists_noUpdate_MissingFile() throws Exception {
     // model with missing file.
     CustomModel missingFileModel =
-        new CustomModel(MODEL_NAME, UPDATE_MODEL_HASH, 100, 0, expectedDestinationFolder + "/4");
+        modelFactory.create(
+            MODEL_NAME, UPDATE_MODEL_HASH, 100, 0, expectedDestinationFolder + "/4");
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
         .thenReturn(missingFileModel)
         .thenReturn(customModelUpdateLoaded);
@@ -240,7 +265,7 @@ public class FirebaseModelDownloaderTest {
 
   @Test
   public void getModel_latestModel_localExists_noUpdate_MissingDownloadId() throws Exception {
-    CustomModel badLocalModel = new CustomModel(MODEL_NAME, UPDATE_MODEL_HASH, 100, 0);
+    CustomModel badLocalModel = modelFactory.create(MODEL_NAME, UPDATE_MODEL_HASH, 100, 0);
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
         .thenReturn(badLocalModel) // getlocalModelDetails 1
         .thenReturn(null) // getCustomModelTask 1
@@ -275,7 +300,7 @@ public class FirebaseModelDownloaderTest {
   @Test
   public void getModel_latestModel_localExists_noUpdate_inProgress() throws Exception {
     // model with no file yet.
-    CustomModel inProgressLocalModel = new CustomModel(MODEL_NAME, UPDATE_MODEL_HASH, 100, 88);
+    CustomModel inProgressLocalModel = modelFactory.create(MODEL_NAME, UPDATE_MODEL_HASH, 100, 88);
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME)))
         .thenReturn(inProgressLocalModel) // getlocalModelDetails 1
         .thenReturn(inProgressLocalModel) // getCustomModelTask 1
@@ -356,7 +381,7 @@ public class FirebaseModelDownloaderTest {
   @Test
   public void getModel_latestModel_localExists_DownloadInProgress() throws Exception {
     CustomModel customModelLoadedWithDownload =
-        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 99, expectedDestinationFolder + "/0");
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 99, expectedDestinationFolder + "/0");
 
     when(mockPrefs.getCustomModelDetails(eq(MODEL_NAME))).thenReturn(customModelLoadedWithDownload);
     when(mockPrefs.getDownloadingCustomModelDetails(eq(MODEL_NAME)))
@@ -423,7 +448,6 @@ public class FirebaseModelDownloaderTest {
     }
 
     verify(mockPrefs, times(2)).getCustomModelDetails(eq(MODEL_NAME));
-    verify(mockFileDownloadService, never()).loadNewlyDownloadedModelFile(any());
     assertThat(task.isComplete()).isTrue();
     assertThat(task.isSuccessful()).isFalse();
     assertTrue(task.getException().getMessage().contains("bad state"));

@@ -14,6 +14,7 @@
 
 package com.google.firebase.installations;
 
+import android.annotation.SuppressLint;
 import android.text.TextUtils;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
@@ -96,6 +97,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         private final AtomicInteger mCount = new AtomicInteger(1);
 
         @Override
+        // TODO(b/258422917): Migrate to go/firebase-android-executors
+        @SuppressLint("ThreadPoolCreation")
         public Thread newThread(Runnable r) {
           return new Thread(
               r, String.format("firebase-installations-executor-%d", mCount.getAndIncrement()));
@@ -123,6 +126,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
           + "Please retry your last request.";
 
   /** package private constructor. */
+  // TODO(b/258422917): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   FirebaseInstallations(
       FirebaseApp firebaseApp, @NonNull Provider<HeartBeatController> heartBeatProvider) {
     this(
@@ -142,6 +147,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         new RandomFidGenerator());
   }
 
+  // TODO(b/258422917): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   FirebaseInstallations(
       ExecutorService backgroundExecutor,
       FirebaseApp firebaseApp,

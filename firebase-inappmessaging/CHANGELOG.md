@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Migrate firebase-inappmessaging SDK to use common executor pool.
 
 # 20.2.0
 * [fixed] Fixed a bug that prevented marking more than one message as

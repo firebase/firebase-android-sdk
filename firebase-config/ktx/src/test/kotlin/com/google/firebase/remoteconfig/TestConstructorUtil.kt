@@ -23,36 +23,36 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler
-import java.util.concurrent.Executor
+import java.util.concurrent.ScheduledExecutorService
 
 // This method is a workaround for testing. It enable us to create a FirebaseRemoteConfig object
 // with mocks using the package-private constructor.
 fun createRemoteConfig(
-    context: Context?,
-    firebaseApp: FirebaseApp,
-    firebaseInstallations: FirebaseInstallationsApi,
-    firebaseAbt: FirebaseABTesting?,
-    executor: Executor,
-    fetchedConfigsCache: ConfigCacheClient,
-    activatedConfigsCache: ConfigCacheClient,
-    defaultConfigsCache: ConfigCacheClient,
-    fetchHandler: ConfigFetchHandler,
-    getHandler: ConfigGetParameterHandler,
-    frcMetadata: ConfigMetadataClient,
-    realtimeClient: ConfigRealtimeHandler
+  context: Context?,
+  firebaseApp: FirebaseApp,
+  firebaseInstallations: FirebaseInstallationsApi,
+  firebaseAbt: FirebaseABTesting?,
+  executor: ScheduledExecutorService,
+  fetchedConfigsCache: ConfigCacheClient,
+  activatedConfigsCache: ConfigCacheClient,
+  defaultConfigsCache: ConfigCacheClient,
+  fetchHandler: ConfigFetchHandler,
+  getHandler: ConfigGetParameterHandler,
+  frcMetadata: ConfigMetadataClient,
+  realtimeClient: ConfigRealtimeHandler
 ): FirebaseRemoteConfig {
-        return FirebaseRemoteConfig(
-            context,
-            firebaseApp,
-            firebaseInstallations,
-            firebaseAbt,
-            executor,
-            fetchedConfigsCache,
-            activatedConfigsCache,
-            defaultConfigsCache,
-            fetchHandler,
-            getHandler,
-            frcMetadata,
-            realtimeClient
-    )
+  return FirebaseRemoteConfig(
+    context,
+    firebaseApp,
+    firebaseInstallations,
+    firebaseAbt,
+    executor,
+    fetchedConfigsCache,
+    activatedConfigsCache,
+    defaultConfigsCache,
+    fetchHandler,
+    getHandler,
+    frcMetadata,
+    realtimeClient
+  )
 }

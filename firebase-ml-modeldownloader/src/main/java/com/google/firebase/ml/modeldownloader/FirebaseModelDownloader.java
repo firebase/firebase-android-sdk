@@ -25,7 +25,8 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.ml.modeldownloader.internal.CustomModelDownloadService;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.DownloadStatus;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ErrorCode;
@@ -36,7 +37,7 @@ import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
 import java.io.File;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import javax.inject.Inject;
 
 public class FirebaseModelDownloader {
 
@@ -46,25 +47,15 @@ public class FirebaseModelDownloader {
   private final ModelFileDownloadService fileDownloadService;
   private final ModelFileManager fileManager;
   private final CustomModelDownloadService modelDownloadService;
-  private final Executor executor;
+  private final Executor bgExecutor;
+  private final Executor blockingExecutor;
 
   private final FirebaseMlLogger eventLogger;
+  private final CustomModel.Factory modelFactory;
 
-  @RequiresApi(api = VERSION_CODES.KITKAT)
-  FirebaseModelDownloader(
-      FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi) {
-    this.firebaseOptions = firebaseApp.getOptions();
-    this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
-    this.eventLogger = FirebaseMlLogger.getInstance(firebaseApp);
-    this.fileDownloadService = new ModelFileDownloadService(firebaseApp);
-    this.modelDownloadService =
-        new CustomModelDownloadService(firebaseApp, firebaseInstallationsApi);
-
-    this.executor = Executors.newSingleThreadExecutor();
-    fileManager = ModelFileManager.getInstance();
-  }
-
+  @Inject
   @VisibleForTesting
+  @RequiresApi(api = VERSION_CODES.KITKAT)
   FirebaseModelDownloader(
       FirebaseOptions firebaseOptions,
       SharedPreferencesUtil sharedPreferencesUtil,
@@ -72,14 +63,18 @@ public class FirebaseModelDownloader {
       CustomModelDownloadService modelDownloadService,
       ModelFileManager fileManager,
       FirebaseMlLogger eventLogger,
-      Executor executor) {
+      @Background Executor bgExecutor,
+      @Blocking Executor blockingExecutor,
+      CustomModel.Factory modelFactory) {
     this.firebaseOptions = firebaseOptions;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
     this.fileDownloadService = fileDownloadService;
     this.modelDownloadService = modelDownloadService;
     this.fileManager = fileManager;
     this.eventLogger = eventLogger;
-    this.executor = executor;
+    this.bgExecutor = bgExecutor;
+    this.blockingExecutor = blockingExecutor;
+    this.modelFactory = modelFactory;
   }
 
   /**
@@ -214,7 +209,7 @@ public class FirebaseModelDownloader {
 
       if (downloadInProgressTask != null) {
         return downloadInProgressTask.continueWithTask(
-            executor,
+            bgExecutor,
             downloadTask -> {
               if (downloadTask.isSuccessful()) {
                 return finishModelDownload(model.getName());
@@ -238,7 +233,7 @@ public class FirebaseModelDownloader {
     // bad model state - delete all existing model details and return exception
     return deleteDownloadedModel(model.getName())
         .continueWithTask(
-            executor,
+            bgExecutor,
             deletionTask ->
                 Tasks.forException(
                     new FirebaseMlException(
@@ -271,7 +266,7 @@ public class FirebaseModelDownloader {
             firebaseOptions.getProjectId(), modelName, modelHash);
 
     return incomingModelDetails.continueWithTask(
-        executor,
+        bgExecutor,
         incomingModelDetailTask -> {
           if (incomingModelDetailTask.isSuccessful()) {
             // null means we have the latest model or we failed to connect.
@@ -355,7 +350,7 @@ public class FirebaseModelDownloader {
             return fileDownloadService
                 .download(incomingModelDetailTask.getResult(), conditions)
                 .continueWithTask(
-                    executor,
+                    blockingExecutor,
                     downloadTask -> {
                       if (downloadTask.isSuccessful()) {
                         return finishModelDownload(modelName);
@@ -388,14 +383,14 @@ public class FirebaseModelDownloader {
               firebaseOptions.getProjectId(), modelName);
       // no local model - start download.
       return retryModelDetails.continueWithTask(
-          executor,
+          bgExecutor,
           retryModelDetailTask -> {
             if (retryModelDetailTask.isSuccessful()) {
               // start download
               return fileDownloadService
                   .download(retryModelDetailTask.getResult(), conditions)
                   .continueWithTask(
-                      executor,
+                      bgExecutor,
                       retryDownloadTask -> {
                         if (retryDownloadTask.isSuccessful()) {
                           return finishModelDownload(modelName);
@@ -445,7 +440,7 @@ public class FirebaseModelDownloader {
     fileDownloadService.maybeCheckDownloadingComplete();
 
     TaskCompletionSource<Set<CustomModel>> taskCompletionSource = new TaskCompletionSource<>();
-    executor.execute(
+    bgExecutor.execute(
         () -> taskCompletionSource.setResult(sharedPreferencesUtil.listDownloadedModels()));
     return taskCompletionSource.getTask();
   }
@@ -459,7 +454,7 @@ public class FirebaseModelDownloader {
   public Task<Void> deleteDownloadedModel(@NonNull String modelName) {
 
     TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
-    executor.execute(
+    bgExecutor.execute(
         () -> {
           // remove all files associated with this model and then clean up model references.
           boolean isSuccessful = deleteModelDetails(modelName);
@@ -535,5 +530,11 @@ public class FirebaseModelDownloader {
   @VisibleForTesting
   String getApplicationId() {
     return firebaseOptions.getApplicationId();
+  }
+
+  /** @hide */
+  @VisibleForTesting
+  public CustomModel.Factory getModelFactory() {
+    return modelFactory;
   }
 }

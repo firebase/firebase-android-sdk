@@ -16,6 +16,7 @@ package com.google.firebase.perf.session.gauges;
 
 import static android.system.Os.sysconf;
 
+import android.annotation.SuppressLint;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.system.OsConstants;
@@ -80,6 +81,8 @@ public class CpuGaugeCollector {
   @Nullable private ScheduledFuture cpuMetricCollectorJob = null;
   private long cpuMetricCollectionRateMs = UNSET_CPU_METRIC_COLLECTION_RATE;
 
+  // TODO(b/258263016): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   CpuGaugeCollector() {
     cpuMetricReadings = new ConcurrentLinkedQueue<>();
     cpuMetricCollectorExecutor = Executors.newSingleThreadScheduledExecutor();
