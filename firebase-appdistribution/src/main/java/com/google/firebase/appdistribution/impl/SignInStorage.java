@@ -16,7 +16,11 @@ package com.google.firebase.appdistribution.impl;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import com.google.firebase.components.Lazy;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.annotations.concurrent.Background;
+import java.util.concurrent.Executor;
 
 /** Class that handles storage for App Distribution SignIn persistence. */
 class SignInStorage {
@@ -24,24 +28,43 @@ class SignInStorage {
   private static final String SIGNIN_PREFERENCES_NAME = "FirebaseAppDistributionSignInStorage";
   private static final String SIGNIN_TAG = "firebase_app_distribution_signin";
 
-  private final Lazy<SharedPreferences> signInSharedPreferences;
+  private final Context applicationContext;
+  @Background private final Executor backgroundExecutor;
 
-  SignInStorage(Context applicationContext) {
-    this.signInSharedPreferences =
-        new Lazy(
-            () ->
-                // TODO(lkellogg): This constructs a SharedPreferences object, which touches disk
-                //   and therefore should be run on a @Background executor. This could ideally be
-                //   done by a new shared component.
-                applicationContext.getSharedPreferences(
-                    SIGNIN_PREFERENCES_NAME, Context.MODE_PRIVATE));
+  SignInStorage(Context applicationContext, @Background Executor backgroundExecutor) {
+    this.applicationContext = applicationContext;
+    this.backgroundExecutor = backgroundExecutor;
   }
 
-  void setSignInStatus(boolean testerSignedIn) {
-    this.signInSharedPreferences.get().edit().putBoolean(SIGNIN_TAG, testerSignedIn).apply();
+  Task<Void> setSignInStatus(boolean testerSignedIn) {
+    return getSharedPreferences()
+        .onSuccessTask(
+            backgroundExecutor,
+            sharedPreferences -> {
+              sharedPreferences.edit().putBoolean(SIGNIN_TAG, testerSignedIn).apply();
+              return null;
+            });
   }
 
-  boolean getSignInStatus() {
-    return signInSharedPreferences.get().getBoolean(SIGNIN_TAG, false);
+  Task<Boolean> getSignInStatus() {
+    return getSharedPreferences()
+        .onSuccessTask(
+            backgroundExecutor,
+            sharedPreferences -> Tasks.forResult(sharedPreferences.getBoolean(SIGNIN_TAG, false)));
+  }
+
+  boolean getSignInStatusBlocking() {
+    return getSharedPreferencesBlocking().getBoolean(SIGNIN_TAG, false);
+  }
+
+  private Task<SharedPreferences> getSharedPreferences() {
+    TaskCompletionSource<SharedPreferences> taskCompletionSource = new TaskCompletionSource<>();
+    backgroundExecutor.execute(
+        () -> taskCompletionSource.setResult(getSharedPreferencesBlocking()));
+    return taskCompletionSource.getTask();
+  }
+
+  private SharedPreferences getSharedPreferencesBlocking() {
+    return applicationContext.getSharedPreferences(SIGNIN_PREFERENCES_NAME, Context.MODE_PRIVATE);
   }
 }
