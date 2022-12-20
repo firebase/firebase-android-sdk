@@ -242,8 +242,10 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
           new OnActivityResumedListener() {
             @Override
             public void onResumed(Activity activity) {
-              task.setResult(
-                  getActivityWithIgnoredClass(activity, previousActivity, classToIgnore));
+              synchronized (lock) {
+                task.setResult(
+                    getActivityWithIgnoredClass(activity, previousActivity, classToIgnore));
+              }
               removeOnActivityResumedListener(this);
             }
           });
