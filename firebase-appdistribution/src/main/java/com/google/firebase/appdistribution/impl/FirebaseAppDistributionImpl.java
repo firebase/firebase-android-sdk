@@ -68,7 +68,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private final SequentialReference<AppDistributionReleaseInternal> cachedNewRelease;
   private final ReleaseIdentifier releaseIdentifier;
   private final ScreenshotTaker screenshotTaker;
-  private final Executor taskExecutor;
+  private final Executor blockingExecutor;
   private final FirebaseAppDistributionNotificationsManager notificationsManager;
   private TaskCache<UpdateTask> updateIfNewReleaseAvailableTaskCache = new TaskCache<>();
   private TaskCache<Task<AppDistributionRelease>> checkForNewReleaseTaskCache = new TaskCache<>();
@@ -94,7 +94,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       @NonNull ReleaseIdentifier releaseIdentifier,
       @NonNull ScreenshotTaker screenshotTaker,
       @NonNull @Lightweight Executor lightweightExecutor,
-      @NonNull Executor taskExecutor) {
+      @NonNull Executor blockingExecutor) {
     this.firebaseApp = firebaseApp;
     this.testerSignInManager = testerSignInManager;
     this.newReleaseFetcher = newReleaseFetcher;
@@ -106,7 +106,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     this.cachedNewRelease = new SequentialReference<>(lightweightExecutor);
     this.lightweightExecutor = lightweightExecutor;
     this.screenshotTaker = screenshotTaker;
-    this.taskExecutor = taskExecutor;
+    this.blockingExecutor = blockingExecutor;
     this.notificationsManager =
         new FirebaseAppDistributionNotificationsManager(firebaseApp.getApplicationContext());
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
@@ -332,13 +332,13 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     screenshotTaker
         .takeScreenshot()
         .addOnFailureListener(
-            taskExecutor,
+            blockingExecutor,
             e -> {
               LogWrapper.w(TAG, "Failed to take screenshot for feedback", e);
               doStartFeedback(infoText, null);
             })
         .addOnSuccessListener(
-            taskExecutor, screenshotUri -> doStartFeedback(infoText, screenshotUri));
+            blockingExecutor, screenshotUri -> doStartFeedback(infoText, screenshotUri));
   }
 
   @Override
@@ -378,17 +378,18 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     testerSignInManager
         .signInTester()
         .addOnFailureListener(
-            taskExecutor,
+            blockingExecutor,
             e -> {
               feedbackInProgress.set(false);
               LogWrapper.e(TAG, "Failed to sign in tester. Could not collect feedback.", e);
             })
         .onSuccessTask(
-            taskExecutor,
+            blockingExecutor,
             unused ->
                 releaseIdentifier
                     .identifyRelease()
                     .addOnFailureListener(
+                        blockingExecutor,
                         e -> {
                           feedbackInProgress.set(false);
                           LogWrapper.e(TAG, "Failed to identify release", e);
@@ -399,11 +400,12 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                               .show();
                         })
                     .onSuccessTask(
-                        taskExecutor,
+                        blockingExecutor,
                         releaseName ->
                             // in development-mode the releaseName might be null
                             launchFeedbackActivity(releaseName, infoText, screenshotUri)
                                 .addOnFailureListener(
+                                    blockingExecutor,
                                     e -> {
                                       feedbackInProgress.set(false);
                                       LogWrapper.e(TAG, "Failed to launch feedback flow", e);

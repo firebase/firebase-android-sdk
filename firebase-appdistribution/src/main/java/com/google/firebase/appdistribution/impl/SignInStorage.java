@@ -30,6 +30,9 @@ class SignInStorage {
     this.signInSharedPreferences =
         new Lazy(
             () ->
+                // TODO(lkellogg): This constructs a SharedPreferences object, which touches disk
+                //   and therefore should be run on a @Background executor. This could ideally be
+                //   done by a new shared component.
                 applicationContext.getSharedPreferences(
                     SIGNIN_PREFERENCES_NAME, Context.MODE_PRIVATE));
   }
