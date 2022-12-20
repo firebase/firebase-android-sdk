@@ -41,6 +41,7 @@ android {
 }
 
 dependencies {
+    implementation project(':firebase-annotations')
     implementation project(':firebase-common')
     implementation project(':firebase-components')
     implementation project(':appcheck:firebase-appcheck')
@@ -51,6 +52,7 @@ dependencies {
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
     javadocClasspath 'org.checkerframework:checker-qual:2.5.2'
 
+    testImplementation project(':integ-testing')
     testImplementation 'junit:junit:4.13-beta-2'
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"

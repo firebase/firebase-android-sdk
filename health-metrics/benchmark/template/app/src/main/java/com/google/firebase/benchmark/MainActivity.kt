@@ -16,10 +16,15 @@ package com.google.firebase.benchmark
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import com.google.firebase.FirebaseApp
+import com.google.firebase.initializeAllComponentsForBenchmark
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        val app = FirebaseApp.getInstance()
+        initializeAllComponentsForBenchmark(app)
     }
 }

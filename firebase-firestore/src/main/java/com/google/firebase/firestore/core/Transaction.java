@@ -17,6 +17,7 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.annotation.SuppressLint;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -162,6 +163,9 @@ public class Transaction {
     int maxPoolSize = corePoolSize;
     int keepAliveSeconds = 1;
     LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
+
+    // TODO(b/258277574): Migrate to go/firebase-android-executors
+    @SuppressLint("ThreadPoolCreation")
     ThreadPoolExecutor executor =
         new ThreadPoolExecutor(
             corePoolSize, maxPoolSize, keepAliveSeconds, TimeUnit.SECONDS, queue);
@@ -199,7 +203,11 @@ public class Transaction {
   private Precondition precondition(DocumentKey key) {
     @Nullable SnapshotVersion version = readVersions.get(key);
     if (!writtenDocs.contains(key) && version != null) {
-      return Precondition.updateTime(version);
+      if (version.equals(SnapshotVersion.NONE)) {
+        return Precondition.exists(false);
+      } else {
+        return Precondition.updateTime(version);
+      }
     } else {
       return Precondition.NONE;
     }

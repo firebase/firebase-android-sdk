@@ -92,5 +92,5 @@ dependencies {
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.28.1'
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker-mockito:2.28.1'
-    androidTestImplementation 'com.google.protobuf:protobuf-java:3.14.0'
+    androidTestImplementation 'com.google.protobuf:protobuf-java:3.21.9'
 }

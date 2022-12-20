@@ -15,6 +15,7 @@ package com.google.firebase.messaging;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import android.annotation.SuppressLint;
 import com.google.android.gms.common.util.concurrent.NamedThreadFactory;
 import com.google.firebase.messaging.threads.PoolableExecutors;
 import com.google.firebase.messaging.threads.ThreadPriority;
@@ -54,6 +55,8 @@ class FcmExecutors {
   }
 
   @SuppressWarnings("ThreadChecker")
+  // TODO(b/258424124): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   private static Executor newCachedSingleThreadExecutor(String threadName) {
     // Creates a single threaded executor that only keeps the thread alive for a short time when
     // idle to reduce resource use.
@@ -68,27 +71,37 @@ class FcmExecutors {
 
   /** Creates a single threaded ScheduledPoolExecutor. */
   @SuppressWarnings("ThreadChecker")
+  // TODO(b/258424124): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   static ScheduledExecutorService newTopicsSyncExecutor() {
     return new ScheduledThreadPoolExecutor(
         /* corePoolSize= */ 1, new NamedThreadFactory(THREAD_TOPICS_IO));
   }
 
   @SuppressWarnings("ThreadChecker")
+  // TODO(b/258424124): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   static ExecutorService newNetworkIOExecutor() {
     // TODO(b/148493968): consider use PoolableExecutors for all FCM threading
     return Executors.newSingleThreadExecutor(new NamedThreadFactory(THREAD_NETWORK_IO));
   }
 
   @SuppressWarnings("ThreadChecker")
+  // TODO(b/258424124): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   static ExecutorService newTaskExecutor() {
     return Executors.newSingleThreadExecutor(new NamedThreadFactory(THREAD_TASK));
   }
 
   @SuppressWarnings("ThreadChecker")
+  // TODO(b/258424124): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   static ExecutorService newFileExecutor() {
     return Executors.newSingleThreadExecutor(new NamedThreadFactory(THREAD_FILE));
   }
 
+  // TODO(b/258424124): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   static ExecutorService newIntentHandleExecutor() {
     return PoolableExecutors.factory()
         .newSingleThreadExecutor(
@@ -97,6 +110,8 @@ class FcmExecutors {
 
   /** Creates a single threaded ScheduledPoolExecutor. */
   @SuppressWarnings("ThreadChecker")
+  // TODO(b/258424124): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   static ScheduledExecutorService newInitExecutor() {
     return new ScheduledThreadPoolExecutor(
         /* corePoolSize= */ 1, new NamedThreadFactory(THREAD_INIT));

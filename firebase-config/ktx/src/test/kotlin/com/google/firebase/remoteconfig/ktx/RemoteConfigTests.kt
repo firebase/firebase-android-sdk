@@ -16,7 +16,6 @@ package com.google.firebase.remoteconfig.ktx
 
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
-import com.google.common.util.concurrent.MoreExecutors
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.installations.FirebaseInstallationsApi
@@ -36,9 +35,10 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
 import org.robolectric.RobolectricTestRunner
+import java.util.concurrent.Executors
 
 const val APP_ID = "1:14368190084:android:09cb977358c6f241"
 const val API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567"
@@ -46,112 +46,113 @@ const val API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567"
 const val EXISTING_APP = "existing"
 
 open class DefaultFirebaseRemoteConfigValue : FirebaseRemoteConfigValue {
-    override fun asLong(): Long = TODO("Unimplementend")
-    override fun asDouble(): Double = TODO("Unimplementend")
-    override fun asString(): String = TODO("Unimplementend")
-    override fun asByteArray(): ByteArray = TODO("Unimplementend")
-    override fun asBoolean(): Boolean = TODO("Unimplementend")
-    override fun getSource(): Int = TODO("Unimplementend")
+  override fun asLong(): Long = TODO("Unimplementend")
+  override fun asDouble(): Double = TODO("Unimplementend")
+  override fun asString(): String = TODO("Unimplementend")
+  override fun asByteArray(): ByteArray = TODO("Unimplementend")
+  override fun asBoolean(): Boolean = TODO("Unimplementend")
+  override fun getSource(): Int = TODO("Unimplementend")
 }
 
 class StringRemoteConfigValue(val value: String) : DefaultFirebaseRemoteConfigValue() {
-    override fun asString() = value
+  override fun asString() = value
 }
 
 abstract class BaseTestCase {
-    @Before
-    fun setUp() {
-        Firebase.initialize(
-                ApplicationProvider.getApplicationContext(),
-                FirebaseOptions.Builder()
-                        .setApplicationId(APP_ID)
-                        .setApiKey(API_KEY)
-                        .setProjectId("123")
-                        .build()
-        )
+  @Before
+  fun setUp() {
+    Firebase.initialize(
+      ApplicationProvider.getApplicationContext(),
+      FirebaseOptions.Builder()
+        .setApplicationId(APP_ID)
+        .setApiKey(API_KEY)
+        .setProjectId("123")
+        .build()
+    )
 
-        Firebase.initialize(
-                ApplicationProvider.getApplicationContext(),
-                FirebaseOptions.Builder()
-                        .setApplicationId(APP_ID)
-                        .setApiKey(API_KEY)
-                        .setProjectId("123")
-                        .build(),
-                EXISTING_APP
-        )
-    }
+    Firebase.initialize(
+      ApplicationProvider.getApplicationContext(),
+      FirebaseOptions.Builder()
+        .setApplicationId(APP_ID)
+        .setApiKey(API_KEY)
+        .setProjectId("123")
+        .build(),
+      EXISTING_APP
+    )
+  }
 
-    @After
-    fun cleanUp() {
-        FirebaseApp.clearInstancesForTest()
-    }
+  @After
+  fun cleanUp() {
+    FirebaseApp.clearInstancesForTest()
+  }
 }
 
 @RunWith(RobolectricTestRunner::class)
 class ConfigTests : BaseTestCase() {
 
-    @Test
-    fun `Firebase#remoteConfig should delegate to FirebaseRemoteConfig#getInstance()`() {
-        assertThat(Firebase.remoteConfig).isSameInstanceAs(FirebaseRemoteConfig.getInstance())
+  @Test
+  fun `Firebase#remoteConfig should delegate to FirebaseRemoteConfig#getInstance()`() {
+    assertThat(Firebase.remoteConfig).isSameInstanceAs(FirebaseRemoteConfig.getInstance())
+  }
+
+  @Test
+  fun `Firebase#remoteConfig should delegate to FirebaseRemoteConfig#getInstance(FirebaseApp, region)`() {
+    val app = Firebase.app(EXISTING_APP)
+    assertThat(Firebase.remoteConfig(app)).isSameInstanceAs(FirebaseRemoteConfig.getInstance(app))
+  }
+
+  @Test
+  fun `Overloaded get() operator returns default value when key doesn't exist`() {
+    val remoteConfig = Firebase.remoteConfig
+    assertThat(remoteConfig["non_existing_key"].asString())
+      .isEqualTo(FirebaseRemoteConfig.DEFAULT_VALUE_FOR_STRING)
+    assertThat(remoteConfig["another_non_exisiting_key"].asDouble())
+      .isEqualTo(FirebaseRemoteConfig.DEFAULT_VALUE_FOR_DOUBLE)
+  }
+
+  @Test
+  fun `FirebaseRemoteConfigSettings builder works`() {
+    val minFetchInterval = 3600L
+    val fetchTimeout = 60L
+    val configSettings = remoteConfigSettings {
+      minimumFetchIntervalInSeconds = minFetchInterval
+      fetchTimeoutInSeconds = fetchTimeout
     }
+    assertThat(configSettings.minimumFetchIntervalInSeconds).isEqualTo(minFetchInterval)
+    assertThat(configSettings.fetchTimeoutInSeconds).isEqualTo(fetchTimeout)
+  }
 
-    @Test
-    fun `Firebase#remoteConfig should delegate to FirebaseRemoteConfig#getInstance(FirebaseApp, region)`() {
-        val app = Firebase.app(EXISTING_APP)
-        assertThat(Firebase.remoteConfig(app)).isSameInstanceAs(FirebaseRemoteConfig.getInstance(app))
-    }
+  @Test
+  fun `Overloaded get() operator returns value when key exists`() {
+    val mockGetHandler = mock(ConfigGetParameterHandler::class.java)
+    val scheduledExecutorService = Executors.newSingleThreadScheduledExecutor()
 
-    @Test
-    fun `Overloaded get() operator returns default value when key doesn't exist`() {
-        val remoteConfig = Firebase.remoteConfig
-        assertThat(remoteConfig["non_existing_key"].asString())
-                .isEqualTo(FirebaseRemoteConfig.DEFAULT_VALUE_FOR_STRING)
-        assertThat(remoteConfig["another_non_exisiting_key"].asDouble())
-                .isEqualTo(FirebaseRemoteConfig.DEFAULT_VALUE_FOR_DOUBLE)
-    }
+    val remoteConfig =
+      createRemoteConfig(
+        context = null,
+        firebaseApp = Firebase.app(EXISTING_APP),
+        firebaseInstallations = mock(FirebaseInstallationsApi::class.java),
+        firebaseAbt = null,
+        executor = scheduledExecutorService,
+        fetchedConfigsCache = mock(ConfigCacheClient::class.java),
+        activatedConfigsCache = mock(ConfigCacheClient::class.java),
+        defaultConfigsCache = mock(ConfigCacheClient::class.java),
+        fetchHandler = mock(ConfigFetchHandler::class.java),
+        getHandler = mockGetHandler,
+        frcMetadata = mock(ConfigMetadataClient::class.java),
+        realtimeClient = mock(ConfigRealtimeHandler::class.java)
+      )
 
-    @Test
-    fun `FirebaseRemoteConfigSettings builder works`() {
-        val minFetchInterval = 3600L
-        val fetchTimeout = 60L
-        val configSettings = remoteConfigSettings {
-            minimumFetchIntervalInSeconds = minFetchInterval
-            fetchTimeoutInSeconds = fetchTimeout
-        }
-        assertThat(configSettings.minimumFetchIntervalInSeconds).isEqualTo(minFetchInterval)
-        assertThat(configSettings.fetchTimeoutInSeconds).isEqualTo(fetchTimeout)
-    }
-
-    @Test
-    fun `Overloaded get() operator returns value when key exists`() {
-        val mockGetHandler = mock(ConfigGetParameterHandler::class.java)
-        val directExecutor = MoreExecutors.directExecutor()
-
-        val remoteConfig = createRemoteConfig(
-            context = null,
-            firebaseApp = Firebase.app(EXISTING_APP),
-            firebaseInstallations = mock(FirebaseInstallationsApi::class.java),
-            firebaseAbt = null,
-            executor = directExecutor,
-            fetchedConfigsCache = mock(ConfigCacheClient::class.java),
-            activatedConfigsCache = mock(ConfigCacheClient::class.java),
-            defaultConfigsCache = mock(ConfigCacheClient::class.java),
-            fetchHandler = mock(ConfigFetchHandler::class.java),
-            getHandler = mockGetHandler,
-            frcMetadata = mock(ConfigMetadataClient::class.java),
-            realtimeClient = mock(ConfigRealtimeHandler::class.java)
-        )
-
-        `when`(mockGetHandler.getValue("KEY")).thenReturn(StringRemoteConfigValue("non default value"))
-        assertThat(remoteConfig["KEY"].asString()).isEqualTo("non default value")
-    }
+    `when`(mockGetHandler.getValue("KEY")).thenReturn(StringRemoteConfigValue("non default value"))
+    assertThat(remoteConfig["KEY"].asString()).isEqualTo("non default value")
+  }
 }
 
 @RunWith(RobolectricTestRunner::class)
 class LibraryVersionTest : BaseTestCase() {
-    @Test
-    fun `library version should be registered with runtime`() {
-        val publisher = Firebase.app.get(UserAgentPublisher::class.java)
-        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
-    }
+  @Test
+  fun `library version should be registered with runtime`() {
+    val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+    assertThat(publisher.userAgent).contains(LIBRARY_NAME)
+  }
 }
