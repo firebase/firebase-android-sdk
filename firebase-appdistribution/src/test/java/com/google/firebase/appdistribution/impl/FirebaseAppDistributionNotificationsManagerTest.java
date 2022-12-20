@@ -95,7 +95,7 @@ public class FirebaseAppDistributionNotificationsManagerTest {
     Notification notification =
         shadowOf(notificationManager).getNotification(APP_UPDATE.tag, APP_UPDATE.id);
     assertThat(shadowOf(notification).getProgress()).isEqualTo(100);
-    assertThat(shadowOf(notification).getContentTitle().toString()).contains("Download completed");
+    assertThat(shadowOf(notification).getContentTitle().toString()).contains("Download complete");
   }
 
   @Test
