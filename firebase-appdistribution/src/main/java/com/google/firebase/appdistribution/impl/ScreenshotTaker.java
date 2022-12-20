@@ -72,6 +72,8 @@ class ScreenshotTaker {
    * @return a {@link Task} that will complete with the file URI in app-level storage where the
    *     screenshot was written, or null if no activity could be found to screenshot.
    */
+  // TODO(b/261014422): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   Task<Uri> takeScreenshot() {
     return deleteScreenshot()
         .onSuccessTask(unused -> captureScreenshot())

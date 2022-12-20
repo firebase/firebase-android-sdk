@@ -372,6 +372,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     notificationsManager.cancelFeedbackNotification();
   }
 
+  // TODO(b/261014422): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   private void doStartFeedback(CharSequence infoText, @Nullable Uri screenshotUri) {
     testerSignInManager
         .signInTester()
