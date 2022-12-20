@@ -25,6 +25,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Looper;
 import android.os.Process;
@@ -70,6 +71,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   @Mock private Activity activity2;
   @Mock private Bundle bundle;
 
+  private final Context appContext = ApplicationProvider.getApplicationContext();
   private ArgumentCaptor<TraceMetric> traceArgumentCaptor;
 
   // a mocked current wall-clock time in microseconds.
@@ -103,6 +105,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     AppStartTrace trace =
         new AppStartTrace(transportManager, clock, configResolver, fakeExecutorService);
+    trace.registerActivityLifecycleCallbacks(appContext);
     // first activity goes through onCreate()->onStart()->onResume() state change.
     currentTime = 1;
     trace.onActivityCreated(activity1, bundle);
@@ -176,6 +179,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     AppStartTrace trace =
         new AppStartTrace(transportManager, clock, configResolver, fakeExecutorService);
+    trace.registerActivityLifecycleCallbacks(appContext);
     // first activity onCreate()
     currentTime = 1;
     trace.onActivityCreated(activity1, bundle);
@@ -212,6 +216,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     AppStartTrace trace =
         new AppStartTrace(transportManager, clock, configResolver, fakeExecutorService);
+    trace.registerActivityLifecycleCallbacks(appContext);
     // Delays activity creation after 1 minute from app start time.
     currentTime =
         TimeUnit.MILLISECONDS.toMicros(SystemClock.elapsedRealtime())
@@ -258,14 +263,14 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   public void timeToInitialDisplay_isLogged() {
     // Test setup
     when(clock.getTime()).thenCallRealMethod(); // Use robolectric shadows to manipulate time
-    View testView = new View(ApplicationProvider.getApplicationContext());
+    View testView = new View(appContext);
     when(activity1.findViewById(android.R.id.content)).thenReturn(testView);
     when(activity2.findViewById(android.R.id.content)).thenReturn(testView);
     when(configResolver.getIsExperimentTTIDEnabled()).thenReturn(true);
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     AppStartTrace trace =
         new AppStartTrace(transportManager, clock, configResolver, fakeExecutorService);
-
+    trace.registerActivityLifecycleCallbacks(appContext);
     // Simulate resume and manually stepping time forward
     ShadowSystemClock.advanceBy(Duration.ofMillis(1000));
     long resumeTime = TimeUnit.NANOSECONDS.toMicros(SystemClock.elapsedRealtimeNanos());
