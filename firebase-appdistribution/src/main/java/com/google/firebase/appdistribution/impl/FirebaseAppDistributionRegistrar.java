@@ -14,7 +14,6 @@
 
 package com.google.firebase.appdistribution.impl;
 
-import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.Context;
 import androidx.annotation.Keep;
@@ -61,7 +60,10 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             .add(Dependency.required(backgroundExecutor))
             .add(Dependency.required(blockingExecutor))
             .add(Dependency.required(lightweightExecutor))
-            .factory(c -> buildFirebaseAppDistribution(c, backgroundExecutor, blockingExecutor, lightweightExecutor))
+            .factory(
+                c ->
+                    buildFirebaseAppDistribution(
+                        c, backgroundExecutor, blockingExecutor, lightweightExecutor))
             // construct FirebaseAppDistribution instance on startup so we can register for
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
