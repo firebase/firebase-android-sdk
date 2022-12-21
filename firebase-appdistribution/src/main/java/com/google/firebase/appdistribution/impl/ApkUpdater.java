@@ -26,7 +26,6 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
-import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
@@ -47,7 +46,6 @@ class ApkUpdater {
   private static final String REQUEST_METHOD_GET = "GET";
   private static final String DEFAULT_APK_FILE_NAME = "downloaded_release.apk";
 
-  private TaskCompletionSource<File> downloadTaskCompletionSource;
   private final Executor blockingExecutor; // Executor to run task listeners on a background thread
   private final Context context;
   private final ApkInstaller apkInstaller;
@@ -142,25 +140,11 @@ class ApkUpdater {
   @NonNull
   Task<File> downloadApk(
       @NonNull AppDistributionReleaseInternal newRelease, boolean showNotification) {
-    if (downloadTaskCompletionSource != null
-        && !downloadTaskCompletionSource.getTask().isComplete()) {
-      return downloadTaskCompletionSource.getTask();
-    }
-
-    downloadTaskCompletionSource = new TaskCompletionSource<>();
-
-    blockingExecutor.execute(
-        () -> {
-          try {
-            makeApkDownloadRequest(newRelease, showNotification);
-          } catch (FirebaseAppDistributionException e) {
-            safeSetTaskException(downloadTaskCompletionSource, e);
-          }
-        });
-    return downloadTaskCompletionSource.getTask();
+    return TaskUtils.runAsyncInTask(
+        blockingExecutor, () -> makeApkDownloadRequest(newRelease, showNotification));
   }
 
-  private void makeApkDownloadRequest(
+  private File makeApkDownloadRequest(
       @NonNull AppDistributionReleaseInternal newRelease, boolean showNotification)
       throws FirebaseAppDistributionException {
     String downloadUrl = newRelease.getDownloadUrl();
@@ -197,7 +181,7 @@ class ApkUpdater {
         UpdateStatus.DOWNLOADED,
         showNotification,
         R.string.download_completed);
-    safeSetTaskResult(downloadTaskCompletionSource, apkFile);
+    return apkFile;
   }
 
   private static boolean isResponseSuccess(int responseCode) {
