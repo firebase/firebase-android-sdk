@@ -110,14 +110,15 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             firebaseInstallationsApiProvider,
             new TesterApiHttpClient(firebaseApp),
             blockingExecutor);
-    SignInStorage signInStorage = new SignInStorage(context);
+    SignInStorage signInStorage = new SignInStorage(context, backgroundExecutor);
     FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
         FirebaseAppDistributionLifecycleNotifier.getInstance();
     ReleaseIdentifier releaseIdentifier = new ReleaseIdentifier(firebaseApp, testerApiClient);
     FirebaseAppDistribution appDistribution =
         new FirebaseAppDistributionImpl(
             firebaseApp,
-            new TesterSignInManager(firebaseApp, firebaseInstallationsApiProvider, signInStorage),
+            new TesterSignInManager(
+                firebaseApp, firebaseInstallationsApiProvider, signInStorage, blockingExecutor),
             new NewReleaseFetcher(
                 firebaseApp.getApplicationContext(), testerApiClient, releaseIdentifier),
             new ApkUpdater(firebaseApp, new ApkInstaller(), blockingExecutor),
