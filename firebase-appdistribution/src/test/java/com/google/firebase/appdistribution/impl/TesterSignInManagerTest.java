@@ -14,16 +14,17 @@
 
 package com.google.firebase.appdistribution.impl;
 
-import static android.os.Looper.getMainLooper;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitAsyncOperations;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitTask;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitTaskFailure;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -43,9 +44,12 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionServiceImplTest.TestActivity;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -79,6 +83,7 @@ public class TesterSignInManagerTest {
   private TestActivity activity;
   private ShadowActivity shadowActivity;
   private ShadowPackageManager shadowPackageManager;
+  private ExecutorService blockingExecutor;
 
   @Mock private Provider<FirebaseInstallationsApi> mockFirebaseInstallationsProvider;
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
@@ -109,6 +114,8 @@ public class TesterSignInManagerTest {
 
     when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
 
+    when(mockSignInStorage.getSignInStatus()).thenReturn(Tasks.forResult(false));
+
     shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
 
@@ -130,12 +137,28 @@ public class TesterSignInManagerTest {
     shadowActivity = shadowOf(activity);
     TestUtils.mockForegroundActivity(mockLifecycleNotifier, activity);
 
+    blockingExecutor = TestOnlyExecutors.blocking();
+
     testerSignInManager =
         new TesterSignInManager(
             firebaseApp,
             mockFirebaseInstallationsProvider,
             mockSignInStorage,
-            mockLifecycleNotifier);
+            mockLifecycleNotifier,
+            blockingExecutor);
+  }
+
+  @Test
+  public void signInTester_alreadySignedIn_doesNothing()
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
+    when(mockSignInStorage.getSignInStatus()).thenReturn(Tasks.forResult(true));
+
+    Task signInTask = testerSignInManager.signInTester();
+    awaitTask(signInTask);
+
+    assertThat(signInTask.isSuccessful()).isTrue();
+    verifyNoInteractions(mockFirebaseInstallationsProvider);
+    verifyNoInteractions(mockFirebaseInstallations);
   }
 
   @Test
@@ -144,9 +167,8 @@ public class TesterSignInManagerTest {
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(fisException));
 
     Task signInTask = testerSignInManager.signInTester();
-    shadowOf(getMainLooper()).idle();
 
-    assertTaskFailure(
+    awaitTaskFailure(
         signInTask, Status.AUTHENTICATION_FAILURE, "Failed to authenticate", fisException);
   }
 
@@ -158,14 +180,12 @@ public class TesterSignInManagerTest {
         .thenAnswer(unused -> Tasks.forException(unexpectedException));
 
     Task signInTask = testerSignInManager.signInTester();
-    shadowOf(getMainLooper()).idle();
 
-    assertTaskFailure(signInTask, Status.UNKNOWN, "Unknown", unexpectedException);
+    awaitTaskFailure(signInTask, Status.UNKNOWN, "Unknown", unexpectedException);
   }
 
   @Test
-  public void signInTester_whenChromeAvailable_opensCustomTab() {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
+  public void signInTester_whenChromeAvailable_opensCustomTab() throws InterruptedException {
     ResolveInfo resolveInfo = new ResolveInfo();
     resolveInfo.resolvePackageName = "garbage";
     Intent customTabIntent = new Intent("android.support.customtabs.action.CustomTabsService");
@@ -173,59 +193,58 @@ public class TesterSignInManagerTest {
     shadowPackageManager.addResolveInfoForIntent(customTabIntent, resolveInfo);
 
     testerSignInManager.signInTester();
-    shadowOf(getMainLooper()).idle();
+    awaitAsyncOperations(blockingExecutor);
 
     verify(mockFirebaseInstallations, times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
   }
 
   @Test
-  public void signInTester_whenChromeNotAvailable_opensBrowserIntent() {
-    when(mockSignInStorage.getSignInStatus()).thenReturn(false);
+  public void signInTester_whenChromeNotAvailable_opensBrowserIntent() throws InterruptedException {
     ResolveInfo resolveInfo = new ResolveInfo();
     resolveInfo.resolvePackageName = "garbage";
     Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(TEST_URL));
     shadowPackageManager.addResolveInfoForIntent(browserIntent, resolveInfo);
 
     testerSignInManager.signInTester();
-    shadowOf(getMainLooper()).idle();
+    awaitAsyncOperations(blockingExecutor);
 
     verify(mockFirebaseInstallations, times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
   }
 
   @Test
-  public void signInTester_whenSignInCalledMultipleTimes_returnsSameTask() {
-    Task<Void> signInTask1 = testerSignInManager.signInTester();
-    Task<Void> signInTask2 = testerSignInManager.signInTester();
+  public void signInTester_whenSignInCalledMultipleTimes_secondCallHasNoEffect()
+      throws InterruptedException {
+    testerSignInManager.signInTester();
+    testerSignInManager.signInTester();
 
-    assertEquals(signInTask1, signInTask2);
+    awaitAsyncOperations(blockingExecutor);
+
+    verify(mockFirebaseInstallationsProvider, times(1)).get();
   }
 
   @Test
-  public void signInTester_whenReturnFromSignIn_taskSucceeds() {
+  public void signInTester_whenReturnFromSignIn_taskSucceeds()
+      throws InterruptedException, FirebaseAppDistributionException, ExecutionException {
     Task signInTask = testerSignInManager.signInTester();
 
     // Simulate re-entering app after successful sign in, via SignInResultActivity
     testerSignInManager.onActivityCreated(mockSignInResultActivity);
+    awaitTask(signInTask);
 
     assertTrue(signInTask.isSuccessful());
     verify(mockSignInStorage).setSignInStatus(true);
   }
 
   @Test
-  public void signInTester_whenAppReenteredDuringSignIn_taskFails() {
+  public void signInTester_whenAppReenteredDuringSignIn_taskFails() throws InterruptedException {
     Task signInTask = testerSignInManager.signInTester();
-    shadowOf(getMainLooper()).idle();
+    awaitAsyncOperations(blockingExecutor);
 
     // Simulate re-entering app before completing sign in
     testerSignInManager.onActivityResumed(activity);
-    shadowOf(getMainLooper()).idle();
 
-    assertFalse(signInTask.isSuccessful());
-    Exception e = signInTask.getException();
-    assertTrue(e instanceof FirebaseAppDistributionException);
-    assertEquals(AUTHENTICATION_CANCELED, ((FirebaseAppDistributionException) e).getErrorCode());
-    assertEquals(ErrorMessages.AUTHENTICATION_CANCELED, e.getMessage());
+    assertTaskFailure(signInTask, AUTHENTICATION_CANCELED, ErrorMessages.AUTHENTICATION_CANCELED);
   }
 }
