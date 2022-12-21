@@ -27,7 +27,6 @@ import static org.mockito.Mockito.when;
 
 import android.app.Activity;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -262,13 +261,6 @@ public class ApkUpdaterTest {
         assertThrows(FirebaseAppDistributionException.class, () -> onCompleteListener.await());
     assertThat(e.getErrorCode()).isEqualTo(Status.INSTALLATION_FAILURE);
     verifyNoInteractions(mockNotificationsManager);
-  }
-
-  @Test
-  public void downloadApk_whenCalledMultipleTimes_returnsSameTask() {
-    Task<File> task1 = apkUpdater.downloadApk(TEST_RELEASE, false);
-    Task<File> task2 = apkUpdater.downloadApk(TEST_RELEASE, false);
-    assertThat(task1).isEqualTo(task2);
   }
 
   @Test
