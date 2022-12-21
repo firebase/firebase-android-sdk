@@ -132,14 +132,15 @@ class TaskUtils {
       Task<T> task, Executor executor, UpdateTaskContinuation<T> continuation) {
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
     task.addOnSuccessListener(
-        executor,
-        result -> {
-          try {
-            updateTask.shadow(continuation.then(result));
-          } catch (Throwable t) {
-            updateTask.setException(FirebaseAppDistributionExceptions.wrap(t));
-          }
-        });
+            executor,
+            result -> {
+              try {
+                updateTask.shadow(continuation.then(result));
+              } catch (Throwable t) {
+                updateTask.setException(FirebaseAppDistributionExceptions.wrap(t));
+              }
+            })
+        .addOnFailureListener(executor, updateTask::setException);
     return updateTask;
   }
 
