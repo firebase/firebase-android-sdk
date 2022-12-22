@@ -16,6 +16,8 @@ package com.google.firebase.appdistribution.impl;
 
 import com.google.android.gms.tasks.Task;
 
+// TODO: replace this with TaskCompletionSourceCache and UpdateTaskCache, then rename
+// TaskCompletionSourceCache to TaskCache
 /**
  * A cache for Tasks, for use in cases where we only ever want one active task at a time for a
  * particular operation.
