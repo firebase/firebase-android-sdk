@@ -145,10 +145,15 @@ public class DeveloperListenerManager {
     registeredErrorListeners.remove(displayErrorListener);
   }
 
+  public void removeDismissListener(FirebaseInAppMessagingDismissListener dismissListener) {
+    registeredDismissListeners.remove(dismissListener);
+  }
+
   public void removeAllListeners() {
     registeredClickListeners.clear();
     registeredImpressionListeners.clear();
     registeredErrorListeners.clear();
+    registeredDismissListeners.clear();
   }
 
   private abstract static class ExecutorAndListener<T> {

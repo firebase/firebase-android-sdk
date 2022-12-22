@@ -1,6 +1,7 @@
 # Unreleased
 * [changed] Migrate firebase-inappmessaging SDK to use common executor pool.
 * [changed] Refactoring to reduce load on app's Main thread.
+* [feature] Added new api for removing dismiss listener.
 
 # 20.2.0
 * [fixed] Fixed a bug that prevented marking more than one message as
