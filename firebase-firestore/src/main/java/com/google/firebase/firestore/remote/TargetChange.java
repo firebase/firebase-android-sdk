@@ -31,9 +31,10 @@ public final class TargetChange {
   private final ImmutableSortedSet<DocumentKey> modifiedDocuments;
   private final ImmutableSortedSet<DocumentKey> removedDocuments;
 
-  public static TargetChange createSynthesizedTargetChangeForCurrentChange(boolean isCurrent) {
+  public static TargetChange createSynthesizedTargetChangeForCurrentChange(
+      boolean isCurrent, ByteString resumeToken) {
     return new TargetChange(
-        ByteString.EMPTY,
+        resumeToken,
         isCurrent,
         DocumentKey.emptyKeySet(),
         DocumentKey.emptyKeySet(),

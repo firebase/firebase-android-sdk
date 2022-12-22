@@ -91,7 +91,6 @@ public class FirebaseLibraryExtension {
 
   private FirebaseStaticAnalysis initializeStaticAnalysis(Project project) {
     return new FirebaseStaticAnalysis(
-        projectsFromProperty(project, "firebase.checks.errorproneProjects"),
         projectsFromProperty(project, "firebase.checks.lintProjects"));
   }
 

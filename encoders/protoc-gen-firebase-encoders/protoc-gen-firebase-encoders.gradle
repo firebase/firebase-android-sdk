@@ -37,7 +37,7 @@ jar {
 
 dependencies {
 
-    implementation "com.google.protobuf:protobuf-java:3.14.0"
+    implementation "com.google.protobuf:protobuf-java:3.21.9"
     implementation 'com.squareup:javapoet:1.13.0'
     implementation 'com.google.guava:guava:30.0-jre'
     implementation 'com.google.dagger:dagger:2.43.2'

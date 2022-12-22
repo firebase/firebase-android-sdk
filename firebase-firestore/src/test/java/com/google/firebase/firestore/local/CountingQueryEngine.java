@@ -24,9 +24,14 @@ import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
+import com.google.firebase.firestore.model.mutation.DeleteMutation;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Overlay;
+import com.google.firebase.firestore.model.mutation.PatchMutation;
+import com.google.firebase.firestore.model.mutation.SetMutation;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
 
@@ -35,10 +40,17 @@ import java.util.SortedSet;
  * mutations read.
  */
 class CountingQueryEngine extends QueryEngine {
+  enum OverlayType {
+    Patch,
+    Set,
+    Delete
+  }
+
   private final QueryEngine queryEngine;
 
   private final int[] overlaysReadByCollection = new int[] {0};
   private final int[] overlaysReadByKey = new int[] {0};
+  private final Map<DocumentKey, OverlayType> overlayTypes = new HashMap();
   private final int[] documentsReadByCollection = new int[] {0};
   private final int[] documentsReadByKey = new int[] {0};
 
@@ -49,6 +61,7 @@ class CountingQueryEngine extends QueryEngine {
   void resetCounts() {
     overlaysReadByCollection[0] = 0;
     overlaysReadByKey[0] = 0;
+    overlayTypes.clear();
     documentsReadByCollection[0] = 0;
     documentsReadByKey[0] = 0;
   }
@@ -102,6 +115,14 @@ class CountingQueryEngine extends QueryEngine {
    */
   int getOverlaysReadByKey() {
     return overlaysReadByKey[0];
+  }
+
+  /**
+   * Returns the types of overlay returned by the OverlayCahce's `getOverlays()` API (since the last
+   * call to `resetCounts()`)
+   */
+  Map<DocumentKey, OverlayType> getOverlayTypes() {
+    return Collections.unmodifiableMap(overlayTypes);
   }
 
   private RemoteDocumentCache wrapRemoteDocumentCache(RemoteDocumentCache subject) {
@@ -160,12 +181,19 @@ class CountingQueryEngine extends QueryEngine {
       @Override
       public Overlay getOverlay(DocumentKey key) {
         ++overlaysReadByKey[0];
-        return subject.getOverlay(key);
+        Overlay overlay = subject.getOverlay(key);
+        overlayTypes.put(key, getOverlayType(overlay));
+        return overlay;
       }
 
       public Map<DocumentKey, Overlay> getOverlays(SortedSet<DocumentKey> keys) {
         overlaysReadByKey[0] += keys.size();
-        return subject.getOverlays(keys);
+        Map<DocumentKey, Overlay> overlays = subject.getOverlays(keys);
+        for (Map.Entry<DocumentKey, Overlay> entry : overlays.entrySet()) {
+          overlayTypes.put(entry.getKey(), getOverlayType(entry.getValue()));
+        }
+
+        return overlays;
       }
 
       @Override
@@ -182,6 +210,9 @@ class CountingQueryEngine extends QueryEngine {
       public Map<DocumentKey, Overlay> getOverlays(ResourcePath collection, int sinceBatchId) {
         Map<DocumentKey, Overlay> result = subject.getOverlays(collection, sinceBatchId);
         overlaysReadByCollection[0] += result.size();
+        for (Map.Entry<DocumentKey, Overlay> entry : result.entrySet()) {
+          overlayTypes.put(entry.getKey(), getOverlayType(entry.getValue()));
+        }
         return result;
       }
 
@@ -191,7 +222,22 @@ class CountingQueryEngine extends QueryEngine {
         Map<DocumentKey, Overlay> result =
             subject.getOverlays(collectionGroup, sinceBatchId, count);
         overlaysReadByCollection[0] += result.size();
+        for (Map.Entry<DocumentKey, Overlay> entry : result.entrySet()) {
+          overlayTypes.put(entry.getKey(), getOverlayType(entry.getValue()));
+        }
         return result;
+      }
+
+      private OverlayType getOverlayType(Overlay overlay) {
+        if (overlay.getMutation() instanceof SetMutation) {
+          return OverlayType.Set;
+        } else if (overlay.getMutation() instanceof PatchMutation) {
+          return OverlayType.Patch;
+        } else if (overlay.getMutation() instanceof DeleteMutation) {
+          return OverlayType.Delete;
+        } else {
+          throw new IllegalStateException("Overlay is a unrecognizable mutation.");
+        }
       }
     };
   }

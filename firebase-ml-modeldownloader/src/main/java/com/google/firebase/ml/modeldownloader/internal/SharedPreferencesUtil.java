@@ -29,8 +29,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /** @hide */
+@Singleton
 public class SharedPreferencesUtil {
 
   public static final String FIREBASE_MODELDOWNLOADER_COLLECTION_ENABLED =
@@ -58,10 +61,13 @@ public class SharedPreferencesUtil {
 
   private final String persistenceKey;
   private final FirebaseApp firebaseApp;
+  private final CustomModel.Factory modelFactory;
 
-  public SharedPreferencesUtil(FirebaseApp firebaseApp) {
+  @Inject
+  public SharedPreferencesUtil(FirebaseApp firebaseApp, CustomModel.Factory modelFactory) {
     this.firebaseApp = firebaseApp;
     this.persistenceKey = firebaseApp.getPersistenceKey();
+    this.modelFactory = modelFactory;
   }
 
   /**
@@ -99,7 +105,7 @@ public class SharedPreferencesUtil {
         getSharedPreferences()
             .getLong(String.format(DOWNLOADING_MODEL_ID_PATTERN, persistenceKey, modelName), 0);
 
-    return new CustomModel(modelName, modelHash, fileSize, id, filePath);
+    return modelFactory.create(modelName, modelHash, fileSize, id, filePath);
   }
 
   /**
@@ -130,7 +136,7 @@ public class SharedPreferencesUtil {
         getSharedPreferences()
             .getLong(String.format(DOWNLOADING_MODEL_ID_PATTERN, persistenceKey, modelName), 0);
 
-    return new CustomModel(modelName, modelHash, fileSize, id);
+    return modelFactory.create(modelName, modelHash, fileSize, id);
   }
 
   /**

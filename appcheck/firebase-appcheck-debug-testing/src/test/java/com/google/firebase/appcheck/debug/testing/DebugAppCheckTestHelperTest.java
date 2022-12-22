@@ -35,10 +35,9 @@ public class DebugAppCheckTestHelperTest {
   private static final String PROJECT_ID = "projectId";
   private static final String APP_ID = "appId";
   private static final String OTHER_FIREBASE_APP_NAME = "otherFirebaseAppName";
-  private static final String DEBUG_SECRET = "debugSecret";
 
   private final DebugAppCheckTestHelper debugAppCheckTestHelper =
-      DebugAppCheckTestHelper.fromString(DEBUG_SECRET);
+      DebugAppCheckTestHelper.fromInstrumentationArgs();
 
   @Before
   public void setUp() {

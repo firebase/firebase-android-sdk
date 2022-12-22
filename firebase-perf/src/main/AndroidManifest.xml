@@ -6,11 +6,6 @@
   <uses-permission android:name="android.permission.INTERNET"/>
 
   <application>
-    <provider
-      android:authorities="${applicationId}.firebaseperfprovider"
-      android:exported="false"
-      android:initOrder="101"
-      android:name="com.google.firebase.perf.provider.FirebasePerfProvider"/>
 
     <service
       android:exported="false"

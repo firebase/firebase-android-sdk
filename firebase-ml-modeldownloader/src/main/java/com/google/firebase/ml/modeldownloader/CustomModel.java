@@ -16,9 +16,13 @@ package com.google.firebase.ml.modeldownloader;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.internal.Objects;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedFactory;
+import dagger.assisted.AssistedInject;
 import java.io.File;
 
 /**
@@ -27,6 +31,7 @@ import java.io.File;
  * downloaded, the original model file will be removed once it is safe to do so.
  */
 public class CustomModel {
+  private final ModelFileDownloadService fileDownloadService;
   private final String name;
   private final long downloadId;
   private final long fileSize;
@@ -35,57 +40,31 @@ public class CustomModel {
   private final String downloadUrl;
   private final long downloadUrlExpiry;
 
-  /**
-   * Use when creating a custom model while the initial download is still in progress.
-   *
-   * @param name Model name.
-   * @param modelHash Model hash.
-   * @param fileSize Model file size.
-   * @param downloadId Android Download Manger - download ID.
-   * @hide
-   */
-  public CustomModel(
-      @NonNull String name, @NonNull String modelHash, long fileSize, long downloadId) {
-    this(name, modelHash, fileSize, downloadId, "", "", 0);
-  }
+  /** @hide */
+  @AssistedFactory
+  public interface Factory {
+    CustomModel create(
+        @Assisted("name") String name,
+        @Assisted("modelHash") String modelHash,
+        @Assisted("fileSize") long fileSize,
+        @Assisted("downloadId") long downloadId,
+        @Assisted("localFilePath") String localFilePath,
+        @Assisted("downloadUrl") String downloadUrl,
+        @Assisted("downloadUrlExpiry") long downloadUrlExpiry);
 
-  /**
-   * Use when creating a custom model from a stored model with a new download in the background.
-   *
-   * @param name Model name.
-   * @param modelHash Model hash.
-   * @param fileSize Model file size.
-   * @param downloadId Android Download Manger - download ID.
-   * @hide
-   */
-  public CustomModel(
-      @NonNull String name,
-      @NonNull String modelHash,
-      long fileSize,
-      long downloadId,
-      String localFilePath) {
-    this(name, modelHash, fileSize, downloadId, localFilePath, "", 0);
-  }
+    default CustomModel create(String name, String modelHash, long fileSize, long downloadId) {
+      return create(name, modelHash, fileSize, downloadId, "", "", 0);
+    }
 
-  /**
-   * Use when creating a custom model from a download service response. Download URL and download
-   * URL expiry should go together. These will not be stored in user preferences as this is a
-   * temporary step towards setting the actual download ID.
-   *
-   * @param name Model name.
-   * @param modelHash Model hash.
-   * @param fileSize Model file size.
-   * @param downloadUrl Download URL path
-   * @param downloadUrlExpiry Time download URL path expires.
-   * @hide
-   */
-  public CustomModel(
-      @NonNull String name,
-      @NonNull String modelHash,
-      long fileSize,
-      String downloadUrl,
-      long downloadUrlExpiry) {
-    this(name, modelHash, fileSize, 0, "", downloadUrl, downloadUrlExpiry);
+    default CustomModel create(
+        String name, String modelHash, long fileSize, long downloadId, String localFilePath) {
+      return create(name, modelHash, fileSize, downloadId, localFilePath, "", 0);
+    }
+
+    default CustomModel create(
+        String name, String modelHash, long fileSize, String downloadUrl, long downloadUrlExpiry) {
+      return create(name, modelHash, fileSize, 0, "", downloadUrl, downloadUrlExpiry);
+    }
   }
 
   /**
@@ -100,14 +79,19 @@ public class CustomModel {
    * @param downloadUrlExpiry Expiry time of download URL link.
    * @hide
    */
-  private CustomModel(
-      @NonNull String name,
-      @NonNull String modelHash,
-      long fileSize,
-      long downloadId,
-      @Nullable String localFilePath,
-      @Nullable String downloadUrl,
-      long downloadUrlExpiry) {
+  @AssistedInject
+  @VisibleForTesting
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  public CustomModel(
+      ModelFileDownloadService fileDownloadService,
+      @Assisted("name") String name,
+      @Assisted("modelHash") String modelHash,
+      @Assisted("fileSize") long fileSize,
+      @Assisted("downloadId") long downloadId,
+      @Assisted("localFilePath") String localFilePath,
+      @Assisted("downloadUrl") String downloadUrl,
+      @Assisted("downloadUrlExpiry") long downloadUrlExpiry) {
+    this.fileDownloadService = fileDownloadService;
     this.modelHash = modelHash;
     this.name = name;
     this.fileSize = fileSize;
@@ -137,7 +121,7 @@ public class CustomModel {
    */
   @Nullable
   public File getFile() {
-    return getFile(ModelFileDownloadService.getInstance());
+    return getFile(fileDownloadService);
   }
 
   /**

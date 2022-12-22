@@ -105,12 +105,12 @@ public class DataSnapshot {
    * returned are:
    *
    * <ul>
-   *   <li>Boolean
-   *   <li>String
-   *   <li>Long
-   *   <li>Double
-   *   <li>Map&lt;String, Object&gt;
-   *   <li>List&lt;Object&gt;
+   *   <li><code>Boolean</code>
+   *   <li><code>String</code>
+   *   <li><code>Long</code>
+   *   <li><code>Double</code>
+   *   <li><code>Map&lt;String, Object&gt;</code>
+   *   <li><code>List&lt;Object&gt;</code>
    * </ul>
    *
    * This list is recursive; the possible types for {@link java.lang.Object} in the above list is
@@ -129,12 +129,12 @@ public class DataSnapshot {
    * returned are:
    *
    * <ul>
-   *   <li>Boolean
-   *   <li>String
-   *   <li>Long
-   *   <li>Double
-   *   <li>Map&lt;String, Object&gt;
-   *   <li>List&lt;Object&gt;
+   *   <li><code>Boolean</code>
+   *   <li><code>String</code>
+   *   <li><code>Long</code>
+   *   <li><code>Double</code>
+   *   <li><code>Map&lt;String, Object&gt;</code>
+   *   <li><code>List&lt;Object&gt;</code>
    * </ul>
    *
    * This list is recursive; the possible types for {@link java.lang.Object} in the above list is
@@ -166,7 +166,7 @@ public class DataSnapshot {
    *
    * An example class might look like:
    *
-   * <pre><code>
+   * <pre>
    *     class Message {
    *         private String author;
    *         private String text;
@@ -190,7 +190,7 @@ public class DataSnapshot {
    *
    *     // Later
    *     Message m = snapshot.getValue(Message.class);
-   * </code></pre>
+   * </pre>
    *
    * @param valueType The class into which this snapshot should be marshalled
    * @param <T> The type to return. Implicitly defined from the class passed in
@@ -208,10 +208,10 @@ public class DataSnapshot {
    * properly-typed Collection. So, in the case where you want a {@link java.util.List} of Message
    * instances, you will need to do something like the following:
    *
-   * <pre><code>
+   * <pre>
    *     GenericTypeIndicator&lt;List&lt;Message&gt;&gt; t = new GenericTypeIndicator&lt;List&lt;Message&gt;&gt;() {};
    *     List&lt;Message&gt; messages = snapshot.getValue(t);
-   * </code></pre>
+   * </pre>
    *
    * It is important to use a subclass of {@link GenericTypeIndicator}. See {@link
    * GenericTypeIndicator} for more details
@@ -255,11 +255,13 @@ public class DataSnapshot {
 
   /**
    * Gives access to all of the immediate children of this snapshot. Can be used in native for
-   * loops: <code>
-   * <br>    for (DataSnapshot child : parent.getChildren()) {
-   * <br>    &nbsp;&nbsp;&nbsp;&nbsp;...
-   * <br>    }
-   * </code>
+   * loops:
+   *
+   * <pre>
+   * for (DataSnapshot child : parent.getChildren()) {
+   *   &nbsp;&nbsp;&nbsp;&nbsp;...
+   * }
+   * </pre>
    *
    * @return The immediate children of this snapshot
    */
@@ -298,8 +300,8 @@ public class DataSnapshot {
    * types:
    *
    * <ul>
-   *   <li>Double
-   *   <li>String
+   *   <li><code>Double</code>
+   *   <li><code>String</code>
    * </ul>
    *
    * Note that null is also allowed

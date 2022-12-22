@@ -1,6 +1,16 @@
 name: Health Metrics
 
-on: [ pull_request, push ]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      # add other feature branches here
+  # TODO(yifany): support workflow_dispatch for metric tests (or only for startup time test)
 
 env:
   GITHUB_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
@@ -8,7 +18,10 @@ env:
 jobs:
   coverage:
     name: Coverage
-    if: (github.repository == 'Firebase/firebase-android-sdk' && github.event_name == 'push') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    if: |
+      (github.event_name == 'push' && github.repository == 'firebase/firebase-android-sdk')
+        || (github.event_name == 'pull_request'
+              && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -21,15 +34,6 @@ jobs:
           java-version: 11
           distribution: temurin
           cache: gradle
-      - name: Set up NDK 21.4.7075529
-        run: |
-          ANDROID_ROOT=/usr/local/lib/android
-          ANDROID_SDK_ROOT=${ANDROID_ROOT}/sdk
-          ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk-bundle
-          SDKMANAGER=${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager
-          echo "y" | $SDKMANAGER "ndk;21.4.7075529"
-          ln -sfn ${ANDROID_SDK_ROOT}/ndk/21.4.7075529 ${ANDROID_NDK_ROOT}
-          echo "ANDROID_NDK_HOME=${ANDROID_NDK_ROOT}" >> $GITHUB_ENV
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
@@ -49,7 +53,10 @@ jobs:
 
   size:
     name: Size
-    if: (github.repository == 'Firebase/firebase-android-sdk' && github.event_name == 'push') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    if: |
+      (github.event_name == 'push' && github.repository == 'firebase/firebase-android-sdk')
+        || (github.event_name == 'pull_request'
+              && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -62,15 +69,6 @@ jobs:
           java-version: 11
           distribution: temurin
           cache: gradle
-      - name: Set up NDK 21.4.7075529
-        run: |
-          ANDROID_ROOT=/usr/local/lib/android
-          ANDROID_SDK_ROOT=${ANDROID_ROOT}/sdk
-          ANDROID_NDK_ROOT=${ANDROID_SDK_ROOT}/ndk-bundle
-          SDKMANAGER=${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager
-          echo "y" | $SDKMANAGER "ndk;21.4.7075529"
-          ln -sfn ${ANDROID_SDK_ROOT}/ndk/21.4.7075529 ${ANDROID_NDK_ROOT}
-          echo "ANDROID_NDK_HOME=${ANDROID_NDK_ROOT}" >> $GITHUB_ENV
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
@@ -87,3 +85,49 @@ jobs:
       - name: Run size tests (post-submit)
         if: ${{ github.event_name == 'push' }}
         run: fireci binary_size
+
+  startup_time:
+    name: Startup Time
+    if: |
+      (github.event_name == 'push' && github.repository == 'firebase/firebase-android-sdk')
+        || (github.event_name == 'pull_request'
+              && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+          submodules: true
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: 11
+          distribution: temurin
+          cache: gradle
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - uses: google-github-actions/auth@v0
+        with:
+          credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT }}'
+      - uses: google-github-actions/setup-gcloud@v0
+      - name: Set up fireci
+        run: pip3 install -e ci/fireci
+      - name: Add google-services.json
+        env:
+          INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
+          BENCHMARK_APP_LOCATION: health-metrics/benchmark/template/app/google-services.json
+        run: |
+          echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > $BENCHMARK_APP_LOCATION
+      - name: Run startup-time tests (presubmit)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          git diff --name-only HEAD~1 | \
+            xargs printf -- '--changed-git-paths %s\n' | \
+            xargs ./gradlew writeChangedProjects --output-file-path=modules.json
+          fireci macrobenchmark ci --pull-request --changed-modules-file modules.json
+      - name: Run startup-time tests (post-submit)
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          fireci macrobenchmark ci --push

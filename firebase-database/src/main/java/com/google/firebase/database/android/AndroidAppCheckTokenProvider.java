@@ -14,6 +14,7 @@
 
 package com.google.firebase.database.android;
 
+import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.appcheck.AppCheckTokenResult;
@@ -36,6 +37,8 @@ public class AndroidAppCheckTokenProvider implements TokenProvider {
         authProvider -> internalAppCheck.set(authProvider.get()));
   }
 
+  // TODO(b/261014172): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @Override
   public void getToken(boolean forceRefresh, @NonNull final GetTokenCompletionListener listener) {
     InternalAppCheckTokenProvider appCheckProvider = internalAppCheck.get();
