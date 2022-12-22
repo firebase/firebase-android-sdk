@@ -24,12 +24,16 @@ import java.util.concurrent.Executor;
 
 /** Class that handles storage for App Distribution SignIn persistence. */
 class SignInStorage {
-
   private static final String SIGNIN_PREFERENCES_NAME = "FirebaseAppDistributionSignInStorage";
   private static final String SIGNIN_TAG = "firebase_app_distribution_signin";
 
   private final Context applicationContext;
   @Background private final Executor backgroundExecutor;
+  private SharedPreferences sharedPreferences;
+
+  private interface SharedPreferencesFunction<T> {
+    T apply(SharedPreferences sharedPreferences);
+  }
 
   SignInStorage(Context applicationContext, @Background Executor backgroundExecutor) {
     this.applicationContext = applicationContext;
@@ -37,35 +41,41 @@ class SignInStorage {
   }
 
   Task<Void> setSignInStatus(boolean testerSignedIn) {
-    return getSharedPreferences()
-        .onSuccessTask(
-            backgroundExecutor,
-            sharedPreferences -> {
-              sharedPreferences.edit().putBoolean(SIGNIN_TAG, testerSignedIn).apply();
-              return null;
-            });
+    return applyToSharedPreferences(
+        sharedPreferences -> {
+          sharedPreferences.edit().putBoolean(SIGNIN_TAG, testerSignedIn).apply();
+          return null;
+        });
   }
 
   Task<Boolean> getSignInStatus() {
-    return getSharedPreferences()
-        .onSuccessTask(
-            backgroundExecutor,
-            sharedPreferences -> Tasks.forResult(sharedPreferences.getBoolean(SIGNIN_TAG, false)));
+    return applyToSharedPreferences(
+        sharedPreferences -> sharedPreferences.getBoolean(SIGNIN_TAG, false));
   }
 
   boolean getSignInStatusBlocking() {
     return getSharedPreferencesBlocking().getBoolean(SIGNIN_TAG, false);
   }
 
-  private Task<SharedPreferences> getSharedPreferences() {
-    TaskCompletionSource<SharedPreferences> taskCompletionSource = new TaskCompletionSource<>();
-    backgroundExecutor.execute(
-        () -> taskCompletionSource.setResult(getSharedPreferencesBlocking()));
-    return taskCompletionSource.getTask();
-  }
-
   private SharedPreferences getSharedPreferencesBlocking() {
     // This may construct a new SharedPreferences object, which requires storage I/O
     return applicationContext.getSharedPreferences(SIGNIN_PREFERENCES_NAME, Context.MODE_PRIVATE);
+  }
+
+  private <T> Task<T> applyToSharedPreferences(SharedPreferencesFunction<T> func) {
+    // Check nullness of sharedPreferences directly even though multiple threads could be calling
+    // this function at once. This isn't a problem because: 1) once it is set it will never be set,
+    // back to null, and 2) even if it is initialized twice on different threads the second call
+    // will get the exact same instance.
+    if (sharedPreferences != null) {
+      return Tasks.forResult(func.apply(sharedPreferences));
+    }
+    TaskCompletionSource<T> taskCompletionSource = new TaskCompletionSource<>();
+    backgroundExecutor.execute(
+        () -> {
+          sharedPreferences = getSharedPreferencesBlocking();
+          taskCompletionSource.setResult(func.apply(sharedPreferences));
+        });
+    return taskCompletionSource.getTask();
   }
 }

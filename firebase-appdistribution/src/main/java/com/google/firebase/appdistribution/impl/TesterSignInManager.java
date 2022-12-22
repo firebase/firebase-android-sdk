@@ -15,6 +15,8 @@
 package com.google.firebase.appdistribution.impl;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UNKNOWN;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskResult;
 
@@ -34,7 +36,6 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Blocking;
-import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.inject.Provider;
@@ -84,7 +85,7 @@ class TesterSignInManager {
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull final SignInStorage signInStorage,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
-      @Lightweight Executor blockingExecutor) {
+      @Blocking Executor blockingExecutor) {
     this.firebaseApp = firebaseApp;
     this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.signInStorage = signInStorage;
@@ -101,8 +102,15 @@ class TesterSignInManager {
     // result of the signIn Task in the onActivityCreated callback
     if (activity instanceof SignInResultActivity) {
       LogWrapper.v(TAG, "Sign in completed");
-      this.setSuccessfulSignInResult();
-      this.signInStorage.setSignInStatus(true);
+      this.signInStorage
+          .setSignInStatus(true)
+          .addOnSuccessListener(blockingExecutor, unused -> this.setSuccessfulSignInResult())
+          .addOnFailureListener(
+              blockingExecutor,
+              e ->
+                  this.setSignInTaskCompletionError(
+                      new FirebaseAppDistributionException(
+                          "Error storing tester sign in state", UNKNOWN, e)));
     }
   }
 
@@ -160,14 +168,14 @@ class TesterSignInManager {
           .getId()
           .addOnFailureListener(
               blockingExecutor,
-              handleTaskFailure(ErrorMessages.AUTHENTICATION_ERROR, Status.AUTHENTICATION_FAILURE))
+              handleTaskFailure(ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE))
           .addOnSuccessListener(
               blockingExecutor,
               fid ->
                   getForegroundActivityAndOpenSignInFlow(fid)
                       .addOnFailureListener(
                           blockingExecutor,
-                          handleTaskFailure(ErrorMessages.UNKNOWN_ERROR, Status.UNKNOWN)));
+                          handleTaskFailure(ErrorMessages.UNKNOWN_ERROR, UNKNOWN)));
 
       return signInTaskCompletionSource.getTask();
     }
