@@ -101,8 +101,8 @@ class TesterSignInManager {
     // result of the signIn Task in the onActivityCreated callback
     if (activity instanceof SignInResultActivity) {
       LogWrapper.v(TAG, "Sign in completed");
-      this.setSuccessfulSignInResult();
       this.signInStorage.setSignInStatus(true);
+      this.setSuccessfulSignInResult();
     }
   }
 
