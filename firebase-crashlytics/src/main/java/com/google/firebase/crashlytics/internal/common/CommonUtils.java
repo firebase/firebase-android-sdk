@@ -615,27 +615,29 @@ public class CommonUtils {
     int buildId =
         CommonUtils.getResourcesIdentifier(context, BUILD_IDS_BUILD_ID_RESOURCE_NAME, "array");
 
-    if (libId != 0 && archId != 0 && buildId != 0) {
-      libNames = context.getResources().getStringArray(libId);
-      arch = context.getResources().getStringArray(archId);
-      buildIds = context.getResources().getStringArray(buildId);
-
-      if (libNames.length != buildIds.length || arch.length != buildIds.length) {
-        Logger.getLogger()
-            .d(
-                String.format(
-                    "Lengths did not match: %d %d %d",
-                    libNames.length, arch.length, buildIds.length));
-        return buildIdInfoList;
-      }
-
-      for (int i = 0; i < buildIds.length; i++) {
-        buildIdInfoList.add(new BuildIdInfo(libNames[i], arch[i], buildIds[i]));
-      }
-    } else {
+    if (libId == 0 || archId == 0 || buildId == 0) {
       Logger.getLogger()
           .d(String.format("Could not find resources: %d %d %d", libId, archId, buildId));
+      return buildIdInfoList;
     }
+
+    libNames = context.getResources().getStringArray(libId);
+    arch = context.getResources().getStringArray(archId);
+    buildIds = context.getResources().getStringArray(buildId);
+
+    if (libNames.length != buildIds.length || arch.length != buildIds.length) {
+      Logger.getLogger()
+          .d(
+              String.format(
+                  "Lengths did not match: %d %d %d",
+                  libNames.length, arch.length, buildIds.length));
+      return buildIdInfoList;
+    }
+
+    for (int i = 0; i < buildIds.length; i++) {
+      buildIdInfoList.add(new BuildIdInfo(libNames[i], arch[i], buildIds[i]));
+    }
+
     return buildIdInfoList;
   }
 

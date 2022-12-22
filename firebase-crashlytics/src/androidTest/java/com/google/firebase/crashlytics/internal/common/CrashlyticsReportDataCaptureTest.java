@@ -19,6 +19,7 @@ import static com.google.firebase.crashlytics.internal.common.CrashlyticsReportD
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -90,23 +91,18 @@ public class CrashlyticsReportDataCaptureTest {
     eventThreadImportance = 4;
     maxChainedExceptions = 8;
 
-    Settings testSettings = new TestSettings(3);
     testSettingsProvider = mock(SettingsProvider.class);
-    when(testSettingsProvider.getSettingsSync()).thenReturn(testSettings);
-    when(testSettingsProvider.getSettingsAsync()).thenReturn(Tasks.forResult(testSettings));
     initDataCapture();
   }
 
   private void initDataCapture() throws Exception {
-    List<BuildIdInfo> buildIdInfoList = new ArrayList<>();
-    buildIdInfoList.add(new BuildIdInfo("lib.so", "x86", "aabb"));
     AppData appData =
         AppData.create(
             context,
             idManager,
             "googleAppId",
             "buildId",
-            buildIdInfoList,
+            new ArrayList<BuildIdInfo>(),
             developmentPlatformProvider);
     dataCapture =
         new CrashlyticsReportDataCapture(
@@ -145,6 +141,9 @@ public class CrashlyticsReportDataCaptureTest {
 
   @Test
   public void testCaptureAnrEvent_foregroundAnr() {
+    Settings testSettings = new TestSettings(3, 0, 0, false);
+    when(testSettingsProvider.getSettingsSync()).thenReturn(testSettings);
+    when(testSettingsProvider.getSettingsAsync()).thenReturn(Tasks.forResult(testSettings));
     CrashlyticsReport.ApplicationExitInfo testApplicationExitInfo = makeAppExitInfo(false);
     final CrashlyticsReport.Session.Event event =
         dataCapture.captureAnrEventData(testApplicationExitInfo);
@@ -157,6 +156,9 @@ public class CrashlyticsReportDataCaptureTest {
 
   @Test
   public void testCaptureAnrEvent_backgroundAnr() {
+    Settings testSettings = new TestSettings(3, 0, 0, false);
+    when(testSettingsProvider.getSettingsSync()).thenReturn(testSettings);
+    when(testSettingsProvider.getSettingsAsync()).thenReturn(Tasks.forResult(testSettings));
     CrashlyticsReport.ApplicationExitInfo testApplicationExitInfo = makeAppExitInfo(true);
     final CrashlyticsReport.Session.Event event =
         dataCapture.captureAnrEventData(testApplicationExitInfo);
@@ -165,6 +167,143 @@ public class CrashlyticsReportDataCaptureTest {
     assertEquals(testApplicationExitInfo, event.getApp().getExecution().getAppExitInfo());
     assertEquals(testApplicationExitInfo.getTimestamp(), event.getTimestamp());
     assertEquals(true, event.getApp().getBackground());
+  }
+
+  @Test
+  public void testCaptureAnrEvent_collectBuildIds() throws Exception {
+    CrashlyticsReport.ApplicationExitInfo testApplicationExitInfo = makeAppExitInfo(false);
+    Settings testSettings = new TestSettings(3, 0, 0, true);
+    when(testSettingsProvider.getSettingsSync()).thenReturn(testSettings);
+    when(testSettingsProvider.getSettingsAsync()).thenReturn(Tasks.forResult(testSettings));
+    List<BuildIdInfo> buildIdInfoList = new ArrayList<>();
+    buildIdInfoList.add(new BuildIdInfo("lib.so", "x86", "aabb"));
+    AppData appData =
+        AppData.create(
+            context,
+            idManager,
+            "googleAppId",
+            "buildId",
+            buildIdInfoList,
+            developmentPlatformProvider);
+    dataCapture =
+        new CrashlyticsReportDataCapture(
+            context, idManager, appData, stackTraceTrimmingStrategy, testSettingsProvider);
+    final CrashlyticsReport.Session.Event event =
+        dataCapture.captureAnrEventData(testApplicationExitInfo);
+
+    assertEquals("anr", event.getType());
+    CrashlyticsReport.ApplicationExitInfo generatedAppExitInfo =
+        event.getApp().getExecution().getAppExitInfo();
+    assertNotEquals(testApplicationExitInfo, generatedAppExitInfo);
+    assertEquals(testApplicationExitInfo.getTimestamp(), event.getTimestamp());
+    assertEquals(generatedAppExitInfo.getBuildIdMappingForArch().size(), 1);
+    assertEquals(
+        generatedAppExitInfo.getBuildIdMappingForArch().get(0).getLibraryName(),
+        buildIdInfoList.get(0).getLibraryName());
+    assertEquals(
+        generatedAppExitInfo.getBuildIdMappingForArch().get(0).getArch(),
+        buildIdInfoList.get(0).getArch());
+    assertEquals(
+        generatedAppExitInfo.getBuildIdMappingForArch().get(0).getBuildId(),
+        buildIdInfoList.get(0).getBuildId());
+  }
+
+  @Test
+  public void testCaptureAnrEvent_collectMultipleBuildIds() throws Exception {
+    CrashlyticsReport.ApplicationExitInfo testApplicationExitInfo = makeAppExitInfo(false);
+    Settings testSettings = new TestSettings(3, 0, 0, true);
+    when(testSettingsProvider.getSettingsSync()).thenReturn(testSettings);
+    when(testSettingsProvider.getSettingsAsync()).thenReturn(Tasks.forResult(testSettings));
+    List<BuildIdInfo> buildIdInfoList = new ArrayList<>();
+    buildIdInfoList.add(new BuildIdInfo("lib.so", "x86", "aabb"));
+    buildIdInfoList.add(new BuildIdInfo("other.so", "arm", "bbaa"));
+    AppData appData =
+        AppData.create(
+            context,
+            idManager,
+            "googleAppId",
+            "buildId",
+            buildIdInfoList,
+            developmentPlatformProvider);
+    dataCapture =
+        new CrashlyticsReportDataCapture(
+            context, idManager, appData, stackTraceTrimmingStrategy, testSettingsProvider);
+    final CrashlyticsReport.Session.Event event =
+        dataCapture.captureAnrEventData(testApplicationExitInfo);
+
+    assertEquals("anr", event.getType());
+    CrashlyticsReport.ApplicationExitInfo generatedAppExitInfo =
+        event.getApp().getExecution().getAppExitInfo();
+    assertNotEquals(testApplicationExitInfo, generatedAppExitInfo);
+    assertEquals(testApplicationExitInfo.getTimestamp(), event.getTimestamp());
+    assertEquals(generatedAppExitInfo.getBuildIdMappingForArch().size(), 2);
+    for (int i = 0; i < buildIdInfoList.size(); i++) {
+      assertEquals(
+          generatedAppExitInfo.getBuildIdMappingForArch().get(i).getLibraryName(),
+          buildIdInfoList.get(i).getLibraryName());
+      assertEquals(
+          generatedAppExitInfo.getBuildIdMappingForArch().get(i).getArch(),
+          buildIdInfoList.get(i).getArch());
+      assertEquals(
+          generatedAppExitInfo.getBuildIdMappingForArch().get(i).getBuildId(),
+          buildIdInfoList.get(i).getBuildId());
+    }
+  }
+
+  @Test
+  public void testCaptureAnrEvent_settingsOff_buildIdsNull() throws Exception {
+    CrashlyticsReport.ApplicationExitInfo testApplicationExitInfo = makeAppExitInfo(false);
+    Settings testSettings = new TestSettings(3, 0, 0, false);
+    when(testSettingsProvider.getSettingsSync()).thenReturn(testSettings);
+    when(testSettingsProvider.getSettingsAsync()).thenReturn(Tasks.forResult(testSettings));
+    List<BuildIdInfo> buildIdInfoList = new ArrayList<>();
+    buildIdInfoList.add(new BuildIdInfo("lib.so", "x86", "aabb"));
+    AppData appData =
+        AppData.create(
+            context,
+            idManager,
+            "googleAppId",
+            "buildId",
+            buildIdInfoList,
+            developmentPlatformProvider);
+    dataCapture =
+        new CrashlyticsReportDataCapture(
+            context, idManager, appData, stackTraceTrimmingStrategy, testSettingsProvider);
+    final CrashlyticsReport.Session.Event event =
+        dataCapture.captureAnrEventData(testApplicationExitInfo);
+
+    assertEquals("anr", event.getType());
+    CrashlyticsReport.ApplicationExitInfo generatedAppExitInfo =
+        event.getApp().getExecution().getAppExitInfo();
+    assertEquals(testApplicationExitInfo, generatedAppExitInfo);
+    assertEquals(generatedAppExitInfo.getBuildIdMappingForArch(), null);
+  }
+
+  @Test
+  public void testCaptureAnrEvent_noBuildIdInAppData_buildIdsNull() throws Exception {
+    CrashlyticsReport.ApplicationExitInfo testApplicationExitInfo = makeAppExitInfo(false);
+    Settings testSettings = new TestSettings(3, 0, 0, true);
+    when(testSettingsProvider.getSettingsSync()).thenReturn(testSettings);
+    when(testSettingsProvider.getSettingsAsync()).thenReturn(Tasks.forResult(testSettings));
+    AppData appData =
+        AppData.create(
+            context,
+            idManager,
+            "googleAppId",
+            "buildId",
+            new ArrayList<>(),
+            developmentPlatformProvider);
+    dataCapture =
+        new CrashlyticsReportDataCapture(
+            context, idManager, appData, stackTraceTrimmingStrategy, testSettingsProvider);
+    final CrashlyticsReport.Session.Event event =
+        dataCapture.captureAnrEventData(testApplicationExitInfo);
+
+    assertEquals("anr", event.getType());
+    CrashlyticsReport.ApplicationExitInfo generatedAppExitInfo =
+        event.getApp().getExecution().getAppExitInfo();
+    assertEquals(testApplicationExitInfo, generatedAppExitInfo);
+    assertEquals(generatedAppExitInfo.getBuildIdMappingForArch(), null);
   }
 
   @Test

@@ -1,0 +1,20 @@
+{
+  "settings_version": 3,
+  "cache_duration": 7200,
+  "features": {
+    "collect_logged_exceptions": true,
+    "collect_reports": true,
+    "collect_anrs": true,
+    "collect_build_ids": true
+  },
+  "app": {
+    "status": "activated",
+    "update_required": true,
+    "report_upload_variant": 2,
+    "native_report_upload_variant": 2
+  },
+  "fabric": {
+    "org_id": "6001bf51c0329dc5da694f7f",
+    "bundle_id": "com.google.firebase.crashlytics.sdk.test"
+  }
+}

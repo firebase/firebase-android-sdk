@@ -60,7 +60,16 @@ public class CrashlyticsReportJsonTransformTest {
 
   @Test
   public void testAnrEventToJsonAndBack_equals() throws IOException {
-    final CrashlyticsReport.Session.Event testEvent = makeAnrEvent();
+    final CrashlyticsReport.Session.Event testEvent = makeAnrEvent(false);
+    final String testEventJson = transform.eventToJson(testEvent);
+    final CrashlyticsReport.Session.Event reifiedEvent = transform.eventFromJson(testEventJson);
+    assertNotSame(reifiedEvent, testEvent);
+    assertEquals(reifiedEvent, testEvent);
+  }
+
+  @Test
+  public void testAnrEventWithBuildIdsToJsonAndBack_equals() throws IOException {
+    final CrashlyticsReport.Session.Event testEvent = makeAnrEvent(true);
     final String testEventJson = transform.eventToJson(testEvent);
     final CrashlyticsReport.Session.Event reifiedEvent = transform.eventFromJson(testEventJson);
     assertNotSame(reifiedEvent, testEvent);
@@ -78,7 +87,17 @@ public class CrashlyticsReportJsonTransformTest {
 
   @Test
   public void testAppExitInfoToJsonAndBack_equals() throws IOException {
-    final CrashlyticsReport.ApplicationExitInfo testAppExitInfo = makeAppExitInfo();
+    final CrashlyticsReport.ApplicationExitInfo testAppExitInfo = makeAppExitInfo(false);
+    final String testAppExitInfoJson = transform.applicationExitInfoToJson(testAppExitInfo);
+    final CrashlyticsReport.ApplicationExitInfo reifiedAppExitInfo =
+        transform.applicationExitInfoFromJson(testAppExitInfoJson);
+    assertNotSame(reifiedAppExitInfo, testAppExitInfo);
+    assertEquals(reifiedAppExitInfo, testAppExitInfo);
+  }
+
+  @Test
+  public void testAppExitInfoWithBuildIdsToJsonAndBack_equals() throws IOException {
+    final CrashlyticsReport.ApplicationExitInfo testAppExitInfo = makeAppExitInfo(true);
     final String testAppExitInfoJson = transform.applicationExitInfoToJson(testAppExitInfo);
     final CrashlyticsReport.ApplicationExitInfo reifiedAppExitInfo =
         transform.applicationExitInfoFromJson(testAppExitInfoJson);
@@ -180,7 +199,7 @@ public class CrashlyticsReportJsonTransformTest {
         .build();
   }
 
-  private static Event makeAnrEvent() {
+  private static Event makeAnrEvent(boolean withBuildIds) {
     return Event.builder()
         .setType("anr")
         .setTimestamp(1000)
@@ -198,7 +217,7 @@ public class CrashlyticsReportJsonTransformTest {
                                     .setUuid("uuid")
                                     .build()))
                         .setSignal(Signal.builder().setCode("0").setName("0").setAddress(0).build())
-                        .setAppExitInfo(makeAppExitInfo())
+                        .setAppExitInfo(makeAppExitInfo(withBuildIds))
                         .build())
                 .setUiOrientation(1)
                 .build())
@@ -246,7 +265,19 @@ public class CrashlyticsReportJsonTransformTest {
             .build());
   }
 
-  private static CrashlyticsReport.ApplicationExitInfo makeAppExitInfo() {
+  private static CrashlyticsReport.ApplicationExitInfo makeAppExitInfo(boolean withBuildIds) {
+    ImmutableList<CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch>
+        buildIdMappingForArchImmutableList = null;
+    if (withBuildIds) {
+      buildIdMappingForArchImmutableList =
+          ImmutableList.from(
+              CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch.builder()
+                  .setLibraryName("lib.so")
+                  .setArch("x86")
+                  .setBuildId("aabb")
+                  .build());
+    }
+
     return CrashlyticsReport.ApplicationExitInfo.builder()
         .setTraceFile("trace")
         .setTimestamp(1L)
@@ -256,6 +287,7 @@ public class CrashlyticsReportJsonTransformTest {
         .setPid(1)
         .setPss(1L)
         .setRss(1L)
+        .setBuildIdMappingForArch(buildIdMappingForArchImmutableList)
         .build();
   }
 }

@@ -61,9 +61,16 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
     verifySettingsDataObject(mockCurrentTimeProvider, settings, false, true);
   }
 
+  public void testFirebaseSettingsTransform_collectBuildIds() throws Exception {
+    JSONObject testJson = getTestJSON("firebase_settings_collect_build_ids.json");
+    Settings settings = transform.buildFromJson(mockCurrentTimeProvider, testJson);
+
+    verifySettingsDataObject(mockCurrentTimeProvider, settings, false, true, true);
+  }
+
   private void verifySettingsDataObject(
       CurrentTimeProvider mockCurrentTimeProvider, Settings settings, boolean isAppNew) {
-    verifySettingsDataObject(mockCurrentTimeProvider, settings, isAppNew, false);
+    verifySettingsDataObject(mockCurrentTimeProvider, settings, isAppNew, false, false);
   }
 
   private void verifySettingsDataObject(
@@ -71,6 +78,15 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
       Settings settings,
       boolean isAppNew,
       boolean collectAnrs) {
+    verifySettingsDataObject(mockCurrentTimeProvider, settings, isAppNew, collectAnrs, false);
+  }
+
+  private void verifySettingsDataObject(
+      CurrentTimeProvider mockCurrentTimeProvider,
+      Settings settings,
+      boolean isAppNew,
+      boolean collectAnrs,
+      boolean collectBuildIds) {
     assertEquals(7200010, settings.expiresAtMillis);
 
     assertEquals(3, settings.settingsVersion);
@@ -81,6 +97,7 @@ public class SettingsV3JsonTransformTest extends CrashlyticsTestCase {
 
     assertTrue(settings.featureFlagData.collectReports);
     assertEquals(settings.featureFlagData.collectAnrs, collectAnrs);
+    assertEquals(settings.featureFlagData.collectBuildIds, collectBuildIds);
 
     verify(mockCurrentTimeProvider).getCurrentTimeMillis();
   }
