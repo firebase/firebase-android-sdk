@@ -64,7 +64,7 @@ class SignInStorage {
 
   private <T> Task<T> applyToSharedPreferences(SharedPreferencesFunction<T> func) {
     // Check nullness of sharedPreferences directly even though multiple threads could be calling
-    // this function at once. This isn't a problem because: 1) once it is set it will never be set,
+    // this function at once. This isn't a problem because: 1) once it is set it will never be reset
     // back to null, and 2) even if it is initialized twice on different threads the second call
     // will get the exact same instance.
     if (sharedPreferences != null) {
