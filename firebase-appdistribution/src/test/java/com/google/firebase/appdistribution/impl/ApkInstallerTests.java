@@ -14,14 +14,27 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.INSTALLATION_FAILURE;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitAsyncOperations;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
+import android.app.Activity;
 import android.content.Intent;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionServiceImplTest.TestActivity;
+import com.google.firebase.concurrent.TestOnlyExecutors;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,6 +50,7 @@ public class ApkInstallerTests {
   private ShadowActivity shadowActivity;
   private ApkInstaller apkInstaller;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
+  @Lightweight private ExecutorService lightweightExecutor;
 
   @Before
   public void setUp() {
@@ -44,32 +58,19 @@ public class ApkInstallerTests {
 
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
-    apkInstaller = new ApkInstaller(mockLifecycleNotifier);
+    lightweightExecutor = TestOnlyExecutors.lite();
+    apkInstaller = new ApkInstaller(mockLifecycleNotifier, lightweightExecutor);
   }
 
   @Test
-  public void installApk_currentActivityNotNull_InstallIntentOnCurrentActivity() {
+  public void installApk_currentActivityNotNull_InstallIntentOnCurrentActivity()
+      throws InterruptedException {
     String path = "path";
     Task<Void> installTask = apkInstaller.installApk(path, activity);
+    awaitAsyncOperations(lightweightExecutor);
     Intent installIntent = shadowActivity.getNextStartedActivity();
 
     assertFalse(installTask.isComplete());
-    assertEquals(
-        "com.google.firebase.appdistribution.impl.InstallActivity",
-        installIntent.getComponent().getShortClassName());
-    assertEquals(path, installIntent.getExtras().get("INSTALL_PATH"));
-  }
-
-  @Test
-  public void
-      setCurrentActivity_appInForegroundAfterAnInstallAttempt_installIntentOnCurrentActivity() {
-    apkInstaller.onActivityStarted(null);
-    String path = "path123";
-    Task<Void> installTask = apkInstaller.installApk(path, activity);
-    apkInstaller.onActivityStarted(activity);
-
-    Intent installIntent = shadowActivity.getNextStartedActivity();
-
     assertEquals(
         "com.google.firebase.appdistribution.impl.InstallActivity",
         installIntent.getComponent().getShortClassName());
@@ -81,14 +82,20 @@ public class ApkInstallerTests {
   public void installActivityDestroyed_setsInstallError() {
     Task<Void> installTask = apkInstaller.installApk("path", activity);
     apkInstaller.onActivityDestroyed(new InstallActivity());
-    Exception ex = installTask.getException();
 
-    assert ex instanceof FirebaseAppDistributionException;
-    assertEquals(
-        ErrorMessages.APK_INSTALLATION_FAILED,
-        ((FirebaseAppDistributionException) ex).getMessage());
-    assertEquals(
-        FirebaseAppDistributionException.Status.INSTALLATION_FAILURE,
-        ((FirebaseAppDistributionException) ex).getErrorCode());
+    awaitTaskFailure(installTask, INSTALLATION_FAILURE, ErrorMessages.APK_INSTALLATION_FAILED);
+  }
+
+  @Test
+  public void whenCalledMultipleTimes_onlyEmitsOneIntent()
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
+    Activity mockActivity = mock(Activity.class);
+    doNothing().when(mockActivity).startActivity(any());
+
+    apkInstaller.installApk("path", mockActivity);
+    apkInstaller.installApk("path", mockActivity);
+    awaitAsyncOperations(lightweightExecutor);
+
+    verify(mockActivity, times(1)).startActivity(any());
   }
 }

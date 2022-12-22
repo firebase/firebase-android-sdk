@@ -14,46 +14,35 @@
 
 package com.google.firebase.appdistribution.impl;
 
-import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
-
 import android.app.Activity;
 import android.content.Intent;
-import androidx.annotation.GuardedBy;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
+import java.util.concurrent.Executor;
 
 /** Class that handles installing APKs in {@link FirebaseAppDistribution}. */
 class ApkInstaller {
   private static final String TAG = "ApkInstaller";
 
   private final FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier;
+  private final TaskCompletionSourceCache<Void> installTaskCompletionSourceCache;
+  private final @Lightweight Executor lightweightExecutor;
 
-  @GuardedBy("installTaskLock")
-  private TaskCompletionSource<Void> installTaskCompletionSource;
-
-  private final Object installTaskLock = new Object();
-
-  ApkInstaller(FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier) {
+  ApkInstaller(
+      FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier,
+      @Lightweight Executor lightweightExecutor) {
     this.lifeCycleNotifier = lifeCycleNotifier;
-    lifeCycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
+    this.installTaskCompletionSourceCache = new TaskCompletionSourceCache<>(lightweightExecutor);
+    this.lightweightExecutor = lightweightExecutor;
     lifeCycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
   }
 
-  ApkInstaller() {
-    this(FirebaseAppDistributionLifecycleNotifier.getInstance());
-  }
-
-  void onActivityStarted(@Nullable Activity activity) {
-    synchronized (installTaskLock) {
-      if (installTaskCompletionSource == null
-          || installTaskCompletionSource.getTask().isComplete()
-          || activity == null) {
-        return;
-      }
-    }
+  ApkInstaller(@Lightweight Executor lightweightExecutor) {
+    this(FirebaseAppDistributionLifecycleNotifier.getInstance(), lightweightExecutor);
   }
 
   void onActivityDestroyed(@Nullable Activity activity) {
@@ -65,15 +54,11 @@ class ApkInstaller {
   }
 
   Task<Void> installApk(String path, Activity currentActivity) {
-    synchronized (installTaskLock) {
-      startInstallActivity(path, currentActivity);
-
-      if (this.installTaskCompletionSource == null
-          || this.installTaskCompletionSource.getTask().isComplete()) {
-        this.installTaskCompletionSource = new TaskCompletionSource<>();
-      }
-      return installTaskCompletionSource.getTask();
-    }
+    return installTaskCompletionSourceCache.getOrCreateTaskFromCompletionSource(
+        () -> {
+          startInstallActivity(path, currentActivity);
+          return new TaskCompletionSource<>();
+        });
   }
 
   private void startInstallActivity(String path, Activity currentActivity) {
@@ -84,12 +69,9 @@ class ApkInstaller {
   }
 
   void trySetInstallTaskError() {
-    synchronized (installTaskLock) {
-      safeSetTaskException(
-          installTaskCompletionSource,
-          new FirebaseAppDistributionException(
-              ErrorMessages.APK_INSTALLATION_FAILED,
-              FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
-    }
+    installTaskCompletionSourceCache.setException(
+        new FirebaseAppDistributionException(
+            ErrorMessages.APK_INSTALLATION_FAILED,
+            FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
   }
 }

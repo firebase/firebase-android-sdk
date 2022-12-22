@@ -21,6 +21,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.UpdateTask;
+import com.google.firebase.concurrent.FirebaseExecutors;
 import java.util.concurrent.Executor;
 
 class TaskUtils {
@@ -142,6 +143,13 @@ class TaskUtils {
             })
         .addOnFailureListener(executor, updateTask::setException);
     return updateTask;
+  }
+
+  /** Set a {@link TaskCompletionSource} to be resolved with the result of another {@link Task}. */
+  static <T> void shadowTask(TaskCompletionSource<T> taskCompletionSource, Task<T> task) {
+    task.addOnSuccessListener(FirebaseExecutors.directExecutor(), taskCompletionSource::setResult)
+        .addOnFailureListener(
+            FirebaseExecutors.directExecutor(), taskCompletionSource::setException);
   }
 
   private TaskUtils() {}
