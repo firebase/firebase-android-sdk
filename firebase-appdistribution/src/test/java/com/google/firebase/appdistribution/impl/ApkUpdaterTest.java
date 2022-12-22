@@ -183,6 +183,18 @@ public class ApkUpdaterTest {
     doReturn(new ByteArrayInputStream(TEST_FILE.getBytes()))
         .when(mockHttpsUrlConnection)
         .getInputStream();
+    // Sleep thread to simulate actually making the request, which gives us time to add
+    // a listener to the returned UpdateTask in time to get all the progress updates
+    when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL))
+        .thenAnswer(
+            invocation -> {
+              try {
+                Thread.sleep(100);
+              } catch (InterruptedException e) {
+                throw new AssertionError("Interrupted while sleeping in mock");
+              }
+              return mockHttpsUrlConnection;
+            });
     doNothing().when(apkUpdater).validateJarFile(any(), anyLong(), anyBoolean(), anyLong());
     when(mockApkInstaller.installApk(any(), any())).thenReturn(Tasks.forResult(null));
 

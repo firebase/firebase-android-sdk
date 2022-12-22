@@ -110,8 +110,7 @@ class ApkUpdater {
             activity -> apkInstaller.installApk(file.getPath(), activity))
         .addOnSuccessListener(lightweightExecutor, unused -> cachedUpdateTask.setResult())
         .addOnFailureListener(
-            // TODO(lkellogg): check if this can switch to lightweight (uses NotificationManager)
-            blockingExecutor,
+            lightweightExecutor,
             e -> {
               postUpdateProgress(
                   file.length(),
