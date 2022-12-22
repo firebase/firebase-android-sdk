@@ -522,16 +522,10 @@ public class FirebaseAppDistributionServiceImplTest {
       throws InterruptedException, FirebaseAppDistributionException, ExecutionException {
     Task<AppDistributionReleaseInternal> setCachedNewReleaseTask =
         firebaseAppDistribution.getCachedNewRelease().set(TEST_RELEASE_NEWER_AAB_INTERNAL);
-
-    // Confirm that the cached new release is initially set
     awaitTask(setCachedNewReleaseTask);
-    assertThat(setCachedNewReleaseTask.getResult()).isEqualTo(TEST_RELEASE_NEWER_AAB_INTERNAL);
 
-    // Sign out the tester
     firebaseAppDistribution.signOutTester();
-    awaitAsyncOperations(lightweightExecutor);
 
-    // Confirm that the cached new release is now null
     Task<AppDistributionReleaseInternal> cachedNewReleaseTask =
         firebaseAppDistribution.getCachedNewRelease().get();
     awaitTask(cachedNewReleaseTask);
