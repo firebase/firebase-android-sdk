@@ -27,7 +27,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.shadows.ShadowLooper;
 import org.robolectric.shadows.ShadowPowerManager;
 
 @RunWith(RobolectricTestRunner.class)
@@ -78,7 +77,6 @@ public class WakeLockHolderRoboTest {
     WakeLock wakeLock = ShadowPowerManager.getLatestWakeLock();
     taskCompletionSource.setResult(null);
 
-    ShadowLooper.idleMainLooper();
     assertThat(wakeLock.isHeld()).isFalse();
   }
 

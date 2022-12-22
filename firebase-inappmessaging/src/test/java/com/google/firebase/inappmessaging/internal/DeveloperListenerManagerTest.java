@@ -20,7 +20,6 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
@@ -52,7 +51,7 @@ public class DeveloperListenerManagerTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    developerListenerManager = new DeveloperListenerManager(TestOnlyExecutors.background());
+    developerListenerManager = new DeveloperListenerManager();
   }
 
   @Test

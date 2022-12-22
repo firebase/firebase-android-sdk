@@ -14,7 +14,7 @@
 
 package com.google.firebase.inappmessaging.internal;
 
-import com.google.firebase.annotations.concurrent.Background;
+import androidx.annotation.NonNull;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
@@ -24,7 +24,13 @@ import com.google.firebase.inappmessaging.model.Action;
 import com.google.firebase.inappmessaging.model.InAppMessage;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A class used to manage and schedule events to registered (ie: developer-defined) or expensive
@@ -35,7 +41,11 @@ import java.util.concurrent.Executor;
 @SuppressWarnings("JavaDoc")
 public class DeveloperListenerManager {
 
-  private final Executor backgroundExecutor;
+  // We limit to 1 so there is minimial impact to device performance
+  private static final int POOL_SIZE = 1;
+  // Keep alive to minimize chance of having to restart a thread to handle both impression and click
+  private static final int KEEP_ALIVE_TIME_SECONDS = 15;
+  public static DeveloperListenerManager instance = new DeveloperListenerManager();
   private Map<FirebaseInAppMessagingClickListener, ClicksExecutorAndListener>
       registeredClickListeners = new HashMap<>();
   private Map<FirebaseInAppMessagingDismissListener, DismissExecutorAndListener>
@@ -45,15 +55,25 @@ public class DeveloperListenerManager {
   private Map<FirebaseInAppMessagingImpressionListener, ImpressionExecutorAndListener>
       registeredImpressionListeners = new HashMap<>();
 
-  public DeveloperListenerManager(@Background Executor backgroundExecutor) {
-    this.backgroundExecutor = backgroundExecutor;
+  private static BlockingQueue<Runnable> mCallbackQueue = new LinkedBlockingQueue<>();
+  private static final ThreadPoolExecutor CALLBACK_QUEUE_EXECUTOR =
+      new ThreadPoolExecutor(
+          POOL_SIZE,
+          POOL_SIZE,
+          KEEP_ALIVE_TIME_SECONDS,
+          TimeUnit.SECONDS,
+          mCallbackQueue,
+          new FIAMThreadFactory("EventListeners-"));
+
+  static {
+    CALLBACK_QUEUE_EXECUTOR.allowCoreThreadTimeOut(true);
   }
 
   // Used internally by MetricsLoggerClient
   public void impressionDetected(InAppMessage inAppMessage) {
     for (ImpressionExecutorAndListener listener : registeredImpressionListeners.values()) {
       listener
-          .withExecutor(backgroundExecutor)
+          .withExecutor(CALLBACK_QUEUE_EXECUTOR)
           .execute(() -> listener.getListener().impressionDetected(inAppMessage));
     }
   }
@@ -63,7 +83,7 @@ public class DeveloperListenerManager {
       FirebaseInAppMessagingDisplayCallbacks.InAppMessagingErrorReason errorReason) {
     for (ErrorsExecutorAndListener listener : registeredErrorListeners.values()) {
       listener
-          .withExecutor(backgroundExecutor)
+          .withExecutor(CALLBACK_QUEUE_EXECUTOR)
           .execute(() -> listener.getListener().displayErrorEncountered(inAppMessage, errorReason));
     }
   }
@@ -71,7 +91,7 @@ public class DeveloperListenerManager {
   public void messageClicked(InAppMessage inAppMessage, Action action) {
     for (ClicksExecutorAndListener listener : registeredClickListeners.values()) {
       listener
-          .withExecutor(backgroundExecutor)
+          .withExecutor(CALLBACK_QUEUE_EXECUTOR)
           .execute(() -> listener.getListener().messageClicked(inAppMessage, action));
     }
   }
@@ -79,7 +99,7 @@ public class DeveloperListenerManager {
   public void messageDismissed(InAppMessage inAppMessage) {
     for (DismissExecutorAndListener listener : registeredDismissListeners.values()) {
       listener
-          .withExecutor(backgroundExecutor)
+          .withExecutor(CALLBACK_QUEUE_EXECUTOR)
           .execute(() -> listener.getListener().messageDismissed(inAppMessage));
     }
   }
@@ -149,6 +169,27 @@ public class DeveloperListenerManager {
     registeredClickListeners.clear();
     registeredImpressionListeners.clear();
     registeredErrorListeners.clear();
+  }
+
+  /** The thread factory for Storage threads. */
+  static class FIAMThreadFactory implements ThreadFactory {
+    private final AtomicInteger threadNumber = new AtomicInteger(1);
+    private final String mNameSuffix;
+
+    FIAMThreadFactory(@NonNull String suffix) {
+      mNameSuffix = suffix;
+    }
+
+    @SuppressWarnings("ThreadPriorityCheck")
+    @Override
+    public Thread newThread(@NonNull Runnable r) {
+      Thread t = new Thread(r, "FIAM-" + mNameSuffix + threadNumber.getAndIncrement());
+      t.setDaemon(false);
+      t.setPriority(
+          android.os.Process.THREAD_PRIORITY_BACKGROUND
+              + android.os.Process.THREAD_PRIORITY_MORE_FAVORABLE);
+      return t;
+    }
   }
 
   private abstract static class ExecutorAndListener<T> {

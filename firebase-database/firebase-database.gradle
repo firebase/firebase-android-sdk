@@ -100,6 +100,7 @@ dependencies {
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.25.0'
+    testImplementation 'org.codehaus.plexus:plexus-utils:3.4.2'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'com.firebase:firebase-token-generator:2.0.0'
     testImplementation 'com.fasterxml.jackson.core:jackson-core:2.9.8'

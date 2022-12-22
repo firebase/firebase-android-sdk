@@ -29,9 +29,7 @@ ext {
 
   /** Recursively renames build scripts to ${project.name}.gradle. */
   renameBuildScripts = {ProjectDescriptor project ->
-    def ktsFile = "${project.name}.gradle.kts"
-    def projectFile = new File(project.projectDir, ktsFile).exists() ? ktsFile : "${project.name}.gradle"
-    project.buildFileName = project.parent ? projectFile : 'build.gradle'
+    project.buildFileName = project.parent ? "${project.name}.gradle" : 'build.gradle'
 
     project.children.each {
       renameBuildScripts(it)

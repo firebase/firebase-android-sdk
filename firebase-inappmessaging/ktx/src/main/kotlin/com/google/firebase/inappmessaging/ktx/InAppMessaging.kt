@@ -24,13 +24,13 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 
 /** Returns the [FirebaseInAppMessaging] instance of the default [FirebaseApp]. */
 val Firebase.inAppMessaging: FirebaseInAppMessaging
-  get() = FirebaseInAppMessaging.getInstance()
+    get() = FirebaseInAppMessaging.getInstance()
 
 internal const val LIBRARY_NAME: String = "fire-iam-ktx"
 
 /** @suppress */
 @Keep
 class FirebaseInAppMessagingKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> =
-    listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+    override fun getComponents(): List<Component<*>> =
+            listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 }

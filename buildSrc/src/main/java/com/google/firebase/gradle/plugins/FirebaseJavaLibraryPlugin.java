@@ -68,6 +68,13 @@ public class FirebaseJavaLibraryPlugin implements Plugin<Project> {
                 .getConfigurations()
                 .all(
                     c -> {
+                      if ("annotationProcessor".equals(c.getName())) {
+                        for (String checkProject : library.staticAnalysis.errorproneCheckProjects) {
+                          project
+                              .getDependencies()
+                              .add("annotationProcessor", project.project(checkProject));
+                        }
+                      }
                       if ("lintChecks".equals(c.getName())) {
                         for (String checkProject :
                             library.staticAnalysis.androidLintCheckProjects) {

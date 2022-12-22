@@ -17,7 +17,6 @@ package com.google.firebase.inappmessaging.internal;
 import static com.google.firebase.inappmessaging.EventType.CLICK_EVENT_TYPE;
 import static com.google.firebase.inappmessaging.EventType.IMPRESSION_EVENT_TYPE;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
@@ -96,8 +95,6 @@ public class MetricsLoggerClient {
   }
 
   /** Log impression */
-  // TODO(b/261014173): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   void logImpression(InAppMessage message) {
     if (!isTestCampaign(message)) {
       // If message is not a test message then log
@@ -118,8 +115,6 @@ public class MetricsLoggerClient {
   }
 
   /** Log click */
-  // TODO(b/261014173): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   void logMessageClick(InAppMessage message, Action action) {
     if (!isTestCampaign(message)) {
       // If message is not a test message then log
@@ -137,8 +132,6 @@ public class MetricsLoggerClient {
   }
 
   /** Log Rendering error */
-  // TODO(b/261014173): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   void logRenderError(InAppMessage message, InAppMessagingErrorReason errorReason) {
     if (!isTestCampaign(message)) {
       // If message is not a test message then log campaign metrics
@@ -155,8 +148,6 @@ public class MetricsLoggerClient {
   }
 
   /** Log dismiss */
-  // TODO(b/261014173): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   void logDismiss(InAppMessage message, InAppMessagingDismissType dismissType) {
     if (!isTestCampaign(message)) {
       // If message is not a test message then log campaign metrics

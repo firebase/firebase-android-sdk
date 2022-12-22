@@ -22,123 +22,109 @@ private const val EXPECTED_ERROR = "Use androidx nullability annotations"
 private const val NO_WARNINGS = "No warnings."
 
 private fun annotationSource(pkg: String, name: String): String {
-  return """
+    return """
         package $pkg;
 
         public @interface $name {}
-    """
-    .trimIndent()
+    """.trimIndent()
 }
 
 private fun javaxAnnotation(name: String): String {
-  return annotationSource("javax.annotation", name)
+    return annotationSource("javax.annotation", name)
 }
 
 private fun androidxAnnotation(name: String): String {
-  return annotationSource("androidx.annotation", name)
+    return annotationSource("androidx.annotation", name)
 }
 
-private val JAVAX_NULLABLE_CLASS =
-  """
+private val JAVAX_NULLABLE_CLASS = """
     import javax.annotation.Nullable;
     @Nullable
     class Foo {}
-"""
-    .trimIndent()
+""".trimIndent()
 
-private val ANDROIDX_NULLABLE_CLASS =
-  """
+private val ANDROIDX_NULLABLE_CLASS = """
     import androidx.annotation.Nullable;
     @Nullable
     class Foo {}
-"""
-    .trimIndent()
+""".trimIndent()
 
-private val JAVAX_NULLABLE_METHOD =
-  """
+private val JAVAX_NULLABLE_METHOD = """
     import javax.annotation.Nullable;
 
     class Foo {
       @Nullable String hello() { return null; }
     }
-"""
-    .trimIndent()
+""".trimIndent()
 
-private val ANDROIDX_NULLABLE_METHOD =
-  """
+private val ANDROIDX_NULLABLE_METHOD = """
     import androidx.annotation.Nullable;
 
     class Foo {
       @Nullable String hello() { return null; }
     }
-"""
-    .trimIndent()
+""".trimIndent()
 
-private val JAVAX_NON_NULL_METHOD_PARAMETER =
-  """
+private val JAVAX_NON_NULL_METHOD_PARAMETER = """
     import javax.annotation.Nonnull;
 
     class Foo {
       String hello(@Nonnull String bar) { return null; }
     }
-"""
-    .trimIndent()
+""".trimIndent()
 
-private val ANDROIDX_NON_NULL_METHOD_PARAMETER =
-  """
+private val ANDROIDX_NON_NULL_METHOD_PARAMETER = """
     import androidx.annotation.NonNull;
 
     class Foo {
       String hello(@NonNull String bar) { return null; }
     }
-"""
-    .trimIndent()
+""".trimIndent()
 
 class AndroidxNullabilityTests : LintDetectorTest() {
-  override fun getDetector(): Detector = NonAndroidxNullabilityDetector()
+    override fun getDetector(): Detector = NonAndroidxNullabilityDetector()
 
-  override fun getIssues(): MutableList<Issue> =
-    mutableListOf(NonAndroidxNullabilityDetector.NON_ANDROIDX_NULLABILITY)
+    override fun getIssues(): MutableList<Issue> =
+            mutableListOf(NonAndroidxNullabilityDetector.NON_ANDROIDX_NULLABILITY)
 
-  fun testJavaxAnnotatedNullableClass() {
-    lint()
-      .files(java(JAVAX_NULLABLE_CLASS), java(javaxAnnotation("Nullable")))
-      .run()
-      .checkContains(EXPECTED_ERROR)
-  }
+    fun testJavaxAnnotatedNullableClass() {
+        lint().files(java(JAVAX_NULLABLE_CLASS), java(javaxAnnotation("Nullable")))
+                .run()
+                .checkContains(EXPECTED_ERROR)
+    }
 
-  fun testAndroidxAnnotatedNullableClass() {
-    lint()
-      .files(java(ANDROIDX_NULLABLE_CLASS), java(androidxAnnotation("Nullable")))
-      .run()
-      .checkContains(NO_WARNINGS)
-  }
+    fun testAndroidxAnnotatedNullableClass() {
+        lint().files(
+                java(ANDROIDX_NULLABLE_CLASS), java(androidxAnnotation("Nullable")))
+                .run()
+                .checkContains(NO_WARNINGS)
+    }
 
-  fun testJavaxAnnotatedNullableMethod() {
-    lint()
-      .files(java(JAVAX_NULLABLE_METHOD), java(javaxAnnotation("Nullable")))
-      .run()
-      .checkContains(EXPECTED_ERROR)
-  }
+    fun testJavaxAnnotatedNullableMethod() {
+        lint().files(
+                java(JAVAX_NULLABLE_METHOD), java(javaxAnnotation("Nullable")))
+                .run()
+                .checkContains(EXPECTED_ERROR)
+    }
 
-  fun testAndroidxAnnotatedNullableMethod() {
-    lint()
-      .files(java(ANDROIDX_NULLABLE_METHOD), java(androidxAnnotation("Nullable")))
-      .run()
-      .checkContains(NO_WARNINGS)
-  }
+    fun testAndroidxAnnotatedNullableMethod() {
+        lint().files(
+                java(ANDROIDX_NULLABLE_METHOD), java(androidxAnnotation("Nullable")))
+                .run()
+                .checkContains(NO_WARNINGS)
+    }
 
-  fun testJavaxAnnotatedNonNullMethodParameter() {
-    lint()
-      .files(java(JAVAX_NON_NULL_METHOD_PARAMETER), java(javaxAnnotation("Nonnull")))
-      .run()
-      .checkContains(EXPECTED_ERROR)
-  }
+    fun testJavaxAnnotatedNonNullMethodParameter() {
+        lint().files(
+                java(JAVAX_NON_NULL_METHOD_PARAMETER), java(javaxAnnotation("Nonnull")))
+                .run()
+                .checkContains(EXPECTED_ERROR)
+    }
 
-  fun testAndroidxAnnotatedNonNullMethodParameter() {
-    lint()
-      .files(java(ANDROIDX_NON_NULL_METHOD_PARAMETER), java(androidxAnnotation("NonNull")))
-      .run()
-      .checkContains(NO_WARNINGS)
-  }
+    fun testAndroidxAnnotatedNonNullMethodParameter() {
+        lint().files(
+                java(ANDROIDX_NON_NULL_METHOD_PARAMETER), java(androidxAnnotation("NonNull")))
+                .run()
+                .checkContains(NO_WARNINGS)
+    }
 }

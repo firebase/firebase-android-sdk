@@ -22,7 +22,6 @@ import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.fieldIndex;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
-import static com.google.firebase.firestore.testutil.TestUtil.keyMap;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.orderBy;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
@@ -210,12 +209,6 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     Query query = query("coll").filter(filter("matches", "==", true));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 1);
-    assertOverlayTypes(
-        keyMap(
-            "coll/a",
-            CountingQueryEngine.OverlayType.Set,
-            "coll/b",
-            CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/a", "coll/b");
   }
 
@@ -245,7 +238,6 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     // The query engine first reads the documents by key and then re-runs the query without limit.
     assertRemoteDocumentsRead(/* byKey= */ 5, /* byCollection= */ 0);
     assertOverlaysRead(/* byKey= */ 5, /* byCollection= */ 1);
-    assertOverlayTypes(keyMap("coll/b", CountingQueryEngine.OverlayType.Delete));
     assertQueryReturned("coll/a", "coll/c");
   }
 
@@ -287,7 +279,6 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     Query query = query("coll").orderBy(orderBy("time", "asc"));
     executeQuery(query);
     assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
-    assertOverlayTypes(keyMap("coll/a", CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/a");
   }
 }

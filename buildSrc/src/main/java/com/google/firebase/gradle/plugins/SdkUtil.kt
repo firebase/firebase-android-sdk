@@ -22,27 +22,29 @@ import org.gradle.api.GradleException
 import org.gradle.api.Project
 
 val Project.sdkDir: File
-  get() {
-    val properties = Properties()
-    val localProperties = rootProject.file("local.properties")
-    if (localProperties.exists()) {
-      try {
-        FileInputStream(localProperties).use { fis -> properties.load(fis) }
-      } catch (ex: IOException) {
-        throw GradleException("Could not load local.properties", ex)
-      }
+    get() {
+        val properties = Properties()
+        val localProperties = rootProject.file("local.properties")
+        if (localProperties.exists()) {
+            try {
+                FileInputStream(localProperties).use { fis -> properties.load(fis) }
+            } catch (ex: IOException) {
+                throw GradleException("Could not load local.properties", ex)
+            }
+        }
+        val sdkDir = properties.getProperty("sdk.dir")
+        if (sdkDir != null) {
+            return file(sdkDir)
+        }
+        val androidHome = System.getenv("ANDROID_HOME")
+                ?: throw GradleException("No sdk.dir or ANDROID_HOME set.")
+        return file(androidHome)
     }
-    val sdkDir = properties.getProperty("sdk.dir")
-    if (sdkDir != null) {
-      return file(sdkDir)
-    }
-    val androidHome =
-      System.getenv("ANDROID_HOME") ?: throw GradleException("No sdk.dir or ANDROID_HOME set.")
-    return file(androidHome)
-  }
 
 val Project.androidJar: File?
-  get() {
-    val android = project.extensions.findByType(LibraryExtension::class.java) ?: return null
-    return File(sdkDir, String.format("/platforms/%s/android.jar", android.compileSdkVersion))
-  }
+    get() {
+        val android = project.extensions.findByType(LibraryExtension::class.java)
+                ?: return null
+        return File(
+                sdkDir, String.format("/platforms/%s/android.jar", android.compileSdkVersion))
+    }

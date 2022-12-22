@@ -28,6 +28,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
+import com.google.firebase.perf.provider.FirebasePerfProvider;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
@@ -839,7 +840,8 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
                 appStartConfigFetchDelay));
 
     // Simulate time fast forward to some time before fetch time is up
-    long appStartTimeInMs = System.currentTimeMillis();
+    long appStartTimeInMs =
+        TimeUnit.MICROSECONDS.toMillis(FirebasePerfProvider.getAppStartTime().getMicros());
     when(remoteConfigManagerPartialMock.getCurrentSystemTimeMillis())
         .thenReturn(appStartTimeInMs + appStartConfigFetchDelay - 2000);
 
@@ -865,7 +867,8 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
                 appStartConfigFetchDelay));
 
     // Simulate time fast forward to 2s after fetch delay time is up
-    long appStartTimeInMs = System.currentTimeMillis();
+    long appStartTimeInMs =
+        TimeUnit.MICROSECONDS.toMillis(FirebasePerfProvider.getAppStartTime().getMicros());
     when(remoteConfigManagerPartialMock.getCurrentSystemTimeMillis())
         .thenReturn(appStartTimeInMs + appStartConfigFetchDelay + 2000);
 
@@ -917,18 +920,13 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     when(mockFirebaseRemoteConfig.getAll()).thenReturn(configs);
     if (initializeFrc) {
       return new RemoteConfigManager(
-          cacheManager,
-          fakeExecutor,
-          mockFirebaseRemoteConfig,
-          appStartConfigFetchDelayInMs,
-          RemoteConfigManager.getInitialStartupMillis());
+          cacheManager, fakeExecutor, mockFirebaseRemoteConfig, appStartConfigFetchDelayInMs);
     } else {
       return new RemoteConfigManager(
           cacheManager,
           fakeExecutor,
           /* firebaseRemoteConfig= */ null,
-          appStartConfigFetchDelayInMs,
-          RemoteConfigManager.getInitialStartupMillis());
+          appStartConfigFetchDelayInMs);
     }
   }
 

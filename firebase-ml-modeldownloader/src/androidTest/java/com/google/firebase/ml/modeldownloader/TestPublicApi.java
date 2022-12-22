@@ -45,8 +45,7 @@ public class TestPublicApi {
     app.setDataCollectionDefaultEnabled(Boolean.FALSE);
     FirebaseModelDownloader firebaseModelDownloader = FirebaseModelDownloader.getInstance(app);
 
-    SharedPreferencesUtil sharedPreferencesUtil =
-        new SharedPreferencesUtil(app, firebaseModelDownloader.getModelFactory());
+    SharedPreferencesUtil sharedPreferencesUtil = new SharedPreferencesUtil(app);
     // reset shared preferences and downloads for models used by this test.
     firebaseModelDownloader.deleteDownloadedModel(MODEL_NAME_LOCAL);
     firebaseModelDownloader.deleteDownloadedModel(MODEL_NAME_LOCAL_2);

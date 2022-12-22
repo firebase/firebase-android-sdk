@@ -20,9 +20,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.annotations.concurrent.Blocking;
-import com.google.firebase.annotations.concurrent.Lightweight;
-import java.util.concurrent.Executor;
+import com.google.android.gms.tasks.OnFailureListener;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 
@@ -37,18 +36,19 @@ public class DefaultTokenRefresher {
   @VisibleForTesting static final long MAX_DELAY_SECONDS = 16 * 60; // 16 minutes
 
   private final DefaultFirebaseAppCheck firebaseAppCheck;
-  private final Executor liteExecutor;
   private final ScheduledExecutorService scheduledExecutorService;
 
   private volatile ScheduledFuture<?> refreshFuture;
   private volatile long delayAfterFailureSeconds;
 
+  DefaultTokenRefresher(@NonNull DefaultFirebaseAppCheck firebaseAppCheck) {
+    this(checkNotNull(firebaseAppCheck), Executors.newScheduledThreadPool(/* corePoolSize= */ 1));
+  }
+
+  @VisibleForTesting
   DefaultTokenRefresher(
-      @NonNull DefaultFirebaseAppCheck firebaseAppCheck,
-      @Lightweight Executor liteExecutor,
-      @Blocking ScheduledExecutorService scheduledExecutorService) {
-    this.firebaseAppCheck = checkNotNull(firebaseAppCheck);
-    this.liteExecutor = liteExecutor;
+      DefaultFirebaseAppCheck firebaseAppCheck, ScheduledExecutorService scheduledExecutorService) {
+    this.firebaseAppCheck = firebaseAppCheck;
     this.scheduledExecutorService = scheduledExecutorService;
     this.delayAfterFailureSeconds = UNSET_DELAY;
   }
@@ -93,7 +93,13 @@ public class DefaultTokenRefresher {
   private void onRefresh() {
     firebaseAppCheck
         .fetchTokenFromProvider()
-        .addOnFailureListener(liteExecutor, e -> scheduleRefreshAfterFailure());
+        .addOnFailureListener(
+            new OnFailureListener() {
+              @Override
+              public void onFailure(@NonNull Exception e) {
+                scheduleRefreshAfterFailure();
+              }
+            });
   }
 
   /** Cancels the in-flight scheduled refresh. */

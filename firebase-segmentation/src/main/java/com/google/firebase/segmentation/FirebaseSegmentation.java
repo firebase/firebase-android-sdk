@@ -30,6 +30,7 @@ import com.google.firebase.segmentation.remote.SegmentationServiceClient;
 import com.google.firebase.segmentation.remote.SegmentationServiceClient.Code;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /** Entry point of Firebase Segmentation SDK. */
 public class FirebaseSegmentation {
@@ -42,29 +43,24 @@ public class FirebaseSegmentation {
   private final SegmentationServiceClient backendServiceClient;
   private final Executor executor;
 
-  FirebaseSegmentation(
-      FirebaseApp firebaseApp,
-      FirebaseInstallationsApi firebaseInstallationsApi,
-      Executor blockingExecutor) {
+  FirebaseSegmentation(FirebaseApp firebaseApp, FirebaseInstallationsApi firebaseInstallationsApi) {
     this(
         firebaseApp,
         firebaseInstallationsApi,
         new CustomInstallationIdCache(firebaseApp),
-        new SegmentationServiceClient(firebaseApp.getApplicationContext()),
-        blockingExecutor);
+        new SegmentationServiceClient(firebaseApp.getApplicationContext()));
   }
 
   FirebaseSegmentation(
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallationsApi,
       CustomInstallationIdCache localCache,
-      SegmentationServiceClient backendServiceClient,
-      Executor blockingExecutor) {
+      SegmentationServiceClient backendServiceClient) {
     this.firebaseApp = firebaseApp;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.localCache = localCache;
     this.backendServiceClient = backendServiceClient;
-    this.executor = blockingExecutor;
+    this.executor = Executors.newFixedThreadPool(4);
   }
 
   /**

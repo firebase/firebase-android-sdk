@@ -16,7 +16,6 @@ package com.google.firebase.firestore.core;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
@@ -189,8 +188,6 @@ public final class FirestoreClient {
     asyncQueue.enqueueAndForget(() -> eventManager.removeQueryListener(listener));
   }
 
-  // TODO(b/261013682): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   public Task<Document> getDocumentFromLocalCache(DocumentKey docKey) {
     this.verifyNotTerminated();
     return asyncQueue
@@ -240,8 +237,6 @@ public final class FirestoreClient {
         () -> syncEngine.transaction(asyncQueue, options, updateFunction));
   }
 
-  // TODO(b/261013682): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   public Task<Long> runCountQuery(Query query) {
     this.verifyNotTerminated();
     final TaskCompletionSource<Long> result = new TaskCompletionSource<>();

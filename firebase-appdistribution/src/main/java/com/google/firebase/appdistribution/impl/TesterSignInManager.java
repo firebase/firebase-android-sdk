@@ -18,7 +18,6 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskResult;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -114,8 +113,6 @@ class TesterSignInManager {
     }
   }
 
-  // TODO(b/261014422): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   @NonNull
   public Task<Void> signInTester() {
     if (signInStorage.getSignInStatus()) {

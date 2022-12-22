@@ -17,9 +17,12 @@ package com.google.firebase.gradle.plugins;
 import java.util.Set;
 
 public class FirebaseStaticAnalysis {
+  public Set<String> errorproneCheckProjects;
   public Set<String> androidLintCheckProjects;
 
-  public FirebaseStaticAnalysis(Set<String> androidLintCheckProjects) {
+  public FirebaseStaticAnalysis(
+      Set<String> errorproneCheckProjects, Set<String> androidLintCheckProjects) {
+    this.errorproneCheckProjects = errorproneCheckProjects;
     this.androidLintCheckProjects = androidLintCheckProjects;
   }
 }

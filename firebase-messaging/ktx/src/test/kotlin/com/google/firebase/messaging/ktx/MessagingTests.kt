@@ -33,60 +33,59 @@ const val APP_ID = "APP_ID"
 const val API_KEY = "API_KEY"
 
 abstract class BaseTestCase {
-  @Before
-  fun setUp() {
-    Firebase.initialize(
-      ApplicationProvider.getApplicationContext(),
-      FirebaseOptions.Builder()
-        .setApplicationId(APP_ID)
-        .setApiKey(API_KEY)
-        .setProjectId("123")
-        .build()
-    )
-  }
+    @Before
+    fun setUp() {
+        Firebase.initialize(
+                ApplicationProvider.getApplicationContext(),
+                FirebaseOptions.Builder()
+                        .setApplicationId(APP_ID)
+                        .setApiKey(API_KEY)
+                        .setProjectId("123")
+                        .build()
+        )
+    }
 
-  @After
-  fun cleanUp() {
-    FirebaseApp.clearInstancesForTest()
-  }
+    @After
+    fun cleanUp() {
+        FirebaseApp.clearInstancesForTest()
+    }
 }
 
 @RunWith(RobolectricTestRunner::class)
 class MessagingTests : BaseTestCase() {
 
-  @Test
-  fun `messaging should delegate to FirebaseMessaging#getInstance()`() {
-    assertThat(Firebase.messaging).isSameInstanceAs(FirebaseMessaging.getInstance())
-  }
+    @Test
+    fun `messaging should delegate to FirebaseMessaging#getInstance()`() {
+        assertThat(Firebase.messaging).isSameInstanceAs(FirebaseMessaging.getInstance())
+    }
 
-  @Test
-  fun `remoteMessage() should produce correct RemoteMessages`() {
-    val recipient = "recipient"
-    val expectedCollapseKey = "collapse"
-    val msgId = "id"
-    val msgType = "type"
-    val timeToLive = 100
-    val remoteMessage =
-      remoteMessage(recipient) {
-        collapseKey = expectedCollapseKey
-        messageId = msgId
-        messageType = msgType
-        ttl = timeToLive
-        addData("hello", "world")
-      }
-    assertThat(remoteMessage.to).isEqualTo(recipient)
-    assertThat(remoteMessage.collapseKey).isEqualTo(expectedCollapseKey)
-    assertThat(remoteMessage.messageId).isEqualTo(msgId)
-    assertThat(remoteMessage.messageType).isEqualTo(msgType)
-    assertThat(remoteMessage.data).isEqualTo(mapOf("hello" to "world"))
-  }
+    @Test
+    fun `remoteMessage() should produce correct RemoteMessages`() {
+        val recipient = "recipient"
+        val expectedCollapseKey = "collapse"
+        val msgId = "id"
+        val msgType = "type"
+        val timeToLive = 100
+        val remoteMessage = remoteMessage(recipient) {
+            collapseKey = expectedCollapseKey
+            messageId = msgId
+            messageType = msgType
+            ttl = timeToLive
+            addData("hello", "world")
+        }
+        assertThat(remoteMessage.to).isEqualTo(recipient)
+        assertThat(remoteMessage.collapseKey).isEqualTo(expectedCollapseKey)
+        assertThat(remoteMessage.messageId).isEqualTo(msgId)
+        assertThat(remoteMessage.messageType).isEqualTo(msgType)
+        assertThat(remoteMessage.data).isEqualTo(mapOf("hello" to "world"))
+    }
 }
 
 @RunWith(RobolectricTestRunner::class)
 class LibraryVersionTest : BaseTestCase() {
-  @Test
-  fun `library version should be registered with runtime`() {
-    val publisher = Firebase.app.get(UserAgentPublisher::class.java)
-    assertThat(publisher.userAgent).contains(LIBRARY_NAME)
-  }
+    @Test
+    fun `library version should be registered with runtime`() {
+        val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
+    }
 }

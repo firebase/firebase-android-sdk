@@ -14,7 +14,6 @@
 
 package com.google.firebase.perf.config;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.Nullable;
@@ -50,8 +49,6 @@ public class DeviceCacheManager {
     this.serialExecutor = serialExecutor;
   }
 
-  // TODO(b/258263016): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   public static synchronized DeviceCacheManager getInstance() {
     if (instance == null) {
       instance = new DeviceCacheManager(Executors.newSingleThreadExecutor());

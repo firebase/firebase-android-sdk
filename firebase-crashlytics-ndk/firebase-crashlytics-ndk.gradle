@@ -27,7 +27,6 @@ android {
         timeOutInMs 60 * 1000
     }
 
-    ndkVersion "25.1.8937393"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16
@@ -66,31 +65,45 @@ android {
         }
     }
 
-    // There is not any normal way to package native executables in an Android APK.
-    // It is normal to package native code as a loadable module but Android's APK
-    // installer will ignore files not named like a shared object, so give the
-    // handler executable an acceptable name
     libraryVariants.all { variant ->
-        def fixTasks = ["x86", "x86_64", "armeabi-v7a", "arm64-v8a"].collect { arch ->
-            tasks.register("fixTrampolineFilenames${variant.baseName}${arch}", com.google.firebase.gradle.NdkBinaryFixTask) {
-                it.inputFile =
-                        file("${buildDir}/intermediates/ndkBuild/${variant.baseName}/obj/local/${arch}/crashlytics-trampoline")
-            }
-        }
+        variant.outputs.each { output ->
+            def func = fixTrampolineFilenames(variant.baseName)
 
-        tasks.withType(com.android.build.gradle.tasks.BundleAar) {
-            if (it.variantName != variant.baseName) return
-            fixTasks.each { fix ->
-                it.dependsOn fix
-                it.from(fix.map { it.outputFile }) {
-                    into fix.map { it.into }
-                }
+            tasks.findAll {
+                it.name.startsWith("bundleReleaseAar")
+            }.each {
+                it.dependsOn func
+            }
+
+            tasks.findAll {
+                it.name.startsWith("externalNativeBuild") && !it.name.contains("Clean")
+            }.each {
+                func.dependsOn it
             }
         }
-        tasks.findAll {
-            it.name.startsWith("externalNativeBuild") && !it.name.contains("Clean")
-        }.each { task ->
-            fixTasks.each { fix -> fix.configure { it.dependsOn task } }
+    }
+}
+
+
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+
+// There is not any normal way to package native executables in an Android APK.
+// It is normal to package native code as a loadable module but Android's APK
+// installer will ignore files not named like a shared object, so give the
+// handler executable an acceptable name
+def fixTrampolineFilenames(variantBaseName) {
+    project.task("fixTrampolineFilenames${variantBaseName}").configure({
+    }).doFirst {
+        ["x86", "x86_64", "armeabi-v7a", "arm64-v8a"].each { arch ->
+            def initial = new File(
+                    "${buildDir}/intermediates/ndkBuild/${variantBaseName}/obj/local/${arch}/crashlytics-trampoline")
+            def renamed = new File(
+                    "${buildDir}/intermediates/ndkBuild/${variantBaseName}/obj/local/${arch}/libcrashlytics-trampoline.so")
+
+            // There is no need to delete the original file, it will not be
+            // packaged into the APK
+            Files.copy(initial.toPath(), renamed.toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
     }
 }

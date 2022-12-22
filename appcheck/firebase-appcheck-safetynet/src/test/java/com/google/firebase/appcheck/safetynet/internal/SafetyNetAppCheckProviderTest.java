@@ -37,8 +37,8 @@ import com.google.firebase.appcheck.internal.AppCheckTokenResponse;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
-import com.google.firebase.concurrent.TestOnlyExecutors;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -62,6 +62,7 @@ public class SafetyNetAppCheckProviderTest {
   private static final String TIME_TO_LIVE = "3600s";
 
   private FirebaseApp firebaseApp;
+  private ExecutorService backgroundExecutor = MoreExecutors.newDirectExecutorService();
   @Mock private GoogleApiAvailability mockGoogleApiAvailability;
   @Mock private SafetyNetClient mockSafetyNetClient;
   @Mock private NetworkClient mockNetworkClient;
@@ -83,11 +84,7 @@ public class SafetyNetAppCheckProviderTest {
     assertThrows(
         NullPointerException.class,
         () -> {
-          new SafetyNetAppCheckProvider(
-              null,
-              TestOnlyExecutors.lite(),
-              TestOnlyExecutors.background(),
-              TestOnlyExecutors.blocking());
+          new SafetyNetAppCheckProvider(null);
         });
   }
 
@@ -98,12 +95,7 @@ public class SafetyNetAppCheckProviderTest {
         .thenReturn(ConnectionResult.SERVICE_MISSING);
     SafetyNetAppCheckProvider provider =
         new SafetyNetAppCheckProvider(
-            firebaseApp,
-            mockNetworkClient,
-            mockGoogleApiAvailability,
-            TestOnlyExecutors.lite(),
-            TestOnlyExecutors.background(),
-            TestOnlyExecutors.blocking());
+            firebaseApp, mockNetworkClient, mockGoogleApiAvailability, backgroundExecutor);
     assertThat(provider.getSafetyNetClientTask().isSuccessful()).isFalse();
   }
 
@@ -113,12 +105,7 @@ public class SafetyNetAppCheckProviderTest {
         .thenReturn(ConnectionResult.SERVICE_MISSING);
     SafetyNetAppCheckProvider provider =
         new SafetyNetAppCheckProvider(
-            firebaseApp,
-            mockNetworkClient,
-            mockGoogleApiAvailability,
-            TestOnlyExecutors.lite(),
-            TestOnlyExecutors.background(),
-            TestOnlyExecutors.blocking());
+            firebaseApp, mockNetworkClient, mockGoogleApiAvailability, backgroundExecutor);
     assertThat(provider.getSafetyNetClientTask().isSuccessful()).isFalse();
 
     Task<AppCheckToken> tokenTask = provider.getToken();
@@ -128,14 +115,12 @@ public class SafetyNetAppCheckProviderTest {
 
   @Test
   public void testGetToken_nonNullSafetyNetClient_expectCallsSafetyNetForAttestation() {
-    // TODO(b/258273630): Use TestOnlyExecutors instead of MoreExecutors.directExecutor().
     SafetyNetAppCheckProvider provider =
         new SafetyNetAppCheckProvider(
             firebaseApp,
             mockSafetyNetClient,
             mockNetworkClient,
-            /* liteExecutor= */ MoreExecutors.directExecutor(),
-            TestOnlyExecutors.blocking(),
+            backgroundExecutor,
             mockRetryManager);
     assertThat(provider.getSafetyNetClientTask().getResult()).isEqualTo(mockSafetyNetClient);
 
@@ -157,8 +142,7 @@ public class SafetyNetAppCheckProviderTest {
             firebaseApp,
             mockSafetyNetClient,
             mockNetworkClient,
-            TestOnlyExecutors.lite(),
-            TestOnlyExecutors.blocking(),
+            backgroundExecutor,
             mockRetryManager);
     assertThrows(
         NullPointerException.class,
@@ -176,8 +160,7 @@ public class SafetyNetAppCheckProviderTest {
             firebaseApp,
             mockSafetyNetClient,
             mockNetworkClient,
-            TestOnlyExecutors.lite(),
-            TestOnlyExecutors.blocking(),
+            backgroundExecutor,
             mockRetryManager);
     assertThrows(
         IllegalArgumentException.class,
@@ -194,8 +177,7 @@ public class SafetyNetAppCheckProviderTest {
             firebaseApp,
             mockSafetyNetClient,
             mockNetworkClient,
-            TestOnlyExecutors.lite(),
-            TestOnlyExecutors.blocking(),
+            backgroundExecutor,
             mockRetryManager);
     Task<AppCheckToken> task =
         provider.exchangeSafetyNetAttestationResponseForToken(mockSafetyNetAttestationResponse);
@@ -211,14 +193,12 @@ public class SafetyNetAppCheckProviderTest {
     when(mockAppCheckTokenResponse.getToken()).thenReturn(APP_CHECK_TOKEN);
     when(mockAppCheckTokenResponse.getTimeToLive()).thenReturn(TIME_TO_LIVE);
 
-    // TODO(b/258273630): Use TestOnlyExecutors instead of MoreExecutors.directExecutor().
     SafetyNetAppCheckProvider provider =
         new SafetyNetAppCheckProvider(
             firebaseApp,
             mockSafetyNetClient,
             mockNetworkClient,
-            /* liteExecutor= */ MoreExecutors.directExecutor(),
-            /* blockingExecutor= */ MoreExecutors.directExecutor(),
+            backgroundExecutor,
             mockRetryManager);
     Task<AppCheckToken> task =
         provider.exchangeSafetyNetAttestationResponseForToken(mockSafetyNetAttestationResponse);
@@ -239,14 +219,12 @@ public class SafetyNetAppCheckProviderTest {
             any(), eq(NetworkClient.SAFETY_NET), eq(mockRetryManager)))
         .thenThrow(new IOException());
 
-    // TODO(b/258273630): Use TestOnlyExecutors instead of MoreExecutors.directExecutor().
     SafetyNetAppCheckProvider provider =
         new SafetyNetAppCheckProvider(
             firebaseApp,
             mockSafetyNetClient,
             mockNetworkClient,
-            /* liteExecutor= */ MoreExecutors.directExecutor(),
-            /* blockingExecutor= */ MoreExecutors.directExecutor(),
+            backgroundExecutor,
             mockRetryManager);
     Task<AppCheckToken> task =
         provider.exchangeSafetyNetAttestationResponseForToken(mockSafetyNetAttestationResponse);

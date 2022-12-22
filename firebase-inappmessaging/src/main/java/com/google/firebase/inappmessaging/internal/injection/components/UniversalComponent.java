@@ -28,7 +28,6 @@ import com.google.firebase.inappmessaging.internal.Schedulers;
 import com.google.firebase.inappmessaging.internal.injection.modules.AnalyticsEventsModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.AppMeasurementModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ApplicationModule;
-import com.google.firebase.inappmessaging.internal.injection.modules.ExecutorsModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ForegroundFlowableModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.GrpcChannelModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ProgrammaticContextualTriggerFlowableModule;
@@ -65,8 +64,7 @@ import javax.inject.Singleton;
       ProtoStorageClientModule.class,
       SystemClockModule.class,
       RateLimitModule.class,
-      AppMeasurementModule.class,
-      ExecutorsModule.class
+      AppMeasurementModule.class
     })
 public interface UniversalComponent {
   ProviderInstaller probiderInstaller();

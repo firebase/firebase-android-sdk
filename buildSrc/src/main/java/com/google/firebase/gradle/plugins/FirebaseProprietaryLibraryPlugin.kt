@@ -19,18 +19,18 @@ import org.gradle.api.Project
 import org.gradle.kotlin.dsl.apply
 
 class FirebaseProprietaryLibraryPlugin : Plugin<Project> {
-  override fun apply(project: Project) {
-    project.apply(plugin = "firebase-library")
+    override fun apply(project: Project) {
+        project.apply(plugin = "firebase-library")
 
-    val library = project.extensions.getByType(FirebaseLibraryExtension::class.java)
-    library.publishSources = false
-    library.customizePom {
-      licenses {
-        license {
-          name.set("Android Software Development Kit License")
-          url.set("https://developer.android.com/studio/terms.html")
+        val library = project.extensions.getByType(FirebaseLibraryExtension::class.java)
+        library.publishSources = false
+        library.customizePom {
+            licenses {
+                license {
+                    name.set("Android Software Development Kit License")
+                    url.set("https://developer.android.com/studio/terms.html")
+                }
+            }
         }
-      }
     }
-  }
 }

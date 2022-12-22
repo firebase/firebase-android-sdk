@@ -32,60 +32,56 @@ const val API_KEY = "API_KEY"
 
 @RunWith(AndroidJUnit4::class)
 class CallTests {
-  companion object {
-    lateinit var app: FirebaseApp
+    companion object {
+        lateinit var app: FirebaseApp
 
-    @BeforeClass
-    @JvmStatic
-    fun setup() {
-      app = Firebase.initialize(InstrumentationRegistry.getContext())!!
+        @BeforeClass @JvmStatic fun setup() {
+            app = Firebase.initialize(InstrumentationRegistry.getContext())!!
+        }
+
+        @AfterClass @JvmStatic fun cleanup() {
+            app.delete()
+        }
     }
 
-    @AfterClass
-    @JvmStatic
-    fun cleanup() {
-      app.delete()
+    @Test
+    fun testDataCall() {
+        val functions = Firebase.functions(app)
+        val input = hashMapOf(
+            "bool" to true,
+            "int" to 2,
+            "long" to 3L,
+            "string" to "four",
+            "array" to listOf(5, 6),
+            "null" to null
+        )
+
+        var function = functions.getHttpsCallable("dataTest")
+        val actual = Tasks.await(function.call(input)).getData()
+
+        assertThat(actual).isInstanceOf(Map::class.java)
+        @Suppress("UNCHECKED_CAST")
+        val map = actual as Map<String, *>
+        assertThat(map["message"]).isEqualTo("stub response")
+        assertThat(map["code"]).isEqualTo(42)
+        assertThat(map["long"]).isEqualTo(420L)
     }
-  }
 
-  @Test
-  fun testDataCall() {
-    val functions = Firebase.functions(app)
-    val input =
-      hashMapOf(
-        "bool" to true,
-        "int" to 2,
-        "long" to 3L,
-        "string" to "four",
-        "array" to listOf(5, 6),
-        "null" to null
-      )
+    @Test
+    fun testNullDataCall() {
+        val functions = Firebase.functions(app)
+        var function = functions.getHttpsCallable("nullTest")
+        val actual = Tasks.await(function.call(null)).getData()
 
-    var function = functions.getHttpsCallable("dataTest")
-    val actual = Tasks.await(function.call(input)).getData()
+        assertThat(actual).isNull()
+    }
 
-    assertThat(actual).isInstanceOf(Map::class.java)
-    @Suppress("UNCHECKED_CAST") val map = actual as Map<String, *>
-    assertThat(map["message"]).isEqualTo("stub response")
-    assertThat(map["code"]).isEqualTo(42)
-    assertThat(map["long"]).isEqualTo(420L)
-  }
+    @Test
+    fun testEmptyDataCall() {
+        val functions = Firebase.functions(app)
+        var function = functions.getHttpsCallable("nullTest")
+        val actual = Tasks.await(function.call()).getData()
 
-  @Test
-  fun testNullDataCall() {
-    val functions = Firebase.functions(app)
-    var function = functions.getHttpsCallable("nullTest")
-    val actual = Tasks.await(function.call(null)).getData()
-
-    assertThat(actual).isNull()
-  }
-
-  @Test
-  fun testEmptyDataCall() {
-    val functions = Firebase.functions(app)
-    var function = functions.getHttpsCallable("nullTest")
-    val actual = Tasks.await(function.call()).getData()
-
-    assertThat(actual).isNull()
-  }
+        assertThat(actual).isNull()
+    }
 }

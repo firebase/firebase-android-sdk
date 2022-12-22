@@ -83,8 +83,7 @@ public class TestUtil {
       Map<String, ObjectValue> oldDocs,
       Map<String, ObjectValue> docsToAdd,
       boolean hasPendingWrites,
-      boolean isFromCache,
-      boolean hasCachedResults) {
+      boolean isFromCache) {
     DocumentSet oldDocuments = docSet(Document.KEY_COMPARATOR);
     ImmutableSortedSet<DocumentKey> mutatedKeys = DocumentKey.emptyKeySet();
     for (Map.Entry<String, ObjectValue> pair : oldDocs.entrySet()) {
@@ -117,8 +116,7 @@ public class TestUtil {
             isFromCache,
             mutatedKeys,
             /* didSyncStateChange= */ true,
-            /* excludesMetadataChanges= */ false,
-            hasCachedResults);
+            /* excludesMetadataChanges= */ false);
     return new QuerySnapshot(query(path), viewSnapshot, FIRESTORE);
   }
 

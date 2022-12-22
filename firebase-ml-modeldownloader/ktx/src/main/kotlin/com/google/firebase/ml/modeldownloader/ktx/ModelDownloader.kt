@@ -28,18 +28,18 @@ internal const val LIBRARY_NAME: String = "firebase-ml-modeldownloader-ktx"
 
 /** Returns the [FirebaseModelDownloader] instance of the default [FirebaseApp]. */
 val Firebase.modelDownloader: FirebaseModelDownloader
-  get() = FirebaseModelDownloader.getInstance()
+    get() = FirebaseModelDownloader.getInstance()
 
 /** Returns the [FirebaseModelDownloader] instance of a given [FirebaseApp]. */
 fun Firebase.modelDownloader(app: FirebaseApp) = FirebaseModelDownloader.getInstance(app)
 
 /** Returns a [CustomModelDownloadConditions] initialized using the [init] function. */
 fun customModelDownloadConditions(
-  init: CustomModelDownloadConditions.Builder.() -> Unit
+    init: CustomModelDownloadConditions.Builder.() -> Unit
 ): CustomModelDownloadConditions {
-  val builder = CustomModelDownloadConditions.Builder()
-  builder.init()
-  return builder.build()
+    val builder = CustomModelDownloadConditions.Builder()
+    builder.init()
+    return builder.build()
 }
 
 operator fun CustomModel.component1(): File? = file
@@ -54,6 +54,6 @@ operator fun CustomModel.component5() = name
 
 /** @suppress */
 class FirebaseMlModelDownloaderKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> =
-    listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+    override fun getComponents(): List<Component<*>> =
+            listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 }

@@ -18,16 +18,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.google.android.datatransport.Transport;
-import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.SystemInfo;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
@@ -35,7 +32,6 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class DataTransportMlEventSenderTest {
 
-  @Mock private TransportFactory mockTransportFactory;
   @Mock private Transport<FirebaseMlLogEvent> mockTransport;
 
   private DataTransportMlEventSender statsSender;
@@ -52,10 +48,7 @@ public class DataTransportMlEventSenderTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    when(mockTransportFactory.getTransport(
-            any(), ArgumentMatchers.<Class<FirebaseMlLogEvent>>any(), any(), any()))
-        .thenReturn(mockTransport);
-    statsSender = new DataTransportMlEventSender(() -> mockTransportFactory);
+    statsSender = new DataTransportMlEventSender(mockTransport);
   }
 
   @Test

@@ -26,23 +26,20 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue
 
 /** Returns the [FirebaseRemoteConfig] instance of the default [FirebaseApp]. */
 val Firebase.remoteConfig: FirebaseRemoteConfig
-  get() = FirebaseRemoteConfig.getInstance()
+    get() = FirebaseRemoteConfig.getInstance()
 
 /** Returns the [FirebaseRemoteConfig] instance of a given [FirebaseApp]. */
-fun Firebase.remoteConfig(app: FirebaseApp): FirebaseRemoteConfig =
-  FirebaseRemoteConfig.getInstance(app)
+fun Firebase.remoteConfig(app: FirebaseApp): FirebaseRemoteConfig = FirebaseRemoteConfig.getInstance(app)
 
 /** See [FirebaseRemoteConfig#getValue] */
 operator fun FirebaseRemoteConfig.get(key: String): FirebaseRemoteConfigValue {
-  return this.getValue(key)
+    return this.getValue(key)
 }
 
-fun remoteConfigSettings(
-  init: FirebaseRemoteConfigSettings.Builder.() -> Unit
-): FirebaseRemoteConfigSettings {
-  val builder = FirebaseRemoteConfigSettings.Builder()
-  builder.init()
-  return builder.build()
+fun remoteConfigSettings(init: FirebaseRemoteConfigSettings.Builder.() -> Unit): FirebaseRemoteConfigSettings {
+    val builder = FirebaseRemoteConfigSettings.Builder()
+    builder.init()
+    return builder.build()
 }
 
 internal const val LIBRARY_NAME: String = "fire-cfg-ktx"
@@ -50,6 +47,6 @@ internal const val LIBRARY_NAME: String = "fire-cfg-ktx"
 /** @suppress */
 @Keep
 class FirebaseRemoteConfigKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> =
-    listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+    override fun getComponents(): List<Component<*>> =
+            listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 }

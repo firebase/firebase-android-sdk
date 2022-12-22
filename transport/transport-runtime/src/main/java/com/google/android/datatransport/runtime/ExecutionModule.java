@@ -14,7 +14,6 @@
 
 package com.google.android.datatransport.runtime;
 
-import android.annotation.SuppressLint;
 import dagger.Module;
 import dagger.Provides;
 import java.util.concurrent.Executor;
@@ -25,7 +24,6 @@ import javax.inject.Singleton;
 abstract class ExecutionModule {
   @Singleton
   @Provides
-  @SuppressLint("ThreadPoolCreation")
   static Executor executor() {
     return new SafeLoggingExecutor(Executors.newSingleThreadExecutor());
   }

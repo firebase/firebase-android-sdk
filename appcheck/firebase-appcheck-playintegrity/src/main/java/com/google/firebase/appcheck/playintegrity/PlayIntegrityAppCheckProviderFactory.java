@@ -40,8 +40,7 @@ public class PlayIntegrityAppCheckProviderFactory implements AppCheckProviderFac
 
   @NonNull
   @Override
-  @SuppressWarnings("FirebaseUseExplicitDependencies")
   public AppCheckProvider create(@NonNull FirebaseApp firebaseApp) {
-    return firebaseApp.get(PlayIntegrityAppCheckProvider.class);
+    return new PlayIntegrityAppCheckProvider(firebaseApp);
   }
 }

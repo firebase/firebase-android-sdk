@@ -15,7 +15,6 @@
 package com.google.firebase.perf.application;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.perf.application.AppStateMonitor.AppStateCallback;
 import static com.google.firebase.perf.v1.ApplicationProcessState.FOREGROUND_BACKGROUND;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -671,11 +670,9 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
     Map<Integer, ApplicationProcessState> subscriberState = new HashMap<>();
 
-    // Register callbacks, but note that each callback is saved in a local variable. Otherwise
-    // WeakReference can get garbage collected, making this test flaky.
     final int subscriber1 = 1;
-    AppStateCallback callback1 = newState -> subscriberState.put(subscriber1, newState);
-    monitor.registerForAppState(new WeakReference<>(callback1));
+    monitor.registerForAppState(
+        new WeakReference<>(newState -> subscriberState.put(subscriber1, newState)));
 
     // Activity comes to Foreground
     monitor.onActivityResumed(activity1);
@@ -691,19 +688,17 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
     Map<Integer, ApplicationProcessState> subscriberState = new HashMap<>();
 
-    // Register callbacks, but note that each callback is saved in a local variable. Otherwise
-    // WeakReference can get garbage collected, making this test flaky.
     final int subscriber1 = 1;
-    AppStateCallback callback1 = newState -> subscriberState.put(subscriber1, newState);
-    monitor.registerForAppState(new WeakReference<>(callback1));
+    monitor.registerForAppState(
+        new WeakReference<>(newState -> subscriberState.put(subscriber1, newState)));
 
     final int subscriber2 = 2;
-    AppStateCallback callback2 = newState -> subscriberState.put(subscriber2, newState);
-    monitor.registerForAppState(new WeakReference<>(callback2));
+    monitor.registerForAppState(
+        new WeakReference<>(newState -> subscriberState.put(subscriber2, newState)));
 
     final int subscriber3 = 3;
-    AppStateCallback callback3 = newState -> subscriberState.put(subscriber3, newState);
-    monitor.registerForAppState(new WeakReference<>(callback3));
+    monitor.registerForAppState(
+        new WeakReference<>(newState -> subscriberState.put(subscriber3, newState)));
 
     // Activity comes to Foreground
     monitor.onActivityResumed(activity1);

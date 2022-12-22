@@ -14,16 +14,13 @@
 
 package com.google.firebase.functions;
 
+import android.content.Context;
 import androidx.annotation.GuardedBy;
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedFactory;
+import com.google.firebase.FirebaseApp;
 import java.util.HashMap;
 import java.util.Map;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 /** Multi-resource container for Functions. */
-@Singleton
 class FunctionsMultiResourceComponent {
   /**
    * A static map from instance key to FirebaseFunctions instances. Instance keys region names.
@@ -33,24 +30,27 @@ class FunctionsMultiResourceComponent {
   @GuardedBy("this")
   private final Map<String, FirebaseFunctions> instances = new HashMap<>();
 
-  private final FirebaseFunctionsFactory functionsFactory;
+  private final Context applicationContext;
+  private final ContextProvider contextProvider;
+  private final FirebaseApp app;
 
-  @Inject
-  FunctionsMultiResourceComponent(FirebaseFunctionsFactory functionsFactory) {
-    this.functionsFactory = functionsFactory;
+  FunctionsMultiResourceComponent(
+      Context applicationContext, ContextProvider contextProvider, FirebaseApp app) {
+    this.applicationContext = applicationContext;
+    this.contextProvider = contextProvider;
+    this.app = app;
   }
 
   synchronized FirebaseFunctions get(String regionOrCustomDomain) {
     FirebaseFunctions functions = instances.get(regionOrCustomDomain);
+    String projectId = app.getOptions().getProjectId();
+
     if (functions == null) {
-      functions = functionsFactory.create(regionOrCustomDomain);
+      functions =
+          new FirebaseFunctions(
+              app, applicationContext, projectId, regionOrCustomDomain, contextProvider);
       instances.put(regionOrCustomDomain, functions);
     }
     return functions;
-  }
-
-  @AssistedFactory
-  interface FirebaseFunctionsFactory {
-    FirebaseFunctions create(@Assisted String regionOrCustomDomain);
   }
 }

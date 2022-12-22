@@ -142,8 +142,7 @@ public final class MutationBatch {
     for (DocumentKey key : getKeys()) {
       // TODO(mutabledocuments): This method should take a map of MutableDocuments and we should
       // remove this cast.
-      OverlayedDocument overlayedDocument = documentMap.get(key);
-      MutableDocument document = (MutableDocument) overlayedDocument.getDocument();
+      MutableDocument document = (MutableDocument) documentMap.get(key).getDocument();
       FieldMask mutatedFields = applyToLocalView(document, documentMap.get(key).getMutatedFields());
       // Set mutationFields to null if the document is only from local mutations, this creates
       // a Set(or Delete) mutation, instead of trying to create a patch mutation as the overlay.
@@ -152,7 +151,6 @@ public final class MutationBatch {
       if (overlay != null) {
         overlays.put(key, overlay);
       }
-
       if (!document.isValidDocument()) {
         document.convertToNoDocument(SnapshotVersion.NONE);
       }

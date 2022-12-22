@@ -17,17 +17,16 @@ package com.google.firebase.lint.checks
 import com.android.tools.lint.checks.infrastructure.LintDetectorTest
 
 fun annotationSource(): String {
-  return """
+    return """
         package com.google.firebase.annotations;
 
         @Inherited
         public @interface DeferredApi {}
-    """
-    .trimIndent()
+    """.trimIndent()
 }
 
 fun deferredSource(): String {
-  return """
+    return """
         package com.google.firebase.inject;
         import com.google.firebase.annotations.DeferredApi;
 
@@ -39,63 +38,52 @@ fun deferredSource(): String {
 
         void whenAvailable(@NonNull DeferredHandler<T> handler);
       }
-    """
-    .trimIndent()
+    """.trimIndent()
 }
 
 fun providerSource(): String {
-  return """
+    return """
         package com.google.firebase.inject;
 
         public interface Provider<T> {
           T get();
         }
-    """
-    .trimIndent()
+    """.trimIndent()
 }
 
-fun annotatedInterface() =
-  """
+fun annotatedInterface() = """
             import com.google.firebase.annotations.DeferredApi;
             
             interface MyApi {
               @DeferredApi void myMethod();
             }
-        """
-    .trimIndent()
+        """.trimIndent()
 
 class DeferredApiDetectorTests : LintDetectorTest() {
-  override fun getDetector() = DeferredApiDetector()
+    override fun getDetector() = DeferredApiDetector()
 
-  override fun getIssues() = mutableListOf(DeferredApiDetector.INVALID_DEFERRED_API_USE)
+    override fun getIssues() = mutableListOf(DeferredApiDetector.INVALID_DEFERRED_API_USE)
 
-  fun test_directUseOfDeferredApiMethodInConstructor_shouldFail() {
-    lint()
-      .files(
-        java(annotationSource()),
-        java(annotatedInterface()),
-        java(
-          """
+    fun test_directUseOfDeferredApiMethodInConstructor_shouldFail() {
+        lint().files(
+                java(annotationSource()),
+                java(annotatedInterface()),
+                java("""
                      class UseOfMyApi {
                        UseOfMyApi(MyApi api) {
                          api.myMethod();
                        }
                      }
-                     """
-            .trimIndent()
-        )
-      )
-      .run()
-      .checkContains("myMethod is only safe to call")
-  }
+                     """.trimIndent()))
+                .run()
+                .checkContains("myMethod is only safe to call")
+    }
 
-  fun test_directUseOfDeferredApiMethodInMethodThroughField_shouldFail() {
-    lint()
-      .files(
-        java(annotationSource()),
-        java(annotatedInterface()),
-        java(
-          """
+    fun test_directUseOfDeferredApiMethodInMethodThroughField_shouldFail() {
+        lint().files(
+                java(annotationSource()),
+                java(annotatedInterface()),
+                java("""
                      class UseOfMyApi {
                        private final MyApi api;
                        UseOfMyApi(MyApi api) {
@@ -106,23 +94,18 @@ class DeferredApiDetectorTests : LintDetectorTest() {
                          api.myMethod();
                        }
                      }
-                     """
-            .trimIndent()
-        )
-      )
-      .run()
-      .checkContains("myMethod is only safe to call")
-  }
+                     """.trimIndent()))
+                .run()
+                .checkContains("myMethod is only safe to call")
+    }
 
-  fun test_whenAvailableUseOfDeferredApiMethodThroughFieldInLambda_shouldSucceed() {
-    lint()
-      .files(
-        java(annotationSource()),
-        java(deferredSource()),
-        java(providerSource()),
-        java(annotatedInterface()),
-        java(
-          """
+    fun test_whenAvailableUseOfDeferredApiMethodThroughFieldInLambda_shouldSucceed() {
+        lint().files(
+                java(annotationSource()),
+                java(deferredSource()),
+                java(providerSource()),
+                java(annotatedInterface()),
+                java("""
                      import com.google.firebase.inject.Deferred;
                      class UseOfMyApi {
                        private final Deferred<MyApi> api;
@@ -134,23 +117,18 @@ class DeferredApiDetectorTests : LintDetectorTest() {
                              apiProvider.get().myMethod());
                        }
                      }
-                     """
-            .trimIndent()
-        )
-      )
-      .run()
-      .expectClean()
-  }
+                     """.trimIndent()))
+                .run()
+                .expectClean()
+    }
 
-  fun test_whenAvailableUseOfDeferredApiMethodThroughFieldInAnonymousClass_shouldSucceed() {
-    lint()
-      .files(
-        java(annotationSource()),
-        java(deferredSource()),
-        java(providerSource()),
-        java(annotatedInterface()),
-        java(
-          """
+    fun test_whenAvailableUseOfDeferredApiMethodThroughFieldInAnonymousClass_shouldSucceed() {
+        lint().files(
+                java(annotationSource()),
+                java(deferredSource()),
+                java(providerSource()),
+                java(annotatedInterface()),
+                java("""
                      import com.google.firebase.inject.Deferred;
                      import com.google.firebase.inject.Provider;
                      class UseOfMyApi {
@@ -166,23 +144,18 @@ class DeferredApiDetectorTests : LintDetectorTest() {
                          });
                        }
                      }
-                     """
-            .trimIndent()
-        )
-      )
-      .run()
-      .expectClean()
-  }
+                     """.trimIndent()))
+                .run()
+                .expectClean()
+    }
 
-  fun test_whenAvailableUseOfDeferredApiMethodInConstructorInLambda_shouldSucceed() {
-    lint()
-      .files(
-        java(annotationSource()),
-        java(deferredSource()),
-        java(providerSource()),
-        java(annotatedInterface()),
-        java(
-          """
+    fun test_whenAvailableUseOfDeferredApiMethodInConstructorInLambda_shouldSucceed() {
+        lint().files(
+                java(annotationSource()),
+                java(deferredSource()),
+                java(providerSource()),
+                java(annotatedInterface()),
+                java("""
                      import com.google.firebase.inject.Deferred;
                      class UseOfMyApi {
                        UseOfMyApi(Deferred<MyApi> api) {
@@ -190,23 +163,18 @@ class DeferredApiDetectorTests : LintDetectorTest() {
                              apiProvider.get().myMethod());
                        }
                      }
-                     """
-            .trimIndent()
-        )
-      )
-      .run()
-      .expectClean()
-  }
+                     """.trimIndent()))
+                .run()
+                .expectClean()
+    }
 
-  fun test_whenAvailableUseOfDeferredApiMethodThatCallsToAnotherDeferredApi_shouldSucceed() {
-    lint()
-      .files(
-        java(annotationSource()),
-        java(deferredSource()),
-        java(providerSource()),
-        java(annotatedInterface()),
-        java(
-          """
+    fun test_whenAvailableUseOfDeferredApiMethodThatCallsToAnotherDeferredApi_shouldSucceed() {
+        lint().files(
+                java(annotationSource()),
+                java(deferredSource()),
+                java(providerSource()),
+                java(annotatedInterface()),
+                java("""
                      import com.google.firebase.annotations.DeferredApi;
                      import com.google.firebase.inject.Deferred;
                      class UseOfMyApi {
@@ -221,23 +189,18 @@ class DeferredApiDetectorTests : LintDetectorTest() {
                          api.myMethod();
                        }
                      }
-                     """
-            .trimIndent()
-        )
-      )
-      .run()
-      .expectClean()
-  }
+                     """.trimIndent()))
+                .run()
+                .expectClean()
+    }
 
-  fun test_whenAvailableUseOfRegularMethodThatCallsToAnotherDeferredApi_shouldFail() {
-    lint()
-      .files(
-        java(annotationSource()),
-        java(deferredSource()),
-        java(providerSource()),
-        java(annotatedInterface()),
-        java(
-          """
+    fun test_whenAvailableUseOfRegularMethodThatCallsToAnotherDeferredApi_shouldFail() {
+        lint().files(
+                java(annotationSource()),
+                java(deferredSource()),
+                java(providerSource()),
+                java(annotatedInterface()),
+                java("""
                      import com.google.firebase.annotations.DeferredApi;
                      import com.google.firebase.inject.Deferred;
                      class UseOfMyApi {
@@ -251,11 +214,8 @@ class DeferredApiDetectorTests : LintDetectorTest() {
                          api.myMethod();
                        }
                      }
-                     """
-            .trimIndent()
-        )
-      )
-      .run()
-      .checkContains("myMethod is only safe to call")
-  }
+                     """.trimIndent()))
+                .run()
+                .checkContains("myMethod is only safe to call")
+    }
 }

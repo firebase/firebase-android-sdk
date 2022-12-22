@@ -21,7 +21,6 @@ jobs:
             -e py                   \
             -e gradle               \
             -e java                 \
-            -e kt                 \
             -e groovy               \
             -e sh                   \
             -e proto

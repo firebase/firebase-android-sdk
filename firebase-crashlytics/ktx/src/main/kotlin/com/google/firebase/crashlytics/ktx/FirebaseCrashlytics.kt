@@ -24,12 +24,14 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 
 /** Returns the [FirebaseCrashlytics] instance of the default [FirebaseApp]. */
 val Firebase.crashlytics: FirebaseCrashlytics
-  get() = FirebaseCrashlytics.getInstance()
+    get() = FirebaseCrashlytics.getInstance()
 
-/** Associates all key-value parameters with the reports */
+/**
+ * Associates all key-value parameters with the reports
+ */
 fun FirebaseCrashlytics.setCustomKeys(init: KeyValueBuilder.() -> Unit) {
-  val builder = KeyValueBuilder(this)
-  builder.init()
+    val builder = KeyValueBuilder(this)
+    builder.init()
 }
 
 internal const val LIBRARY_NAME: String = "fire-cls-ktx"
@@ -37,6 +39,6 @@ internal const val LIBRARY_NAME: String = "fire-cls-ktx"
 /** @suppress */
 @Keep
 class FirebaseCrashlyticsKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> =
-    listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+    override fun getComponents(): List<Component<*>> =
+            listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 }

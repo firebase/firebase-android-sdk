@@ -23,16 +23,16 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 
 /** Returns the [FirebaseInstallations] instance of the default [FirebaseApp]. */
 val Firebase.installations: FirebaseInstallations
-  get() = FirebaseInstallations.getInstance()
+    get() = FirebaseInstallations.getInstance()
 
 /** Returns the [FirebaseInstallations] instance of a given [FirebaseApp]. */
 fun Firebase.installations(app: FirebaseApp): FirebaseInstallations =
-  FirebaseInstallations.getInstance(app)
+        FirebaseInstallations.getInstance(app)
 
 internal const val LIBRARY_NAME: String = "fire-installations-ktx"
 
 /** @suppress */
 class FirebaseInstallationsKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> =
-    listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+    override fun getComponents(): List<Component<*>> =
+            listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 }

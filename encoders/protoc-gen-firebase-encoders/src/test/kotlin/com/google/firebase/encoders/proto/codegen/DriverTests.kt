@@ -25,60 +25,70 @@ import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class DriverTests {
-  object DevNullOutputStream : OutputStream() {
-    override fun write(b: Int) {}
-  }
+    object DevNullOutputStream : OutputStream() {
+        override fun write(b: Int) {}
+    }
 
-  @Test
-  fun `driver should throw if config file is not specified`() {
-    val thrown =
-      assertThrows(InvalidConfigException::class.java) {
-        driver(CodeGeneratorRequest.getDefaultInstance().asInput(), DevNullOutputStream)
-      }
-    assertThat(thrown.message).contains("Required plugin option is missing")
-  }
-  @Test
-  fun `driver should throw if config file does not exist`() {
-    val requestInput =
-      CodeGeneratorRequest.newBuilder().setParameter("does_not_exist.txtpb").build().asInput()
-    val thrown =
-      assertThrows(InvalidConfigException::class.java) { driver(requestInput, DevNullOutputStream) }
-    assertThat(thrown.message).contains("does not exist")
-  }
+    @Test
+    fun `driver should throw if config file is not specified`() {
+        val thrown = assertThrows(InvalidConfigException::class.java) {
+            driver(CodeGeneratorRequest.getDefaultInstance().asInput(), DevNullOutputStream)
+        }
+        assertThat(thrown.message).contains("Required plugin option is missing")
+    }
+    @Test
+    fun `driver should throw if config file does not exist`() {
+        val requestInput = CodeGeneratorRequest.newBuilder()
+                .setParameter("does_not_exist.txtpb")
+                .build()
+                .asInput()
+        val thrown = assertThrows(InvalidConfigException::class.java) {
+            driver(requestInput, DevNullOutputStream)
+        }
+        assertThat(thrown.message).contains("does not exist")
+    }
 
-  @Test
-  fun `driver should throw if config file has syntax error`() {
-    val cfg = File.createTempFile("invalid_cfg", null)
-    cfg.writeText("invalid")
-    val requestInput =
-      CodeGeneratorRequest.newBuilder().setParameter(cfg.absolutePath).build().asInput()
+    @Test
+    fun `driver should throw if config file has syntax error`() {
+        val cfg = File.createTempFile("invalid_cfg", null)
+        cfg.writeText("invalid")
+        val requestInput = CodeGeneratorRequest.newBuilder()
+                .setParameter(cfg.absolutePath)
+                .build()
+                .asInput()
 
-    val thrown =
-      assertThrows(InvalidConfigException::class.java) { driver(requestInput, DevNullOutputStream) }
-    assertThat(thrown.cause).isInstanceOf(TextFormat.ParseException::class.java)
-  }
+        val thrown = assertThrows(InvalidConfigException::class.java) {
+            driver(requestInput, DevNullOutputStream)
+        }
+        assertThat(thrown.cause).isInstanceOf(TextFormat.ParseException::class.java)
+    }
 
-  @Test
-  fun `driver should throw if vendor_package is empty`() {
-    val cfg = File.createTempFile("invalid_cfg", null)
-    cfg.writeText("include: \"\"")
-    val requestInput =
-      CodeGeneratorRequest.newBuilder().setParameter(cfg.absolutePath).build().asInput()
+    @Test
+    fun `driver should throw if vendor_package is empty`() {
+        val cfg = File.createTempFile("invalid_cfg", null)
+        cfg.writeText("include: \"\"")
+        val requestInput = CodeGeneratorRequest.newBuilder()
+                .setParameter(cfg.absolutePath)
+                .build()
+                .asInput()
 
-    val thrown =
-      assertThrows(InvalidConfigException::class.java) { driver(requestInput, DevNullOutputStream) }
-    assertThat(thrown.message).contains("vendor_package is not set")
-  }
+        val thrown = assertThrows(InvalidConfigException::class.java) {
+            driver(requestInput, DevNullOutputStream)
+        }
+        assertThat(thrown.message).contains("vendor_package is not set")
+    }
 
-  @Test
-  fun `driver should succeed if config is valid`() {
-    val cfg = File.createTempFile("valid_cfg", null)
-    cfg.writeText("vendor_package: \"com.example\"")
-    val requestInput =
-      CodeGeneratorRequest.newBuilder().setParameter(cfg.absolutePath).build().asInput()
+    @Test
+    fun `driver should succeed if config is valid`() {
+        val cfg = File.createTempFile("valid_cfg", null)
+        cfg.writeText("vendor_package: \"com.example\"")
+        val requestInput = CodeGeneratorRequest.newBuilder()
+                .setParameter(cfg.absolutePath)
+                .build()
+                .asInput()
 
-    driver(requestInput, DevNullOutputStream)
-  }
+        driver(requestInput, DevNullOutputStream)
+    }
 }
 
 private fun CodeGeneratorRequest.asInput() = toByteString().newInput()

@@ -1386,7 +1386,7 @@
                 "value": {
                   "value": "patched"
                 },
-                "version": 0
+                "version": 250
               }
             ],
             "query": {
@@ -1670,7 +1670,7 @@
                 "value": {
                   "value": "patched"
                 },
-                "version": 0
+                "version": 250
               }
             ],
             "query": {

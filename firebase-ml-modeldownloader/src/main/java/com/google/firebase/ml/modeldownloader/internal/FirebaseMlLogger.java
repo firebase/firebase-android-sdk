@@ -14,11 +14,15 @@
 
 package com.google.firebase.ml.modeldownloader.internal;
 
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.SystemClock;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
-import com.google.firebase.FirebaseOptions;
+import com.google.android.datatransport.TransportFactory;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.ml.modeldownloader.BuildConfig;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.DeleteModelLogEvent;
@@ -29,10 +33,6 @@ import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelD
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ModelOptions;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent.ModelOptions.ModelInfo;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.SystemInfo;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
 
 /**
  * Logging class for Firebase ML Event logging.
@@ -40,35 +40,62 @@ import javax.inject.Singleton;
  * @hide
  */
 @WorkerThread
-@Singleton
 public class FirebaseMlLogger {
 
   public static final int NO_FAILURE_VALUE = 0;
   private static final String TAG = "FirebaseMlLogger";
   private final SharedPreferencesUtil sharedPreferencesUtil;
   private final DataTransportMlEventSender eventSender;
-  private final FirebaseOptions firebaseOptions;
+  private final FirebaseApp firebaseApp;
 
-  private final Provider<String> appPackageName;
-  private final Provider<String> appVersionCode;
+  private final String appPackageName;
+  private final String appVersion;
   private final String firebaseProjectId;
   private final String apiKey;
 
-  @Inject
   public FirebaseMlLogger(
-      FirebaseOptions options,
-      SharedPreferencesUtil sharedPreferencesUtil,
-      DataTransportMlEventSender eventSender,
-      @Named("appPackageName") Provider<String> appPackageName,
-      @Named("appVersionCode") Provider<String> appVersionCode) {
-    this.firebaseOptions = options;
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull SharedPreferencesUtil sharedPreferencesUtil,
+      @NonNull TransportFactory transportFactory) {
+    this.firebaseApp = firebaseApp;
+    this.sharedPreferencesUtil = sharedPreferencesUtil;
+    this.eventSender = DataTransportMlEventSender.create(transportFactory);
+
+    this.firebaseProjectId = getProjectId();
+    this.apiKey = getApiKey();
+    this.appPackageName = firebaseApp.getApplicationContext().getPackageName();
+    this.appVersion = getAppVersion();
+  }
+
+  @VisibleForTesting
+  FirebaseMlLogger(
+      @NonNull FirebaseApp firebaseApp,
+      @NonNull SharedPreferencesUtil sharedPreferencesUtil,
+      @NonNull DataTransportMlEventSender eventSender) {
+    this.firebaseApp = firebaseApp;
     this.sharedPreferencesUtil = sharedPreferencesUtil;
     this.eventSender = eventSender;
 
     this.firebaseProjectId = getProjectId();
     this.apiKey = getApiKey();
-    this.appPackageName = appPackageName;
-    this.appVersionCode = appVersionCode;
+    this.appPackageName = firebaseApp.getApplicationContext().getPackageName();
+    this.appVersion = getAppVersion();
+  }
+
+  /**
+   * Get FirebaseMlLogger instance using the firebase app returned by {@link
+   * FirebaseApp#getInstance()}
+   *
+   * @return FirebaseMlLogger
+   */
+  @NonNull
+  public static FirebaseMlLogger getInstance() {
+    return FirebaseApp.getInstance().get(FirebaseMlLogger.class);
+  }
+
+  @NonNull
+  public static FirebaseMlLogger getInstance(@NonNull FirebaseApp app) {
+    return app.get(FirebaseMlLogger.class);
   }
 
   void logModelInfoRetrieverFailure(CustomModel model, ErrorCode errorCode) {
@@ -229,15 +256,33 @@ public class FirebaseMlLogger {
   private SystemInfo getSystemInfo() {
     return SystemInfo.builder()
         .setFirebaseProjectId(firebaseProjectId)
-        .setAppId(appPackageName.get())
-        .setAppVersion(appVersionCode.get())
+        .setAppId(appPackageName)
+        .setAppVersion(appVersion)
         .setApiKey(apiKey)
         .setMlSdkVersion(BuildConfig.VERSION_NAME)
         .build();
   }
 
+  private String getAppVersion() {
+    String version = "";
+    try {
+      PackageInfo packageInfo =
+          firebaseApp
+              .getApplicationContext()
+              .getPackageManager()
+              .getPackageInfo(firebaseApp.getApplicationContext().getPackageName(), 0);
+      version = String.valueOf(packageInfo.versionCode);
+    } catch (NameNotFoundException e) {
+      Log.e(TAG, "Exception thrown when trying to get app version " + e);
+    }
+    return version;
+  }
+
   private String getProjectId() {
-    String projectId = firebaseOptions.getProjectId();
+    if (firebaseApp == null) {
+      return "";
+    }
+    String projectId = firebaseApp.getOptions().getProjectId();
     if (projectId == null) {
       return "";
     }
@@ -245,6 +290,10 @@ public class FirebaseMlLogger {
   }
 
   private String getApiKey() {
-    return firebaseOptions.getApiKey();
+    if (firebaseApp == null) {
+      return "";
+    }
+    String key = firebaseApp.getOptions().getApiKey();
+    return key == null ? "" : key;
   }
 }

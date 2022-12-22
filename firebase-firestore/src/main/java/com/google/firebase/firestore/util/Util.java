@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.util;
 
-import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.Nullable;
@@ -207,8 +206,6 @@ public class Util {
   }
 
   /** Raises an exception on Android's UI Thread and crashes the end user's app. */
-  // TODO(b/258277574): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   public static void crashMainThread(RuntimeException exception) {
     new Handler(Looper.getMainLooper())
         .post(

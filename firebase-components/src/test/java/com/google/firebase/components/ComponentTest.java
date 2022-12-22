@@ -15,8 +15,6 @@
 package com.google.firebase.components;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.components.Qualified.qualified;
-import static com.google.firebase.components.Qualified.unqualified;
 import static org.junit.Assert.fail;
 
 import java.math.BigDecimal;
@@ -27,8 +25,6 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class ComponentTest {
-  @interface TestQualifier {}
-
   interface TestInterface {}
 
   private static class TestClass implements TestInterface {}
@@ -40,7 +36,7 @@ public class ComponentTest {
     TestClass testClass = new TestClass();
     Component<TestClass> component = Component.of(testClass, TestClass.class, TestInterface.class);
     assertThat(component.getProvidedInterfaces())
-        .containsExactly(unqualified(TestClass.class), unqualified(TestInterface.class));
+        .containsExactly(TestClass.class, TestInterface.class);
     assertThat(component.isLazy()).isTrue();
     assertThat(component.isValue()).isTrue();
     assertThat(component.isAlwaysEager()).isFalse();
@@ -53,22 +49,7 @@ public class ComponentTest {
   public void builder_shouldSetCorrectDefaults() {
     Component<TestClass> component =
         Component.builder(TestClass.class).factory(nullFactory).build();
-    assertThat(component.getProvidedInterfaces()).containsExactly(unqualified(TestClass.class));
-    assertThat(component.isLazy()).isTrue();
-    assertThat(component.isValue()).isTrue();
-    assertThat(component.isAlwaysEager()).isFalse();
-    assertThat(component.isEagerInDefaultApp()).isFalse();
-    assertThat(component.getDependencies()).isEmpty();
-  }
-
-  @Test
-  public void qualifiedBuilder_shouldSetCorrectDefaults() {
-    Component<TestClass> component =
-        Component.builder(qualified(TestQualifier.class, TestClass.class))
-            .factory(nullFactory)
-            .build();
-    assertThat(component.getProvidedInterfaces())
-        .containsExactly(qualified(TestQualifier.class, TestClass.class));
+    assertThat(component.getProvidedInterfaces()).containsExactly(TestClass.class);
     assertThat(component.isLazy()).isTrue();
     assertThat(component.isValue()).isTrue();
     assertThat(component.isAlwaysEager()).isFalse();
@@ -80,7 +61,7 @@ public class ComponentTest {
   public void intoSetBuilder_shouldSetCorrectDefaults() {
     Component<TestClass> component =
         Component.intoSetBuilder(TestClass.class).factory(nullFactory).build();
-    assertThat(component.getProvidedInterfaces()).containsExactly(unqualified(TestClass.class));
+    assertThat(component.getProvidedInterfaces()).containsExactly(TestClass.class);
     assertThat(component.isLazy()).isTrue();
     assertThat(component.isValue()).isFalse();
     assertThat(component.isAlwaysEager()).isFalse();
@@ -92,7 +73,7 @@ public class ComponentTest {
   public void intoSet_shouldSetCorrectDefaults() {
     TestClass testClass = new TestClass();
     Component<TestClass> component = Component.intoSet(testClass, TestClass.class);
-    assertThat(component.getProvidedInterfaces()).containsExactly(unqualified(TestClass.class));
+    assertThat(component.getProvidedInterfaces()).containsExactly(TestClass.class);
     assertThat(component.isLazy()).isTrue();
     assertThat(component.isValue()).isFalse();
     assertThat(component.isAlwaysEager()).isFalse();
@@ -193,21 +174,7 @@ public class ComponentTest {
     Component<TestClass> component =
         Component.builder(TestClass.class, TestInterface.class).factory(nullFactory).build();
     assertThat(component.getProvidedInterfaces())
-        .containsExactly(unqualified(TestClass.class), unqualified(TestInterface.class));
-  }
-
-  @Test
-  public void builder_withMultipleQualifiedInterfaces_shouldProperlySetInterfaces() {
-    Component<TestClass> component =
-        Component.builder(
-                qualified(TestQualifier.class, TestClass.class),
-                qualified(TestQualifier.class, TestInterface.class))
-            .factory(nullFactory)
-            .build();
-    assertThat(component.getProvidedInterfaces())
-        .containsExactly(
-            qualified(TestQualifier.class, TestClass.class),
-            qualified(TestQualifier.class, TestInterface.class));
+        .containsExactly(TestClass.class, TestInterface.class);
   }
 
   @Test

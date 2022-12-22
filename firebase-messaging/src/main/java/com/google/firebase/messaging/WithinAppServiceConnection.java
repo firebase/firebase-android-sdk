@@ -16,7 +16,6 @@ package com.google.firebase.messaging;
 import static com.google.firebase.messaging.FirebaseMessaging.TAG;
 import static com.google.firebase.messaging.WakeLockHolder.WAKE_LOCK_ACQUIRE_TIMEOUT_MILLIS;
 
-import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -105,8 +104,6 @@ class WithinAppServiceConnection implements ServiceConnection {
   @GuardedBy("this")
   private boolean connectionInProgress = false;
 
-  // TODO(b/258424124): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   WithinAppServiceConnection(Context context, String action) {
     // Class instances are owned by a static variable in FirebaseInstanceIdReceiver
     // and GcmReceiver so that they survive getting gc'd and reinstantiated, so use a

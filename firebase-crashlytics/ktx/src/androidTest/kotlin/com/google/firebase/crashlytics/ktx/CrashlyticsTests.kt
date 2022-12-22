@@ -30,54 +30,46 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CrashlyticsTests {
-  companion object {
-    lateinit var app: FirebaseApp
+    companion object {
+        lateinit var app: FirebaseApp
 
-    @BeforeClass
-    @JvmStatic
-    fun setup() {
-      app = Firebase.initialize(InstrumentationRegistry.getContext())!!
+        @BeforeClass @JvmStatic fun setup() {
+            app = Firebase.initialize(InstrumentationRegistry.getContext())!!
+        }
+
+        @AfterClass @JvmStatic fun cleanup() {
+            app.delete()
+        }
     }
 
-    @AfterClass
-    @JvmStatic
-    fun cleanup() {
-      app.delete()
+    @Test
+    fun firebaseCrashlyticsDelegates() {
+        assertThat(Firebase.crashlytics).isSameInstanceAs(FirebaseCrashlytics.getInstance())
     }
-  }
 
-  @Test
-  fun firebaseCrashlyticsDelegates() {
-    assertThat(Firebase.crashlytics).isSameInstanceAs(FirebaseCrashlytics.getInstance())
-  }
-
-  @Test
-  fun testDataCall() {
-    assertThat("hola").isEqualTo("hola")
-  }
+    @Test
+    fun testDataCall() {
+        assertThat("hola").isEqualTo("hola")
+    }
 }
 
 @RunWith(AndroidJUnit4::class)
 class LibraryVersionTest {
-  companion object {
-    lateinit var app: FirebaseApp
+    companion object {
+        lateinit var app: FirebaseApp
 
-    @BeforeClass
-    @JvmStatic
-    fun setup() {
-      app = Firebase.initialize(InstrumentationRegistry.getContext())!!
+        @BeforeClass @JvmStatic fun setup() {
+            app = Firebase.initialize(InstrumentationRegistry.getContext())!!
+        }
+
+        @AfterClass @JvmStatic fun cleanup() {
+            app.delete()
+        }
     }
 
-    @AfterClass
-    @JvmStatic
-    fun cleanup() {
-      app.delete()
+    @Test
+    fun libraryRegistrationAtRuntime() {
+        val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
     }
-  }
-
-  @Test
-  fun libraryRegistrationAtRuntime() {
-    val publisher = Firebase.app.get(UserAgentPublisher::class.java)
-    assertThat(publisher.userAgent).contains(LIBRARY_NAME)
-  }
 }

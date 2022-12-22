@@ -14,8 +14,6 @@
 
 rootProject.name = 'com.google.firebase'
 
-enableFeaturePreview("VERSION_CATALOGS")
-
 //Note: do not add subprojects to this file. Instead add them to subprojects.gradle
 
 apply from: 'gradle/projectSettings.gradle'

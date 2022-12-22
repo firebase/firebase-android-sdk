@@ -105,9 +105,6 @@ public class MessagingAnalyticsRoboTest {
 
     // Create and Initialize Firelog service components
     context = ApplicationProvider.getApplicationContext();
-
-    // Reset sharedpreferences for bigquery delivery metrics export before every test.
-    resetPreferencesField(DELIVERY_METRICS_EXPORT_TO_BIG_QUERY_PREF);
   }
 
   /** If the developer didn't include Analytics and Firelog, we should not crash. */
@@ -332,13 +329,6 @@ public class MessagingAnalyticsRoboTest {
     assertThat(MessagingAnalytics.deliveryMetricsExportToBigQueryEnabled()).isTrue();
     assertManifestFieldWithValue(MANIFEST_DELIVERY_METRICS_EXPORT_TO_BIG_QUERY_ENABLED, false);
     assertPreferencesFieldWithValue(DELIVERY_METRICS_EXPORT_TO_BIG_QUERY_PREF, true);
-  }
-
-  private void resetPreferencesField(String field) {
-    SharedPreferences preferences =
-        context.getSharedPreferences(FCM_PREFERENCES, Context.MODE_PRIVATE);
-
-    preferences.edit().remove(field).apply();
   }
 
   private void assertPreferencesFieldWithValue(String field, Boolean expectedValue) {

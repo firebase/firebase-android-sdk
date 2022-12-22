@@ -21,7 +21,7 @@ import javax.annotation.Nullable;
 /** Represents a local view (overlay) of a document, and the fields that are locally mutated. */
 public class OverlayedDocument {
   private Document overlayedDocument;
-  @Nullable private FieldMask mutatedFields;
+  private FieldMask mutatedFields;
 
   OverlayedDocument(Document overlayedDocument, FieldMask mutatedFields) {
     this.overlayedDocument = overlayedDocument;
@@ -33,11 +33,8 @@ public class OverlayedDocument {
   }
 
   /**
-   * The fields that are locally mutated by patch mutations.
-   *
-   * <p>If the overlayed document is from set or delete mutations, returns null.
-   *
-   * <p>If there is no overlay (mutation) for the document, returns FieldMask.EMPTY.
+   * The fields that are locally mutated by patch mutations. If the overlayed document is from set
+   * or delete mutations, this returns null.
    */
   public @Nullable FieldMask getMutatedFields() {
     return mutatedFields;

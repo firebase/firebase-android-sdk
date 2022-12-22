@@ -18,20 +18,20 @@ import com.google.firebase.encoders.proto.CodeGenConfig
 import com.google.protobuf.TextFormat
 
 object ConfigReader {
-  fun read(readable: Readable): CodeGenConfig {
-    val builder = CodeGenConfig.newBuilder()
-    try {
-      TextFormat.merge(readable, builder)
-    } catch (ex: TextFormat.ParseException) {
-      throw InvalidConfigException("Unable to parse config.", ex)
-    }
-    val config = builder.build()
-    if (config.vendorPackage.isEmpty()) {
-      throw InvalidConfigException("vendor_package is not set in config.")
-    }
+    fun read(readable: Readable): CodeGenConfig {
+        val builder = CodeGenConfig.newBuilder()
+        try {
+            TextFormat.merge(readable, builder)
+        } catch (ex: TextFormat.ParseException) {
+            throw InvalidConfigException("Unable to parse config.", ex)
+        }
+        val config = builder.build()
+        if (config.vendorPackage.isEmpty()) {
+            throw InvalidConfigException("vendor_package is not set in config.")
+        }
 
-    return config
-  }
+        return config
+    }
 }
 
 class InvalidConfigException(msg: String, cause: Throwable? = null) : RuntimeException(msg, cause)

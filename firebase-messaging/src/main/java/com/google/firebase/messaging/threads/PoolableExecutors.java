@@ -14,7 +14,6 @@
 
 package com.google.firebase.messaging.threads;
 
-import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import com.google.errorprone.annotations.CompileTimeConstant;
 import java.util.concurrent.ExecutorService;
@@ -53,8 +52,6 @@ public class PoolableExecutors {
     /** {@inheritDoc} */
     @NonNull
     @Override
-    // TODO(b/258424124): Migrate to go/firebase-android-executors
-    @SuppressLint("ThreadPoolCreation")
     public ExecutorService newThreadPool(ThreadPriority priority) {
       // NOTE: Cached threadpools automatically time out all threads.  They have no concept of core
       // threads; the queue blocks until a thread is started.
@@ -64,8 +61,6 @@ public class PoolableExecutors {
     /** {@inheritDoc} */
     @NonNull
     @Override
-    // TODO(b/258424124): Migrate to go/firebase-android-executors
-    @SuppressLint("ThreadPoolCreation")
     public ExecutorService newThreadPool(ThreadFactory threadFactory, ThreadPriority priority) {
       return Executors.unconfigurableExecutorService(Executors.newCachedThreadPool(threadFactory));
     }
@@ -84,8 +79,6 @@ public class PoolableExecutors {
     /** {@inheritDoc} */
     @NonNull
     @Override
-    // TODO(b/258424124): Migrate to go/firebase-android-executors
-    @SuppressLint("ThreadPoolCreation")
     public ExecutorService newThreadPool(
         int maxConcurrency, ThreadFactory threadFactory, ThreadPriority priority) {
       ThreadPoolExecutor executor =
@@ -122,8 +115,6 @@ public class PoolableExecutors {
     /** {@inheritDoc} */
     @NonNull
     @Override
-    // TODO(b/258424124): Migrate to go/firebase-android-executors
-    @SuppressLint("ThreadPoolCreation")
     public ScheduledExecutorService newScheduledThreadPool(
         int maxConcurrency, ThreadPriority priority) {
       // NOTE: There's no way to make a scheduled executor stop threads automatically, because
@@ -137,8 +128,6 @@ public class PoolableExecutors {
     /** {@inheritDoc} */
     @NonNull
     @Override
-    // TODO(b/258424124): Migrate to go/firebase-android-executors
-    @SuppressLint("ThreadPoolCreation")
     public ScheduledExecutorService newScheduledThreadPool(
         int maxConcurrency, ThreadFactory threadFactory, ThreadPriority priority) {
       return Executors.unconfigurableScheduledExecutorService(
@@ -147,8 +136,6 @@ public class PoolableExecutors {
 
     @Override
     @NonNull
-    // TODO(b/258424124): Migrate to go/firebase-android-executors
-    @SuppressLint("ThreadPoolCreation")
     public void executeOneOff(
         @CompileTimeConstant final String moduleName,
         @CompileTimeConstant final String name,
@@ -159,8 +146,6 @@ public class PoolableExecutors {
 
     @Override
     @NonNull
-    // TODO(b/258424124): Migrate to go/firebase-android-executors
-    @SuppressLint("ThreadPoolCreation")
     public Future<?> submitOneOff(
         @CompileTimeConstant final String moduleName,
         @CompileTimeConstant final String name,

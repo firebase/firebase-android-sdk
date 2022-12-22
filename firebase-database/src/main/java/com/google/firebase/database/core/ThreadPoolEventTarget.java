@@ -14,7 +14,6 @@
 
 package com.google.firebase.database.core;
 
-import android.annotation.SuppressLint;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
@@ -26,8 +25,6 @@ class ThreadPoolEventTarget implements EventTarget {
 
   private final ThreadPoolExecutor executor;
 
-  // TODO(b/258277572): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   public ThreadPoolEventTarget(
       final ThreadFactory wrappedFactory, final ThreadInitializer threadInitializer) {
     int poolSize = 1;

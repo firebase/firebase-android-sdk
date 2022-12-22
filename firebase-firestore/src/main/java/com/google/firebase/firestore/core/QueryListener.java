@@ -87,8 +87,7 @@ public class QueryListener {
               newSnapshot.isFromCache(),
               newSnapshot.getMutatedKeys(),
               newSnapshot.didSyncStateChange(),
-              /* excludesMetadataChanges= */ true,
-              newSnapshot.hasCachedResults());
+              /* excludesMetadataChanges= */ true);
     }
 
     if (!raisedInitialEvent) {
@@ -140,11 +139,8 @@ public class QueryListener {
       return false;
     }
 
-    // Raise data from cache if we have any documents, have cached results before,
-    // or we are offline.
-    return (!snapshot.getDocuments().isEmpty()
-        || snapshot.hasCachedResults()
-        || onlineState.equals(OnlineState.OFFLINE));
+    // Raise data from cache if we have any documents or we are offline
+    return !snapshot.getDocuments().isEmpty() || onlineState.equals(OnlineState.OFFLINE);
   }
 
   private boolean shouldRaiseEvent(ViewSnapshot snapshot) {
@@ -175,8 +171,7 @@ public class QueryListener {
             snapshot.getDocuments(),
             snapshot.getMutatedKeys(),
             snapshot.isFromCache(),
-            snapshot.excludesMetadataChanges(),
-            snapshot.hasCachedResults());
+            snapshot.excludesMetadataChanges());
     raisedInitialEvent = true;
     listener.onEvent(snapshot, null);
   }

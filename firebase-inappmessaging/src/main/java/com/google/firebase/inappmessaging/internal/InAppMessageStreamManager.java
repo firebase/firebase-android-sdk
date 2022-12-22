@@ -14,7 +14,6 @@
 
 package com.google.firebase.inappmessaging.internal;
 
-import android.annotation.SuppressLint;
 import android.text.TextUtils;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
@@ -388,8 +387,6 @@ public class InAppMessageStreamManager {
     return FetchEligibleCampaignsResponse.newBuilder().setExpirationEpochTimestampMillis(1).build();
   }
 
-  // TODO(b/261014173): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   private static <T> Maybe<T> taskToMaybe(Task<T> task) {
     return Maybe.create(
         emitter -> {

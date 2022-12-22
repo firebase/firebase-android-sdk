@@ -17,7 +17,6 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.testutil.TestUtil.andFilters;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.orFilters;
-import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -57,7 +56,7 @@ public class FilterTest {
 
     CompositeFilter orFilter = orFilters(A, B, C);
     assertTrue(orFilter.isDisjunction());
-    assertEquals(orFilter.getFilters(), Arrays.asList(A, B, C));
+    assertEquals(andFilter.getFilters(), Arrays.asList(A, B, C));
   }
 
   @Test
@@ -85,12 +84,5 @@ public class FilterTest {
     assertTrue(orFilter2.isDisjunction());
     assertFalse(orFilter2.isFlat());
     assertFalse(orFilter2.isFlatConjunction());
-  }
-
-  @Test
-  public void testCanonicalIdOfFlatConjunctions() {
-    Target target1 = query("col").filter(A).filter(B).filter(C).toTarget();
-    Target target2 = query("col").filter(andFilters(A, B, C)).toTarget();
-    assertEquals(target1.getCanonicalId(), target2.getCanonicalId());
   }
 }

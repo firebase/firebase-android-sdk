@@ -121,20 +121,6 @@ public class CustomModelDownloadServiceTest {
   private FirebaseInstallationsApi installationsApiMock;
   @Mock private FirebaseMlLogger mockEventLogger;
 
-  private final ModelFileDownloadService modelFileDownloadService =
-      mock(ModelFileDownloadService.class);
-  private final CustomModel.Factory modelFactory =
-      (name, modelHash, fileSize, downloadId, localFilePath, downloadUrl, downloadUrlExpiry) ->
-          new CustomModel(
-              modelFileDownloadService,
-              name,
-              modelHash,
-              fileSize,
-              downloadId,
-              localFilePath,
-              downloadUrl,
-              downloadUrlExpiry);
-
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
@@ -186,20 +172,18 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            () -> installationsApiMock,
+            installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
             TEST_ENDPOINT,
-            mockEventLogger,
-            modelFactory);
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
 
     Assert.assertEquals(
         modelTask.getResult(),
-        modelFactory.create(
-            MODEL_NAME, MODEL_HASH, FILE_SIZE, DOWNLOAD_URI, TEST_EXPIRATION_IN_MS));
+        new CustomModel(MODEL_NAME, MODEL_HASH, FILE_SIZE, DOWNLOAD_URI, TEST_EXPIRATION_IN_MS));
 
     WireMock.verify(
         getRequestedFor(urlEqualTo(downloadPath))
@@ -236,20 +220,18 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            () -> installationsApiMock,
+            installationsApiMock,
             directExecutor,
             API_KEY,
             null,
             TEST_ENDPOINT,
-            mockEventLogger,
-            modelFactory);
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getNewDownloadUrlWithExpiry(PROJECT_ID, MODEL_NAME);
 
     Assert.assertEquals(
         modelTask.getResult(),
-        modelFactory.create(
-            MODEL_NAME, MODEL_HASH, FILE_SIZE, DOWNLOAD_URI, TEST_EXPIRATION_IN_MS));
+        new CustomModel(MODEL_NAME, MODEL_HASH, FILE_SIZE, DOWNLOAD_URI, TEST_EXPIRATION_IN_MS));
 
     WireMock.verify(
         getRequestedFor(urlEqualTo(downloadPath))
@@ -284,20 +266,18 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            () -> installationsApiMock,
+            installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
             TEST_ENDPOINT,
-            mockEventLogger,
-            modelFactory);
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
     Assert.assertEquals(
         modelTask.getResult(),
-        modelFactory.create(
-            MODEL_NAME, MODEL_HASH, FILE_SIZE, DOWNLOAD_URI, TEST_EXPIRATION_IN_MS));
+        new CustomModel(MODEL_NAME, MODEL_HASH, FILE_SIZE, DOWNLOAD_URI, TEST_EXPIRATION_IN_MS));
 
     WireMock.verify(
         getRequestedFor(urlEqualTo(downloadPath))
@@ -334,13 +314,12 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            () -> installationsApiMock,
+            installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
             TEST_ENDPOINT,
-            mockEventLogger,
-            modelFactory);
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -384,13 +363,12 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            () -> installationsApiMock,
+            installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
             TEST_ENDPOINT,
-            mockEventLogger,
-            modelFactory);
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -437,13 +415,12 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            () -> installationsApiMock,
+            installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
             TEST_ENDPOINT,
-            mockEventLogger,
-            modelFactory);
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -496,13 +473,12 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            () -> installationsApiMock,
+            installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
             TEST_ENDPOINT,
-            mockEventLogger,
-            modelFactory);
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -555,13 +531,12 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            () -> installationsApiMock,
+            installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
             TEST_ENDPOINT,
-            mockEventLogger,
-            modelFactory);
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -613,13 +588,12 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            () -> installationsApiMock,
+            installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
             TEST_ENDPOINT,
-            mockEventLogger,
-            modelFactory);
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -669,13 +643,12 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            () -> installationsApiMock,
+            installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
             TEST_ENDPOINT,
-            mockEventLogger,
-            modelFactory);
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -717,13 +690,12 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            () -> installationsApiMock,
+            installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
             TEST_ENDPOINT,
-            mockEventLogger,
-            modelFactory);
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -746,13 +718,12 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            () -> installationsApiMock,
+            installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
             TEST_ENDPOINT,
-            mockEventLogger,
-            modelFactory);
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, null);
 
@@ -776,13 +747,12 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            () -> installationsApiMock,
+            installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
             "https7://localhost:8989/barUrl",
-            mockEventLogger,
-            modelFactory);
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 
@@ -805,13 +775,12 @@ public class CustomModelDownloadServiceTest {
     CustomModelDownloadService service =
         new CustomModelDownloadService(
             ApplicationProvider.getApplicationContext(),
-            () -> installationsApiMock,
+            installationsApiMock,
             directExecutor,
             API_KEY,
             PACKAGE_FINGERPRINT_HASH,
             TEST_ENDPOINT,
-            mockEventLogger,
-            modelFactory);
+            mockEventLogger);
 
     Task<CustomModel> modelTask = service.getCustomModelDetails(PROJECT_ID, MODEL_NAME, MODEL_HASH);
 

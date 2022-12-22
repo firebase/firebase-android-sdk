@@ -44,8 +44,6 @@ class SyncTask implements Runnable {
   private final FirebaseMessaging firebaseMessaging;
 
   @VisibleForTesting
-  // TODO(b/258424124): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   ExecutorService processorExecutor =
       new ThreadPoolExecutor(
           /* corePoolSize= */ 0,

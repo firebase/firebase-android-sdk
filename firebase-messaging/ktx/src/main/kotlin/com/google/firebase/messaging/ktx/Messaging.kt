@@ -26,20 +26,17 @@ internal const val LIBRARY_NAME: String = "fire-fcm-ktx"
 
 /** Returns the [FirebaseMessaging] instance of the default [FirebaseApp]. */
 val Firebase.messaging: FirebaseMessaging
-  get() = FirebaseMessaging.getInstance()
+    get() = FirebaseMessaging.getInstance()
 
 /** Returns a [RemoteMessage] instance initialized using the [init] function. */
-inline fun remoteMessage(
-  to: String,
-  crossinline init: RemoteMessage.Builder.() -> Unit
-): RemoteMessage {
-  val builder = RemoteMessage.Builder(to)
-  builder.init()
-  return builder.build()
+inline fun remoteMessage(to: String, crossinline init: RemoteMessage.Builder.() -> Unit): RemoteMessage {
+    val builder = RemoteMessage.Builder(to)
+    builder.init()
+    return builder.build()
 }
 
 /** @suppress */
 class FirebaseMessagingKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> =
-    listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+    override fun getComponents(): List<Component<*>> =
+            listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 }

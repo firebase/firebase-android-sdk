@@ -19,7 +19,6 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskResult;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
@@ -63,8 +62,6 @@ class ApkUpdater {
 
   private final Object updateTaskLock = new Object();
 
-  // TODO(b/261014422): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   public ApkUpdater(@NonNull FirebaseApp firebaseApp, @NonNull ApkInstaller apkInstaller) {
     this(
         Executors.newSingleThreadExecutor(),

@@ -23,6 +23,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
@@ -45,12 +47,10 @@ import com.google.firebase.components.ComponentDiscoveryService;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.ComponentRuntime;
 import com.google.firebase.components.Lazy;
-import com.google.firebase.concurrent.ExecutorsRegistrar;
 import com.google.firebase.events.Publisher;
 import com.google.firebase.heartbeatinfo.DefaultHeartBeatController;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.internal.DataCollectionConfigStorage;
-import com.google.firebase.provider.FirebaseInitProvider;
 import com.google.firebase.tracing.ComponentMonitor;
 import com.google.firebase.tracing.FirebaseTrace;
 import java.nio.charset.Charset;
@@ -59,6 +59,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -96,9 +97,15 @@ public class FirebaseApp {
 
   private static final Object LOCK = new Object();
 
+  private static final Executor UI_EXECUTOR = new UiExecutor();
+
   /** A map of (name, FirebaseApp) instances. */
   @GuardedBy("LOCK")
   static final Map<String, FirebaseApp> INSTANCES = new ArrayMap<>();
+
+  private static final String FIREBASE_ANDROID = "fire-android";
+  private static final String FIREBASE_COMMON = "fire-core";
+  private static final String KOTLIN = "kotlin";
 
   private final Context applicationContext;
   private final String name;
@@ -409,7 +416,6 @@ public class FirebaseApp {
     this.applicationContext = Preconditions.checkNotNull(applicationContext);
     this.name = Preconditions.checkNotEmpty(name);
     this.options = Preconditions.checkNotNull(options);
-    StartupTime startupTime = FirebaseInitProvider.getStartupTime();
 
     FirebaseTrace.pushTrace("Firebase");
 
@@ -420,23 +426,15 @@ public class FirebaseApp {
     FirebaseTrace.popTrace(); // ComponentDiscovery
 
     FirebaseTrace.pushTrace("Runtime");
-    ComponentRuntime.Builder builder =
-        ComponentRuntime.builder(com.google.firebase.concurrent.UiExecutor.INSTANCE)
+    componentRuntime =
+        ComponentRuntime.builder(UI_EXECUTOR)
             .addLazyComponentRegistrars(registrars)
             .addComponentRegistrar(new FirebaseCommonRegistrar())
-            .addComponentRegistrar(new ExecutorsRegistrar())
             .addComponent(Component.of(applicationContext, Context.class))
             .addComponent(Component.of(this, FirebaseApp.class))
             .addComponent(Component.of(options, FirebaseOptions.class))
-            .setProcessor(new ComponentMonitor());
-
-    // Don't provide StartupTime in direct boot mode or if Firebase was manually started
-    if (UserManagerCompat.isUserUnlocked(applicationContext)
-        && FirebaseInitProvider.isCurrentlyInitializing()) {
-      builder.addComponent(Component.of(startupTime, StartupTime.class));
-    }
-
-    componentRuntime = builder.build();
+            .setProcessor(new ComponentMonitor())
+            .build();
     FirebaseTrace.popTrace(); // Runtime
 
     dataCollectionConfigStorage =
@@ -712,6 +710,16 @@ public class FirebaseApp {
           }
         }
       }
+    }
+  }
+
+  private static class UiExecutor implements Executor {
+
+    private static final Handler HANDLER = new Handler(Looper.getMainLooper());
+
+    @Override
+    public void execute(@NonNull Runnable command) {
+      HANDLER.post(command);
     }
   }
 }

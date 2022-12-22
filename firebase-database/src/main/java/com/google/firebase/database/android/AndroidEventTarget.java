@@ -14,7 +14,6 @@
 
 package com.google.firebase.database.android;
 
-import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Looper;
 import com.google.firebase.database.core.EventTarget;
@@ -22,8 +21,6 @@ import com.google.firebase.database.core.EventTarget;
 public class AndroidEventTarget implements EventTarget {
   private final Handler handler;
 
-  // TODO(b/258277572): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   public AndroidEventTarget() {
     this.handler = new Handler(Looper.getMainLooper());
   }

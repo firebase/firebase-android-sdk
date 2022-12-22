@@ -13,7 +13,6 @@
 // limitations under the License.
 package com.google.firebase.crashlytics.internal.common;
 
-import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
@@ -273,8 +272,6 @@ class CrashlyticsController {
 
     // If data collection gets enabled while we are waiting for an action, go ahead and send the
     // reports, and any subsequent explicit response will be ignored.
-    // TODO(b/261014167): Use an explicit executor in continuations.
-    @SuppressLint("TaskMainThread")
     final Task<Boolean> collectionEnabled =
         dataCollectionArbiter
             .waitForAutomaticDataCollectionEnabled()
@@ -330,8 +327,6 @@ class CrashlyticsController {
     return unsentReportsHandled.getTask();
   }
 
-  // TODO(b/261014167): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   Task<Void> submitAllReports(Task<Settings> settingsDataTask) {
     if (!reportingCoordinator.hasReportsToSend()) {
       // Just notify the user that there are no reports and stop.
@@ -739,9 +734,6 @@ class CrashlyticsController {
       return Tasks.forResult(null);
     }
     Logger.getLogger().d("Logging app exception event to Firebase Analytics");
-
-    // TODO(b/258263226): Migrate to go/firebase-android-executors
-    @SuppressLint("ThreadPoolCreation")
     final ThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
     return Tasks.call(
         executor,

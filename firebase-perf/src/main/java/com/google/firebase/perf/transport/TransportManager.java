@@ -17,7 +17,6 @@ package com.google.firebase.perf.transport;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -126,8 +125,6 @@ public class TransportManager implements AppStateCallback {
 
   private boolean isForegroundState = false;
 
-  // TODO(b/258263016): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   private TransportManager() {
     // MAX_POOL_SIZE must always be 1. We only allow one thread in this Executor. The reason
     // we specifically use a ThreadPoolExecutor rather than generating one from ExecutorService

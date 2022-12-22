@@ -21,7 +21,6 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskResult;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -102,8 +101,6 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   @NonNull
-  // TODO(b/261014422): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   public UpdateTask updateIfNewReleaseAvailable() {
     synchronized (updateIfNewReleaseTaskLock) {
       if (updateIfNewReleaseAvailableIsTaskInProgress()) {
@@ -114,6 +111,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       remakeUpdateConfirmationDialog = false;
       dialogHostActivity = null;
     }
+
     lifecycleNotifier
         .applyToForegroundActivityTask(this::showSignInConfirmationDialog)
         .onSuccessTask(unused -> signInTester())
@@ -221,8 +219,6 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   @NonNull
-  // TODO(b/261014422): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   public synchronized Task<AppDistributionRelease> checkForNewRelease() {
     if (cachedCheckForNewReleaseTask != null && !cachedCheckForNewReleaseTask.isComplete()) {
       LogWrapper.getInstance().v("Response in progress");

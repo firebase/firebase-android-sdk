@@ -15,11 +15,9 @@
 package com.google.firebase.inappmessaging.internal.injection.modules;
 
 import android.app.Application;
-import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.inappmessaging.internal.DeveloperListenerManager;
 import dagger.Module;
 import dagger.Provides;
-import java.util.concurrent.Executor;
 import javax.inject.Singleton;
 
 /**
@@ -43,8 +41,7 @@ public class ApplicationModule {
 
   @Provides
   @Singleton
-  public DeveloperListenerManager developerListenerManager(
-      @Background Executor backgroundExecutor) {
-    return new DeveloperListenerManager(backgroundExecutor);
+  public DeveloperListenerManager developerListenerManager() {
+    return new DeveloperListenerManager();
   }
 }

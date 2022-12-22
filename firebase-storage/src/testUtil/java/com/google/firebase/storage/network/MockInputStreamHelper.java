@@ -14,7 +14,6 @@
 
 package com.google.firebase.storage.network;
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +37,6 @@ public class MockInputStreamHelper extends InputStream {
     this.injectExceptions = new TreeSet<>();
   }
 
-  @CanIgnoreReturnValue
   public MockInputStreamHelper injectExceptionAt(int bytePos) {
     if (opened) {
       throw new IllegalStateException("Can't add exception points after reading from stream.");

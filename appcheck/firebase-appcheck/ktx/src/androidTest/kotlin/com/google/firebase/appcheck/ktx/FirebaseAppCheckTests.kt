@@ -37,70 +37,70 @@ const val EXISTING_APP = "existing"
 
 @RunWith(AndroidJUnit4ClassRunner::class)
 abstract class BaseTestCase {
-  @Before
-  fun setUp() {
-    Firebase.initialize(
-      ApplicationProvider.getApplicationContext(),
-      FirebaseOptions.Builder()
-        .setApplicationId(APP_ID)
-        .setApiKey(API_KEY)
-        .setProjectId("123")
-        .build()
-    )
+    @Before
+    fun setUp() {
+        Firebase.initialize(
+                ApplicationProvider.getApplicationContext(),
+                FirebaseOptions.Builder()
+                        .setApplicationId(APP_ID)
+                        .setApiKey(API_KEY)
+                        .setProjectId("123")
+                        .build()
+        )
 
-    Firebase.initialize(
-      ApplicationProvider.getApplicationContext(),
-      FirebaseOptions.Builder()
-        .setApplicationId(APP_ID)
-        .setApiKey(API_KEY)
-        .setProjectId("123")
-        .build(),
-      EXISTING_APP
-    )
-  }
+        Firebase.initialize(
+                ApplicationProvider.getApplicationContext(),
+                FirebaseOptions.Builder()
+                        .setApplicationId(APP_ID)
+                        .setApiKey(API_KEY)
+                        .setProjectId("123")
+                        .build(),
+                EXISTING_APP
+        )
+    }
 
-  @After
-  fun cleanUp() {
-    FirebaseApp.clearInstancesForTest()
-  }
+    @After
+    fun cleanUp() {
+        FirebaseApp.clearInstancesForTest()
+    }
 }
 
 @RunWith(AndroidJUnit4ClassRunner::class)
 class FirebaseAppCheckTests : BaseTestCase() {
-  @Test
-  fun appCheck_default_callsDefaultGetInstance() {
-    assertThat(Firebase.appCheck).isSameInstanceAs(FirebaseAppCheck.getInstance())
-  }
+    @Test
+    fun appCheck_default_callsDefaultGetInstance() {
+        assertThat(Firebase.appCheck).isSameInstanceAs(FirebaseAppCheck.getInstance())
+    }
 
-  @Test
-  fun appCheck_with_custom_firebaseapp_calls_GetInstance() {
-    val app = Firebase.app(EXISTING_APP)
-    assertThat(Firebase.appCheck(app)).isSameInstanceAs(FirebaseAppCheck.getInstance(app))
-  }
+    @Test
+    fun appCheck_with_custom_firebaseapp_calls_GetInstance() {
+        val app = Firebase.app(EXISTING_APP)
+        assertThat(Firebase.appCheck(app))
+            .isSameInstanceAs(FirebaseAppCheck.getInstance(app))
+    }
 
-  @Test
-  fun appCheckToken_destructuring_declaration_works() {
-    val mockAppCheckToken =
-      object : AppCheckToken() {
-        override fun getToken(): String = "randomToken"
+    @Test
+    fun appCheckToken_destructuring_declaration_works() {
+        val mockAppCheckToken = object : AppCheckToken() {
+            override fun getToken(): String = "randomToken"
 
-        override fun getExpireTimeMillis(): Long = 23121997
-      }
+            override fun getExpireTimeMillis(): Long = 23121997
+        }
 
-    val (token, expiration) = mockAppCheckToken
+        val (token, expiration) = mockAppCheckToken
 
-    assertThat(token).isEqualTo(mockAppCheckToken.token)
-    assertThat(expiration).isEqualTo(mockAppCheckToken.expireTimeMillis)
-  }
+        assertThat(token).isEqualTo(mockAppCheckToken.token)
+        assertThat(expiration).isEqualTo(mockAppCheckToken.expireTimeMillis)
+    }
 }
 
 internal const val LIBRARY_NAME: String = "fire-app-check-ktx"
 
 @RunWith(AndroidJUnit4ClassRunner::class)
 class LibraryVersionTest : BaseTestCase() {
-  @Test
-  fun libraryRegistrationAtRuntime() {
-    val publisher = Firebase.app.get(UserAgentPublisher::class.java)
-    assertThat(publisher.userAgent).contains(LIBRARY_NAME)
-  }
+    @Test
+    fun libraryRegistrationAtRuntime() {
+        val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
+    }
 }

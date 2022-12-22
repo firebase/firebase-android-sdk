@@ -367,7 +367,6 @@ public class FirebaseMessaging {
    * @param enable Whether to enable or disable notification delegation.
    * @return A Task that completes when the notification delegation has been set.
    */
-  @NonNull
   public Task<Void> setNotificationDelegationEnabled(boolean enable) {
     return ProxyNotificationInitializer.setEnableProxyNotification(initExecutor, context, enable);
   }
@@ -456,8 +455,6 @@ public class FirebaseMessaging {
    *     "[a-zA-Z0-9-_.~%]{1,900}".
    * @return A task that will be completed when the topic has been successfully subscribed to.
    */
-  // TODO(b/261013992): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   @NonNull
   public Task<Void> subscribeToTopic(@NonNull String topic) {
     return topicsSubscriberTask.onSuccessTask(
@@ -473,8 +470,6 @@ public class FirebaseMessaging {
    *     expression: "[a-zA-Z0-9-_.~%]{1,900}".
    * @return A task that will be completed when the topic has been successfully unsubscribed from.
    */
-  // TODO(b/261013992): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   @NonNull
   public Task<Void> unsubscribeFromTopic(@NonNull String topic) {
     return topicsSubscriberTask.onSuccessTask(
@@ -553,8 +548,6 @@ public class FirebaseMessaging {
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
-  // TODO(b/258424124): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   void enqueueTaskWithDelaySeconds(Runnable task, long delaySeconds) {
     synchronized (FirebaseMessaging.class) {
       if (syncExecutor == null) {

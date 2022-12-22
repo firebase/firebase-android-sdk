@@ -23,39 +23,48 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
+import com.google.firebase.FirebaseApp;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.FirebaseMlException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
 
 /**
  * Model File Manager is used to move the downloaded file to the appropriate locations.
  *
  * @hide
  */
-@Singleton
 public class ModelFileManager {
 
   public static final String CUSTOM_MODEL_ROOT_PATH = "com.google.firebase.ml.custom.models";
   private static final String TAG = "FirebaseModelFileManage";
   private static final int INVALID_INDEX = -1;
   private final Context context;
-  private final String persistenceKey;
+  private final FirebaseApp firebaseApp;
   private final SharedPreferencesUtil sharedPreferencesUtil;
 
-  @Inject
-  public ModelFileManager(
-      Context applicationContext,
-      @Named("persistenceKey") String persistenceKey,
-      SharedPreferencesUtil sharedPreferencesUtil) {
-    this.context = applicationContext;
-    this.persistenceKey = persistenceKey;
-    this.sharedPreferencesUtil = sharedPreferencesUtil;
+  public ModelFileManager(@NonNull FirebaseApp firebaseApp) {
+    this.context = firebaseApp.getApplicationContext();
+    this.firebaseApp = firebaseApp;
+    this.sharedPreferencesUtil = new SharedPreferencesUtil(firebaseApp);
+  }
+
+  /**
+   * Get ModelFileDownloadService instance using the firebase app returned by {@link
+   * FirebaseApp#getInstance()}
+   *
+   * @return ModelFileDownloadService
+   */
+  @NonNull
+  public static ModelFileManager getInstance() {
+    return FirebaseApp.getInstance().get(ModelFileManager.class);
+  }
+
+  @NonNull
+  public static ModelFileManager getInstance(@NonNull FirebaseApp app) {
+    return app.get(ModelFileManager.class);
   }
 
   void deleteNonLatestCustomModels() throws FirebaseMlException {
@@ -88,7 +97,7 @@ public class ModelFileManager {
     } else {
       root = context.getApplicationContext().getDir(modelTypeSpecificRoot, Context.MODE_PRIVATE);
     }
-    File firebaseAppDir = new File(root, persistenceKey);
+    File firebaseAppDir = new File(root, firebaseApp.getPersistenceKey());
     return new File(firebaseAppDir, modelName);
   }
 

@@ -23,14 +23,12 @@ import com.google.firebase.lint.checks.ManifestElementHasNoExportedAttributeDete
 import java.lang.AssertionError
 
 internal fun manifestWith(cmp: Component, exported: Boolean? = null): String {
-  val exportedStr =
-    when (exported) {
-      true,
-      false -> "android:exported=\"$exported\""
-      null -> ""
+    val exportedStr = when (exported) {
+        true, false -> "android:exported=\"$exported\""
+        null -> ""
     }
 
-  return """
+    return """
             <manifest
                 xmlns:android="http://schemas.android.com/apk/res/android"
                 package="com.example.lib">
@@ -38,44 +36,46 @@ internal fun manifestWith(cmp: Component, exported: Boolean? = null): String {
                 <${cmp.xmlName} android:name="foo" $exportedStr/>
             </application>
             </manifest>
-            """
-    .trimIndent()
+            """.trimIndent()
 }
 
 fun TestLintResult.checkContains(expected: String) {
-  this.check(
-    TestResultChecker { output ->
-      if (!output.contains(expected)) {
-        throw AssertionError("Expected:<[$expected]>, but was:<[$output]>")
-      }
-    }
-  )
+    this.check(TestResultChecker { output ->
+        if (!output.contains(expected)) {
+            throw AssertionError("Expected:<[$expected]>, but was:<[$output]>")
+        }
+    })
 }
 
 class Test : LintDetectorTest() {
-  fun testComponents_withNoExportedAttr_shouldFail() {
-    Component.values().forEach {
-      lint()
-        .files(manifest(manifestWith(it)))
-        .run()
-        .checkContains("Error: Set android:exported attribute explicitly")
+    fun testComponents_withNoExportedAttr_shouldFail() {
+        Component.values().forEach {
+            lint().files(
+                    manifest(manifestWith(it)))
+                    .run()
+                    .checkContains("Error: Set android:exported attribute explicitly")
+        }
     }
-  }
 
-  fun testComponents_withExportedAttrTrue_shouldSucceed() {
-    Component.values().forEach {
-      lint().files(manifest(manifestWith(it, true))).run().expectClean()
+    fun testComponents_withExportedAttrTrue_shouldSucceed() {
+        Component.values().forEach {
+            lint().files(
+                    manifest(manifestWith(it, true)))
+                    .run()
+                    .expectClean()
+        }
     }
-  }
 
-  fun testComponents_withExportedAttrFalse_shouldSucceed() {
-    Component.values().forEach {
-      lint().files(manifest(manifestWith(it, false))).run().expectClean()
+    fun testComponents_withExportedAttrFalse_shouldSucceed() {
+        Component.values().forEach {
+            lint().files(
+                    manifest(manifestWith(it, false)))
+                    .run()
+                    .expectClean()
+        }
     }
-  }
 
-  override fun getDetector(): Detector = ManifestElementHasNoExportedAttributeDetector()
+    override fun getDetector(): Detector = ManifestElementHasNoExportedAttributeDetector()
 
-  override fun getIssues(): MutableList<Issue> =
-    mutableListOf(ManifestElementHasNoExportedAttributeDetector.EXPORTED_MISSING_ISSUE)
+    override fun getIssues(): MutableList<Issue> = mutableListOf(ManifestElementHasNoExportedAttributeDetector.EXPORTED_MISSING_ISSUE)
 }

@@ -33,7 +33,6 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
@@ -150,11 +149,7 @@ public class FirebaseInAppMessagingTest {
   @Mock private DisplayCallbacksFactory displayCallbacksFactory;
   @Mock private FirebaseInAppMessagingDisplayCallbacks displayCallbacks;
   @Mock private ProgramaticContextualTriggers programaticContextualTriggers;
-
-  @Mock
-  DeveloperListenerManager developerListenerManager =
-      new DeveloperListenerManager(TestOnlyExecutors.background());
-
+  @Mock DeveloperListenerManager developerListenerManager = new DeveloperListenerManager();
   FirebaseApp firebaseApp1;
   FirebaseOptions options;
 

@@ -19,10 +19,6 @@ import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
-import com.google.firebase.components.Lazy;
-import com.google.firebase.inject.Provider;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 
 /**
  * This class is responsible for sending Firebase ML Log Events to Firebase through Google
@@ -32,26 +28,26 @@ import javax.inject.Singleton;
  *
  * @hide
  */
-@Singleton
 public class DataTransportMlEventSender {
   private static final String FIREBASE_ML_LOG_SDK_NAME = "FIREBASE_ML_LOG_SDK";
-  private final Provider<Transport<FirebaseMlLogEvent>> transport;
+  private final Transport<FirebaseMlLogEvent> transport;
 
-  @Inject
-  DataTransportMlEventSender(Provider<TransportFactory> transportFactory) {
-    this.transport =
-        new Lazy<>(
-            () ->
-                transportFactory
-                    .get()
-                    .getTransport(
-                        FIREBASE_ML_LOG_SDK_NAME,
-                        FirebaseMlLogEvent.class,
-                        Encoding.of("json"),
-                        FirebaseMlLogEvent.getFirebaseMlJsonTransformer()));
+  @NonNull
+  public static DataTransportMlEventSender create(TransportFactory transportFactory) {
+    final Transport<FirebaseMlLogEvent> transport =
+        transportFactory.getTransport(
+            FIREBASE_ML_LOG_SDK_NAME,
+            FirebaseMlLogEvent.class,
+            Encoding.of("json"),
+            FirebaseMlLogEvent.getFirebaseMlJsonTransformer());
+    return new DataTransportMlEventSender(transport);
+  }
+
+  DataTransportMlEventSender(Transport<FirebaseMlLogEvent> transport) {
+    this.transport = transport;
   }
 
   public void sendEvent(@NonNull FirebaseMlLogEvent firebaseMlLogEvent) {
-    transport.get().send(Event.ofData(firebaseMlLogEvent));
+    transport.send(Event.ofData(firebaseMlLogEvent));
   }
 }

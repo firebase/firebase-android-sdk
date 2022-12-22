@@ -27,7 +27,7 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 
 /** Returns the [FirebaseAppDistribution] instance of the default [FirebaseApp]. */
 val Firebase.appDistribution: FirebaseAppDistribution
-  get() = FirebaseAppDistribution.getInstance()
+    get() = FirebaseAppDistribution.getInstance()
 
 /**
  * Destructuring declaration for [AppDistributionRelease] to provide binaryType.
@@ -83,6 +83,6 @@ internal const val LIBRARY_NAME: String = "fire-appdistribution-ktx"
 /** @suppress */
 @Keep
 class FirebaseAppDistributionKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> =
-    listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+    override fun getComponents(): List<Component<*>> =
+            listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 }

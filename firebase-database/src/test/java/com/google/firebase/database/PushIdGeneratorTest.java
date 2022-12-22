@@ -19,6 +19,7 @@ import static com.google.firebase.database.snapshot.ChildKey.MIN_KEY_NAME;
 import static org.junit.Assert.assertEquals;
 
 import com.google.firebase.database.core.utilities.PushIdGenerator;
+import org.codehaus.plexus.util.StringUtils;
 import org.junit.Test;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -40,7 +41,8 @@ public class PushIdGeneratorTest {
         PushIdGenerator.successor(String.valueOf(Integer.MAX_VALUE)));
     assertEquals(
         MAX_KEY_NAME,
-        PushIdGenerator.successor(repeat(Character.toString(MAX_PUSH_CHAR), MAX_KEY_LEN)));
+        PushIdGenerator.successor(
+            StringUtils.repeat(Character.toString(MAX_PUSH_CHAR), MAX_KEY_LEN)));
   }
 
   @Test
@@ -49,7 +51,9 @@ public class PushIdGeneratorTest {
     assertEquals(
         "abd",
         PushIdGenerator.successor(
-            "abc" + repeat(Character.toString(MAX_PUSH_CHAR), MAX_KEY_LEN - "abc".length())));
+            "abc"
+                + StringUtils.repeat(
+                    Character.toString(MAX_PUSH_CHAR), MAX_KEY_LEN - "abc".length())));
     assertEquals(
         "abc" + MIN_PUSH_CHAR + MIN_PUSH_CHAR, PushIdGenerator.successor("abc" + MIN_PUSH_CHAR));
   }
@@ -65,18 +69,8 @@ public class PushIdGeneratorTest {
   @Test
   public void testPredecessorBasicValue() {
     assertEquals(
-        "abb" + repeat(Character.toString(MAX_PUSH_CHAR), MAX_KEY_LEN - "abc".length()),
+        "abb" + StringUtils.repeat(Character.toString(MAX_PUSH_CHAR), MAX_KEY_LEN - "abc".length()),
         PushIdGenerator.predecessor("abc"));
     assertEquals("abc", PushIdGenerator.predecessor("abc" + MIN_PUSH_CHAR));
-  }
-
-  private static String repeat(String str, int repeat) {
-    // Copied from
-    // https://github.com/codehaus-plexus/plexus-utils/blob/master/src/main/java/org/codehaus/plexus/util/StringUtils.java.
-    StringBuilder buffer = new StringBuilder(repeat * str.length());
-    for (int i = 0; i < repeat; i++) {
-      buffer.append(str);
-    }
-    return buffer.toString();
   }
 }

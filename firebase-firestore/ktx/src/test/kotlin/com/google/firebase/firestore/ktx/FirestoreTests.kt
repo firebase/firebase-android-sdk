@@ -42,147 +42,140 @@ const val API_KEY = "API_KEY"
 const val EXISTING_APP = "existing"
 
 abstract class BaseTestCase {
-  @Before
-  fun setUp() {
-    Firebase.initialize(
-      ApplicationProvider.getApplicationContext(),
-      FirebaseOptions.Builder()
-        .setApplicationId(APP_ID)
-        .setApiKey(API_KEY)
-        .setProjectId("123")
-        .build()
-    )
+    @Before
+    fun setUp() {
+        Firebase.initialize(
+                ApplicationProvider.getApplicationContext(),
+                FirebaseOptions.Builder()
+                        .setApplicationId(APP_ID)
+                        .setApiKey(API_KEY)
+                        .setProjectId("123")
+                        .build()
+        )
 
-    Firebase.initialize(
-      ApplicationProvider.getApplicationContext(),
-      FirebaseOptions.Builder()
-        .setApplicationId(APP_ID)
-        .setApiKey(API_KEY)
-        .setProjectId("123")
-        .build(),
-      EXISTING_APP
-    )
-  }
+        Firebase.initialize(
+                ApplicationProvider.getApplicationContext(),
+                FirebaseOptions.Builder()
+                        .setApplicationId(APP_ID)
+                        .setApiKey(API_KEY)
+                        .setProjectId("123")
+                        .build(),
+                EXISTING_APP
+        )
+    }
 
-  @After
-  fun cleanUp() {
-    FirebaseApp.clearInstancesForTest()
-  }
+    @After
+    fun cleanUp() {
+        FirebaseApp.clearInstancesForTest()
+    }
 }
 
 @RunWith(RobolectricTestRunner::class)
 class FirestoreTests : BaseTestCase() {
 
-  @Test
-  fun `firestore should delegate to FirebaseFirestore#getInstance()`() {
-    assertThat(Firebase.firestore).isSameInstanceAs(FirebaseFirestore.getInstance())
-  }
-
-  @Test
-  fun `FirebaseApp#firestore should delegate to FirebaseFirestore#getInstance(FirebaseApp)`() {
-    val app = Firebase.app(EXISTING_APP)
-    assertThat(Firebase.firestore(app)).isSameInstanceAs(FirebaseFirestore.getInstance(app))
-  }
-
-  @Test
-  fun `FirebaseFirestoreSettings builder works`() {
-    val host = "http://10.0.2.2:8080"
-    val isSslEnabled = false
-    val isPersistenceEnabled = false
-
-    val settings = firestoreSettings {
-      this.host = host
-      this.isSslEnabled = isSslEnabled
-      this.isPersistenceEnabled = isPersistenceEnabled
+    @Test
+    fun `firestore should delegate to FirebaseFirestore#getInstance()`() {
+        assertThat(Firebase.firestore).isSameInstanceAs(FirebaseFirestore.getInstance())
     }
 
-    assertThat(host).isEqualTo(settings.host)
-    assertThat(isSslEnabled).isEqualTo(settings.isSslEnabled)
-    assertThat(isPersistenceEnabled).isEqualTo(settings.isPersistenceEnabled)
-  }
+    @Test
+    fun `FirebaseApp#firestore should delegate to FirebaseFirestore#getInstance(FirebaseApp)`() {
+        val app = Firebase.app(EXISTING_APP)
+        assertThat(Firebase.firestore(app)).isSameInstanceAs(FirebaseFirestore.getInstance(app))
+    }
+
+    @Test
+    fun `FirebaseFirestoreSettings builder works`() {
+        val host = "http://10.0.2.2:8080"
+        val isSslEnabled = false
+        val isPersistenceEnabled = false
+
+        val settings = firestoreSettings {
+            this.host = host
+            this.isSslEnabled = isSslEnabled
+            this.isPersistenceEnabled = isPersistenceEnabled
+        }
+
+        assertThat(host).isEqualTo(settings.host)
+        assertThat(isSslEnabled).isEqualTo(settings.isSslEnabled)
+        assertThat(isPersistenceEnabled).isEqualTo(settings.isPersistenceEnabled)
+    }
 }
 
 @RunWith(RobolectricTestRunner::class)
 class LibraryVersionTest : BaseTestCase() {
-  @Test
-  fun `library version should be registered with runtime`() {
-    val publisher = Firebase.app.get(UserAgentPublisher::class.java)
-    assertThat(publisher.userAgent).contains(LIBRARY_NAME)
-  }
+    @Test
+    fun `library version should be registered with runtime`() {
+        val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
+    }
 }
 
 data class Room(var a: Int = 0, var b: Int = 0)
 
 @RunWith(RobolectricTestRunner::class)
 class DocumentSnapshotTests {
-  @Before
-  fun setup() {
-    Mockito.`when`(TestUtil.firestore().firestoreSettings)
-      .thenReturn(FirebaseFirestoreSettings.Builder().build())
-  }
+    @Before
+    fun setup() {
+        Mockito.`when`(TestUtil.firestore().firestoreSettings).thenReturn(FirebaseFirestoreSettings.Builder().build())
+    }
 
-  @After
-  fun cleanup() {
-    Mockito.reset(TestUtil.firestore())
-  }
+    @After
+    fun cleanup() {
+        Mockito.reset(TestUtil.firestore())
+    }
 
-  @Test
-  fun `reified getField delegates to get()`() {
-    val ds = TestUtil.documentSnapshot("rooms/foo", mapOf("a" to 1, "b" to 2), false)
+    @Test
+    fun `reified getField delegates to get()`() {
+        val ds = TestUtil.documentSnapshot("rooms/foo", mapOf("a" to 1, "b" to 2), false)
 
-    assertThat(ds.getField<Int>("a")).isEqualTo(ds.get("a", Int::class.java))
-    assertThat(ds.getField<Int>(FieldPath.of("a")))
-      .isEqualTo(ds.get(FieldPath.of("a"), Int::class.java))
+        assertThat(ds.getField<Int>("a")).isEqualTo(ds.get("a", Int::class.java))
+        assertThat(ds.getField<Int>(FieldPath.of("a")))
+                .isEqualTo(ds.get(FieldPath.of("a"), Int::class.java))
 
-    assertThat(ds.getField<Int>("a", DocumentSnapshot.ServerTimestampBehavior.ESTIMATE))
-      .isEqualTo(ds.get("a", Int::class.java, DocumentSnapshot.ServerTimestampBehavior.ESTIMATE))
-    assertThat(
-        ds.getField<Int>(FieldPath.of("a"), DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
-      )
-      .isEqualTo(ds.get(FieldPath.of("a"), Int::class.java))
-  }
+        assertThat(ds.getField<Int>("a", DocumentSnapshot.ServerTimestampBehavior.ESTIMATE))
+                .isEqualTo(ds.get("a", Int::class.java, DocumentSnapshot.ServerTimestampBehavior.ESTIMATE))
+        assertThat(ds.getField<Int>(FieldPath.of("a"), DocumentSnapshot.ServerTimestampBehavior.ESTIMATE))
+                .isEqualTo(ds.get(FieldPath.of("a"), Int::class.java))
+    }
 
-  @Test
-  fun `reified toObject delegates to toObject(Class)`() {
-    val ds = TestUtil.documentSnapshot("rooms/foo", mapOf("a" to 1, "b" to 2), false)
+    @Test
+    fun `reified toObject delegates to toObject(Class)`() {
+        val ds = TestUtil.documentSnapshot("rooms/foo", mapOf("a" to 1, "b" to 2), false)
 
-    var room = ds.toObject<Room>()
-    assertThat(room).isEqualTo(Room(1, 2))
-    assertThat(room).isEqualTo(ds.toObject(Room::class.java))
+        var room = ds.toObject<Room>()
+        assertThat(room).isEqualTo(Room(1, 2))
+        assertThat(room).isEqualTo(ds.toObject(Room::class.java))
 
-    room = ds.toObject<Room>(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
-    assertThat(room).isEqualTo(Room(1, 2))
-    assertThat(room)
-      .isEqualTo(ds.toObject(Room::class.java, DocumentSnapshot.ServerTimestampBehavior.ESTIMATE))
-  }
+        room = ds.toObject<Room>(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)
+        assertThat(room).isEqualTo(Room(1, 2))
+        assertThat(room)
+                .isEqualTo(ds.toObject(Room::class.java, DocumentSnapshot.ServerTimestampBehavior.ESTIMATE))
+    }
 }
 
 @RunWith(RobolectricTestRunner::class)
 class QuerySnapshotTests {
-  @Before
-  fun setup() {
-    Mockito.`when`(TestUtil.firestore().firestoreSettings)
-      .thenReturn(FirebaseFirestoreSettings.Builder().build())
-  }
+    @Before
+    fun setup() {
+        Mockito.`when`(TestUtil.firestore().firestoreSettings).thenReturn(FirebaseFirestoreSettings.Builder().build())
+    }
 
-  @After
-  fun cleanup() {
-    Mockito.reset(TestUtil.firestore())
-  }
+    @After
+    fun cleanup() {
+        Mockito.reset(TestUtil.firestore())
+    }
 
-  @Test
-  fun `reified toObjects delegates to toObjects(Class)`() {
-    val qs =
-      TestUtil.querySnapshot(
-        "rooms",
-        mapOf(),
-        mapOf("id" to ObjectValue.fromMap(mapOf("a" to wrap(1), "b" to wrap(2)))),
-        false,
-        false
-      )
+    @Test
+    fun `reified toObjects delegates to toObjects(Class)`() {
+        val qs = TestUtil.querySnapshot(
+                "rooms",
+                mapOf(),
+                mapOf("id" to ObjectValue.fromMap(mapOf("a" to wrap(1), "b" to wrap(2)))),
+                false,
+                false)
 
-    assertThat(qs.toObjects<Room>()).containsExactly(Room(1, 2))
-    assertThat(qs.toObjects<Room>(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE))
-      .containsExactly(Room(1, 2))
-  }
+        assertThat(qs.toObjects<Room>()).containsExactly(Room(1, 2))
+        assertThat(qs.toObjects<Room>(DocumentSnapshot.ServerTimestampBehavior.ESTIMATE)).containsExactly(Room(1, 2))
+    }
 }

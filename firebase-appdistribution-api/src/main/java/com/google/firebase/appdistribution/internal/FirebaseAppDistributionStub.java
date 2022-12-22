@@ -14,7 +14,6 @@
 
 package com.google.firebase.appdistribution.internal;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -39,8 +38,6 @@ import java.util.concurrent.Executor;
  * Tasks}/{@link UpdateTask UpdateTasks} with {@link
  * FirebaseAppDistributionException.Status#NOT_IMPLEMENTED}.
  */
-// TODO(b/261013680): Use an explicit executor in continuations.
-@SuppressLint("TaskMainThread")
 public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
   @NonNull
   @Override

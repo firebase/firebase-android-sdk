@@ -14,7 +14,6 @@
 
 package com.google.firebase.perf.session.gauges;
 
-import android.annotation.SuppressLint;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.logging.AndroidLogger;
@@ -53,8 +52,6 @@ public class MemoryGaugeCollector {
   @Nullable private ScheduledFuture memoryMetricCollectorJob = null;
   private long memoryMetricCollectionRateMs = UNSET_MEMORY_METRIC_COLLECTION_RATE;
 
-  // TODO(b/258263016): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   MemoryGaugeCollector() {
     this(Executors.newSingleThreadScheduledExecutor(), Runtime.getRuntime());
   }

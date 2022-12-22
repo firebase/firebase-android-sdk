@@ -25,48 +25,39 @@ import com.android.tools.lint.detector.api.XmlContext
 import com.android.tools.lint.detector.api.XmlScanner
 import org.w3c.dom.Element
 
-@Suppress("DetectorIsMissingAnnotations")
 class ManifestElementHasNoExportedAttributeDetector : Detector(), XmlScanner {
 
-  enum class Component(val xmlName: String) {
-    ACTIVITY("activity"),
-    ACTIVITY_ALIAS("activity-alias"),
-    PROVIDER("provider"),
-    RECEIVER("receiver"),
-    SERVICE("service"),
-  }
+    enum class Component(val xmlName: String) {
+        ACTIVITY("activity"),
+        ACTIVITY_ALIAS("activity-alias"),
+        PROVIDER("provider"),
+        RECEIVER("receiver"),
+        SERVICE("service"),
+    }
 
-  companion object {
-    internal val EXPORTED_MISSING_ISSUE: Issue =
-      Issue.create(
-        "ManifestElementHasNoExportedAttribute",
-        "`android:exported` attribute missing on element",
-        "Leaving this attribute out may unintentionally lead to an exported component, please " +
-          "specify the value explicitly.",
-        Category.SECURITY,
-        1,
-        Severity.ERROR,
-        Implementation(
-          ManifestElementHasNoExportedAttributeDetector::class.java,
-          Scope.MANIFEST_SCOPE
-        )
-      )
-  }
+    companion object {
+        internal val EXPORTED_MISSING_ISSUE: Issue = Issue.create(
+                "ManifestElementHasNoExportedAttribute",
+                "`android:exported` attribute missing on element",
+                "Leaving this attribute out may unintentionally lead to an exported component, please " +
+                        "specify the value explicitly.",
+                Category.SECURITY,
+                1,
+                Severity.ERROR,
+                Implementation(ManifestElementHasNoExportedAttributeDetector::class.java, Scope.MANIFEST_SCOPE))
+    }
 
-  override fun getApplicableElements(): Collection<String>? = Component.values().map { it.xmlName }
+    override fun getApplicableElements(): Collection<String>? = Component.values().map { it.xmlName }
 
-  override fun visitElement(context: XmlContext, element: Element) {
-    val value = element.getAttributeNS(SdkConstants.ANDROID_URI, "exported")
-    value
-      .takeIf { it.isEmpty() }
-      ?.let {
-        context.report(
-          EXPORTED_MISSING_ISSUE,
-          element,
-          context.getLocation(element),
-          "Set `android:exported` attribute explicitly. As the implicit default value " +
-            "is insecure."
-        )
-      }
-  }
+    override fun visitElement(context: XmlContext, element: Element) {
+        val value = element.getAttributeNS(SdkConstants.ANDROID_URI, "exported")
+        value.takeIf { it.isEmpty() }?.let {
+            context.report(
+                    EXPORTED_MISSING_ISSUE,
+                    element,
+                    context.getLocation(element),
+                    "Set `android:exported` attribute explicitly. As the implicit default value " +
+                            "is insecure.")
+        }
+    }
 }

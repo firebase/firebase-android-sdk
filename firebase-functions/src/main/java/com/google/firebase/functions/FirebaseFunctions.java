@@ -15,6 +15,7 @@
 package com.google.firebase.functions;
 
 import android.content.Context;
+import android.os.Handler;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -26,20 +27,14 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.annotations.concurrent.Lightweight;
-import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.functions.FirebaseFunctionsException.Code;
-import dagger.assisted.Assisted;
-import dagger.assisted.AssistedInject;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import javax.inject.Named;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -62,6 +57,9 @@ public class FirebaseFunctions {
    */
   private static boolean providerInstallStarted = false;
 
+  // The FirebaseApp instance
+  private final FirebaseApp app;
+
   // The network client to use for HTTPS requests.
   private final OkHttpClient client;
 
@@ -70,8 +68,6 @@ public class FirebaseFunctions {
 
   // A provider of client metadata to include with calls.
   private final ContextProvider contextProvider;
-
-  private final Executor executor;
 
   // The projectId to use for all functions references.
   private final String projectId;
@@ -88,15 +84,13 @@ public class FirebaseFunctions {
   // Emulator settings
   @Nullable private EmulatedServiceSettings emulatorSettings;
 
-  @AssistedInject
   FirebaseFunctions(
+      FirebaseApp app,
       Context context,
-      @Named("projectId") String projectId,
-      @Assisted String regionOrCustomDomain,
-      ContextProvider contextProvider,
-      @Lightweight Executor executor,
-      @UiThread Executor uiExecutor) {
-    this.executor = executor;
+      String projectId,
+      String regionOrCustomDomain,
+      ContextProvider contextProvider) {
+    this.app = app;
     this.client = new OkHttpClient();
     this.serializer = new Serializer();
     this.contextProvider = Preconditions.checkNotNull(contextProvider);
@@ -118,16 +112,15 @@ public class FirebaseFunctions {
       this.customDomain = regionOrCustomDomain;
     }
 
-    maybeInstallProviders(context, uiExecutor);
+    maybeInstallProviders(context);
   }
 
   /**
    * Runs ProviderInstaller.installIfNeededAsync once per application instance.
    *
    * @param context The application context.
-   * @param uiExecutor
    */
-  private static void maybeInstallProviders(Context context, Executor uiExecutor) {
+  private static void maybeInstallProviders(Context context) {
     // Make sure this only runs once.
     synchronized (providerInstalled) {
       if (providerInstallStarted) {
@@ -138,7 +131,7 @@ public class FirebaseFunctions {
 
     // Package installIfNeededAsync into a Runnable so it can be run on the main thread.
     // installIfNeededAsync checks to make sure it is on the main thread, and throws otherwise.
-    uiExecutor.execute(
+    Runnable runnable =
         () ->
             ProviderInstaller.installIfNeededAsync(
                 context,
@@ -153,7 +146,10 @@ public class FirebaseFunctions {
                     Log.d("FirebaseFunctions", "Failed to update ssl context");
                     providerInstalled.setResult(null);
                   }
-                }));
+                });
+
+    Handler handler = new Handler(context.getMainLooper());
+    handler.post(runnable);
   }
 
   /**
@@ -273,9 +269,8 @@ public class FirebaseFunctions {
   Task<HttpsCallableResult> call(String name, @Nullable Object data, HttpsCallOptions options) {
     return providerInstalled
         .getTask()
-        .continueWithTask(executor, task -> contextProvider.getContext())
+        .continueWithTask(task -> contextProvider.getContext())
         .continueWithTask(
-            executor,
             task -> {
               if (!task.isSuccessful()) {
                 return Tasks.forException(task.getException());
@@ -296,9 +291,8 @@ public class FirebaseFunctions {
   Task<HttpsCallableResult> call(URL url, @Nullable Object data, HttpsCallOptions options) {
     return providerInstalled
         .getTask()
-        .continueWithTask(executor, task -> contextProvider.getContext())
+        .continueWithTask(task -> contextProvider.getContext())
         .continueWithTask(
-            executor,
             task -> {
               if (!task.isSuccessful()) {
                 return Tasks.forException(task.getException());
@@ -311,7 +305,7 @@ public class FirebaseFunctions {
   /**
    * Calls a Callable HTTPS trigger endpoint.
    *
-   * @param url The name of the HTTPS trigger.
+   * @param name The name of the HTTPS trigger.
    * @param data Parameters to pass to the function. Can be anything encodable as JSON.
    * @param context Metadata to supply with the function call.
    * @return A Task that will be completed when the request is complete.

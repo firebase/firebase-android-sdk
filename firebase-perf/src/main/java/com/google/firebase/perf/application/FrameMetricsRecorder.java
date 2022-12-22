@@ -15,7 +15,6 @@
 package com.google.firebase.perf.application;
 
 import android.app.Activity;
-import android.os.Build;
 import android.util.SparseIntArray;
 import androidx.core.app.FrameMetricsAggregator;
 import androidx.fragment.app.Fragment;
@@ -108,22 +107,11 @@ public class FrameMetricsRecorder {
     }
     Optional<PerfFrameMetrics> data = this.snapshot();
     try {
-      // No reliable way to check for hardware-acceleration, so we must catch retroactively (#2736).
       frameMetricsAggregator.remove(activity);
-    } catch (IllegalArgumentException | NullPointerException ex) {
-      // Both of these exceptions result from android.view.View.addFrameMetricsListener silently
-      // failing when the view is not hardware-accelerated. Successful addFrameMetricsListener
-      // stores an observer in a list, and initializes the list if it was uninitialized. Invoking
-      // View.removeFrameMetricsListener(listener) throws IAE if it doesn't exist in the list, or
-      // throws NPE if the list itself was never initialized (#4184).
-      if (ex instanceof NullPointerException && Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-        // Re-throw above API 28, since the NPE is fixed in API 29:
-        // https://android.googlesource.com/platform/frameworks/base/+/140ff5ea8e2d99edc3fbe63a43239e459334c76b
-        throw ex;
-      }
+    } catch (IllegalArgumentException err) {
       logger.warn(
-          "View not hardware accelerated. Unable to collect FrameMetrics. %s", ex.toString());
-      data = Optional.absent();
+          "View not hardware accelerated. Unable to collect FrameMetrics. %s", err.toString());
+      return Optional.absent();
     }
     frameMetricsAggregator.reset();
     isRecording = false;
