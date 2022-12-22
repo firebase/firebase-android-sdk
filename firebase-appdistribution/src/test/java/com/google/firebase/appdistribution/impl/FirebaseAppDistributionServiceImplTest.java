@@ -21,6 +21,7 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.HOST_ACTIVITY_INTERRUPTED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.INSTALLATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
+import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UNKNOWN;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UPDATE_NOT_AVAILABLE;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.AUTHENTICATION_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.JSON_PARSING_ERROR;
@@ -42,6 +43,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -68,6 +70,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
@@ -137,8 +141,8 @@ public class FirebaseAppDistributionServiceImplTest {
           .setDownloadUrl(TEST_URL)
           .build();
 
-  private final ExecutorService lightweightExecutor = TestOnlyExecutors.lite();
-  private final ExecutorService blockingExecutor = TestOnlyExecutors.blocking();
+  @Lightweight private final ExecutorService lightweightExecutor = TestOnlyExecutors.lite();
+  @Blocking private final ExecutorService blockingExecutor = TestOnlyExecutors.blocking();
 
   private FirebaseAppDistributionImpl firebaseAppDistribution;
   private ActivityController<TestActivity> activityController;
@@ -190,6 +194,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     when(mockTesterSignInManager.signInTester()).thenReturn(Tasks.forResult(null));
     when(mockSignInStorage.getSignInStatus()).thenReturn(Tasks.forResult(true));
+    when(mockSignInStorage.setSignInStatus(anyBoolean())).thenReturn(Tasks.forResult(null));
 
     when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
 
@@ -506,10 +511,25 @@ public class FirebaseAppDistributionServiceImplTest {
   }
 
   @Test
-  public void signOutTester_setsSignInStatusFalse() throws InterruptedException {
+  public void signOutTester_setsSignInStatusFalse() {
     firebaseAppDistribution.signOutTester();
-    awaitTermination(lightweightExecutor);
+
     verify(mockSignInStorage).setSignInStatus(false);
+  }
+
+  @Test
+  public void signOutTester_unsetsCachedNewRelease()
+      throws InterruptedException, FirebaseAppDistributionException, ExecutionException {
+    Task<AppDistributionReleaseInternal> setCachedNewReleaseTask =
+        firebaseAppDistribution.getCachedNewRelease().set(TEST_RELEASE_NEWER_AAB_INTERNAL);
+    awaitTask(setCachedNewReleaseTask);
+
+    firebaseAppDistribution.signOutTester();
+
+    Task<AppDistributionReleaseInternal> cachedNewReleaseTask =
+        firebaseAppDistribution.getCachedNewRelease().get();
+    awaitTask(cachedNewReleaseTask);
+    assertThat(cachedNewReleaseTask.getResult()).isNull();
   }
 
   @Test
@@ -759,8 +779,7 @@ public class FirebaseAppDistributionServiceImplTest {
   public void startFeedback_screenshotFails_startActivityWithNoScreenshot()
       throws InterruptedException {
     when(mockScreenshotTaker.takeScreenshot())
-        .thenReturn(
-            Tasks.forException(new FirebaseAppDistributionException("Error", Status.UNKNOWN)));
+        .thenReturn(Tasks.forException(new FirebaseAppDistributionException("Error", UNKNOWN)));
     when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
 
     firebaseAppDistribution.startFeedback("Some terms and conditions");
@@ -781,7 +800,7 @@ public class FirebaseAppDistributionServiceImplTest {
       throws InterruptedException {
     when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
     FirebaseAppDistributionException exception =
-        new FirebaseAppDistributionException("Error", Status.UNKNOWN);
+        new FirebaseAppDistributionException("Error", UNKNOWN);
     when(mockTesterSignInManager.signInTester()).thenReturn(Tasks.forException(exception));
 
     firebaseAppDistribution.startFeedback("Some terms and conditions");
@@ -795,7 +814,7 @@ public class FirebaseAppDistributionServiceImplTest {
   public void startFeedback_cantIdentifyRelease_logsAndSetsInProgressToFalse()
       throws InterruptedException {
     FirebaseAppDistributionException exception =
-        new FirebaseAppDistributionException("Error", Status.UNKNOWN);
+        new FirebaseAppDistributionException("Error", UNKNOWN);
     when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forException(exception));
 
     firebaseAppDistribution.startFeedback("Some terms and conditions");
