@@ -312,13 +312,13 @@ public class FirebaseDatabase {
    * @param host the emulator host (for example, 10.0.2.2)
    * @param port the emulator port (for example, 9000)
    */
-  public void useEmulator(@NonNull String host, int port) {
+  public void useEmulator(@NonNull String host) {
     if (this.repo != null) {
       throw new IllegalStateException(
           "Cannot call useEmulator() after instance has already been initialized.");
     }
 
-    this.emulatorSettings = new EmulatedServiceSettings(host, port);
+    this.emulatorSettings = new EmulatedServiceSettings(host, 9000);
   }
 
   public String testMethodNotToBeUsed(@NonNull String valueToReturn) {
