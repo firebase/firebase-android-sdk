@@ -7,6 +7,10 @@ on:
         description: 'Release name'
         required: true
         type: string
+      past-name:
+        description: 'Past release name'
+        required: true
+        type: string
 
 jobs:
   create-branches:
@@ -32,12 +36,7 @@ jobs:
         run: |
           git config user.name 'Create Release GA'
           git config user.email 'noreply@google.com'
-          echo "[release]" > release.cfg
-          echo "name = ${{ inputs.name }}" >> release.cfg
-          echo "mode = RELEASE" >> release.cfg
-          echo "" >> release.cfg
-          echo "[modules]" >> release.cfg
-          echo "" >> release.cfg
+          ./gradlew generateReleaseConfig -PcurrentRelease=${{ inputs.name }} -PpastRelease=${{ inputs.past-name }} -PprintOutput=true
           git add release.cfg
           git commit -a -m 'Create release config'
 
