@@ -16,13 +16,14 @@ package com.google.firebase.remoteconfig.internal;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.util.Log;
 import androidx.annotation.GuardedBy;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
+import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -102,15 +103,17 @@ public class ConfigRealtimeHttpClient {
   }
 
   /** Retries HTTP stream connection asyncly in random time intervals. */
-  @SuppressLint("VisibleForTests")
-  public synchronized void retryHTTPConnection() {
+  private synchronized void retryHTTPConnection() {
     if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
       if (httpRetriesRemaining < ORIGINAL_RETRIES) {
         httpRetrySeconds *= getRetryMultiplier();
       }
       httpRetriesRemaining--;
-      realtimeHttpStreamFutureTask = scheduledExecutorService.schedule(
-          createRealtimeHttpStreamFutureTask(), httpRetrySeconds, TimeUnit.SECONDS);
+      realtimeHttpStreamFutureTask =
+          scheduledExecutorService.schedule(
+              createRealtimeHttpStreamFutureTask(createRealtimeHttpStream()),
+              httpRetrySeconds,
+              TimeUnit.SECONDS);
     } else {
       propagateErrors(
           new FirebaseRemoteConfigClientException(
@@ -119,33 +122,52 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  private synchronized RealtimeHttpStreamFutureTask createRealtimeHttpStreamFutureTask() {
-    ConfigRealtimeHttpStream configRealtimeHttpStream =
-        new ConfigRealtimeHttpStream(
-            firebaseApp,
-            firebaseInstallations,
-            context,
-            namespace,
-            listeners,
-            scheduledExecutorService,
-            configFetchHandler);
+  private ConfigRealtimeHttpStream createRealtimeHttpStream() {
+    return new ConfigRealtimeHttpStream(
+        firebaseApp,
+        firebaseInstallations,
+        context,
+        namespace,
+        listeners,
+        scheduledExecutorService,
+        configFetchHandler);
+  }
+
+  @SuppressLint("VisibleForTests")
+  public synchronized RealtimeHttpStreamFutureTask createRealtimeHttpStreamFutureTask(
+      ConfigRealtimeHttpStream configRealtimeHttpStream) {
     Runnable runnable =
         new Runnable() {
           @Override
           public void run() {
-            configRealtimeHttpStream.beginRealtimeHttpStream();
+            HttpURLConnection httpURLConnection = null;
+            try {
+              httpURLConnection = configRealtimeHttpStream.createRealtimeConnection();
+            } catch (IOException ex) {
+              propagateErrors(
+                  new FirebaseRemoteConfigClientException(
+                      "Unable to connect to the server. Check your connection and try again.",
+                      FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
+            }
+            if (httpURLConnection != null) {
+              configRealtimeHttpStream.beginRealtimeHttpStream(httpURLConnection);
+            }
           }
         };
 
     return new RealtimeHttpStreamFutureTask(runnable, configRealtimeHttpStream);
   }
 
+  @SuppressLint("VisibleForTests")
   public synchronized void startRealtimeHttpStream() {
     if (canMakeHttpStreamConnection()) {
-      realtimeHttpStreamFutureTask = scheduledExecutorService.submit(createRealtimeHttpStreamFutureTask());
+      realtimeHttpStreamFutureTask =
+          scheduledExecutorService.submit(
+              createRealtimeHttpStreamFutureTask(createRealtimeHttpStream()));
     }
   }
 
+  @SuppressLint("VisibleForTests")
   public synchronized void endRealtimeHttpStream() {
     if (realtimeHttpStreamFutureTask != null) {
       realtimeHttpStreamFutureTask.cancel(true);
@@ -153,7 +175,8 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  private class RealtimeHttpStreamFutureTask extends FutureTask<String> {
+  @SuppressLint("VisibleForTests")
+  public class RealtimeHttpStreamFutureTask extends FutureTask<String> {
     private final ConfigRealtimeHttpStream configRealtimeHttpStream;
 
     public RealtimeHttpStreamFutureTask(
@@ -165,16 +188,13 @@ public class ConfigRealtimeHttpClient {
     @Override
     protected void done() {
       realtimeHttpStreamFutureTask = null;
-      Log.i("FRC", "looking");
       isRealtimeDisabled = configRealtimeHttpStream.getBackoffState();
       if (configRealtimeHttpStream.getLastAttemptState()) {
         resetRetryParameters();
       }
       if (configRealtimeHttpStream.getRetryState()) {
-        Log.i("FRC", "retrying");
         retryHTTPConnection();
       }
-      Log.i("FRC", "out");
     }
   }
 }

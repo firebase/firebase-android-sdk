@@ -64,7 +64,6 @@ public class ConfigRealtimeHttpStream {
   private boolean isRealtimeDisabled;
   private boolean lastAttemptWasSuccessful;
   private boolean retryConnection;
-  private HttpURLConnection httpURLConnection;
 
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
@@ -87,8 +86,6 @@ public class ConfigRealtimeHttpStream {
     this.namespace = namespace;
     this.configFetchHandler = configFetchHandler;
     this.scheduledExecutorService = scheduledExecutorService;
-
-    this.httpURLConnection = null;
 
     this.isRealtimeDisabled = false;
     this.lastAttemptWasSuccessful = false;
@@ -226,11 +223,7 @@ public class ConfigRealtimeHttpStream {
   @SuppressLint("VisibleForTests")
   public HttpURLConnection createRealtimeConnection() throws IOException {
     URL realtimeUrl = getUrl();
-    HttpURLConnection httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
-    setCommonRequestHeaders(httpURLConnection);
-    setRequestParams(httpURLConnection);
-
-    return httpURLConnection;
+    return (HttpURLConnection) realtimeUrl.openConnection();
   }
 
   /**
@@ -274,12 +267,13 @@ public class ConfigRealtimeHttpStream {
    * chunk-encoded HTTP body. When the connection closes, it attempts to reestablish the stream.
    */
   @SuppressLint({"VisibleForTests", "DefaultLocale"})
-  public synchronized void beginRealtimeHttpStream() {
-    Log.i(TAG, "working");
+  public synchronized void beginRealtimeHttpStream(HttpURLConnection httpURLConnection) {
+    setCommonRequestHeaders(httpURLConnection);
+
     Integer responseCode = null;
     try {
-      // Create the open the connection.
-      httpURLConnection = createRealtimeConnection();
+      setRequestParams(httpURLConnection);
+      setRequestParams(httpURLConnection);
       responseCode = httpURLConnection.getResponseCode();
 
       // If the connection returned a 200 response code, start listening for messages.
@@ -299,14 +293,12 @@ public class ConfigRealtimeHttpStream {
               e.getCause(),
               FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
     } finally {
-      closeRealtimeHttpStream();
-      Log.i(TAG, "here");
+      closeRealtimeHttpStream(httpURLConnection);
       // If responseCode is null then no connection was made to server and the SDK should still
       // retry.
       if (responseCode == null
           || responseCode == HttpURLConnection.HTTP_OK
           || isStatusCodeRetryable(responseCode)) {
-        Log.i(TAG, "here2");
         retryConnection = true;
       } else {
         propagateErrors(
@@ -321,20 +313,19 @@ public class ConfigRealtimeHttpStream {
   }
 
   // Pauses Http stream listening
-  public synchronized void closeRealtimeHttpStream() {
+  public synchronized void closeRealtimeHttpStream(HttpURLConnection httpURLConnection) {
     if (httpURLConnection != null) {
-      this.httpURLConnection.disconnect();
+      httpURLConnection.disconnect();
 
       // Explicitly close the input stream due to a bug in the Android okhttp implementation.
       // See github.com/firebase/firebase-android-sdk/pull/808.
       try {
-        this.httpURLConnection.getInputStream().close();
-        if (this.httpURLConnection.getErrorStream() != null) {
-          this.httpURLConnection.getErrorStream().close();
+        httpURLConnection.getInputStream().close();
+        if (httpURLConnection.getErrorStream() != null) {
+          httpURLConnection.getErrorStream().close();
         }
       } catch (IOException e) {
       }
-      this.httpURLConnection = null;
     }
   }
 }
