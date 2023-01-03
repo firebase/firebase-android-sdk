@@ -14,43 +14,15 @@
 
 package com.example
 
-sealed interface Phrase {
+interface AlternativePhrases {
   fun speak(): String
 }
 
 /**
  * A phrase used when one is entering a premise.
- *
- * Pronounced <b>he &#183; lo</b>
- *
- * @see Goodbye
  */
-class Hello() : Phrase {
-  fun sayHello() = "Hello"
+class Hi() : AlternativePhrases {
+  fun sayHi() = "Hi"
 
-  fun speak() = sayHello()
+  override fun speak() = sayHi()
 }
-
-/**
- * A phrase used when one is leaving, or departing from a premise.
- *
- * Pronounced <b>good &#183; bi</b>
- *
- * @see Hello
- */
-class Goodbye() : Phrase {
-  fun sayGoodbye() = "Goodbye"
-
-  fun speak() = sayGoodbye()
-}
-
-/**
- * An unprofessional way to greet a friend.
- *
- * @hide
- */
-class Wasgood() : Phrase {
-  fun speak() = "Wasgood"
-}
-// add stuff here for transform tests ig?
-// build file maybe?

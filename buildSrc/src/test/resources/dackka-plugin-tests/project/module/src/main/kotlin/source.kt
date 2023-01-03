@@ -28,7 +28,7 @@ interface Phrase {
 class Hello() : Phrase {
   fun sayHello() = "Hello"
 
-  fun speak() = sayHello()
+  override fun speak() = sayHello()
 }
 
 /**
@@ -41,7 +41,7 @@ class Hello() : Phrase {
 class Goodbye() : Phrase {
   fun sayGoodbye() = "Goodbye"
 
-  fun speak() = sayGoodbye()
+  override fun speak() = sayGoodbye()
 }
 
 /**
@@ -50,7 +50,7 @@ class Goodbye() : Phrase {
  * @see <a href="firebase.google.com">Firebase</a>Make your app the best it can be
  */
 class CheckTheReleaseSpreadsheet(): Phrase {
-  fun speak() = "Check the release spreadsheet"
+  override fun speak() = "Check the release spreadsheet"
 }
 
 /**
@@ -59,5 +59,5 @@ class CheckTheReleaseSpreadsheet(): Phrase {
  * @hide
  */
 class Wasgood() : Phrase {
-  fun speak() = "Wasgood"
+  override fun speak() = "Wasgood"
 }
