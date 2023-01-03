@@ -150,7 +150,7 @@ class LicenseResolverPluginTests {
         }
 
         thirdPartyLicenses {
-            add 'customLib1', "${File("src/test/fixtures/license.txt").absolutePath}"
+            add 'customLib1', "${File("src/test/resources/license.txt").absolutePath}"
         }
         """
   }
