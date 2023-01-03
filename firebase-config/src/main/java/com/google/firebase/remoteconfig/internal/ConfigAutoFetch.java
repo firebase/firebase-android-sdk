@@ -115,15 +115,6 @@ public class ConfigAutoFetch {
         httpURLConnection.disconnect();
       }
     }
-
-    // TODO: Factor ConfigUpdateListener out of internal retry logic.
-    retryCallback.onUpdate(ConfigUpdate.create(new HashSet<>()));
-    scheduledExecutorService.shutdownNow();
-    try {
-      scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
-    } catch (InterruptedException ex) {
-      Log.d(TAG, "Thread Interrupted.");
-    }
   }
 
   // Auto-fetch new config and execute callbacks on each new message
