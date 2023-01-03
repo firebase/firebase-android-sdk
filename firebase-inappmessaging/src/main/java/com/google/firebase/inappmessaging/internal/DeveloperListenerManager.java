@@ -14,6 +14,7 @@
 
 package com.google.firebase.inappmessaging.internal;
 
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener;
@@ -154,6 +155,16 @@ public class DeveloperListenerManager {
     registeredImpressionListeners.clear();
     registeredErrorListeners.clear();
     registeredDismissListeners.clear();
+  }
+
+  @VisibleForTesting
+  public Map getAllListeners() {
+    Map listeners = new HashMap();
+    listeners.putAll(registeredClickListeners);
+    listeners.putAll(registeredImpressionListeners);
+    listeners.putAll(registeredErrorListeners);
+    listeners.putAll(registeredDismissListeners);
+    return listeners;
   }
 
   private abstract static class ExecutorAndListener<T> {
