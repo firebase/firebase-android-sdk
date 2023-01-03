@@ -1,0 +1,25 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url 'https://storage.googleapis.com/android-ci/mvn/'
+            metadataSources {
+                artifact()
+            }
+        }
+    }
+}
+
+configure(subprojects) {
+    repositories {
+        google()
+        mavenCentral()
+        maven {
+            url 'https://storage.googleapis.com/android-ci/mvn/'
+            metadataSources {
+                artifact()
+            }
+        }
+    }
+}
