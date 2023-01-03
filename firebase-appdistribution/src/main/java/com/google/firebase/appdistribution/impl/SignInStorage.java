@@ -16,6 +16,7 @@ package com.google.firebase.appdistribution.impl;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -24,8 +25,10 @@ import java.util.concurrent.Executor;
 
 /** Class that handles storage for App Distribution SignIn persistence. */
 class SignInStorage {
-  private static final String SIGNIN_PREFERENCES_NAME = "FirebaseAppDistributionSignInStorage";
-  private static final String SIGNIN_TAG = "firebase_app_distribution_signin";
+  @VisibleForTesting
+  static final String SIGNIN_PREFERENCES_NAME = "FirebaseAppDistributionSignInStorage";
+
+  @VisibleForTesting static final String SIGNIN_TAG = "firebase_app_distribution_signin";
 
   private final Context applicationContext;
   @Background private final Executor backgroundExecutor;
@@ -54,12 +57,14 @@ class SignInStorage {
   }
 
   boolean getSignInStatusBlocking() {
-    return getSharedPreferencesBlocking().getBoolean(SIGNIN_TAG, false);
+    return getAndCacheSharedPreferences().getBoolean(SIGNIN_TAG, false);
   }
 
-  private SharedPreferences getSharedPreferencesBlocking() {
+  private SharedPreferences getAndCacheSharedPreferences() {
     // This may construct a new SharedPreferences object, which requires storage I/O
-    return applicationContext.getSharedPreferences(SIGNIN_PREFERENCES_NAME, Context.MODE_PRIVATE);
+    sharedPreferences =
+        applicationContext.getSharedPreferences(SIGNIN_PREFERENCES_NAME, Context.MODE_PRIVATE);
+    return sharedPreferences;
   }
 
   private <T> Task<T> applyToSharedPreferences(SharedPreferencesFunction<T> func) {
@@ -72,10 +77,7 @@ class SignInStorage {
     }
     TaskCompletionSource<T> taskCompletionSource = new TaskCompletionSource<>();
     backgroundExecutor.execute(
-        () -> {
-          sharedPreferences = getSharedPreferencesBlocking();
-          taskCompletionSource.setResult(func.apply(sharedPreferences));
-        });
+        () -> taskCompletionSource.setResult(func.apply(getAndCacheSharedPreferences())));
     return taskCompletionSource.getTask();
   }
 }
