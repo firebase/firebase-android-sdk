@@ -27,11 +27,11 @@
   <string name="download_completed" translation_description="Title of notification when download of update has completed">Herunterladen abgeschlossen</string>
   <string name="download_failed" translation_description="Title of notification when download of update has failed">Download fehlgeschlagen</string>
   <string name="install_failed" translation_description="Title of notification when installation of update has failed">Installation fehlgeschlagen</string>
-  <string name="notifications_group_name" translation_description="Title of the notification channel group for the SDK">Firebase App-Bereitstellung</string>
+  <string name="notifications_group_name" translation_description="Title of the notification channel group for the SDK">Firebase App-Distribution</string>
   <string name="app_update_notification_channel_name" translation_description="Name of the notification channel for in-app updates">App-Updates</string>
   <string name="app_update_notification_channel_description" translation_description="Description of the notification channel for in-app updates">Zeigt den Fortschritt von In-App-Updates an</string>
   <string name="feedback_launch_failed" translation_description="Toast explaining that launching the feedback functionality failed">Feedback-Funktion konnte nicht gestartet werden</string>
-  <string name="feedback_unidentified_release" translation_description="Toast explaining feedback can't be provided, because release can't be found">Release nicht gefunden. Diese App wurde möglicherweise nicht per App-Bereitstellung installiert oder Sie haben keinen Zugriff mehr darauf.</string>
+  <string name="feedback_unidentified_release" translation_description="Toast explaining feedback can't be provided, because release can't be found">Release nicht gefunden. Diese App wurde möglicherweise nicht mit Firebase App-Distribution installiert oder Sie haben keinen Zugriff mehr darauf.</string>
   <string name="feedback_no_release" translation_description="Toast explaining that feedback would have been sent, but was not, since development mode was active">Das Feedback konnte nicht gesendet werden, da der Entwicklungsmodus aktiviert ist.</string>
   <string name="feedback_notification_channel_name" translation_description="Name of the notification channel for in-app feedback">Feedback</string>
   <string name="feedback_notification_channel_description" translation_description="Description of the notification channel for in-app feedback">Zeigt Benachrichtigung an, Feedback zur App einzugeben</string>
