@@ -37,151 +37,149 @@ import org.robolectric.annotation.LooperMode;
 @Config(manifest = Config.NONE)
 @LooperMode(LooperMode.Mode.LEGACY)
 public class ConfigRealtimeHttpClientTest {
-    private final String NAMESPACE = "firebase";
-    private final String PROJECT_NUMBER = "14368190084";
-    private static final String APP_ID = "1:14368190084:android:09cb977358c6f241";
-    private static final String API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
-    private static final String PROJECT_ID = "fake-frc-test-id";
+  private final String NAMESPACE = "firebase";
+  private final String PROJECT_NUMBER = "14368190084";
+  private static final String APP_ID = "1:14368190084:android:09cb977358c6f241";
+  private static final String API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
+  private static final String PROJECT_ID = "fake-frc-test-id";
 
-    private Set<ConfigUpdateListener> configUpdateListeners;
+  private Set<ConfigUpdateListener> configUpdateListeners;
 
-    @Mock private ScheduledExecutorService scheduledExecutorService;
-    @Mock private ConfigFetchHandler configFetchHandler;
-    @Mock private FirebaseInstallationsApi firebaseInstallations;
-    @Mock private ConfigRealtimeHttpStream configRealtimeHttpStream;
-    @Mock private ScheduledFuture<?> t;
-    @Mock private ConfigCacheClient activatedCacheCLient;
+  @Mock private ScheduledExecutorService scheduledExecutorService;
+  @Mock private ConfigFetchHandler configFetchHandler;
+  @Mock private FirebaseInstallationsApi firebaseInstallations;
+  @Mock private ConfigRealtimeHttpStream configRealtimeHttpStream;
+  @Mock private ScheduledFuture<?> t;
+  @Mock private ConfigCacheClient activatedCacheCLient;
 
-    private FakeHttpURLConnection fakeHttpURLConnection;
-    private ConfigRealtimeHttpClient configRealtimeHttpClient;
+  private FakeHttpURLConnection fakeHttpURLConnection;
+  private ConfigRealtimeHttpClient configRealtimeHttpClient;
 
-    @Before
-    public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        Context context = ApplicationProvider.getApplicationContext();
-        FirebaseApp firebaseApp = initializeFirebaseApp(context);
+  @Before
+  public void setup() throws Exception {
+    MockitoAnnotations.initMocks(this);
+    Context context = ApplicationProvider.getApplicationContext();
+    FirebaseApp firebaseApp = initializeFirebaseApp(context);
 
-        configUpdateListeners = new HashSet<>();
-        configUpdateListeners.add(
-                new ConfigUpdateListener() {
-                    @Override
-                    public void onUpdate(@NonNull ConfigUpdate configUpdate) {
+    configUpdateListeners = new HashSet<>();
+    configUpdateListeners.add(
+        new ConfigUpdateListener() {
+          @Override
+          public void onUpdate(@NonNull ConfigUpdate configUpdate) {}
 
-                    }
+          @Override
+          public void onError(@NonNull FirebaseRemoteConfigException error) {}
+        });
 
-                    @Override
-                    public void onError(@NonNull FirebaseRemoteConfigException error) {}
-                });
+    fakeHttpURLConnection =
+        new FakeHttpURLConnection(
+            new URL(String.format(REALTIME_REGEX_URL, PROJECT_NUMBER, NAMESPACE)));
 
-        fakeHttpURLConnection =
-                new FakeHttpURLConnection(
-                        new URL(String.format(REALTIME_REGEX_URL, PROJECT_NUMBER, NAMESPACE)));
+    configRealtimeHttpClient =
+        new ConfigRealtimeHttpClient(
+            activatedCacheCLient,
+            firebaseApp,
+            firebaseInstallations,
+            configFetchHandler,
+            context,
+            NAMESPACE,
+            configUpdateListeners,
+            scheduledExecutorService);
+  }
 
-        configRealtimeHttpClient =
-                new ConfigRealtimeHttpClient(
-                        activatedCacheCLient,
-                        firebaseApp,
-                        firebaseInstallations,
-                        configFetchHandler,
-                        context,
-                        NAMESPACE,
-                        configUpdateListeners,
-                        scheduledExecutorService);
-    }
+  @Test
+  public void createRealtimeHttpStreamFutureTask_andRun() throws Exception {
+    when(configRealtimeHttpStream.getBackoffState()).thenReturn(false);
+    when(configRealtimeHttpStream.getLastAttemptState()).thenReturn(false);
+    when(configRealtimeHttpStream.getRetryState()).thenReturn(false);
+    when(configRealtimeHttpStream.createRealtimeConnection()).thenReturn(fakeHttpURLConnection);
+    ConfigRealtimeHttpClient.RealtimeHttpStreamFutureTask futureTask =
+        configRealtimeHttpClient.createRealtimeHttpStreamFutureTask(configRealtimeHttpStream);
 
-    @Test
-    public void createRealtimeHttpStreamFutureTask_andRun() throws Exception {
-        when(configRealtimeHttpStream.getBackoffState()).thenReturn(false);
-        when(configRealtimeHttpStream.getLastAttemptState()).thenReturn(false);
-        when(configRealtimeHttpStream.getRetryState()).thenReturn(false);
-        when(configRealtimeHttpStream.createRealtimeConnection()).thenReturn(fakeHttpURLConnection);
-        ConfigRealtimeHttpClient.RealtimeHttpStreamFutureTask futureTask =
-                configRealtimeHttpClient.createRealtimeHttpStreamFutureTask(configRealtimeHttpStream);
+    futureTask.run();
 
-        futureTask.run();
+    verify(configRealtimeHttpStream).beginRealtimeHttpStream(fakeHttpURLConnection);
+    verify(configRealtimeHttpStream).getLastAttemptState();
+  }
 
-        verify(configRealtimeHttpStream).beginRealtimeHttpStream(fakeHttpURLConnection);
-        verify(configRealtimeHttpStream).getLastAttemptState();
-    }
+  @Test
+  public void createRealtimeHttpStreamFutureTask_andRunThenRetry() throws Exception {
+    when(configRealtimeHttpStream.getBackoffState()).thenReturn(false);
+    when(configRealtimeHttpStream.getLastAttemptState()).thenReturn(false);
+    when(configRealtimeHttpStream.getRetryState()).thenReturn(true);
+    when(configRealtimeHttpStream.createRealtimeConnection()).thenReturn(fakeHttpURLConnection);
+    ConfigRealtimeHttpClient.RealtimeHttpStreamFutureTask futureTask =
+        configRealtimeHttpClient.createRealtimeHttpStreamFutureTask(configRealtimeHttpStream);
 
-    @Test
-    public void createRealtimeHttpStreamFutureTask_andRunThenRetry() throws Exception {
-        when(configRealtimeHttpStream.getBackoffState()).thenReturn(false);
-        when(configRealtimeHttpStream.getLastAttemptState()).thenReturn(false);
-        when(configRealtimeHttpStream.getRetryState()).thenReturn(true);
-        when(configRealtimeHttpStream.createRealtimeConnection()).thenReturn(fakeHttpURLConnection);
-        ConfigRealtimeHttpClient.RealtimeHttpStreamFutureTask futureTask =
-                configRealtimeHttpClient.createRealtimeHttpStreamFutureTask(configRealtimeHttpStream);
+    futureTask.run();
 
-        futureTask.run();
+    verify(scheduledExecutorService).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+  }
 
-        verify(scheduledExecutorService).schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
-    }
+  @Test
+  public void createRealtimeHttpStreamFutureTask_andRunThenNoRetry() throws Exception {
+    when(configRealtimeHttpStream.getBackoffState()).thenReturn(true);
+    when(configRealtimeHttpStream.getLastAttemptState()).thenReturn(false);
+    when(configRealtimeHttpStream.getRetryState()).thenReturn(false);
+    when(configRealtimeHttpStream.createRealtimeConnection()).thenReturn(fakeHttpURLConnection);
+    ConfigRealtimeHttpClient.RealtimeHttpStreamFutureTask futureTask =
+        configRealtimeHttpClient.createRealtimeHttpStreamFutureTask(configRealtimeHttpStream);
 
-    @Test
-    public void createRealtimeHttpStreamFutureTask_andRunThenNoRetry() throws Exception {
-        when(configRealtimeHttpStream.getBackoffState()).thenReturn(true);
-        when(configRealtimeHttpStream.getLastAttemptState()).thenReturn(false);
-        when(configRealtimeHttpStream.getRetryState()).thenReturn(false);
-        when(configRealtimeHttpStream.createRealtimeConnection()).thenReturn(fakeHttpURLConnection);
-        ConfigRealtimeHttpClient.RealtimeHttpStreamFutureTask futureTask =
-                configRealtimeHttpClient.createRealtimeHttpStreamFutureTask(configRealtimeHttpStream);
+    futureTask.run();
 
-        futureTask.run();
+    verify(scheduledExecutorService, never())
+        .schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
+  }
 
-        verify(scheduledExecutorService, never())
-                .schedule(any(Runnable.class), anyLong(), any(TimeUnit.class));
-    }
+  @Test
+  public void callStartRealtimeHttpStream_andSubmitToExecutorService() {
+    configRealtimeHttpClient.startRealtimeHttpStream();
 
-    @Test
-    public void callStartRealtimeHttpStream_andSubmitToExecutorService() {
-        configRealtimeHttpClient.startRealtimeHttpStream();
+    verify(scheduledExecutorService)
+        .submit(any(ConfigRealtimeHttpClient.RealtimeHttpStreamFutureTask.class));
+  }
 
-        verify(scheduledExecutorService)
-                .submit(any(ConfigRealtimeHttpClient.RealtimeHttpStreamFutureTask.class));
-    }
+  @Test
+  public void callStartRealtimeHttpStream_andBackoffEnabled() throws Exception {
+    when(configRealtimeHttpStream.getBackoffState()).thenReturn(true);
+    when(configRealtimeHttpStream.getLastAttemptState()).thenReturn(false);
+    when(configRealtimeHttpStream.getRetryState()).thenReturn(false);
+    when(configRealtimeHttpStream.createRealtimeConnection()).thenReturn(fakeHttpURLConnection);
+    ConfigRealtimeHttpClient.RealtimeHttpStreamFutureTask futureTask =
+        configRealtimeHttpClient.createRealtimeHttpStreamFutureTask(configRealtimeHttpStream);
+    futureTask.run();
 
-    @Test
-    public void callStartRealtimeHttpStream_andBackoffEnabled() throws Exception {
-        when(configRealtimeHttpStream.getBackoffState()).thenReturn(true);
-        when(configRealtimeHttpStream.getLastAttemptState()).thenReturn(false);
-        when(configRealtimeHttpStream.getRetryState()).thenReturn(false);
-        when(configRealtimeHttpStream.createRealtimeConnection()).thenReturn(fakeHttpURLConnection);
-        ConfigRealtimeHttpClient.RealtimeHttpStreamFutureTask futureTask =
-                configRealtimeHttpClient.createRealtimeHttpStreamFutureTask(configRealtimeHttpStream);
-        futureTask.run();
+    configRealtimeHttpClient.startRealtimeHttpStream();
 
-        configRealtimeHttpClient.startRealtimeHttpStream();
+    verify(scheduledExecutorService, never()).submit(any(Runnable.class));
+  }
 
-        verify(scheduledExecutorService, never()).submit(any(Runnable.class));
-    }
+  @Test
+  public void callEndRealtimeHttpStream_andLetNewThreadToBeSubmitted() {
+    doReturn(t).when(scheduledExecutorService).submit(any(Runnable.class));
 
-    @Test
-    public void callEndRealtimeHttpStream_andLetNewThreadToBeSubmitted() {
-        doReturn(t).when(scheduledExecutorService).submit(any(Runnable.class));
+    configRealtimeHttpClient.startRealtimeHttpStream();
+    configRealtimeHttpClient.startRealtimeHttpStream();
 
-        configRealtimeHttpClient.startRealtimeHttpStream();
-        configRealtimeHttpClient.startRealtimeHttpStream();
+    verify(scheduledExecutorService, times(1))
+        .submit(any(ConfigRealtimeHttpClient.RealtimeHttpStreamFutureTask.class));
 
-        verify(scheduledExecutorService, times(1))
-                .submit(any(ConfigRealtimeHttpClient.RealtimeHttpStreamFutureTask.class));
+    configRealtimeHttpClient.endRealtimeHttpStream();
+    configRealtimeHttpClient.startRealtimeHttpStream();
 
-        configRealtimeHttpClient.endRealtimeHttpStream();
-        configRealtimeHttpClient.startRealtimeHttpStream();
+    verify(scheduledExecutorService, times(2))
+        .submit(any(ConfigRealtimeHttpClient.RealtimeHttpStreamFutureTask.class));
+  }
 
-        verify(scheduledExecutorService, times(2))
-                .submit(any(ConfigRealtimeHttpClient.RealtimeHttpStreamFutureTask.class));
-    }
+  private static FirebaseApp initializeFirebaseApp(Context context) {
+    FirebaseApp.clearInstancesForTest();
 
-    private static FirebaseApp initializeFirebaseApp(Context context) {
-        FirebaseApp.clearInstancesForTest();
-
-        return FirebaseApp.initializeApp(
-                context,
-                new FirebaseOptions.Builder()
-                        .setApiKey(API_KEY)
-                        .setApplicationId(APP_ID)
-                        .setProjectId(PROJECT_ID)
-                        .build());
-    }
+    return FirebaseApp.initializeApp(
+        context,
+        new FirebaseOptions.Builder()
+            .setApiKey(API_KEY)
+            .setApplicationId(APP_ID)
+            .setProjectId(PROJECT_ID)
+            .build());
+  }
 }

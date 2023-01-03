@@ -59,14 +59,14 @@ public class ConfigRealtimeHttpClient {
   private final ConfigCacheClient activatedCacheClient;
 
   public ConfigRealtimeHttpClient(
-          ConfigCacheClient activatedCacheClient,
-          FirebaseApp firebaseApp,
-          FirebaseInstallationsApi firebaseInstallations,
-          ConfigFetchHandler configFetchHandler,
-          Context context,
-          String namespace,
-          Set<ConfigUpdateListener> listeners,
-          ScheduledExecutorService scheduledExecutorService) {
+      ConfigCacheClient activatedCacheClient,
+      FirebaseApp firebaseApp,
+      FirebaseInstallationsApi firebaseInstallations,
+      ConfigFetchHandler configFetchHandler,
+      Context context,
+      String namespace,
+      Set<ConfigUpdateListener> listeners,
+      ScheduledExecutorService scheduledExecutorService) {
 
     this.listeners = listeners;
     this.scheduledExecutorService = scheduledExecutorService;
@@ -113,51 +113,51 @@ public class ConfigRealtimeHttpClient {
       }
       httpRetriesRemaining--;
       realtimeHttpStreamFutureTask =
-              scheduledExecutorService.schedule(
-                      createRealtimeHttpStreamFutureTask(createRealtimeHttpStream()),
-                      httpRetrySeconds,
-                      TimeUnit.SECONDS);
+          scheduledExecutorService.schedule(
+              createRealtimeHttpStreamFutureTask(createRealtimeHttpStream()),
+              httpRetrySeconds,
+              TimeUnit.SECONDS);
     } else {
       propagateErrors(
-              new FirebaseRemoteConfigClientException(
-                      "Unable to connect to the server. Check your connection and try again.",
-                      FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
+          new FirebaseRemoteConfigClientException(
+              "Unable to connect to the server. Check your connection and try again.",
+              FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
     }
   }
 
   private ConfigRealtimeHttpStream createRealtimeHttpStream() {
     return new ConfigRealtimeHttpStream(
-            activatedCacheClient,
-            firebaseApp,
-            firebaseInstallations,
-            context,
-            namespace,
-            listeners,
-            scheduledExecutorService,
-            configFetchHandler);
+        activatedCacheClient,
+        firebaseApp,
+        firebaseInstallations,
+        context,
+        namespace,
+        listeners,
+        scheduledExecutorService,
+        configFetchHandler);
   }
 
   @SuppressLint("VisibleForTests")
   public synchronized RealtimeHttpStreamFutureTask createRealtimeHttpStreamFutureTask(
-          ConfigRealtimeHttpStream configRealtimeHttpStream) {
+      ConfigRealtimeHttpStream configRealtimeHttpStream) {
     Runnable runnable =
-            new Runnable() {
-              @Override
-              public void run() {
-                HttpURLConnection httpURLConnection = null;
-                try {
-                  httpURLConnection = configRealtimeHttpStream.createRealtimeConnection();
-                } catch (IOException ex) {
-                  propagateErrors(
-                          new FirebaseRemoteConfigClientException(
-                                  "Unable to connect to the server. Check your connection and try again.",
-                                  FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
-                }
-                if (httpURLConnection != null) {
-                  configRealtimeHttpStream.beginRealtimeHttpStream(httpURLConnection);
-                }
-              }
-            };
+        new Runnable() {
+          @Override
+          public void run() {
+            HttpURLConnection httpURLConnection = null;
+            try {
+              httpURLConnection = configRealtimeHttpStream.createRealtimeConnection();
+            } catch (IOException ex) {
+              propagateErrors(
+                  new FirebaseRemoteConfigClientException(
+                      "Unable to connect to the server. Check your connection and try again.",
+                      FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
+            }
+            if (httpURLConnection != null) {
+              configRealtimeHttpStream.beginRealtimeHttpStream(httpURLConnection);
+            }
+          }
+        };
 
     return new RealtimeHttpStreamFutureTask(runnable, configRealtimeHttpStream);
   }
@@ -166,8 +166,8 @@ public class ConfigRealtimeHttpClient {
   public synchronized void startRealtimeHttpStream() {
     if (canMakeHttpStreamConnection()) {
       realtimeHttpStreamFutureTask =
-              scheduledExecutorService.submit(
-                      createRealtimeHttpStreamFutureTask(createRealtimeHttpStream()));
+          scheduledExecutorService.submit(
+              createRealtimeHttpStreamFutureTask(createRealtimeHttpStream()));
     }
   }
 
@@ -184,7 +184,7 @@ public class ConfigRealtimeHttpClient {
     private final ConfigRealtimeHttpStream configRealtimeHttpStream;
 
     public RealtimeHttpStreamFutureTask(
-            Runnable runnable, ConfigRealtimeHttpStream configRealtimeHttpStream) {
+        Runnable runnable, ConfigRealtimeHttpStream configRealtimeHttpStream) {
       super(runnable, null);
       this.configRealtimeHttpStream = configRealtimeHttpStream;
     }

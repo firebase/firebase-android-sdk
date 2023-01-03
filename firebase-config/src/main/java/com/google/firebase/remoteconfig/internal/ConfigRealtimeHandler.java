@@ -41,15 +41,14 @@ public class ConfigRealtimeHandler {
   private final ScheduledExecutorService scheduledExecutorService;
   private final ConfigRealtimeHttpClient configRealtimeHttpClient;
 
-
   public ConfigRealtimeHandler(
-          FirebaseApp firebaseApp,
-          FirebaseInstallationsApi firebaseInstallations,
-          ConfigFetchHandler configFetchHandler,
-          ConfigCacheClient activatedCacheClient,
-          Context context,
-          String namespace,
-          ScheduledExecutorService scheduledExecutorService) {
+      FirebaseApp firebaseApp,
+      FirebaseInstallationsApi firebaseInstallations,
+      ConfigFetchHandler configFetchHandler,
+      ConfigCacheClient activatedCacheClient,
+      Context context,
+      String namespace,
+      ScheduledExecutorService scheduledExecutorService) {
 
     this.listeners = new LinkedHashSet<>();
 
@@ -61,15 +60,15 @@ public class ConfigRealtimeHandler {
     this.activatedCacheClient = activatedCacheClient;
     this.scheduledExecutorService = scheduledExecutorService;
     this.configRealtimeHttpClient =
-            new ConfigRealtimeHttpClient(
-                    activatedCacheClient,
-                    firebaseApp,
-                    firebaseInstallations,
-                    configFetchHandler,
-                    context,
-                    namespace,
-                    listeners,
-                    scheduledExecutorService);
+        new ConfigRealtimeHttpClient(
+            activatedCacheClient,
+            firebaseApp,
+            firebaseInstallations,
+            configFetchHandler,
+            context,
+            namespace,
+            listeners,
+            scheduledExecutorService);
   }
 
   public void pauseRealtime() {
@@ -78,10 +77,10 @@ public class ConfigRealtimeHandler {
 
   @NonNull
   public synchronized ConfigUpdateListenerRegistration addRealtimeConfigUpdateListener(
-          @NonNull ConfigUpdateListener configUpdateListener) {
+      @NonNull ConfigUpdateListener configUpdateListener) {
     listeners.add(configUpdateListener);
     if (configUpdateListener.getClass() != EmptyConfigUpdateListener.class
-            || listeners.size() > 1) {
+        || listeners.size() > 1) {
       configRealtimeHttpClient.startRealtimeHttpStream();
     }
     return new ConfigUpdateListenerRegistrationInternal(configUpdateListener);
@@ -95,7 +94,7 @@ public class ConfigRealtimeHandler {
   }
 
   public class ConfigUpdateListenerRegistrationInternal
-          implements ConfigUpdateListenerRegistration {
+      implements ConfigUpdateListenerRegistration {
     private final ConfigUpdateListener listener;
 
     public ConfigUpdateListenerRegistrationInternal(ConfigUpdateListener listener) {
@@ -110,8 +109,7 @@ public class ConfigRealtimeHandler {
   public static class EmptyConfigUpdateListener implements ConfigUpdateListener {
 
     @Override
-    public void onUpdate(@NonNull ConfigUpdate configUpdate) {
-    }
+    public void onUpdate(@NonNull ConfigUpdate configUpdate) {}
 
     @Override
     public void onError(@NonNull FirebaseRemoteConfigException error) {}
