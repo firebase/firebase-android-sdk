@@ -244,8 +244,9 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void signOutTester() {
-    cachedNewRelease.set(null);
+    // Set sign in status first so isTesterSigned returns the correct state as soon as possible
     signInStorage.setSignInStatus(false);
+    cachedNewRelease.set(null);
   }
 
   @Override
