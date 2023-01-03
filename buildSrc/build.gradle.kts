@@ -98,17 +98,30 @@ gradlePlugin {
     }
 }
 
+tasks.register("testPlugins") {
+    project.ext["enablePluginTests"] = "true"
+    dependsOn("test")
+}
+
+tasks.register<Test>("dackkaPluginTests") {
+    systemProperty("rebuildDackkaOutput", "true")
+    include("com/google/firebase/gradle/plugins/DackkaPluginTests.class")
+}
+
+tasks.register("updateDackkaTestsOutput") {
+    project.ext["enablePluginTests"] = "true"
+    dependsOn("dackkaPluginTests")
+}
+
+tasks.test.configure {
+    onlyIf {
+        project.hasProperty("enablePluginTests")
+    }
+}
+
 tasks.withType<Test> {
     testLogging {
         // Make sure output from standard out or error is shown in Gradle output.
         showStandardStreams = true
-    }
-    val enablePluginTests: String? by rootProject
-    enabled = enablePluginTests == "true"
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = "11"
     }
 }
