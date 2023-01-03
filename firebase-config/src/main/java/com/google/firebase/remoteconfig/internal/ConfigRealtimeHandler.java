@@ -25,8 +25,6 @@ import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class ConfigRealtimeHandler {
@@ -34,93 +32,57 @@ public class ConfigRealtimeHandler {
   @GuardedBy("this")
   private final Set<ConfigUpdateListener> listeners;
 
-  @GuardedBy("this")
-  private Future<?> realtimeHttpClientTask;
-
   private final ConfigFetchHandler configFetchHandler;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
-  private final ConfigCacheClient activatedCacheClient;
   private final Context context;
   private final String namespace;
+  private final ConfigCacheClient activatedCacheClient;
   private final ScheduledExecutorService scheduledExecutorService;
+  private final ConfigRealtimeHttpClient configRealtimeHttpClient;
+
 
   public ConfigRealtimeHandler(
-      FirebaseApp firebaseApp,
-      FirebaseInstallationsApi firebaseInstallations,
-      ConfigFetchHandler configFetchHandler,
-      ConfigCacheClient activatedCacheClient,
-      Context context,
-      String namespace,
-      ScheduledExecutorService scheduledExecutorService) {
+          FirebaseApp firebaseApp,
+          FirebaseInstallationsApi firebaseInstallations,
+          ConfigFetchHandler configFetchHandler,
+          ConfigCacheClient activatedCacheClient,
+          Context context,
+          String namespace,
+          ScheduledExecutorService scheduledExecutorService) {
 
     this.listeners = new LinkedHashSet<>();
-    this.realtimeHttpClientTask = null;
 
     this.firebaseApp = firebaseApp;
     this.configFetchHandler = configFetchHandler;
     this.firebaseInstallations = firebaseInstallations;
-    this.activatedCacheClient = activatedCacheClient;
     this.context = context;
     this.namespace = namespace;
+    this.activatedCacheClient = activatedCacheClient;
     this.scheduledExecutorService = scheduledExecutorService;
+    this.configRealtimeHttpClient =
+            new ConfigRealtimeHttpClient(
+                    activatedCacheClient,
+                    firebaseApp,
+                    firebaseInstallations,
+                    configFetchHandler,
+                    context,
+                    namespace,
+                    listeners,
+                    scheduledExecutorService);
   }
 
-  private synchronized boolean canCreateRealtimeHttpClientTask() {
-    return !listeners.isEmpty() && realtimeHttpClientTask == null;
-  }
-
-  private synchronized Runnable createRealtimeHttpClientTask(
-      ConfigRealtimeHttpClient configRealtimeHttpClient) {
-    return new Runnable() {
-      @Override
-      public void run() {
-        configRealtimeHttpClient.beginRealtimeHttpStream();
-        boolean isRealtimeClientRunning = true;
-        while (isRealtimeClientRunning) {
-          if (Thread.currentThread().isInterrupted()) {
-            isRealtimeClientRunning = false;
-          }
-        }
-      }
-    };
-  }
-
-  // Kicks off Http stream listening and autofetch
-  private synchronized void beginRealtime() {
-    if (canCreateRealtimeHttpClientTask()) {
-      ConfigRealtimeHttpClient realtimeHttpClient =
-          new ConfigRealtimeHttpClient(
-              firebaseApp,
-              firebaseInstallations,
-              configFetchHandler,
-              activatedCacheClient,
-              context,
-              namespace,
-              listeners,
-              scheduledExecutorService);
-      this.realtimeHttpClientTask =
-          this.scheduledExecutorService.submit(
-              new RealtimeHttpClientFutureTask(
-                  createRealtimeHttpClientTask(realtimeHttpClient), realtimeHttpClient));
-    }
-  }
-
-  // Pauses Http stream listening
-  public synchronized void pauseRealtime() {
-    if (realtimeHttpClientTask != null && !realtimeHttpClientTask.isCancelled()) {
-      realtimeHttpClientTask.cancel(true);
-      realtimeHttpClientTask = null;
-    }
+  public void pauseRealtime() {
+    configRealtimeHttpClient.endRealtimeHttpStream();
   }
 
   @NonNull
   public synchronized ConfigUpdateListenerRegistration addRealtimeConfigUpdateListener(
-      @NonNull ConfigUpdateListener configUpdateListener) {
+          @NonNull ConfigUpdateListener configUpdateListener) {
     listeners.add(configUpdateListener);
     if (configUpdateListener.getClass() != EmptyConfigUpdateListener.class
-        || listeners.size() > 1) {
-      beginRealtime();
+            || listeners.size() > 1) {
+      configRealtimeHttpClient.startRealtimeHttpStream();
     }
     return new ConfigUpdateListenerRegistrationInternal(configUpdateListener);
   }
@@ -128,27 +90,12 @@ public class ConfigRealtimeHandler {
   private synchronized void removeRealtimeConfigUpdateListener(ConfigUpdateListener listener) {
     listeners.remove(listener);
     if (listeners.isEmpty()) {
-      pauseRealtime();
-    }
-  }
-
-  private class RealtimeHttpClientFutureTask extends FutureTask<String> {
-    private final ConfigRealtimeHttpClient configRealtimeHttpClient;
-
-    public RealtimeHttpClientFutureTask(
-        Runnable runnable, ConfigRealtimeHttpClient configRealtimeHttpClient) {
-      super(runnable, null);
-      this.configRealtimeHttpClient = configRealtimeHttpClient;
-    }
-
-    @Override
-    protected void done() {
-      this.configRealtimeHttpClient.stopRealtime();
+      configRealtimeHttpClient.endRealtimeHttpStream();
     }
   }
 
   public class ConfigUpdateListenerRegistrationInternal
-      implements ConfigUpdateListenerRegistration {
+          implements ConfigUpdateListenerRegistration {
     private final ConfigUpdateListener listener;
 
     public ConfigUpdateListenerRegistrationInternal(ConfigUpdateListener listener) {
@@ -163,7 +110,8 @@ public class ConfigRealtimeHandler {
   public static class EmptyConfigUpdateListener implements ConfigUpdateListener {
 
     @Override
-    public void onUpdate(ConfigUpdate configUpdate) {}
+    public void onUpdate(@NonNull ConfigUpdate configUpdate) {
+    }
 
     @Override
     public void onError(@NonNull FirebaseRemoteConfigException error) {}
