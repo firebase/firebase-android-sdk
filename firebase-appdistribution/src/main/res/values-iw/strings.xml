@@ -31,7 +31,7 @@
   <string name="app_update_notification_channel_name" translation_description="Name of the notification channel for in-app updates">עדכונים לאפליקציה</string>
   <string name="app_update_notification_channel_description" translation_description="Description of the notification channel for in-app updates">מוצגת ההתקדמות בהתקנה של העדכונים בתוך האפליקציה</string>
   <string name="feedback_launch_failed" translation_description="Toast explaining that launching the feedback functionality failed">הפעלת המשוב נכשלה</string>
-  <string name="feedback_unidentified_release" translation_description="Toast explaining feedback can't be provided, because release can't be found">הגרסה לא נמצאה. ייתכן שהאפליקציה הזו לא הותקנה על ידי התכונה &apos;הפצת אפליקציות&apos;, או שאין לך גישה יותר.</string>
+  <string name="feedback_unidentified_release" translation_description="Toast explaining feedback can't be provided, because release can't be found">הגרסה לא נמצאה. ייתכן שהאפליקציה הזו לא הותקנה על ידי התכונה \'הפצת אפליקציות\', או שאין לך גישה יותר.</string>
   <string name="feedback_no_release" translation_description="Toast explaining that feedback would have been sent, but was not, since development mode was active">המשוב היה נשלח, אבל הוא לא נשלח עקב מצב פיתוח.</string>
   <string name="feedback_notification_channel_name" translation_description="Name of the notification channel for in-app feedback">משוב</string>
   <string name="feedback_notification_channel_description" translation_description="Description of the notification channel for in-app feedback">מוצגת התראה להזין משוב על האפליקציה</string>
