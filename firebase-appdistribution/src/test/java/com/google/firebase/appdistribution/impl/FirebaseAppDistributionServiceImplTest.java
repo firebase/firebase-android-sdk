@@ -514,8 +514,9 @@ public class FirebaseAppDistributionServiceImplTest {
   }
 
   @Test
-  public void signOutTester_setsSignInStatusFalse() {
+  public void signOutTester_setsSignInStatusFalse() throws InterruptedException {
     firebaseAppDistribution.signOutTester();
+    awaitAsyncOperations(backgroundExecutor);
 
     assertThat(signInStorage.getSignInStatusBlocking()).isFalse();
   }
