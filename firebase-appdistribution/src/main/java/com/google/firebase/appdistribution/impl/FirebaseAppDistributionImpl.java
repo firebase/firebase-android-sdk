@@ -68,20 +68,21 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private final SignInStorage signInStorage;
   private final ReleaseIdentifier releaseIdentifier;
   private final ScreenshotTaker screenshotTaker;
-  @Lightweight private Executor lightweightExecutor;
+  @Lightweight private final Executor lightweightExecutor;
   @Blocking private final Executor blockingExecutor;
   private final SequentialReference<AppDistributionReleaseInternal> cachedNewRelease;
-  private TaskCache<AppDistributionRelease> checkForNewReleaseTaskCache;
-  private UpdateTaskCache updateIfNewReleaseAvailableTaskCache;
+  private final TaskCache<AppDistributionRelease> checkForNewReleaseTaskCache;
+  private final UpdateTaskCache updateIfNewReleaseAvailableTaskCache;
   private final FirebaseAppDistributionNotificationsManager notificationsManager;
-  private AlertDialog updateConfirmationDialog;
-  private AlertDialog signInConfirmationDialog;
-  @Nullable private Activity dialogHostActivity = null;
+  private final AtomicBoolean feedbackInProgress = new AtomicBoolean(false);
+
+  @Nullable private AlertDialog updateConfirmationDialog;
+  @Nullable private AlertDialog signInConfirmationDialog;
+  @Nullable private Activity dialogHostActivity;
   private boolean remakeSignInConfirmationDialog = false;
   private boolean remakeUpdateConfirmationDialog = false;
-  private TaskCompletionSource<Void> showSignInDialogTask = null;
-  private TaskCompletionSource<Void> showUpdateDialogTask = null;
-  private final AtomicBoolean feedbackInProgress = new AtomicBoolean(false);
+  @Nullable private TaskCompletionSource<Void> showSignInDialogTask;
+  @Nullable private TaskCompletionSource<Void> showUpdateDialogTask;
 
   @VisibleForTesting
   FirebaseAppDistributionImpl(
