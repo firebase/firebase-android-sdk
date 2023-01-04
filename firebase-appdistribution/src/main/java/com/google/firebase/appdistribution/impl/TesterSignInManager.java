@@ -17,16 +17,12 @@ package com.google.firebase.appdistribution.impl;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UNKNOWN;
-import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
-import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskResult;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.net.Uri;
-import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.browser.customtabs.CustomTabsIntent;
@@ -35,7 +31,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.inject.Provider;
@@ -55,28 +51,22 @@ class TesterSignInManager {
   private final SignInStorage signInStorage;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
-  // TODO: remove synchronized block usage in this class so this does not have to be blocking
-  @Blocking private final Executor blockingExecutor;
+  @Lightweight private final Executor lightweightExecutor;
+  private final TaskCompletionSourceCache<Void> signInTaskCompletionSourceCache;
 
-  private final Object signInTaskLock = new Object();
-
-  @GuardedBy("signInTaskLock")
   private boolean hasBeenSentToBrowserForCurrentTask = false;
-
-  @GuardedBy("signInTaskLock")
-  private TaskCompletionSource<Void> signInTaskCompletionSource = null;
 
   TesterSignInManager(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull final SignInStorage signInStorage,
-      @Blocking Executor blockingExecutor) {
+      @Lightweight Executor lightweightExecutor) {
     this(
         firebaseApp,
         firebaseInstallationsApiProvider,
         signInStorage,
         FirebaseAppDistributionLifecycleNotifier.getInstance(),
-        blockingExecutor);
+        lightweightExecutor);
   }
 
   @VisibleForTesting
@@ -85,12 +75,13 @@ class TesterSignInManager {
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull final SignInStorage signInStorage,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
-      @Blocking Executor blockingExecutor) {
+      @Lightweight Executor lightweightExecutor) {
     this.firebaseApp = firebaseApp;
     this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
-    this.blockingExecutor = blockingExecutor;
+    this.lightweightExecutor = lightweightExecutor;
+    this.signInTaskCompletionSourceCache = new TaskCompletionSourceCache<>(lightweightExecutor);
 
     lifecycleNotifier.addOnActivityCreatedListener(this::onActivityCreated);
     lifecycleNotifier.addOnActivityResumedListener(this::onActivityResumed);
@@ -104,13 +95,11 @@ class TesterSignInManager {
       LogWrapper.v(TAG, "Sign in completed");
       this.signInStorage
           .setSignInStatus(true)
-          .addOnSuccessListener(blockingExecutor, unused -> this.setSuccessfulSignInResult())
+          .addOnSuccessListener(
+              lightweightExecutor, unused -> signInTaskCompletionSourceCache.setResult(null))
           .addOnFailureListener(
-              blockingExecutor,
-              e ->
-                  this.setSignInTaskCompletionError(
-                      new FirebaseAppDistributionException(
-                          "Error storing tester sign in state", UNKNOWN, e)));
+              lightweightExecutor,
+              handleTaskFailure("Error storing tester sign in state", UNKNOWN));
     }
   }
 
@@ -120,27 +109,26 @@ class TesterSignInManager {
       // SignInResult and InstallActivity are internal to the SDK and should not be treated as
       // reentering the app
       return;
-    } else {
-      // Throw error if app reentered during sign in
-      synchronized (signInTaskLock) {
-        if (awaitingResultFromBrowser()) {
-          LogWrapper.e(TAG, "App Resumed without sign in flow completing.");
-          setSignInTaskCompletionError(
+    }
+
+    // Throw error if app reentered during sign in
+    if (hasBeenSentToBrowserForCurrentTask) {
+      signInTaskCompletionSourceCache
+          .setException(
               new FirebaseAppDistributionException(
-                  ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED));
-        }
-      }
+                  ErrorMessages.AUTHENTICATION_CANCELED, AUTHENTICATION_CANCELED))
+          .addOnSuccessListener(
+              lightweightExecutor,
+              unused -> LogWrapper.e(TAG, "App resumed without sign in flow completing."));
     }
   }
 
-  // TODO(b/261014422): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   @NonNull
   public Task<Void> signInTester() {
     return signInStorage
         .getSignInStatus()
         .onSuccessTask(
-            blockingExecutor,
+            lightweightExecutor,
             signedIn -> {
               if (signedIn) {
                 LogWrapper.v(TAG, "Tester is already signed in.");
@@ -150,78 +138,42 @@ class TesterSignInManager {
             });
   }
 
-  // TODO(b/261014422): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   private Task<Void> doSignInTester() {
-    synchronized (signInTaskLock) {
-      if (signInTaskCompletionSource != null
-          && !signInTaskCompletionSource.getTask().isComplete()) {
-        LogWrapper.v(TAG, "Detected In-Progress sign in task. Returning the same task.");
-        return signInTaskCompletionSource.getTask();
-      }
-
-      signInTaskCompletionSource = new TaskCompletionSource<>();
-      hasBeenSentToBrowserForCurrentTask = false;
-
-      firebaseInstallationsApiProvider
-          .get()
-          .getId()
-          .addOnFailureListener(
-              blockingExecutor,
-              handleTaskFailure(ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE))
-          .addOnSuccessListener(
-              blockingExecutor,
-              fid ->
-                  getForegroundActivityAndOpenSignInFlow(fid)
-                      .addOnFailureListener(
-                          blockingExecutor,
-                          handleTaskFailure(ErrorMessages.UNKNOWN_ERROR, UNKNOWN)));
-
-      return signInTaskCompletionSource.getTask();
-    }
+    return signInTaskCompletionSourceCache.getOrCreateTaskFromCompletionSource(
+        () -> {
+          TaskCompletionSource<Void> signInTaskCompletionSource = new TaskCompletionSource<>();
+          hasBeenSentToBrowserForCurrentTask = false;
+          firebaseInstallationsApiProvider
+              .get()
+              .getId()
+              .addOnFailureListener(
+                  lightweightExecutor,
+                  handleTaskFailure(ErrorMessages.AUTHENTICATION_ERROR, AUTHENTICATION_FAILURE))
+              .addOnSuccessListener(
+                  lightweightExecutor,
+                  fid ->
+                      getForegroundActivityAndOpenSignInFlow(fid)
+                          .addOnFailureListener(
+                              lightweightExecutor,
+                              handleTaskFailure(ErrorMessages.UNKNOWN_ERROR, UNKNOWN)));
+          return signInTaskCompletionSource;
+        });
   }
 
   private Task<Void> getForegroundActivityAndOpenSignInFlow(String fid) {
     return lifecycleNotifier.consumeForegroundActivity(
         activity -> {
-          // Launch the intent outside of the synchronized block because we don't need to wait
-          // for the lock, and we don't want to risk the activity leaving the foreground in
-          // the meantime.
           openSignInFlowInBrowser(fid, activity);
-          // This synchronized block is required by the @GuardedBy annotation, but is not
-          // practically required in this case because the only reads of this variable are on
-          // the main thread, which this callback is also running on.
-          synchronized (signInTaskLock) {
-            hasBeenSentToBrowserForCurrentTask = true;
-          }
+          hasBeenSentToBrowserForCurrentTask = true;
         });
   }
 
   private OnFailureListener handleTaskFailure(String message, Status status) {
     return e -> {
       LogWrapper.e(TAG, message, e);
-      setSignInTaskCompletionError(new FirebaseAppDistributionException(message, status, e));
+      signInTaskCompletionSourceCache.setException(
+          new FirebaseAppDistributionException(message, status, e));
     };
-  }
-
-  private boolean awaitingResultFromBrowser() {
-    synchronized (signInTaskLock) {
-      return signInTaskCompletionSource != null
-          && !signInTaskCompletionSource.getTask().isComplete()
-          && hasBeenSentToBrowserForCurrentTask;
-    }
-  }
-
-  private void setSignInTaskCompletionError(FirebaseAppDistributionException e) {
-    synchronized (signInTaskLock) {
-      safeSetTaskException(signInTaskCompletionSource, e);
-    }
-  }
-
-  private void setSuccessfulSignInResult() {
-    synchronized (signInTaskLock) {
-      safeSetTaskResult(signInTaskCompletionSource, null);
-    }
   }
 
   private static String getApplicationName(Context context) {
