@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution.impl;
 import android.app.Activity;
 import android.content.Intent;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.annotations.concurrent.Lightweight;
@@ -32,6 +33,7 @@ class ApkInstaller {
   private final TaskCompletionSourceCache<Void> installTaskCompletionSourceCache;
   private final @Lightweight Executor lightweightExecutor;
 
+  @VisibleForTesting
   ApkInstaller(
       FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier,
       @Lightweight Executor lightweightExecutor) {
@@ -49,7 +51,10 @@ class ApkInstaller {
     if (activity instanceof InstallActivity) {
       // Since install activity is destroyed but app is still active, installation has failed /
       // cancelled.
-      this.trySetInstallTaskError();
+      installTaskCompletionSourceCache.setException(
+          new FirebaseAppDistributionException(
+              ErrorMessages.APK_INSTALLATION_FAILED,
+              FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
     }
   }
 
@@ -66,12 +71,5 @@ class ApkInstaller {
     intent.putExtra("INSTALL_PATH", path);
     currentActivity.startActivity(intent);
     LogWrapper.v(TAG, "Prompting tester with install activity");
-  }
-
-  void trySetInstallTaskError() {
-    installTaskCompletionSourceCache.setException(
-        new FirebaseAppDistributionException(
-            ErrorMessages.APK_INSTALLATION_FAILED,
-            FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
   }
 }

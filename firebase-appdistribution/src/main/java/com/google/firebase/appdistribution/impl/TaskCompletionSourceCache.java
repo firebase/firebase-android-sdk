@@ -43,7 +43,9 @@ class TaskCompletionSourceCache<T> {
    * Constructor for a {@link TaskCompletionSourceCache} that controls access using its own
    * sequential executor backed by the given base executor.
    *
-   * @param baseExecutor Executor (typically {@link Lightweight}) to back the sequential executor.
+   * @param baseExecutor Executor to back the sequential executor. This can be a {@link Lightweight}
+   *     executor unless the {@link TaskCompletionSourceProducer} passed to {@link
+   *     #getOrCreateTaskFromCompletionSource} needs to be executed on a different executor.
    */
   TaskCompletionSourceCache(Executor baseExecutor) {
     sequentialExecutor = FirebaseExecutors.newSequentialExecutor(baseExecutor);
