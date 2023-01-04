@@ -48,6 +48,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import javax.net.ssl.HttpsURLConnection;
@@ -183,15 +184,16 @@ public class ApkUpdaterTest {
     doReturn(new ByteArrayInputStream(TEST_FILE.getBytes()))
         .when(mockHttpsUrlConnection)
         .getInputStream();
-    // Sleep thread to simulate actually making the request, which gives us time to add
-    // a listener to the returned UpdateTask in time to get all the progress updates
+    // Block thread actually making the request on a latch, which gives us time to add listeners to
+    // the returned UpdateTask in time to get all the progress updates
+    CountDownLatch mockConnectionLatch = new CountDownLatch(1);
     when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL))
         .thenAnswer(
             invocation -> {
               try {
-                Thread.sleep(100);
+                mockConnectionLatch.await();
               } catch (InterruptedException e) {
-                throw new AssertionError("Interrupted while sleeping in mock");
+                throw new AssertionError("Interrupted while waiting in mock");
               }
               return mockHttpsUrlConnection;
             });
@@ -199,7 +201,8 @@ public class ApkUpdaterTest {
     when(mockApkInstaller.installApk(any(), any())).thenReturn(Tasks.forResult(null));
 
     UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, true);
-    List<UpdateProgress> events = awaitProgressEvents(updateTask, 3);
+    List<UpdateProgress> events =
+        awaitProgressEvents(updateTask, 3, mockConnectionLatch::countDown);
 
     assertThat(events).hasSize(3);
     assertThat(events.get(0).getUpdateStatus()).isEqualTo(UpdateStatus.PENDING);
