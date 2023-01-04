@@ -45,7 +45,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.annotations.concurrent.Background;
-import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionServiceImplTest.TestActivity;
@@ -88,7 +88,7 @@ public class TesterSignInManagerTest {
   private TestActivity activity;
   private ShadowActivity shadowActivity;
   private ShadowPackageManager shadowPackageManager;
-  @Blocking private ExecutorService blockingExecutor = TestOnlyExecutors.blocking();
+  @Lightweight private ExecutorService lightweightExecutor = TestOnlyExecutors.lite();
   @Background private ExecutorService backgroundExecutor = TestOnlyExecutors.background();
   private SignInStorage signInStorage;
 
@@ -150,7 +150,7 @@ public class TesterSignInManagerTest {
             mockFirebaseInstallationsProvider,
             signInStorage,
             mockLifecycleNotifier,
-            blockingExecutor);
+            lightweightExecutor);
   }
 
   @Test
@@ -199,7 +199,7 @@ public class TesterSignInManagerTest {
 
     testerSignInManager.signInTester();
     awaitAsyncOperations(backgroundExecutor);
-    awaitAsyncOperations(blockingExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     verify(mockFirebaseInstallations, times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
@@ -214,7 +214,7 @@ public class TesterSignInManagerTest {
 
     testerSignInManager.signInTester();
     awaitAsyncOperations(backgroundExecutor);
-    awaitAsyncOperations(blockingExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     verify(mockFirebaseInstallations, times(1)).getId();
     assertThat(shadowActivity.getNextStartedActivity().getData()).isEqualTo(Uri.parse(TEST_URL));
@@ -227,7 +227,7 @@ public class TesterSignInManagerTest {
     testerSignInManager.signInTester();
 
     awaitAsyncOperations(backgroundExecutor);
-    awaitAsyncOperations(blockingExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     verify(mockFirebaseInstallationsProvider, times(1)).get();
   }
@@ -237,7 +237,7 @@ public class TesterSignInManagerTest {
       throws InterruptedException, FirebaseAppDistributionException, ExecutionException {
     Task signInTask = testerSignInManager.signInTester();
     awaitAsyncOperations(backgroundExecutor);
-    awaitAsyncOperations(blockingExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     // Simulate re-entering app after successful sign in, via SignInResultActivity
     testerSignInManager.onActivityCreated(mockSignInResultActivity);
@@ -255,7 +255,7 @@ public class TesterSignInManagerTest {
         .thenReturn(Tasks.forException(expectedException));
     Task signInTask = testerSignInManager.signInTester();
     awaitAsyncOperations(backgroundExecutor);
-    awaitAsyncOperations(blockingExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     // Simulate re-entering app after successful sign in, via SignInResultActivity
     testerSignInManager.onActivityCreated(mockSignInResultActivity);
@@ -267,7 +267,7 @@ public class TesterSignInManagerTest {
   public void signInTester_whenAppReenteredDuringSignIn_taskFails() throws InterruptedException {
     Task signInTask = testerSignInManager.signInTester();
     awaitAsyncOperations(backgroundExecutor);
-    awaitAsyncOperations(blockingExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     // Simulate re-entering app before completing sign in
     testerSignInManager.onActivityResumed(activity);

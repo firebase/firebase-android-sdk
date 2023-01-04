@@ -118,7 +118,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
         new FirebaseAppDistributionImpl(
             firebaseApp,
             new TesterSignInManager(
-                firebaseApp, firebaseInstallationsApiProvider, signInStorage, blockingExecutor),
+                firebaseApp, firebaseInstallationsApiProvider, signInStorage, lightweightExecutor),
             new NewReleaseFetcher(
                 firebaseApp.getApplicationContext(),
                 testerApiClient,
