@@ -21,6 +21,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.UpdateTask;
+import com.google.firebase.concurrent.FirebaseExecutors;
 import java.util.concurrent.Executor;
 
 class TaskUtils {
@@ -142,6 +143,16 @@ class TaskUtils {
             })
         .addOnFailureListener(executor, updateTask::setException);
     return updateTask;
+  }
+
+  /** Set a {@link TaskCompletionSource} to be resolved with the result of another {@link Task}. */
+  static <T> void shadowTask(TaskCompletionSource<T> taskCompletionSource, Task<T> task) {
+    // Using direct executor here ensures that any handlers that were themselves added using a
+    // direct executor will behave as expected: they'll be executed on the thread that sets the
+    // result.
+    task.addOnSuccessListener(FirebaseExecutors.directExecutor(), taskCompletionSource::setResult)
+        .addOnFailureListener(
+            FirebaseExecutors.directExecutor(), taskCompletionSource::setException);
   }
 
   private TaskUtils() {}
