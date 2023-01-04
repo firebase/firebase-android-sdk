@@ -29,16 +29,12 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.UpdateProgress;
-import com.google.firebase.appdistribution.UpdateTask;
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.ActivityConsumer;
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.ActivityFunction;
-import com.google.firebase.concurrent.FirebaseExecutors;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -100,15 +96,6 @@ final class TestUtils {
     // Idle the main looper, which is also running these tests, so any Task or lifecycle callbacks
     // can be handled. See http://robolectric.org/blog/2019/06/04/paused-looper/ for more info.
     shadowOf(getMainLooper()).idle();
-  }
-
-  /** Await a specified number of progress events on an {@link UpdateTask}. */
-  static List<UpdateProgress> awaitProgressEvents(UpdateTask updateTask, int count)
-      throws InterruptedException {
-    List<UpdateProgress> progressEvents = new ArrayList<>();
-    updateTask.addOnProgressListener(FirebaseExecutors.directExecutor(), progressEvents::add);
-    awaitProgressEvents(progressEvents, count);
-    return progressEvents;
   }
 
   /** Await a specified number of progress events being added to the given collection. */
