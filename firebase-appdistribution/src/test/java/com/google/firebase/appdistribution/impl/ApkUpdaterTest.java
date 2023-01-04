@@ -42,6 +42,7 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
+import com.google.firebase.concurrent.FirebaseExecutors;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -186,12 +187,12 @@ public class ApkUpdaterTest {
         .getInputStream();
     // Block thread actually making the request on a latch, which gives us time to add listeners to
     // the returned UpdateTask in time to get all the progress updates
-    CountDownLatch mockConnectionLatch = new CountDownLatch(1);
+    CountDownLatch countDownLatch = new CountDownLatch(1);
     when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL))
         .thenAnswer(
             invocation -> {
               try {
-                mockConnectionLatch.await();
+                countDownLatch.await();
               } catch (InterruptedException e) {
                 throw new AssertionError("Interrupted while waiting in mock");
               }
@@ -200,11 +201,15 @@ public class ApkUpdaterTest {
     doNothing().when(apkUpdater).validateJarFile(any(), anyLong(), anyBoolean(), anyLong());
     when(mockApkInstaller.installApk(any(), any())).thenReturn(Tasks.forResult(null));
 
+    // Start the update
     UpdateTask updateTask = apkUpdater.updateApk(TEST_RELEASE, true);
-    List<UpdateProgress> events =
-        awaitProgressEvents(updateTask, 3, mockConnectionLatch::countDown);
 
-    assertThat(events).hasSize(3);
+    // Listen for progress events
+    List<UpdateProgress> events = new ArrayList<>();
+    updateTask.addOnProgressListener(FirebaseExecutors.directExecutor(), events::add);
+    countDownLatch.countDown();
+    awaitProgressEvents(events, 3);
+
     assertThat(events.get(0).getUpdateStatus()).isEqualTo(UpdateStatus.PENDING);
     assertThat(events.get(1).getUpdateStatus()).isEqualTo(UpdateStatus.DOWNLOADING);
     assertThat(events.get(1).getApkBytesDownloaded()).isEqualTo(TEST_FILE.length());

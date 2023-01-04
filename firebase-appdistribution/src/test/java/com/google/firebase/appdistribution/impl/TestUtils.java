@@ -37,6 +37,7 @@ import com.google.firebase.concurrent.TestOnlyExecutors;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -104,24 +105,15 @@ final class TestUtils {
   /** Await a specified number of progress events on an {@link UpdateTask}. */
   static List<UpdateProgress> awaitProgressEvents(UpdateTask updateTask, int count)
       throws InterruptedException {
-    return awaitProgressEvents(updateTask, count, /* setupFunction= */ () -> {});
-  }
-
-  /**
-   * Await a specified number of progress events on an {@link UpdateTask}, executing a {@link
-   * Runnable} after adding the listeners.
-   *
-   * @param updateTask the update task
-   * @param count the number of progress events to await
-   * @param setupFunction a function to run after adding the listeners to the update task, but
-   *     before we await the progress events. This is useful for kicking off delayed processes that
-   *     would otherwise start emitting progress events that need to be captured.
-   */
-  static List<UpdateProgress> awaitProgressEvents(
-      UpdateTask updateTask, int count, Runnable setupFunction) throws InterruptedException {
     List<UpdateProgress> progressEvents = new ArrayList<>();
     updateTask.addOnProgressListener(FirebaseExecutors.directExecutor(), progressEvents::add);
-    setupFunction.run();
+    awaitProgressEvents(progressEvents, count);
+    return progressEvents;
+  }
+
+  /** Await a specified number of progress events being added to the given collection. */
+  static void awaitProgressEvents(Collection<UpdateProgress> progressEvents, int count)
+      throws InterruptedException {
     ExecutorService executor = TestOnlyExecutors.blocking();
     executor.execute(
         () -> {
@@ -135,7 +127,6 @@ final class TestUtils {
         });
     executor.awaitTermination(500, TimeUnit.MILLISECONDS);
     assertThat(progressEvents).hasSize(count);
-    return progressEvents;
   }
 
   /**
