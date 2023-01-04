@@ -33,7 +33,7 @@ import static com.google.firebase.appdistribution.impl.FeedbackActivity.INFO_TEX
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_KEY;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_URI_KEY;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitAsyncOperations;
-import static com.google.firebase.appdistribution.impl.TestUtils.awaitProgressEvents;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitCondition;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTask;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTaskFailure;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTermination;
@@ -86,6 +86,7 @@ import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -364,11 +365,29 @@ public class FirebaseAppDistributionServiceImplTest {
   @Test
   public void updateIfNewReleaseAvailable_whenActivityBackgrounded_updateDialogNotShown()
       throws InterruptedException {
-    when(mockNewReleaseFetcher.checkForNewRelease()).thenReturn(Tasks.forResult(null));
+    // Block thread making the request on a latch, which gives us time to add listeners to the
+    // returned UpdateTask in time to get all the progress updates
+    CountDownLatch countDownLatch = new CountDownLatch(1);
+    when(mockNewReleaseFetcher.checkForNewRelease())
+        .thenAnswer(
+            invocation -> {
+              try {
+                countDownLatch.await();
+              } catch (InterruptedException e) {
+                throw new AssertionError("Interrupted while waiting in mock");
+              }
+              return Tasks.forResult(null);
+            });
 
+    // Start the update
     UpdateTask task = firebaseAppDistribution.updateIfNewReleaseAvailable();
 
-    List<UpdateProgress> progressEvents = awaitProgressEvents(task, 1);
+    // Listen for progress events
+    List<UpdateProgress> progressEvents = new ArrayList<>();
+    task.addOnProgressListener(FirebaseExecutors.directExecutor(), progressEvents::add);
+    countDownLatch.countDown();
+    awaitCondition(() -> progressEvents.size() == 1);
+
     assertEquals(UpdateStatus.NEW_RELEASE_NOT_AVAILABLE, progressEvents.get(0).getUpdateStatus());
     assertNull(ShadowAlertDialog.getLatestAlertDialog());
   }
