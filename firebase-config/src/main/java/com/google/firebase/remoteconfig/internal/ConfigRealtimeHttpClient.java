@@ -101,6 +101,18 @@ public class ConfigRealtimeHttpClient {
     httpRetriesRemaining = ORIGINAL_RETRIES;
   }
 
+  private synchronized void getValuesFromRealtimeHttpString(
+      ConfigRealtimeHttpStream configRealtimeHttpStream) {
+    realtimeHttpStreamFutureTask = null;
+    isRealtimeDisabled = configRealtimeHttpStream.getBackoffState();
+    if (configRealtimeHttpStream.getLastAttemptState()) {
+      resetRetryParameters();
+    }
+    if (configRealtimeHttpStream.getRetryState()) {
+      retryHTTPConnection();
+    }
+  }
+
   private synchronized boolean canMakeHttpStreamConnection() {
     return !listeners.isEmpty() && realtimeHttpStreamFutureTask == null && !isRealtimeDisabled;
   }
@@ -125,7 +137,7 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  private ConfigRealtimeHttpStream createRealtimeHttpStream() {
+  private synchronized ConfigRealtimeHttpStream createRealtimeHttpStream() {
     return new ConfigRealtimeHttpStream(
         activatedCacheClient,
         firebaseApp,
@@ -191,14 +203,7 @@ public class ConfigRealtimeHttpClient {
 
     @Override
     protected void done() {
-      realtimeHttpStreamFutureTask = null;
-      isRealtimeDisabled = configRealtimeHttpStream.getBackoffState();
-      if (configRealtimeHttpStream.getLastAttemptState()) {
-        resetRetryParameters();
-      }
-      if (configRealtimeHttpStream.getRetryState()) {
-        retryHTTPConnection();
-      }
+      getValuesFromRealtimeHttpString(configRealtimeHttpStream);
     }
   }
 }
