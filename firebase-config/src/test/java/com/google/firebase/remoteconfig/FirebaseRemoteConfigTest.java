@@ -69,7 +69,6 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler.FetchRespons
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
-import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -181,7 +180,6 @@ public final class FirebaseRemoteConfigTest {
   private FetchResponse realtimeFetchedContainerResponse;
   private ConfigContainer realtimeFetchedContainer;
   private ConfigAutoFetch configAutoFetch;
-  private ConfigRealtimeHttpClient configRealtimeHttpClient;
   private FetchResponse firstFetchedContainerResponse;
 
   private final ScheduledExecutorService scheduledExecutorService =
@@ -330,16 +328,6 @@ public final class FirebaseRemoteConfigTest {
             mockActivatedCache,
             listeners,
             mockRetryListener,
-            scheduledExecutorService);
-    configRealtimeHttpClient =
-        new ConfigRealtimeHttpClient(
-            firebaseApp,
-            mockFirebaseInstallations,
-            mockFetchHandler,
-            mockActivatedCache,
-            context,
-            "firebase",
-            listeners,
             scheduledExecutorService);
   }
 
