@@ -16,21 +16,21 @@ package com.google.firebase.appdistribution.impl;
 
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.DOWNLOAD_FAILURE;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.NETWORK_FAILURE;
-import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
-import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskResult;
 
 import android.content.Context;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
-import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.UpdateStatus;
+import com.google.firebase.appdistribution.UpdateTask;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -46,24 +46,23 @@ class ApkUpdater {
   private static final String REQUEST_METHOD_GET = "GET";
   private static final String DEFAULT_APK_FILE_NAME = "downloaded_release.apk";
 
-  private final Executor blockingExecutor; // Executor to run task listeners on a background thread
+  private final @Blocking Executor blockingExecutor;
+  private final @Lightweight Executor lightweightExecutor;
   private final Context context;
   private final ApkInstaller apkInstaller;
   private final FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager;
   private final HttpsUrlConnectionFactory httpsUrlConnectionFactory;
   private final FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier;
-
-  @GuardedBy("updateTaskLock")
-  private UpdateTaskImpl cachedUpdateTask;
-
-  private final Object updateTaskLock = new Object();
+  private UpdateTaskCache cachedUpdateTask;
 
   public ApkUpdater(
       @NonNull FirebaseApp firebaseApp,
       @NonNull ApkInstaller apkInstaller,
-      @NonNull Executor blockingExecutor) {
+      @NonNull @Blocking Executor blockingExecutor,
+      @NonNull @Lightweight Executor lightweightExecutor) {
     this(
         blockingExecutor,
+        lightweightExecutor,
         firebaseApp.getApplicationContext(),
         apkInstaller,
         new FirebaseAppDistributionNotificationsManager(firebaseApp.getApplicationContext()),
@@ -73,57 +72,45 @@ class ApkUpdater {
 
   @VisibleForTesting
   public ApkUpdater(
-      @NonNull Executor blockingExecutor,
+      @NonNull @Blocking Executor blockingExecutor,
+      @NonNull @Lightweight Executor lightweightExecutor,
       @NonNull Context context,
       @NonNull ApkInstaller apkInstaller,
       @NonNull FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager,
       @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier) {
     this.blockingExecutor = blockingExecutor;
+    this.lightweightExecutor = lightweightExecutor;
     this.context = context;
     this.apkInstaller = apkInstaller;
     this.appDistributionNotificationsManager = appDistributionNotificationsManager;
     this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
     this.lifeCycleNotifier = lifeCycleNotifier;
+    this.cachedUpdateTask = new UpdateTaskCache(lightweightExecutor);
   }
 
-  UpdateTaskImpl updateApk(
+  UpdateTask updateApk(
       @NonNull AppDistributionReleaseInternal newRelease, boolean showNotification) {
-    synchronized (updateTaskLock) {
-      if (cachedUpdateTask != null && !cachedUpdateTask.isComplete()) {
-        return cachedUpdateTask;
-      }
-
-      cachedUpdateTask = new UpdateTaskImpl();
-    }
-
-    downloadApk(newRelease, showNotification)
-        .addOnSuccessListener(blockingExecutor, file -> installApk(file, showNotification))
-        .addOnFailureListener(
-            blockingExecutor,
-            e -> {
-              setUpdateTaskCompletionErrorWithDefault(
-                  e, "Failed to download APK", Status.DOWNLOAD_FAILURE);
-            });
-
-    synchronized (updateTaskLock) {
-      return cachedUpdateTask;
-    }
+    return cachedUpdateTask.getOrCreateUpdateTask(
+        () -> {
+          downloadApk(newRelease, showNotification)
+              .addOnSuccessListener(lightweightExecutor, file -> installApk(file, showNotification))
+              .addOnFailureListener(
+                  lightweightExecutor,
+                  e ->
+                      setUpdateTaskCompletionErrorWithDefault(
+                          e, "Failed to download APK", Status.DOWNLOAD_FAILURE));
+          return new UpdateTaskImpl();
+        });
   }
 
   private void installApk(File file, boolean showDownloadNotificationManager) {
     lifeCycleNotifier
         .applyToForegroundActivityTask(
             activity -> apkInstaller.installApk(file.getPath(), activity))
-        .addOnSuccessListener(
-            blockingExecutor,
-            unused -> {
-              synchronized (updateTaskLock) {
-                safeSetTaskResult(cachedUpdateTask);
-              }
-            })
+        .addOnSuccessListener(lightweightExecutor, unused -> cachedUpdateTask.setResult())
         .addOnFailureListener(
-            blockingExecutor,
+            lightweightExecutor,
             e -> {
               postUpdateProgress(
                   file.length(),
@@ -261,17 +248,11 @@ class ApkUpdater {
     }
   }
 
-  private void setUpdateTaskCompletionError(FirebaseAppDistributionException e) {
-    synchronized (updateTaskLock) {
-      safeSetTaskException(cachedUpdateTask, e);
-    }
-  }
-
   private void setUpdateTaskCompletionErrorWithDefault(Exception e, String message, Status status) {
     if (e instanceof FirebaseAppDistributionException) {
-      setUpdateTaskCompletionError((FirebaseAppDistributionException) e);
+      cachedUpdateTask.setException((FirebaseAppDistributionException) e);
     } else {
-      setUpdateTaskCompletionError(new FirebaseAppDistributionException(message, status, e));
+      cachedUpdateTask.setException(new FirebaseAppDistributionException(message, status, e));
     }
   }
 
@@ -281,14 +262,12 @@ class ApkUpdater {
       UpdateStatus status,
       boolean showNotification,
       int stringResourceId) {
-    synchronized (updateTaskLock) {
-      cachedUpdateTask.updateProgress(
-          UpdateProgressImpl.builder()
-              .setApkFileTotalBytes(totalBytes)
-              .setApkBytesDownloaded(downloadedBytes)
-              .setUpdateStatus(status)
-              .build());
-    }
+    cachedUpdateTask.setProgress(
+        UpdateProgressImpl.builder()
+            .setApkFileTotalBytes(totalBytes)
+            .setApkBytesDownloaded(downloadedBytes)
+            .setUpdateStatus(status)
+            .build());
     if (showNotification) {
       appDistributionNotificationsManager.showAppUpdateNotification(
           totalBytes, downloadedBytes, stringResourceId);
