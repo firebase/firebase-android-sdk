@@ -63,7 +63,7 @@ class UpdateTaskCache {
     UpdateTaskImpl impl = new UpdateTaskImpl();
     sequentialExecutor.execute(
         () -> {
-          if (!isOngoing(cachedUpdateTaskImpl)) {
+          if (cachedUpdateTaskImpl == null || cachedUpdateTaskImpl.isComplete()) {
             cachedUpdateTaskImpl = producer.produce();
           }
           impl.shadow(cachedUpdateTaskImpl);
@@ -72,50 +72,59 @@ class UpdateTaskCache {
   }
 
   /**
-   * Sets the exception on the cached {@link UpdateTaskImpl}, if there is one and it is not
+   * Sets the progress on the cached {@link UpdateTaskImpl}, if there is one and it is not
    * completed.
+   *
+   * <p>The task must be created using {@link #getOrCreateUpdateTask} before calling this method.
+   *
+   * @return A task that resolves when the change is applied, or fails with {@link
+   *     IllegalStateException} if the task was not created yet or was already completed.
    */
   Task<Void> setProgress(UpdateProgress progress) {
-    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
-    sequentialExecutor.execute(
-        () -> {
-          if (isOngoing(cachedUpdateTaskImpl)) {
-            cachedUpdateTaskImpl.updateProgress(progress);
-          }
-        });
-    return taskCompletionSource.getTask();
+    return executeIfOngoing(() -> cachedUpdateTaskImpl.updateProgress(progress));
   }
 
   /**
    * Sets the result on the cached {@link UpdateTaskImpl}, if there is one and it is not completed.
+   *
+   * <p>The task must be created using {@link #getOrCreateUpdateTask} before calling this method.
+   *
+   * @return A task that resolves when the change is applied, or fails with {@link
+   *     IllegalStateException} if the task was not created yet or was already completed.
    */
   Task<Void> setResult() {
-    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
-    sequentialExecutor.execute(
-        () -> {
-          if (isOngoing(cachedUpdateTaskImpl)) {
-            cachedUpdateTaskImpl.setResult();
-          }
-        });
-    return taskCompletionSource.getTask();
+    return executeIfOngoing(() -> cachedUpdateTaskImpl.setResult());
   }
 
   /**
    * Sets the exception on the cached {@link UpdateTaskImpl}, if there is one and it is not
    * completed.
+   *
+   * <p>The task must be created using {@link #getOrCreateUpdateTask} before calling this method.
+   *
+   * @return A task that resolves when the change is applied, or fails with {@link
+   *     IllegalStateException} if the task was not created yet or was already completed.
    */
   Task<Void> setException(FirebaseAppDistributionException e) {
+    return executeIfOngoing(() -> cachedUpdateTaskImpl.setException(e));
+  }
+
+  private Task<Void> executeIfOngoing(Runnable r) {
     TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
     sequentialExecutor.execute(
         () -> {
-          if (isOngoing(cachedUpdateTaskImpl)) {
-            cachedUpdateTaskImpl.setException(e);
+          if (cachedUpdateTaskImpl == null) {
+            taskCompletionSource.setException(
+                new IllegalStateException(
+                    "Tried to set exception before calling getOrCreateUpdateTask()"));
+          } else if (cachedUpdateTaskImpl.isComplete()) {
+            taskCompletionSource.setException(
+                new IllegalStateException("Tried to set exception on a completed task"));
+          } else {
+            r.run();
+            taskCompletionSource.setResult(null);
           }
         });
     return taskCompletionSource.getTask();
-  }
-
-  private static boolean isOngoing(UpdateTask updateTask) {
-    return updateTask != null && !updateTask.isComplete();
   }
 }
