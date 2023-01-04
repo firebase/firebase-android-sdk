@@ -504,7 +504,7 @@ public class FirebaseInAppMessagingFlowableTest {
     analyticsConnector.invokeListenerOnEvent(ANALYTICS_EVENT_NAME);
     analyticsConnector.invokeListenerOnEvent("some_other_event");
     analyticsConnector.invokeListenerOnEvent(ANALYTICS_EVENT_NAME);
-    await().timeout(2, SECONDS).until(() -> subscriber.valueCount() > 0);
+    await().timeout(2, SECONDS).until(() -> subscriber.valueCount() > 1);
 
     List<Object> triggeredMessages = getPlainValues(subscriber);
     assertThat(triggeredMessages.size()).isEqualTo(2);
