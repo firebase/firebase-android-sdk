@@ -101,10 +101,27 @@ final class TestUtils {
     shadowOf(getMainLooper()).idle();
   }
 
+  /** Await a specified number of progress events on an {@link UpdateTask}. */
   static List<UpdateProgress> awaitProgressEvents(UpdateTask updateTask, int count)
       throws InterruptedException {
+    return awaitProgressEvents(updateTask, count, /* setupFunction= */ () -> {});
+  }
+
+  /**
+   * Await a specified number of progress events on an {@link UpdateTask}, executing a {@link
+   * Runnable} after adding the listeners.
+   *
+   * @param updateTask the update task
+   * @param count the number of progress events to await
+   * @param setupFunction a function to run after adding the listeners to the update task, but
+   *     before we await the progress events. This is useful for kicking off delayed processes that
+   *     would otherwise start emitting progress events that need to be captured.
+   */
+  static List<UpdateProgress> awaitProgressEvents(
+      UpdateTask updateTask, int count, Runnable setupFunction) throws InterruptedException {
     List<UpdateProgress> progressEvents = new ArrayList<>();
     updateTask.addOnProgressListener(FirebaseExecutors.directExecutor(), progressEvents::add);
+    setupFunction.run();
     ExecutorService executor = TestOnlyExecutors.blocking();
     executor.execute(
         () -> {
