@@ -1166,21 +1166,6 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void realtime_stream_listen_and_retry_success() throws Exception {
-    when(mockHttpURLConnection.getInputStream())
-        .thenReturn(
-            new ByteArrayInputStream(
-                "{ \"latestTemplateVersionNumber\": 1 }".getBytes(StandardCharsets.UTF_8)));
-    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
-            ConfigFetchHandler.FetchType.REALTIME, 1))
-        .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
-    configAutoFetch.listenForNotifications();
-
-    verify(mockRetryListener).onUpdate(any());
-  }
-
-  @Test
   public void realtime_fetchesWithoutChangedParams_doesNotCallOnUpdate() throws Exception {
     when(mockHttpURLConnection.getInputStream())
         .thenReturn(

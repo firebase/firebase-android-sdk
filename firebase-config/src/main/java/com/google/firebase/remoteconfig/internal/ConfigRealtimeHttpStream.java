@@ -133,15 +133,13 @@ public class ConfigRealtimeHttpStream {
 
   private void getInstallationAuthToken(HttpURLConnection httpURLConnection) {
     Task<InstallationTokenResult> installationAuthTokenTask = firebaseInstallations.getToken(false);
-    Tasks.forResult(installationAuthTokenTask)
-        .continueWithTask(
-            scheduledExecutorService,
-            unusedToken -> {
-              httpURLConnection.setRequestProperty(
-                  INSTALLATIONS_AUTH_TOKEN_HEADER,
-                  installationAuthTokenTask.getResult().getToken());
-              return Tasks.forResult(null);
-            });
+    installationAuthTokenTask.onSuccessTask(
+        scheduledExecutorService,
+        unusedToken -> {
+          httpURLConnection.setRequestProperty(
+              INSTALLATIONS_AUTH_TOKEN_HEADER, unusedToken.getToken());
+          return Tasks.forResult(null);
+        });
   }
 
   /** Gets the Android package's SHA-1 fingerprint. */

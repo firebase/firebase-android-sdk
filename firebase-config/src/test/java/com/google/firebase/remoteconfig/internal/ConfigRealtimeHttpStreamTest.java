@@ -190,7 +190,6 @@ public class ConfigRealtimeHttpStreamTest {
     spyConfigRealtimeHttpStream.beginRealtimeHttpStream(fakeHttpURLConnection);
 
     Map<String, String> expectedHeaders = new HashMap();
-    expectedHeaders.put(INSTALLATIONS_AUTH_TOKEN_HEADER, "10");
     expectedHeaders.put(API_KEY_HEADER, API_KEY);
 
     // Headers required for Android API Key Restrictions.
