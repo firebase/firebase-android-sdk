@@ -283,7 +283,6 @@ public class ConfigRealtimeHttpStream {
     Integer responseCode = null;
     try {
       setRequestParams(httpURLConnection);
-      setRequestParams(httpURLConnection);
       responseCode = httpURLConnection.getResponseCode();
 
       // If the connection returned a 200 response code, start listening for messages.
@@ -296,6 +295,7 @@ public class ConfigRealtimeHttpStream {
         configAutoFetch.listenForNotifications();
       }
     } catch (IOException e) {
+      Log.i(TAG, e.toString());
       Log.d(TAG, "Exception connecting to realtime stream. Retrying the connection...");
       propagateErrors(
           new FirebaseRemoteConfigServerException(
