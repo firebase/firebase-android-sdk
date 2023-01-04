@@ -32,14 +32,17 @@ import com.google.firebase.appdistribution.OnProgressListener;
 import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateTask;
 import com.google.firebase.concurrent.FirebaseExecutors;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 /** Implementation of UpdateTask, the return type of updateApp. */
 // TODO(b/261013814): Use an explicit executor in continuations.
 class UpdateTaskImpl extends UpdateTask {
+
   @Nullable
   @GuardedBy("lock")
-  private ManagedListener listener = null;
+  private List<ManagedListener> listeners = new ArrayList<>();
 
   private final Object lock = new Object();
   private final Object taskCompletionLock = new Object();
@@ -59,8 +62,8 @@ class UpdateTaskImpl extends UpdateTask {
   void updateProgress(@NonNull UpdateProgress updateProgress) {
     synchronized (lock) {
       snapshot = updateProgress;
-      if (this.listener != null) {
-        this.listener.invoke(updateProgress);
+      for (ManagedListener listener : listeners) {
+        listener.invoke(updateProgress);
       }
     }
   }
@@ -94,9 +97,9 @@ class UpdateTaskImpl extends UpdateTask {
       @Nullable Executor executor, @NonNull OnProgressListener listener) {
     ManagedListener managedListener = new ManagedListener(executor, listener);
     synchronized (lock) {
-      this.listener = managedListener;
+      this.listeners.add(managedListener);
       if (snapshot != null) {
-        this.listener.invoke(snapshot);
+        managedListener.invoke(snapshot);
       }
     }
     return this;
@@ -264,7 +267,7 @@ class UpdateTaskImpl extends UpdateTask {
   public void setResult() {
 
     synchronized (lock) {
-      this.listener = null;
+      this.listeners.clear();
     }
 
     synchronized (taskCompletionLock) {
@@ -278,7 +281,7 @@ class UpdateTaskImpl extends UpdateTask {
   public void setException(@NonNull Exception exception) {
 
     synchronized (lock) {
-      this.listener = null;
+      this.listeners.clear();
     }
 
     synchronized (taskCompletionLock) {
