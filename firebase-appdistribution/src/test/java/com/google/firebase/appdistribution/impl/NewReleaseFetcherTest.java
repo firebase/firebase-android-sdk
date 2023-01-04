@@ -17,8 +17,12 @@ package com.google.firebase.appdistribution.impl;
 import static android.os.Looper.getMainLooper;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.BinaryType.APK;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitTask;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -28,11 +32,13 @@ import androidx.test.core.content.pm.PackageInfoBuilder;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import com.google.firebase.concurrent.TestOnlyExecutors;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -58,7 +64,7 @@ public class NewReleaseFetcherTest {
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
   @Mock private ReleaseIdentifier mockReleaseIdentifier;
 
-  Executor testExecutor = Executors.newSingleThreadExecutor();
+  @Lightweight Executor lightweightExecutor = TestOnlyExecutors.lite();
 
   @Before
   public void setup() throws FirebaseAppDistributionException {
@@ -84,11 +90,13 @@ public class NewReleaseFetcherTest {
             new NewReleaseFetcher(
                 ApplicationProvider.getApplicationContext(),
                 mockFirebaseAppDistributionTesterApiClient,
-                mockReleaseIdentifier));
+                mockReleaseIdentifier,
+                lightweightExecutor));
   }
 
   @Test
-  public void checkForNewRelease_whenCalledMultipleTimes_returnsTheSameTask() {
+  public void checkForNewRelease_whenCalledMultipleTimes_onlyFetchesReleasesOnce()
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
     // Start a new task completion source and do not complete it, to mimic an in progress task
     TaskCompletionSource<AppDistributionReleaseInternal> task = new TaskCompletionSource<>();
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease()).thenReturn(task.getTask());
@@ -98,7 +106,13 @@ public class NewReleaseFetcherTest {
     Task<AppDistributionReleaseInternal> checkForNewReleaseTask2 =
         newReleaseFetcher.checkForNewRelease();
 
-    assertEquals(checkForNewReleaseTask1, checkForNewReleaseTask2);
+    // Don't set the result until after calling twice, to make sure that the task from the first
+    // call is still ongoing.
+    task.setResult(null);
+    awaitTask(checkForNewReleaseTask1);
+    awaitTask(checkForNewReleaseTask2);
+
+    verify(mockFirebaseAppDistributionTesterApiClient, times(1)).fetchNewRelease();
   }
 
   @Test
@@ -107,7 +121,7 @@ public class NewReleaseFetcherTest {
         .thenReturn(Tasks.forResult(getTestNewRelease().build()));
 
     Task<AppDistributionReleaseInternal> task = newReleaseFetcher.checkForNewRelease();
-    AppDistributionReleaseInternal appDistributionReleaseInternal = TestUtils.awaitTask(task);
+    AppDistributionReleaseInternal appDistributionReleaseInternal = awaitTask(task);
 
     assertEquals(getTestNewRelease().build(), appDistributionReleaseInternal);
   }
@@ -123,23 +137,23 @@ public class NewReleaseFetcherTest {
     Task<AppDistributionReleaseInternal> task = newReleaseFetcher.checkForNewRelease();
     shadowOf(getMainLooper()).idle();
 
-    assertThat(task.isSuccessful()).isFalse();
-    assertThat(task.getException()).isEqualTo(expectedException);
+    awaitTaskFailure(task, FirebaseAppDistributionException.Status.UNKNOWN, "test");
   }
 
   @Test
-  public void checkForNewRelease_whenNewReleaseIsSameRelease_returnsNull() {
+  public void checkForNewRelease_whenNewReleaseIsSameRelease_returnsNull()
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease())
         .thenReturn(Tasks.forResult(getTestInstalledRelease().build()));
 
     Task<AppDistributionReleaseInternal> releaseTask = newReleaseFetcher.checkForNewRelease();
-    shadowOf(getMainLooper()).idle();
 
-    assertThat(releaseTask.getResult()).isNull();
+    assertThat(awaitTask(releaseTask)).isNull();
   }
 
   @Test
-  public void checkForNewRelease_whenNewReleaseIsLowerVersionCode_returnsNull() {
+  public void checkForNewRelease_whenNewReleaseIsLowerVersionCode_returnsNull()
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease())
         .thenReturn(
             Tasks.forResult(
@@ -148,14 +162,13 @@ public class NewReleaseFetcherTest {
                     .build()));
 
     Task<AppDistributionReleaseInternal> releaseTask = newReleaseFetcher.checkForNewRelease();
-    shadowOf(getMainLooper()).idle();
 
-    assertThat(releaseTask.isSuccessful()).isTrue();
-    assertThat(releaseTask.getResult()).isNull();
+    assertThat(awaitTask(releaseTask)).isNull();
   }
 
   @Test
-  public void checkForNewRelease_whenNewAabIsAvailable_returnsRelease() {
+  public void checkForNewRelease_whenNewAabIsAvailable_returnsRelease()
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
     AppDistributionReleaseInternal expectedRelease =
         getTestNewRelease()
             .setDownloadUrl("http://fake-download-url")
@@ -166,14 +179,13 @@ public class NewReleaseFetcherTest {
         .thenReturn(Tasks.forResult(expectedRelease));
 
     Task<AppDistributionReleaseInternal> result = newReleaseFetcher.checkForNewRelease();
-    shadowOf(getMainLooper()).idle();
 
-    assertThat(result.isSuccessful()).isTrue();
-    assertThat(result.getResult()).isEqualTo(expectedRelease);
+    assertThat(awaitTask(result)).isEqualTo(expectedRelease);
   }
 
   @Test
-  public void checkForNewRelease_differentVersionNameThanInstalled_returnsRelease() {
+  public void checkForNewRelease_differentVersionNameThanInstalled_returnsRelease()
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
     AppDistributionReleaseInternal expectedRelease =
         getTestNewRelease()
             .setDownloadUrl("http://fake-download-url")
@@ -185,14 +197,13 @@ public class NewReleaseFetcherTest {
         .thenReturn(Tasks.forResult(expectedRelease));
 
     Task<AppDistributionReleaseInternal> result = newReleaseFetcher.checkForNewRelease();
-    shadowOf(getMainLooper()).idle();
 
-    assertThat(result.isSuccessful()).isTrue();
-    assertThat(result.getResult()).isEqualTo(expectedRelease);
+    assertThat(awaitTask(result)).isEqualTo(expectedRelease);
   }
 
   @Test
-  public void checkForNewRelease_whenNewReleaseIsSameAsInstalledAab_returnsNull() {
+  public void checkForNewRelease_whenNewReleaseIsSameAsInstalledAab_returnsNull()
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease())
         .thenReturn(
             Tasks.forResult(
@@ -203,10 +214,8 @@ public class NewReleaseFetcherTest {
                     .build()));
 
     Task<AppDistributionReleaseInternal> result = newReleaseFetcher.checkForNewRelease();
-    shadowOf(getMainLooper()).idle();
 
-    assertThat(result.isSuccessful()).isTrue();
-    assertThat(result.getResult()).isNull();
+    assertThat(awaitTask(result)).isNull();
   }
 
   @Test
@@ -216,7 +225,7 @@ public class NewReleaseFetcherTest {
 
     Task<AppDistributionReleaseInternal> task = newReleaseFetcher.checkForNewRelease();
 
-    TestUtils.awaitTaskFailure(task, Status.UNKNOWN, "Missing APK hash");
+    awaitTaskFailure(task, Status.UNKNOWN, "Missing APK hash");
   }
 
   private AppDistributionReleaseInternal.Builder getTestNewRelease() {
