@@ -15,34 +15,58 @@
 package com.google.firebase.appdistribution.impl;
 
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.annotations.concurrent.Lightweight;
+import com.google.firebase.concurrent.FirebaseExecutors;
+import java.util.concurrent.Executor;
 
 /**
- * A cache for Tasks, for use in cases where we only ever want one active task at a time for a
- * particular operation.
+ * A cache for a {@link Task}, for use in cases where we only ever want one active task at a time
+ * for a particular operation.
+ *
+ * <p>If you need a reference to an underlying TaskCompletionSource, use {@link
+ * TaskCompletionSourceCache} instead.
  */
-class TaskCache<T extends Task> {
+class TaskCache<T> {
 
-  /** A functional interface for a producer of a new Task. */
+  /** A functional interface for a producer of a new {@link Task}. */
   @FunctionalInterface
-  interface TaskProducer<T extends Task> {
+  interface TaskProducer<T> {
 
-    /** Produce a new Task. */
-    T produce();
+    /** Produce a new {@link Task}. */
+    Task<T> produce();
   }
 
-  private T cachedTask;
+  private Task<T> cachedTask;
+  private final Executor sequentialExecutor;
 
   /**
-   * Gets a cached task, if there is one and it is not completed, or else calls the given {@code
-   * producer} and caches the returned task.
+   * Constructor for a {@link TaskCache} that controls access using its own sequential executor
+   * backed by the given base executor.
    *
-   * @return the cached task if there is one and it is not completed, or else the result from {@code
-   *     producer.produce()}
+   * @param baseExecutor Executor (typically {@link Lightweight}) to back the sequential executor.
    */
-  synchronized T getOrCreateTask(TaskProducer<T> producer) {
-    if (cachedTask == null || cachedTask.isComplete()) {
-      cachedTask = producer.produce();
-    }
-    return cachedTask;
+  TaskCache(Executor baseExecutor) {
+    sequentialExecutor = FirebaseExecutors.newSequentialExecutor(baseExecutor);
+  }
+
+  /**
+   * Gets a cached {@link Task}, if there is one and it is not completed, or else calls the given
+   * {@code producer} and caches the return value.
+   */
+  Task<T> getOrCreateTask(TaskProducer<T> producer) {
+    TaskCompletionSource<T> taskCompletionSource = new TaskCompletionSource<>();
+    sequentialExecutor.execute(
+        () -> {
+          if (!isOngoing(cachedTask)) {
+            cachedTask = producer.produce();
+          }
+          TaskUtils.shadowTask(taskCompletionSource, cachedTask);
+        });
+    return taskCompletionSource.getTask();
+  }
+
+  private static <T> boolean isOngoing(Task<T> task) {
+    return task != null && !task.isComplete();
   }
 }

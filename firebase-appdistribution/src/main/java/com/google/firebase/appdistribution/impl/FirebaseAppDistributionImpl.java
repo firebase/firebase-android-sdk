@@ -36,6 +36,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.BinaryType;
@@ -65,22 +66,23 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private final ApkUpdater apkUpdater;
   private final AabUpdater aabUpdater;
   private final SignInStorage signInStorage;
-  private final SequentialReference<AppDistributionReleaseInternal> cachedNewRelease;
   private final ReleaseIdentifier releaseIdentifier;
   private final ScreenshotTaker screenshotTaker;
-  private final Executor blockingExecutor;
+  @Lightweight private final Executor lightweightExecutor;
+  @Blocking private final Executor blockingExecutor;
+  private final SequentialReference<AppDistributionReleaseInternal> cachedNewRelease;
+  private final TaskCache<AppDistributionRelease> checkForNewReleaseTaskCache;
+  private final UpdateTaskCache updateIfNewReleaseAvailableTaskCache;
   private final FirebaseAppDistributionNotificationsManager notificationsManager;
-  private TaskCache<UpdateTask> updateIfNewReleaseAvailableTaskCache = new TaskCache<>();
-  private TaskCache<Task<AppDistributionRelease>> checkForNewReleaseTaskCache = new TaskCache<>();
-  @Lightweight private Executor lightweightExecutor;
-  private AlertDialog updateConfirmationDialog;
-  private AlertDialog signInConfirmationDialog;
-  @Nullable private Activity dialogHostActivity = null;
+  private final AtomicBoolean feedbackInProgress = new AtomicBoolean(false);
+
+  @Nullable private AlertDialog updateConfirmationDialog;
+  @Nullable private AlertDialog signInConfirmationDialog;
+  @Nullable private Activity dialogHostActivity;
   private boolean remakeSignInConfirmationDialog = false;
   private boolean remakeUpdateConfirmationDialog = false;
-  private TaskCompletionSource<Void> showSignInDialogTask = null;
-  private TaskCompletionSource<Void> showUpdateDialogTask = null;
-  private final AtomicBoolean feedbackInProgress = new AtomicBoolean(false);
+  @Nullable private TaskCompletionSource<Void> showSignInDialogTask;
+  @Nullable private TaskCompletionSource<Void> showUpdateDialogTask;
 
   @VisibleForTesting
   FirebaseAppDistributionImpl(
@@ -94,7 +96,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       @NonNull ReleaseIdentifier releaseIdentifier,
       @NonNull ScreenshotTaker screenshotTaker,
       @NonNull @Lightweight Executor lightweightExecutor,
-      @NonNull Executor blockingExecutor) {
+      @NonNull @Blocking Executor blockingExecutor) {
     this.firebaseApp = firebaseApp;
     this.testerSignInManager = testerSignInManager;
     this.newReleaseFetcher = newReleaseFetcher;
@@ -103,10 +105,12 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     this.signInStorage = signInStorage;
     this.releaseIdentifier = releaseIdentifier;
     this.lifecycleNotifier = lifecycleNotifier;
-    this.cachedNewRelease = new SequentialReference<>(lightweightExecutor);
-    this.lightweightExecutor = lightweightExecutor;
     this.screenshotTaker = screenshotTaker;
+    this.lightweightExecutor = lightweightExecutor;
     this.blockingExecutor = blockingExecutor;
+    this.cachedNewRelease = new SequentialReference<>(lightweightExecutor);
+    this.checkForNewReleaseTaskCache = new TaskCache<>(lightweightExecutor);
+    this.updateIfNewReleaseAvailableTaskCache = new UpdateTaskCache(lightweightExecutor);
     this.notificationsManager =
         new FirebaseAppDistributionNotificationsManager(firebaseApp.getApplicationContext());
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
@@ -117,7 +121,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   @Override
   @NonNull
   public UpdateTask updateIfNewReleaseAvailable() {
-    return updateIfNewReleaseAvailableTaskCache.getOrCreateTask(
+    return updateIfNewReleaseAvailableTaskCache.getOrCreateUpdateTask(
         () -> {
           UpdateTaskImpl updateTask = new UpdateTaskImpl();
           remakeSignInConfirmationDialog = false;
