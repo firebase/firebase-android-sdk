@@ -16,16 +16,17 @@ package com.google.firebase.appdistribution.impl;
 
 import static com.google.firebase.appdistribution.impl.PackageInfoUtils.getPackageInfo;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.content.pm.PackageInfoCompat;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import java.util.concurrent.Executor;
 
 /**
  * Class that handles fetching the latest release from App Distribution and determining if it is a
@@ -36,33 +37,32 @@ class NewReleaseFetcher {
 
   private final FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   private final ReleaseIdentifier releaseIdentifier;
+  private @Lightweight Executor lightweightExecutor;
   private final Context context;
 
-  Task<AppDistributionReleaseInternal> cachedCheckForNewRelease = null;
+  TaskCache<AppDistributionReleaseInternal> cachedCheckForNewRelease;
 
   NewReleaseFetcher(
       @NonNull Context applicationContext,
       @NonNull FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient,
-      ReleaseIdentifier releaseIdentifier) {
+      ReleaseIdentifier releaseIdentifier,
+      @Lightweight Executor lightweightExecutor) {
     this.firebaseAppDistributionTesterApiClient = firebaseAppDistributionTesterApiClient;
     this.context = applicationContext;
     this.releaseIdentifier = releaseIdentifier;
+    this.lightweightExecutor = lightweightExecutor;
+    this.cachedCheckForNewRelease = new TaskCache<>(lightweightExecutor);
   }
 
-  // TODO(b/261014422): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   @NonNull
-  public synchronized Task<AppDistributionReleaseInternal> checkForNewRelease() {
-    if (cachedCheckForNewRelease != null && !cachedCheckForNewRelease.isComplete()) {
-      return cachedCheckForNewRelease;
-    }
-
-    this.cachedCheckForNewRelease =
-        firebaseAppDistributionTesterApiClient
-            .fetchNewRelease()
-            .onSuccessTask(release -> Tasks.forResult(isNewerRelease(release) ? release : null));
-
-    return cachedCheckForNewRelease;
+  public Task<AppDistributionReleaseInternal> checkForNewRelease() {
+    return cachedCheckForNewRelease.getOrCreateTask(
+        () ->
+            firebaseAppDistributionTesterApiClient
+                .fetchNewRelease()
+                .onSuccessTask(
+                    lightweightExecutor,
+                    release -> Tasks.forResult(isNewerRelease(release) ? release : null)));
   }
 
   private boolean isNewerRelease(AppDistributionReleaseInternal retrievedNewRelease)
