@@ -80,6 +80,8 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
               task.getDestinationDirectory().set(project.getRootDir());
             });
 
+    project.getTasks().create("generateReleaseConfig", ReleaseGenerator.class);
+
     project
         .getGradle()
         .projectsEvaluated(
