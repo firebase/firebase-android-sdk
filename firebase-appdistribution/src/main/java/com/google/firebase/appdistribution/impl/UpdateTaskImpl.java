@@ -73,6 +73,9 @@ class UpdateTaskImpl extends UpdateTask {
    * progress or completing this task with the same changes.
    */
   void shadow(UpdateTask updateTask) {
+    // Using direct executor here ensures that any handlers that were themselves added using a
+    // direct executor will behave as expected: they'll be executed on the thread that sets the
+    // result or updates progress.
     updateTask
         .addOnProgressListener(FirebaseExecutors.directExecutor(), this::updateProgress)
         .addOnSuccessListener(FirebaseExecutors.directExecutor(), unused -> setResult())
