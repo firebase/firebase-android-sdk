@@ -59,7 +59,8 @@ class TaskCompletionSourceCache<T> {
     TaskCompletionSource<T> taskCompletionSource = new TaskCompletionSource<>();
     sequentialExecutor.execute(
         () -> {
-          if (!isOngoing(cachedTaskCompletionSource)) {
+          if (cachedTaskCompletionSource == null
+              || cachedTaskCompletionSource.getTask().isComplete()) {
             cachedTaskCompletionSource = producer.produce();
           }
           TaskUtils.shadowTask(taskCompletionSource, cachedTaskCompletionSource.getTask());
@@ -68,36 +69,62 @@ class TaskCompletionSourceCache<T> {
   }
 
   /**
-   * Sets the result on the cached {@link TaskCompletionSource}, if there is one and it is not
-   * completed.
+   * Sets the result on the cached {@link TaskCompletionSource}.
+   *
+   * <p>The task must be created using {@link #getOrCreateTaskFromCompletionSource} before calling
+   * this method.
+   *
+   * @return A task that resolves when the change is applied, or fails with {@link
+   *     IllegalStateException} if the task was not created yet or was already completed.
    */
   Task<Void> setResult(T result) {
-    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
-    sequentialExecutor.execute(
-        () -> {
-          if (isOngoing(cachedTaskCompletionSource)) {
-            cachedTaskCompletionSource.setResult(result);
-          }
-        });
-    return taskCompletionSource.getTask();
+    return executeIfOngoing(() -> cachedTaskCompletionSource.setResult(result));
   }
 
   /**
    * Sets the exception on the cached {@link TaskCompletionSource}, if there is one and it is not
    * completed.
+   *
+   * <p>The task must be created using {@link #getOrCreateTaskFromCompletionSource} before calling
+   * this method.
+   *
+   * @return A task that resolves when the change is applied, or fails with {@link
+   *     IllegalStateException} if the task was not created yet or was already completed.
    */
   Task<Void> setException(Exception e) {
-    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
+    return executeIfOngoing(() -> cachedTaskCompletionSource.setException(e));
+  }
+
+  /**
+   * Returns a task indicating whether the cached {@link TaskCompletionSource} has been initialized
+   * and is not yet completed.
+   */
+  Task<Boolean> isOngoing() {
+    TaskCompletionSource<Boolean> taskCompletionSource = new TaskCompletionSource<>();
     sequentialExecutor.execute(
-        () -> {
-          if (isOngoing(cachedTaskCompletionSource)) {
-            cachedTaskCompletionSource.setException(e);
-          }
-        });
+        () ->
+            taskCompletionSource.setResult(
+                cachedTaskCompletionSource != null
+                    && !cachedTaskCompletionSource.getTask().isComplete()));
     return taskCompletionSource.getTask();
   }
 
-  private static <T> boolean isOngoing(TaskCompletionSource<T> taskCompletionSource) {
-    return taskCompletionSource != null && !taskCompletionSource.getTask().isComplete();
+  private Task<Void> executeIfOngoing(Runnable r) {
+    TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
+    sequentialExecutor.execute(
+        () -> {
+          if (cachedTaskCompletionSource == null) {
+            taskCompletionSource.setException(
+                new IllegalStateException(
+                    "Tried to set exception before calling getOrCreateTaskFromCompletionSource()"));
+          } else if (cachedTaskCompletionSource.getTask().isComplete()) {
+            taskCompletionSource.setException(
+                new IllegalStateException("Tried to set exception on a completed task"));
+          } else {
+            r.run();
+            taskCompletionSource.setResult(null);
+          }
+        });
+    return taskCompletionSource.getTask();
   }
 }
