@@ -45,10 +45,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -129,15 +126,13 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   // TODO(b/258422917): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
   FirebaseInstallations(
-      FirebaseApp firebaseApp, @NonNull Provider<HeartBeatController> heartBeatProvider) {
+      FirebaseApp firebaseApp,
+      @NonNull Provider<HeartBeatController> heartBeatProvider,
+      @NonNull ExecutorService backgroundExecutor,
+      @NonNull ExecutorService networkExecutor) {
     this(
-        new ThreadPoolExecutor(
-            CORE_POOL_SIZE,
-            MAXIMUM_POOL_SIZE,
-            KEEP_ALIVE_TIME_IN_SECONDS,
-            TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(),
-            THREAD_FACTORY),
+        backgroundExecutor,
+        networkExecutor,
         firebaseApp,
         new FirebaseInstallationServiceClient(
             firebaseApp.getApplicationContext(), heartBeatProvider),
@@ -151,6 +146,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @SuppressLint("ThreadPoolCreation")
   FirebaseInstallations(
       ExecutorService backgroundExecutor,
+      ExecutorService networkExecutor,
       FirebaseApp firebaseApp,
       FirebaseInstallationServiceClient serviceClient,
       PersistedInstallation persistedInstallation,
@@ -164,14 +160,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     this.iidStore = iidStore;
     this.fidGenerator = fidGenerator;
     this.backgroundExecutor = backgroundExecutor;
-    this.networkExecutor =
-        new ThreadPoolExecutor(
-            CORE_POOL_SIZE,
-            MAXIMUM_POOL_SIZE,
-            KEEP_ALIVE_TIME_IN_SECONDS,
-            TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(),
-            THREAD_FACTORY);
+    this.networkExecutor = networkExecutor;
   }
 
   /**

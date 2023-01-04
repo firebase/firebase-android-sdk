@@ -68,7 +68,8 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class FirebaseInstallationsTest {
   private FirebaseApp firebaseApp;
-  private ExecutorService executor;
+  private ExecutorService backgroundExecutor;
+  private ExecutorService networkExecutor;
   private PersistedInstallation persistedInstallation;
   @Mock private FirebaseInstallationServiceClient mockBackend;
   @Mock private IidStore mockIidStore;
@@ -140,7 +141,10 @@ public class FirebaseInstallationsTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
-    executor = new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+    backgroundExecutor =
+        new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+    networkExecutor =
+        new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
 
     firebaseApp =
         FirebaseApp.initializeApp(
@@ -157,7 +161,8 @@ public class FirebaseInstallationsTest {
     utils = Utils.getInstance(fakeClock);
     firebaseInstallations =
         new FirebaseInstallations(
-            executor,
+            backgroundExecutor,
+            networkExecutor,
             firebaseApp,
             mockBackend,
             persistedInstallation,
@@ -172,7 +177,7 @@ public class FirebaseInstallationsTest {
   public void cleanUp() {
     persistedInstallation.clearForTesting();
     try {
-      executor.awaitTermination(250, TimeUnit.MILLISECONDS);
+      backgroundExecutor.awaitTermination(250, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
 
     }
@@ -202,14 +207,14 @@ public class FirebaseInstallationsTest {
     // Confirm both that it returns the expected ID, as does reading the prefs from storage.
     TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
     Task<String> task = firebaseInstallations.getId();
-    task.addOnCompleteListener(executor, onCompleteListener);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     String fid = onCompleteListener.await();
     assertWithMessage("getId Task failed.").that(fid).isEqualTo(TEST_FID_1);
     PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
     assertThat(entry.getFirebaseInstallationId()).isEqualTo(TEST_FID_1);
 
     // Waiting for Task that registers FID on the FIS Servers
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    backgroundExecutor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     // The storage should still have the same ID and the status should indicate that the
     // fid is registered.
@@ -237,14 +242,14 @@ public class FirebaseInstallationsTest {
     // Confirm both that it returns the expected ID, as does reading the prefs from storage.
     TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
     Task<String> task = firebaseInstallations.getId();
-    task.addOnCompleteListener(executor, onCompleteListener);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     String fid = onCompleteListener.await();
     assertWithMessage("getId Task failed.").that(fid).isEqualTo(TEST_INSTANCE_ID_1);
     PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
     assertThat(entry.getFirebaseInstallationId()).isEqualTo(TEST_INSTANCE_ID_1);
 
     // Waiting for Task that registers FID on the FIS Servers
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    backgroundExecutor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     // The storage should still have the same ID and the status should indicate that the
     // fid is registered.
@@ -268,12 +273,12 @@ public class FirebaseInstallationsTest {
     // Confirm both that it returns the expected ID, as does reading the prefs from storage.
     TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
     Task<String> task = firebaseInstallations.getId();
-    task.addOnCompleteListener(executor, onCompleteListener);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     String fid = onCompleteListener.await();
     assertWithMessage("getId Task failed.").that(fid).isEqualTo("generatedFid");
 
     // Waiting for Task that registers FID on the FIS Servers
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    backgroundExecutor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     // The storage should still have the same ID and the status should indicate that the
     // fid is registered.
@@ -298,13 +303,13 @@ public class FirebaseInstallationsTest {
     // No exception, means success.
     TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
     Task<String> task = firebaseInstallations.getId();
-    task.addOnCompleteListener(executor, onCompleteListener);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     String fid = onCompleteListener.await();
     assertWithMessage("getId Task failed.").that(fid).isEqualTo(TEST_FID_1);
 
     // getId() returns fid immediately but registers fid asynchronously.  Waiting for half a second
     // while we mock fid registration. We dont send an actual request to FIS in tests.
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    backgroundExecutor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     // check that the mockClient didn't get invoked at all, since the fid is already registered
     // and the authtoken is present and not expired
@@ -331,13 +336,13 @@ public class FirebaseInstallationsTest {
     // No exception, means success.
     TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
     Task<String> task = firebaseInstallations.getId();
-    task.addOnCompleteListener(executor, onCompleteListener);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     String fid = onCompleteListener.await();
     assertWithMessage("getId Task failed.").that(fid).isEqualTo(TEST_FID_1);
 
     // getId() returns fid immediately but registers fid asynchronously.  Waiting for half a second
     // while we mock fid registration. We dont send an actual request to FIS in tests.
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    backgroundExecutor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     // check that the mockClient didn't get invoked at all, since the fid is already registered
     // and the authtoken is present and not expired
@@ -482,12 +487,12 @@ public class FirebaseInstallationsTest {
     // Unregister FidListener2
     listenerHandle.unregister();
 
-    task.addOnCompleteListener(executor, onCompleteListener);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     String fid = onCompleteListener.await();
     assertWithMessage("getId Task failed.").that(fid).isEqualTo(TEST_FID_1);
 
     // Waiting for Task that registers FID on the FIS Servers
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    backgroundExecutor.awaitTermination(500, TimeUnit.MILLISECONDS);
     PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
     assertThat(entry.getFirebaseInstallationId()).isEqualTo(TEST_FID_2);
 
@@ -508,14 +513,14 @@ public class FirebaseInstallationsTest {
     // Confirm both that it returns the expected ID, as does reading the prefs from storage.
     TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
     Task<String> task = firebaseInstallations.getId();
-    task.addOnCompleteListener(executor, onCompleteListener);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     String fid = onCompleteListener.await();
     assertWithMessage("getId Task failed.").that(fid).isEqualTo(TEST_INSTANCE_ID_1);
     PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
     assertThat(entry.getFirebaseInstallationId()).isEqualTo(TEST_INSTANCE_ID_1);
 
     // Waiting for Task that registers FID on the FIS Servers
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    backgroundExecutor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     // The storage should still have the same ID and the status should indicate that the
     // fid si registered.
@@ -536,14 +541,14 @@ public class FirebaseInstallationsTest {
     Task<String> task1 = firebaseInstallations.getId();
     Task<String> task2 = firebaseInstallations.getId();
     TestOnCompleteListener<String> onCompleteListener1 = new TestOnCompleteListener<>();
-    task1.addOnCompleteListener(executor, onCompleteListener1);
+    task1.addOnCompleteListener(backgroundExecutor, onCompleteListener1);
     TestOnCompleteListener<String> onCompleteListener2 = new TestOnCompleteListener<>();
-    task2.addOnCompleteListener(executor, onCompleteListener2);
+    task2.addOnCompleteListener(backgroundExecutor, onCompleteListener2);
     onCompleteListener1.await();
     onCompleteListener2.await();
 
     // Waiting for Task that registers FID on the FIS Servers
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    backgroundExecutor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     assertWithMessage("Persisted Fid of Task1 doesn't match.")
         .that(task1.getResult())
@@ -581,13 +586,13 @@ public class FirebaseInstallationsTest {
 
     TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
     Task<String> getIdTask = firebaseInstallations.getId();
-    getIdTask.addOnCompleteListener(executor, onCompleteListener);
+    getIdTask.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     String fid = onCompleteListener.await();
 
     assertWithMessage("getId Task failed").that(fid).isEqualTo(TEST_FID_1);
 
     // Waiting for Task that generates auth token with the FIS Servers
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    backgroundExecutor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     // Validate that registration status is still REGISTER
     PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
@@ -625,14 +630,14 @@ public class FirebaseInstallationsTest {
     // kick off a refresh of the token.
     TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
     Task<String> getIdTask = firebaseInstallations.getId();
-    getIdTask.addOnCompleteListener(executor, onCompleteListener);
+    getIdTask.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     String fid = onCompleteListener.await();
     assertWithMessage("getId Task failed").that(fid).isEqualTo(TEST_FID_1);
 
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener2 =
         new TestOnCompleteListener<>();
     Task<InstallationTokenResult> task = firebaseInstallations.getToken(false);
-    task.addOnCompleteListener(executor, onCompleteListener2);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener2);
     InstallationTokenResult installationTokenResult = onCompleteListener2.await();
 
     // Check that the token has been refreshed
@@ -662,19 +667,19 @@ public class FirebaseInstallationsTest {
     // The first call will return the existing FID, "tobereplaced"
     TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
     Task<String> task = firebaseInstallations.getId();
-    task.addOnCompleteListener(executor, onCompleteListener);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     String fid = onCompleteListener.await();
 
     // do a getId(), the unregistered TEST_FID_1 should be returned
     assertWithMessage("getId Task failed.").that(fid).isEqualTo("tobereplaced");
 
     // Waiting for Task that registers FID on the FIS Servers
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    backgroundExecutor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     // The next call should return the FID that was returned by the server
     onCompleteListener = new TestOnCompleteListener<>();
     task = firebaseInstallations.getId();
-    task.addOnCompleteListener(executor, onCompleteListener);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     fid = onCompleteListener.await();
 
     // do a getId(), the unregistered TEST_FID_1 should be returned
@@ -699,14 +704,14 @@ public class FirebaseInstallationsTest {
 
     TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
     Task<String> task = firebaseInstallations.getId();
-    task.addOnCompleteListener(executor, onCompleteListener);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     String fid = onCompleteListener.await();
 
     // do a getId(), the unregistered TEST_FID_1 should be returned
     assertWithMessage("getId Task failed.").that(fid).isEqualTo(TEST_FID_1);
 
     // Waiting for Task that registers FID on the FIS Servers.
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    backgroundExecutor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     // We expect that the server error will cause the FID to be put into the error state.
     // There is nothing more we can do.
@@ -732,13 +737,13 @@ public class FirebaseInstallationsTest {
 
     TestOnCompleteListener<String> onCompleteListener = new TestOnCompleteListener<>();
     Task<String> getIdTask = firebaseInstallations.getId();
-    getIdTask.addOnCompleteListener(executor, onCompleteListener);
+    getIdTask.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     String fid = onCompleteListener.await();
 
     assertEquals("fid doesn't match expected", TEST_FID_1, fid);
 
     // Waiting for Task that registers FID on the FIS Servers
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
+    backgroundExecutor.awaitTermination(500, TimeUnit.MILLISECONDS);
 
     // We expect that the IOException will cause the request to fail, but it will not
     // cause the FID to be put into the error state because we expect this to eventually succeed.
@@ -756,7 +761,7 @@ public class FirebaseInstallationsTest {
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener =
         new TestOnCompleteListener<>();
     Task<InstallationTokenResult> task = firebaseInstallations.getToken(false);
-    task.addOnCompleteListener(executor, onCompleteListener);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     onCompleteListener.await();
 
     PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
@@ -776,7 +781,7 @@ public class FirebaseInstallationsTest {
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener =
         new TestOnCompleteListener<>();
     Task<InstallationTokenResult> task = firebaseInstallations.getToken(false);
-    task.addOnCompleteListener(executor, onCompleteListener);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     InstallationTokenResult installationTokenResult = onCompleteListener.await();
 
     assertWithMessage("Persisted Auth Token doesn't match")
@@ -811,7 +816,7 @@ public class FirebaseInstallationsTest {
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener =
         new TestOnCompleteListener<>();
     Task<InstallationTokenResult> task = firebaseInstallations.getToken(false);
-    task.addOnCompleteListener(executor, onCompleteListener);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     InstallationTokenResult installationTokenResult = onCompleteListener.await();
 
     assertWithMessage("Persisted Auth Token doesn't match")
@@ -847,10 +852,10 @@ public class FirebaseInstallationsTest {
     Task<InstallationTokenResult> task2 = firebaseInstallations.getToken(false);
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener1 =
         new TestOnCompleteListener<>();
-    task1.addOnCompleteListener(executor, onCompleteListener1);
+    task1.addOnCompleteListener(backgroundExecutor, onCompleteListener1);
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener2 =
         new TestOnCompleteListener<>();
-    task2.addOnCompleteListener(executor, onCompleteListener2);
+    task2.addOnCompleteListener(backgroundExecutor, onCompleteListener2);
     onCompleteListener1.await();
     onCompleteListener2.await();
 
@@ -877,7 +882,7 @@ public class FirebaseInstallationsTest {
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener =
         new TestOnCompleteListener<>();
     Task<InstallationTokenResult> task = firebaseInstallations.getToken(false);
-    task.addOnCompleteListener(executor, onCompleteListener);
+    task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
     InstallationTokenResult installationTokenResult = onCompleteListener.await();
 
     assertWithMessage("Persisted Auth Token doesn't match")
@@ -905,7 +910,7 @@ public class FirebaseInstallationsTest {
       TestOnCompleteListener<InstallationTokenResult> onCompleteListener =
           new TestOnCompleteListener<>();
       Task<InstallationTokenResult> task = firebaseInstallations.getToken(true);
-      task.addOnCompleteListener(executor, onCompleteListener);
+      task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
       onCompleteListener.await();
       fail("the getAuthToken() call should have failed due to Auth Error.");
     } catch (ExecutionException expected) {
@@ -942,7 +947,7 @@ public class FirebaseInstallationsTest {
       TestOnCompleteListener<InstallationTokenResult> onCompleteListener =
           new TestOnCompleteListener<>();
       Task<InstallationTokenResult> task = firebaseInstallations.getToken(true);
-      task.addOnCompleteListener(executor, onCompleteListener);
+      task.addOnCompleteListener(backgroundExecutor, onCompleteListener);
       onCompleteListener.await();
       fail(
           "getAuthToken() succeeded but should have failed due to the BAD_CONFIG error "
@@ -1001,10 +1006,10 @@ public class FirebaseInstallationsTest {
     Task<InstallationTokenResult> task2 = firebaseInstallations.getToken(true);
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener1 =
         new TestOnCompleteListener<>();
-    task1.addOnCompleteListener(executor, onCompleteListener1);
+    task1.addOnCompleteListener(backgroundExecutor, onCompleteListener1);
     TestOnCompleteListener<InstallationTokenResult> onCompleteListener2 =
         new TestOnCompleteListener<>();
-    task2.addOnCompleteListener(executor, onCompleteListener2);
+    task2.addOnCompleteListener(backgroundExecutor, onCompleteListener2);
     onCompleteListener1.await();
     onCompleteListener2.await();
 
@@ -1036,7 +1041,7 @@ public class FirebaseInstallationsTest {
         .thenReturn(TEST_INSTALLATION_RESPONSE);
 
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
-    firebaseInstallations.delete().addOnCompleteListener(executor, onCompleteListener);
+    firebaseInstallations.delete().addOnCompleteListener(backgroundExecutor, onCompleteListener);
     onCompleteListener.await();
 
     PersistedInstallationEntry entryValue =
@@ -1053,7 +1058,7 @@ public class FirebaseInstallationsTest {
         PersistedInstallationEntry.INSTANCE.withUnregisteredFid(TEST_FID_1));
 
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
-    firebaseInstallations.delete().addOnCompleteListener(executor, onCompleteListener);
+    firebaseInstallations.delete().addOnCompleteListener(backgroundExecutor, onCompleteListener);
     onCompleteListener.await();
 
     PersistedInstallationEntry entryValue =
@@ -1069,7 +1074,7 @@ public class FirebaseInstallationsTest {
         PersistedInstallationEntry.INSTANCE.withNoGeneratedFid());
 
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
-    firebaseInstallations.delete().addOnCompleteListener(executor, onCompleteListener);
+    firebaseInstallations.delete().addOnCompleteListener(backgroundExecutor, onCompleteListener);
     onCompleteListener.await();
 
     PersistedInstallationEntry entry = persistedInstallation.readPersistedInstallationEntryValue();
@@ -1098,7 +1103,7 @@ public class FirebaseInstallationsTest {
     // Expect exception
     try {
       TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
-      firebaseInstallations.delete().addOnCompleteListener(executor, onCompleteListener);
+      firebaseInstallations.delete().addOnCompleteListener(backgroundExecutor, onCompleteListener);
       onCompleteListener.await();
       fail("firebaseInstallations.delete() failed due to Server Error.");
     } catch (ExecutionException expected) {
@@ -1133,7 +1138,7 @@ public class FirebaseInstallationsTest {
     // Expect exception
     try {
       TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
-      firebaseInstallations.delete().addOnCompleteListener(executor, onCompleteListener);
+      firebaseInstallations.delete().addOnCompleteListener(backgroundExecutor, onCompleteListener);
       onCompleteListener.await();
       fail("firebaseInstallations.delete() should have failed due to a Network Error.");
     } catch (ExecutionException expected) {
