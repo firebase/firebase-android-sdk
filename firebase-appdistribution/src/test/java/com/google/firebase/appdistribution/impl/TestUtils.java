@@ -28,22 +28,25 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.ActivityConsumer;
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.ActivityFunction;
-import com.google.firebase.concurrent.TestOnlyExecutors;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mockito.stubbing.Answer;
 
 final class TestUtils {
+
+  private static final int AWAIT_TERMINATION_TIMEOUT_MS = 100;
+  private static final int AWAIT_CONDITION_TIMEOUT_MS = 500;
+  private static final int SLEEP_MS = 50;
+
   private TestUtils() {}
 
   static void awaitTaskFailure(Task task, Status status, String messageSubstring) {
@@ -86,7 +89,7 @@ final class TestUtils {
   }
 
   static void awaitTermination(ExecutorService executorService) throws InterruptedException {
-    executorService.awaitTermination(100, TimeUnit.MILLISECONDS);
+    executorService.awaitTermination(AWAIT_TERMINATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
   }
 
   static void awaitAsyncOperations(ExecutorService executorService) throws InterruptedException {
@@ -98,22 +101,19 @@ final class TestUtils {
     shadowOf(getMainLooper()).idle();
   }
 
-  /** Await a specified number of progress events being added to the given collection. */
-  static void awaitProgressEvents(Collection<UpdateProgress> progressEvents, int count)
-      throws InterruptedException {
-    ExecutorService executor = TestOnlyExecutors.blocking();
-    executor.execute(
-        () -> {
-          while (progressEvents.size() < count) {
-            try {
-              Thread.sleep(50);
-            } catch (InterruptedException e) {
-              throw new RuntimeException("Interrupted while waiting for progress events", e);
-            }
-          }
-        });
-    executor.awaitTermination(500, TimeUnit.MILLISECONDS);
-    assertThat(progressEvents).hasSize(count);
+  static void awaitCondition(BooleanSupplier condition) throws InterruptedException {
+    long start = System.currentTimeMillis();
+    while (elapsedTime(start) < AWAIT_CONDITION_TIMEOUT_MS) {
+      if (condition.getAsBoolean()) {
+        return;
+      }
+      Thread.sleep(SLEEP_MS);
+    }
+    throw new AssertionError("Timed out waiting for condition");
+  }
+
+  private static long elapsedTime(long start) {
+    return System.currentTimeMillis() - start;
   }
 
   /**

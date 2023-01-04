@@ -33,7 +33,7 @@ import static com.google.firebase.appdistribution.impl.FeedbackActivity.INFO_TEX
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_KEY;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_URI_KEY;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitAsyncOperations;
-import static com.google.firebase.appdistribution.impl.TestUtils.awaitProgressEvents;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitCondition;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTask;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTaskFailure;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTermination;
@@ -386,7 +386,7 @@ public class FirebaseAppDistributionServiceImplTest {
     List<UpdateProgress> progressEvents = new ArrayList<>();
     task.addOnProgressListener(FirebaseExecutors.directExecutor(), progressEvents::add);
     countDownLatch.countDown();
-    awaitProgressEvents(progressEvents, 1);
+    awaitCondition(() -> progressEvents.size() == 1);
 
     assertEquals(UpdateStatus.NEW_RELEASE_NOT_AVAILABLE, progressEvents.get(0).getUpdateStatus());
     assertNull(ShadowAlertDialog.getLatestAlertDialog());

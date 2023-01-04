@@ -15,7 +15,7 @@
 package com.google.firebase.appdistribution.impl;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.appdistribution.impl.TestUtils.awaitProgressEvents;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitCondition;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTask;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -180,8 +180,7 @@ public class ApkUpdaterTest {
 
   @Test
   public void updateApk_whenSuccessfullyUpdated_notificationsSetCorrectly()
-      throws FirebaseAppDistributionException, ExecutionException, InterruptedException,
-          IOException {
+      throws FirebaseAppDistributionException, InterruptedException, IOException {
     doReturn(new ByteArrayInputStream(TEST_FILE.getBytes()))
         .when(mockHttpsUrlConnection)
         .getInputStream();
@@ -208,7 +207,7 @@ public class ApkUpdaterTest {
     List<UpdateProgress> events = new ArrayList<>();
     updateTask.addOnProgressListener(FirebaseExecutors.directExecutor(), events::add);
     countDownLatch.countDown();
-    awaitProgressEvents(events, 3);
+    awaitCondition(() -> events.size() == 3);
 
     assertThat(events.get(0).getUpdateStatus()).isEqualTo(UpdateStatus.PENDING);
     assertThat(events.get(1).getUpdateStatus()).isEqualTo(UpdateStatus.DOWNLOADING);
