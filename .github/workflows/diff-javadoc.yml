@@ -31,7 +31,7 @@ jobs:
           echo "run=$(cat modules.json | sed "s/[]\"[]//g" | sed "s/,/\n/g" | xargs printf -- "%s:kotlinDoc ")" >> $GITHUB_OUTPUT
 
       - name: Build
-        run: ./gradlew ${{ steps.changed-modules.outputs.run }}
+        run: mkdir build && ./gradlew ${{ steps.changed-modules.outputs.run }}
 
       - name: Move original docs
         run: mv build ~/diff/modified
@@ -41,7 +41,7 @@ jobs:
           ref: ${{ github.base_ref }}
 
       - name: Build
-        run: ./gradlew ${{ steps.changed-modules.outputs.run }}
+        run: mkdir build && ./gradlew ${{ steps.changed-modules.outputs.run }}
 
       - name: Move modified docs
         run: mv build ~/diff/original
@@ -62,6 +62,7 @@ jobs:
           > diff.md
 
       - name: Add comment
+        continue-on-error: true
         uses: mshick/add-pr-comment@a65df5f64fc741e91c59b8359a4bc56e57aaf5b1
         with:
           message-path: diff.md
