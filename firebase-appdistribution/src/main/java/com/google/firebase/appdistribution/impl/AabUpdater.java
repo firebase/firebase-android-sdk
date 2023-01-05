@@ -160,11 +160,7 @@ class AabUpdater {
     updateIntent.setData(Uri.parse(redirectUrl));
     updateIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
     LogWrapper.v(TAG, "Redirecting to play");
-
-    // Launch the intent before the synchronized block to avoid failing to update in the rare
-    // scenario where the activity moves to the background while we're awaiting the lock.
     hostActivity.startActivity(updateIntent);
-
     updateTaskCache.setProgress(
         UpdateProgressImpl.builder()
             .setApkBytesDownloaded(-1)
