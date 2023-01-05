@@ -254,7 +254,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   @Override
-  public synchronized Task<AppDistributionRelease> checkForNewRelease() {
+  public Task<AppDistributionRelease> checkForNewRelease() {
     return checkForNewReleaseTaskCache.getOrCreateTask(
         () ->
             assertTesterIsSignedIn()
