@@ -1,5 +1,9 @@
 # Unreleased
 
+# 16.0.0-beta04
+* [fixed] Fixed a bug where only the last listener added to an `UpdateTask` using
+  `addOnProgressListener()` would receive updates.
+
 # 16.0.0-beta05
 * [unchanged] Updated to accommodate the release of the updated
   [appdistro] Kotlin extensions library.
