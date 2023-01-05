@@ -235,22 +235,27 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
         return Tasks.forResult(
             getActivityWithIgnoredClass(currentActivity, previousActivity, classToIgnore));
       }
+    }
 
-      TaskCompletionSource<Activity> task = new TaskCompletionSource<>();
+    TaskCompletionSource<Activity> task = new TaskCompletionSource<>();
 
-      addOnActivityResumedListener(
-          new OnActivityResumedListener() {
-            @Override
-            public void onResumed(Activity activity) {
-              synchronized (lock) {
-                task.setResult(
-                    getActivityWithIgnoredClass(activity, previousActivity, classToIgnore));
-              }
-              removeOnActivityResumedListener(this);
-            }
-          });
+    addOnActivityResumedListener(
+        new OnActivityResumedListener() {
+          @Override
+          public void onResumed(Activity activity) {
+            task.setResult(
+                getActivityWithIgnoredClass(activity, getPreviousActivity(), classToIgnore));
+            removeOnActivityResumedListener(this);
+          }
+        });
 
-      return task.getTask();
+    return task.getTask();
+  }
+
+  @Nullable
+  private Activity getPreviousActivity() {
+    synchronized (lock) {
+      return previousActivity;
     }
   }
 
