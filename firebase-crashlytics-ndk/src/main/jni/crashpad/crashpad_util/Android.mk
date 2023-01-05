@@ -4,6 +4,9 @@ THIRD_PARTY_PATH := ../../../../third_party
 
 include $(CLEAR_VARS)
 
+IMPLICIT_INCLUDES := \
+    -include $(LOCAL_PATH)/include/execvpe.h \
+
 LOCAL_MODULE := crashpad_util
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../libchrome/include \
@@ -20,6 +23,7 @@ LOCAL_CPPFLAGS := \
     -Os \
     -flto \
     -fvisibility=hidden \
+    $(IMPLICIT_INCLUDES) \
 
 LOCAL_SRC_FILES := \
     $(THIRD_PARTY_PATH)/crashpad/util/file/delimited_file_reader.cc \
