@@ -15,7 +15,7 @@
 package com.google.firebase.appdistribution.impl;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitTaskFailure;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -99,7 +99,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     // Simulate an activity resuming
     lifecycleNotifier.onActivityResumed(activity);
 
-    assertTaskFailure(task, Status.UNKNOWN, "Unknown", consumerException);
+    awaitTaskFailure(task, Status.UNKNOWN, "Unknown", consumerException);
   }
 
   @Test
@@ -144,7 +144,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     // Simulate an activity resuming
     lifecycleNotifier.onActivityResumed(activity);
 
-    assertTaskFailure(task, Status.UNKNOWN, "Unknown", functionException);
+    awaitTaskFailure(task, Status.UNKNOWN, "Unknown", functionException);
   }
 
   @Test
@@ -190,7 +190,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     // Simulate an activity resuming
     lifecycleNotifier.onActivityResumed(activity);
 
-    assertTaskFailure(task, Status.AUTHENTICATION_CANCELED, "exception in continuation task");
+    awaitTaskFailure(task, Status.AUTHENTICATION_CANCELED, "exception in continuation task");
   }
 
   @Test
@@ -204,7 +204,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     // Simulate an activity resuming
     lifecycleNotifier.onActivityResumed(activity);
 
-    assertTaskFailure(task, Status.UNKNOWN, "Unknown", continuationException);
+    awaitTaskFailure(task, Status.UNKNOWN, "Unknown", continuationException);
   }
 
   @Test

@@ -49,17 +49,21 @@ final class TestUtils {
 
   private TestUtils() {}
 
-  static void awaitTaskFailure(Task task, Status status, String messageSubstring) {
+  static FirebaseAppDistributionException awaitTaskFailure(
+      Task task, Status status, String messageSubstring) {
     assertThrows(FirebaseAppDistributionException.class, () -> awaitTask(task));
-    assertTaskFailure(task, status, messageSubstring);
+    return assertTaskFailure(task, status, messageSubstring);
   }
 
-  static void awaitTaskFailure(Task task, Status status, String messageSubstring, Throwable cause) {
+  static FirebaseAppDistributionException awaitTaskFailure(
+      Task task, Status status, String messageSubstring, Throwable cause) {
     assertThrows(FirebaseAppDistributionException.class, () -> awaitTask(task));
-    assertTaskFailure(task, status, messageSubstring, cause);
+    FirebaseAppDistributionException exception = assertTaskFailure(task, status, messageSubstring);
+    assertThat(exception).hasCauseThat().isEqualTo(cause);
+    return exception;
   }
 
-  static FirebaseAppDistributionException assertTaskFailure(
+  private static FirebaseAppDistributionException assertTaskFailure(
       Task task, Status status, String messageSubstring) {
     assertThat(task.isComplete()).isTrue();
     assertThat(task.isSuccessful()).isFalse();
@@ -68,12 +72,6 @@ final class TestUtils {
     assertThat(e.getErrorCode()).isEqualTo(status);
     assertThat(e).hasMessageThat().contains(messageSubstring);
     return e;
-  }
-
-  static void assertTaskFailure(
-      Task task, Status status, String messageSubstring, Throwable cause) {
-    assertTaskFailure(task, status, messageSubstring);
-    assertThat(task.getException()).hasCauseThat().isEqualTo(cause);
   }
 
   static <T> T awaitTask(Task<T> task)

@@ -17,7 +17,6 @@ package com.google.firebase.appdistribution.impl;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.AUTHENTICATION_CANCELED;
 import static com.google.firebase.appdistribution.FirebaseAppDistributionException.Status.UNKNOWN;
-import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitAsyncOperations;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTask;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTaskFailure;
@@ -272,6 +271,6 @@ public class TesterSignInManagerTest {
     // Simulate re-entering app before completing sign in
     testerSignInManager.onActivityResumed(activity);
 
-    assertTaskFailure(signInTask, AUTHENTICATION_CANCELED, ErrorMessages.AUTHENTICATION_CANCELED);
+    awaitTaskFailure(signInTask, AUTHENTICATION_CANCELED, ErrorMessages.AUTHENTICATION_CANCELED);
   }
 }
