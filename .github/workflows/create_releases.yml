@@ -31,12 +31,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Create release configuration template
         run: |
           git config user.name 'Create Release GA'
           git config user.email 'noreply@google.com'
-          git fetch origin ${{ inputs.past-name }}:${{ inputs.past-name }}
           ./gradlew generateReleaseConfig -PcurrentRelease=${{ inputs.name }} -PpastRelease=${{ inputs.past-name }} -PprintOutput=true
           git add release.cfg
           git commit -a -m 'Create release config'
