@@ -16,7 +16,11 @@ package com.google.firebase.appdistribution.impl;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitAsyncOperations;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitCondition;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 import static org.robolectric.annotation.LooperMode.Mode.PAUSED;
@@ -24,17 +28,23 @@ import static org.robolectric.annotation.LooperMode.Mode.PAUSED;
 import android.app.Activity;
 import android.net.Uri;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
+import com.google.firebase.concurrent.FirebaseExecutors;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import javax.net.ssl.HttpsURLConnection;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,9 +72,11 @@ public class AabUpdaterTest {
           .setDownloadUrl("https://test-url")
           .build();
 
+  @Blocking private final ExecutorService blockingExecutor = TestOnlyExecutors.blocking();
+  @Lightweight private final ExecutorService lightweightExecutor = TestOnlyExecutors.lite();
+
   private AabUpdater aabUpdater;
   private ShadowActivity shadowActivity;
-  private ExecutorService testExecutor;
   @Mock private HttpsURLConnection mockHttpsUrlConnection;
   @Mock private HttpsUrlConnectionFactory mockHttpsUrlConnectionFactory;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
@@ -78,7 +90,6 @@ public class AabUpdaterTest {
 
     FirebaseApp.clearInstancesForTest();
 
-    testExecutor = Executors.newSingleThreadExecutor();
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     shadowActivity = shadowOf(activity);
 
@@ -90,7 +101,11 @@ public class AabUpdaterTest {
 
     aabUpdater =
         Mockito.spy(
-            new AabUpdater(mockLifecycleNotifier, mockHttpsUrlConnectionFactory, testExecutor));
+            new AabUpdater(
+                mockLifecycleNotifier,
+                mockHttpsUrlConnectionFactory,
+                blockingExecutor,
+                lightweightExecutor));
 
     TestUtils.mockForegroundActivity(mockLifecycleNotifier, activity);
   }
@@ -102,7 +117,8 @@ public class AabUpdaterTest {
     when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL)).thenThrow(caughtException);
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    awaitAsyncOperations(testExecutor);
+    awaitAsyncOperations(blockingExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     assertTaskFailure(
         updateTask, Status.NETWORK_FAILURE, "Failed to open connection", caughtException);
@@ -114,7 +130,8 @@ public class AabUpdaterTest {
     when(mockHttpsUrlConnection.getResponseCode()).thenReturn(200);
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    awaitAsyncOperations(testExecutor);
+    awaitAsyncOperations(blockingExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "Expected redirect");
   }
@@ -125,7 +142,8 @@ public class AabUpdaterTest {
     when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn(null);
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    awaitAsyncOperations(testExecutor);
+    awaitAsyncOperations(blockingExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "No Location header");
   }
@@ -135,18 +153,26 @@ public class AabUpdaterTest {
     when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn("");
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    awaitAsyncOperations(testExecutor);
+    awaitAsyncOperations(blockingExecutor);
+    awaitAsyncOperations(lightweightExecutor);
 
     assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "Empty Location header");
   }
 
   @Test
   public void updateAppTask_whenAabReleaseAvailable_redirectsToPlay() throws Exception {
-    TestOnProgressListener listener = TestOnProgressListener.withExpectedCount(1);
-    UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    updateTask.addOnProgressListener(testExecutor, listener);
+    // Block thread actually making the request on a latch, which gives us time to add listeners to
+    // the returned UpdateTask in time to get all the progress updates
+    CountDownLatch countDownLatch = mockOpenConnectionWithLatch();
 
-    List<UpdateProgress> progressEvents = listener.await();
+    // Start update
+    UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
+
+    // Listen for progress events
+    List<UpdateProgress> progressEvents = new ArrayList<>();
+    updateTask.addOnProgressListener(FirebaseExecutors.directExecutor(), progressEvents::add);
+    countDownLatch.countDown();
+    awaitCondition(() -> progressEvents.size() == 1);
 
     // Task is not completed in this case, because app is expected to terminate during update
     assertThat(shadowActivity.getNextStartedActivity().getData())
@@ -164,7 +190,8 @@ public class AabUpdaterTest {
   @Test
   public void updateAppTask_onAppResume_setsUpdateCancelled() throws InterruptedException {
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    awaitAsyncOperations(testExecutor);
+    awaitAsyncOperations(blockingExecutor);
+    awaitAsyncOperations(lightweightExecutor);
     aabUpdater.onActivityStarted(activity);
 
     FirebaseAppDistributionException exception =
@@ -175,10 +202,41 @@ public class AabUpdaterTest {
   }
 
   @Test
-  public void updateApp_whenCalledMultipleTimesWithAAB_returnsSameUpdateTask() {
+  public void updateApp_whenCalledMultipleTimesWithAAB_onlyMakesOneRequest()
+      throws IOException, FirebaseAppDistributionException, ExecutionException,
+          InterruptedException {
+    // Block thread actually making the request on a latch, which gives us time to add listeners to
+    // the returned UpdateTask in time to get all the progress updates
+    CountDownLatch countDownLatch = mockOpenConnectionWithLatch();
+
+    // Start update twice
     UpdateTask updateTask1 = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
     UpdateTask updateTask2 = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
 
-    assertEquals(updateTask1, updateTask2);
+    // Listen for progress events
+    List<UpdateProgress> progressEvents1 = new ArrayList<>();
+    updateTask1.addOnProgressListener(FirebaseExecutors.directExecutor(), progressEvents1::add);
+    List<UpdateProgress> progressEvents2 = new ArrayList<>();
+    updateTask2.addOnProgressListener(FirebaseExecutors.directExecutor(), progressEvents2::add);
+    countDownLatch.countDown();
+    awaitCondition(() -> progressEvents1.size() == 1);
+    awaitCondition(() -> progressEvents2.size() == 1);
+
+    verify(mockHttpsUrlConnectionFactory, times(1)).openConnection(anyString());
+  }
+
+  private CountDownLatch mockOpenConnectionWithLatch() throws IOException {
+    CountDownLatch countDownLatch = new CountDownLatch(1);
+    when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL))
+        .thenAnswer(
+            invocation -> {
+              try {
+                countDownLatch.await();
+              } catch (InterruptedException e) {
+                throw new AssertionError("Interrupted while waiting in mock");
+              }
+              return mockHttpsUrlConnection;
+            });
+    return countDownLatch;
   }
 }
