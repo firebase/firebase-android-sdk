@@ -14,9 +14,9 @@
 package com.google.firebase.appdistribution.impl;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.appdistribution.impl.TestUtils.assertTaskFailure;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitAsyncOperations;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitCondition;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitTaskFailure;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
@@ -111,52 +111,41 @@ public class AabUpdaterTest {
   }
 
   @Test
-  public void updateAppTask_whenOpenConnectionFails_setsNetworkFailure()
-      throws IOException, InterruptedException {
+  public void updateAppTask_whenOpenConnectionFails_setsNetworkFailure() throws IOException {
     IOException caughtException = new IOException("error");
     when(mockHttpsUrlConnectionFactory.openConnection(TEST_URL)).thenThrow(caughtException);
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    awaitAsyncOperations(blockingExecutor);
-    awaitAsyncOperations(lightweightExecutor);
 
-    assertTaskFailure(
+    awaitTaskFailure(
         updateTask, Status.NETWORK_FAILURE, "Failed to open connection", caughtException);
   }
 
   @Test
-  public void updateAppTask_isNotRedirectResponse_setsDownloadFailure()
-      throws IOException, InterruptedException {
+  public void updateAppTask_isNotRedirectResponse_setsDownloadFailure() throws IOException {
     when(mockHttpsUrlConnection.getResponseCode()).thenReturn(200);
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    awaitAsyncOperations(blockingExecutor);
-    awaitAsyncOperations(lightweightExecutor);
 
-    assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "Expected redirect");
+    awaitTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "Expected redirect");
   }
 
   @Test
-  public void updateAppTask_missingLocationHeader_setsDownloadFailure()
-      throws InterruptedException {
+  public void updateAppTask_missingLocationHeader_setsDownloadFailure() {
     when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn(null);
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    awaitAsyncOperations(blockingExecutor);
-    awaitAsyncOperations(lightweightExecutor);
 
-    assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "No Location header");
+    awaitTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "No Location header");
   }
 
   @Test
-  public void updateAppTask_emptyLocationHeader_setsDownloadFailure() throws InterruptedException {
+  public void updateAppTask_emptyLocationHeader_setsDownloadFailure() {
     when(mockHttpsUrlConnection.getHeaderField("Location")).thenReturn("");
 
     UpdateTask updateTask = aabUpdater.updateAab(TEST_RELEASE_NEWER_AAB_INTERNAL);
-    awaitAsyncOperations(blockingExecutor);
-    awaitAsyncOperations(lightweightExecutor);
 
-    assertTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "Empty Location header");
+    awaitTaskFailure(updateTask, Status.DOWNLOAD_FAILURE, "Empty Location header");
   }
 
   @Test
@@ -195,7 +184,7 @@ public class AabUpdaterTest {
     aabUpdater.onActivityStarted(activity);
 
     FirebaseAppDistributionException exception =
-        assertTaskFailure(updateTask, Status.INSTALLATION_CANCELED, ErrorMessages.UPDATE_CANCELED);
+        awaitTaskFailure(updateTask, Status.INSTALLATION_CANCELED, ErrorMessages.UPDATE_CANCELED);
     assertEquals(
         ReleaseUtils.convertToAppDistributionRelease(TEST_RELEASE_NEWER_AAB_INTERNAL),
         exception.getRelease());
