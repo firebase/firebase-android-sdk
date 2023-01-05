@@ -129,7 +129,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
                 new ApkInstaller(lightweightExecutor),
                 blockingExecutor,
                 lightweightExecutor),
-            new AabUpdater(blockingExecutor),
+            new AabUpdater(blockingExecutor, lightweightExecutor),
             signInStorage,
             lifecycleNotifier,
             releaseIdentifier,
