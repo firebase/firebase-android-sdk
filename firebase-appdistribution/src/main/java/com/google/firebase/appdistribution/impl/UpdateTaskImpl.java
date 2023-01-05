@@ -55,7 +55,7 @@ class UpdateTaskImpl extends UpdateTask {
 
   UpdateTaskImpl() {
     synchronized (taskCompletionLock) {
-      this.taskCompletionSource = new TaskCompletionSource<>();
+      taskCompletionSource = new TaskCompletionSource<>();
     }
   }
 
@@ -75,13 +75,13 @@ class UpdateTaskImpl extends UpdateTask {
   void shadow(UpdateTask updateTask) {
     updateTask
         .addOnProgressListener(FirebaseExecutors.directExecutor(), this::updateProgress)
-        .addOnSuccessListener(FirebaseExecutors.directExecutor(), unused -> this.setResult())
+        .addOnSuccessListener(FirebaseExecutors.directExecutor(), unused -> setResult())
         .addOnFailureListener(FirebaseExecutors.directExecutor(), this::setException);
   }
 
   private Task<Void> getTask() {
-    synchronized (this.taskCompletionLock) {
-      return this.taskCompletionSource.getTask();
+    synchronized (taskCompletionLock) {
+      return taskCompletionSource.getTask();
     }
   }
 
@@ -97,7 +97,7 @@ class UpdateTaskImpl extends UpdateTask {
       @Nullable Executor executor, @NonNull OnProgressListener listener) {
     ManagedListener managedListener = new ManagedListener(executor, listener);
     synchronized (lock) {
-      this.listeners.add(managedListener);
+      listeners.add(managedListener);
       if (snapshot != null) {
         managedListener.invoke(snapshot);
       }
@@ -267,12 +267,12 @@ class UpdateTaskImpl extends UpdateTask {
   public void setResult() {
 
     synchronized (lock) {
-      this.listeners.clear();
+      listeners.clear();
     }
 
     synchronized (taskCompletionLock) {
-      if (!this.taskCompletionSource.getTask().isComplete()) {
-        this.taskCompletionSource.setResult(null);
+      if (!taskCompletionSource.getTask().isComplete()) {
+        taskCompletionSource.setResult(null);
       }
     }
   }
@@ -281,12 +281,12 @@ class UpdateTaskImpl extends UpdateTask {
   public void setException(@NonNull Exception exception) {
 
     synchronized (lock) {
-      this.listeners.clear();
+      listeners.clear();
     }
 
     synchronized (taskCompletionLock) {
-      if (!this.taskCompletionSource.getTask().isComplete()) {
-        this.taskCompletionSource.setException(exception);
+      if (!taskCompletionSource.getTask().isComplete()) {
+        taskCompletionSource.setException(exception);
       }
     }
   }
