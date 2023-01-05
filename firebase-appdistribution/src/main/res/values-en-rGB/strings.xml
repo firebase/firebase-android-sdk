@@ -37,7 +37,7 @@
   <string name="feedback_notification_channel_description" translation_description="Description of the notification channel for in-app feedback">Shows notification to enter feedback about app</string>
   <string name="feedback_notification_title" translation_description="Title of notification encouraging testers to enter feedback">We want your feedback!</string>
   <string name="feedback_notification_text" translation_description="Text of notification encouraging testers to enter feedback for the app">Tap to enter feedback for %1$s</string>
-  <string name="unknown_sources_dialog_title" translation_description="Title of dialog describing that installation from unknown sources needs to be enabled">Installation from unknown Sources</string>
+  <string name="unknown_sources_dialog_title" translation_description="Title of dialog describing that installation from unknown sources needs to be enabled">Installation from unknown sources</string>
   <string name="unknown_sources_dialog_description" translation_description="Text of dialog describing why installation from unknown sources needs to be enabled">To install the update, enable installation from unknown sources</string>
   <string name="unknown_sources_yes_button" translation_description="Label on button launching settings to enable installation from unknown sources">Settings</string>
   <string name="back_button_description" translation_description="Description for image button (back) which aborts feedback">Back</string>
