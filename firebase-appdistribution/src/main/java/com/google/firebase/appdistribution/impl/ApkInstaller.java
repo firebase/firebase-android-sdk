@@ -43,10 +43,6 @@ class ApkInstaller {
     lifeCycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
   }
 
-  ApkInstaller(@Lightweight Executor lightweightExecutor) {
-    this(FirebaseAppDistributionLifecycleNotifier.getInstance(), lightweightExecutor);
-  }
-
   void onActivityDestroyed(@Nullable Activity activity) {
     if (activity instanceof InstallActivity) {
       // Since install activity is destroyed but app is still active, installation has failed /
