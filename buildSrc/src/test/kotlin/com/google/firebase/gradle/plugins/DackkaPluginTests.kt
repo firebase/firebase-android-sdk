@@ -33,7 +33,9 @@ import org.junit.rules.TemporaryFolder
  * The resources for the tests are stored under `src/test/resources/dackka-plugin-tests` with two
  * sub directories that will be explained below.
  *
- * ### project Directory containing a small gradle project, with various sub-projects. These exist
+ * ### project 
+ *
+ * Directory containing a small gradle project, with various sub-projects. These exist
  * to test edge case scenarios in our doc generation- to ensure any changes do not break previous
  * fixes.
  *
