@@ -56,6 +56,14 @@ public class BloomFilter {
     return this.size == 0;
   }
 
+  /**
+   * Check whether the document path is a possible member of the bloom filter. It might return false
+   * positive result, ie, a document path is not a member of the bloom filter, but the method
+   * returned true.
+   *
+   * @param value a string representation of the document path.
+   * @return true if the document path might be contained in the bloom filter.
+   */
   public boolean mightContain(@NonNull String value) {
     // Empty bitmap or empty value should always return false on membership check.
     if (this.isEmpty() || value.isEmpty()) {
@@ -80,6 +88,7 @@ public class BloomFilter {
     return true;
   }
 
+  /** Hash a string using md5 hashing algorithm, and return an array of 16 bytes. */
   @NonNull
   private static byte[] md5Hash(@NonNull String value) {
     MessageDigest digest;
@@ -91,7 +100,7 @@ public class BloomFilter {
     return digest.digest(value.getBytes());
   }
 
-  // Interpret 8 bytes into a long, using little endian 2’s complement.
+  /** Interpret 8 bytes into a long, using little endian 2’s complement. */
   private static long getLongLittleEndian(@NonNull byte[] bytes, int offset) {
     long result = 0;
     for (int i = 0; i < 8 && i < bytes.length; i++) {
@@ -100,8 +109,10 @@ public class BloomFilter {
     return result;
   }
 
-  // Calculate the ith hash value based on the hashed 64bit integers,
-  // and calculate its corresponding bit index in the bitmap to be checked.
+  /**
+   * Calculate the ith hash value based on the hashed 64bit integers, and calculate its
+   * corresponding bit index in the bitmap to be checked.
+   */
   private int getBitIndex(long hash1, long hash2, int index) {
     // Calculate hashed value h(i) = h1 + (i * h2).
     long combinedHash = hash1 + (hash2 * index);
@@ -109,13 +120,14 @@ public class BloomFilter {
     return (int) mod;
   }
 
-  private static long unsignedRemainder(long dividend, int divisor) {
+  /** Calculate module, where the dividend and divisor are treated as unsigned 64-bit longs. */
+  private static long unsignedRemainder(long dividend, long divisor) {
     long quotient = ((dividend >>> 1) / divisor) << 1;
     long remainder = dividend - quotient * divisor;
     return remainder - (remainder >= divisor ? divisor : 0);
   }
 
-  // Return whether the bit on the given index in the bitmap is set to 1.
+  /** Return whether the bit on the given index in the bitmap is set to 1. */
   private boolean isBitSet(int index) {
     // To retrieve bit n, calculate: (bitmap[n / 8] & (0x01 << (n % 8))).
     byte byteAtIndex = this.bitmap[(index / 8)];
