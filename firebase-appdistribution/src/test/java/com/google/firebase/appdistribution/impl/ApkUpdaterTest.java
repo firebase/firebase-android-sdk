@@ -125,13 +125,13 @@ public class ApkUpdaterTest {
     apkUpdater =
         Mockito.spy(
             new ApkUpdater(
-                blockingExecutor,
-                lightweightExecutor,
                 ApplicationProvider.getApplicationContext(),
                 mockApkInstaller,
                 mockNotificationsManager,
                 mockHttpsUrlConnectionFactory,
-                mockLifecycleNotifier));
+                mockLifecycleNotifier,
+                blockingExecutor,
+                lightweightExecutor));
   }
 
   @Test
