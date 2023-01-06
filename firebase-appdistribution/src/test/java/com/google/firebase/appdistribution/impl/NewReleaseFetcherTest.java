@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution.impl;
 import static android.os.Looper.getMainLooper;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.appdistribution.BinaryType.APK;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitAsyncOperations;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTask;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTaskFailure;
 import static org.junit.Assert.assertEquals;
@@ -38,7 +39,7 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -64,7 +65,7 @@ public class NewReleaseFetcherTest {
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
   @Mock private ReleaseIdentifier mockReleaseIdentifier;
 
-  @Lightweight Executor lightweightExecutor = TestOnlyExecutors.lite();
+  @Lightweight ExecutorService lightweightExecutor = TestOnlyExecutors.lite();
 
   @Before
   public void setup() throws FirebaseAppDistributionException {
@@ -81,7 +82,7 @@ public class NewReleaseFetcherTest {
     packageInfo.versionName = "1.0";
     shadowPackageManager.installPackage(packageInfo);
 
-    when(mockReleaseIdentifier.extractApkHash()).thenReturn(CURRENT_APK_HASH);
+    when(mockReleaseIdentifier.extractApkHash()).thenReturn(Tasks.forResult(CURRENT_APK_HASH));
     when(mockReleaseIdentifier.extractInternalAppSharingArtifactId())
         .thenReturn(TEST_IAS_ARTIFACT_ID);
 
@@ -147,6 +148,7 @@ public class NewReleaseFetcherTest {
         .thenReturn(Tasks.forResult(getTestInstalledRelease().build()));
 
     Task<AppDistributionReleaseInternal> releaseTask = newReleaseFetcher.checkForNewRelease();
+    awaitAsyncOperations(lightweightExecutor);
 
     assertThat(awaitTask(releaseTask)).isNull();
   }
