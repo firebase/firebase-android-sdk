@@ -232,16 +232,14 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   <A extends Activity> Task<Activity> getForegroundActivity(@Nullable Class<A> classToIgnore) {
     synchronized (lock) {
       if (currentActivity != null) {
-        Activity foregroundActivity =
-            getActivityWithIgnoredClass(currentActivity, previousActivity, classToIgnore);
+        Activity foregroundActivity = getCurrentActivityWithIgnoredClass(classToIgnore);
         if (Looper.myLooper() == Looper.getMainLooper()) {
           // We're already on the UI thread, so just complete the task with the activity
           return Tasks.forResult(foregroundActivity);
         } else {
           // Run in UI thread so that returned Task will be completed on the UI thread
           return runAsyncInTask(
-              uiThreadExecutor,
-              () -> getActivityWithIgnoredClass(currentActivity, previousActivity, classToIgnore));
+              uiThreadExecutor, () -> getCurrentActivityWithIgnoredClass(classToIgnore));
         }
       }
     }
@@ -252,8 +250,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
           @Override
           public void onResumed(Activity activity) {
             // Since this method is run on the UI thread, the Task is completed on the UI thread
-            task.setResult(
-                getActivityWithIgnoredClass(activity, getPreviousActivity(), classToIgnore));
+            task.setResult(getCurrentActivityWithIgnoredClass(classToIgnore));
             removeOnActivityResumedListener(this);
           }
         });
@@ -261,19 +258,14 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   }
 
   @Nullable
-  private Activity getPreviousActivity() {
+  private <A extends Activity> Activity getCurrentActivityWithIgnoredClass(
+      @Nullable Class<A> classToIgnore) {
     synchronized (lock) {
-      return previousActivity;
-    }
-  }
-
-  @Nullable
-  private static <A extends Activity> Activity getActivityWithIgnoredClass(
-      Activity activity, @Nullable Activity fallbackActivity, @Nullable Class<A> classToIgnore) {
-    if (classToIgnore != null && classToIgnore.isInstance(activity)) {
-      return fallbackActivity;
-    } else {
-      return activity;
+      if (classToIgnore != null && classToIgnore.isInstance(currentActivity)) {
+        return previousActivity;
+      } else {
+        return currentActivity;
+      }
     }
   }
 
