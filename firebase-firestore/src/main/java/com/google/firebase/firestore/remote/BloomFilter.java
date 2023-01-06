@@ -105,8 +105,14 @@ public class BloomFilter {
   private int getBitIndex(long hash1, long hash2, int index) {
     // Calculate hashed value h(i) = h1 + (i * h2).
     long combinedHash = hash1 + (hash2 * index);
-    long mod = UnsignedLong.remainder(combinedHash, this.size);
+    long mod = unsignedRemainder(combinedHash, this.size);
     return (int) mod;
+  }
+
+  public static long unsignedRemainder(long dividend, int divisor) {
+    long quotient = ((dividend >>> 1) / divisor) << 1;
+    long remainder = dividend - quotient * divisor;
+    return remainder - (remainder >= divisor ? divisor : 0);
   }
 
   // Return whether the bit on the given index in the bitmap is set to 1.
