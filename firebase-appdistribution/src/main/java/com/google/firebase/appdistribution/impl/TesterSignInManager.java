@@ -60,20 +60,6 @@ class TesterSignInManager {
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull final SignInStorage signInStorage,
-      @Lightweight Executor lightweightExecutor) {
-    this(
-        firebaseApp,
-        firebaseInstallationsApiProvider,
-        signInStorage,
-        FirebaseAppDistributionLifecycleNotifier.getInstance(),
-        lightweightExecutor);
-  }
-
-  @VisibleForTesting
-  TesterSignInManager(
-      @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
-      @NonNull final SignInStorage signInStorage,
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
       @Lightweight Executor lightweightExecutor) {
     this.firebaseApp = firebaseApp;

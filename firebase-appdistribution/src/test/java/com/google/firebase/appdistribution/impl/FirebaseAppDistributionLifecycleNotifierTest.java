@@ -26,11 +26,14 @@ import android.app.Activity;
 import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.ActivityConsumer;
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.ActivityFunction;
 import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.NullableActivityFunction;
+import com.google.firebase.concurrent.TestOnlyExecutors;
+import java.util.concurrent.Executor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -47,6 +50,8 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
 
   static class OtherTestActivity extends Activity {}
 
+  private final @UiThread Executor uiThreadExecutor = TestOnlyExecutors.ui();
+
   @Captor private ArgumentCaptor<Activity> activityArgCaptor;
   private TestActivity activity;
   private OtherTestActivity otherActivity;
@@ -57,7 +62,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     MockitoAnnotations.initMocks(this);
     activity = Robolectric.buildActivity(TestActivity.class).create().get();
     otherActivity = Robolectric.buildActivity(OtherTestActivity.class).create().get();
-    lifecycleNotifier = new FirebaseAppDistributionLifecycleNotifier();
+    lifecycleNotifier = new FirebaseAppDistributionLifecycleNotifier(uiThreadExecutor);
   }
 
   @Test

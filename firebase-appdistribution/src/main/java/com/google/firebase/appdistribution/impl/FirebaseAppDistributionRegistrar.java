@@ -22,6 +22,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
@@ -52,6 +53,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
     Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
     Qualified<Executor> lightweightExecutor =
         Qualified.qualified(Lightweight.class, Executor.class);
+    Qualified<Executor> uiThreadExecutor = Qualified.qualified(UiThread.class, Executor.class);
     return Arrays.asList(
         Component.builder(FirebaseAppDistribution.class)
             .name(LIBRARY_NAME)
@@ -60,10 +62,15 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             .add(Dependency.required(backgroundExecutor))
             .add(Dependency.required(blockingExecutor))
             .add(Dependency.required(lightweightExecutor))
+            .add(Dependency.required(uiThreadExecutor))
             .factory(
                 c ->
                     buildFirebaseAppDistribution(
-                        c, backgroundExecutor, blockingExecutor, lightweightExecutor))
+                        c,
+                        backgroundExecutor,
+                        blockingExecutor,
+                        lightweightExecutor,
+                        uiThreadExecutor))
             // construct FirebaseAppDistribution instance on startup so we can register for
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
@@ -71,7 +78,6 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
         Component.builder(FeedbackSender.class)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
-            .add(Dependency.required(backgroundExecutor))
             .add(Dependency.required(blockingExecutor))
             .factory(c -> buildFeedbackSender(c, c.get(blockingExecutor)))
             .build(),
@@ -96,11 +102,13 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
       ComponentContainer container,
       Qualified<Executor> backgroundExecutorType,
       Qualified<Executor> blockingExecutorType,
-      Qualified<Executor> lightweightExecutorType) {
+      Qualified<Executor> lightweightExecutorType,
+      Qualified<Executor> uiThreadExecutorType) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
     Executor backgroundExecutor = container.get(backgroundExecutorType);
     Executor blockingExecutor = container.get(blockingExecutorType);
     Executor lightweightExecutor = container.get(lightweightExecutorType);
+    Executor uiThreadExecutor = container.get(uiThreadExecutorType);
     Context context = firebaseApp.getApplicationContext();
     Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
         container.getProvider(FirebaseInstallationsApi.class);
@@ -112,13 +120,17 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             blockingExecutor);
     SignInStorage signInStorage = new SignInStorage(context, backgroundExecutor);
     FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
-        FirebaseAppDistributionLifecycleNotifier.getInstance();
+        FirebaseAppDistributionLifecycleNotifier.getInstance(uiThreadExecutor);
     ReleaseIdentifier releaseIdentifier = new ReleaseIdentifier(firebaseApp, testerApiClient);
     FirebaseAppDistribution appDistribution =
         new FirebaseAppDistributionImpl(
             firebaseApp,
             new TesterSignInManager(
-                firebaseApp, firebaseInstallationsApiProvider, signInStorage, lightweightExecutor),
+                firebaseApp,
+                firebaseInstallationsApiProvider,
+                signInStorage,
+                lifecycleNotifier,
+                lightweightExecutor),
             new NewReleaseFetcher(
                 firebaseApp.getApplicationContext(),
                 testerApiClient,
@@ -126,10 +138,11 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
                 lightweightExecutor),
             new ApkUpdater(
                 firebaseApp,
-                new ApkInstaller(lightweightExecutor),
+                new ApkInstaller(lifecycleNotifier, lightweightExecutor),
+                lifecycleNotifier,
                 blockingExecutor,
                 lightweightExecutor),
-            new AabUpdater(blockingExecutor, lightweightExecutor),
+            new AabUpdater(lifecycleNotifier, blockingExecutor, lightweightExecutor),
             signInStorage,
             lifecycleNotifier,
             releaseIdentifier,
