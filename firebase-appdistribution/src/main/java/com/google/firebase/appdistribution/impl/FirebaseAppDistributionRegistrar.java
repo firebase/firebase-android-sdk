@@ -79,14 +79,19 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
             .add(Dependency.required(blockingExecutor))
-            .factory(c -> buildFeedbackSender(c, c.get(blockingExecutor)))
+            .add(Dependency.required(lightweightExecutor))
+            .factory(c -> buildFeedbackSender(c, blockingExecutor, lightweightExecutor))
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 
   private FeedbackSender buildFeedbackSender(
-      ComponentContainer container, Executor blockingExecutor) {
+      ComponentContainer container,
+      Qualified<Executor> blockingExecutorType,
+      Qualified<Executor> lightweightExecutorType) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
+    Executor blockingExecutor = container.get(blockingExecutorType);
+    Executor lightweightExecutor = container.get(lightweightExecutorType);
     Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
         container.getProvider(FirebaseInstallationsApi.class);
     FirebaseAppDistributionTesterApiClient testerApiClient =
@@ -95,7 +100,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             firebaseInstallationsApiProvider,
             new TesterApiHttpClient(firebaseApp),
             blockingExecutor);
-    return new FeedbackSender(testerApiClient, blockingExecutor);
+    return new FeedbackSender(testerApiClient, blockingExecutor, lightweightExecutor);
   }
 
   private FirebaseAppDistribution buildFirebaseAppDistribution(
@@ -150,7 +155,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
             releaseIdentifier,
             new ScreenshotTaker(firebaseApp, lifecycleNotifier, backgroundExecutor),
             lightweightExecutor,
-            blockingExecutor);
+            uiThreadExecutor);
 
     if (context instanceof Application) {
       Application firebaseApplication = (Application) context;

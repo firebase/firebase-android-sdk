@@ -23,9 +23,12 @@ import android.net.Uri;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
-import java.util.concurrent.Executors;
+import com.google.firebase.concurrent.TestOnlyExecutors;
+import java.util.concurrent.Executor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,6 +44,9 @@ public class FeedbackSenderTest {
   private static final Uri TEST_SCREENSHOT_URI =
       Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
 
+  @Blocking private final Executor blockingExecutor = TestOnlyExecutors.blocking();
+  @Lightweight private final Executor lightweightExecutor = TestOnlyExecutors.lite();
+
   @Mock private FirebaseAppDistributionTesterApiClient mockTesterApiClient;
 
   private FeedbackSender feedbackSender;
@@ -48,7 +54,7 @@ public class FeedbackSenderTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    feedbackSender = new FeedbackSender(mockTesterApiClient, Executors.newSingleThreadExecutor());
+    feedbackSender = new FeedbackSender(mockTesterApiClient, blockingExecutor, lightweightExecutor);
   }
 
   @Test
