@@ -34,7 +34,6 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appdistribution.AppDistributionRelease;
@@ -48,6 +47,7 @@ import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.inject.Inject;
 
 /**
  * This class is the "real" implementation of the Firebase App Distribution API which should only be
@@ -58,7 +58,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private static final String TAG = "Impl";
   private static final int UNKNOWN_RELEASE_FILE_SIZE = -1;
 
-  private final FirebaseApp firebaseApp;
+  private final Context applicationContext;
   private final TesterSignInManager testerSignInManager;
   private final NewReleaseFetcher newReleaseFetcher;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
@@ -83,9 +83,9 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   @Nullable private TaskCompletionSource<Void> showSignInDialogTask;
   @Nullable private TaskCompletionSource<Void> showUpdateDialogTask;
 
-  @VisibleForTesting
+  @Inject
   FirebaseAppDistributionImpl(
-      @NonNull FirebaseApp firebaseApp,
+      @NonNull Context applicationContext,
       @NonNull TesterSignInManager testerSignInManager,
       @NonNull NewReleaseFetcher newReleaseFetcher,
       @NonNull ApkUpdater apkUpdater,
@@ -94,9 +94,10 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
       @NonNull ReleaseIdentifier releaseIdentifier,
       @NonNull ScreenshotTaker screenshotTaker,
+      @NonNull FirebaseAppDistributionNotificationsManager notificationsManager,
       @NonNull @Lightweight Executor lightweightExecutor,
       @NonNull @UiThread Executor uiThreadExecutor) {
-    this.firebaseApp = firebaseApp;
+    this.applicationContext = applicationContext;
     this.testerSignInManager = testerSignInManager;
     this.newReleaseFetcher = newReleaseFetcher;
     this.apkUpdater = apkUpdater;
@@ -110,8 +111,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     this.cachedNewRelease = new SequentialReference<>(lightweightExecutor);
     this.checkForNewReleaseTaskCache = new TaskCache<>(lightweightExecutor);
     this.updateIfNewReleaseAvailableTaskCache = new UpdateTaskCache(lightweightExecutor);
-    this.notificationsManager =
-        new FirebaseAppDistributionNotificationsManager(firebaseApp.getApplicationContext());
+    this.notificationsManager = notificationsManager;
     lifecycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
     lifecycleNotifier.addOnActivityPausedListener(this::onActivityPaused);
     lifecycleNotifier.addOnActivityResumedListener(this::onActivityResumed);
@@ -206,18 +206,19 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         () -> {
           signInConfirmationDialog = new AlertDialog.Builder(hostActivity).create();
 
-          Context context = firebaseApp.getApplicationContext();
-          signInConfirmationDialog.setTitle(context.getString(R.string.signin_dialog_title));
-          signInConfirmationDialog.setMessage(context.getString(R.string.singin_dialog_message));
+          signInConfirmationDialog.setTitle(
+              applicationContext.getString(R.string.signin_dialog_title));
+          signInConfirmationDialog.setMessage(
+              applicationContext.getString(R.string.singin_dialog_message));
 
           signInConfirmationDialog.setButton(
               AlertDialog.BUTTON_POSITIVE,
-              context.getString(R.string.singin_yes_button),
+              applicationContext.getString(R.string.singin_yes_button),
               (dialogInterface, i) -> showSignInDialogTask.setResult(null));
 
           signInConfirmationDialog.setButton(
               AlertDialog.BUTTON_NEGATIVE,
-              context.getString(R.string.singin_no_button),
+              applicationContext.getString(R.string.singin_no_button),
               (dialogInterface, i) ->
                   showSignInDialogTask.setException(
                       new FirebaseAppDistributionException(
@@ -336,7 +337,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void startFeedback(@StringRes int infoTextResourceId) {
-    startFeedback(firebaseApp.getApplicationContext().getText(infoTextResourceId));
+    startFeedback(applicationContext.getText(infoTextResourceId));
   }
 
   @Override
@@ -409,7 +410,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                           feedbackInProgress.set(false);
                           LogWrapper.e(TAG, "Failed to identify release", e);
                           Toast.makeText(
-                                  firebaseApp.getApplicationContext(),
+                                  applicationContext,
                                   R.string.feedback_unidentified_release,
                                   Toast.LENGTH_LONG)
                               .show();
@@ -425,7 +426,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                                       feedbackInProgress.set(false);
                                       LogWrapper.e(TAG, "Failed to launch feedback flow", e);
                                       Toast.makeText(
-                                              firebaseApp.getApplicationContext(),
+                                              applicationContext,
                                               R.string.feedback_launch_failed,
                                               Toast.LENGTH_LONG)
                                           .show();
@@ -526,7 +527,6 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       showUpdateDialogTask = new TaskCompletionSource<>();
     }
 
-    Context context = firebaseApp.getApplicationContext();
     dialogHostActivity = hostActivity;
 
     // We should already be on the main (UI) thread here, but be explicit just to be safe. If we are
@@ -534,19 +534,20 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     hostActivity.runOnUiThread(
         () -> {
           updateConfirmationDialog = new AlertDialog.Builder(hostActivity).create();
-          updateConfirmationDialog.setTitle(context.getString(R.string.update_dialog_title));
+          updateConfirmationDialog.setTitle(
+              applicationContext.getString(R.string.update_dialog_title));
 
           StringBuilder message =
               new StringBuilder(
                   String.format(
-                      context.getString(R.string.update_version_available),
+                      applicationContext.getString(R.string.update_version_available),
                       newRelease.getDisplayVersion(),
                       newRelease.getVersionCode()));
 
           if (newRelease.getReleaseNotes() != null && !newRelease.getReleaseNotes().isEmpty()) {
             message
                 .append("\n\n")
-                .append(context.getString(R.string.update_release_notes))
+                .append(applicationContext.getString(R.string.update_release_notes))
                 .append(" ")
                 .append(newRelease.getReleaseNotes());
           }
@@ -554,12 +555,12 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
           updateConfirmationDialog.setButton(
               AlertDialog.BUTTON_POSITIVE,
-              context.getString(R.string.update_yes_button),
+              applicationContext.getString(R.string.update_yes_button),
               (dialogInterface, i) -> showUpdateDialogTask.setResult(null));
 
           updateConfirmationDialog.setButton(
               AlertDialog.BUTTON_NEGATIVE,
-              context.getString(R.string.update_no_button),
+              applicationContext.getString(R.string.update_no_button),
               (dialogInterface, i) ->
                   showUpdateDialogTask.setException(
                       new FirebaseAppDistributionException(
@@ -622,6 +623,6 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   private CharSequence getText(int resourceId) {
-    return firebaseApp.getApplicationContext().getText(resourceId);
+    return applicationContext.getText(resourceId);
   }
 }

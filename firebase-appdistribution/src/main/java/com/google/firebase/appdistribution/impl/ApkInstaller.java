@@ -17,29 +17,25 @@ package com.google.firebase.appdistribution.impl;
 import android.app.Activity;
 import android.content.Intent;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import java.util.concurrent.Executor;
+import javax.inject.Inject;
 
 /** Class that handles installing APKs in {@link FirebaseAppDistribution}. */
 class ApkInstaller {
   private static final String TAG = "ApkInstaller";
 
-  private final FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier;
   private final TaskCompletionSourceCache<Void> installTaskCompletionSourceCache;
-  private final @Lightweight Executor lightweightExecutor;
 
-  @VisibleForTesting
+  @Inject
   ApkInstaller(
       FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier,
       @Lightweight Executor lightweightExecutor) {
-    this.lifeCycleNotifier = lifeCycleNotifier;
     this.installTaskCompletionSourceCache = new TaskCompletionSourceCache<>(lightweightExecutor);
-    this.lightweightExecutor = lightweightExecutor;
     lifeCycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
   }
 

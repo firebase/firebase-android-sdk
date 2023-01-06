@@ -17,6 +17,7 @@ package com.google.firebase.appdistribution.impl;
 import android.app.Activity;
 import android.os.Bundle;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
+import javax.inject.Inject;
 
 public class TakeScreenshotAndStartFeedbackActivity extends Activity {
 
@@ -25,14 +26,19 @@ public class TakeScreenshotAndStartFeedbackActivity extends Activity {
   public static final String INFO_TEXT_EXTRA_KEY =
       "com.google.firebase.appdistribution.TakeScreenshotAndStartFeedbackActivity.INFO_TEXT";
 
+  @Inject FirebaseAppDistribution firebaseAppDistribution;
+
   private CharSequence infoText;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
+    // Inject members before calling super.onCreate to avoid issues with fragment restoration
+    AppDistroComponent.getInstance().inject(this);
+
     super.onCreate(savedInstanceState);
     infoText = getIntent().getCharSequenceExtra(INFO_TEXT_EXTRA_KEY);
     LogWrapper.i(TAG, "Capturing screenshot and starting feedback");
-    FirebaseAppDistribution.getInstance().startFeedback(infoText);
+    firebaseAppDistribution.startFeedback(infoText);
     finish();
   }
 }
