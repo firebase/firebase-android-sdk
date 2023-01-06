@@ -58,27 +58,28 @@ class ApkUpdater {
   public ApkUpdater(
       @NonNull FirebaseApp firebaseApp,
       @NonNull ApkInstaller apkInstaller,
+      @NonNull FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier,
       @NonNull @Blocking Executor blockingExecutor,
       @NonNull @Lightweight Executor lightweightExecutor) {
     this(
-        blockingExecutor,
-        lightweightExecutor,
         firebaseApp.getApplicationContext(),
         apkInstaller,
         new FirebaseAppDistributionNotificationsManager(firebaseApp.getApplicationContext()),
         new HttpsUrlConnectionFactory(),
-        FirebaseAppDistributionLifecycleNotifier.getInstance());
+        lifeCycleNotifier,
+        blockingExecutor,
+        lightweightExecutor);
   }
 
   @VisibleForTesting
   public ApkUpdater(
-      @NonNull @Blocking Executor blockingExecutor,
-      @NonNull @Lightweight Executor lightweightExecutor,
       @NonNull Context context,
       @NonNull ApkInstaller apkInstaller,
       @NonNull FirebaseAppDistributionNotificationsManager appDistributionNotificationsManager,
       @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory,
-      @NonNull FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier) {
+      @NonNull FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier,
+      @NonNull @Blocking Executor blockingExecutor,
+      @NonNull @Lightweight Executor lightweightExecutor) {
     this.blockingExecutor = blockingExecutor;
     this.lightweightExecutor = lightweightExecutor;
     this.context = context;
