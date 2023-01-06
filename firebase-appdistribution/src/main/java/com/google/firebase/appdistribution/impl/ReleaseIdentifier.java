@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution.impl;
 
 import static com.google.firebase.appdistribution.impl.PackageInfoUtils.getPackageInfoWithMetadata;
+import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
 
 import android.content.pm.PackageInfo;
 import androidx.annotation.NonNull;
@@ -23,6 +24,8 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.File;
@@ -36,6 +39,7 @@ import java.util.Enumeration;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -51,10 +55,18 @@ class ReleaseIdentifier {
   private final FirebaseApp firebaseApp;
   private final FirebaseAppDistributionTesterApiClient testerApiClient;
 
+  @Background private final Executor backgroundExecutor;
+  @Lightweight private final Executor lightweightExecutor;
+
   ReleaseIdentifier(
-      FirebaseApp firebaseApp, FirebaseAppDistributionTesterApiClient testerApiClient) {
+      FirebaseApp firebaseApp,
+      FirebaseAppDistributionTesterApiClient testerApiClient,
+      @Background Executor backgroundExecutor,
+      @Lightweight Executor lightweightExecutor) {
     this.firebaseApp = firebaseApp;
     this.testerApiClient = testerApiClient;
+    this.backgroundExecutor = backgroundExecutor;
+    this.lightweightExecutor = lightweightExecutor;
   }
 
   /**
@@ -82,13 +94,8 @@ class ReleaseIdentifier {
     }
 
     // If we can't find an IAS artifact ID, we assume the installed release is an APK
-    String apkHash;
-    try {
-      apkHash = extractApkHash();
-    } catch (FirebaseAppDistributionException e) {
-      return Tasks.forException(e);
-    }
-    return testerApiClient.findReleaseUsingApkHash(apkHash);
+    return extractApkHash()
+        .onSuccessTask(lightweightExecutor, testerApiClient::findReleaseUsingApkHash);
   }
 
   /**
@@ -111,15 +118,19 @@ class ReleaseIdentifier {
    *
    * <p>The result is stored in an in-memory cache to avoid computing it repeatedly.
    */
-  String extractApkHash() throws FirebaseAppDistributionException {
-    PackageInfo metadataPackageInfo =
-        getPackageInfoWithMetadata(firebaseApp.getApplicationContext());
-    String installedReleaseApkHash = extractApkHash(metadataPackageInfo);
-    if (installedReleaseApkHash == null || installedReleaseApkHash.isEmpty()) {
-      throw new FirebaseAppDistributionException(
-          "Could not calculate hash of installed APK", Status.UNKNOWN);
-    }
-    return installedReleaseApkHash;
+  Task<String> extractApkHash() {
+    return runAsyncInTask(
+        backgroundExecutor,
+        () -> {
+          PackageInfo metadataPackageInfo =
+              getPackageInfoWithMetadata(firebaseApp.getApplicationContext());
+          String installedReleaseApkHash = extractApkHash(metadataPackageInfo);
+          if (installedReleaseApkHash == null || installedReleaseApkHash.isEmpty()) {
+            throw new FirebaseAppDistributionException(
+                "Could not calculate hash of installed APK", Status.UNKNOWN);
+          }
+          return installedReleaseApkHash;
+        });
   }
 
   private String extractApkHash(PackageInfo packageInfo) {
