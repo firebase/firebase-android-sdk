@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution.impl;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.appdistribution.impl.TestUtils.awaitTask;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
@@ -33,7 +34,12 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
+import com.google.firebase.concurrent.TestOnlyExecutors;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,6 +61,9 @@ public class ReleaseIdentifierTest {
   private static final String IAS_ARTIFACT_ID_KEY = "com.android.vending.internal.apk.id";
   private static final String CURRENT_APK_HASH = "currentApkHash";
   private static final long INSTALLED_VERSION_CODE = 1;
+
+  @Background private final Executor backgroundExecutor = TestOnlyExecutors.background();
+  @Lightweight private final Executor lightweightExecutor = TestOnlyExecutors.lite();
 
   private FirebaseApp firebaseApp;
   private ShadowPackageManager shadowPackageManager;
@@ -79,11 +88,15 @@ public class ReleaseIdentifierTest {
 
     shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
-    releaseIdentifier = Mockito.spy(new ReleaseIdentifier(firebaseApp, mockTesterApiClient));
+    releaseIdentifier =
+        Mockito.spy(
+            new ReleaseIdentifier(
+                firebaseApp, mockTesterApiClient, backgroundExecutor, lightweightExecutor));
   }
 
   @Test
-  public void identifyRelease_apk_returnsReleaseName() {
+  public void identifyRelease_apk_returnsReleaseName()
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
     installTestApk();
     doReturn(CURRENT_APK_HASH).when(releaseIdentifier).calculateApkHash(any());
     when(mockTesterApiClient.findReleaseUsingApkHash(CURRENT_APK_HASH))
@@ -91,32 +104,36 @@ public class ReleaseIdentifierTest {
 
     Task<String> task = releaseIdentifier.identifyRelease();
 
-    assertThat(task.isSuccessful()).isTrue();
-    assertThat(task.getResult()).isEqualTo(TEST_RELEASE_NAME);
+    assertThat(awaitTask(task)).isEqualTo(TEST_RELEASE_NAME);
   }
 
   @Test
-  public void identifyRelease_aab_returnsReleaseName() {
+  public void identifyRelease_aab_returnsReleaseName()
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
     installTestAab();
     when(mockTesterApiClient.findReleaseUsingIasArtifactId(TEST_IAS_ARTIFACT_ID))
         .thenReturn(Tasks.forResult(TEST_RELEASE_NAME));
 
     Task<String> task = releaseIdentifier.identifyRelease();
 
-    assertThat(task.isSuccessful()).isTrue();
-    assertThat(task.getResult()).isEqualTo(TEST_RELEASE_NAME);
+    assertThat(awaitTask(task)).isEqualTo(TEST_RELEASE_NAME);
   }
 
   @Test
-  public void extractApkHash_returnsAHash() throws FirebaseAppDistributionException {
-    assertThat(releaseIdentifier.extractApkHash().matches("^[0-9a-fA-F]+$")).isTrue();
+  public void extractApkHash_returnsAHash()
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
+    Task<String> task = releaseIdentifier.extractApkHash();
+
+    assertThat(awaitTask(task).matches("^[0-9a-fA-F]+$")).isTrue();
   }
 
   @Test
   public void extractApkHash_ifKeyInCachedApkHashes_doesNotRecalculateZipHash()
-      throws FirebaseAppDistributionException {
-    releaseIdentifier.extractApkHash();
-    releaseIdentifier.extractApkHash();
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
+    Task<String> task1 = releaseIdentifier.extractApkHash();
+    awaitTask(task1);
+    Task<String> task2 = releaseIdentifier.extractApkHash();
+    awaitTask(task2);
 
     // asserts that that calculateApkHash is only called once
     verify(releaseIdentifier).calculateApkHash(any());

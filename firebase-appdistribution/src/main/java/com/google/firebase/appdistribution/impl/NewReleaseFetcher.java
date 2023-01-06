@@ -62,31 +62,44 @@ class NewReleaseFetcher {
                 .fetchNewRelease()
                 .onSuccessTask(
                     lightweightExecutor,
-                    release -> Tasks.forResult(isNewerRelease(release) ? release : null)));
+                    release ->
+                        isNewerRelease(release)
+                            .onSuccessTask(
+                                lightweightExecutor,
+                                isNewer -> Tasks.forResult(isNewer ? release : null))));
   }
 
-  private boolean isNewerRelease(AppDistributionReleaseInternal retrievedNewRelease)
+  private Task<Boolean> isNewerRelease(AppDistributionReleaseInternal retrievedNewRelease)
       throws FirebaseAppDistributionException {
     if (retrievedNewRelease == null) {
       LogWrapper.v(TAG, "Tester does not have access to any releases");
-      return false;
+      return Tasks.forResult(false);
     }
 
     long newReleaseBuildVersion = parseBuildVersion(retrievedNewRelease.getBuildVersion());
 
     if (isOlderBuildVersion(newReleaseBuildVersion)) {
       LogWrapper.v(TAG, "New release has lower version code than current release");
-      return false;
+      return Tasks.forResult(false);
     }
 
     if (isNewerBuildVersion(newReleaseBuildVersion)
-        || !isSameAsInstalledRelease(retrievedNewRelease)
         || hasDifferentAppVersionName(retrievedNewRelease)) {
-      return true;
-    } else {
-      LogWrapper.v(TAG, "New release is older or is currently installed");
-      return false;
+      return Tasks.forResult(true);
     }
+
+    return hasSameBinaryIdentifier(retrievedNewRelease)
+        .onSuccessTask(
+            lightweightExecutor,
+            hasSameBinaryIdentifier -> {
+              if (hasSameBinaryIdentifier) {
+                // The release has the same app version name and binary identifier, and has either
+                // an equal or older build version
+                LogWrapper.v(TAG, "New release is older or is currently installed");
+                return Tasks.forResult(false);
+              }
+              return Tasks.forResult(true);
+            });
   }
 
   private long parseBuildVersion(String buildVersion) throws FirebaseAppDistributionException {
@@ -114,12 +127,15 @@ class NewReleaseFetcher {
   }
 
   @VisibleForTesting
-  boolean isSameAsInstalledRelease(AppDistributionReleaseInternal newRelease)
+  Task<Boolean> hasSameBinaryIdentifier(AppDistributionReleaseInternal newRelease)
       throws FirebaseAppDistributionException {
     if (newRelease.getBinaryType().equals(BinaryType.APK)) {
       return hasSameHashAsInstalledRelease(newRelease);
     }
+    return Tasks.forResult(hasSameIasArtifactId(newRelease));
+  }
 
+  boolean hasSameIasArtifactId(AppDistributionReleaseInternal newRelease) {
     if (newRelease.getIasArtifactId() == null || newRelease.getIasArtifactId().isEmpty()) {
       LogWrapper.w(TAG, "AAB release missing IAS Artifact ID. Assuming new release is different.");
       return false;
@@ -146,12 +162,17 @@ class NewReleaseFetcher {
     return getPackageInfo(context).versionName;
   }
 
-  private boolean hasSameHashAsInstalledRelease(AppDistributionReleaseInternal newRelease)
+  private Task<Boolean> hasSameHashAsInstalledRelease(AppDistributionReleaseInternal newRelease)
       throws FirebaseAppDistributionException {
     if (newRelease.getApkHash().isEmpty()) {
-      throw new FirebaseAppDistributionException(
-          "Missing APK hash from new release", Status.UNKNOWN);
+      return Tasks.forException(
+          new FirebaseAppDistributionException(
+              "Missing APK hash from new release", Status.UNKNOWN));
     }
-    return releaseIdentifier.extractApkHash().equals(newRelease.getApkHash());
+    return releaseIdentifier
+        .extractApkHash()
+        .onSuccessTask(
+            lightweightExecutor,
+            apkHash -> Tasks.forResult(apkHash.equals(newRelease.getApkHash())));
   }
 }
