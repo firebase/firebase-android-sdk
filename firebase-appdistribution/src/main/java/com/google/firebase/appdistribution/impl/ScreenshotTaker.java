@@ -33,8 +33,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import java.io.BufferedOutputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 
@@ -141,7 +141,7 @@ class ScreenshotTaker {
     // First delete the previous file if it's still there
     deleteScreenshot();
 
-    try (FileOutputStream outputStream = openFileOutputStream()) {
+    try (BufferedOutputStream outputStream = openFileOutputStream()) {
       // PNG is a lossless format, the compression factor (100) is ignored
       bitmap.compress(Bitmap.CompressFormat.PNG, /* quality= */ 100, outputStream);
     } catch (IOException e) {
@@ -157,9 +157,10 @@ class ScreenshotTaker {
     firebaseApp.getApplicationContext().deleteFile(SCREENSHOT_FILE_NAME);
   }
 
-  private FileOutputStream openFileOutputStream() throws FileNotFoundException {
-    return firebaseApp
-        .getApplicationContext()
-        .openFileOutput(SCREENSHOT_FILE_NAME, Context.MODE_PRIVATE);
+  private BufferedOutputStream openFileOutputStream() throws FileNotFoundException {
+    return new BufferedOutputStream(
+        firebaseApp
+            .getApplicationContext()
+            .openFileOutput(SCREENSHOT_FILE_NAME, Context.MODE_PRIVATE));
   }
 }
