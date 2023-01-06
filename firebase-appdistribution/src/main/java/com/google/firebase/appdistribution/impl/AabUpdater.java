@@ -47,13 +47,10 @@ class AabUpdater {
   private boolean hasBeenSentToPlayForCurrentTask = false;
 
   AabUpdater(
+      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
       @NonNull @Blocking Executor blockingExecutor,
       @NonNull @Lightweight Executor lightweightExecutor) {
-    this(
-        FirebaseAppDistributionLifecycleNotifier.getInstance(),
-        new HttpsUrlConnectionFactory(),
-        blockingExecutor,
-        lightweightExecutor);
+    this(lifecycleNotifier, new HttpsUrlConnectionFactory(), blockingExecutor, lightweightExecutor);
   }
 
   AabUpdater(

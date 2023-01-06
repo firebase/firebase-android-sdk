@@ -14,9 +14,12 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
+
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
+import android.os.Looper;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,6 +28,7 @@ import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -53,6 +57,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   }
 
   private static FirebaseAppDistributionLifecycleNotifier instance;
+  private final Executor uiThreadExecutor;
   private final Object lock = new Object();
 
   @GuardedBy("lock")
@@ -82,11 +87,14 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   private final Queue<OnActivityDestroyedListener> onDestroyedListeners = new ArrayDeque<>();
 
   @VisibleForTesting
-  FirebaseAppDistributionLifecycleNotifier() {}
+  FirebaseAppDistributionLifecycleNotifier(Executor uiThreadExecutor) {
+    this.uiThreadExecutor = uiThreadExecutor;
+  }
 
-  static synchronized FirebaseAppDistributionLifecycleNotifier getInstance() {
+  static synchronized FirebaseAppDistributionLifecycleNotifier getInstance(
+      @UiThread Executor uiThreadExecutor) {
     if (instance == null) {
-      instance = new FirebaseAppDistributionLifecycleNotifier();
+      instance = new FirebaseAppDistributionLifecycleNotifier(uiThreadExecutor);
     }
     return instance;
   }
@@ -115,9 +123,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
    * Apply a function to a foreground activity, when one is available, returning a {@link Task} that
    * will complete immediately after the function is applied.
    *
-   * <p>The function will be called immediately once the activity is available. This may be main
-   * thread or the calling thread, depending on whether or not there is already a foreground
-   * activity available when this method is called.
+   * <p>The function will always be called on the UI thread.
    */
   <T> Task<T> applyToForegroundActivity(ActivityFunction<T> function) {
     return getForegroundActivity(null)
@@ -141,9 +147,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
    * will be passed to the function, which may be null if there was no previously active activity or
    * the activity has been destroyed.
    *
-   * <p>The function will be called immediately once the activity is available. This may be main
-   * thread or the calling thread, depending on whether or not there is already a foreground
-   * activity available when this method is called.
+   * <p>The function will always be called on the UI thread.
    */
   <T, A extends Activity> Task<T> applyToNullableForegroundActivity(
       Class<A> classToIgnore, NullableActivityFunction<T> function) {
@@ -168,9 +172,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
    * will be passed to the function, which may be null if there was no previously active activity or
    * the activity has been destroyed.
    *
-   * <p>The continuation function will be called immediately once the activity is available. This
-   * may be on the main thread or the calling thread, depending on whether or not there is already a
-   * foreground activity available when this method is called.
+   * <p>The function will always be called on the UI thread.
    */
   <T, A extends Activity> Task<T> applyToNullableForegroundActivityTask(
       Class<A> classToIgnore, SuccessContinuation<Activity, T> continuation) {
@@ -207,9 +209,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
    * Apply a function to a foreground activity, when one is available, returning a {@link Task} that
    * will complete with the result of the Task returned by that function.
    *
-   * <p>The continuation function will be called immediately once the activity is available. This
-   * may be on the main thread or the calling thread, depending on whether or not there is already a
-   * foreground activity available when this method is called.
+   * <p>The function will always be called on the UI thread.
    */
   <T> Task<T> applyToForegroundActivityTask(SuccessContinuation<Activity, T> continuation) {
     return getForegroundActivity()
@@ -232,40 +232,40 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   <A extends Activity> Task<Activity> getForegroundActivity(@Nullable Class<A> classToIgnore) {
     synchronized (lock) {
       if (currentActivity != null) {
-        return Tasks.forResult(
-            getActivityWithIgnoredClass(currentActivity, previousActivity, classToIgnore));
+        Activity foregroundActivity = getCurrentActivityWithIgnoredClass(classToIgnore);
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+          // We're already on the UI thread, so just complete the task with the activity
+          return Tasks.forResult(foregroundActivity);
+        } else {
+          // Run in UI thread so that returned Task will be completed on the UI thread
+          return runAsyncInTask(
+              uiThreadExecutor, () -> getCurrentActivityWithIgnoredClass(classToIgnore));
+        }
       }
     }
 
     TaskCompletionSource<Activity> task = new TaskCompletionSource<>();
-
     addOnActivityResumedListener(
         new OnActivityResumedListener() {
           @Override
           public void onResumed(Activity activity) {
-            task.setResult(
-                getActivityWithIgnoredClass(activity, getPreviousActivity(), classToIgnore));
+            // Since this method is run on the UI thread, the Task is completed on the UI thread
+            task.setResult(getCurrentActivityWithIgnoredClass(classToIgnore));
             removeOnActivityResumedListener(this);
           }
         });
-
     return task.getTask();
   }
 
   @Nullable
-  private Activity getPreviousActivity() {
+  private <A extends Activity> Activity getCurrentActivityWithIgnoredClass(
+      @Nullable Class<A> classToIgnore) {
     synchronized (lock) {
-      return previousActivity;
-    }
-  }
-
-  @Nullable
-  private static <A extends Activity> Activity getActivityWithIgnoredClass(
-      Activity activity, @Nullable Activity fallbackActivity, @Nullable Class<A> classToIgnore) {
-    if (classToIgnore != null && classToIgnore.isInstance(activity)) {
-      return fallbackActivity;
-    } else {
-      return activity;
+      if (classToIgnore != null && classToIgnore.isInstance(currentActivity)) {
+        return previousActivity;
+      } else {
+        return currentActivity;
+      }
     }
   }
 
