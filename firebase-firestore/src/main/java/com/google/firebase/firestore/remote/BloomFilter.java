@@ -14,20 +14,18 @@
 
 package com.google.firebase.firestore.remote;
 
+import android.util.Base64;
 import androidx.annotation.NonNull;
-import com.google.firebase.firestore.util.Logger;
+import androidx.annotation.VisibleForTesting;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 
 public class BloomFilter {
-  private static final String TAG = "BloomFilter";
-
   private final int size;
   private final byte[] bitmap;
   private final int hashCount;
 
-  public BloomFilter(@NonNull byte[] bitmap, @NonNull int padding, @NonNull int hashCount) {
+  public BloomFilter(@NonNull byte[] bitmap, int padding, int hashCount) {
     if (padding < 0 || padding >= 8) {
       throw new IllegalArgumentException("Invalid padding: " + padding);
     }
@@ -52,12 +50,9 @@ public class BloomFilter {
     this.size = bitmap.length * 8 - padding;
   }
 
-  @NonNull
-  public int getSize() {
-    return this.size;
-  }
-
-  public boolean isEmpty() {
+  /** Return if a bloom filter is empty. */
+  @VisibleForTesting
+  boolean isEmpty() {
     return this.size == 0;
   }
 
@@ -67,13 +62,14 @@ public class BloomFilter {
       return false;
     }
 
-    byte[] md5HashedValue = this.MD5Hash(value);
-    if (md5HashedValue == null || md5HashedValue.length != 16) {
-      return false;
+    byte[] md5HashedValue = md5Hash(value);
+    if (md5HashedValue.length != 16) {
+      throw new RuntimeException(
+          "Invalid md5HashedValue.length: " + md5HashedValue.length + " (expected 16)");
     }
 
-    long hash1 = this.getLongLittleEndian(md5HashedValue, 0);
-    long hash2 = this.getLongLittleEndian(md5HashedValue, 8);
+    long hash1 = getLongLittleEndian(md5HashedValue, 0);
+    long hash2 = getLongLittleEndian(md5HashedValue, 8);
 
     for (int i = 0; i < this.hashCount; i++) {
       int index = this.getBitIndex(hash1, hash2, i);
@@ -84,19 +80,19 @@ public class BloomFilter {
     return true;
   }
 
-  public static byte[] MD5Hash(String value) {
+  @NonNull
+  public static byte[] md5Hash(@NonNull String value) {
+    MessageDigest digest;
     try {
-      MessageDigest digest = MessageDigest.getInstance("MD5");
-      digest.update(value.getBytes());
-      return digest.digest();
+      digest = MessageDigest.getInstance("MD5");
     } catch (NoSuchAlgorithmException e) {
-      Logger.warn(TAG, "Could not create hashing algorithm: MD5.", e);
-      return null;
+      throw new RuntimeException("Missing MD5 MessageDigest provider.", e);
     }
+    return digest.digest(value.getBytes());
   }
 
   // Interpret 8 bytes into a long, using little endian 2’s complement.
-  public static long getLongLittleEndian(byte[] bytes, int offset) {
+  public static long getLongLittleEndian(@NonNull byte[] bytes, int offset) {
     long result = 0;
     for (int i = 0; i < 8 && i < bytes.length; i++) {
       result |= (bytes[offset + i] & 0xFFL) << (i * 8);
@@ -106,10 +102,11 @@ public class BloomFilter {
 
   // Calculate the ith hash value based on the hashed 64bit integers,
   // and calculate its corresponding bit index in the bitmap to be checked.
-  private int getBitIndex(long num1, long num2, int index) {
+  private int getBitIndex(long hash1, long hash2, int index) {
     // Calculate hashed value h(i) = h1 + (i * h2).
-    Long hashValue2 = num1 + num2 * index;
-    return (int) Long.remainderUnsigned(hashValue2, this.size);
+    long combinedHash = hash1 + (hash2 * index);
+    long mod = UnsignedLong.remainder(combinedHash, this.size);
+    return (int) mod;
   }
 
   // Return whether the bit on the given index in the bitmap is set to 1.
@@ -123,12 +120,12 @@ public class BloomFilter {
   @Override
   public String toString() {
     return "BloomFilter{"
-        + "bitmap="
-        + Arrays.toString(bitmap)
         + ", hashCount="
         + hashCount
         + ", size="
         + size
+        + "bitmap="
+        + Base64.encodeToString(bitmap, Base64.NO_WRAP)
         + '}';
   }
 }

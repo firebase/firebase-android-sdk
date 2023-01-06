@@ -39,7 +39,7 @@ public class BloomFilterTest {
   @Test
   public void testEmptyBloomFilter() {
     BloomFilter bloomFilter = new BloomFilter(new byte[0], 0, 0);
-    assertEquals(bloomFilter.getSize(), 0);
+    assertTrue(bloomFilter.isEmpty());
   }
 
   @Test
@@ -57,9 +57,9 @@ public class BloomFilterTest {
   @Test
   public void testNonEmptyBloomFilter() {
     BloomFilter bloomFilter1 = new BloomFilter(new byte[1], 0, 1);
-    assertEquals(bloomFilter1.getSize(), 8);
+    assertFalse(bloomFilter1.isEmpty());
     BloomFilter bloomFilter2 = new BloomFilter(new byte[1], 7, 1);
-    assertEquals(bloomFilter2.getSize(), 1);
+    assertFalse(bloomFilter2.isEmpty());
   }
 
   @Test
@@ -115,7 +115,6 @@ public class BloomFilterTest {
    * membership results from n to 2n is expected to be false with some false positive results.
    */
   @Test
-  @SuppressWarnings("DefaultCharset")
   public void testBloomFilterGoldenTest() throws Exception {
     String documentPrefix = "projects/project-1/databases/database-1/documents/coll/doc";
 
@@ -123,19 +122,20 @@ public class BloomFilterTest {
     HashMap<String, JSONObject> parsedSpecFiles = new HashMap<>();
     File jsonDir = new File("src/test/resources/bloom_filter_golden_test_data");
     File[] jsonFiles = jsonDir.listFiles();
-    for (File f : jsonFiles) {
-      if (!f.toString().endsWith(".json")) {
+    assert jsonFiles != null;
+    for (File file : jsonFiles) {
+      if (!file.toString().endsWith(".json")) {
         continue;
       }
 
       // Read the files into a map.
       StringBuilder builder = new StringBuilder();
-      BufferedReader reader = new BufferedReader(new FileReader(f));
+      BufferedReader reader = new BufferedReader(new FileReader(file));
       Stream<String> lines = reader.lines();
       lines.forEach(builder::append);
       String json = builder.toString();
       JSONObject fileJSON = new JSONObject(json);
-      parsedSpecFiles.put(f.getName(), fileJSON);
+      parsedSpecFiles.put(file.getName(), fileJSON);
     }
 
     // Loop and test the files
@@ -146,6 +146,7 @@ public class BloomFilterTest {
 
       // Read test data and instantiate a BloomFilter object
       JSONObject fileJSON = parsedSpecFiles.get(fileName);
+      assert fileJSON != null;
       JSONObject bits = fileJSON.getJSONObject("bits");
       String bitmap = bits.getString("bitmap");
       int padding = bits.getInt("padding");
@@ -156,13 +157,21 @@ public class BloomFilterTest {
       // Find corresponding membership test result.
       JSONObject resultJSON =
           parsedSpecFiles.get(fileName.replace("bloom_filter_proto", "membership_test_result"));
+      assert resultJSON != null;
       String membershipTestResults = resultJSON.getString("membershipTestResults");
 
       // Run and compare mightContain result with the expectation.
       for (int i = 0; i < membershipTestResults.length(); i++) {
         boolean expectedMembershipResult = membershipTestResults.charAt(i) == '1';
         boolean mightContain = bloomFilter.mightContain(documentPrefix + i);
-        assertEquals(mightContain, expectedMembershipResult);
+        assertEquals(
+            "MightContain result doesn't match the expectation. File: "
+                + fileName
+                + ". Document: "
+                + documentPrefix
+                + i,
+            mightContain,
+            expectedMembershipResult);
       }
     }
   }
