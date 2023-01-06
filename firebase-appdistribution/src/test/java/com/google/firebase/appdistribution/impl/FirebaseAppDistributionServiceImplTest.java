@@ -72,8 +72,8 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.annotations.concurrent.Background;
-import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
@@ -88,6 +88,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -144,9 +145,9 @@ public class FirebaseAppDistributionServiceImplTest {
           .setDownloadUrl(TEST_URL)
           .build();
 
-  @Lightweight private final ExecutorService lightweightExecutor = TestOnlyExecutors.lite();
-  @Blocking private final ExecutorService blockingExecutor = TestOnlyExecutors.blocking();
   @Background private final ExecutorService backgroundExecutor = TestOnlyExecutors.background();
+  @Lightweight private final ExecutorService lightweightExecutor = TestOnlyExecutors.lite();
+  @UiThread private final Executor uiThreadExecutor = TestOnlyExecutors.ui();
 
   private FirebaseAppDistributionImpl firebaseAppDistribution;
   private ActivityController<TestActivity> activityController;
@@ -196,7 +197,7 @@ public class FirebaseAppDistributionServiceImplTest {
                 mockReleaseIdentifier,
                 mockScreenshotTaker,
                 lightweightExecutor,
-                blockingExecutor));
+                uiThreadExecutor));
 
     when(mockTesterSignInManager.signInTester()).thenReturn(Tasks.forResult(null));
     setSignInStatusSharedPreference(true);
@@ -748,7 +749,7 @@ public class FirebaseAppDistributionServiceImplTest {
     when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
 
     firebaseAppDistribution.startFeedback("Some terms and conditions");
-    TestUtils.awaitAsyncOperations(blockingExecutor);
+    TestUtils.awaitAsyncOperations(lightweightExecutor);
 
     verify(mockTesterSignInManager).signInTester();
     Intent expectedIntent = new Intent(activity, FeedbackActivity.class);
@@ -767,7 +768,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     firebaseAppDistribution.startFeedback("Some terms and conditions");
     firebaseAppDistribution.startFeedback("Some other terms and conditions");
-    TestUtils.awaitAsyncOperations(blockingExecutor);
+    TestUtils.awaitAsyncOperations(lightweightExecutor);
 
     verify(activity, times(1)).startActivity(any());
   }
@@ -777,7 +778,7 @@ public class FirebaseAppDistributionServiceImplTest {
     when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
     Uri providedUri = Uri.parse("file:/provided/uri");
     firebaseAppDistribution.startFeedback("Some terms and conditions", providedUri);
-    TestUtils.awaitAsyncOperations(blockingExecutor);
+    TestUtils.awaitAsyncOperations(lightweightExecutor);
 
     verifyNoInteractions(mockScreenshotTaker);
     verify(mockTesterSignInManager).signInTester();
@@ -796,7 +797,7 @@ public class FirebaseAppDistributionServiceImplTest {
 
     firebaseAppDistribution.startFeedback("Some terms and conditions", TEST_SCREENSHOT_URI);
     firebaseAppDistribution.startFeedback("Some other terms and conditions", TEST_SCREENSHOT_URI);
-    TestUtils.awaitAsyncOperations(blockingExecutor);
+    TestUtils.awaitAsyncOperations(lightweightExecutor);
 
     verify(activity, times(1)).startActivity(any());
   }
@@ -806,7 +807,7 @@ public class FirebaseAppDistributionServiceImplTest {
     when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
 
     firebaseAppDistribution.startFeedback("Some terms and conditions");
-    TestUtils.awaitAsyncOperations(blockingExecutor);
+    TestUtils.awaitAsyncOperations(lightweightExecutor);
     // Simulate destroying the feedback activity
     firebaseAppDistribution.onActivityDestroyed(
         new FeedbackActivity() {
@@ -827,7 +828,7 @@ public class FirebaseAppDistributionServiceImplTest {
     when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forResult("release-name"));
 
     firebaseAppDistribution.startFeedback("Some terms and conditions");
-    TestUtils.awaitAsyncOperations(blockingExecutor);
+    TestUtils.awaitAsyncOperations(lightweightExecutor);
 
     verify(mockTesterSignInManager).signInTester();
     Intent expectedIntent = new Intent(activity, FeedbackActivity.class);
@@ -848,7 +849,7 @@ public class FirebaseAppDistributionServiceImplTest {
     when(mockTesterSignInManager.signInTester()).thenReturn(Tasks.forException(exception));
 
     firebaseAppDistribution.startFeedback("Some terms and conditions");
-    TestUtils.awaitAsyncOperations(blockingExecutor);
+    TestUtils.awaitAsyncOperations(lightweightExecutor);
 
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isFalse();
     assertLoggedError("Failed to sign in tester", exception);
@@ -862,7 +863,7 @@ public class FirebaseAppDistributionServiceImplTest {
     when(mockReleaseIdentifier.identifyRelease()).thenReturn(Tasks.forException(exception));
 
     firebaseAppDistribution.startFeedback("Some terms and conditions");
-    TestUtils.awaitAsyncOperations(blockingExecutor);
+    TestUtils.awaitAsyncOperations(lightweightExecutor);
 
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isFalse();
     assertLoggedError("Failed to identify release", exception);
