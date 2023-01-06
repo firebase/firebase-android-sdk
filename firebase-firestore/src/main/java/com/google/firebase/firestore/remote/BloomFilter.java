@@ -17,8 +17,6 @@ package com.google.firebase.firestore.remote;
 import androidx.annotation.NonNull;
 import com.google.firebase.firestore.util.Logger;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -74,14 +72,14 @@ public class BloomFilter {
 
     byte[] md5HashedValue = this.MD5Hash(value);
     if (md5HashedValue == null || md5HashedValue.length != 16) {
-      //
       return false;
     }
 
-    long[] hashedValues = get64BitUnsignedInt(md5HashedValue);
+    long hash1 = this.getLongLittleEndian(md5HashedValue, 0);
+    long hash2 = this.getLongLittleEndian(md5HashedValue, 8);
 
     for (int i = 0; i < this.hashCount; i++) {
-      int index = this.getBitIndex(hashedValues, i);
+      int index = this.getBitIndex(hash1, hash2, i);
       if (!this.isBitSet(index)) {
         return false;
       }
@@ -100,26 +98,23 @@ public class BloomFilter {
     }
   }
 
-  // Interpret the 16 bytes array as two 64-bit unsigned integers, encoded using
-  // 2’s complement using little endian.
-  private static long[] get64BitUnsignedInt(byte[] bytes) {
-    byte[] chunk1 = Arrays.copyOfRange(bytes, 0, 8);
-    byte[] chunk2 = Arrays.copyOfRange(bytes, 8, 16);
-
-    long num1 = ByteBuffer.wrap(chunk1).order(ByteOrder.LITTLE_ENDIAN).getLong();
-    long num2 = ByteBuffer.wrap(chunk2).order(ByteOrder.LITTLE_ENDIAN).getLong();
-
-    return new long[] {num1, num2};
+  // Interpret 8 bytes into a long, using little endian 2’s complement.
+  public static long getLongLittleEndian(byte[] bytes, int offset) {
+    long result = 0;
+    for (int i = 0; i < 8 && i < bytes.length; i++) {
+      result |= (bytes[offset + i] & 0xFFL) << (i * 8);
+    }
+    return result;
   }
 
   // Calculate the ith hash value based on the hashed 64bit integers,
   // and calculate its corresponding bit index in the bitmap to be checked.
-  private int getBitIndex(long[] numbers, int index) {
-    BigInteger num1 = new BigInteger(Long.toUnsignedString(numbers[0]));
-    BigInteger num2 = new BigInteger(Long.toUnsignedString(numbers[1]));
+  private int getBitIndex(long num1, long num2, int index) {
+    BigInteger bigInteger1 = new BigInteger(Long.toUnsignedString(num1));
+    BigInteger bigInteger2 = new BigInteger(Long.toUnsignedString(num2));
 
     // Calculate hashed value h(i) = h1 + (i * h2).
-    BigInteger hashValue = num1.add(num2.multiply(BigInteger.valueOf(index)));
+    BigInteger hashValue = bigInteger1.add(bigInteger2.multiply(BigInteger.valueOf(index)));
 
     // Wrap if hash value overflow 64bit.
     if (hashValue.compareTo(this.MAX_64_BIT_UNSIGNED_INTEGER) == 1) {
