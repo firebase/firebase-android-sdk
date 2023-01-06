@@ -81,7 +81,7 @@ public class BloomFilter {
   }
 
   @NonNull
-  public static byte[] md5Hash(@NonNull String value) {
+  private static byte[] md5Hash(@NonNull String value) {
     MessageDigest digest;
     try {
       digest = MessageDigest.getInstance("MD5");
@@ -92,7 +92,7 @@ public class BloomFilter {
   }
 
   // Interpret 8 bytes into a long, using little endian 2’s complement.
-  public static long getLongLittleEndian(@NonNull byte[] bytes, int offset) {
+  private static long getLongLittleEndian(@NonNull byte[] bytes, int offset) {
     long result = 0;
     for (int i = 0; i < 8 && i < bytes.length; i++) {
       result |= (bytes[offset + i] & 0xFFL) << (i * 8);
@@ -109,7 +109,7 @@ public class BloomFilter {
     return (int) mod;
   }
 
-  public static long unsignedRemainder(long dividend, int divisor) {
+  private static long unsignedRemainder(long dividend, int divisor) {
     long quotient = ((dividend >>> 1) / divisor) << 1;
     long remainder = dividend - quotient * divisor;
     return remainder - (remainder >= divisor ? divisor : 0);
