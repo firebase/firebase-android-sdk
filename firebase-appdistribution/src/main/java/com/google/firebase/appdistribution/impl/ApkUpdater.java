@@ -111,11 +111,12 @@ class ApkUpdater {
             activity -> apkInstaller.installApk(file.getPath(), activity))
         .addOnSuccessListener(lightweightExecutor, unused -> cachedUpdateTask.setResult())
         .addOnFailureListener(
-            lightweightExecutor,
+            blockingExecutor, // Getting the file length performs disk IO
             e -> {
+              long fileLength = file.length();
               postUpdateProgress(
-                  file.length(),
-                  file.length(),
+                  fileLength,
+                  fileLength,
                   UpdateStatus.INSTALL_FAILED,
                   showDownloadNotificationManager,
                   R.string.install_failed);
