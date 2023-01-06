@@ -14,7 +14,6 @@
 
 package com.google.firebase.appdistribution.impl;
 
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
@@ -31,6 +30,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.FileNotFoundException;
@@ -46,12 +46,12 @@ class ScreenshotTaker {
 
   private final FirebaseApp firebaseApp;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
-  private final Executor backgroundExecutor;
+  @Background private final Executor backgroundExecutor;
 
   ScreenshotTaker(
       FirebaseApp firebaseApp,
       FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
-      Executor backgroundExecutor) {
+      @Background Executor backgroundExecutor) {
     this.firebaseApp = firebaseApp;
     this.lifecycleNotifier = lifecycleNotifier;
     this.backgroundExecutor = backgroundExecutor;
@@ -63,22 +63,9 @@ class ScreenshotTaker {
    * @return a {@link Task} that will complete with the file URI in app-level storage where the
    *     screenshot was written, or null if no activity could be found to screenshot.
    */
-  // TODO(b/261014422): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   Task<Uri> takeScreenshot() {
-    return deleteScreenshot()
-        .onSuccessTask(unused -> captureScreenshot())
-        .onSuccessTask(this::writeToFile);
-  }
-
-  /** Deletes any previously taken screenshot. */
-  Task<Void> deleteScreenshot() {
-    return TaskUtils.runAsyncInTask(
-        backgroundExecutor,
-        () -> {
-          firebaseApp.getApplicationContext().deleteFile(SCREENSHOT_FILE_NAME);
-          return null;
-        });
+    return captureScreenshot()
+        .onSuccessTask(backgroundExecutor, bitmap -> Tasks.forResult(writeToFile(bitmap)));
   }
 
   @VisibleForTesting
@@ -98,7 +85,7 @@ class ScreenshotTaker {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
               return captureScreenshotOreo(activity);
             } else {
-              return captureScreenshotLegacy(activity);
+              return Tasks.forResult(captureScreenshotLegacy(activity));
             }
           } catch (Exception | OutOfMemoryError e) {
             throw new FirebaseAppDistributionException(
@@ -112,11 +99,11 @@ class ScreenshotTaker {
     return Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.RGB_565);
   }
 
-  private static Task<Bitmap> captureScreenshotLegacy(Activity activity) {
+  private static Bitmap captureScreenshotLegacy(Activity activity) {
     Bitmap bitmap = getBitmapForScreenshot(activity);
     Canvas canvas = new Canvas(bitmap);
     activity.getWindow().getDecorView().getRootView().draw(canvas);
-    return Tasks.forResult(bitmap);
+    return bitmap;
   }
 
   @TargetApi(Build.VERSION_CODES.O)
@@ -145,23 +132,29 @@ class ScreenshotTaker {
     return taskCompletionSource.getTask();
   }
 
-  private Task<Uri> writeToFile(@Nullable Bitmap bitmap) {
+  @Nullable
+  private Uri writeToFile(@Nullable Bitmap bitmap) throws FirebaseAppDistributionException {
     if (bitmap == null) {
-      return Tasks.forResult(null);
+      return null;
     }
-    return TaskUtils.runAsyncInTask(
-        backgroundExecutor,
-        () -> {
-          try (FileOutputStream outputStream = openFileOutputStream()) {
-            // PNG is a lossless format, the compression factor (100) is ignored
-            bitmap.compress(Bitmap.CompressFormat.PNG, /* quality= */ 100, outputStream);
-          } catch (IOException e) {
-            throw new FirebaseAppDistributionException(
-                "Failed to write screenshot to storage", Status.UNKNOWN, e);
-          }
-          return Uri.fromFile(
-              firebaseApp.getApplicationContext().getFileStreamPath(SCREENSHOT_FILE_NAME));
-        });
+
+    // First delete the previous file if it's still there
+    deleteScreenshot();
+
+    try (FileOutputStream outputStream = openFileOutputStream()) {
+      // PNG is a lossless format, the compression factor (100) is ignored
+      bitmap.compress(Bitmap.CompressFormat.PNG, /* quality= */ 100, outputStream);
+    } catch (IOException e) {
+      throw new FirebaseAppDistributionException(
+          "Failed to write screenshot to storage", Status.UNKNOWN, e);
+    }
+    return Uri.fromFile(
+        firebaseApp.getApplicationContext().getFileStreamPath(SCREENSHOT_FILE_NAME));
+  }
+
+  @VisibleForTesting
+  void deleteScreenshot() {
+    firebaseApp.getApplicationContext().deleteFile(SCREENSHOT_FILE_NAME);
   }
 
   private FileOutputStream openFileOutputStream() throws FileNotFoundException {

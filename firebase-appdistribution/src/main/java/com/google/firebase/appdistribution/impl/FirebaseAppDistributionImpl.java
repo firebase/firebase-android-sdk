@@ -21,7 +21,6 @@ import static com.google.firebase.appdistribution.FirebaseAppDistributionExcepti
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
 import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskResult;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -36,8 +35,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
@@ -69,7 +68,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   private final ReleaseIdentifier releaseIdentifier;
   private final ScreenshotTaker screenshotTaker;
   @Lightweight private final Executor lightweightExecutor;
-  @Blocking private final Executor blockingExecutor;
+  @UiThread private final Executor uiThreadExecutor;
   private final SequentialReference<AppDistributionReleaseInternal> cachedNewRelease;
   private final TaskCache<AppDistributionRelease> checkForNewReleaseTaskCache;
   private final UpdateTaskCache updateIfNewReleaseAvailableTaskCache;
@@ -96,7 +95,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       @NonNull ReleaseIdentifier releaseIdentifier,
       @NonNull ScreenshotTaker screenshotTaker,
       @NonNull @Lightweight Executor lightweightExecutor,
-      @NonNull @Blocking Executor blockingExecutor) {
+      @NonNull @UiThread Executor uiThreadExecutor) {
     this.firebaseApp = firebaseApp;
     this.testerSignInManager = testerSignInManager;
     this.newReleaseFetcher = newReleaseFetcher;
@@ -107,7 +106,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     this.lifecycleNotifier = lifecycleNotifier;
     this.screenshotTaker = screenshotTaker;
     this.lightweightExecutor = lightweightExecutor;
-    this.blockingExecutor = blockingExecutor;
+    this.uiThreadExecutor = uiThreadExecutor;
     this.cachedNewRelease = new SequentialReference<>(lightweightExecutor);
     this.checkForNewReleaseTaskCache = new TaskCache<>(lightweightExecutor);
     this.updateIfNewReleaseAvailableTaskCache = new UpdateTaskCache(lightweightExecutor);
@@ -350,13 +349,13 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     screenshotTaker
         .takeScreenshot()
         .addOnFailureListener(
-            blockingExecutor,
+            lightweightExecutor,
             e -> {
               LogWrapper.w(TAG, "Failed to take screenshot for feedback", e);
               doStartFeedback(infoText, null);
             })
         .addOnSuccessListener(
-            blockingExecutor, screenshotUri -> doStartFeedback(infoText, screenshotUri));
+            lightweightExecutor, screenshotUri -> doStartFeedback(infoText, screenshotUri));
   }
 
   @Override
@@ -390,24 +389,22 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     notificationsManager.cancelFeedbackNotification();
   }
 
-  // TODO(b/261014422): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   private void doStartFeedback(CharSequence infoText, @Nullable Uri screenshotUri) {
     testerSignInManager
         .signInTester()
         .addOnFailureListener(
-            blockingExecutor,
+            lightweightExecutor,
             e -> {
               feedbackInProgress.set(false);
               LogWrapper.e(TAG, "Failed to sign in tester. Could not collect feedback.", e);
             })
         .onSuccessTask(
-            blockingExecutor,
+            lightweightExecutor,
             unused ->
                 releaseIdentifier
                     .identifyRelease()
                     .addOnFailureListener(
-                        blockingExecutor,
+                        uiThreadExecutor,
                         e -> {
                           feedbackInProgress.set(false);
                           LogWrapper.e(TAG, "Failed to identify release", e);
@@ -418,12 +415,12 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                               .show();
                         })
                     .onSuccessTask(
-                        blockingExecutor,
+                        lightweightExecutor,
                         releaseName ->
                             // in development-mode the releaseName might be null
                             launchFeedbackActivity(releaseName, infoText, screenshotUri)
                                 .addOnFailureListener(
-                                    blockingExecutor,
+                                    uiThreadExecutor,
                                     e -> {
                                       feedbackInProgress.set(false);
                                       LogWrapper.e(TAG, "Failed to launch feedback flow", e);
