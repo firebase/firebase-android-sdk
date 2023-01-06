@@ -14,6 +14,7 @@ package com.google.firebase.inappmessaging {
     method @NonNull public static com.google.firebase.inappmessaging.FirebaseInAppMessaging getInstance();
     method public boolean isAutomaticDataCollectionEnabled();
     method public void removeClickListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingClickListener);
+    method public void removeDismissListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener);
     method public void removeDisplayErrorListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayErrorListener);
     method public void removeImpressionListener(@NonNull com.google.firebase.inappmessaging.FirebaseInAppMessagingImpressionListener);
     method public void setAutomaticDataCollectionEnabled(@Nullable Boolean);

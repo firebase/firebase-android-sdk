@@ -17,6 +17,7 @@ package com.google.firebase.inappmessaging.internal.injection.modules;
 import androidx.annotation.NonNull;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import dagger.Module;
 import dagger.Provides;
 import java.util.concurrent.Executor;
@@ -27,10 +28,13 @@ import javax.inject.Singleton;
 public class ExecutorsModule {
   private final Executor backgroundExecutor;
   private final Executor blockingExecutor;
+  private final Executor lightWeightExecutor;
 
   public ExecutorsModule(
+      @NonNull @Lightweight Executor lightWeightExecutor,
       @NonNull @Background Executor backgroundExecutor,
       @NonNull @Blocking Executor blockingExecutor) {
+    this.lightWeightExecutor = lightWeightExecutor;
     this.backgroundExecutor = backgroundExecutor;
     this.blockingExecutor = blockingExecutor;
   }
@@ -41,6 +45,14 @@ public class ExecutorsModule {
   @NonNull
   public Executor providesBackgroundExecutor() {
     return backgroundExecutor;
+  }
+
+  @Provides
+  @Lightweight
+  @Singleton
+  @NonNull
+  public Executor providesLightWeightExecutor() {
+    return lightWeightExecutor;
   }
 
   @Provides

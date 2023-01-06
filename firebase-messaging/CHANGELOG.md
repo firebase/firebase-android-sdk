@@ -1,6 +1,14 @@
 # Unreleased
 
+
+# 23.1.1
 * [fixed] Fixed deadlock when handling simultaneous messages.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-messaging` library. The Kotlin extensions library has no additional
+updates.
 
 # 23.1.0
 * [unchanged] Updated to accommodate the release of the updated
