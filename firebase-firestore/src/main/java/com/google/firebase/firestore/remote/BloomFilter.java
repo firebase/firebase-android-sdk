@@ -16,15 +16,12 @@ package com.google.firebase.firestore.remote;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.firestore.util.Logger;
-import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 
 public class BloomFilter {
   private static final String TAG = "BloomFilter";
-  private static final BigInteger MAX_64_BIT_UNSIGNED_INTEGER =
-      new BigInteger("ffffffffffffffff", 16);
 
   private final int size;
   private final byte[] bitmap;
@@ -110,18 +107,9 @@ public class BloomFilter {
   // Calculate the ith hash value based on the hashed 64bit integers,
   // and calculate its corresponding bit index in the bitmap to be checked.
   private int getBitIndex(long num1, long num2, int index) {
-    BigInteger bigInteger1 = new BigInteger(Long.toUnsignedString(num1));
-    BigInteger bigInteger2 = new BigInteger(Long.toUnsignedString(num2));
-
     // Calculate hashed value h(i) = h1 + (i * h2).
-    BigInteger hashValue = bigInteger1.add(bigInteger2.multiply(BigInteger.valueOf(index)));
-
-    // Wrap if hash value overflow 64bit.
-    if (hashValue.compareTo(this.MAX_64_BIT_UNSIGNED_INTEGER) == 1) {
-      hashValue = new BigInteger(Long.toUnsignedString(hashValue.longValue()));
-    }
-
-    return hashValue.mod(BigInteger.valueOf(this.size)).intValue();
+    Long hashValue2 = num1 + num2 * index;
+    return (int) Long.remainderUnsigned(hashValue2, this.size);
   }
 
   // Return whether the bit on the given index in the bitmap is set to 1.
