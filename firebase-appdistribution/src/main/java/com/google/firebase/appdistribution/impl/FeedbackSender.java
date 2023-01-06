@@ -14,23 +14,28 @@
 
 package com.google.firebase.appdistribution.impl;
 
-import android.annotation.SuppressLint;
 import android.net.Uri;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import java.util.concurrent.Executor;
 
 /** Sends tester feedback to the Tester API. */
 class FeedbackSender {
   private final FirebaseAppDistributionTesterApiClient testerApiClient;
-  private final Executor blockingExecutor;
+  @Blocking private final Executor blockingExecutor;
+  @Lightweight private final Executor lightweightExecutor;
 
   FeedbackSender(
-      FirebaseAppDistributionTesterApiClient testerApiClient, Executor blockingExecutor) {
+      FirebaseAppDistributionTesterApiClient testerApiClient,
+      @Blocking Executor blockingExecutor,
+      @Lightweight Executor lightweightExecutor) {
     this.testerApiClient = testerApiClient;
     this.blockingExecutor = blockingExecutor;
+    this.lightweightExecutor = lightweightExecutor;
   }
 
   /** Get an instance of FeedbackSender. */
@@ -38,14 +43,13 @@ class FeedbackSender {
     return FirebaseApp.getInstance().get(FeedbackSender.class);
   }
 
-  // TODO(b/261014422): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   /** Send feedback text and optionally a screenshot to the Tester API for the given release. */
   Task<Void> sendFeedback(String releaseName, String feedbackText, @Nullable Uri screenshotUri) {
     return testerApiClient
         .createFeedback(releaseName, feedbackText)
-        .onSuccessTask(feedbackName -> attachScreenshot(feedbackName, screenshotUri))
-        .onSuccessTask(testerApiClient::commitFeedback);
+        .onSuccessTask(
+            lightweightExecutor, feedbackName -> attachScreenshot(feedbackName, screenshotUri))
+        .onSuccessTask(lightweightExecutor, testerApiClient::commitFeedback);
   }
 
   // TODO(kbolay): Remove this hack to make the executor available in FeedbackAction and use a more
