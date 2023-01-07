@@ -1,4 +1,6 @@
 # Unreleased
+* [fixed] Fixed a `NoSuchElementException` crash in `FirebaseMessagingService`.
+
 
 
 # 23.1.1

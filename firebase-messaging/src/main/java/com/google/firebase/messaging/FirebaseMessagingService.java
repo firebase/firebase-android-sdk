@@ -239,17 +239,19 @@ public class FirebaseMessagingService extends EnhancedIntentService {
     if (TextUtils.isEmpty(messageId)) {
       return false;
     }
-    if (recentlyReceivedMessageIds.contains(messageId)) {
-      if (Log.isLoggable(TAG, Log.DEBUG)) {
-        Log.d(TAG, "Received duplicate message: " + messageId);
+    synchronized (recentlyReceivedMessageIds) {
+      if (recentlyReceivedMessageIds.contains(messageId)) {
+        if (Log.isLoggable(TAG, Log.DEBUG)) {
+          Log.d(TAG, "Received duplicate message: " + messageId);
+        }
+        return true;
       }
-      return true;
+      // Add this message ID to the queue
+      if (recentlyReceivedMessageIds.size() >= RECENTLY_RECEIVED_MESSAGE_IDS_MAX_SIZE) {
+        recentlyReceivedMessageIds.remove();
+      }
+      recentlyReceivedMessageIds.add(messageId);
     }
-    // Add this message ID to the queue
-    if (recentlyReceivedMessageIds.size() >= RECENTLY_RECEIVED_MESSAGE_IDS_MAX_SIZE) {
-      recentlyReceivedMessageIds.remove();
-    }
-    recentlyReceivedMessageIds.add(messageId);
     return false;
   }
 
