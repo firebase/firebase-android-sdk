@@ -14,8 +14,10 @@
 
 package com.googletest.firebase.appdistribution.testapp
 
+import android.Manifest.permission.POST_NOTIFICATIONS
 import android.app.AlertDialog
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -27,8 +29,11 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
+import androidx.core.content.ContextCompat
 import androidx.core.widget.doOnTextChanged
 import com.google.android.gms.tasks.Task
 import com.google.android.material.textfield.TextInputLayout
@@ -61,6 +66,7 @@ class MainActivity : AppCompatActivity() {
   lateinit var progressPercent: TextView
   lateinit var progressBar: ProgressBar
   lateinit var feedbackTriggerMenu: TextInputLayout
+  lateinit var permissionRequestLauncher: ActivityResultLauncher<String>
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -115,6 +121,52 @@ class MainActivity : AppCompatActivity() {
       }
     }
 
+    setupFeedbackNotification()
+  }
+
+  private fun setupFeedbackNotification() {
+    // Register the permissions callback, which handles the user's response to the
+    // system permissions dialog
+    permissionRequestLauncher =
+      registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+        if (isGranted) {
+          showFeedbackNotification()
+        } else {
+          // Typically, here we should show the user a message explaining what behavior is
+          // unavailable because they have not enabled notifications. However in this case we are
+          // calling this method every time the activity is created, and we don't want to keep
+          // showing them such a message over and over if they've explicitly disabled notifications
+          // for the app.
+        }
+      }
+
+    // Check the permissions and behave accordingly
+    when {
+      ContextCompat.checkSelfPermission(this, POST_NOTIFICATIONS) ==
+        PackageManager.PERMISSION_GRANTED -> {
+        showFeedbackNotification()
+      }
+      shouldShowRequestPermissionRationale(POST_NOTIFICATIONS) -> {
+        Log.i(TAG, "Showing customer rationale for requesting permission.")
+        AlertDialog.Builder(this)
+          .setMessage(
+            "Using a notification to initiate feedback to the developer. " +
+              "To enable this feature, allow the app to post notifications."
+          )
+          .setPositiveButton("OK") { _, _ ->
+            Log.i(TAG, "Launching request for permission.")
+            permissionRequestLauncher.launch(POST_NOTIFICATIONS)
+          }
+          .setNegativeButton("No thanks") { _, _ -> Log.i(TAG, "User denied permission request.") }
+          .show()
+      }
+      else -> {
+        permissionRequestLauncher.launch(POST_NOTIFICATIONS)
+      }
+    }
+  }
+
+  private fun showFeedbackNotification() {
     firebaseAppDistribution.showFeedbackNotification(
       R.string.feedbackInfoText,
       InterruptionLevel.HIGH
