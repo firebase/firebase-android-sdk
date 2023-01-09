@@ -301,12 +301,14 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
             .setDurationUs(
                 getStartTimerCompat().getDurationMicros(this.onDrawPostAtFrontOfQueueTime))
             .build());
-    this.experimentTtid.addSubtraces(
-        TraceMetric.newBuilder()
-            .setName("_experiment_procStart_to_classLoad")
-            .setClientStartTimeUs(getStartTimerCompat().getMicros())
-            .setDurationUs(getStartTimerCompat().getDurationMicros(getClassLoadTimeCompat()))
-            .build());
+    if (processStartTime != null) {
+      this.experimentTtid.addSubtraces(
+          TraceMetric.newBuilder()
+              .setName("_experiment_procStart_to_classLoad")
+              .setClientStartTimeUs(getStartTimerCompat().getMicros())
+              .setDurationUs(getStartTimerCompat().getDurationMicros(getClassLoadTimeCompat()))
+              .build());
+    }
     this.experimentTtid.putCustomAttributes(
         "systemDeterminedForeground", systemForegroundCheck ? "true" : "false");
     this.experimentTtid.putCounters("onDrawCount", onDrawCount);
