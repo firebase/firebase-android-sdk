@@ -17,7 +17,6 @@ package com.google.firebase.appdistribution.impl;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
-import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -31,7 +30,11 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.UiThread;
 import java.io.IOException;
+import java.util.concurrent.Executor;
+import javax.inject.Inject;
 
 /** Activity for tester to compose and submit feedback. */
 public class FeedbackActivity extends AppCompatActivity {
@@ -46,16 +49,21 @@ public class FeedbackActivity extends AppCompatActivity {
   public static final String SCREENSHOT_URI_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT_URI";
 
-  private FeedbackSender feedbackSender;
+  @Inject FeedbackSender feedbackSender;
+  @Inject @Blocking Executor blockingExecutor;
+  @Inject @UiThread Executor uiThreadExecutor;
+
   @Nullable private String releaseName; // in development-mode the releaseName might be null
   private CharSequence infoText;
   @Nullable private Uri screenshotUri;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+    // Inject members before calling super.onCreate to avoid issues with fragment restoration
+    AppDistroComponent.getInstance().inject(this);
+
     super.onCreate(savedInstanceState);
 
-    feedbackSender = FeedbackSender.getInstance();
     if (savedInstanceState != null) {
       releaseName = savedInstanceState.getString(RELEASE_NAME_KEY);
       infoText = savedInstanceState.getCharSequence(INFO_TEXT_KEY);
@@ -96,33 +104,31 @@ public class FeedbackActivity extends AppCompatActivity {
   }
 
   private void setupScreenshot() {
-    feedbackSender
-        .getBlockingExecutor()
-        .execute(
-            () -> {
-              // do I/O on separate thread in order to not block the UI
-              Bitmap screenshot = screenshotUri == null ? null : readScreenshot();
-              if (screenshot != null) {
-                runOnUiThread(
-                    () -> {
-                      ImageView imageView = findViewById(R.id.screenshotImageView);
-                      imageView.setImageBitmap(screenshot);
-                      CheckBox checkBox = findViewById(R.id.screenshotCheckBox);
-                      checkBox.setChecked(true);
-                      checkBox.setOnClickListener(
-                          v -> imageView.setVisibility(checkBox.isChecked() ? VISIBLE : GONE));
-                    });
-              } else {
-                LogWrapper.e(TAG, "No screenshot available");
-                runOnUiThread(
-                    () -> {
-                      CheckBox checkBox = findViewById(R.id.screenshotCheckBox);
-                      checkBox.setText(R.string.no_screenshot);
-                      checkBox.setClickable(false);
-                      checkBox.setChecked(false);
-                    });
-              }
-            });
+    blockingExecutor.execute(
+        () -> {
+          // do I/O on separate thread in order to not block the UI
+          Bitmap screenshot = screenshotUri == null ? null : readScreenshot();
+          if (screenshot != null) {
+            runOnUiThread(
+                () -> {
+                  ImageView imageView = findViewById(R.id.screenshotImageView);
+                  imageView.setImageBitmap(screenshot);
+                  CheckBox checkBox = findViewById(R.id.screenshotCheckBox);
+                  checkBox.setChecked(true);
+                  checkBox.setOnClickListener(
+                      v -> imageView.setVisibility(checkBox.isChecked() ? VISIBLE : GONE));
+                });
+          } else {
+            LogWrapper.e(TAG, "No screenshot available");
+            runOnUiThread(
+                () -> {
+                  CheckBox checkBox = findViewById(R.id.screenshotCheckBox);
+                  checkBox.setText(R.string.no_screenshot);
+                  checkBox.setClickable(false);
+                  checkBox.setChecked(false);
+                });
+          }
+        });
   }
 
   @Nullable
@@ -145,8 +151,6 @@ public class FeedbackActivity extends AppCompatActivity {
     return bitmap;
   }
 
-  // TODO(b/261014422): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   public void submitFeedback(View view) {
     setSubmittingStateEnabled(true);
     if (releaseName == null) {
@@ -163,12 +167,14 @@ public class FeedbackActivity extends AppCompatActivity {
             feedbackText.getText().toString(),
             screenshotCheckBox.isChecked() ? screenshotUri : null)
         .addOnSuccessListener(
+            uiThreadExecutor,
             unused -> {
               LogWrapper.i(TAG, "Feedback submitted");
               Toast.makeText(this, "Feedback submitted", Toast.LENGTH_LONG).show();
               finish();
             })
         .addOnFailureListener(
+            uiThreadExecutor,
             e -> {
               LogWrapper.e(TAG, "Failed to submit feedback", e);
               Toast.makeText(this, "Error submitting feedback", Toast.LENGTH_LONG).show();

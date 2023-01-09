@@ -71,7 +71,9 @@ public class ScreenshotTakerTest {
                 .build());
 
     screenshotTaker =
-        spy(new ScreenshotTaker(firebaseApp, mockLifecycleNotifier, backgroundExecutor));
+        spy(
+            new ScreenshotTaker(
+                firebaseApp.getApplicationContext(), mockLifecycleNotifier, backgroundExecutor));
 
     // Taking a screenshot of an actual activity would require an instrumentation test
     doReturn(Tasks.forResult(TEST_SCREENSHOT)).when(screenshotTaker).captureScreenshot();

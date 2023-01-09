@@ -91,7 +91,10 @@ public class ReleaseIdentifierTest {
     releaseIdentifier =
         Mockito.spy(
             new ReleaseIdentifier(
-                firebaseApp, mockTesterApiClient, backgroundExecutor, lightweightExecutor));
+                firebaseApp.getApplicationContext(),
+                mockTesterApiClient,
+                backgroundExecutor,
+                lightweightExecutor));
   }
 
   @Test

@@ -30,7 +30,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
@@ -38,6 +38,7 @@ import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
 import java.util.concurrent.Executor;
+import javax.inject.Inject;
 
 /** Class that handles signing in the tester. */
 class TesterSignInManager {
@@ -46,7 +47,8 @@ class TesterSignInManager {
   private static final String SIGNIN_REDIRECT_URL =
       "https://appdistribution.firebase.google.com/pub/testerapps/%s/installations/%s/buildalerts?appName=%s&packageName=%s&newRedirectScheme=true";
 
-  private final FirebaseApp firebaseApp;
+  private final Context applicationContext;
+  private final FirebaseOptions firebaseOptions;
   private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
   private final SignInStorage signInStorage;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
@@ -56,13 +58,16 @@ class TesterSignInManager {
 
   private boolean hasBeenSentToBrowserForCurrentTask = false;
 
+  @Inject
   TesterSignInManager(
-      @NonNull FirebaseApp firebaseApp,
-      @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
-      @NonNull final SignInStorage signInStorage,
-      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
+      Context applicationContext,
+      FirebaseOptions firebaseOptions,
+      Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
+      SignInStorage signInStorage,
+      FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
       @Lightweight Executor lightweightExecutor) {
-    this.firebaseApp = firebaseApp;
+    this.applicationContext = applicationContext;
+    this.firebaseOptions = firebaseOptions;
     this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
@@ -172,17 +177,16 @@ class TesterSignInManager {
   }
 
   private void openSignInFlowInBrowser(String fid, Activity activity) {
-    Context context = firebaseApp.getApplicationContext();
     Uri uri =
         Uri.parse(
             String.format(
                 SIGNIN_REDIRECT_URL,
-                firebaseApp.getOptions().getApplicationId(),
+                firebaseOptions.getApplicationId(),
                 fid,
-                getApplicationName(context),
-                context.getPackageName()));
+                getApplicationName(applicationContext),
+                applicationContext.getPackageName()));
     LogWrapper.v(TAG, "Opening sign in flow in browser at " + uri);
-    if (supportsCustomTabs(context)) {
+    if (supportsCustomTabs(applicationContext)) {
       // If we can launch a chrome view, try that.
       CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
       Intent intent = customTabsIntent.intent;

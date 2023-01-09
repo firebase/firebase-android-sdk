@@ -145,7 +145,8 @@ public class TesterSignInManagerTest {
 
     testerSignInManager =
         new TesterSignInManager(
-            firebaseApp,
+            firebaseApp.getApplicationContext(),
+            firebaseApp.getOptions(),
             mockFirebaseInstallationsProvider,
             signInStorage,
             mockLifecycleNotifier,

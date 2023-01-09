@@ -50,7 +50,7 @@ public class FirebaseAppDistributionNotificationsManagerTest {
             ApplicationProvider.getApplicationContext().getSystemService(NOTIFICATION_SERVICE);
     firebaseAppDistributionNotificationsManager =
         new FirebaseAppDistributionNotificationsManager(
-            ApplicationProvider.getApplicationContext());
+            ApplicationProvider.getApplicationContext(), new AppIconSource());
   }
 
   @Test
