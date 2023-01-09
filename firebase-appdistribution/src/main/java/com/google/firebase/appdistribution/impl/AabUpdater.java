@@ -31,6 +31,7 @@ import com.google.firebase.appdistribution.UpdateStatus;
 import com.google.firebase.appdistribution.UpdateTask;
 import java.io.IOException;
 import java.util.concurrent.Executor;
+import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 
 /** Class that handles updateApp functionality for AABs in {@link FirebaseAppDistribution}. */
@@ -46,13 +47,7 @@ class AabUpdater {
   private AppDistributionReleaseInternal aabReleaseInProgress;
   private boolean hasBeenSentToPlayForCurrentTask = false;
 
-  AabUpdater(
-      @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
-      @NonNull @Blocking Executor blockingExecutor,
-      @NonNull @Lightweight Executor lightweightExecutor) {
-    this(lifecycleNotifier, new HttpsUrlConnectionFactory(), blockingExecutor, lightweightExecutor);
-  }
-
+  @Inject
   AabUpdater(
       @NonNull FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
       @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory,

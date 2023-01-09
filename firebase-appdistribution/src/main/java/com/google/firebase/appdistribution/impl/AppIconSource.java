@@ -21,11 +21,15 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Build.VERSION;
 import androidx.core.content.ContextCompat;
+import javax.inject.Inject;
 
 class AppIconSource {
   private static final String TAG = "AppIconSource";
 
   private static final int DEFAULT_ICON = android.R.drawable.sym_def_app_icon;
+
+  @Inject
+  AppIconSource() {}
 
   /**
    * Get an icon for the given app context, or a default icon if the app icon is adaptive or does
