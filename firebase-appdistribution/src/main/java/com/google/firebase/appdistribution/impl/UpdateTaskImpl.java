@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
@@ -37,7 +38,6 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 /** Implementation of UpdateTask, the return type of updateApp. */
-// TODO(b/261013814): Use an explicit executor in continuations.
 class UpdateTaskImpl extends UpdateTask {
 
   @Nullable
@@ -141,6 +141,7 @@ class UpdateTaskImpl extends UpdateTask {
     return getTask().getException();
   }
 
+  @SuppressLint("TaskMainThread") // Uses default (main thread) executor to match caller's intent
   @NonNull
   @Override
   public Task<Void> addOnSuccessListener(
@@ -162,6 +163,7 @@ class UpdateTaskImpl extends UpdateTask {
     return getTask().addOnSuccessListener(activity, onSuccessListener);
   }
 
+  @SuppressLint("TaskMainThread") // Uses default (main thread) executor to match caller's intent
   @NonNull
   @Override
   public Task<Void> addOnFailureListener(@NonNull OnFailureListener onFailureListener) {
@@ -182,6 +184,7 @@ class UpdateTaskImpl extends UpdateTask {
     return getTask().addOnFailureListener(activity, onFailureListener);
   }
 
+  @SuppressLint("TaskMainThread") // Uses default (main thread) executor to match caller's intent
   @NonNull
   @Override
   public Task<Void> addOnCompleteListener(@NonNull OnCompleteListener<Void> onCompleteListener) {
@@ -202,6 +205,7 @@ class UpdateTaskImpl extends UpdateTask {
     return getTask().addOnCompleteListener(activity, onCompleteListener);
   }
 
+  @SuppressLint("TaskMainThread") // Uses default (main thread) executor to match caller's intent
   @NonNull
   @Override
   public Task<Void> addOnCanceledListener(@NonNull OnCanceledListener onCanceledListener) {
@@ -222,6 +226,7 @@ class UpdateTaskImpl extends UpdateTask {
     return getTask().addOnCanceledListener(activity, onCanceledListener);
   }
 
+  @SuppressLint("TaskMainThread") // Uses default (main thread) executor to match caller's intent
   @NonNull
   @Override
   public <TContinuationResult> Task<TContinuationResult> continueWith(
@@ -236,6 +241,7 @@ class UpdateTaskImpl extends UpdateTask {
     return getTask().continueWith(executor, continuation);
   }
 
+  @SuppressLint("TaskMainThread") // Uses default (main thread) executor to match caller's intent
   @NonNull
   @Override
   public <TContinuationResult> Task<TContinuationResult> continueWithTask(
@@ -251,6 +257,7 @@ class UpdateTaskImpl extends UpdateTask {
     return getTask().continueWithTask(executor, continuation);
   }
 
+  @SuppressLint("TaskMainThread") // Uses default (main thread) executor to match caller's intent
   @NonNull
   @Override
   public <TContinuationResult> Task<TContinuationResult> onSuccessTask(
