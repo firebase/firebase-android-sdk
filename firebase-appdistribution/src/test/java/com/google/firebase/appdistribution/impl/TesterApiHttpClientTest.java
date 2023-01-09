@@ -79,7 +79,11 @@ public class TesterApiHttpClientTest {
 
     when(mockHttpsURLConnectionFactory.openConnection(TEST_URL)).thenReturn(mockHttpsURLConnection);
 
-    testerApiHttpClient = new TesterApiHttpClient(firebaseApp, mockHttpsURLConnectionFactory);
+    testerApiHttpClient =
+        new TesterApiHttpClient(
+            firebaseApp.getApplicationContext(),
+            firebaseApp.getOptions(),
+            mockHttpsURLConnectionFactory);
   }
 
   @Test

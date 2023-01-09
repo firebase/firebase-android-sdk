@@ -17,13 +17,13 @@ package com.google.firebase.appdistribution.impl;
 import static com.google.firebase.appdistribution.impl.PackageInfoUtils.getPackageInfoWithMetadata;
 import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
 
+import android.content.Context;
 import android.content.pm.PackageInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import javax.inject.Inject;
 
 /** Identifies the installed release using binary identifiers. */
 class ReleaseIdentifier {
@@ -52,18 +53,19 @@ class ReleaseIdentifier {
   static final String IAS_ARTIFACT_ID_METADATA_KEY = "com.android.vending.internal.apk.id";
 
   private final ConcurrentMap<String, String> cachedApkHashes = new ConcurrentHashMap<>();
-  private final FirebaseApp firebaseApp;
+  private final Context applicationContext;
   private final FirebaseAppDistributionTesterApiClient testerApiClient;
 
   @Background private final Executor backgroundExecutor;
   @Lightweight private final Executor lightweightExecutor;
 
+  @Inject
   ReleaseIdentifier(
-      FirebaseApp firebaseApp,
+      Context applicationContext,
       FirebaseAppDistributionTesterApiClient testerApiClient,
       @Background Executor backgroundExecutor,
       @Lightweight Executor lightweightExecutor) {
-    this.firebaseApp = firebaseApp;
+    this.applicationContext = applicationContext;
     this.testerApiClient = testerApiClient;
     this.backgroundExecutor = backgroundExecutor;
     this.lightweightExecutor = lightweightExecutor;
@@ -106,7 +108,7 @@ class ReleaseIdentifier {
    */
   @Nullable
   String extractInternalAppSharingArtifactId() throws FirebaseAppDistributionException {
-    PackageInfo packageInfo = getPackageInfoWithMetadata(firebaseApp.getApplicationContext());
+    PackageInfo packageInfo = getPackageInfoWithMetadata(applicationContext);
     if (packageInfo.applicationInfo.metaData == null) {
       throw new FirebaseAppDistributionException("Missing package info metadata", Status.UNKNOWN);
     }
@@ -122,8 +124,7 @@ class ReleaseIdentifier {
     return runAsyncInTask(
         backgroundExecutor,
         () -> {
-          PackageInfo metadataPackageInfo =
-              getPackageInfoWithMetadata(firebaseApp.getApplicationContext());
+          PackageInfo metadataPackageInfo = getPackageInfoWithMetadata(applicationContext);
           String installedReleaseApkHash = extractApkHash(metadataPackageInfo);
           if (installedReleaseApkHash == null || installedReleaseApkHash.isEmpty()) {
             throw new FirebaseAppDistributionException(

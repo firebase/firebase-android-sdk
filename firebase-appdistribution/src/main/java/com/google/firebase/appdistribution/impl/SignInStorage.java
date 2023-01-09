@@ -22,6 +22,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.annotations.concurrent.Background;
 import java.util.concurrent.Executor;
+import javax.inject.Inject;
 
 /** Class that handles storage for App Distribution SignIn persistence. */
 class SignInStorage {
@@ -38,6 +39,7 @@ class SignInStorage {
     T apply(SharedPreferences sharedPreferences);
   }
 
+  @Inject
   SignInStorage(Context applicationContext, @Background Executor backgroundExecutor) {
     this.applicationContext = applicationContext;
     this.backgroundExecutor = backgroundExecutor;
