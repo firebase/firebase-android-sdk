@@ -29,6 +29,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import com.google.firebase.appdistribution.InterruptionLevel;
+import javax.inject.Inject;
 
 class FirebaseAppDistributionNotificationsManager {
   private static final String TAG = "NotificationsManager";
@@ -58,11 +59,7 @@ class FirebaseAppDistributionNotificationsManager {
   private final AppIconSource appIconSource;
   private final NotificationManagerCompat notificationManager;
 
-  FirebaseAppDistributionNotificationsManager(Context context) {
-    this(context, new AppIconSource());
-  }
-
-  @VisibleForTesting
+  @Inject
   FirebaseAppDistributionNotificationsManager(Context context, AppIconSource appIconSource) {
     this.context = context;
     this.appIconSource = appIconSource;

@@ -29,7 +29,6 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
@@ -37,6 +36,7 @@ import java.io.BufferedOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.concurrent.Executor;
+import javax.inject.Inject;
 
 /** A class that takes screenshots of the host app. */
 class ScreenshotTaker {
@@ -44,15 +44,16 @@ class ScreenshotTaker {
   static final String SCREENSHOT_FILE_NAME =
       "com.google.firebase.appdistribution_feedback_screenshot.png";
 
-  private final FirebaseApp firebaseApp;
+  private final Context applicationContext;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
   @Background private final Executor backgroundExecutor;
 
+  @Inject
   ScreenshotTaker(
-      FirebaseApp firebaseApp,
+      Context applicationContext,
       FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
       @Background Executor backgroundExecutor) {
-    this.firebaseApp = firebaseApp;
+    this.applicationContext = applicationContext;
     this.lifecycleNotifier = lifecycleNotifier;
     this.backgroundExecutor = backgroundExecutor;
   }
@@ -148,19 +149,16 @@ class ScreenshotTaker {
       throw new FirebaseAppDistributionException(
           "Failed to write screenshot to storage", Status.UNKNOWN, e);
     }
-    return Uri.fromFile(
-        firebaseApp.getApplicationContext().getFileStreamPath(SCREENSHOT_FILE_NAME));
+    return Uri.fromFile(applicationContext.getFileStreamPath(SCREENSHOT_FILE_NAME));
   }
 
   @VisibleForTesting
   void deleteScreenshot() {
-    firebaseApp.getApplicationContext().deleteFile(SCREENSHOT_FILE_NAME);
+    applicationContext.deleteFile(SCREENSHOT_FILE_NAME);
   }
 
   private BufferedOutputStream openFileOutputStream() throws FileNotFoundException {
     return new BufferedOutputStream(
-        firebaseApp
-            .getApplicationContext()
-            .openFileOutput(SCREENSHOT_FILE_NAME, Context.MODE_PRIVATE));
+        applicationContext.openFileOutput(SCREENSHOT_FILE_NAME, Context.MODE_PRIVATE));
   }
 }

@@ -18,29 +18,21 @@ import android.net.Uri;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import java.util.concurrent.Executor;
+import javax.inject.Inject;
 
 /** Sends tester feedback to the Tester API. */
 class FeedbackSender {
   private final FirebaseAppDistributionTesterApiClient testerApiClient;
-  @Blocking private final Executor blockingExecutor;
   @Lightweight private final Executor lightweightExecutor;
 
+  @Inject
   FeedbackSender(
       FirebaseAppDistributionTesterApiClient testerApiClient,
-      @Blocking Executor blockingExecutor,
       @Lightweight Executor lightweightExecutor) {
     this.testerApiClient = testerApiClient;
-    this.blockingExecutor = blockingExecutor;
     this.lightweightExecutor = lightweightExecutor;
-  }
-
-  /** Get an instance of FeedbackSender. */
-  static FeedbackSender getInstance() {
-    return FirebaseApp.getInstance().get(FeedbackSender.class);
   }
 
   /** Send feedback text and optionally a screenshot to the Tester API for the given release. */
@@ -50,12 +42,6 @@ class FeedbackSender {
         .onSuccessTask(
             lightweightExecutor, feedbackName -> attachScreenshot(feedbackName, screenshotUri))
         .onSuccessTask(lightweightExecutor, testerApiClient::commitFeedback);
-  }
-
-  // TODO(kbolay): Remove this hack to make the executor available in FeedbackAction and use a more
-  //     sophisticated dependency injection solution.
-  Executor getBlockingExecutor() {
-    return blockingExecutor;
   }
 
   private Task<String> attachScreenshot(String feedbackName, @Nullable Uri screenshotUri) {

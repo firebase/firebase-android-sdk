@@ -54,7 +54,7 @@ public class FeedbackSenderTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    feedbackSender = new FeedbackSender(mockTesterApiClient, blockingExecutor, lightweightExecutor);
+    feedbackSender = new FeedbackSender(mockTesterApiClient, lightweightExecutor);
   }
 
   @Test
