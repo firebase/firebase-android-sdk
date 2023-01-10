@@ -139,10 +139,6 @@ public class ConfigContainer {
     return templateVersionNumber;
   }
 
-  public ConfigContainer getCopy() throws JSONException {
-    return ConfigContainer.copyOf(containerJson);
-  }
-
   @Override
   public String toString() {
     return containerJson.toString();
