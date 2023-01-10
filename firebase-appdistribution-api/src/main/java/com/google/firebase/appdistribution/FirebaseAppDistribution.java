@@ -125,8 +125,10 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * @param infoTextResourceId string resource ID of text to display to the tester before collecting
-   *     feedback data (e.g. Terms and Conditions)
+   * @param infoTextResourceId string resource ID of text that will be shown to the tester before
+   *     they submit feedback. If you’re a customer who would like to provide notice to your testers
+   *     about collection and processing of their feedback data, you can use this text to provide
+   *     such notice.
    */
   void startFeedback(@StringRes int infoTextResourceId);
 
@@ -141,8 +143,9 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * @param infoText text to display to the tester before collecting feedback data (e.g. Terms and
-   *     Conditions)
+   * @param infoText text that will be shown to the tester before they submit feedback. If you’re a
+   *     customer who would like to provide notice to your testers about collection and processing
+   *     of their feedback data, you can use this text to provide such notice.
    */
   void startFeedback(@NonNull CharSequence infoText);
 
@@ -157,8 +160,10 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * @param infoTextResourceId string resource ID of text to display to the tester before collecting
-   *     feedback data (e.g. Terms and Conditions)
+   * @param infoTextResourceId string resource ID of text that will be shown to the tester before
+   *     they submit feedback. If you’re a customer who would like to provide notice to your testers
+   *     about collection and processing of their feedback data, you can use this text to provide
+   *     such notice.
    * @param screenshot URI to a bitmap containing a screenshot that will be included with the
    *     report, or null to not include a screenshot
    */
@@ -175,8 +180,9 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * @param infoText text to display to the tester before collecting feedback data (e.g. Terms and
-   *     Conditions)
+   * @param infoText text that will be shown to the tester before they submit feedback. If you’re a
+   *     customer who would like to provide notice to your testers about collection and processing
+   *     of their feedback data, you can use this text to provide such notice.
    * @param screenshot URI to a bitmap containing a screenshot that will be included with the
    *     report, or null to not include a screenshot
    */
@@ -201,8 +207,10 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * @param infoTextResourceId string resource ID of text to display to the tester before collecting
-   *     feedback data (e.g. Terms and Conditions)
+   * @param infoTextResourceId string resource ID of text that will be shown to the tester before
+   *     they submit feedback. If you’re a customer who would like to provide notice to your testers
+   *     about collection and processing of their feedback data, you can use this text to provide
+   *     such notice.
    * @param interruptionLevel the level of interruption for the feedback notification. On platforms
    *     below Android 8, this corresponds to a notification channel importance and once set cannot
    *     be changed except by the user.
@@ -229,8 +237,9 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * @param infoText text to display to the tester before collecting feedback data (e.g. Terms and
-   *     Conditions)
+   * @param infoText text that will be shown to the tester before they submit feedback. If you’re a
+   *     customer who would like to provide notice to your testers about collection and processing
+   *     of their feedback data, you can use this text to provide such notice.
    * @param interruptionLevel the level of interruption for the feedback notification. On platforms
    *     below Android 8, this corresponds to a notification channel importance and once set cannot
    *     be changed except by the user.
