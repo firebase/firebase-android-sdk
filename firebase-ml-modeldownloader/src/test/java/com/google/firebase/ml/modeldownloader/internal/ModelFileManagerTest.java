@@ -25,6 +25,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.FirebaseOptions.Builder;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.FirebaseMlException;
+import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -51,8 +52,8 @@ public class ModelFileManagerTest {
   public static final String MODEL_NAME_2 = "MODEL_NAME_2";
   public static final String MODEL_HASH_2 = "hash2";
 
-  final CustomModel CUSTOM_MODEL_NO_FILE = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
-  final CustomModel CUSTOM_MODEL_NO_FILE_2 = new CustomModel(MODEL_NAME_2, MODEL_HASH_2, 101, 0);
+  private CustomModel CUSTOM_MODEL_NO_FILE;
+  private CustomModel CUSTOM_MODEL_NO_FILE_2;
 
   private File testModelFile;
   private File testModelFile2;
@@ -60,7 +61,8 @@ public class ModelFileManagerTest {
   ModelFileManager fileManager;
   FirebaseApp app;
   private SharedPreferencesUtil sharedPreferencesUtil;
-  String modelDestinationFolder;
+  private String modelDestinationFolder;
+  private CustomModel.Factory modelFactory;
 
   @Before
   public void setUp() throws IOException {
@@ -68,10 +70,18 @@ public class ModelFileManagerTest {
     FirebaseApp.clearInstancesForTest();
     app = FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), FIREBASE_OPTIONS);
 
-    sharedPreferencesUtil = new SharedPreferencesUtil(app);
-    fileManager = new ModelFileManager(app);
+    modelFactory = FirebaseModelDownloader.getInstance(app).getModelFactory();
+
+    sharedPreferencesUtil = new SharedPreferencesUtil(app, modelFactory);
+    fileManager =
+        new ModelFileManager(
+            ApplicationProvider.getApplicationContext(),
+            app.getPersistenceKey(),
+            sharedPreferencesUtil);
 
     modelDestinationFolder = setUpTestingFiles(app, MODEL_NAME);
+    CUSTOM_MODEL_NO_FILE = modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0);
+    CUSTOM_MODEL_NO_FILE_2 = modelFactory.create(MODEL_NAME_2, MODEL_HASH_2, 101, 0);
   }
 
   private String setUpTestingFiles(FirebaseApp app, String modelName) throws IOException {
@@ -181,7 +191,7 @@ public class ModelFileManagerTest {
     MoveFileToDestination(modelDestinationFolder, testModelFile2, CUSTOM_MODEL_NO_FILE, 1);
 
     sharedPreferencesUtil.setLoadedCustomModelDetails(
-        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, modelDestinationFolder + "/1"));
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0, modelDestinationFolder + "/1"));
     fileManager.deleteNonLatestCustomModels();
 
     assertFalse(new File(modelDestinationFolder + "/0").exists());
@@ -199,11 +209,11 @@ public class ModelFileManagerTest {
     MoveFileToDestination(modelDestinationFolder2, testModelFile2, CUSTOM_MODEL_NO_FILE_2, 0);
 
     sharedPreferencesUtil.setLoadedCustomModelDetails(
-        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, modelDestinationFolder + "/0"));
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0, modelDestinationFolder + "/0"));
 
     // Download in progress, hence file path is not present
     sharedPreferencesUtil.setLoadedCustomModelDetails(
-        new CustomModel(MODEL_NAME_2, MODEL_HASH_2, 100, 0));
+        modelFactory.create(MODEL_NAME_2, MODEL_HASH_2, 100, 0));
 
     fileManager.deleteNonLatestCustomModels();
 
@@ -217,7 +227,7 @@ public class ModelFileManagerTest {
     MoveFileToDestination(modelDestinationFolder, testModelFile, CUSTOM_MODEL_NO_FILE, 0);
 
     sharedPreferencesUtil.setLoadedCustomModelDetails(
-        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, modelDestinationFolder + "/0"));
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0, modelDestinationFolder + "/0"));
     fileManager.deleteNonLatestCustomModels();
 
     assertTrue(new File(modelDestinationFolder + "/0").exists());
@@ -230,14 +240,14 @@ public class ModelFileManagerTest {
     MoveFileToDestination(modelDestinationFolder, testModelFile2, CUSTOM_MODEL_NO_FILE, 1);
 
     sharedPreferencesUtil.setLoadedCustomModelDetails(
-        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, modelDestinationFolder + "/1"));
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0, modelDestinationFolder + "/1"));
 
     String modelDestinationFolder2 = setUpTestingFiles(app, MODEL_NAME_2);
     MoveFileToDestination(modelDestinationFolder2, testModelFile, CUSTOM_MODEL_NO_FILE_2, 0);
     MoveFileToDestination(modelDestinationFolder2, testModelFile2, CUSTOM_MODEL_NO_FILE_2, 1);
 
     sharedPreferencesUtil.setLoadedCustomModelDetails(
-        new CustomModel(MODEL_NAME_2, MODEL_HASH_2, 101, 0, modelDestinationFolder2 + "/1"));
+        modelFactory.create(MODEL_NAME_2, MODEL_HASH_2, 101, 0, modelDestinationFolder2 + "/1"));
 
     fileManager.deleteNonLatestCustomModels();
 
@@ -297,14 +307,14 @@ public class ModelFileManagerTest {
     MoveFileToDestination(modelDestinationFolder, testModelFile2, CUSTOM_MODEL_NO_FILE, 1);
 
     sharedPreferencesUtil.setLoadedCustomModelDetails(
-        new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, modelDestinationFolder + "/1"));
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0, modelDestinationFolder + "/1"));
 
     String modelDestinationFolder2 = setUpTestingFiles(app, MODEL_NAME_2);
     MoveFileToDestination(modelDestinationFolder2, testModelFile, CUSTOM_MODEL_NO_FILE_2, 0);
     MoveFileToDestination(modelDestinationFolder2, testModelFile2, CUSTOM_MODEL_NO_FILE_2, 1);
 
     sharedPreferencesUtil.setLoadedCustomModelDetails(
-        new CustomModel(MODEL_NAME_2, MODEL_HASH_2, 101, 0, modelDestinationFolder2 + "/1"));
+        modelFactory.create(MODEL_NAME_2, MODEL_HASH_2, 101, 0, modelDestinationFolder2 + "/1"));
 
     fileManager.deleteOldModels(MODEL_NAME, modelDestinationFolder + "/1");
 

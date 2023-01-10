@@ -176,8 +176,7 @@ public class RemoteConfigComponentTest {
   private RemoteConfigComponent getNewFrcComponent() {
     return new RemoteConfigComponent(
         context,
-        directExecutor,
-scheduledExecutorService,
+        scheduledExecutorService,
         mockFirebaseApp,
         mockFirebaseInstallations,
         mockFirebaseAbt,
@@ -188,7 +187,6 @@ scheduledExecutorService,
   private RemoteConfigComponent getNewFrcComponentWithoutLoadingDefault() {
     return new RemoteConfigComponent(
         context,
-        directExecutor,
         scheduledExecutorService,
         mockFirebaseApp,
         mockFirebaseInstallations,

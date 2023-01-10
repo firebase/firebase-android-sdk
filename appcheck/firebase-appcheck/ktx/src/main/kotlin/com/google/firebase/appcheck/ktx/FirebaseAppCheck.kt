@@ -25,7 +25,7 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 
 /** Returns the [FirebaseAppCheck] instance of the default [FirebaseApp]. */
 val Firebase.appCheck: FirebaseAppCheck
-    get() = FirebaseAppCheck.getInstance()
+  get() = FirebaseAppCheck.getInstance()
 
 /** Returns the [FirebaseAppCheck] instance of a given [FirebaseApp]. */
 fun Firebase.appCheck(app: FirebaseApp) = FirebaseAppCheck.getInstance(app)
@@ -48,6 +48,6 @@ internal const val LIBRARY_NAME: String = "fire-app-check-ktx"
 
 /** @suppress */
 class FirebaseAppCheckKtxRegistrar : ComponentRegistrar {
-    override fun getComponents(): List<Component<*>> =
-            listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+  override fun getComponents(): List<Component<*>> =
+    listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 }

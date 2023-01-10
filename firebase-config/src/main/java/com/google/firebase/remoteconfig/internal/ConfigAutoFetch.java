@@ -21,6 +21,7 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.remoteconfig.ConfigUpdate;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
@@ -33,7 +34,6 @@ import java.net.HttpURLConnection;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
@@ -41,7 +41,7 @@ import org.json.JSONObject;
 
 public class ConfigAutoFetch {
 
-  private static final int FETCH_RETRY = 3;
+  private static final int MAXIMUM_FETCH_ATTEMPTS = 3;
   private static final String TEMPLATE_VERSION_KEY = "latestTemplateVersionNumber";
   private static final String REALTIME_DISABLED_KEY = "featureDisabled";
 
@@ -53,7 +53,7 @@ public class ConfigAutoFetch {
   private final ConfigFetchHandler configFetchHandler;
   private final ConfigCacheClient activatedCache;
   private final ConfigUpdateListener retryCallback;
-  private final ScheduledExecutorService executorService;
+  private final ScheduledExecutorService scheduledExecutorService;
   private final Random random;
 
   public ConfigAutoFetch(
@@ -62,13 +62,13 @@ public class ConfigAutoFetch {
       ConfigCacheClient activatedCache,
       Set<ConfigUpdateListener> eventListeners,
       ConfigUpdateListener retryCallback,
-      ScheduledExecutorService executorService) {
+      ScheduledExecutorService scheduledExecutorService) {
     this.httpURLConnection = httpURLConnection;
     this.configFetchHandler = configFetchHandler;
     this.activatedCache = activatedCache;
     this.eventListeners = eventListeners;
     this.retryCallback = retryCallback;
-    this.executorService = executorService;
+    this.scheduledExecutorService = scheduledExecutorService;
     this.random = new Random();
   }
 
@@ -78,9 +78,9 @@ public class ConfigAutoFetch {
     }
   }
 
-  private synchronized void executeAllListenerCallbacks(Set<String> updatedParams) {
+  private synchronized void executeAllListenerCallbacks(ConfigUpdate configUpdate) {
     for (ConfigUpdateListener listener : eventListeners) {
-      listener.onUpdate(updatedParams);
+      listener.onUpdate(configUpdate);
     }
   }
 
@@ -117,10 +117,10 @@ public class ConfigAutoFetch {
     }
 
     // TODO: Factor ConfigUpdateListener out of internal retry logic.
-    retryCallback.onUpdate(new HashSet<>());
-    executorService.shutdownNow();
+    retryCallback.onUpdate(ConfigUpdate.create(new HashSet<>()));
+    scheduledExecutorService.shutdownNow();
     try {
-      executorService.awaitTermination(3L, TimeUnit.SECONDS);
+      scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
     } catch (InterruptedException ex) {
       Log.d(TAG, "Thread Interrupted.");
     }
@@ -162,7 +162,7 @@ public class ConfigAutoFetch {
               long oldTemplateVersion = configFetchHandler.getTemplateVersionNumber();
               long targetTemplateVersion = jsonObject.getLong(TEMPLATE_VERSION_KEY);
               if (targetTemplateVersion > oldTemplateVersion) {
-                autoFetch(FETCH_RETRY, targetTemplateVersion);
+                autoFetch(MAXIMUM_FETCH_ATTEMPTS, targetTemplateVersion);
               }
             }
           } catch (JSONException ex) {
@@ -189,7 +189,7 @@ public class ConfigAutoFetch {
 
     // Needs fetch to occur between 0 - 4 seconds. Randomize to not cause ddos alerts in backend
     int timeTillFetch = random.nextInt(4);
-    executorService.schedule(
+    scheduledExecutorService.schedule(
         new Runnable() {
           @Override
           public void run() {
@@ -202,12 +202,17 @@ public class ConfigAutoFetch {
 
   @VisibleForTesting
   public synchronized Task<Void> fetchLatestConfig(int remainingAttempts, long targetVersion) {
-    Task<ConfigFetchHandler.FetchResponse> fetchTask = configFetchHandler.fetch(0L);
+    int remainingAttemptsAfterFetch = remainingAttempts - 1;
+    int currentAttemptNumber = MAXIMUM_FETCH_ATTEMPTS - remainingAttemptsAfterFetch;
+
+    Task<ConfigFetchHandler.FetchResponse> fetchTask =
+        configFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, currentAttemptNumber);
     Task<ConfigContainer> activatedConfigsTask = activatedCache.get();
 
     return Tasks.whenAllComplete(fetchTask, activatedConfigsTask)
         .continueWithTask(
-                executorService,
+            scheduledExecutorService,
             (listOfUnusedCompletedTasks) -> {
               if (!fetchTask.isSuccessful()) {
                 return Tasks.forException(
@@ -231,7 +236,7 @@ public class ConfigAutoFetch {
                     "Fetched template version is the same as SDK's current version."
                         + " Retrying fetch.");
                 // Continue fetching until template version number is greater then current.
-                autoFetch(remainingAttempts - 1, targetVersion);
+                autoFetch(remainingAttemptsAfterFetch, targetVersion);
                 return Tasks.forResult(null);
               }
 
@@ -253,7 +258,8 @@ public class ConfigAutoFetch {
                 return Tasks.forResult(null);
               }
 
-              executeAllListenerCallbacks(updatedParams);
+              ConfigUpdate configUpdate = ConfigUpdate.create(updatedParams);
+              executeAllListenerCallbacks(configUpdate);
               return Tasks.forResult(null);
             });
   }

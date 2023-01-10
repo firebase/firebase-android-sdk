@@ -17,6 +17,7 @@ package com.google.firebase.inappmessaging.internal;
 import android.text.TextUtils;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.AppForeground;
 import com.google.firebase.inappmessaging.internal.injection.qualifiers.ProgrammaticTrigger;
@@ -39,6 +40,7 @@ import io.reactivex.flowables.ConnectableFlowable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import java.util.Locale;
+import java.util.concurrent.Executor;
 import javax.inject.Inject;
 
 /**
@@ -64,6 +66,7 @@ public class InAppMessageStreamManager {
   private final AbtIntegrationHelper abtIntegrationHelper;
   private final FirebaseInstallationsApi firebaseInstallations;
   private final DataCollectionHelper dataCollectionHelper;
+  @Blocking private final Executor blockingExecutor;
 
   @Inject
   public InAppMessageStreamManager(
@@ -80,7 +83,8 @@ public class InAppMessageStreamManager {
       TestDeviceHelper testDeviceHelper,
       FirebaseInstallationsApi firebaseInstallations,
       DataCollectionHelper dataCollectionHelper,
-      AbtIntegrationHelper abtIntegrationHelper) {
+      AbtIntegrationHelper abtIntegrationHelper,
+      @Blocking Executor blockingExecutor) {
     this.appForegroundEventFlowable = appForegroundEventFlowable;
     this.programmaticTriggerEventFlowable = programmaticTriggerEventFlowable;
     this.campaignCacheClient = campaignCacheClient;
@@ -95,6 +99,7 @@ public class InAppMessageStreamManager {
     this.dataCollectionHelper = dataCollectionHelper;
     this.firebaseInstallations = firebaseInstallations;
     this.abtIntegrationHelper = abtIntegrationHelper;
+    this.blockingExecutor = blockingExecutor;
   }
 
   private static boolean containsTriggeringCondition(String event, ThickContent content) {
@@ -243,8 +248,8 @@ public class InAppMessageStreamManager {
 
               Maybe<InstallationIdResult> getIID =
                   Maybe.zip(
-                          taskToMaybe(firebaseInstallations.getId()),
-                          taskToMaybe(firebaseInstallations.getToken(false)),
+                          taskToMaybe(firebaseInstallations.getId(), blockingExecutor),
+                          taskToMaybe(firebaseInstallations.getToken(false), blockingExecutor),
                           InstallationIdResult::create)
                       .observeOn(schedulers.io());
 
@@ -387,15 +392,17 @@ public class InAppMessageStreamManager {
     return FetchEligibleCampaignsResponse.newBuilder().setExpirationEpochTimestampMillis(1).build();
   }
 
-  private static <T> Maybe<T> taskToMaybe(Task<T> task) {
+  private static <T> Maybe<T> taskToMaybe(Task<T> task, @Blocking Executor blockingExecutor) {
     return Maybe.create(
         emitter -> {
           task.addOnSuccessListener(
+              blockingExecutor,
               result -> {
                 emitter.onSuccess(result);
                 emitter.onComplete();
               });
           task.addOnFailureListener(
+              blockingExecutor,
               e -> {
                 emitter.onError(e);
                 emitter.onComplete();

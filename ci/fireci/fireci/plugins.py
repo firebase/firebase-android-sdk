@@ -27,7 +27,7 @@ def discover():
      Note: plugins *must* define the `firebaseplugins` package as a namespace package.
            See: https://packaging.python.org/guides/packaging-namespace-packages/
   """
-  modules = pkgutil.iter_modules(fireciplugins.__path__,
-                                 fireciplugins.__name__ + ".")
+  modules = pkgutil.walk_packages(fireciplugins.__path__,
+                                  fireciplugins.__name__ + ".")
   for _, name, _ in modules:
     importlib.import_module(name)

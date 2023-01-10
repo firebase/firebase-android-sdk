@@ -25,7 +25,7 @@ package com.google.firebase.database;
  * {@link DataSnapshot}: <br>
  * <br>
  *
- * <pre><code>
+ * <pre>
  *     class Message {
  *         private String author;
  *         private String text;
@@ -51,7 +51,7 @@ package com.google.firebase.database;
  *     GenericTypeIndicator&lt;List&lt;Message&gt;&gt; t = new GenericTypeIndicator&lt;List&lt;Message&gt;&gt;() {};
  *     List&lt;Message&gt; messages = snapshot.getValue(t);
  *
- * </code></pre>
+ * </pre>
  *
  * @param <T> The type of generic collection that this instance servers as an indicator for
  */

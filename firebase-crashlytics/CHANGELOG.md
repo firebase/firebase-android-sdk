@@ -1,6 +1,31 @@
 # Unreleased
 
+# 18.3.2
+* [unchanged] Updated to accommodate the release of the updated
+  `firebase-crashlytics-ndk` v18.3.2.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 18.3.1
+* [fixed] Fixed an [issue](https://github.com/firebase/firebase-android-sdk/issues/4223){: .external}
+  in v18.3.0 that caused a `NoClassDefFoundError` in specific cases.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
 # 18.3.0
+Warning: We're aware of an
+[issue](https://github.com/firebase/firebase-android-sdk/issues/4223){: .external}
+in this version of the [crashlytics] Android SDK.<br>**We strongly recommend
+using the latest version of the SDK (v18.3.1+ or [bom] v31.0.1+).**
+
 * [changed] Improved crash reporting reliability for crashes that occur early
   in the app's lifecycle.
 

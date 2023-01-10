@@ -32,6 +32,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import com.google.firebase.remoteconfig.ConfigUpdate;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
@@ -292,7 +293,7 @@ public class ConfigRealtimeHttpClient {
     ConfigUpdateListener retryCallback =
         new ConfigUpdateListener() {
           @Override
-          public void onUpdate(Set<String> updatedParams) {
+          public void onUpdate(ConfigUpdate configUpdate) {
             closeRealtimeHttpStream();
             retryHTTPConnection();
           }
@@ -307,7 +308,12 @@ public class ConfigRealtimeHttpClient {
         };
 
     return new ConfigAutoFetch(
-        httpURLConnection, configFetchHandler, activatedCache, listeners, retryCallback, scheduledExecutorService);
+        httpURLConnection,
+        configFetchHandler,
+        activatedCache,
+        listeners,
+        retryCallback,
+        scheduledExecutorService);
   }
 
   // HTTP status code that the Realtime client should retry on.

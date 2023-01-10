@@ -92,6 +92,7 @@ android {
 
 dependencies {
     // Firebase Deps
+    implementation project(':firebase-annotations')
     implementation project(':firebase-common')
     implementation project(':firebase-components')
     implementation project(':firebase-config')

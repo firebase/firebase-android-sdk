@@ -126,12 +126,12 @@ public class DatabaseReference extends Query {
    * correspond to the JSON types:
    *
    * <ul>
-   *   <li>Boolean
-   *   <li>Long
-   *   <li>Double
-   *   <li>String
-   *   <li>Map&lt;String, Object&gt;
-   *   <li>List&lt;Object&gt;
+   *   <li><code>Boolean</code>
+   *   <li><code>Long</code>
+   *   <li><code>Double</code>
+   *   <li><code>String</code>
+   *   <li><code>Map&lt;String, Object&gt;</code>
+   *   <li><code>List&lt;Object&gt;</code>
    * </ul>
    *
    * <br>
@@ -165,12 +165,12 @@ public class DatabaseReference extends Query {
    * the JSON types:
    *
    * <ul>
-   *   <li>Boolean
-   *   <li>Long
-   *   <li>Double
-   *   <li>String
-   *   <li>Map&lt;String, Object&gt;
-   *   <li>List&lt;Object&gt;
+   *   <li><code>Boolean</code>
+   *   <li><code>Long</code>
+   *   <li><code>Double</code>
+   *   <li><code>String</code>
+   *   <li><code>Map&lt;String, Object&gt;</code>
+   *   <li><code>List&lt;Object&gt;</code>
    * </ul>
    *
    * <br>
@@ -205,12 +205,12 @@ public class DatabaseReference extends Query {
    * correspond to the JSON types:
    *
    * <ul>
-   *   <li>Boolean
-   *   <li>Long
-   *   <li>Double
-   *   <li>String
-   *   <li>Map&lt;String, Object&gt;
-   *   <li>List&lt;Object&gt;
+   *   <li><code>Boolean</code>
+   *   <li><code>Long</code>
+   *   <li><code>Double</code>
+   *   <li><code>String</code>
+   *   <li><code>Map&lt;String, Object&gt;</code>
+   *   <li><code>List&lt;Object&gt;</code>
    * </ul>
    *
    * <br>
@@ -242,12 +242,12 @@ public class DatabaseReference extends Query {
    * value correspond to the JSON types:
    *
    * <ul>
-   *   <li>Boolean
-   *   <li>Long
-   *   <li>Double
-   *   <li>String
-   *   <li>Map&lt;String, Object&gt;
-   *   <li>List&lt;Object&gt;
+   *   <li><code>Boolean</code>
+   *   <li><code>Long</code>
+   *   <li><code>Double</code>
+   *   <li><code>String</code>
+   *   <li><code>Map&lt;String, Object&gt;</code>
+   *   <li><code>List&lt;Object&gt;</code>
    * </ul>
    *
    * <br>

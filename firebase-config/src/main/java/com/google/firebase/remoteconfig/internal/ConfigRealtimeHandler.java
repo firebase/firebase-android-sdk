@@ -19,6 +19,7 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.remoteconfig.ConfigUpdate;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
@@ -97,7 +98,7 @@ public class ConfigRealtimeHandler {
               context,
               namespace,
               listeners,
-                  scheduledExecutorService);
+              scheduledExecutorService);
       this.realtimeHttpClientTask =
           this.scheduledExecutorService.submit(
               new RealtimeHttpClientFutureTask(
@@ -162,7 +163,7 @@ public class ConfigRealtimeHandler {
   public static class EmptyConfigUpdateListener implements ConfigUpdateListener {
 
     @Override
-    public void onUpdate(Set<String> updatedParams) {}
+    public void onUpdate(ConfigUpdate configUpdate) {}
 
     @Override
     public void onError(@NonNull FirebaseRemoteConfigException error) {}

@@ -28,31 +28,31 @@ import java.util.concurrent.Executor
 // This method is a workaround for testing. It enable us to create a FirebaseRemoteConfig object
 // with mocks using the package-private constructor.
 fun createRemoteConfig(
-    context: Context?,
-    firebaseApp: FirebaseApp,
-    firebaseInstallations: FirebaseInstallationsApi,
-    firebaseAbt: FirebaseABTesting?,
-    executor: Executor,
-    fetchedConfigsCache: ConfigCacheClient,
-    activatedConfigsCache: ConfigCacheClient,
-    defaultConfigsCache: ConfigCacheClient,
-    fetchHandler: ConfigFetchHandler,
-    getHandler: ConfigGetParameterHandler,
-    frcMetadata: ConfigMetadataClient,
-    realtimeClient: ConfigRealtimeHandler
+  context: Context?,
+  firebaseApp: FirebaseApp,
+  firebaseInstallations: FirebaseInstallationsApi,
+  firebaseAbt: FirebaseABTesting?,
+  executor: Executor,
+  fetchedConfigsCache: ConfigCacheClient,
+  activatedConfigsCache: ConfigCacheClient,
+  defaultConfigsCache: ConfigCacheClient,
+  fetchHandler: ConfigFetchHandler,
+  getHandler: ConfigGetParameterHandler,
+  frcMetadata: ConfigMetadataClient,
+  realtimeHandler: ConfigRealtimeHandler
 ): FirebaseRemoteConfig {
-        return FirebaseRemoteConfig(
-            context,
-            firebaseApp,
-            firebaseInstallations,
-            firebaseAbt,
-            executor,
-            fetchedConfigsCache,
-            activatedConfigsCache,
-            defaultConfigsCache,
-            fetchHandler,
-            getHandler,
-            frcMetadata,
-            realtimeClient
-    )
+  return FirebaseRemoteConfig(
+    context,
+    firebaseApp,
+    firebaseInstallations,
+    firebaseAbt,
+    executor,
+    fetchedConfigsCache,
+    activatedConfigsCache,
+    defaultConfigsCache,
+    fetchHandler,
+    getHandler,
+    frcMetadata,
+    realtimeHandler
+  )
 }

@@ -69,12 +69,21 @@ public class TransactionTest {
 
   private static TransactionStage get = Transaction::get;
 
+  private enum FromDocumentType {
+    // The operation will be performed on a document that exists.
+    EXISTING,
+    // The operation will be performed on a document that has never existed.
+    NON_EXISTENT,
+    // The operation will be performed on a document that existed, but was deleted.
+    DELETED,
+  }
+
   /**
    * Used for testing that all possible combinations of executing transactions result in the desired
    * document value or error.
    *
-   * <p>`run()`, `withExistingDoc()`, and `withNonexistentDoc()` don't actually do anything except
-   * assign variables into the TransactionTester.
+   * <p>`run()`, `withExistingDoc()`, `withNonexistentDoc()` and `withDeletedDoc()` don't actually
+   * do anything except assign variables into the TransactionTester.
    *
    * <p>`expectDoc()`, `expectNoDoc()`, and `expectError()` will trigger the transaction to run and
    * assert that the end result matches the input.
@@ -82,7 +91,7 @@ public class TransactionTest {
   private static class TransactionTester {
     private FirebaseFirestore db;
     private DocumentReference docRef;
-    private boolean fromExistingDoc = false;
+    private FromDocumentType fromDocumentType = FromDocumentType.NON_EXISTENT;
     private List<TransactionStage> stages = new ArrayList<>();
 
     TransactionTester(FirebaseFirestore inputDb) {
@@ -91,13 +100,19 @@ public class TransactionTest {
 
     @CanIgnoreReturnValue
     public TransactionTester withExistingDoc() {
-      fromExistingDoc = true;
+      fromDocumentType = FromDocumentType.EXISTING;
       return this;
     }
 
     @CanIgnoreReturnValue
     public TransactionTester withNonexistentDoc() {
-      fromExistingDoc = false;
+      fromDocumentType = FromDocumentType.NON_EXISTENT;
+      return this;
+    }
+
+    @CanIgnoreReturnValue
+    public TransactionTester withDeletedDoc() {
+      fromDocumentType = FromDocumentType.DELETED;
       return this;
     }
 
@@ -160,8 +175,20 @@ public class TransactionTest {
 
     private void prepareDoc() {
       docRef = db.collection("tester-docref").document();
-      if (fromExistingDoc) {
-        waitFor(docRef.set(map("foo", "bar0")));
+
+      switch (fromDocumentType) {
+        case EXISTING:
+          waitFor(docRef.set(map("foo", "bar0")));
+          break;
+        case NON_EXISTENT:
+          // Nothing to do; document does not exist.
+          break;
+        case DELETED:
+          waitFor(docRef.set(map("foo", "bar0")));
+          waitFor(docRef.delete());
+          break;
+        default:
+          throw new RuntimeException("invalid fromDocumentType: " + fromDocumentType);
       }
     }
 
@@ -241,6 +268,29 @@ public class TransactionTest {
     tt.withNonexistentDoc().run(get, set1, set2).expectDoc(map("foo", "bar2"));
   }
 
+  // This test is identical to the test above, except that withNonexistentDoc()
+  // is replaced by withDeletedDoc(), to guard against regression of
+  // https://github.com/firebase/firebase-js-sdk/issues/5871, where transactions
+  // would incorrectly fail with FAILED_PRECONDITION when operations were
+  // performed on a deleted document (rather than a non-existent document).
+  @Test
+  public void testRunsTransactionsAfterGettingDeletedDoc() {
+    FirebaseFirestore firestore = testFirestore();
+    TransactionTester tt = new TransactionTester(firestore);
+
+    tt.withDeletedDoc().run(get, delete1, delete1).expectNoDoc();
+    tt.withDeletedDoc().run(get, delete1, update2).expectError(Code.INVALID_ARGUMENT);
+    tt.withDeletedDoc().run(get, delete1, set2).expectDoc(map("foo", "bar2"));
+
+    tt.withDeletedDoc().run(get, update1, delete1).expectError(Code.INVALID_ARGUMENT);
+    tt.withDeletedDoc().run(get, update1, update2).expectError(Code.INVALID_ARGUMENT);
+    tt.withDeletedDoc().run(get, update1, set2).expectError(Code.INVALID_ARGUMENT);
+
+    tt.withDeletedDoc().run(get, set1, delete1).expectNoDoc();
+    tt.withDeletedDoc().run(get, set1, update2).expectDoc(map("foo", "bar2"));
+    tt.withDeletedDoc().run(get, set1, set2).expectDoc(map("foo", "bar2"));
+  }
+
   @Test
   public void testRunsTransactionsOnExistingDoc() {
     FirebaseFirestore firestore = testFirestore();
@@ -275,6 +325,24 @@ public class TransactionTest {
     tt.withNonexistentDoc().run(set1, delete1).expectNoDoc();
     tt.withNonexistentDoc().run(set1, update2).expectDoc(map("foo", "bar2"));
     tt.withNonexistentDoc().run(set1, set2).expectDoc(map("foo", "bar2"));
+  }
+
+  @Test
+  public void testRunsTransactionsOnDeletedDoc() {
+    FirebaseFirestore firestore = testFirestore();
+    TransactionTester tt = new TransactionTester(firestore);
+
+    tt.withDeletedDoc().run(delete1, delete1).expectNoDoc();
+    tt.withDeletedDoc().run(delete1, update2).expectError(Code.INVALID_ARGUMENT);
+    tt.withDeletedDoc().run(delete1, set2).expectDoc(map("foo", "bar2"));
+
+    tt.withDeletedDoc().run(update1, delete1).expectError(Code.NOT_FOUND);
+    tt.withDeletedDoc().run(update1, update2).expectError(Code.NOT_FOUND);
+    tt.withDeletedDoc().run(update1, set2).expectError(Code.NOT_FOUND);
+
+    tt.withDeletedDoc().run(set1, delete1).expectNoDoc();
+    tt.withDeletedDoc().run(set1, update2).expectDoc(map("foo", "bar2"));
+    tt.withDeletedDoc().run(set1, set2).expectDoc(map("foo", "bar2"));
   }
 
   @Test
@@ -635,6 +703,29 @@ public class TransactionTest {
     Exception e = waitForException(transactionTask);
     assertEquals(Code.INVALID_ARGUMENT, ((FirebaseFirestoreException) e).getCode());
     assertEquals(1, count.get());
+  }
+
+  @Test
+  public void testRetryOnAlreadyExistsError() {
+    final FirebaseFirestore firestore = testFirestore();
+    DocumentReference doc = firestore.collection("foo").document();
+    AtomicInteger transactionCallbackCount = new AtomicInteger(0);
+    waitFor(
+        firestore.runTransaction(
+            transaction -> {
+              int currentCount = transactionCallbackCount.incrementAndGet();
+              transaction.get(doc);
+              // Do a write outside of the transaction.
+              if (currentCount == 1) waitFor(doc.set(map("foo1", "bar1")));
+              // Now try to set the doc within the transaction. This should fail once
+              // with ALREADY_EXISTS error.
+              transaction.set(doc, map("foo2", "bar2"));
+              return null;
+            }));
+    DocumentSnapshot snapshot = waitFor(doc.get());
+    assertEquals(2, transactionCallbackCount.get());
+    assertTrue(snapshot.exists());
+    assertEquals(map("foo2", "bar2"), snapshot.getData());
   }
 
   @Test

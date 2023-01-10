@@ -168,7 +168,7 @@ public class ConfigContainer {
    */
   public Set<String> getChangedParams(ConfigContainer other) throws JSONException {
     // Make a copy of the other config before modifying it
-    JSONObject otherConfig = other.getCopy().getConfigs();
+    JSONObject otherConfig = ConfigContainer.copyOf(other.containerJson).getConfigs();
 
     // Experiments aren't associated with params, so we can just compare arrays once
     Boolean experimentsChanged = !this.getAbtExperiments().equals(other.getAbtExperiments());

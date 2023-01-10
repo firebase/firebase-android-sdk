@@ -21,74 +21,59 @@ import org.junit.runners.JUnit4
 
 @RunWith(JUnit4::class)
 class TypeTests {
-    @Test
-    fun `proto and java qualified names work as expected`() {
-        val package1 = Owner.Package("com.example", "com.example.proto", "my_proto.proto")
-        val helloMsg = UserDefined.Message(owner = package1, name = "Hello", fields = listOf())
-        val worldMsg = UserDefined.Message(Owner.MsgRef(helloMsg), "World", fields = listOf())
+  @Test
+  fun `proto and java qualified names work as expected`() {
+    val package1 = Owner.Package("com.example", "com.example.proto", "my_proto.proto")
+    val helloMsg = UserDefined.Message(owner = package1, name = "Hello", fields = listOf())
+    val worldMsg = UserDefined.Message(Owner.MsgRef(helloMsg), "World", fields = listOf())
 
-        assertThat(helloMsg.protobufFullName).isEqualTo("com.example.Hello")
-        assertThat(helloMsg.javaName).isEqualTo("com.example.proto.Hello")
+    assertThat(helloMsg.protobufFullName).isEqualTo("com.example.Hello")
+    assertThat(helloMsg.javaName).isEqualTo("com.example.proto.Hello")
 
-        assertThat(worldMsg.protobufFullName).isEqualTo("com.example.Hello.World")
-        assertThat(worldMsg.javaName).isEqualTo("com.example.proto.Hello\$World")
-    }
+    assertThat(worldMsg.protobufFullName).isEqualTo("com.example.Hello.World")
+    assertThat(worldMsg.javaName).isEqualTo("com.example.proto.Hello\$World")
+  }
 
-    @Test
-    fun `ProtoField#toString() method should not cause stack overflow`() {
-        /*
-        syntax = "proto3";
-        package com.example;
-        option java_package = "com.example.proto";
+  @Test
+  fun `ProtoField#toString() method should not cause stack overflow`() {
+    /*
+    syntax = "proto3";
+    package com.example;
+    option java_package = "com.example.proto";
 
-        message Hello {
-            message World {
-              Hello hello = 1;
-              int64 my_long = 2;
-            }
-            World world = 1;
-            repeated int32 my_int = 2;
+    message Hello {
+        message World {
+          Hello hello = 1;
+          int64 my_long = 2;
         }
-         */
-        val package1 = Owner.Package("com.example", "com.example.proto", "my_proto.proto")
-        val worldField = ProtoField(
-            name = "world",
-            type = Unresolved("com.example.Hello.World"),
-            number = 1
-        )
-        val helloField = ProtoField(
-            name = "hello",
-            type = Unresolved("com.example.Hello"),
-            number = 1
-        )
-        val helloMsg = UserDefined.Message(
-            owner = package1,
-            name = "Hello",
-            fields = listOf(
-                worldField,
-                ProtoField(
-                    name = "my_int",
-                    type = Primitive.INT32,
-                    number = 2,
-                    repeated = true
-                )
-            )
-        )
-        val worldMsg = UserDefined.Message(
-            owner = Owner.MsgRef(helloMsg),
-            name = "World",
-            fields = listOf(
-                helloField,
-                ProtoField(
-                    name = "my_long",
-                    type = Primitive.INT64,
-                    number = 2
-                )
-            )
-        )
-        worldField.type = worldMsg
-        helloField.type = helloMsg
-
-        assertThat(helloMsg.fields[0].toString()).contains("com.example.Hello.World")
+        World world = 1;
+        repeated int32 my_int = 2;
     }
+     */
+    val package1 = Owner.Package("com.example", "com.example.proto", "my_proto.proto")
+    val worldField =
+      ProtoField(name = "world", type = Unresolved("com.example.Hello.World"), number = 1)
+    val helloField = ProtoField(name = "hello", type = Unresolved("com.example.Hello"), number = 1)
+    val helloMsg =
+      UserDefined.Message(
+        owner = package1,
+        name = "Hello",
+        fields =
+          listOf(
+            worldField,
+            ProtoField(name = "my_int", type = Primitive.INT32, number = 2, repeated = true)
+          )
+      )
+    val worldMsg =
+      UserDefined.Message(
+        owner = Owner.MsgRef(helloMsg),
+        name = "World",
+        fields =
+          listOf(helloField, ProtoField(name = "my_long", type = Primitive.INT64, number = 2))
+      )
+    worldField.type = worldMsg
+    helloField.type = helloMsg
+
+    assertThat(helloMsg.fields[0].toString()).contains("com.example.Hello.World")
+  }
 }

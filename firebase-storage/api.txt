@@ -34,12 +34,14 @@ package com.google.firebase.storage {
     method @NonNull public static com.google.firebase.storage.FirebaseStorage getInstance(@NonNull String);
     method @NonNull public static com.google.firebase.storage.FirebaseStorage getInstance(@NonNull com.google.firebase.FirebaseApp);
     method @NonNull public static com.google.firebase.storage.FirebaseStorage getInstance(@NonNull com.google.firebase.FirebaseApp, @NonNull String);
+    method public long getMaxChunkUploadRetry();
     method public long getMaxDownloadRetryTimeMillis();
     method public long getMaxOperationRetryTimeMillis();
     method public long getMaxUploadRetryTimeMillis();
     method @NonNull public com.google.firebase.storage.StorageReference getReference();
     method @NonNull public com.google.firebase.storage.StorageReference getReference(@NonNull String);
     method @NonNull public com.google.firebase.storage.StorageReference getReferenceFromUrl(@NonNull String);
+    method public void setMaxChunkUploadRetry(long);
     method public void setMaxDownloadRetryTimeMillis(long);
     method public void setMaxOperationRetryTimeMillis(long);
     method public void setMaxUploadRetryTimeMillis(long);

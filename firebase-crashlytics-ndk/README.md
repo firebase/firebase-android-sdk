@@ -11,11 +11,6 @@ Initialize them by running the following commands:
 
 ## Building
 
-* `firebase-crashlytics-ndk` must be built with NDK 21. Use Android Studio's
-  SDK Manager to ensure you have the appropriate NDK version installed, and
-  edit `../local.properties` to specify which NDK version to use when building
-  this project. For example:
-  `ndk.dir=$USER_HOME/Library/Android/sdk/ndk/21.4.7075529`
 * All Gradle commands should be run from the root of this repository:
   `./gradlew :firebase-crashlytics-ndk:assemble`
 

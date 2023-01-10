@@ -35,67 +35,68 @@ const val API_KEY = "API_KEY"
 const val EXISTING_APP = "existing"
 
 abstract class BaseTestCase {
-    @Before
-    fun setUp() {
-        Firebase.initialize(
-                ApplicationProvider.getApplicationContext(),
-                FirebaseOptions.Builder()
-                        .setApplicationId(APP_ID)
-                        .setApiKey(API_KEY)
-                        .setProjectId("123")
-                        .build()
-        )
+  @Before
+  fun setUp() {
+    Firebase.initialize(
+      ApplicationProvider.getApplicationContext(),
+      FirebaseOptions.Builder()
+        .setApplicationId(APP_ID)
+        .setApiKey(API_KEY)
+        .setProjectId("123")
+        .build()
+    )
 
-        Firebase.initialize(
-                ApplicationProvider.getApplicationContext(),
-                FirebaseOptions.Builder()
-                        .setApplicationId(APP_ID)
-                        .setApiKey(API_KEY)
-                        .setProjectId("123")
-                        .build(),
-                EXISTING_APP
-        )
-    }
+    Firebase.initialize(
+      ApplicationProvider.getApplicationContext(),
+      FirebaseOptions.Builder()
+        .setApplicationId(APP_ID)
+        .setApiKey(API_KEY)
+        .setProjectId("123")
+        .build(),
+      EXISTING_APP
+    )
+  }
 
-    @After
-    fun cleanUp() {
-        FirebaseApp.clearInstancesForTest()
-    }
+  @After
+  fun cleanUp() {
+    FirebaseApp.clearInstancesForTest()
+  }
 }
 
 @RunWith(RobolectricTestRunner::class)
 class FunctionsTests : BaseTestCase() {
 
-    @Test
-    fun `functions should delegate to FirebaseFunctions#getInstance()`() {
-        assertThat(Firebase.functions).isSameInstanceAs(FirebaseFunctions.getInstance())
-    }
+  @Test
+  fun `functions should delegate to FirebaseFunctions#getInstance()`() {
+    assertThat(Firebase.functions).isSameInstanceAs(FirebaseFunctions.getInstance())
+  }
 
-    @Test
-    fun `FirebaseApp#functions should delegate to FirebaseFunctions#getInstance(FirebaseApp)`() {
-        val app = Firebase.app(EXISTING_APP)
-        assertThat(Firebase.functions(app)).isSameInstanceAs(FirebaseFunctions.getInstance(app))
-    }
+  @Test
+  fun `FirebaseApp#functions should delegate to FirebaseFunctions#getInstance(FirebaseApp)`() {
+    val app = Firebase.app(EXISTING_APP)
+    assertThat(Firebase.functions(app)).isSameInstanceAs(FirebaseFunctions.getInstance(app))
+  }
 
-    @Test
-    fun `Firebase#functions should delegate to FirebaseFunctions#getInstance(region)`() {
-        val region = "valid_region"
-        assertThat(Firebase.functions(region)).isSameInstanceAs(FirebaseFunctions.getInstance(region))
-    }
+  @Test
+  fun `Firebase#functions should delegate to FirebaseFunctions#getInstance(region)`() {
+    val region = "valid_region"
+    assertThat(Firebase.functions(region)).isSameInstanceAs(FirebaseFunctions.getInstance(region))
+  }
 
-    @Test
-    fun `Firebase#functions should delegate to FirebaseFunctions#getInstance(FirebaseApp, region)`() {
-        val app = Firebase.app(EXISTING_APP)
-        val region = "valid_region"
-        assertThat(Firebase.functions(app, region)).isSameInstanceAs(FirebaseFunctions.getInstance(app, region))
-    }
+  @Test
+  fun `Firebase#functions should delegate to FirebaseFunctions#getInstance(FirebaseApp, region)`() {
+    val app = Firebase.app(EXISTING_APP)
+    val region = "valid_region"
+    assertThat(Firebase.functions(app, region))
+      .isSameInstanceAs(FirebaseFunctions.getInstance(app, region))
+  }
 }
 
 @RunWith(RobolectricTestRunner::class)
 class LibraryVersionTest : BaseTestCase() {
-    @Test
-    fun `library version should be registered with runtime`() {
-        val publisher = Firebase.app.get(UserAgentPublisher::class.java)
-        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
-    }
+  @Test
+  fun `library version should be registered with runtime`() {
+    val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+    assertThat(publisher.userAgent).contains(LIBRARY_NAME)
+  }
 }

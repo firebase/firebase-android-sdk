@@ -29,6 +29,7 @@ import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL
 import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_PERSONALIZATION_ID_PARAM;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -86,14 +87,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -193,7 +191,8 @@ public final class FirebaseRemoteConfigTest {
   private ConfigRealtimeHttpClient configRealtimeHttpClient;
   private FetchResponse firstFetchedContainerResponse;
 
-  private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+  private final ScheduledExecutorService scheduledExecutorService =
+      Executors.newSingleThreadScheduledExecutor();
 
   @Before
   public void setUp() throws Exception {
@@ -310,8 +309,8 @@ public final class FirebaseRemoteConfigTest {
     ConfigUpdateListener listener =
         new ConfigUpdateListener() {
           @Override
-          public void onUpdate(Set<String> changedParams) {
-            mockOnUpdateListener.onUpdate(changedParams);
+          public void onUpdate(ConfigUpdate configUpdate) {
+            mockOnUpdateListener.onUpdate(configUpdate);
           }
 
           @Override
@@ -338,7 +337,7 @@ public final class FirebaseRemoteConfigTest {
             mockActivatedCache,
             listeners,
             mockRetryListener,
-                executorService);
+            scheduledExecutorService);
     configRealtimeHttpClient =
         new ConfigRealtimeHttpClient(
             firebaseApp,
@@ -348,7 +347,7 @@ public final class FirebaseRemoteConfigTest {
             context,
             "firebase",
             listeners,
-                executorService);
+            scheduledExecutorService);
   }
 
   @Test
@@ -1192,10 +1191,12 @@ public final class FirebaseRemoteConfigTest {
             new ByteArrayInputStream(
                 "{ \"latestTemplateVersionNumber\": 1 }".getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, 1))
+        .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(mockRetryListener).onUpdate(new HashSet<>());
+    verify(mockRetryListener).onUpdate(any());
   }
 
   @Test
@@ -1294,7 +1295,9 @@ public final class FirebaseRemoteConfigTest {
                 "{ \"featureDisabled\": false,  \"latestTemplateVersionNumber\": 2 }"
                     .getBytes(StandardCharsets.UTF_8)));
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, 1))
+        .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
     verify(mockUnavailableEventListener, never())
@@ -1307,7 +1310,9 @@ public final class FirebaseRemoteConfigTest {
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, 1))
+        .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
     verify(mockInvalidMessageEventListener).onError(any(FirebaseRemoteConfigClientException.class));
@@ -1318,37 +1323,46 @@ public final class FirebaseRemoteConfigTest {
     // Setup activated configs with keys "string_param", "long_param"
     loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.fetch(0L)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, 1))
+        .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+    configAutoFetch.fetchLatestConfig(3, 1);
 
-    configAutoFetch.fetchLatestConfig(1, 1);
-    flushTasks();
+    flushScheduledTasks();
 
     Set<String> updatedParams = Sets.newHashSet("realtime_param");
-    verify(mockOnUpdateListener).onUpdate(updatedParams);
+    verify(mockOnUpdateListener)
+        .onUpdate(argThat(configUpdate -> configUpdate.getUpdatedParams().equals(updatedParams)));
   }
 
   @Test
-  public void realtime_autofetchBeforeActivate_callsOnUpdateWithAllFetchedParams() throws Exception {
+  public void realtime_autofetchBeforeActivate_callsOnUpdateWithAllFetchedParams()
+      throws Exception {
     // The first call to get() returns null while the cache is loading.
     loadCacheWithConfig(mockActivatedCache, null);
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, 3))
+        .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
 
     configAutoFetch.fetchLatestConfig(1, 1);
-    flushTasks();
+    flushScheduledTasks();
 
     Set<String> updatedParams = Sets.newHashSet("string_param", "long_param", "realtime_param");
-    verify(mockOnUpdateListener).onUpdate(updatedParams);
+    verify(mockOnUpdateListener)
+        .onUpdate(argThat(configUpdate -> configUpdate.getUpdatedParams().equals(updatedParams)));
   }
 
   @Test
   public void realtime_stream_autofetch_failure() throws Exception {
     loadCacheWithConfig(mockActivatedCache, firstFetchedContainer);
     when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
-    when(mockFetchHandler.fetch(0)).thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, 3))
+        .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
 
     configAutoFetch.fetchLatestConfig(1, 1000);
-    flushTasks();
+    flushScheduledTasks();
 
     verify(mockNotFetchedEventListener).onError(any(FirebaseRemoteConfigServerException.class));
   }
@@ -1431,20 +1445,22 @@ public final class FirebaseRemoteConfigTest {
   }
 
   /**
-   * Flush tasks on the {@code executorService}'s thread.
+   * Flush tasks on the {@code scheduledExecutorService}'s thread.
    *
-   * @throws InterruptedException
+   * @throws InterruptedException if the thread is interrupted while waiting.
    */
-  private void flushTasks() throws InterruptedException {
+  private void flushScheduledTasks() throws InterruptedException {
+    // Create a latch with a count of 1 and submit an execution request to countdown.
+    // When the existing tasks have been executed, the countdown will execute and release the latch.
     CountDownLatch latch = new CountDownLatch(1);
-    executorService.execute(latch::countDown);
-    assertTrue("Task didn't finish", latch.await(10, TimeUnit.MILLISECONDS));
+    scheduledExecutorService.execute(latch::countDown);
+    assertTrue("Task didn't finish.", latch.await(1000, TimeUnit.MILLISECONDS));
   }
 
   private ConfigUpdateListener generateEmptyRealtimeListener() {
     return new ConfigUpdateListener() {
       @Override
-      public void onUpdate(Set<String> updatedParams) {}
+      public void onUpdate(ConfigUpdate configUpdate) {}
 
       @Override
       public void onError(@NonNull FirebaseRemoteConfigException error) {}

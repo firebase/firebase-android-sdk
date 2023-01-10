@@ -22,8 +22,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.api.internal.BackgroundDetector;
 import com.google.android.gms.common.api.internal.BackgroundDetector.BackgroundStateChangeListener;
+import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.internal.util.Clock;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 
 /** Class to manage whether or not to schedule an {@link AppCheckToken} refresh attempt. */
 public final class TokenRefreshManager {
@@ -41,10 +45,15 @@ public final class TokenRefreshManager {
   private volatile long nextRefreshTimeMillis;
   private volatile boolean isAutoRefreshEnabled;
 
-  TokenRefreshManager(@NonNull Context context, @NonNull DefaultFirebaseAppCheck firebaseAppCheck) {
+  TokenRefreshManager(
+      @NonNull Context context,
+      @NonNull DefaultFirebaseAppCheck firebaseAppCheck,
+      @Lightweight Executor liteExecutor,
+      @Blocking ScheduledExecutorService scheduledExecutorService) {
     this(
         checkNotNull(context),
-        new DefaultTokenRefresher(checkNotNull(firebaseAppCheck)),
+        new DefaultTokenRefresher(
+            checkNotNull(firebaseAppCheck), liteExecutor, scheduledExecutorService),
         new Clock.DefaultClock());
   }
 
