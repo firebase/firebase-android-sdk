@@ -44,6 +44,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -68,7 +69,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final RandomFidGenerator fidGenerator;
   private final Object lock = new Object();
   private final ExecutorService backgroundExecutor;
-  private final ExecutorService networkExecutor;
+  private final Executor networkExecutor;
   /* FID of this Firebase Installations instance. Cached after successfully registering and
   persisting the FID locally. NOTE: cachedFid resets if FID is deleted.*/
   @GuardedBy("this")
@@ -129,7 +130,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       FirebaseApp firebaseApp,
       @NonNull Provider<HeartBeatController> heartBeatProvider,
       @NonNull ExecutorService backgroundExecutor,
-      @NonNull ExecutorService networkExecutor) {
+      @NonNull Executor networkExecutor) {
     this(
         backgroundExecutor,
         networkExecutor,
@@ -146,7 +147,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @SuppressLint("ThreadPoolCreation")
   FirebaseInstallations(
       ExecutorService backgroundExecutor,
-      ExecutorService networkExecutor,
+      Executor networkExecutor,
       FirebaseApp firebaseApp,
       FirebaseInstallationServiceClient serviceClient,
       PersistedInstallation persistedInstallation,

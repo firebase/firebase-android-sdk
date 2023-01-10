@@ -38,6 +38,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.components.Lazy;
+import com.google.firebase.concurrent.FirebaseExecutors;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.installations.FirebaseInstallationsException.Status;
 import com.google.firebase.installations.internal.FidListenerHandle;
 import com.google.firebase.installations.local.IidStore;
@@ -50,6 +52,7 @@ import com.google.firebase.installations.remote.InstallationResponse.ResponseCod
 import com.google.firebase.installations.remote.TokenResult;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -69,7 +72,7 @@ import org.robolectric.RobolectricTestRunner;
 public class FirebaseInstallationsTest {
   private FirebaseApp firebaseApp;
   private ExecutorService backgroundExecutor;
-  private ExecutorService networkExecutor;
+  private Executor networkExecutor;
   private PersistedInstallation persistedInstallation;
   @Mock private FirebaseInstallationServiceClient mockBackend;
   @Mock private IidStore mockIidStore;
@@ -141,10 +144,10 @@ public class FirebaseInstallationsTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
-    backgroundExecutor =
-        new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+    backgroundExecutor = TestOnlyExecutors.background();
     networkExecutor =
-        new ThreadPoolExecutor(0, 1, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+        FirebaseExecutors.newSequentialExecutor(
+            new ThreadPoolExecutor(0, 5, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>()));
 
     firebaseApp =
         FirebaseApp.initializeApp(
@@ -539,12 +542,12 @@ public class FirebaseInstallationsTest {
 
     // Call getId multiple times
     Task<String> task1 = firebaseInstallations.getId();
-    Task<String> task2 = firebaseInstallations.getId();
     TestOnCompleteListener<String> onCompleteListener1 = new TestOnCompleteListener<>();
     task1.addOnCompleteListener(backgroundExecutor, onCompleteListener1);
+    onCompleteListener1.await();
+    Task<String> task2 = firebaseInstallations.getId();
     TestOnCompleteListener<String> onCompleteListener2 = new TestOnCompleteListener<>();
     task2.addOnCompleteListener(backgroundExecutor, onCompleteListener2);
-    onCompleteListener1.await();
     onCompleteListener2.await();
 
     // Waiting for Task that registers FID on the FIS Servers
