@@ -21,10 +21,10 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.stream.Stream;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -35,52 +35,78 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class BloomFilterTest {
+  private static final String GOLDEN_DOCUMENT_PREFIX =
+      "projects/project-1/databases/database-1/documents/coll/doc";
+  private static final String GOLDEN_TEST_LOCATION =
+      "src/test/resources/bloom_filter_golden_test_data/";
 
   @Test
-  public void testEmptyBloomFilter() {
+  public void instantiateEmptyBloomFilter() {
     BloomFilter bloomFilter = new BloomFilter(new byte[0], 0, 0);
-    assertTrue(bloomFilter.isEmpty());
+    assertEquals(bloomFilter.getSize(), 0);
   }
 
   @Test
-  public void testEmptyBloomFilterThrowException() {
-    IllegalArgumentException paddingException =
+  public void instantiateNonEmptyBloomFilter() {
+    BloomFilter bloomFilter1 = new BloomFilter(new byte[] {1}, 0, 1);
+    assertEquals(bloomFilter1.getSize(), 8);
+    BloomFilter bloomFilter2 = new BloomFilter(new byte[] {1}, 7, 1);
+    assertEquals(bloomFilter2.getSize(), 1);
+  }
+
+  @Test
+  public void constructorShouldThrowNPEOnNullBitmap() {
+    NullPointerException emptyBloomFilterException =
+        assertThrows(NullPointerException.class, () -> new BloomFilter(null, 0, 0));
+    assertThat(emptyBloomFilterException).hasMessageThat().contains("Bitmap cannot be null.");
+    NullPointerException nonEmptyBloomFilterException =
+        assertThrows(NullPointerException.class, () -> new BloomFilter(null, 1, 1));
+    assertThat(nonEmptyBloomFilterException).hasMessageThat().contains("Bitmap cannot be null.");
+  }
+
+  @Test
+  public void constructorShouldThrowIAEOnEmptyBloomFilterWithNonZeroPadding() {
+    IllegalArgumentException exception =
         assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[0], 1, 0));
-    assertThat(paddingException)
-        .hasMessageThat()
-        .contains("Invalid padding when bitmap length is 0: 1");
-    IllegalArgumentException hashCountException =
-        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[0], 0, -1));
-    assertThat(hashCountException).hasMessageThat().contains("Invalid hash count: -1");
+    assertThat(exception).hasMessageThat().contains("Invalid padding when bitmap length is 0: 1");
   }
 
   @Test
-  public void testNonEmptyBloomFilter() {
-    BloomFilter bloomFilter1 = new BloomFilter(new byte[1], 0, 1);
-    assertFalse(bloomFilter1.isEmpty());
-    BloomFilter bloomFilter2 = new BloomFilter(new byte[1], 7, 1);
-    assertFalse(bloomFilter2.isEmpty());
-  }
-
-  @Test
-  public void testNonEmptyBloomFilterThrowException() {
-    IllegalArgumentException negativePaddingException =
-        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[1], -1, 1));
-    assertThat(negativePaddingException).hasMessageThat().contains("Invalid padding: -1");
-    IllegalArgumentException overflowPaddingException =
-        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[1], 8, 1));
-    assertThat(overflowPaddingException).hasMessageThat().contains("Invalid padding: 8");
-
-    IllegalArgumentException negativeHashCountException =
-        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[1], 1, -1));
-    assertThat(negativeHashCountException).hasMessageThat().contains("Invalid hash count: -1");
+  public void constructorShouldThrowIAEOnNonEmptyBloomFilterWithZeroHashCount() {
     IllegalArgumentException zeroHashCountException =
-        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[1], 1, 0));
+        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[] {1}, 1, 0));
     assertThat(zeroHashCountException).hasMessageThat().contains("Invalid hash count: 0");
   }
 
   @Test
-  public void testBloomFilterProcessNonStandardCharacters() {
+  public void constructorShouldThrowIAEOnNegativePadding() {
+    IllegalArgumentException emptyBloomFilterException =
+        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[0], -1, 0));
+    assertThat(emptyBloomFilterException).hasMessageThat().contains("Invalid padding: -1");
+    IllegalArgumentException nonEmptyBloomFilterException =
+        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[] {1}, -1, 1));
+    assertThat(nonEmptyBloomFilterException).hasMessageThat().contains("Invalid padding: -1");
+  }
+
+  @Test
+  public void constructorShouldThrowIAEOnNegativeHashValue() {
+    IllegalArgumentException emptyBloomFilterException =
+        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[0], 0, -1));
+    assertThat(emptyBloomFilterException).hasMessageThat().contains("Invalid hash count: -1");
+    IllegalArgumentException nonEmptyBloomFilterException =
+        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[] {1}, 1, -1));
+    assertThat(nonEmptyBloomFilterException).hasMessageThat().contains("Invalid hash count: -1");
+  }
+
+  @Test
+  public void constructorShouldThrowIAEOnOverflowPadding() {
+    IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[] {1}, 8, 1));
+    assertThat(exception).hasMessageThat().contains("Invalid padding: 8");
+  }
+
+  @Test
+  public void mightContainCanProcessNonStandardCharacters() {
     // A non-empty BloomFilter object with 1 insertion : "ÀÒ∑"
     BloomFilter bloomFilter = new BloomFilter(new byte[] {(byte) 237, 5}, 5, 8);
     assertTrue(bloomFilter.mightContain("ÀÒ∑"));
@@ -88,19 +114,28 @@ public class BloomFilterTest {
   }
 
   @Test
-  public void testEmptyBloomFilterMightContainAlwaysReturnFalse() {
+  public void mightContainOnEmptyBloomFilterShouldReturnFalse() {
     BloomFilter bloomFilter = new BloomFilter(new byte[0], 0, 0);
-    assertFalse(bloomFilter.mightContain("abc"));
+    assertFalse(bloomFilter.mightContain("a"));
   }
 
   @Test
-  public void testBloomFilterMightContainOnEmptyStringAlwaysReturnFalse() {
+  public void mightContainWithEmptyStringShouldReturnFalse() {
     BloomFilter emptyBloomFilter = new BloomFilter(new byte[0], 0, 0);
-    BloomFilter nonEmptyBloomFilter =
-        new BloomFilter(new byte[] {(byte) 255, (byte) 255, (byte) 255}, 1, 16);
+    BloomFilter nonEmptyBloomFilter = new BloomFilter(new byte[] {(byte) 255}, 0, 1);
 
     assertFalse(emptyBloomFilter.mightContain(""));
     assertFalse(nonEmptyBloomFilter.mightContain(""));
+  }
+
+  @Test
+  public void bloomFilterToString() {
+    BloomFilter emptyBloomFilter = new BloomFilter(new byte[0], 0, 0);
+    assertEquals(emptyBloomFilter.toString(), "BloomFilter{hashCount=0, size=0, bitmap=\"\"}");
+
+    BloomFilter nonEmptyBloomFilter = new BloomFilter(new byte[] {1}, 1, 1);
+    assertEquals(
+        nonEmptyBloomFilter.toString(), "BloomFilter{hashCount=1, size=7, bitmap=\"AQ==\"}");
   }
 
   /**
@@ -114,65 +149,106 @@ public class BloomFilterTest {
    * to documentPrefix+2n. The membership results from 0 to n is expected to be true, and the
    * membership results from n to 2n is expected to be false with some false positive results.
    */
+  private void runGoldenTest(String testFile) throws Exception {
+    String resultFile = testFile.replace("bloom_filter_proto", "membership_test_result");
+
+    JSONObject testJson = readJsonFile(testFile);
+    JSONObject resultJSON = readJsonFile(resultFile);
+
+    JSONObject bits = testJson.getJSONObject("bits");
+    String bitmap = bits.getString("bitmap");
+    int padding = bits.getInt("padding");
+    int hashCount = testJson.getInt("hashCount");
+    BloomFilter bloomFilter =
+        new BloomFilter(Base64.getDecoder().decode(bitmap), padding, hashCount);
+
+    String membershipTestResults = resultJSON.getString("membershipTestResults");
+
+    // Run and compare mightContain result with the expectation.
+    for (int i = 0; i < membershipTestResults.length(); i++) {
+      boolean expectedMembershipResult = membershipTestResults.charAt(i) == '1';
+      boolean mightContain = bloomFilter.mightContain(GOLDEN_DOCUMENT_PREFIX + i);
+      assertEquals(
+          "mightContain() result doesn't match the expectation. File: "
+              + testFile
+              + ". Document: "
+              + GOLDEN_DOCUMENT_PREFIX
+              + i,
+          mightContain,
+          expectedMembershipResult);
+    }
+  }
+
+  private JSONObject readJsonFile(String fileName) throws Exception {
+    // Read the file into JSON object.
+    StringBuilder builder = new StringBuilder();
+    InputStreamReader streamReader =
+        new InputStreamReader(
+            new FileInputStream(GOLDEN_TEST_LOCATION + fileName), StandardCharsets.UTF_8);
+    BufferedReader reader = new BufferedReader(streamReader);
+    Stream<String> lines = reader.lines();
+    lines.forEach(builder::append);
+    String json = builder.toString();
+    return new JSONObject(json);
+  }
+
   @Test
-  public void testBloomFilterGoldenTest() throws Exception {
-    String documentPrefix = "projects/project-1/databases/database-1/documents/coll/doc";
+  public void goldenTest_1Document_1FalsePositiveRate() throws Exception {
+    runGoldenTest("Validation_BloomFilterTest_MD5_1_1_bloom_filter_proto.json");
+  }
 
-    // Import the golden test files for bloom filter
-    HashMap<String, JSONObject> parsedSpecFiles = new HashMap<>();
-    File jsonDir = new File("src/test/resources/bloom_filter_golden_test_data");
-    File[] jsonFiles = jsonDir.listFiles();
-    assert jsonFiles != null;
-    for (File file : jsonFiles) {
-      if (!file.toString().endsWith(".json")) {
-        continue;
-      }
+  @Test
+  public void goldenTest_1Document_01FalsePositiveRate() throws Exception {
+    runGoldenTest("Validation_BloomFilterTest_MD5_1_01_bloom_filter_proto.json");
+  }
 
-      // Read the files into a map.
-      StringBuilder builder = new StringBuilder();
-      BufferedReader reader = new BufferedReader(new FileReader(file));
-      Stream<String> lines = reader.lines();
-      lines.forEach(builder::append);
-      String json = builder.toString();
-      JSONObject fileJSON = new JSONObject(json);
-      parsedSpecFiles.put(file.getName(), fileJSON);
-    }
+  @Test
+  public void goldenTest_1Document_0001FalsePositiveRate() throws Exception {
+    runGoldenTest("Validation_BloomFilterTest_MD5_1_0001_bloom_filter_proto.json");
+  }
 
-    // Loop and test the files
-    for (String fileName : parsedSpecFiles.keySet()) {
-      if (fileName.contains("membership_test_result")) {
-        continue;
-      }
+  @Test
+  public void goldenTest_500Document_1FalsePositiveRate() throws Exception {
+    runGoldenTest("Validation_BloomFilterTest_MD5_500_1_bloom_filter_proto.json");
+  }
 
-      // Read test data and instantiate a BloomFilter object
-      JSONObject fileJSON = parsedSpecFiles.get(fileName);
-      assert fileJSON != null;
-      JSONObject bits = fileJSON.getJSONObject("bits");
-      String bitmap = bits.getString("bitmap");
-      int padding = bits.getInt("padding");
-      int hashCount = fileJSON.getInt("hashCount");
-      BloomFilter bloomFilter =
-          new BloomFilter(Base64.getDecoder().decode(bitmap), padding, hashCount);
+  @Test
+  public void goldenTest_500Document_01FalsePositiveRate() throws Exception {
+    runGoldenTest("Validation_BloomFilterTest_MD5_500_01_bloom_filter_proto.json");
+  }
 
-      // Find corresponding membership test result.
-      JSONObject resultJSON =
-          parsedSpecFiles.get(fileName.replace("bloom_filter_proto", "membership_test_result"));
-      assert resultJSON != null;
-      String membershipTestResults = resultJSON.getString("membershipTestResults");
+  @Test
+  public void goldenTest_500Document_0001FalsePositiveRate() throws Exception {
+    runGoldenTest("Validation_BloomFilterTest_MD5_500_0001_bloom_filter_proto.json");
+  }
 
-      // Run and compare mightContain result with the expectation.
-      for (int i = 0; i < membershipTestResults.length(); i++) {
-        boolean expectedMembershipResult = membershipTestResults.charAt(i) == '1';
-        boolean mightContain = bloomFilter.mightContain(documentPrefix + i);
-        assertEquals(
-            "MightContain result doesn't match the expectation. File: "
-                + fileName
-                + ". Document: "
-                + documentPrefix
-                + i,
-            mightContain,
-            expectedMembershipResult);
-      }
-    }
+  @Test
+  public void goldenTest_5000Document_1FalsePositiveRate() throws Exception {
+    runGoldenTest("Validation_BloomFilterTest_MD5_5000_1_bloom_filter_proto.json");
+  }
+
+  @Test
+  public void goldenTest_5000Document_01FalsePositiveRate() throws Exception {
+    runGoldenTest("Validation_BloomFilterTest_MD5_5000_01_bloom_filter_proto.json");
+  }
+
+  @Test
+  public void goldenTest_5000Document_0001FalsePositiveRate() throws Exception {
+    runGoldenTest("Validation_BloomFilterTest_MD5_5000_0001_bloom_filter_proto.json");
+  }
+
+  @Test
+  public void goldenTest_50000Document_1FalsePositiveRate() throws Exception {
+    runGoldenTest("Validation_BloomFilterTest_MD5_50000_1_bloom_filter_proto.json");
+  }
+
+  @Test
+  public void goldenTest_50000Document_01FalsePositiveRate() throws Exception {
+    runGoldenTest("Validation_BloomFilterTest_MD5_50000_01_bloom_filter_proto.json");
+  }
+
+  @Test
+  public void goldenTest_50000Document_0001FalsePositiveRate() throws Exception {
+    runGoldenTest("Validation_BloomFilterTest_MD5_50000_0001_bloom_filter_proto.json");
   }
 }

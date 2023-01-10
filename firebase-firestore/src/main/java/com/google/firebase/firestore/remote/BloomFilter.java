@@ -17,6 +17,7 @@ package com.google.firebase.firestore.remote;
 import android.util.Base64;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -24,8 +25,12 @@ public class BloomFilter {
   private final int size;
   private final byte[] bitmap;
   private final int hashCount;
+  private static MessageDigest md5HashMessageDigest;
 
   public BloomFilter(@NonNull byte[] bitmap, int padding, int hashCount) {
+    if (bitmap == null) {
+      throw new NullPointerException("Bitmap cannot be null.");
+    }
     if (padding < 0 || padding >= 8) {
       throw new IllegalArgumentException("Invalid padding: " + padding);
     }
@@ -48,21 +53,26 @@ public class BloomFilter {
     this.bitmap = bitmap;
     this.hashCount = hashCount;
     this.size = bitmap.length * 8 - padding;
+    this.md5HashMessageDigest = getMd5HashMessageDigest();
   }
 
-  /** Return if a bloom filter is empty. */
-  @VisibleForTesting
-  boolean isEmpty() {
+  private boolean isEmpty() {
     return this.size == 0;
   }
 
+  /** Returns the number of bits in the bloom filter. */
+  @VisibleForTesting
+  int getSize() {
+    return this.size;
+  }
+
   /**
-   * Check whether the document path is a possible member of the bloom filter. It might return false
-   * positive result, ie, a document path is not a member of the bloom filter, but the method
+   * Check whether the given string is a possible member of the bloom filter. It might return false
+   * positive result, ie, the given string is not a member of the bloom filter, but the method
    * returned true.
    *
-   * @param value a string representation of the document path.
-   * @return true if the document path might be contained in the bloom filter.
+   * @param value the string to be tested membership.
+   * @return true if the given string might be contained in the bloom filter.
    */
   public boolean mightContain(@NonNull String value) {
     // Empty bitmap or empty value should always return false on membership check.
@@ -70,14 +80,14 @@ public class BloomFilter {
       return false;
     }
 
-    byte[] md5HashedValue = md5Hash(value);
-    if (md5HashedValue.length != 16) {
+    byte[] hashedValue = md5HashDigest(value);
+    if (hashedValue.length != 16) {
       throw new RuntimeException(
-          "Invalid md5HashedValue.length: " + md5HashedValue.length + " (expected 16)");
+          "Invalid md5HashedValue.length: " + hashedValue.length + " (expected 16)");
     }
 
-    long hash1 = getLongLittleEndian(md5HashedValue, 0);
-    long hash2 = getLongLittleEndian(md5HashedValue, 8);
+    long hash1 = getLongLittleEndian(hashedValue, 0);
+    long hash2 = getLongLittleEndian(hashedValue, 8);
 
     for (int i = 0; i < this.hashCount; i++) {
       int index = this.getBitIndex(hash1, hash2, i);
@@ -90,20 +100,25 @@ public class BloomFilter {
 
   /** Hash a string using md5 hashing algorithm, and return an array of 16 bytes. */
   @NonNull
-  private static byte[] md5Hash(@NonNull String value) {
+  private static byte[] md5HashDigest(@NonNull String value) {
+    return md5HashMessageDigest.digest(value.getBytes(StandardCharsets.UTF_8));
+  }
+
+  @NonNull
+  private static MessageDigest getMd5HashMessageDigest() {
     MessageDigest digest;
     try {
       digest = MessageDigest.getInstance("MD5");
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException("Missing MD5 MessageDigest provider.", e);
     }
-    return digest.digest(value.getBytes());
+    return digest;
   }
 
   /** Interpret 8 bytes into a long, using little endian 2’s complement. */
   private static long getLongLittleEndian(@NonNull byte[] bytes, int offset) {
     long result = 0;
-    for (int i = 0; i < 8 && i < bytes.length; i++) {
+    for (int i = 0; i < 8; i++) {
       result |= (bytes[offset + i] & 0xFFL) << (i * 8);
     }
     return result;
@@ -120,14 +135,22 @@ public class BloomFilter {
     return (int) mod;
   }
 
-  /** Calculate module, where the dividend and divisor are treated as unsigned 64-bit longs. */
+  /**
+   * Calculate modulo, where the dividend and divisor are treated as unsigned 64-bit longs.
+   *
+   * <p>The implementation is taken from <a
+   * href="https://github.com/google/guava/blob/553037486901cc60820ab7dcb38a25b6f34eba43/android/guava/src/com/google/common/primitives/UnsignedLongs.java">Dagger2</a>,
+   * simplified to our needs.
+   *
+   * <p>
+   */
   private static long unsignedRemainder(long dividend, long divisor) {
     long quotient = ((dividend >>> 1) / divisor) << 1;
     long remainder = dividend - quotient * divisor;
     return remainder - (remainder >= divisor ? divisor : 0);
   }
 
-  /** Return whether the bit on the given index in the bitmap is set to 1. */
+  /** Return whether the bit at the given index in the bitmap is set to 1. */
   private boolean isBitSet(int index) {
     // To retrieve bit n, calculate: (bitmap[n / 8] & (0x01 << (n % 8))).
     byte byteAtIndex = this.bitmap[(index / 8)];
@@ -138,12 +161,12 @@ public class BloomFilter {
   @Override
   public String toString() {
     return "BloomFilter{"
-        + ", hashCount="
+        + "hashCount="
         + hashCount
         + ", size="
         + size
-        + "bitmap="
+        + ", bitmap=\""
         + Base64.encodeToString(bitmap, Base64.NO_WRAP)
-        + '}';
+        + "\"}";
   }
 }
