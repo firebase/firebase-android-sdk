@@ -139,7 +139,7 @@ public class BloomFilter {
    * Calculate modulo, where the dividend and divisor are treated as unsigned 64-bit longs.
    *
    * <p>The implementation is taken from <a
-   * href="https://github.com/google/guava/blob/553037486901cc60820ab7dcb38a25b6f34eba43/android/guava/src/com/google/common/primitives/UnsignedLongs.java">Dagger2</a>,
+   * href="https://github.com/google/guava/blob/553037486901cc60820ab7dcb38a25b6f34eba43/android/guava/src/com/google/common/primitives/UnsignedLongs.java">Guava</a>,
    * simplified to our needs.
    *
    * <p>

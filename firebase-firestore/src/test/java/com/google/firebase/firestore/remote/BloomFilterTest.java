@@ -122,9 +122,8 @@ public class BloomFilterTest {
   @Test
   public void mightContainWithEmptyStringShouldReturnFalse() {
     BloomFilter emptyBloomFilter = new BloomFilter(new byte[0], 0, 0);
-    BloomFilter nonEmptyBloomFilter = new BloomFilter(new byte[] {(byte) 255}, 0, 1);
-
     assertFalse(emptyBloomFilter.mightContain(""));
+    BloomFilter nonEmptyBloomFilter = new BloomFilter(new byte[] {(byte) 255}, 0, 1);
     assertFalse(nonEmptyBloomFilter.mightContain(""));
   }
 
@@ -132,7 +131,6 @@ public class BloomFilterTest {
   public void bloomFilterToString() {
     BloomFilter emptyBloomFilter = new BloomFilter(new byte[0], 0, 0);
     assertEquals(emptyBloomFilter.toString(), "BloomFilter{hashCount=0, size=0, bitmap=\"\"}");
-
     BloomFilter nonEmptyBloomFilter = new BloomFilter(new byte[] {1}, 1, 1);
     assertEquals(
         nonEmptyBloomFilter.toString(), "BloomFilter{hashCount=1, size=7, bitmap=\"AQ==\"}");
