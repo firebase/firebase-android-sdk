@@ -22,11 +22,11 @@ firebaseLibrary {
 }
 
 android {
-    compileSdkVersion project.targetSdkVersion
+    compileSdk 31
 
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion project.targetSdkVersion
+        targetSdkVersion 31
         multiDexEnabled true
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -72,9 +72,9 @@ dependencies {
     compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     implementation 'androidx.activity:activity:1.6.1'
-    implementation 'androidx.appcompat:appcompat:1.6.0'
-    implementation 'androidx.browser:browser:1.4.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.appcompat:appcompat:1.3.1'
+    implementation "androidx.browser:browser:1.3.0"
+    implementation "androidx.constraintlayout:constraintlayout:2.1.4"
 
     androidTestImplementation project(':integ-testing')
     androidTestImplementation 'androidx.test.ext:junit:1.1.1'
