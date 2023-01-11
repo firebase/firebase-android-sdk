@@ -54,8 +54,6 @@ import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
@@ -145,9 +143,7 @@ public class FirebaseInstallationsTest {
     MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
     backgroundExecutor = TestOnlyExecutors.background();
-    networkExecutor =
-        FirebaseExecutors.newSequentialExecutor(
-            new ThreadPoolExecutor(0, 5, 30L, TimeUnit.SECONDS, new LinkedBlockingQueue<>()));
+    networkExecutor = FirebaseExecutors.newSequentialExecutor(TestOnlyExecutors.blocking());
 
     firebaseApp =
         FirebaseApp.initializeApp(
