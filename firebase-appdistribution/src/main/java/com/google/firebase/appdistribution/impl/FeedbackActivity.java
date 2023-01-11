@@ -27,6 +27,9 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.PickVisualMediaRequest;
+import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -100,19 +103,42 @@ public class FeedbackActivity extends AppCompatActivity {
     findViewById(R.id.backButton).setOnClickListener(v -> finish());
     findViewById(R.id.sendButton).setOnClickListener(this::submitFeedback);
 
+    // Registers a photo picker activity launcher in single-select mode
+    ActivityResultLauncher<PickVisualMediaRequest> pickMedia =
+        registerForActivityResult(
+            new PickVisualMedia(),
+            uri -> {
+              if (uri != null) {
+                LogWrapper.d(TAG, "Selected custom screenshot URI: " + uri);
+                screenshotUri = uri;
+                setupScreenshot();
+              } else {
+                LogWrapper.d(TAG, "No custom screenshot selected. Not changing screenshot URI.");
+              }
+            });
+
+    findViewById(R.id.chooseScreenshotButton)
+        .setOnClickListener(
+            v ->
+                pickMedia.launch(
+                    new PickVisualMediaRequest.Builder()
+                        .setMediaType(new PickVisualMedia.SingleMimeType("image/png"))
+                        .build()));
+
     setupScreenshot();
   }
 
   private void setupScreenshot() {
     blockingExecutor.execute(
         () -> {
-          // do I/O on separate thread in order to not block the UI
-          Bitmap screenshot = screenshotUri == null ? null : readScreenshot();
+          // Do I/O on separate thread in order to not block the UI
+          Bitmap screenshot = readScreenshot(screenshotUri);
           if (screenshot != null) {
             runOnUiThread(
                 () -> {
                   ImageView imageView = findViewById(R.id.screenshotImageView);
                   imageView.setImageBitmap(screenshot);
+                  imageView.setVisibility(VISIBLE);
                   CheckBox checkBox = findViewById(R.id.screenshotCheckBox);
                   checkBox.setChecked(true);
                   checkBox.setOnClickListener(
@@ -132,21 +158,21 @@ public class FeedbackActivity extends AppCompatActivity {
   }
 
   @Nullable
-  private Bitmap readScreenshot() {
+  private Bitmap readScreenshot(@Nullable Uri uri) {
+    if (uri == null) {
+      return null;
+    }
     Bitmap bitmap;
     try {
       bitmap =
           ImageUtils.readScaledImage(
-              getContentResolver(),
-              screenshotUri,
-              SCREENSHOT_TARGET_WIDTH_PX,
-              SCREENSHOT_TARGET_HEIGHT_PX);
+              getContentResolver(), uri, SCREENSHOT_TARGET_WIDTH_PX, SCREENSHOT_TARGET_HEIGHT_PX);
     } catch (IOException | SecurityException e) {
-      LogWrapper.e(TAG, "Could not read screenshot image from URI: " + screenshotUri, e);
+      LogWrapper.e(TAG, "Could not read screenshot image from URI: " + uri, e);
       return null;
     }
     if (bitmap == null) {
-      LogWrapper.e(TAG, "Could not decode screenshot image: " + screenshotUri);
+      LogWrapper.e(TAG, "Could not decode screenshot image: " + uri);
     }
     return bitmap;
   }
