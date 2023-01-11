@@ -10,6 +10,7 @@
       android:roundIcon="@mipmap/ic_launcher_round"
       android:supportsRtl="true"
       android:theme="@style/Theme.AppDistributionTestAppSample"
+      android:localeConfig="@xml/locales_config"
       android:name="com.googletest.firebase.appdistribution.testapp.AppDistroTestApplication">
     <activity android:name="com.googletest.firebase.appdistribution.testapp.MainActivity" android:exported="true">
       <intent-filter>
