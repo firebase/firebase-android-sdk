@@ -340,8 +340,7 @@ public class ConfigRealtimeHttpClient {
     ConfigUpdateListener retryCallback =
         new ConfigUpdateListener() {
           @Override
-          public void onUpdate(ConfigUpdate configUpdate) {
-          }
+          public void onUpdate(ConfigUpdate configUpdate) {}
 
           // This method will only be called when a realtimeDisabled message is sent down the
           // stream.
