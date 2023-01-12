@@ -222,6 +222,7 @@ public class PublishingPlugin implements Plugin<Project> {
     try (Stream<String> stream = Files.lines(Path.of(publishConfigurationFilePath))) {
       return stream
           .dropWhile((line) -> !line.equals("[modules]"))
+          // We need to skip the "[modules]" line since it's not dropped
           .skip(1)
           .collect(Collectors.toList());
     } catch (IOException e) {
