@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.remoteconfig.ConfigUpdate;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
@@ -22,7 +23,6 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class RealtimeFragment extends Fragment {
   private View rootView;
@@ -80,9 +80,9 @@ public class RealtimeFragment extends Fragment {
         frc.addOnConfigUpdateListener(
             new ConfigUpdateListener() {
               @Override
-              public void onUpdate(Set<String> updatedParams) {
-                Log.d(TAG, String.join(", ", updatedParams));
-                updatedParamsText.setText(String.join(", ", updatedParams));
+              public void onUpdate(ConfigUpdate configUpdate) {
+                Log.d(TAG, String.join(", ", configUpdate.getUpdatedParams()));
+                updatedParamsText.setText(String.join(", ", configUpdate.getUpdatedParams()));
               }
 
               @Override

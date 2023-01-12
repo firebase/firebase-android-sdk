@@ -36,8 +36,7 @@ import com.google.common.collect.ImmutableList;
 public class MainActivity extends AppCompatActivity {
 
   private static final ImmutableList<Tab> TABS =
-      ImmutableList.of(
-          Tab.create("Api", new ApiFragment()), Tab.create("Realtime", new RealtimeFragment()));
+      ImmutableList.of(Tab.create("Realtime Demo", new RealtimeDemoFragment()));
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
