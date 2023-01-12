@@ -44,7 +44,6 @@ public class ConfigRealtimeHandler {
   private final Context context;
   private final String namespace;
   private final ConfigMetadataClient metadataClient;
-  private final ExecutorService executorService;
   private final ScheduledExecutorService scheduledExecutorService;
 
   public ConfigRealtimeHandler(
@@ -55,7 +54,6 @@ public class ConfigRealtimeHandler {
       Context context,
       String namespace,
       ConfigMetadataClient metadataClient,
-      ExecutorService executorService,
       ScheduledExecutorService scheduledExecutorService) {
 
     this.listeners = new LinkedHashSet<>();
@@ -68,7 +66,6 @@ public class ConfigRealtimeHandler {
     this.context = context;
     this.namespace = namespace;
     this.metadataClient = metadataClient;
-    this.executorService = executorService;
     this.scheduledExecutorService = scheduledExecutorService;
   }
 
