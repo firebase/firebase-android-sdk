@@ -101,7 +101,7 @@ public class PublishingPlugin implements Plugin<Project> {
             gradle -> {
               List<String> projectsNames;
               if (!publishConfigFilePath.isEmpty()) {
-                projectsNames = readReleaseConfigFile(publishConfigFilePath, project);
+                projectsNames = readReleaseConfigFile(publishConfigFilePath);
               } else {
                 projectsNames =
                     Arrays.asList(projectNamesToPublish.split(projectsToPublishSeparator, -1));
@@ -218,15 +218,15 @@ public class PublishingPlugin implements Plugin<Project> {
             });
   }
 
-  private List<String> readReleaseConfigFile(String publishConfigurationFilePath, Project project) {
+  private List<String> readReleaseConfigFile(String publishConfigurationFilePath) {
     try (Stream<String> stream = Files.lines(Path.of(publishConfigurationFilePath))) {
       return stream
           .dropWhile((line) -> !line.equals("[modules]"))
           .skip(1)
           .collect(Collectors.toList());
     } catch (IOException e) {
-      project.getLogger().error("Error reading publish configuration file. ", e);
-      return List.of();
+      throw new IllegalArgumentException(
+          "Error reading configuration file " + publishConfigurationFilePath, e);
     }
   }
 
