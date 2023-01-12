@@ -57,11 +57,6 @@ android {
         timeOutInMs 60 * 1000
     }
 
-
-    lintOptions {
-        abortOnError false
-    }
-
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 19

@@ -36,6 +36,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import com.google.firebase.remoteconfig.ConfigUpdate;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
@@ -92,6 +93,7 @@ public class ConfigRealtimeHttpClient {
   private final ConfigFetchHandler configFetchHandler;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
+  ConfigCacheClient activatedCache;
   private final Context context;
   private final String namespace;
   private final Random random;
@@ -102,6 +104,7 @@ public class ConfigRealtimeHttpClient {
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       ConfigFetchHandler configFetchHandler,
+      ConfigCacheClient activatedCache,
       Context context,
       String namespace,
       Set<ConfigUpdateListener> listeners,
@@ -123,6 +126,7 @@ public class ConfigRealtimeHttpClient {
     this.firebaseApp = firebaseApp;
     this.configFetchHandler = configFetchHandler;
     this.firebaseInstallations = firebaseInstallations;
+    this.activatedCache = activatedCache;
     this.context = context;
     this.namespace = namespace;
     this.metadataClient = metadataClient;
@@ -336,7 +340,8 @@ public class ConfigRealtimeHttpClient {
     ConfigUpdateListener retryCallback =
         new ConfigUpdateListener() {
           @Override
-          public void onEvent() {}
+          public void onUpdate(ConfigUpdate configUpdate) {
+          }
 
           // This method will only be called when a realtimeDisabled message is sent down the
           // stream.
@@ -348,7 +353,12 @@ public class ConfigRealtimeHttpClient {
         };
 
     return new ConfigAutoFetch(
-        httpURLConnection, configFetchHandler, listeners, retryCallback, scheduledExecutorService);
+        httpURLConnection,
+        configFetchHandler,
+        activatedCache,
+        listeners,
+        retryCallback,
+        scheduledExecutorService);
   }
 
   // HTTP status code that the Realtime client should retry on.

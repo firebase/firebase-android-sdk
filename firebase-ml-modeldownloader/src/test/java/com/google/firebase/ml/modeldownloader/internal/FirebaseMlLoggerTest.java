@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
@@ -33,6 +34,7 @@ import com.google.firebase.FirebaseOptions.Builder;
 import com.google.firebase.ml.modeldownloader.BuildConfig;
 import com.google.firebase.ml.modeldownloader.CustomModel;
 import com.google.firebase.ml.modeldownloader.FirebaseMlException;
+import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.DeleteModelLogEvent;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.EventName;
 import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.ModelDownloadLogEvent;
@@ -45,9 +47,7 @@ import com.google.firebase.ml.modeldownloader.internal.FirebaseMlLogEvent.System
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
@@ -69,26 +69,42 @@ public class FirebaseMlLoggerTest {
   private static final String MODEL_HASH = "dsf324";
   private static final long SYSTEM_TIME = 2000;
   private static final Long DOWNLOAD_ID = 987923L;
-  private static final CustomModel CUSTOM_MODEL_DOWNLOADING =
-      new CustomModel(MODEL_NAME, MODEL_HASH, 100, DOWNLOAD_ID);
+  private CustomModel CUSTOM_MODEL_DOWNLOADING;
   private static final ModelOptions MODEL_OPTIONS =
       ModelOptions.builder()
           .setModelInfo(ModelInfo.builder().setName(MODEL_NAME).setHash(MODEL_HASH).build())
           .build();
 
-  @Mock private SharedPreferencesUtil mockSharedPreferencesUtil;
-  @Mock private DataTransportMlEventSender mockStatsSender;
+  private final SharedPreferencesUtil mockSharedPreferencesUtil = mock(SharedPreferencesUtil.class);
+  private final DataTransportMlEventSender mockStatsSender = mock(DataTransportMlEventSender.class);
 
   private FirebaseMlLogger mlLogger;
+  private CustomModel.Factory modelFactory;
 
   @Before
   public void setUp() throws NameNotFoundException {
-    MockitoAnnotations.initMocks(this);
     FirebaseApp.clearInstancesForTest();
     FirebaseApp app =
         FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), FIREBASE_OPTIONS);
 
-    mlLogger = new FirebaseMlLogger(app, mockSharedPreferencesUtil, mockStatsSender);
+    modelFactory = FirebaseModelDownloader.getInstance(app).getModelFactory();
+    mlLogger =
+        new FirebaseMlLogger(
+            FIREBASE_OPTIONS,
+            mockSharedPreferencesUtil,
+            mockStatsSender,
+            () -> ApplicationProvider.getApplicationContext().getPackageName(),
+            () -> {
+              try {
+                return String.valueOf(
+                    app.getApplicationContext()
+                        .getPackageManager()
+                        .getPackageInfo(app.getApplicationContext().getPackageName(), 0)
+                        .versionCode);
+              } catch (NameNotFoundException e) {
+                return "";
+              }
+            });
     systemInfo =
         SystemInfo.builder()
             .setFirebaseProjectId(TEST_PROJECT_ID)
@@ -109,6 +125,7 @@ public class FirebaseMlLoggerTest {
     doNothing().when(mockSharedPreferencesUtil).setModelDownloadCompleteTimeMs(any(), anyLong());
     when(mockSharedPreferencesUtil.getCustomModelStatsCollectionFlag()).thenReturn(true);
     SystemClock.setCurrentTimeMillis(SYSTEM_TIME + 500);
+    CUSTOM_MODEL_DOWNLOADING = modelFactory.create(MODEL_NAME, MODEL_HASH, 100, DOWNLOAD_ID);
   }
 
   @Test

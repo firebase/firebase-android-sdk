@@ -28,6 +28,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
@@ -42,8 +43,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -85,9 +84,7 @@ public class RemoteConfigComponent {
       new HashMap<>();
 
   private final Context context;
-  // TODO: Consolidate executors.
-  private final ExecutorService executorService;
-  private final ScheduledExecutorService scheduledExecutorService;
+  private final ScheduledExecutorService executor;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
   private final FirebaseABTesting firebaseAbt;
@@ -101,14 +98,14 @@ public class RemoteConfigComponent {
   /** Firebase Remote Config Component constructor. */
   RemoteConfigComponent(
       Context context,
+      @Blocking ScheduledExecutorService executor,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
       Provider<AnalyticsConnector> analyticsConnector) {
     this(
         context,
-        Executors.newCachedThreadPool(),
-        Executors.newSingleThreadScheduledExecutor(),
+        executor,
         firebaseApp,
         firebaseInstallations,
         firebaseAbt,
@@ -120,20 +117,18 @@ public class RemoteConfigComponent {
   @VisibleForTesting
   protected RemoteConfigComponent(
       Context context,
-      ExecutorService executorService,
-      ScheduledExecutorService scheduledExecutorService,
+      ScheduledExecutorService executor,
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       FirebaseABTesting firebaseAbt,
       Provider<AnalyticsConnector> analyticsConnector,
       boolean loadGetDefault) {
     this.context = context;
-    this.executorService = executorService;
+    this.executor = executor;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
     this.firebaseAbt = firebaseAbt;
     this.analyticsConnector = analyticsConnector;
-    this.scheduledExecutorService = scheduledExecutorService;
 
     this.appId = firebaseApp.getOptions().getApplicationId();
     GlobalBackgroundListener.ensureBackgroundListenerIsRegistered(context);
@@ -143,7 +138,7 @@ public class RemoteConfigComponent {
     // while another test has already cleared the component but hasn't gotten a new one yet.
     if (loadGetDefault) {
       // Loads the default namespace's configs from disk on App startup.
-      Tasks.call(executorService, this::getDefault);
+      Tasks.call(executor, this::getDefault);
     }
   }
 
@@ -180,7 +175,7 @@ public class RemoteConfigComponent {
         namespace,
         firebaseInstallations,
         firebaseAbt,
-        executorService,
+        executor,
         fetchedCacheClient,
         activatedCacheClient,
         defaultsCacheClient,
@@ -220,6 +215,7 @@ public class RemoteConfigComponent {
                   firebaseApp,
                   firebaseInstallations,
                   fetchHandler,
+                  activatedClient,
                   context,
                   namespace,
                   metadataClient));
@@ -241,7 +237,7 @@ public class RemoteConfigComponent {
             "%s_%s_%s_%s.json",
             FIREBASE_REMOTE_CONFIG_FILE_NAME_PREFIX, appId, namespace, configStoreType);
     return ConfigCacheClient.getInstance(
-        Executors.newCachedThreadPool(), ConfigStorageClient.getInstance(context, fileName));
+        executor, ConfigStorageClient.getInstance(context, fileName));
   }
 
   @VisibleForTesting
@@ -263,7 +259,7 @@ public class RemoteConfigComponent {
     return new ConfigFetchHandler(
         firebaseInstallations,
         isPrimaryApp(firebaseApp) ? analyticsConnector : () -> null,
-        executorService,
+        executor,
         DEFAULT_CLOCK,
         DEFAULT_RANDOM,
         fetchedCacheClient,
@@ -276,6 +272,7 @@ public class RemoteConfigComponent {
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       ConfigFetchHandler configFetchHandler,
+      ConfigCacheClient activatedCacheClient,
       Context context,
       String namespace,
       ConfigMetadataClient metadataClient) {
@@ -283,17 +280,16 @@ public class RemoteConfigComponent {
         firebaseApp,
         firebaseInstallations,
         configFetchHandler,
+        activatedCacheClient,
         context,
         namespace,
         metadataClient,
-        executorService,
-        scheduledExecutorService);
+        executor);
   }
 
   private ConfigGetParameterHandler getGetHandler(
       ConfigCacheClient activatedCacheClient, ConfigCacheClient defaultsCacheClient) {
-    return new ConfigGetParameterHandler(
-        executorService, activatedCacheClient, defaultsCacheClient);
+    return new ConfigGetParameterHandler(executor, activatedCacheClient, defaultsCacheClient);
   }
 
   @VisibleForTesting

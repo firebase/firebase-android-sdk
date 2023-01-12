@@ -19,23 +19,24 @@ import androidx.annotation.Discouraged;
 import androidx.annotation.WorkerThread;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.Transport;
+import com.google.android.datatransport.runtime.logging.Logging;
 
 @Discouraged(
     message =
         "TransportRuntime is not a realtime delivery system, don't use unless you absolutely must.")
 public final class ForcedSender {
+  private static final String LOG_TAG = "ForcedSender";
+
+  @SuppressLint("DiscouragedApi")
   @WorkerThread
   public static void sendBlocking(Transport<?> transport, Priority priority) {
-    @SuppressLint("DiscouragedApi")
-    TransportContext context = getTransportContextOrThrow(transport).withPriority(priority);
-    TransportRuntime.getInstance().getUploader().logAndUpdateState(context, 1);
-  }
-
-  private static TransportContext getTransportContextOrThrow(Transport<?> transport) {
     if (transport instanceof TransportImpl) {
-      return ((TransportImpl<?>) transport).getTransportContext();
+      TransportContext context =
+          ((TransportImpl<?>) transport).getTransportContext().withPriority(priority);
+      TransportRuntime.getInstance().getUploader().logAndUpdateState(context, 1);
+    } else {
+      Logging.w(LOG_TAG, "Expected instance of `TransportImpl`, got `%s`.", transport);
     }
-    throw new IllegalArgumentException("Expected instance of TransportImpl.");
   }
 
   private ForcedSender() {}

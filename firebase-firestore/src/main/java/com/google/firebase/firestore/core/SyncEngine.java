@@ -54,6 +54,7 @@ import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
+import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -204,13 +205,16 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     TargetData targetData = localStore.allocateTarget(query.toTarget());
     remoteStore.listen(targetData);
 
-    ViewSnapshot viewSnapshot = initializeViewAndComputeSnapshot(query, targetData.getTargetId());
+    ViewSnapshot viewSnapshot =
+        initializeViewAndComputeSnapshot(
+            query, targetData.getTargetId(), targetData.getResumeToken());
     syncEngineListener.onViewSnapshots(Collections.singletonList(viewSnapshot));
 
     return targetData.getTargetId();
   }
 
-  private ViewSnapshot initializeViewAndComputeSnapshot(Query query, int targetId) {
+  private ViewSnapshot initializeViewAndComputeSnapshot(
+      Query query, int targetId, ByteString resumeToken) {
     QueryResult queryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
 
     SyncState currentTargetSyncState = SyncState.NONE;
@@ -221,10 +225,10 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     if (this.queriesByTarget.get(targetId) != null) {
       Query mirrorQuery = this.queriesByTarget.get(targetId).get(0);
       currentTargetSyncState = this.queryViewsByQuery.get(mirrorQuery).getView().getSyncState();
-      synthesizedCurrentChange =
-          TargetChange.createSynthesizedTargetChangeForCurrentChange(
-              currentTargetSyncState == SyncState.SYNCED);
     }
+    synthesizedCurrentChange =
+        TargetChange.createSynthesizedTargetChangeForCurrentChange(
+            currentTargetSyncState == SyncState.SYNCED, resumeToken);
 
     // TODO(wuandy): Investigate if we can extract the logic of view change computation and
     // update tracked limbo in one place, and have both emitNewSnapsAndNotifyLocalStore

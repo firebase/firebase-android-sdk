@@ -30,9 +30,7 @@ import java.util.Date;
  * 9999-12-31T23:59:59.999999999Z. By restricting to that range, we ensure that we can convert to
  * and from RFC 3339 date strings.
  *
- * @see <a href="
- *     https://github.com/google/protobuf/blob/master/src/google/protobuf/timestamp.proto">The
- *     reference timestamp definition</a>
+ * @see <a href="https://git.page.link/timestamp-proto">Timestamp</a>The ref timestamp definition
  */
 public final class Timestamp implements Comparable<Timestamp>, Parcelable {
 

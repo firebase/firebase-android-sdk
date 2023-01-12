@@ -24,10 +24,10 @@ import java.util.Set;
 /** Cycle detector for the {@link Component} dependency graph. */
 class CycleDetector {
   private static class Dep {
-    private final Class<?> anInterface;
+    private final Qualified<?> anInterface;
     private final boolean set;
 
-    private Dep(Class<?> anInterface, boolean set) {
+    private Dep(Qualified<?> anInterface, boolean set) {
       this.anInterface = anInterface;
       this.set = set;
     }
@@ -135,7 +135,7 @@ class CycleDetector {
     Map<Dep, Set<ComponentNode>> componentIndex = new HashMap<>(components.size());
     for (Component<?> component : components) {
       ComponentNode node = new ComponentNode(component);
-      for (Class<?> anInterface : component.getProvidedInterfaces()) {
+      for (Qualified<?> anInterface : component.getProvidedInterfaces()) {
         Dep cmp = new Dep(anInterface, !component.isValue());
         if (!componentIndex.containsKey(cmp)) {
           componentIndex.put(cmp, new HashSet<>());

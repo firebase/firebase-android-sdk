@@ -19,12 +19,13 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.FirebaseOptions.Builder;
 import com.google.firebase.ml.modeldownloader.internal.ModelFileDownloadService;
@@ -34,8 +35,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
@@ -52,31 +51,42 @@ public class CustomModelTest {
           .build();
   private static final long URL_EXPIRATION = 604800L;
 
-  private final CustomModel CUSTOM_MODEL = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0);
-  private final CustomModel CUSTOM_MODEL_URL =
-      new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION);
-  private final CustomModel CUSTOM_MODEL_BADFILE =
-      new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, "tmp/some/bad/filepath/model.tflite");
+  private CustomModel CUSTOM_MODEL;
+  private CustomModel CUSTOM_MODEL_URL;
+  private CustomModel CUSTOM_MODEL_BADFILE;
 
   private File testModelFile;
   private File testModelFile2;
   private CustomModel customModelWithFile;
 
-  @Mock private ModelFileDownloadService fileDownloadService;
+  private final ModelFileDownloadService fileDownloadService = mock(ModelFileDownloadService.class);
+
+  private final CustomModel.Factory modelFactory =
+      (name, modelHash, fileSize, downloadId, localFilePath, downloadUrl, downloadUrlExpiry) ->
+          new CustomModel(
+              fileDownloadService,
+              name,
+              modelHash,
+              fileSize,
+              downloadId,
+              localFilePath,
+              downloadUrl,
+              downloadUrlExpiry);
 
   @Before
   public void setUp() throws IOException {
-    MockitoAnnotations.initMocks(this);
-    FirebaseApp.clearInstancesForTest();
-    // default app
-    FirebaseApp app =
-        FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext(), FIREBASE_OPTIONS);
-    setUpTestingFiles(app);
-    customModelWithFile = new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0, testModelFile.getPath());
+    CUSTOM_MODEL = modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0);
+    CUSTOM_MODEL_URL = modelFactory.create(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION);
+    CUSTOM_MODEL_BADFILE =
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0, "tmp/some/bad/filepath/model.tflite");
+
+    setUpTestingFiles(ApplicationProvider.getApplicationContext());
+    customModelWithFile =
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0, testModelFile.getPath());
   }
 
-  private void setUpTestingFiles(FirebaseApp app) throws IOException {
-    final File testDir = new File(app.getApplicationContext().getNoBackupFilesDir(), "tmpModels");
+  private void setUpTestingFiles(Context context) throws IOException {
+    final File testDir = new File(context.getNoBackupFilesDir(), "tmpModels");
     testDir.mkdirs();
     // make sure the directory is empty. Doesn't recurse into subdirs, but that's OK since
     // we're only using this directory for this test and we won't create any subdirs.
@@ -168,36 +178,40 @@ public class CustomModelTest {
   @Test
   public void customModel_equals() {
     // downloading models
-    assertEquals(CUSTOM_MODEL, new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0));
-    assertNotEquals(CUSTOM_MODEL, new CustomModel(MODEL_NAME, MODEL_HASH, 101, 0));
-    assertNotEquals(CUSTOM_MODEL, new CustomModel(MODEL_NAME, MODEL_HASH, 100, 101));
+    assertEquals(CUSTOM_MODEL, modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0));
+    assertNotEquals(CUSTOM_MODEL, modelFactory.create(MODEL_NAME, MODEL_HASH, 101, 0));
+    assertNotEquals(CUSTOM_MODEL, modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 101));
     // get model details models
     assertEquals(
-        CUSTOM_MODEL_URL, new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION));
-    assertNotEquals(
-        CUSTOM_MODEL_URL, new CustomModel(MODEL_NAME, MODEL_HASH, 101, MODEL_URL, URL_EXPIRATION));
+        CUSTOM_MODEL_URL,
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION));
     assertNotEquals(
         CUSTOM_MODEL_URL,
-        new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION + 10L));
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 101, MODEL_URL, URL_EXPIRATION));
+    assertNotEquals(
+        CUSTOM_MODEL_URL,
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION + 10L));
   }
 
   @Test
   public void customModel_hashCode() {
     assertEquals(
-        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, MODEL_HASH, 100, 0).hashCode());
+        CUSTOM_MODEL.hashCode(), modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 0).hashCode());
     assertNotEquals(
-        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, MODEL_HASH, 101, 0).hashCode());
+        CUSTOM_MODEL.hashCode(), modelFactory.create(MODEL_NAME, MODEL_HASH, 101, 0).hashCode());
     assertNotEquals(
-        CUSTOM_MODEL.hashCode(), new CustomModel(MODEL_NAME, MODEL_HASH, 100, 101).hashCode());
+        CUSTOM_MODEL.hashCode(), modelFactory.create(MODEL_NAME, MODEL_HASH, 100, 101).hashCode());
 
     assertEquals(
         CUSTOM_MODEL_URL.hashCode(),
-        new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION).hashCode());
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION).hashCode());
     assertNotEquals(
         CUSTOM_MODEL_URL.hashCode(),
-        new CustomModel(MODEL_NAME, MODEL_HASH, 101, MODEL_URL, URL_EXPIRATION).hashCode());
+        modelFactory.create(MODEL_NAME, MODEL_HASH, 101, MODEL_URL, URL_EXPIRATION).hashCode());
     assertNotEquals(
         CUSTOM_MODEL_URL.hashCode(),
-        new CustomModel(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION + 10L).hashCode());
+        modelFactory
+            .create(MODEL_NAME, MODEL_HASH, 100, MODEL_URL, URL_EXPIRATION + 10L)
+            .hashCode());
   }
 }

@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.orFilters;
 import static com.google.firebase.firestore.util.LogicUtils.applyAssociation;
 import static com.google.firebase.firestore.util.LogicUtils.applyDistribution;
 import static com.google.firebase.firestore.util.LogicUtils.computeDistributedNormalForm;
+import static com.google.firebase.firestore.util.LogicUtils.computeInExpansion;
 import static com.google.firebase.firestore.util.LogicUtils.getDnfTerms;
 import static org.junit.Assert.assertEquals;
 
@@ -274,5 +275,80 @@ public class LogicUtilsTest {
     CompositeFilter expectedResult = orFilters(expectedDnfTerms);
     assertThat(computeDistributedNormalForm(compositeFilter)).isEqualTo(expectedResult);
     assertThat(getDnfTerms(compositeFilter)).isEqualTo(Arrays.asList(expectedDnfTerms));
+  }
+
+  @Test
+  public void testInExpansionForFieldFilters() {
+    FieldFilter input1 = filter("a", "in", Arrays.asList(1, 2, 3));
+    FieldFilter input2 = filter("a", "<", 1);
+    FieldFilter input3 = filter("a", "<=", 1);
+    FieldFilter input4 = filter("a", "==", 1);
+    FieldFilter input5 = filter("a", "!=", 1);
+    FieldFilter input6 = filter("a", ">", 1);
+    FieldFilter input7 = filter("a", ">=", 1);
+    FieldFilter input8 = filter("a", "array-contains", 1);
+    FieldFilter input9 = filter("a", "array-contains-any", Arrays.asList(1, 2));
+    FieldFilter input10 = filter("a", "not-in", Arrays.asList(1, 2));
+
+    assertThat(computeInExpansion(input1))
+        .isEqualTo(orFilters(filter("a", "==", 1), filter("a", "==", 2), filter("a", "==", 3)));
+
+    // Other operators should remain the same
+    assertThat(computeInExpansion(input2)).isEqualTo(input2);
+    assertThat(computeInExpansion(input3)).isEqualTo(input3);
+    assertThat(computeInExpansion(input4)).isEqualTo(input4);
+    assertThat(computeInExpansion(input5)).isEqualTo(input5);
+    assertThat(computeInExpansion(input6)).isEqualTo(input6);
+    assertThat(computeInExpansion(input7)).isEqualTo(input7);
+    assertThat(computeInExpansion(input8)).isEqualTo(input8);
+    assertThat(computeInExpansion(input9)).isEqualTo(input9);
+    assertThat(computeInExpansion(input10)).isEqualTo(input10);
+  }
+
+  @Test
+  public void testInExpansionForCompositeFilters() {
+    CompositeFilter cf1 =
+        andFilters(filter("a", "==", 1), filter("b", "in", Arrays.asList(2, 3, 4)));
+
+    assertThat(computeInExpansion(cf1))
+        .isEqualTo(
+            andFilters(
+                filter("a", "==", 1),
+                orFilters(filter("b", "==", 2), filter("b", "==", 3), filter("b", "==", 4))));
+
+    CompositeFilter cf2 =
+        orFilters(filter("a", "==", 1), filter("b", "in", Arrays.asList(2, 3, 4)));
+
+    assertThat(computeInExpansion(cf2))
+        .isEqualTo(
+            orFilters(
+                filter("a", "==", 1),
+                orFilters(filter("b", "==", 2), filter("b", "==", 3), filter("b", "==", 4))));
+
+    CompositeFilter cf3 =
+        andFilters(
+            filter("a", "==", 1),
+            orFilters(filter("b", "==", 2), filter("c", "in", Arrays.asList(2, 3, 4))));
+
+    assertThat(computeInExpansion(cf3))
+        .isEqualTo(
+            andFilters(
+                filter("a", "==", 1),
+                orFilters(
+                    filter("b", "==", 2),
+                    orFilters(filter("c", "==", 2), filter("c", "==", 3), filter("c", "==", 4)))));
+
+    CompositeFilter cf4 =
+        orFilters(
+            filter("a", "==", 1),
+            andFilters(filter("b", "==", 2), filter("c", "in", Arrays.asList(2, 3, 4))));
+
+    assertThat(computeInExpansion(cf4))
+        .isEqualTo(
+            orFilters(
+                filter("a", "==", 1),
+                andFilters(
+                    filter("b", "==", 2),
+                    orFilters(filter("c", "==", 2), filter("c", "==", 3), filter("c", "==", 4)))));
   }
 }

@@ -34,6 +34,7 @@ LOCAL_SRC_FILES := \
     $(THIRD_PARTY_PATH)/crashpad/minidump/minidump_string_writer.cc \
     $(THIRD_PARTY_PATH)/crashpad/minidump/minidump_system_info_writer.cc \
     $(THIRD_PARTY_PATH)/crashpad/minidump/minidump_thread_id_map.cc \
+    $(THIRD_PARTY_PATH)/crashpad/minidump/minidump_thread_name_list_writer.cc \
     $(THIRD_PARTY_PATH)/crashpad/minidump/minidump_thread_writer.cc \
     $(THIRD_PARTY_PATH)/crashpad/minidump/minidump_unloaded_module_writer.cc \
     $(THIRD_PARTY_PATH)/crashpad/minidump/minidump_user_extension_stream_data_source.cc \

@@ -14,6 +14,7 @@
 
 package com.google.firebase.remoteconfig;
 
+import androidx.annotation.NonNull;
 import javax.annotation.Nonnull;
 
 /**
@@ -23,13 +24,16 @@ import javax.annotation.Nonnull;
  */
 public interface ConfigUpdateListener {
   /**
-   * Callback for when a new config has been automatically fetched from the backend. Can be used to
-   * activate the new config.
+   * Callback for when a new config has been automatically fetched from the backend and has changed
+   * from the activated config.
+   *
+   * @param configUpdate A {@link ConfigUpdate} with information about the updated config, including
+   *     the set of updated parameters.
    */
-  void onEvent();
+  void onUpdate(@NonNull ConfigUpdate configUpdate);
 
   /**
-   * Call back for when an error occurs during Realtime.
+   * Callback for when an error occurs while listening for or fetching a config update.
    *
    * @param error
    */

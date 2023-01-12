@@ -17,6 +17,7 @@ package com.google.firebase.firestore;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import androidx.annotation.Keep;
@@ -737,6 +738,8 @@ public class FirebaseFirestore {
    * documents) and loaded to local cache using {@link #loadBundle(byte[])}. Once in local cache,
    * you can use this method to extract a query by name.
    */
+  // TODO(b/261013682): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   public @NonNull Task<Query> getNamedQuery(@NonNull String name) {
     ensureClientConfigured();
     return client

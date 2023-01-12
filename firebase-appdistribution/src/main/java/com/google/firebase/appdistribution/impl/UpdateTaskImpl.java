@@ -34,6 +34,7 @@ import com.google.firebase.appdistribution.UpdateTask;
 import java.util.concurrent.Executor;
 
 /** Implementation of UpdateTask, the return type of updateApp. */
+// TODO(b/261013814): Use an explicit executor in continuations.
 class UpdateTaskImpl extends UpdateTask {
   @Nullable
   @GuardedBy("lock")

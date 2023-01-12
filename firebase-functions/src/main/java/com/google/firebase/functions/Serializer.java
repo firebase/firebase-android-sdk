@@ -38,7 +38,7 @@ class Serializer {
 
   private final DateFormat dateFormat;
 
-  public Serializer() {
+  Serializer() {
     // Encode Dates as UTC ISO 8601 strings.
     dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
     dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));

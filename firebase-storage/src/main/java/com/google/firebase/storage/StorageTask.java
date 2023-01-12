@@ -14,6 +14,7 @@
 
 package com.google.firebase.storage;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -978,6 +979,8 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
     return successTaskImpl(executor, continuation);
   }
 
+  // TODO(b/261014861): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   private <ContinuationResultT> Task<ContinuationResultT> continueWithTaskImpl(
       @Nullable final Executor executor,
@@ -1020,6 +1023,8 @@ public abstract class StorageTask<ResultT extends StorageTask.ProvideError>
     return source.getTask();
   }
 
+  // TODO(b/261014861): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @NonNull
   private <ContinuationResultT> Task<ContinuationResultT> successTaskImpl(
       @Nullable final Executor executor,

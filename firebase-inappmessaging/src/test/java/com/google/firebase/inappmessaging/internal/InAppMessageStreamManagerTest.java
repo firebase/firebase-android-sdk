@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 import android.app.Application;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.inappmessaging.CommonTypesProto.Event;
 import com.google.firebase.inappmessaging.CommonTypesProto.Priority;
 import com.google.firebase.inappmessaging.CommonTypesProto.TriggeringCondition;
@@ -71,18 +72,17 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
-import org.robolectric.annotation.LooperMode;
 
 // TODO: Refactor and clean this logic
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-@LooperMode(LooperMode.Mode.LEGACY)
 public class InAppMessageStreamManagerTest {
   private static final long PAST = 1000000;
   private static final long NOW = PAST + 100000;
   private static final long FUTURE = NOW + 1000000;
   private static final String INSTALLATION_ID = "instance_id";
   private static final String INSTALLATION_TOKEN = "instance_token";
+  private static final long BLOCKING_EXECUTOR_TIMEOUT = 100;
 
   private static final TriggeringCondition.Builder ON_ANALYTICS_TRIGGER =
       TriggeringCondition.newBuilder().setEvent(Event.newBuilder().setName(ANALYTICS_EVENT_NAME));
@@ -241,7 +241,8 @@ public class InAppMessageStreamManagerTest {
             testDeviceHelper,
             firebaseInstallations,
             dataCollectionHelper,
-            abtIntegrationHelper);
+            abtIntegrationHelper,
+            TestOnlyExecutors.blocking());
     subscriber = streamManager.createFirebaseInAppMessageStream().test();
     when(application.getApplicationContext()).thenReturn(application);
     when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(true);
@@ -260,22 +261,25 @@ public class InAppMessageStreamManagerTest {
   }
 
   @Test
-  public void stream_onAppOpen_notifiesSubscriber() {
+  public void stream_onAppOpen_notifiesSubscriber() throws InterruptedException {
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
             campaignImpressionListArgumentCaptor.capture()))
         .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onForegroundTriggered);
   }
 
   @Test
-  public void stream_onAppOpen_dataCollectionDisabled_doesNotFetch() {
+  public void stream_onAppOpen_dataCollectionDisabled_doesNotFetch() throws InterruptedException {
     when(dataCollectionHelper.isAutomaticDataCollectionEnabled()).thenReturn(false);
+
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     subscriber.assertNoValues();
     verify(mockApiClient, times(0)).getFiams(any(), any());
@@ -283,16 +287,18 @@ public class InAppMessageStreamManagerTest {
   }
 
   @Test
-  public void stream_onAppOpen_withEmptyIID_doesNotFetch() {
+  public void stream_onAppOpen_withEmptyIID_doesNotFetch() throws InterruptedException {
     when(firebaseInstallations.getId()).thenReturn(Tasks.forResult(""));
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
+
     verify(mockApiClient, times(0)).getFiams(any(), any());
     verify(campaignCacheClient, times(1)).put(InAppMessageStreamManager.cacheExpiringResponse());
   }
 
   @Test
-  public void stream_onAppOpen_withEmptyFIDToken_doesNotFetch() {
+  public void stream_onAppOpen_withEmptyFIDToken_doesNotFetch() throws InterruptedException {
     when(firebaseInstallations.getToken(false))
         .thenReturn(
             Tasks.forResult(
@@ -319,51 +325,56 @@ public class InAppMessageStreamManagerTest {
                 }));
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
+
     verify(mockApiClient, times(0)).getFiams(any(), any());
     verify(campaignCacheClient, times(1)).put(InAppMessageStreamManager.cacheExpiringResponse());
   }
 
   @Test
-  public void stream_onAnalyticsEvent_notifiesSubscriber() {
+  public void stream_onAnalyticsEvent_notifiesSubscriber() throws InterruptedException {
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
             campaignImpressionListArgumentCaptor.capture()))
         .thenReturn(campaignsResponse);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
   }
 
   @Test
-  public void stream_onProgrammaticTrigger_notifiesSubscriber() {
+  public void stream_onProgrammaticTrigger_notifiesSubscriber() throws InterruptedException {
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
             campaignImpressionListArgumentCaptor.capture()))
         .thenReturn(campaignsResponse);
 
     programmaticTriggerEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
   }
 
   @Test
-  public void stream_onAppOpen_remainsOpen() {
+  public void stream_onAppOpen_remainsOpen() throws InterruptedException {
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
             campaignImpressionListArgumentCaptor.capture()))
         .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     subscriber.assertNotComplete();
   }
 
   @Test
-  public void stream_onUnrelatedForegroundEvent_doesNotTrigger() {
+  public void stream_onUnrelatedForegroundEvent_doesNotTrigger() throws InterruptedException {
     String unrelatedAnalyticsEvent = "some_other_event";
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
@@ -371,13 +382,14 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(unrelatedAnalyticsEvent);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
   @Test
-  public void stream_onUnrelatedAnalyticsEvent_doesNotTrigger() {
+  public void stream_onUnrelatedAnalyticsEvent_doesNotTrigger() throws InterruptedException {
     String unrelatedAnalyticsEvent = "some_other_event";
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
@@ -385,13 +397,14 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(campaignsResponse);
 
     analyticsEmitter.onNext(unrelatedAnalyticsEvent);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
   @Test
-  public void stream_onValidCampaign_notifiesSubscriber() {
+  public void stream_onValidCampaign_notifiesSubscriber() throws InterruptedException {
     ThickContent t =
         thickContentBuilder
             .clearVanillaPayload()
@@ -413,13 +426,14 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
   }
 
   @Test
-  public void stream_onExpiredCampaign_doesNotTrigger() {
+  public void stream_onExpiredCampaign_doesNotTrigger() throws InterruptedException {
     ThickContent t =
         thickContentBuilder
             .clearVanillaPayload()
@@ -441,13 +455,14 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
   @Test
-  public void stream_onFutureCampaign_doesNotTrigger() {
+  public void stream_onFutureCampaign_doesNotTrigger() throws InterruptedException {
     ThickContent t =
         thickContentBuilder
             .clearVanillaPayload()
@@ -469,13 +484,14 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
   @Test
-  public void stream_onValidExperiment_notifiesSubscriber() {
+  public void stream_onValidExperiment_notifiesSubscriber() throws InterruptedException {
     ThickContent t =
         thickContentBuilder
             .clearVanillaPayload()
@@ -499,13 +515,14 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
   }
 
   @Test
-  public void stream_ontestExperiment_doesNotSetExperimentActive() {
+  public void stream_ontestExperiment_doesNotSetExperimentActive() throws InterruptedException {
     ThickContent t =
         thickContentBuilder
             .clearVanillaPayload()
@@ -530,6 +547,7 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
@@ -537,7 +555,7 @@ public class InAppMessageStreamManagerTest {
   }
 
   @Test
-  public void stream_onExpiredExperiment_doesNotTrigger() {
+  public void stream_onExpiredExperiment_doesNotTrigger() throws InterruptedException {
     ThickContent t =
         thickContentBuilder
             .clearVanillaPayload()
@@ -560,13 +578,14 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
   @Test
-  public void stream_onFutureExperiment_doesNotTrigger() {
+  public void stream_onFutureExperiment_doesNotTrigger() throws InterruptedException {
     ThickContent t =
         thickContentBuilder
             .clearVanillaPayload()
@@ -589,13 +608,14 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
   @Test
-  public void stream_onMultipleCampaigns_triggersTestMessage() {
+  public void stream_onMultipleCampaigns_triggersTestMessage() throws InterruptedException {
     ThickContent highPriorityContent =
         ThickContent.newBuilder(thickContent)
             .setPriority(Priority.newBuilder().setValue(1))
@@ -616,6 +636,7 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(r);
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(
@@ -623,7 +644,7 @@ public class InAppMessageStreamManagerTest {
   }
 
   @Test
-  public void stream_onApiClientFailure_absorbsErrors() {
+  public void stream_onApiClientFailure_absorbsErrors() throws InterruptedException {
     Throwable t = new StatusRuntimeException(Status.DATA_LOSS);
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
@@ -631,6 +652,7 @@ public class InAppMessageStreamManagerTest {
         .thenThrow(t);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     subscriber.assertNotComplete();
@@ -639,55 +661,59 @@ public class InAppMessageStreamManagerTest {
   }
 
   @Test
-  public void stream_onCacheHit_notifiesCachedValue() {
+  public void stream_onCacheHit_notifiesCachedValue() throws InterruptedException {
     when(campaignCacheClient.get()).thenReturn(Maybe.just(campaignsResponse));
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedMessageTriggered(subscriber, onForegroundTriggered);
   }
 
   @Test
-  public void stream_onServiceFetchSuccess_cachesValue() {
+  public void stream_onServiceFetchSuccess_cachesValue() throws InterruptedException {
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
             campaignImpressionListArgumentCaptor.capture()))
         .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     verify(campaignCacheClient).put(campaignsResponse);
   }
 
   @Test
-  public void stream_onServiceFetchSuccess_updatesContextualTriggers() {
+  public void stream_onServiceFetchSuccess_updatesContextualTriggers() throws InterruptedException {
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
             campaignImpressionListArgumentCaptor.capture()))
         .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     verify(analyticsEventsManager).updateContextualTriggers(campaignsResponse);
   }
 
   @Test
-  public void stream_onServiceFetchFailure_doesNotCacheValue() {
+  public void stream_onServiceFetchFailure_doesNotCacheValue() throws InterruptedException {
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
             campaignImpressionListArgumentCaptor.capture()))
         .thenThrow(new RuntimeException("e"));
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     verify(campaignCacheClient, times(0)).put(campaignsResponse);
   }
 
   @Test
-  public void stream_whenAppInstallIsFresh_doesNotCacheValue() {
+  public void stream_whenAppInstallIsFresh_doesNotCacheValue() throws InterruptedException {
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
             campaignImpressionListArgumentCaptor.capture()))
@@ -695,13 +721,14 @@ public class InAppMessageStreamManagerTest {
     when(testDeviceHelper.isAppInstallFresh()).thenReturn(true);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     verify(campaignCacheClient, times(0)).put(any());
   }
 
   @Test
-  public void stream_whenDeviceIsInTestMode_doesNotCacheValue() {
+  public void stream_whenDeviceIsInTestMode_doesNotCacheValue() throws InterruptedException {
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
             campaignImpressionListArgumentCaptor.capture()))
@@ -709,13 +736,15 @@ public class InAppMessageStreamManagerTest {
     when(testDeviceHelper.isDeviceInTestMode()).thenReturn(true);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     verify(campaignCacheClient, times(0)).put(any());
   }
 
   @Test
-  public void stream_onCacheReadFailure_notifiesValueFetchedFromService() {
+  public void stream_onCacheReadFailure_notifiesValueFetchedFromService()
+      throws InterruptedException {
     when(campaignCacheClient.get()).thenReturn(Maybe.error(new NullPointerException()));
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
@@ -723,13 +752,14 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onForegroundTriggered);
   }
 
   @Test
-  public void stream_onCacheAndApiFail_absorbsFailure() {
+  public void stream_onCacheAndApiFail_absorbsFailure() throws InterruptedException {
     when(campaignCacheClient.get()).thenReturn(Maybe.error(new NullPointerException()));
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
@@ -737,6 +767,7 @@ public class InAppMessageStreamManagerTest {
         .thenThrow(new NullPointerException());
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     subscriber.assertNotComplete();
@@ -745,7 +776,7 @@ public class InAppMessageStreamManagerTest {
   }
 
   @Test
-  public void stream_onCacheWriteFailure_AbsorbsError() {
+  public void stream_onCacheWriteFailure_AbsorbsError() throws InterruptedException {
     when(campaignCacheClient.put(any(FetchEligibleCampaignsResponse.class)))
         .thenReturn(Completable.error(new NullPointerException()));
     when(mockApiClient.getFiams(
@@ -754,13 +785,14 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onForegroundTriggered);
   }
 
   @Test
-  public void stream_whenCampaignImpressed_filtersCampaign() {
+  public void stream_whenCampaignImpressed_filtersCampaign() throws InterruptedException {
     when(impressionStorageClient.isImpressed(any(ThickContent.class)))
         .thenReturn(Single.just(true));
     when(mockApiClient.getFiams(
@@ -769,13 +801,15 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
   @Test
-  public void stream_whenCampaignImpressionStoreFails_doesNotFilterCampaign() {
+  public void stream_whenCampaignImpressionStoreFails_doesNotFilterCampaign()
+      throws InterruptedException {
     when(impressionStorageClient.isImpressed(any(ThickContent.class)))
         .thenReturn(Single.error(new Exception("e1")));
     when(mockApiClient.getFiams(
@@ -784,13 +818,15 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onForegroundTriggered);
   }
 
   @Test
-  public void stream_whenCampaignImpressionStoreFail_doesNotFilterCampaign() {
+  public void stream_whenCampaignImpressionStoreFail_doesNotFilterCampaign()
+      throws InterruptedException {
     when(impressionStorageClient.isImpressed(any(ThickContent.class)))
         .thenReturn(Single.error(new Exception("e1")));
     when(mockApiClient.getFiams(
@@ -799,25 +835,28 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onForegroundTriggered);
   }
 
   @Test
-  public void stream_whenCampaignImpressionStoreFails_absorbsError() {
+  public void stream_whenCampaignImpressionStoreFails_absorbsError() throws InterruptedException {
     when(impressionStorageClient.getAllImpressions())
         .thenReturn(Maybe.error(new NullPointerException()));
     when(mockApiClient.getFiams(any(InstallationIdResult.class), any(CampaignImpressionList.class)))
         .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedMessageTriggered(subscriber, onForegroundTriggered);
   }
 
   @Test
-  public void stream_whenCampaignImpressionStoreFails_wiresEmptyImpressionList() {
+  public void stream_whenCampaignImpressionStoreFails_wiresEmptyImpressionList()
+      throws InterruptedException {
     when(impressionStorageClient.getAllImpressions())
         .thenReturn(Maybe.error(new NullPointerException()));
     when(mockApiClient.getFiams(
@@ -825,13 +864,14 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(campaignsResponse);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertThat(campaignImpressionListArgumentCaptor.getValue())
         .isEqualTo(CampaignImpressionList.getDefaultInstance());
   }
 
   @Test
-  public void stream_whenAppOpenRateLimited_doesNotTrigger() {
+  public void stream_whenAppOpenRateLimited_doesNotTrigger() throws InterruptedException {
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
             campaignImpressionListArgumentCaptor.capture()))
@@ -839,13 +879,14 @@ public class InAppMessageStreamManagerTest {
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(true));
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     subscriber.assertNoValues();
   }
 
   @Test
-  public void stream_whenAppOpenRateLimited_stillTriggersTestMessage() {
+  public void stream_whenAppOpenRateLimited_stillTriggersTestMessage() throws InterruptedException {
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(true));
     when(testDeviceHelper.isDeviceInTestMode()).thenReturn(true);
     ThickContent testMessageContent =
@@ -871,13 +912,14 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(response);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, testTriggered);
   }
 
   @Test
-  public void stream_alwaysTriggersTestMessagesOnAppForground() {
+  public void stream_alwaysTriggersTestMessagesOnAppForeground() throws InterruptedException {
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(false));
     when(testDeviceHelper.isDeviceInTestMode()).thenReturn(true);
     ThickContent testMessageContent =
@@ -903,13 +945,14 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(r);
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, testTriggered);
   }
 
   @Test
-  public void stream_whenRateLimitingClientFails_triggers() {
+  public void stream_whenRateLimitingClientFails_triggers() throws InterruptedException {
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
             campaignImpressionListArgumentCaptor.capture()))
@@ -918,13 +961,15 @@ public class InAppMessageStreamManagerTest {
         .thenReturn(Single.error(new NullPointerException("e1")));
 
     appForegroundEmitter.onNext(ON_FOREGROUND_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onForegroundTriggered);
   }
 
   @Test
-  public void stream_whenAppOpenRateLimited_notifiesAnalyticsSubscriber() {
+  public void stream_whenAppOpenRateLimited_notifiesAnalyticsSubscriber()
+      throws InterruptedException {
     when(mockApiClient.getFiams(
             installationIdResultArgumentCaptor.capture(),
             campaignImpressionListArgumentCaptor.capture()))
@@ -932,8 +977,13 @@ public class InAppMessageStreamManagerTest {
     when(rateLimiterClient.isRateLimited(appForegroundRateLimit)).thenReturn(Single.just(true));
 
     analyticsEmitter.onNext(ANALYTICS_EVENT_NAME);
+    waitForBlockingExecutor();
 
     assertExpectedGetFiamsCall();
     assertExpectedMessageTriggered(subscriber, onAnalyticsTriggered);
+  }
+
+  private static void waitForBlockingExecutor() throws InterruptedException {
+    TestOnlyExecutors.blocking().awaitTermination(BLOCKING_EXECUTOR_TIMEOUT, TimeUnit.MILLISECONDS);
   }
 }
