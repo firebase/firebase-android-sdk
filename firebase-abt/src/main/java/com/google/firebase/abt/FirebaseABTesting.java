@@ -204,12 +204,8 @@ public class FirebaseABTesting {
   public void validateRunningExperiments(List<AbtExperimentInfo> runningExperiments)
       throws AbtException {
     throwAbtExceptionIfAnalyticsIsNull();
-    Set<String> runningExperimentIds = new HashSet<>();
-    for (AbtExperimentInfo runningExperiment : runningExperiments) {
-      runningExperimentIds.add(runningExperiment.getExperimentId());
-    }
     List<ConditionalUserProperty> experimentsToRemove =
-        getExperimentsToRemove(getAllExperimentsInAnalytics(), runningExperimentIds);
+        getExperimentsToRemove(getAllExperiments(), runningExperiments);
     removeExperiments(experimentsToRemove);
   }
 
@@ -245,34 +241,25 @@ public class FirebaseABTesting {
       return;
     }
 
-    Set<String> replacementExperimentIds = new HashSet<>();
-    for (AbtExperimentInfo replacementExperiment : replacementExperiments) {
-      replacementExperimentIds.add(replacementExperiment.getExperimentId());
-    }
-
-    List<ConditionalUserProperty> experimentsInAnalytics = getAllExperimentsInAnalytics();
-    Set<String> idsOfExperimentsInAnalytics = new HashSet<>();
-    for (ConditionalUserProperty experimentInAnalytics : experimentsInAnalytics) {
-      idsOfExperimentsInAnalytics.add(experimentInAnalytics.name);
-    }
+    List<AbtExperimentInfo> experimentsInAnalytics = getAllExperiments();
 
     List<ConditionalUserProperty> experimentsToRemove =
-        getExperimentsToRemove(experimentsInAnalytics, replacementExperimentIds);
+            getExperimentsToRemove(experimentsInAnalytics, replacementExperiments);
     removeExperiments(experimentsToRemove);
 
     List<AbtExperimentInfo> experimentsToAdd =
-        getExperimentsToAdd(replacementExperiments, idsOfExperimentsInAnalytics);
+        getExperimentsToAdd(replacementExperiments, experimentsInAnalytics);
     addExperiments(experimentsToAdd);
   }
 
   /** Returns this origin's experiments in Analytics that are no longer assigned to this App. */
   private ArrayList<ConditionalUserProperty> getExperimentsToRemove(
-      List<ConditionalUserProperty> experimentsInAnalytics, Set<String> replacementExperimentIds) {
+      List<AbtExperimentInfo> experimentsInAnalytics, List<AbtExperimentInfo> replacementExperiments) {
 
     ArrayList<ConditionalUserProperty> experimentsToRemove = new ArrayList<>();
-    for (ConditionalUserProperty experimentInAnalytics : experimentsInAnalytics) {
-      if (!replacementExperimentIds.contains(experimentInAnalytics.name)) {
-        experimentsToRemove.add(experimentInAnalytics);
+    for (AbtExperimentInfo experimentInAnalytics : experimentsInAnalytics) {
+      if (!experimentsListContainsExperiment(replacementExperiments, experimentInAnalytics)) {
+        experimentsToRemove.add(experimentInAnalytics.toConditionalUserProperty(originService));
       }
     }
     return experimentsToRemove;
@@ -283,15 +270,29 @@ public class FirebaseABTesting {
    * to this origin's list of experiments in Analytics.
    */
   private ArrayList<AbtExperimentInfo> getExperimentsToAdd(
-      List<AbtExperimentInfo> replacementExperiments, Set<String> idsOfExperimentsInAnalytics) {
+      List<AbtExperimentInfo> replacementExperiments, List<AbtExperimentInfo> experimentInfoFromAnalytics) {
 
     ArrayList<AbtExperimentInfo> experimentsToAdd = new ArrayList<>();
     for (AbtExperimentInfo replacementExperiment : replacementExperiments) {
-      if (!idsOfExperimentsInAnalytics.contains(replacementExperiment.getExperimentId())) {
+      if (!experimentsListContainsExperiment(experimentInfoFromAnalytics, replacementExperiment)) {
         experimentsToAdd.add(replacementExperiment);
       }
     }
     return experimentsToAdd;
+  }
+
+  private boolean experimentsListContainsExperiment(
+          List<AbtExperimentInfo> experiments, AbtExperimentInfo experiment) {
+    String experimentId = experiment.getExperimentId();
+    String variantId = experiment.getVariantId();
+
+    for (AbtExperimentInfo experimentInfo : experiments) {
+      if (experimentInfo.getExperimentId().equals(experimentId) && experimentInfo.getVariantId().equals(variantId)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /** Adds the given experiments to the origin's list in Analytics. */
