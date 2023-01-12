@@ -60,8 +60,7 @@ import org.gradle.api.tasks.bundling.Zip;
  *   <li>{@code publishConfigFilePath} is the path to the configuration file from which to read the
  *       list of projects to release. The file format should be consistent with Python's
  *       configparser, and the list of projects should be in a section called "modules". If both
- *       this, and {@code projectsToPublish} are specified, this property takes precedence.
- *       <br>
+ *       this, and {@code projectsToPublish} are specified, this property takes precedence. <br>
  *       <br>
  *       Example config file content:
  *       <pre>
