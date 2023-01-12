@@ -1326,9 +1326,9 @@ public final class FirebaseRemoteConfigTest {
 
     flushScheduledTasks();
 
-    Set<String> updatedParams = Sets.newHashSet("realtime_param");
+    Set<String> updatedKeys = Sets.newHashSet("realtime_param");
     verify(mockOnUpdateListener)
-        .onUpdate(argThat(configUpdate -> configUpdate.getUpdatedParams().equals(updatedParams)));
+        .onUpdate(argThat(configUpdate -> configUpdate.getUpdatedKeys().equals(updatedKeys)));
   }
 
   @Test
@@ -1344,9 +1344,9 @@ public final class FirebaseRemoteConfigTest {
     configAutoFetch.fetchLatestConfig(1, 1);
     flushScheduledTasks();
 
-    Set<String> updatedParams = Sets.newHashSet("string_param", "long_param", "realtime_param");
+    Set<String> updatedKeys = Sets.newHashSet("string_param", "long_param", "realtime_param");
     verify(mockOnUpdateListener)
-        .onUpdate(argThat(configUpdate -> configUpdate.getUpdatedParams().equals(updatedParams)));
+        .onUpdate(argThat(configUpdate -> configUpdate.getUpdatedKeys().equals(updatedKeys)));
   }
 
   @Test

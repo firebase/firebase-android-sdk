@@ -25,8 +25,8 @@ import java.util.Set;
 @AutoValue
 public abstract class ConfigUpdate {
   @NonNull
-  public static ConfigUpdate create(@NonNull Set<String> updatedParams) {
-    return new AutoValue_ConfigUpdate(updatedParams);
+  public static ConfigUpdate create(@NonNull Set<String> updatedKeys) {
+    return new AutoValue_ConfigUpdate(updatedKeys);
   }
 
   /**
@@ -34,5 +34,5 @@ public abstract class ConfigUpdate {
    * keys that are added, deleted, and whose value, value source, or metadata has changed.
    */
   @NonNull
-  public abstract Set<String> getUpdatedParams();
+  public abstract Set<String> getUpdatedKeys();
 }
