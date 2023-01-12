@@ -30,10 +30,8 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Manages Firebase A/B Testing Experiments.
@@ -144,11 +142,11 @@ public class FirebaseABTesting {
   }
 
   /**
-   * Gets the origin service's list of experiments in the app.
+   * Gets the origin service's list of experiments in the app via the Analytics SDK.
    *
    * <p>Note: This is a blocking call and therefore should be called from a worker thread.
    *
-   * @return the origin service's list of experiments in the app.
+   * @return the origin service's list of experiments in the app as {@link AbtExperimentInfo}s.
    * @throws AbtException If there is no Analytics SDK.
    */
   @WorkerThread
@@ -204,6 +202,8 @@ public class FirebaseABTesting {
   public void validateRunningExperiments(List<AbtExperimentInfo> runningExperiments)
       throws AbtException {
     throwAbtExceptionIfAnalyticsIsNull();
+
+    // Get all experiments in Analytics and remove the ones that aren't running.
     List<ConditionalUserProperty> experimentsToRemove =
         getExperimentsToRemove(getAllExperiments(), runningExperiments);
     removeExperiments(experimentsToRemove);
@@ -241,12 +241,15 @@ public class FirebaseABTesting {
       return;
     }
 
+    // Get all experiments in Analytics.
     List<AbtExperimentInfo> experimentsInAnalytics = getAllExperiments();
 
+    // Remove experiments no longer assigned.
     List<ConditionalUserProperty> experimentsToRemove =
             getExperimentsToRemove(experimentsInAnalytics, replacementExperiments);
     removeExperiments(experimentsToRemove);
 
+    // Add newly assigned or updated (changed variant id).
     List<AbtExperimentInfo> experimentsToAdd =
         getExperimentsToAdd(replacementExperiments, experimentsInAnalytics);
     addExperiments(experimentsToAdd);
@@ -370,7 +373,7 @@ public class FirebaseABTesting {
    * Returns a list of all this origin's experiments in this App's Analytics SDK.
    *
    * <p>The list is sorted chronologically by the experiment start time, with the oldest experiment
-   * at index 0.
+   * at index 0. Experiments are stored as {@link ConditionalUserProperty}s in Analytics.
    */
   @WorkerThread
   private List<ConditionalUserProperty> getAllExperimentsInAnalytics() {
