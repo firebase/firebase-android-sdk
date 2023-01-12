@@ -14,77 +14,69 @@
 
 package com.google.firebase.gradle.plugins
 
-import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
+import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.bundling.Zip
+import org.gradle.kotlin.dsl.configure
+import org.gradle.kotlin.dsl.getByName
+import org.gradle.kotlin.dsl.register
 
 class FireEscapeArtifactPlugin : Plugin<Project> {
-  var project: Project? = null
 
   override fun apply(target: Project) {
-    project = target
+    target.afterEvaluate {
+      if (supportsMavenPublishing(target)) {
+        val apiTxtFile = registerApiTxtFileTask(project)
+        val proguardMappingFile = registerProguardMappingFileTask(project)
+        val javadoc = registerJavadocTask(project)
 
-    project!!.afterEvaluate {
-      val firebaseLibrary = extensions.findByType(FirebaseLibraryExtension::class.java)
-      val fireEscapeTask =
-        tasks.create("mavenAarFireEscapeArtifact", Zip::class.java) { classifier = "fireescape" }
-      plugins.withType(MavenPublishPlugin::class.java) {
-        extensions.configure(PublishingExtension::class.java) {
-          publications.withType(MavenPublication::class.java) {
-            if ("mavenAar" == name) {
-              configurePublication(this, fireEscapeTask, firebaseLibrary!!.type)
+        val zippedArtifact =
+          project.tasks.register<Zip>("maven") {
+            from(apiTxtFile)
+            if (project.isAndroid()) {
+              from(proguardMappingFile)
             }
+          }
+
+        extensions.configure<PublishingExtension> {
+          publications.getByName<MavenPublication>("mavenAar") {
+            artifact(zippedArtifact)
+            artifact(javadoc)
           }
         }
       }
     }
   }
-
-  private fun configurePublication(
-    publication: MavenPublication,
-    artifactTask: Zip,
-    libraryType: LibraryType
-  ) {
-    publication.artifact(artifactTask)
-    artifactTask.from(apiTxtFileTask())
-    if (libraryType == LibraryType.ANDROID) {
-      artifactTask.from(proguardMappingFileTask())
-    }
-    publication.artifact(javadocTask())
+  private fun supportsMavenPublishing(project: Project): Boolean {
+    return project.plugins.hasPlugin(MavenPublishPlugin::class.java)
   }
 
-  private fun proguardMappingFileTask(): Task? {
-    return project?.tasks?.create("fireEscapeProguardMapping") {
-      val task = this
-      project.tasks.all {
-        if (name == "assembleRelease") {
-          task.dependsOn(this)
-        }
-      }
-      outputs.file(File(project.buildDir, "outputs/mapping/release/mapping.txt"))
+  private fun registerProguardMappingFileTask(project: Project): TaskProvider<Task> {
+    return project.tasks.register("fireEscapeProguardMapping") {
+      outputs.file(project.fileFromBuildDir("outputs/mapping/release/mapping.txt"))
     }
   }
 
-  private fun apiTxtFileTask(): Task? {
-    return project?.tasks?.create("fireEscapeApiText") {
+  private fun registerApiTxtFileTask(project: Project): TaskProvider<Task> {
+    return project.tasks.register("fireEscapeApiText") {
       dependsOn(JAVADOC_TASK_NAME)
-      outputs.file(File(project.buildDir, "tmp/javadoc/api.txt"))
+      outputs.file(project.fileFromBuildDir("tmp/javadoc/api.txt"))
     }
   }
 
-  private fun javadocTask(): Task? {
-    return project?.tasks?.create("fireescapeJavadocJar", Jar::class.java) {
+  private fun registerJavadocTask(project: Project): TaskProvider<Jar> {
+    return project.tasks.register<Jar>("fireescapeJavadocJar") {
       dependsOn(JAVADOC_TASK_NAME)
-      from(File(project.buildDir, "/docs/javadoc/reference"))
+      project.fileFromBuildDir("/docs/javadoc/reference")
       include("**/*")
-      archiveName = "fireescape-javadoc.jar"
-      classifier = "javadoc"
+      archiveFileName.set("fireescape-javadoc.jar")
+      archiveClassifier.set("javadoc")
     }
   }
 }
