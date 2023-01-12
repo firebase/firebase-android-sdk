@@ -17,6 +17,8 @@ package com.google.firebase.appdistribution.impl;
 import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -27,9 +29,9 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.PickVisualMediaRequest;
-import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia;
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -51,6 +53,9 @@ public class FeedbackActivity extends AppCompatActivity {
       "com.google.firebase.appdistribution.FeedbackActivity.INFO_TEXT";
   public static final String SCREENSHOT_URI_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT_URI";
+
+  private final ActivityResultLauncher<Intent> chooseScreenshotLauncher =
+      registerForActivityResult(new StartActivityForResult(), this::handleChooseScreenshotResult);
 
   @Inject FeedbackSender feedbackSender;
   @Inject @Blocking Executor blockingExecutor;
@@ -81,6 +86,7 @@ public class FeedbackActivity extends AppCompatActivity {
         screenshotUri = Uri.parse(getIntent().getStringExtra(SCREENSHOT_URI_KEY));
       }
     }
+
     setupView();
   }
 
@@ -103,27 +109,14 @@ public class FeedbackActivity extends AppCompatActivity {
     findViewById(R.id.backButton).setOnClickListener(v -> finish());
     findViewById(R.id.sendButton).setOnClickListener(this::submitFeedback);
 
-    // Registers a photo picker activity launcher in single-select mode
-    ActivityResultLauncher<PickVisualMediaRequest> pickMedia =
-        registerForActivityResult(
-            new PickVisualMedia(),
-            uri -> {
-              if (uri != null) {
-                LogWrapper.d(TAG, "Selected custom screenshot URI: " + uri);
-                screenshotUri = uri;
-                setupScreenshot();
-              } else {
-                LogWrapper.d(TAG, "No custom screenshot selected. Not changing screenshot URI.");
-              }
-            });
-
     findViewById(R.id.chooseScreenshotButton)
         .setOnClickListener(
-            v ->
-                pickMedia.launch(
-                    new PickVisualMediaRequest.Builder()
-                        .setMediaType(new PickVisualMedia.SingleMimeType("image/png"))
-                        .build()));
+            v -> {
+              Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+              intent.addCategory(Intent.CATEGORY_OPENABLE);
+              intent.setType("image/png");
+              chooseScreenshotLauncher.launch(intent);
+            });
 
     setupScreenshot();
   }
@@ -155,6 +148,19 @@ public class FeedbackActivity extends AppCompatActivity {
                 });
           }
         });
+  }
+
+  private void handleChooseScreenshotResult(ActivityResult activityResult) {
+    int resultCode = activityResult.getResultCode();
+    Intent intent = activityResult.getData();
+    if (resultCode == Activity.RESULT_OK && intent != null && intent.getData() != null) {
+      Uri uri = intent.getData();
+      LogWrapper.d(TAG, "Selected custom screenshot URI: " + uri);
+      screenshotUri = uri;
+      setupScreenshot();
+    } else {
+      LogWrapper.d(TAG, "No custom screenshot selected. Not changing screenshot URI.");
+    }
   }
 
   @Nullable
