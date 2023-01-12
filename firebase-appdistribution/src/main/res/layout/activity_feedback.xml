@@ -113,6 +113,12 @@
                     android:scaleType="centerInside"
                     android:adjustViewBounds="true"
                     android:contentDescription="@string/screenshot_image_description" />
+
+                <Button
+                    android:id="@+id/chooseScreenshotButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Gallery" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
