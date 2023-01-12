@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -104,7 +103,7 @@ public class PublishingPlugin implements Plugin<Project> {
                 projectsNames = readReleaseConfigFile(publishConfigFilePath);
               } else {
                 projectsNames =
-                    Arrays.asList(projectNamesToPublish.split(projectsToPublishSeparator, -1));
+                    List.of(projectNamesToPublish.split(projectsToPublishSeparator, -1));
               }
 
               Set<FirebaseLibraryExtension> projectsToPublish =
