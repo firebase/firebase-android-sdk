@@ -100,7 +100,7 @@ tasks.withType(Test) {
 
 android.libraryVariants.all { variant ->
     if (findProperty('targetBackend')) {
-        variant.buildConfigField("String", "TARGET_BACKEND", property("targetBackend"))
+        variant.buildConfigField("String", "TARGET_BACKEND", "\"${property("targetBackend")}\"")
     } else {
         // By default set the target backend to 'emulator'
         variant.buildConfigField("String", "TARGET_BACKEND", "\"emulator\"")
