@@ -25,11 +25,27 @@ public class TestSettings extends Settings {
   }
 
   public TestSettings(int settingsVersion, int reportUploadVariant, int nativeReportUploadVariant) {
-    super(5, buildSettingsData(), buildFeatureFlagData(), settingsVersion, 3600, 10, 1.2, 60);
+    this(settingsVersion, reportUploadVariant, nativeReportUploadVariant, false);
   }
 
-  private static Settings.FeatureFlagData buildFeatureFlagData() {
-    return new Settings.FeatureFlagData(true, false);
+  public TestSettings(
+      int settingsVersion,
+      int reportUploadVariant,
+      int nativeReportUploadVarian,
+      boolean collectBuildIds) {
+    super(
+        5,
+        buildSettingsData(),
+        buildFeatureFlagData(collectBuildIds),
+        settingsVersion,
+        3600,
+        10,
+        1.2,
+        60);
+  }
+
+  private static Settings.FeatureFlagData buildFeatureFlagData(boolean collectBuildIds) {
+    return new Settings.FeatureFlagData(true, false, collectBuildIds);
   }
 
   private static Settings.SessionData buildSettingsData() {
