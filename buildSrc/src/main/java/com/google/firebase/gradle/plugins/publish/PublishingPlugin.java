@@ -61,6 +61,18 @@ import org.gradle.api.tasks.bundling.Zip;
  *       list of projects to release. The file format should be consistent with Python's
  *       configparser, and the list of projects should be in a section called "modules". If both
  *       this, and {@code projectsToPublish} are specified, this property takes precedence.
+ *       <br>
+ *       <br>
+ *       Example config file content:
+ *       <pre>
+ *         [release]
+ *         name = M126
+ *         ...
+ *         [modules]
+ *         firebase-database
+ *         firebase-common
+ *         firebase-firestore
+ *       </pre>
  *   <li>{@code projectsToPublish} is a list of projects to release separated by {@code
  *       projectsToPublishSeparator}(default: ","), these projects will have their versions depend
  *       on the {@code publishMode} parameter.
