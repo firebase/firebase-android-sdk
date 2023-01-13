@@ -246,7 +246,7 @@ public class FirebaseABTesting {
 
     // Remove experiments no longer assigned.
     List<ConditionalUserProperty> experimentsToRemove =
-            getExperimentsToRemove(experimentsInAnalytics, replacementExperiments);
+        getExperimentsToRemove(experimentsInAnalytics, replacementExperiments);
     removeExperiments(experimentsToRemove);
 
     // Add newly assigned or updated (changed variant id).
@@ -257,7 +257,8 @@ public class FirebaseABTesting {
 
   /** Returns this origin's experiments in Analytics that are no longer assigned to this App. */
   private ArrayList<ConditionalUserProperty> getExperimentsToRemove(
-      List<AbtExperimentInfo> experimentsInAnalytics, List<AbtExperimentInfo> replacementExperiments) {
+      List<AbtExperimentInfo> experimentsInAnalytics,
+      List<AbtExperimentInfo> replacementExperiments) {
 
     ArrayList<ConditionalUserProperty> experimentsToRemove = new ArrayList<>();
     for (AbtExperimentInfo experimentInAnalytics : experimentsInAnalytics) {
@@ -273,7 +274,8 @@ public class FirebaseABTesting {
    * to this origin's list of experiments in Analytics.
    */
   private ArrayList<AbtExperimentInfo> getExperimentsToAdd(
-      List<AbtExperimentInfo> replacementExperiments, List<AbtExperimentInfo> experimentInfoFromAnalytics) {
+      List<AbtExperimentInfo> replacementExperiments,
+      List<AbtExperimentInfo> experimentInfoFromAnalytics) {
 
     ArrayList<AbtExperimentInfo> experimentsToAdd = new ArrayList<>();
     for (AbtExperimentInfo replacementExperiment : replacementExperiments) {
@@ -285,12 +287,13 @@ public class FirebaseABTesting {
   }
 
   private boolean experimentsListContainsExperiment(
-          List<AbtExperimentInfo> experiments, AbtExperimentInfo experiment) {
+      List<AbtExperimentInfo> experiments, AbtExperimentInfo experiment) {
     String experimentId = experiment.getExperimentId();
     String variantId = experiment.getVariantId();
 
     for (AbtExperimentInfo experimentInfo : experiments) {
-      if (experimentInfo.getExperimentId().equals(experimentId) && experimentInfo.getVariantId().equals(variantId)) {
+      if (experimentInfo.getExperimentId().equals(experimentId)
+          && experimentInfo.getVariantId().equals(variantId)) {
         return true;
       }
     }
