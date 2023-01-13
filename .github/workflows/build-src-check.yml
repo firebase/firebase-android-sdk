@@ -26,7 +26,7 @@ jobs:
         run: |
           ./gradlew -b buildSrc/build.gradle.kts -PenablePluginTests=true check
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@94ba6dbddef5ec4aa827fc275cf7d563bc4d398f
+        uses: EnricoMi/publish-unit-test-result-action@b9f6c61d965bcaa18acc02d6daf706373a448f02
         with:
           files: "**/build/test-results/**/*.xml"
           check_name: "buildSrc Test Results"
