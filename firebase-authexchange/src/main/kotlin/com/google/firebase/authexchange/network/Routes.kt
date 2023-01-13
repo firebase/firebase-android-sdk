@@ -35,7 +35,7 @@ import kotlinx.serialization.Serializable
 @Serializable internal data class AuthExchangeTokenP(val accessToken: String, val ttl: String)
 
 /**
- * Request header for the `/ExchangeCustomInstallationAuthToken` endpoint.
+ * Request header for the `/ExchangeInstallationAuthToken` endpoint.
  *
  * @see ExchangeTokenResponseP
  *
@@ -43,7 +43,7 @@ import kotlinx.serialization.Serializable
  * @property installationAuthToken the installation token issued to the app
  */
 @Serializable
-internal data class ExchangeCustomInstallationAuthTokenRequestP(
+internal data class ExchangeInstallationAuthTokenRequestP(
   val token: String,
   val installationAuthToken: String
 ) : Request
@@ -80,7 +80,7 @@ internal data class ExchangeOidcTokenRequestP(
  * Response header for endpoints that just expect an [AuthExchangeTokenP].
  *
  * @see ExchangeCustomTokenRequestP
- * @see ExchangeCustomInstallationAuthTokenRequestP
+ * @see ExchangeInstallationAuthTokenRequestP
  *
  * @property token auth token returned by the backend
  */
