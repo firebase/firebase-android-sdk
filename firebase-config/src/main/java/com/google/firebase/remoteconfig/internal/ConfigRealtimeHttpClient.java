@@ -130,6 +130,7 @@ public class ConfigRealtimeHttpClient {
   private void getInstallationAuthToken(HttpURLConnection httpURLConnection) {
     Task<InstallationTokenResult> installationAuthTokenTask = firebaseInstallations.getToken(false);
     installationAuthTokenTask.onSuccessTask(
+        scheduledExecutorService,
         unusedToken -> {
           httpURLConnection.setRequestProperty(
               INSTALLATIONS_AUTH_TOKEN_HEADER, unusedToken.getToken());
