@@ -4,6 +4,9 @@ THIRD_PARTY_PATH := ../../../../third_party
 
 include $(CLEAR_VARS)
 
+CPP_IMPLICIT_INCLUDES := \
+    -include $(LOCAL_PATH)/include/execvpe.h \
+
 LOCAL_MODULE := crashpad_util
 LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../libchrome/include \
@@ -20,6 +23,7 @@ LOCAL_CPPFLAGS := \
     -Os \
     -flto \
     -fvisibility=hidden \
+    $(CPP_IMPLICIT_INCLUDES) \
 
 LOCAL_SRC_FILES := \
     $(THIRD_PARTY_PATH)/crashpad/util/file/delimited_file_reader.cc \
@@ -74,7 +78,7 @@ LOCAL_SRC_FILES := \
     $(THIRD_PARTY_PATH)/crashpad/util/posix/close_multiple.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/posix/close_stdio.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/posix/drop_privileges.cc \
-    $(THIRD_PARTY_PATH)/crashpad/util/posix/double_fork_and_exec.cc \
+    $(THIRD_PARTY_PATH)/crashpad/util/posix/spawn_subprocess.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/posix/process_info_linux.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/posix/scoped_dir.cc \
     $(THIRD_PARTY_PATH)/crashpad/util/posix/scoped_mmap.cc \

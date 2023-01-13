@@ -337,6 +337,17 @@ public class FirebaseInAppMessaging {
   }
 
   /**
+   * Unregisters a dismiss listener.
+   *
+   * @param dismissListener the listener callback to be removed which was added using {@link
+   *     #addDismissListener}
+   */
+  public void removeDismissListener(
+      @NonNull FirebaseInAppMessagingDismissListener dismissListener) {
+    developerListenerManager.removeDismissListener(dismissListener);
+  }
+
+  /**
    * Removes all registered listeners.
    *
    * @hide

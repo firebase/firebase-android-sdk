@@ -1,5 +1,7 @@
 # Unreleased
 
+* [changed] Updated internal Crashpad version to commit `c902f6`.
+
 # 18.3.2
 * [fixed] Fixed an [issue](https://github.com/firebase/firebase-android-sdk/issues/4313){: .external}
   preventing native crashes from being reported for Android API 29+.
