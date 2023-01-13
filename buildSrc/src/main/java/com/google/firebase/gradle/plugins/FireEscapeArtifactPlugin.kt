@@ -31,24 +31,25 @@ class FireEscapeArtifactPlugin : Plugin<Project> {
 
   override fun apply(target: Project) {
     target.afterEvaluate {
-      if (supportsMavenPublishing(target)) {
-        val apiTxtFile = registerApiTxtFileTask(project)
-        val proguardMappingFile = registerProguardMappingFileTask(project)
-        val javadoc = registerJavadocTask(project)
+      if (!supportsMavenPublishing(target)) {
+        return@afterEvaluate
+      }
+      val apiTxtFile = registerApiTxtFileTask(project)
+      val proguardMappingFile = registerProguardMappingFileTask(project)
+      val javadoc = registerJavadocTask(project)
 
-        val zippedArtifact =
-          project.tasks.register<Zip>("maven") {
-            from(apiTxtFile)
-            if (project.isAndroid()) {
-              from(proguardMappingFile)
-            }
+      val zippedArtifact =
+        project.tasks.register<Zip>("maven") {
+          from(apiTxtFile)
+          if (project.isAndroid()) {
+            from(proguardMappingFile)
           }
+        }
 
-        extensions.configure<PublishingExtension> {
-          publications.getByName<MavenPublication>("mavenAar") {
-            artifact(zippedArtifact)
-            artifact(javadoc)
-          }
+      extensions.configure<PublishingExtension> {
+        publications.getByName<MavenPublication>("mavenAar") {
+          artifact(zippedArtifact)
+          artifact(javadoc)
         }
       }
     }
