@@ -128,6 +128,25 @@ public class IntegrationTestUtil {
     return provider;
   }
 
+  private static String getFirestoreHost() {
+    switch (backend) {
+      case EMULATOR:
+        return String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT);
+      case QA:
+        return "staging-firestore.sandbox.googleapis.com";
+      case NIGHTLY:
+        return "test-firestore.sandbox.googleapis.com";
+      case PROD:
+      default:
+        return "firestore.googleapis.com";
+    }
+  }
+
+  private static boolean getSslEnabled() {
+    // ssl is enabled in all environments except for the emulator.
+    return !isRunningAgainstEmulator();
+  }
+
   public static TargetBackend getTargetBackend() {
     if (backendForLocalTesting != null) {
       return backendForLocalTesting;
@@ -147,35 +166,19 @@ public class IntegrationTestUtil {
   }
 
   public static DatabaseInfo testEnvDatabaseInfo() {
-    if (backend.equals(TargetBackend.EMULATOR)) {
-      return new DatabaseInfo(
-          DatabaseId.forProject(provider.projectId()),
-          "test-persistenceKey",
-          String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT),
-          /*sslEnabled=*/ false);
-    } else {
-      return new DatabaseInfo(
-          DatabaseId.forProject(provider.projectId()),
-          "test-persistenceKey",
-          provider.firestoreHost(backend),
-          /*sslEnabled=*/ true);
-    }
+    return new DatabaseInfo(
+        DatabaseId.forProject(provider.projectId()),
+        "test-persistenceKey",
+        getFirestoreHost(),
+        getSslEnabled());
   }
 
   public static FirebaseFirestoreSettings newTestSettings() {
     Logger.debug("IntegrationTestUtil", "target backend is: %s", BuildConfig.TARGET_BACKEND);
-
     FirebaseFirestoreSettings.Builder settings = new FirebaseFirestoreSettings.Builder();
-
-    if (backend.equals(TargetBackend.EMULATOR)) {
-      settings.setHost(String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT));
-      settings.setSslEnabled(false);
-    } else {
-      settings.setHost(provider.firestoreHost(backend));
-    }
-
+    settings.setHost(getFirestoreHost());
+    settings.setSslEnabled(getSslEnabled());
     settings.setPersistenceEnabled(true);
-
     return settings.build();
   }
 
