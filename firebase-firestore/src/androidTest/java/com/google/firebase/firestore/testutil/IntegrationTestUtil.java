@@ -174,7 +174,7 @@ public class IntegrationTestUtil {
   }
 
   public static FirebaseFirestoreSettings newTestSettings() {
-    Logger.debug("IntegrationTestUtil", "target backend is: %s", BuildConfig.TARGET_BACKEND);
+    Logger.debug("IntegrationTestUtil", "target backend is: %s", backend.name());
     FirebaseFirestoreSettings.Builder settings = new FirebaseFirestoreSettings.Builder();
     settings.setHost(getFirestoreHost());
     settings.setSslEnabled(getSslEnabled());
