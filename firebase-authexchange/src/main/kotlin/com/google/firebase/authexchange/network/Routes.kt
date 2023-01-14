@@ -33,7 +33,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 internal data class AuthExchangeTokenP(
   val accessToken: String,
-  @SerialName("timeToLive") val timeToLive: String
+  @SerialName("ttl") val timeToLive: String
 )
 
 /**
