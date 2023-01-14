@@ -1,5 +1,6 @@
 package com.google.firebase.authexchange.network
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -16,9 +17,6 @@ import kotlinx.serialization.Serializable
  *
  * Useful for apps with external login already set-up, otherwise known as a headless OIDC flow.
  *
- * While this isn't the only OIDC flow that the API supports, it's the only flow that the mobile SDK
- * supports- so there is no base class for credentials.
- *
  * @property idToken JWT encoded OIDC token returned from a third party provider
  */
 @Serializable internal data class ImplicitCredentialsP(val idToken: String)
@@ -30,9 +28,13 @@ import kotlinx.serialization.Serializable
  * facing [AuthExchangeToken][com.google.firebase.authexchange.AuthExchangeToken].
  *
  * @property accessToken signed JWT containing claims that identify a user
- * @property ttl the duration from the time this token is minted until its expiration
+ * @property timeToLive the duration from the time this token is minted until its expiration
  */
-@Serializable internal data class AuthExchangeTokenP(val accessToken: String, val ttl: String)
+@Serializable
+internal data class AuthExchangeTokenP(
+  val accessToken: String,
+  @SerialName("timeToLive") val timeToLive: String
+)
 
 /**
  * Request header for the `/ExchangeInstallationAuthToken` endpoint.
