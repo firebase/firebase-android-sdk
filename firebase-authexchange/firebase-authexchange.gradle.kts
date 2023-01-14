@@ -32,22 +32,18 @@ android {
 }
 
 dependencies {
-  val googleTruthVersion: String by rootProject
-  val kotlinVersion: String by rootProject
-  val robolectricVersion: String by rootProject
-
   implementation(project(":firebase-common"))
   implementation(project(":firebase-common:ktx"))
   implementation(project(":firebase-components"))
   implementation(project(":firebase-authexchange-interop"))
 
-  implementation("androidx.annotation:annotation:1.5.0")
+  implementation(libs.androidx.annotation)
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
-  implementation("org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion")
+  implementation(libs.kotlin.stdlib)
 
 
-  testImplementation("androidx.test:core:1.5.0")
-  testImplementation("com.google.truth:truth:$googleTruthVersion")
-  testImplementation("junit:junit:4.13.2")
-  testImplementation("org.robolectric:robolectric:$robolectricVersion")
+  testImplementation(libs.androidx.test.core)
+  testImplementation(libs.truth)
+  testImplementation(libs.junit)
+  testImplementation(libs.robolectric)
 }
