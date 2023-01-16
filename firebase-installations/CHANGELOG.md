@@ -1,4 +1,7 @@
-# v17.0.0
+# Unreleased
 
-- [added] The Firebase Installations Service is an infrastructure service for Firebase services that creates unique identifiers and authentication tokens for Firebase clients (called "Firebase Installations") enabling Firebase Targeting, i.e. interoperation between Firebase services.
-- [added] The Firebase Installations SDK introduces the Firebase Installations API. Developers that use API-restrictions for their API-Key may experience blocked requests (https://stackoverflow.com/questions/58495985/). This problem can be mitigated by following the instructions found [here](API_KEY_RESTRICTIONS.md).
+# 17.1.0
+*   [changed] Internal changes to ensure functionality alignment with other
+    SDK releases. For more details, refer to the
+    [Firebase Instance ID v21.1.0 release notes](/support/release-notes/android#iid_v21-1-0).
+

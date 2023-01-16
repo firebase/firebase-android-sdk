@@ -14,17 +14,22 @@
 
 package com.google.firebase.crashlytics.internal.send;
 
+import android.annotation.SuppressLint;
 import com.google.android.datatransport.Event;
+import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.Transport;
+import com.google.android.datatransport.runtime.ForcedSender;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.common.OnDemandCounter;
+import com.google.firebase.crashlytics.internal.common.Utils;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import java.util.Locale;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -57,6 +62,8 @@ final class ReportQueue {
         onDemandCounter);
   }
 
+  // TODO(b/258263226): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   ReportQueue(
       double ratePerMinute,
       double base,
@@ -115,6 +122,19 @@ final class ReportQueue {
     }
   }
 
+  // TODO(b/258263226): Migrate to go/firebase-android-executors
+  @SuppressLint({"DiscouragedApi", "ThreadPoolCreation"}) // best effort only
+  public void flushScheduledReportsIfAble() {
+    CountDownLatch latch = new CountDownLatch(1);
+    new Thread(
+            () -> {
+              ForcedSender.sendBlocking(transport, Priority.HIGHEST);
+              latch.countDown();
+            })
+        .start();
+    Utils.awaitUninterruptibly(latch, 2, TimeUnit.SECONDS);
+  }
+
   /** Send the report to Crashlytics through Google DataTransport. */
   private void sendReport(
       CrashlyticsReportWithSessionId reportWithSessionId,
@@ -128,6 +148,7 @@ final class ReportQueue {
             tcs.trySetException(error);
             return;
           }
+          flushScheduledReportsIfAble();
           tcs.trySetResult(reportWithSessionId);
         });
   }

@@ -661,4 +661,39 @@ final class ConfigurationConstants {
       return "fragment_sampling_percentage";
     }
   }
+
+  protected static final class ExperimentTTID extends ConfigurationFlag<Boolean> {
+    private static ExperimentTTID instance;
+
+    private ExperimentTTID() {
+      super();
+    }
+
+    protected static synchronized ExperimentTTID getInstance() {
+      if (instance == null) {
+        instance = new ExperimentTTID();
+      }
+      return instance;
+    }
+
+    @Override
+    protected Boolean getDefault() {
+      return false;
+    }
+
+    @Override
+    protected String getRemoteConfigFlag() {
+      return "fpr_experiment_app_start_ttid";
+    }
+
+    @Override
+    protected String getDeviceCacheFlag() {
+      return "com.google.firebase.perf.ExperimentTTID";
+    }
+
+    @Override
+    protected String getMetadataFlag() {
+      return "experiment_app_start_ttid";
+    }
+  }
 }

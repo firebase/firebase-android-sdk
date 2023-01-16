@@ -637,7 +637,6 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
 
   @Test
   public void testLogGaugeMetadataSendDataToTransport() {
-    when(fakeGaugeMetadataManager.getProcessName()).thenReturn("processName");
     when(fakeGaugeMetadataManager.getDeviceRamSizeKb()).thenReturn(2000);
     when(fakeGaugeMetadataManager.getMaxAppJavaHeapMemoryKb()).thenReturn(1000);
     when(fakeGaugeMetadataManager.getMaxEncouragedAppJavaHeapMemoryKb()).thenReturn(800);
@@ -649,7 +648,6 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     GaugeMetadata recordedGaugeMetadata = recordedGaugeMetric.getGaugeMetadata();
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo("sessionId");
-    assertThat(recordedGaugeMetadata.getProcessName()).isEqualTo("processName");
 
     assertThat(recordedGaugeMetadata.getDeviceRamSizeKb())
         .isEqualTo(fakeGaugeMetadataManager.getDeviceRamSizeKb());
@@ -699,7 +697,6 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     GaugeMetadata recordedGaugeMetadata = recordedGaugeMetric.getGaugeMetadata();
 
     assertThat(recordedGaugeMetric.getSessionId()).isEqualTo("sessionId");
-    assertThat(recordedGaugeMetadata.hasProcessName()).isTrue();
   }
 
   @Test

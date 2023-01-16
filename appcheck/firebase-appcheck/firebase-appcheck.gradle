@@ -29,6 +29,7 @@ android {
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
+        multiDexEnabled = true
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -41,6 +42,7 @@ android {
 }
 
 dependencies {
+    implementation project(':firebase-annotations')
     implementation project(':firebase-common')
     implementation project(':firebase-components')
     implementation project(":appcheck:firebase-appcheck-interop")
@@ -49,6 +51,7 @@ dependencies {
 
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
 
+    testImplementation project(':integ-testing')
     testImplementation 'junit:junit:4.13-beta-2'
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'org.mockito:mockito-inline:2.25.0'
@@ -56,4 +59,14 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation 'androidx.test:rules:1.2.0'
+
+    androidTestImplementation project(':appcheck:firebase-appcheck')
+    androidTestImplementation project(':integ-testing')
+    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test:runner:1.2.0'
+    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
+    androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation "androidx.annotation:annotation:1.0.0"
+    androidTestImplementation 'org.mockito:mockito-core:2.25.0'
+    androidTestImplementation 'org.mockito:mockito-inline:2.25.0'
 }

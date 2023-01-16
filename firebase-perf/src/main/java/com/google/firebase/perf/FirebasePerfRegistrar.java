@@ -17,10 +17,13 @@ package com.google.firebase.perf;
 import androidx.annotation.Keep;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.StartupTime;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.perf.injection.components.DaggerFirebasePerformanceComponent;
 import com.google.firebase.perf.injection.components.FirebasePerformanceComponent;
@@ -29,6 +32,7 @@ import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * {@link com.google.firebase.components.ComponentRegistrar} for the Firebase Performance SDK.
@@ -40,17 +44,35 @@ import java.util.List;
  */
 @Keep
 public class FirebasePerfRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-perf";
+  private static final String EARLY_LIBRARY_NAME = "fire-perf-early";
 
   @Override
   @Keep
   public List<Component<?>> getComponents() {
+    Qualified<Executor> uiExecutor = Qualified.qualified(UiThread.class, Executor.class);
     return Arrays.asList(
         Component.builder(FirebasePerformance.class)
+            .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(RemoteConfigComponent.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.requiredProvider(TransportFactory.class))
+            .add(Dependency.required(FirebasePerfEarly.class))
             .factory(FirebasePerfRegistrar::providesFirebasePerformance)
+            .build(),
+        Component.builder(FirebasePerfEarly.class)
+            .name(EARLY_LIBRARY_NAME)
+            .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.optionalProvider(StartupTime.class))
+            .add(Dependency.required(uiExecutor))
+            .eagerInDefaultApp()
+            .factory(
+                container ->
+                    new FirebasePerfEarly(
+                        container.get(FirebaseApp.class),
+                        container.getProvider(StartupTime.class).get(),
+                        container.get(uiExecutor)))
             .build(),
         /**
          * Fireperf SDK is lazily by {@link FirebasePerformanceInitializer} during {@link
@@ -59,10 +81,12 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
          * not to force initialize them at app startup (refer
          * https://github.com/google/guice/wiki/InjectingProviders#providers-for-lazy-loading)*
          */
-        LibraryVersionComponent.create("fire-perf", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 
   private static FirebasePerformance providesFirebasePerformance(ComponentContainer container) {
+    // Ensure FirebasePerfEarly was initialized
+    container.get(FirebasePerfEarly.class);
     FirebasePerformanceComponent component =
         DaggerFirebasePerformanceComponent.builder()
             .firebasePerformanceModule(

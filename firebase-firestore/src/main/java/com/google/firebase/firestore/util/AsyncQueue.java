@@ -17,6 +17,7 @@ package com.google.firebase.firestore.util;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Looper;
 import androidx.annotation.NonNull;
@@ -243,6 +244,8 @@ public class AsyncQueue {
       }
     }
 
+    // TODO(b/258277574): Migrate to go/firebase-android-executors
+    @SuppressLint("ThreadPoolCreation")
     SynchronizedShutdownAwareExecutor() {
       DelayedStartFactory threadFactory = new DelayedStartFactory();
 
@@ -519,6 +522,9 @@ public class AsyncQueue {
    */
   public void panic(Throwable t) {
     executor.shutdownNow();
+
+    // TODO(b/258277574): Migrate to go/firebase-android-executors
+    @SuppressLint("ThreadPoolCreation")
     Handler handler = new Handler(Looper.getMainLooper());
     handler.post(
         () -> {

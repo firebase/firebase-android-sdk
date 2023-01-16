@@ -56,7 +56,6 @@ public final class FirebasePerfGaugeManagerValidatorTest {
     // Construct GaugeMetadata
     GaugeMetadata gaugeMetadata =
         createValidGaugeMetadata(
-            "processName",
             /* deviceRamSizeKb= */ 2000,
             /* maxAppJavaHeapMemoryKb= */ 1000,
             /* maxEncouragedAppJavaHeapMemoryKb= */ 800);
@@ -115,7 +114,6 @@ public final class FirebasePerfGaugeManagerValidatorTest {
   public void testGaugeMetricWithOnlyGaugeMetadataIsValid() {
     GaugeMetadata gaugeMetadata =
         createValidGaugeMetadata(
-            "processName",
             /* deviceRamSizeKb= */ 2000,
             /* maxAppJavaHeapMemoryKb= */ 1000,
             /* maxEncouragedAppJavaHeapMemoryKb= */ 800);
@@ -134,7 +132,6 @@ public final class FirebasePerfGaugeManagerValidatorTest {
   public void testGaugeMetadataWithoutMaxJavaHeapIsNotValid() {
     GaugeMetadata gaugeMetadata =
         GaugeMetadata.newBuilder()
-            .setProcessName("processName")
             .setDeviceRamSizeKb(2000)
             .setMaxEncouragedAppJavaHeapMemoryKb(800)
             .build();
@@ -202,12 +199,8 @@ public final class FirebasePerfGaugeManagerValidatorTest {
   }
 
   private GaugeMetadata createValidGaugeMetadata(
-      String processName,
-      int deviceRamSizeKb,
-      int maxAppJavaHeapMemoryKb,
-      int maxEncouragedAppJavaHeapMemoryKb) {
+      int deviceRamSizeKb, int maxAppJavaHeapMemoryKb, int maxEncouragedAppJavaHeapMemoryKb) {
     GaugeMetadata.Builder fakeGaugeMetadataBuilder = GaugeMetadata.newBuilder();
-    fakeGaugeMetadataBuilder.setProcessName(processName);
     fakeGaugeMetadataBuilder.setDeviceRamSizeKb(deviceRamSizeKb);
     fakeGaugeMetadataBuilder.setMaxAppJavaHeapMemoryKb(maxAppJavaHeapMemoryKb);
     fakeGaugeMetadataBuilder.setMaxEncouragedAppJavaHeapMemoryKb(maxEncouragedAppJavaHeapMemoryKb);

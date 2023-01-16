@@ -15,11 +15,18 @@
 package com.google.firebase.appcheck.playintegrity;
 
 import com.google.android.gms.common.annotation.KeepForSdk;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
+import com.google.firebase.appcheck.playintegrity.internal.PlayIntegrityAppCheckProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
+import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * {@link ComponentRegistrar} for setting up FirebaseAppCheck play integrity's dependency injections
@@ -29,10 +36,26 @@ import java.util.List;
  */
 @KeepForSdk
 public class FirebaseAppCheckPlayIntegrityRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-app-check-play-integrity";
 
   @Override
   public List<Component<?>> getComponents() {
+    Qualified<Executor> liteExecutor = Qualified.qualified(Lightweight.class, Executor.class);
+    Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
+
     return Arrays.asList(
-        LibraryVersionComponent.create("fire-app-check-play-integrity", BuildConfig.VERSION_NAME));
+        Component.builder(PlayIntegrityAppCheckProvider.class)
+            .name(LIBRARY_NAME)
+            .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.required(liteExecutor))
+            .add(Dependency.required(blockingExecutor))
+            .factory(
+                (container) ->
+                    new PlayIntegrityAppCheckProvider(
+                        container.get(FirebaseApp.class),
+                        container.get(liteExecutor),
+                        container.get(blockingExecutor)))
+            .build(),
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }

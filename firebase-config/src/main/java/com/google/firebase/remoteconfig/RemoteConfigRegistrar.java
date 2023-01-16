@@ -20,13 +20,16 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.abt.FirebaseABTesting.OriginService;
 import com.google.firebase.abt.component.AbtComponent;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * Registrar for setting up Firebase Remote Config's dependency injections in Firebase Android
@@ -37,11 +40,16 @@ import java.util.List;
  */
 @Keep
 public class RemoteConfigRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-rc";
+
   @Override
   public List<Component<?>> getComponents() {
+    Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
     return Arrays.asList(
         Component.builder(RemoteConfigComponent.class)
+            .name(LIBRARY_NAME)
             .add(Dependency.required(Context.class))
+            .add(Dependency.required(blockingExecutor))
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.required(AbtComponent.class))
@@ -50,12 +58,13 @@ public class RemoteConfigRegistrar implements ComponentRegistrar {
                 container ->
                     new RemoteConfigComponent(
                         container.get(Context.class),
+                        container.get(blockingExecutor),
                         container.get(FirebaseApp.class),
                         container.get(FirebaseInstallationsApi.class),
                         container.get(AbtComponent.class).get(OriginService.REMOTE_CONFIG),
                         container.getProvider(AnalyticsConnector.class)))
             .eagerInDefaultApp()
             .build(),
-        LibraryVersionComponent.create("fire-rc", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }

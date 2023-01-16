@@ -15,9 +15,11 @@
 package com.google.firebase.components;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.components.Qualified.unqualified;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -96,10 +98,10 @@ public final class RestrictedComponentContainerTest {
   @Test
   public void getProvider_withAllowedClass_shouldReturnAnInstanceOfThatClass() {
     Double value = 3.0d;
-    when(delegate.getProvider(Double.class)).thenReturn(new Lazy<>(value));
+    when(delegate.getProvider(unqualified(Double.class))).thenReturn(new Lazy<>(value));
 
     assertThat(container.getProvider(Double.class).get()).isSameInstanceAs(value);
-    verify(delegate).getProvider(Double.class);
+    verify(delegate).getProvider(unqualified(Double.class));
   }
 
   @Test
@@ -125,12 +127,16 @@ public final class RestrictedComponentContainerTest {
   @Test
   public void getDeferred_withAllowedClass_shouldReturnAnInstanceOfThatClass() {
     Integer value = 3;
-    when(delegate.getDeferred(Integer.class)).thenReturn(OptionalProvider.of(() -> value));
+    when(delegate.getDeferred(unqualified(Integer.class)))
+        .thenReturn(OptionalProvider.of(() -> value));
 
     AtomicReference<Integer> returned = new AtomicReference<>();
     container.getDeferred(Integer.class).whenAvailable(d -> returned.set(d.get()));
     assertThat(returned.get()).isSameInstanceAs(value);
-    verify(delegate).getDeferred(Integer.class);
+
+    container.getDeferred(unqualified(Integer.class)).whenAvailable(d -> returned.set(d.get()));
+    assertThat(returned.get()).isSameInstanceAs(value);
+    verify(delegate, times(2)).getDeferred(unqualified(Integer.class));
   }
 
   @Test
@@ -166,10 +172,11 @@ public final class RestrictedComponentContainerTest {
   @Test
   public void setOf_withAllowedClass_shouldReturnExpectedSet() {
     Set<Long> set = Collections.emptySet();
-    when(delegate.setOf(Long.class)).thenReturn(set);
+    when(delegate.setOf(unqualified(Long.class))).thenReturn(set);
 
     assertThat(container.setOf(Long.class)).isSameInstanceAs(set);
-    verify(delegate).setOf(Long.class);
+    assertThat(container.setOf(unqualified(Long.class))).isSameInstanceAs(set);
+    verify(delegate, times(2)).setOf(unqualified(Long.class));
   }
 
   @Test
@@ -185,10 +192,11 @@ public final class RestrictedComponentContainerTest {
   @Test
   public void setOfProvider_withAllowedClass_shouldReturnExpectedSet() {
     Set<Boolean> set = Collections.emptySet();
-    when(delegate.setOfProvider(Boolean.class)).thenReturn(new Lazy<>(set));
+    when(delegate.setOfProvider(unqualified(Boolean.class))).thenReturn(new Lazy<>(set));
 
     assertThat(container.setOfProvider(Boolean.class).get()).isSameInstanceAs(set);
-    verify(delegate).setOfProvider(Boolean.class);
+    assertThat(container.setOfProvider(unqualified(Boolean.class)).get()).isSameInstanceAs(set);
+    verify(delegate, times(2)).setOfProvider(unqualified(Boolean.class));
   }
 
   @Test

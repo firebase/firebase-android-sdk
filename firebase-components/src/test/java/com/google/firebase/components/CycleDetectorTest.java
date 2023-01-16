@@ -15,11 +15,13 @@
 package com.google.firebase.components;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.components.Qualified.qualified;
 import static junit.framework.Assert.fail;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import javax.inject.Qualifier;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -246,7 +248,7 @@ public class CycleDetectorTest {
   }
 
   @Test
-  public void detect_withMultipleComponentsImplementingSameIface_shouldThrow() {
+  public void detect_withMultipleComponentsImplementingSameInterface_shouldThrow() {
     List<Component<?>> components =
         Arrays.asList(
             Component.builder(TestInterface1.class).factory(nullFactory()).build(),
@@ -258,6 +260,45 @@ public class CycleDetectorTest {
     } catch (IllegalArgumentException ex) {
       // success.
     }
+  }
+
+  @Qualifier
+  @interface Qualifier1 {}
+
+  @Qualifier
+  @interface Qualifier2 {}
+
+  @Test
+  public void detect_withMultipleComponentsImplementingSameQualifiedInterface_shouldNotThrow() {
+    List<Component<?>> components =
+        Arrays.asList(
+            Component.builder(TestInterface1.class).factory(nullFactory()).build(),
+            Component.builder(qualified(Qualifier1.class, TestInterface1.class))
+                .factory(nullFactory())
+                .build(),
+            Component.builder(qualified(Qualifier2.class, TestInterface1.class))
+                .factory(nullFactory())
+                .build());
+
+    CycleDetector.detect(components);
+  }
+
+  @Test
+  public void
+      detect_withMultipleComponentsImplementingSameQualifiedInterfaceAndNoDepCycle_shouldNotThrow() {
+    List<Component<?>> components =
+        Arrays.asList(
+            Component.builder(TestInterface1.class).factory(nullFactory()).build(),
+            Component.builder(qualified(Qualifier1.class, TestInterface1.class))
+                .add(Dependency.required(TestInterface1.class))
+                .factory(nullFactory())
+                .build(),
+            Component.builder(qualified(Qualifier2.class, TestInterface1.class))
+                .add(Dependency.required(qualified(Qualifier1.class, TestInterface1.class)))
+                .factory(nullFactory())
+                .build());
+
+    CycleDetector.detect(components);
   }
 
   private static void detect(List<Component<?>> components) {

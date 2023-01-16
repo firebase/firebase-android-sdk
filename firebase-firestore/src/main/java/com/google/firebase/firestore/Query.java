@@ -388,6 +388,23 @@ public class Query {
     return where(Filter.notInArray(fieldPath, values));
   }
 
+  // TODO(orquery): This method will become public API. Change visibility and add documentation.
+  /**
+   * Creates and returns a new {@code Query} with the additional filter.
+   *
+   * @param filter The new filter to apply to the existing query.
+   * @return The newly created {@code Query}.
+   */
+  Query where(Filter filter) {
+    com.google.firebase.firestore.core.Filter parsedFilter = parseFilter(filter);
+    if (parsedFilter.getFilters().isEmpty()) {
+      // Return the existing query if not adding any more filters (e.g. an empty composite filter).
+      return this;
+    }
+    validateNewFilter(parsedFilter);
+    return new Query(query.filter(parsedFilter), firestore);
+  }
+
   /**
    * Takes a {@link Filter.UnaryFilter} object, parses the value object and returns a new {@link
    * FieldFilter} for the field, operator, and parsed value.
@@ -466,17 +483,6 @@ public class Query {
       return parseFieldFilter((Filter.UnaryFilter) filter);
     }
     return parseCompositeFilter((Filter.CompositeFilter) filter);
-  }
-
-  // TODO(orquery): This method will become public API. Change visibility and add documentation.
-  Query where(Filter filter) {
-    com.google.firebase.firestore.core.Filter parsedFilter = parseFilter(filter);
-    if (parsedFilter.getFilters().isEmpty()) {
-      // Return the existing query if not adding any more filters (e.g. an empty composite filter).
-      return this;
-    }
-    validateNewFilter(parsedFilter);
-    return new Query(query.filter(parsedFilter), firestore);
   }
 
   private void validateOrderByField(com.google.firebase.firestore.model.FieldPath field) {
@@ -1224,13 +1230,19 @@ public class Query {
   }
 
   /**
-   * Creates an {@link AggregateQuery} counting the number of documents matching this query.
+   * Returns a query that counts the documents in the result set of this query.
    *
-   * @return An {@link AggregateQuery} object that can be used to count the number of documents in
-   *     the result set of this query.
+   * <p>The returned query, when executed, counts the documents in the result set of this query
+   * <em>without actually downloading the documents</em>.
+   *
+   * <p>Using the returned query to count the documents is efficient because only the final count,
+   * not the documents' data, is downloaded. The returned query can even count the documents if the
+   * result set would be prohibitively large to download entirely (e.g. thousands of documents).
+   *
+   * @return a query that counts the documents in the result set of this query.
    */
   @NonNull
-  AggregateQuery count() {
+  public AggregateQuery count() {
     return new AggregateQuery(this);
   }
 

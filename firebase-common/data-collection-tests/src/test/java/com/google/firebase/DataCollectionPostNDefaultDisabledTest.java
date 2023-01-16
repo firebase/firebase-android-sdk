@@ -27,9 +27,11 @@ import com.google.firebase.internal.DataCollectionConfigStorage;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 
 @RunWith(AndroidJUnit4.class)
 @Config(sdk = 25)
+@LooperMode(LooperMode.Mode.LEGACY)
 public class DataCollectionPostNDefaultDisabledTest {
 
   @Test

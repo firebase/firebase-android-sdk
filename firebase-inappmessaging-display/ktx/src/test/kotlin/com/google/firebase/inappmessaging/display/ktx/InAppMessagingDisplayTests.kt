@@ -36,48 +36,49 @@ internal val API_KEY = "ABC" + UUID.randomUUID().toString()
 const val EXISTING_APP = "existing"
 
 abstract class BaseTestCase {
-    @Before
-    fun setUp() {
-        Firebase.initialize(
-                ApplicationProvider.getApplicationContext(),
-                FirebaseOptions.Builder()
-                        .setApplicationId(APP_ID)
-                        .setApiKey(API_KEY)
-                        .setProjectId("123")
-                        .build()
-        )
+  @Before
+  fun setUp() {
+    Firebase.initialize(
+      ApplicationProvider.getApplicationContext(),
+      FirebaseOptions.Builder()
+        .setApplicationId(APP_ID)
+        .setApiKey(API_KEY)
+        .setProjectId("123")
+        .build()
+    )
 
-        Firebase.initialize(
-                ApplicationProvider.getApplicationContext(),
-                FirebaseOptions.Builder()
-                        .setApplicationId(APP_ID)
-                        .setApiKey(API_KEY)
-                        .setProjectId("123")
-                        .build(),
-                EXISTING_APP
-        )
-    }
+    Firebase.initialize(
+      ApplicationProvider.getApplicationContext(),
+      FirebaseOptions.Builder()
+        .setApplicationId(APP_ID)
+        .setApiKey(API_KEY)
+        .setProjectId("123")
+        .build(),
+      EXISTING_APP
+    )
+  }
 
-    @After
-    fun cleanUp() {
-        FirebaseApp.clearInstancesForTest()
-    }
+  @After
+  fun cleanUp() {
+    FirebaseApp.clearInstancesForTest()
+  }
 }
 
 @RunWith(RobolectricTestRunner::class)
 class InAppMessagingDisplayTests : BaseTestCase() {
 
-    @Test
-    fun `inAppMessagingDisplay should delegate to FirebaseInAppMessagingDisplay#getInstance()`() {
-        assertThat(Firebase.inAppMessagingDisplay).isSameInstanceAs(FirebaseInAppMessagingDisplay.getInstance())
-    }
+  @Test
+  fun `inAppMessagingDisplay should delegate to FirebaseInAppMessagingDisplay#getInstance()`() {
+    assertThat(Firebase.inAppMessagingDisplay)
+      .isSameInstanceAs(FirebaseInAppMessagingDisplay.getInstance())
+  }
 }
 
 @RunWith(RobolectricTestRunner::class)
 class LibraryVersionTest : BaseTestCase() {
-    @Test
-    fun `library version should be registered with runtime`() {
-        val publisher = Firebase.app.get(UserAgentPublisher::class.java)
-        assertThat(publisher.userAgent).contains(LIBRARY_NAME)
-    }
+  @Test
+  fun `library version should be registered with runtime`() {
+    val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+    assertThat(publisher.userAgent).contains(LIBRARY_NAME)
+  }
 }

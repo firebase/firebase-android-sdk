@@ -20,6 +20,7 @@ import static com.google.firebase.inappmessaging.EventType.IMPRESSION_EVENT_TYPE
 import android.os.Bundle;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.inappmessaging.BuildConfig;
 import com.google.firebase.inappmessaging.CampaignAnalytics;
 import com.google.firebase.inappmessaging.ClientAppInfo;
@@ -38,6 +39,7 @@ import com.google.firebase.inappmessaging.model.ModalMessage;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import javax.annotation.Nullable;
 
 /**
@@ -78,6 +80,7 @@ public class MetricsLoggerClient {
   private final Clock clock;
   private final AnalyticsConnector analyticsConnector;
   private final DeveloperListenerManager developerListenerManager;
+  @Blocking private final Executor blockingExecutor;
 
   public MetricsLoggerClient(
       EngagementMetricsLoggerInterface engagementMetricsLogger,
@@ -85,13 +88,15 @@ public class MetricsLoggerClient {
       FirebaseApp firebaseApp,
       FirebaseInstallationsApi firebaseInstallations,
       Clock clock,
-      DeveloperListenerManager developerListenerManager) {
+      DeveloperListenerManager developerListenerManager,
+      @Blocking Executor blockingExecutor) {
     this.engagementMetricsLogger = engagementMetricsLogger;
     this.analyticsConnector = analyticsConnector;
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
     this.clock = clock;
     this.developerListenerManager = developerListenerManager;
+    this.blockingExecutor = blockingExecutor;
   }
 
   /** Log impression */
@@ -101,6 +106,7 @@ public class MetricsLoggerClient {
       firebaseInstallations
           .getId()
           .addOnSuccessListener(
+              blockingExecutor,
               id ->
                   engagementMetricsLogger.logEvent(
                       createEventEntry(message, id, IMPRESSION_EVENT_TYPE).toByteArray()));
@@ -121,6 +127,7 @@ public class MetricsLoggerClient {
       firebaseInstallations
           .getId()
           .addOnSuccessListener(
+              blockingExecutor,
               id ->
                   engagementMetricsLogger.logEvent(
                       createEventEntry(message, id, CLICK_EVENT_TYPE).toByteArray()));
@@ -138,6 +145,7 @@ public class MetricsLoggerClient {
       firebaseInstallations
           .getId()
           .addOnSuccessListener(
+              blockingExecutor,
               id ->
                   engagementMetricsLogger.logEvent(
                       createRenderErrorEntry(message, id, errorTransform.get(errorReason))
@@ -154,6 +162,7 @@ public class MetricsLoggerClient {
       firebaseInstallations
           .getId()
           .addOnSuccessListener(
+              blockingExecutor,
               id ->
                   engagementMetricsLogger.logEvent(
                       createDismissEntry(message, id, dismissTransform.get(dismissType))

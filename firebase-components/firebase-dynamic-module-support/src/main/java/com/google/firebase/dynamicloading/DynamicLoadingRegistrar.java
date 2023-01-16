@@ -23,11 +23,13 @@ import java.util.Arrays;
 import java.util.List;
 
 public class DynamicLoadingRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-dyn-mod";
 
   @Override
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(DynamicLoadingSupport.class)
+            .name(LIBRARY_NAME)
             .add(Dependency.required(Context.class))
             .add(Dependency.required(ComponentLoader.class))
             .alwaysEager()
@@ -36,6 +38,6 @@ public class DynamicLoadingRegistrar implements ComponentRegistrar {
                     new DynamicLoadingSupport(
                         container.get(Context.class), container.get(ComponentLoader.class)))
             .build(),
-        LibraryVersionComponent.create("fire-dyn-mod", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }

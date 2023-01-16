@@ -57,4 +57,8 @@ final class TransportImpl<T> implements Transport<T> {
             .build(),
         callback);
   }
+
+  TransportContext getTransportContext() {
+    return transportContext;
+  }
 }

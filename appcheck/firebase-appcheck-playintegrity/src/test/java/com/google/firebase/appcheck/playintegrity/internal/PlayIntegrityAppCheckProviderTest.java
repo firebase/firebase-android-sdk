@@ -34,8 +34,9 @@ import com.google.firebase.appcheck.internal.AppCheckTokenResponse;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
 import com.google.firebase.appcheck.internal.NetworkClient;
 import com.google.firebase.appcheck.internal.RetryManager;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeoutException;
 import org.json.JSONObject;
 import org.junit.Before;
@@ -47,10 +48,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 
 /** Tests for {@link PlayIntegrityAppCheckProvider}. */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
+@LooperMode(LooperMode.Mode.LEGACY)
 public class PlayIntegrityAppCheckProviderTest {
 
   private static final String PROJECT_NUMBER = "123456";
@@ -68,7 +71,9 @@ public class PlayIntegrityAppCheckProviderTest {
   @Captor private ArgumentCaptor<IntegrityTokenRequest> integrityTokenRequestCaptor;
   @Captor private ArgumentCaptor<byte[]> exchangePlayIntegrityTokenRequestCaptor;
 
-  private ExecutorService backgroundExecutor = MoreExecutors.newDirectExecutorService();
+  // TODO(b/258273630): Use TestOnlyExecutors instead of MoreExecutors.directExecutor().
+  private Executor liteExecutor = MoreExecutors.directExecutor();
+  private Executor blockingExecutor = MoreExecutors.directExecutor();
 
   @Before
   public void setup() {
@@ -83,7 +88,8 @@ public class PlayIntegrityAppCheckProviderTest {
     assertThrows(
         NullPointerException.class,
         () -> {
-          new PlayIntegrityAppCheckProvider(null);
+          new PlayIntegrityAppCheckProvider(
+              null, TestOnlyExecutors.lite(), TestOnlyExecutors.blocking());
         });
   }
 
@@ -102,7 +108,8 @@ public class PlayIntegrityAppCheckProviderTest {
             PROJECT_NUMBER,
             mockIntegrityManager,
             mockNetworkClient,
-            backgroundExecutor,
+            liteExecutor,
+            blockingExecutor,
             mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
@@ -137,7 +144,8 @@ public class PlayIntegrityAppCheckProviderTest {
             PROJECT_NUMBER,
             mockIntegrityManager,
             mockNetworkClient,
-            backgroundExecutor,
+            liteExecutor,
+            blockingExecutor,
             mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
@@ -161,7 +169,8 @@ public class PlayIntegrityAppCheckProviderTest {
             PROJECT_NUMBER,
             mockIntegrityManager,
             mockNetworkClient,
-            backgroundExecutor,
+            liteExecutor,
+            blockingExecutor,
             mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 
@@ -192,7 +201,8 @@ public class PlayIntegrityAppCheckProviderTest {
             PROJECT_NUMBER,
             mockIntegrityManager,
             mockNetworkClient,
-            backgroundExecutor,
+            liteExecutor,
+            blockingExecutor,
             mockRetryManager);
     Task<AppCheckToken> task = provider.getToken();
 

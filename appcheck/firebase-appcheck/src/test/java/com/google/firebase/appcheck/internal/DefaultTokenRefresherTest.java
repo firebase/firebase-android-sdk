@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.android.gms.tasks.Tasks;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.firebase.appcheck.AppCheckToken;
 import java.util.concurrent.ScheduledExecutorService;
 import org.junit.Before;
@@ -33,8 +34,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.annotation.LooperMode;
 
 @RunWith(RobolectricTestRunner.class)
+@LooperMode(LooperMode.Mode.LEGACY)
 public class DefaultTokenRefresherTest {
 
   private static final long TIME_TO_REFRESH_MILLIS = 1000L;
@@ -42,7 +45,6 @@ public class DefaultTokenRefresherTest {
   private static final long TWO_MINUTES_SECONDS = 2L * 60L;
   private static final long FOUR_MINUTES_SECONDS = 4L * 60L;
   private static final long EIGHT_MINUTES_SECONDS = 8L * 60L;
-  private static final String ERROR = "error";
 
   @Mock DefaultFirebaseAppCheck mockFirebaseAppCheck;
   @Mock ScheduledExecutorService mockScheduledExecutorService;
@@ -57,8 +59,10 @@ public class DefaultTokenRefresherTest {
     when(mockFirebaseAppCheck.fetchTokenFromProvider())
         .thenReturn(Tasks.forResult(mockAppCheckToken));
 
+    // TODO(b/258273630): Use TestOnlyExecutors.
     defaultTokenRefresher =
-        new DefaultTokenRefresher(mockFirebaseAppCheck, mockScheduledExecutorService);
+        new DefaultTokenRefresher(
+            mockFirebaseAppCheck, MoreExecutors.directExecutor(), mockScheduledExecutorService);
   }
 
   @Test

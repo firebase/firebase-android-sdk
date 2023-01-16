@@ -54,14 +54,27 @@ public class FirebaseABTestingTest {
   private static final String TEST_EXPERIMENT_1_ID = "1";
   private static final String TEST_EXPERIMENT_2_ID = "2";
 
+  private static final String TEST_VARIANT_ID_A = "VARIANT_A";
+  private static final String TEST_VARIANT_ID_B = "VARIANT_B";
+
   private static final AbtExperimentInfo TEST_ABT_EXPERIMENT_1 =
       createExperimentInfo(
           TEST_EXPERIMENT_1_ID,
+          TEST_VARIANT_ID_A,
           /*triggerEventName=*/ "",
           /*experimentStartTimeInEpochMillis=*/ 1000L);
-  private static final AbtExperimentInfo TEST_ABT_EXPERIMENT_2 =
+  private static final AbtExperimentInfo TEST_ABT_EXPERIMENT_2_VARIANT_A =
       createExperimentInfo(
-          TEST_EXPERIMENT_2_ID, "trigger_event_2", /*experimentStartTimeInEpochMillis=*/ 2000L);
+          TEST_EXPERIMENT_2_ID,
+          TEST_VARIANT_ID_A,
+          "trigger_event_2",
+          /*experimentStartTimeInEpochMillis=*/ 2000L);
+  private static final AbtExperimentInfo TEST_ABT_EXPERIMENT_2_VARIANT_B =
+      createExperimentInfo(
+          TEST_EXPERIMENT_2_ID,
+          TEST_VARIANT_ID_B,
+          "trigger_event_2",
+          /*experimentStartTimeInEpochMillis=*/ 2000L);
 
   private static final int MAX_ALLOWED_EXPERIMENTS_IN_ANALYTICS = 100;
 
@@ -91,7 +104,7 @@ public class FirebaseABTestingTest {
 
     firebaseAbt.replaceAllExperiments(
         Lists.newArrayList(
-            TEST_ABT_EXPERIMENT_1.toStringMap(), TEST_ABT_EXPERIMENT_2.toStringMap()));
+            TEST_ABT_EXPERIMENT_1.toStringMap(), TEST_ABT_EXPERIMENT_2_VARIANT_A.toStringMap()));
 
     ArgumentCaptor<ConditionalUserProperty> analyticsExperimentArgumentCaptor =
         ArgumentCaptor.forClass(ConditionalUserProperty.class);
@@ -107,7 +120,8 @@ public class FirebaseABTestingTest {
 
     // Validates that TEST_ABT_EXPERIMENT_1 and TEST_ABT_EXPERIMENT_2 have been set in Analytics.
     assertThat(analyticsExperiment1.toStringMap()).isEqualTo(TEST_ABT_EXPERIMENT_1.toStringMap());
-    assertThat(analyticsExperiment2.toStringMap()).isEqualTo(TEST_ABT_EXPERIMENT_2.toStringMap());
+    assertThat(analyticsExperiment2.toStringMap())
+        .isEqualTo(TEST_ABT_EXPERIMENT_2_VARIANT_A.toStringMap());
   }
 
   @Test
@@ -117,10 +131,11 @@ public class FirebaseABTestingTest {
         .thenReturn(
             Lists.newArrayList(
                 TEST_ABT_EXPERIMENT_1.toConditionalUserProperty(ORIGIN_SERVICE),
-                TEST_ABT_EXPERIMENT_2.toConditionalUserProperty(ORIGIN_SERVICE)));
+                TEST_ABT_EXPERIMENT_2_VARIANT_A.toConditionalUserProperty(ORIGIN_SERVICE)));
 
-    AbtExperimentInfo newExperiment3 = createExperimentInfo("3", "", 1000L);
-    AbtExperimentInfo newExperiment4 = createExperimentInfo("4", "trigger_event_4", 1000L);
+    AbtExperimentInfo newExperiment3 = createExperimentInfo("3", TEST_VARIANT_ID_A, "", 1000L);
+    AbtExperimentInfo newExperiment4 =
+        createExperimentInfo("4", TEST_VARIANT_ID_A, "trigger_event_4", 1000L);
 
     // Simulates the case where experiment 1 is assigned (as before), experiment 2 is no longer
     // assigned; experiment 3 and experiment 4 are newly assigned.
@@ -147,6 +162,47 @@ public class FirebaseABTestingTest {
   }
 
   @Test
+  public void
+      replaceAllExperiments_existExperimentsInAnalyticsWithDifferentVariants_experimentsCorrectlySetInAnalytics()
+          throws Exception {
+    when(mockAnalyticsConnector.getConditionalUserProperties(ORIGIN_SERVICE, ""))
+        .thenReturn(
+            Lists.newArrayList(
+                TEST_ABT_EXPERIMENT_1.toConditionalUserProperty(ORIGIN_SERVICE),
+                TEST_ABT_EXPERIMENT_2_VARIANT_A.toConditionalUserProperty(ORIGIN_SERVICE)));
+
+    AbtExperimentInfo newExperiment3 = createExperimentInfo("3", "b", "", 1000L);
+    AbtExperimentInfo newExperiment4 = createExperimentInfo("4", "a", "trigger_event_4", 1000L);
+
+    // Simulates the case where experiments 1 and 2 are removed,
+    // experiment 2 is re-set with a new variant, and experiments 3 and 4 are newly added.
+    firebaseAbt.replaceAllExperiments(
+        Lists.newArrayList(
+            TEST_ABT_EXPERIMENT_2_VARIANT_B.toStringMap(),
+            newExperiment3.toStringMap(),
+            newExperiment4.toStringMap()));
+
+    // Validates that experiment 1 is cleared, experiment 2 is updated,
+    // and experiment 3 and experiment 4 are set in Analytics.
+    ArgumentCaptor<ConditionalUserProperty> analyticsExperimentArgumentCaptor =
+        ArgumentCaptor.forClass(ConditionalUserProperty.class);
+    verify(mockAnalyticsConnector, times(1))
+        .clearConditionalUserProperty(TEST_EXPERIMENT_1_ID, null, null);
+    verify(mockAnalyticsConnector, times(1))
+        .clearConditionalUserProperty(TEST_EXPERIMENT_2_ID, null, null);
+    verify(mockAnalyticsConnector, times(3))
+        .setConditionalUserProperty(analyticsExperimentArgumentCaptor.capture());
+
+    List<ConditionalUserProperty> actualValues = analyticsExperimentArgumentCaptor.getAllValues();
+    assertThat(AbtExperimentInfo.fromConditionalUserProperty(actualValues.get(0)).toStringMap())
+        .isEqualTo(TEST_ABT_EXPERIMENT_2_VARIANT_B.toStringMap());
+    assertThat(AbtExperimentInfo.fromConditionalUserProperty(actualValues.get(1)).toStringMap())
+        .isEqualTo(newExperiment3.toStringMap());
+    assertThat(AbtExperimentInfo.fromConditionalUserProperty(actualValues.get(2)).toStringMap())
+        .isEqualTo(newExperiment4.toStringMap());
+  }
+
+  @Test
   public void replaceAllExperiments_totalExperimentsExceedsAnalyticsLimit_oldExperimentsDiscarded()
       throws Exception {
     // Set max allowed experiments in Analytics to 3.
@@ -155,17 +211,18 @@ public class FirebaseABTestingTest {
         .thenReturn(
             Lists.newArrayList(
                 TEST_ABT_EXPERIMENT_1.toConditionalUserProperty(ORIGIN_SERVICE),
-                TEST_ABT_EXPERIMENT_2.toConditionalUserProperty(ORIGIN_SERVICE)));
+                TEST_ABT_EXPERIMENT_2_VARIANT_A.toConditionalUserProperty(ORIGIN_SERVICE)));
 
-    AbtExperimentInfo newExperiment3 = createExperimentInfo("3", "", 1000L);
-    AbtExperimentInfo newExperiment4 = createExperimentInfo("4", "trigger_event_4", 1000L);
+    AbtExperimentInfo newExperiment3 = createExperimentInfo("3", TEST_VARIANT_ID_A, "", 1000L);
+    AbtExperimentInfo newExperiment4 =
+        createExperimentInfo("4", TEST_VARIANT_ID_A, "trigger_event_4", 1000L);
 
     // Simulates the case where experiment 1 and 2 are assigned (as before), experiment 3 and
     // experiment 4 are newly assigned.
     firebaseAbt.replaceAllExperiments(
         Lists.newArrayList(
             TEST_ABT_EXPERIMENT_1.toStringMap(),
-            TEST_ABT_EXPERIMENT_2.toStringMap(),
+            TEST_ABT_EXPERIMENT_2_VARIANT_A.toStringMap(),
             newExperiment3.toStringMap(),
             newExperiment4.toStringMap()));
 
@@ -231,7 +288,7 @@ public class FirebaseABTestingTest {
         .thenReturn(
             Lists.newArrayList(
                 TEST_ABT_EXPERIMENT_1.toConditionalUserProperty(ORIGIN_SERVICE),
-                TEST_ABT_EXPERIMENT_2.toConditionalUserProperty(ORIGIN_SERVICE)));
+                TEST_ABT_EXPERIMENT_2_VARIANT_A.toConditionalUserProperty(ORIGIN_SERVICE)));
 
     firebaseAbt.removeAllExperiments();
 
@@ -266,7 +323,7 @@ public class FirebaseABTestingTest {
         .thenReturn(
             Lists.newArrayList(
                 TEST_ABT_EXPERIMENT_1.toConditionalUserProperty(ORIGIN_SERVICE),
-                TEST_ABT_EXPERIMENT_2.toConditionalUserProperty(ORIGIN_SERVICE)));
+                TEST_ABT_EXPERIMENT_2_VARIANT_A.toConditionalUserProperty(ORIGIN_SERVICE)));
 
     List<AbtExperimentInfo> abtExperimentInfoList = firebaseAbt.getAllExperiments();
 
@@ -274,7 +331,7 @@ public class FirebaseABTestingTest {
     assertThat(abtExperimentInfoList.get(0).toStringMap())
         .isEqualTo(TEST_ABT_EXPERIMENT_1.toStringMap());
     assertThat(abtExperimentInfoList.get(1).toStringMap())
-        .isEqualTo(TEST_ABT_EXPERIMENT_2.toStringMap());
+        .isEqualTo(TEST_ABT_EXPERIMENT_2_VARIANT_A.toStringMap());
   }
 
   @Test
@@ -298,7 +355,7 @@ public class FirebaseABTestingTest {
         .thenReturn(
             Lists.newArrayList(
                 TEST_ABT_EXPERIMENT_1.toConditionalUserProperty(ORIGIN_SERVICE),
-                TEST_ABT_EXPERIMENT_2.toConditionalUserProperty(ORIGIN_SERVICE)));
+                TEST_ABT_EXPERIMENT_2_VARIANT_A.toConditionalUserProperty(ORIGIN_SERVICE)));
 
     // Update to just one experiment running
     firebaseAbt.validateRunningExperiments(Lists.newArrayList(TEST_ABT_EXPERIMENT_1));
@@ -315,11 +372,11 @@ public class FirebaseABTestingTest {
         .thenReturn(
             Lists.newArrayList(
                 TEST_ABT_EXPERIMENT_1.toConditionalUserProperty(ORIGIN_SERVICE),
-                TEST_ABT_EXPERIMENT_2.toConditionalUserProperty(ORIGIN_SERVICE)));
+                TEST_ABT_EXPERIMENT_2_VARIANT_A.toConditionalUserProperty(ORIGIN_SERVICE)));
 
     // Update still says the same two experiments are running
     firebaseAbt.validateRunningExperiments(
-        Lists.newArrayList(TEST_ABT_EXPERIMENT_1, TEST_ABT_EXPERIMENT_2));
+        Lists.newArrayList(TEST_ABT_EXPERIMENT_1, TEST_ABT_EXPERIMENT_2_VARIANT_A));
 
     // Verify nothing cleared
     verify(mockAnalyticsConnector, never()).clearConditionalUserProperty(any(), any(), any());
@@ -346,11 +403,14 @@ public class FirebaseABTestingTest {
   }
 
   private static AbtExperimentInfo createExperimentInfo(
-      String experimentId, String triggerEventName, long experimentStartTimeInEpochMillis) {
+      String experimentId,
+      String variantId,
+      String triggerEventName,
+      long experimentStartTimeInEpochMillis) {
 
     return new AbtExperimentInfo(
         experimentId,
-        VARIANT_ID_VALUE,
+        variantId,
         triggerEventName,
         new Date(experimentStartTimeInEpochMillis),
         TRIGGER_TIMEOUT_IN_MILLIS_VALUE,

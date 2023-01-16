@@ -26,15 +26,18 @@ import java.util.Arrays;
 import java.util.List;
 
 public class CrashlyticsNdkRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-cls-ndk";
+
   @Override
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(CrashlyticsNativeComponent.class)
+            .name(LIBRARY_NAME)
             .add(Dependency.required(Context.class))
             .factory(this::buildCrashlyticsNdk)
             .eagerInDefaultApp()
             .build(),
-        LibraryVersionComponent.create("fire-cls-ndk", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 
   private CrashlyticsNativeComponent buildCrashlyticsNdk(ComponentContainer container) {

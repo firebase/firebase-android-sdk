@@ -14,6 +14,7 @@
 
 package com.google.firebase.perf.session.gauges;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
@@ -63,9 +64,11 @@ public class GaugeManager {
   private ApplicationProcessState applicationProcessState =
       ApplicationProcessState.APPLICATION_PROCESS_STATE_UNKNOWN;
 
+  // TODO(b/258263016): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   private GaugeManager() {
     this(
-        new Lazy<>(() -> Executors.newSingleThreadScheduledExecutor()),
+        new Lazy<>(Executors::newSingleThreadScheduledExecutor),
         TransportManager.getInstance(),
         ConfigResolver.getInstance(),
         null,
@@ -267,7 +270,6 @@ public class GaugeManager {
 
   private GaugeMetadata getGaugeMetadata() {
     return GaugeMetadata.newBuilder()
-        .setProcessName(gaugeMetadataManager.getProcessName())
         .setDeviceRamSizeKb(gaugeMetadataManager.getDeviceRamSizeKb())
         .setMaxAppJavaHeapMemoryKb(gaugeMetadataManager.getMaxAppJavaHeapMemoryKb())
         .setMaxEncouragedAppJavaHeapMemoryKb(

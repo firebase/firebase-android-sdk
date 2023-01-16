@@ -48,6 +48,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.annotation.LooperMode;
 
 /**
  * Unit tests for the Firebase Remote Config Component.
@@ -92,6 +93,7 @@ public class RemoteConfigComponentTest {
   }
 
   @Test
+  @LooperMode(LooperMode.Mode.LEGACY)
   public void frc2p_doesNotCallAbt() throws Exception {
 
     FirebaseRemoteConfig fireperfFrc =
@@ -106,6 +108,7 @@ public class RemoteConfigComponentTest {
   }
 
   @Test
+  @LooperMode(LooperMode.Mode.LEGACY)
   public void frcNonMainFirebaseApp_doesNotCallAbt() throws Exception {
 
     when(mockFirebaseApp.getName()).thenReturn("secondary");

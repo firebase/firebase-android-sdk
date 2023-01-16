@@ -14,11 +14,10 @@
 
 package com.google.firebase.ml_data_collection_tests;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader;
 import com.google.firebase.ml.modeldownloader.internal.SharedPreferencesUtil;
 import java.util.function.Consumer;
 
@@ -47,12 +46,8 @@ final class MlDataCollectionTestUtil {
   }
 
   static SharedPreferencesUtil getSharedPreferencesUtil(FirebaseApp app) {
-    return new SharedPreferencesUtil(app);
-  }
-
-  static SharedPreferences getSharedPreferences(FirebaseApp app) {
-    return app.getApplicationContext()
-        .getSharedPreferences(SharedPreferencesUtil.PREFERENCES_PACKAGE_NAME, Context.MODE_PRIVATE);
+    return new SharedPreferencesUtil(
+        app, FirebaseModelDownloader.getInstance(app).getModelFactory());
   }
 
   static void setSharedPreferencesTo(FirebaseApp app, Boolean enabled) {

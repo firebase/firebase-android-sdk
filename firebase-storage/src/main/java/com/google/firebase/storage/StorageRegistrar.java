@@ -30,10 +30,13 @@ import java.util.List;
 @Keep
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StorageRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-gcs";
+
   @Override
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseStorageComponent.class)
+            .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.optionalProvider(InternalAuthProvider.class))
             .add(Dependency.optionalProvider(InternalAppCheckTokenProvider.class))
@@ -44,6 +47,6 @@ public class StorageRegistrar implements ComponentRegistrar {
                         c.getProvider(InternalAuthProvider.class),
                         c.getProvider(InternalAppCheckTokenProvider.class)))
             .build(),
-        LibraryVersionComponent.create("fire-gcs", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }

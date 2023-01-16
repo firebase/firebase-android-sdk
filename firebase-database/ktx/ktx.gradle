@@ -17,6 +17,8 @@ plugins {
     id 'kotlin-android'
 }
 
+group = "com.google.firebase"
+
 firebaseLibrary {
     releaseWith project(':firebase-database')
     publishJavadoc = true
@@ -50,6 +52,7 @@ dependencies {
     implementation project(':firebase-database')
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
 
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"

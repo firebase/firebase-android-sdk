@@ -38,6 +38,9 @@
         <meta-data
             android:name="fragment_sampling_percentage"
             android:value="100.0" />
+        <meta-data
+            android:name="experiment_app_start_ttid"
+            android:value="true" />
 
         <receiver
             android:name=".FirebasePerfTestReceiver"

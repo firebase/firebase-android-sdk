@@ -37,11 +37,15 @@ public final class Dependency {
     int DEFERRED = 2;
   }
 
-  private final Class<?> anInterface;
-  private final @Type int type;
+  private final Qualified<?> anInterface;
+  @Type private final int type;
   private final @Injection int injection;
 
   private Dependency(Class<?> anInterface, @Type int type, @Injection int injection) {
+    this(Qualified.unqualified(anInterface), type, injection);
+  }
+
+  private Dependency(Qualified<?> anInterface, @Type int type, @Injection int injection) {
     this.anInterface = Preconditions.checkNotNull(anInterface, "Null dependency anInterface.");
     this.type = type;
     this.injection = injection;
@@ -72,6 +76,16 @@ public final class Dependency {
   }
 
   /**
+   * Declares a deferred dependency.
+   *
+   * <p>Such dependencies are optional and may not be present by default. But they can become
+   * available if a dynamic module that contains them is installed.
+   */
+  public static Dependency deferred(Qualified<?> anInterface) {
+    return new Dependency(anInterface, Type.OPTIONAL, Injection.DEFERRED);
+  }
+
+  /**
    * Declares a required dependency.
    *
    * <p>Such dependencies must be present in order for the dependent component to function. Any
@@ -80,6 +94,18 @@ public final class Dependency {
    * at runtime.
    */
   public static Dependency required(Class<?> anInterface) {
+    return new Dependency(anInterface, Type.REQUIRED, Injection.DIRECT);
+  }
+
+  /**
+   * Declares a required dependency.
+   *
+   * <p>Such dependencies must be present in order for the dependent component to function. Any
+   * component with a required dependency should also declare a Maven dependency on an SDK that
+   * provides it. Failing to do so will result in a {@link MissingDependencyException} to be thrown
+   * at runtime.
+   */
+  public static Dependency required(Qualified<?> anInterface) {
     return new Dependency(anInterface, Type.REQUIRED, Injection.DIRECT);
   }
 
@@ -95,12 +121,33 @@ public final class Dependency {
   }
 
   /**
+   * Declares a Set multi-binding dependency.
+   *
+   * <p>Such dependencies provide access to a {@code Set<Foo>} to dependent components. Note that
+   * the set is only filled with components that explicitly declare the intent to be a "set"
+   * dependency via {@link Component#intoSet(Object, Class)}.
+   */
+  public static Dependency setOf(Qualified<?> anInterface) {
+    return new Dependency(anInterface, Type.SET, Injection.DIRECT);
+  }
+
+  /**
    * Declares an optional dependency.
    *
    * <p>Optional dependencies can be missing at runtime(being {@code null}) and dependents must be
    * ready to handle that.
    */
   public static Dependency optionalProvider(Class<?> anInterface) {
+    return new Dependency(anInterface, Type.OPTIONAL, Injection.PROVIDER);
+  }
+
+  /**
+   * Declares an optional dependency.
+   *
+   * <p>Optional dependencies can be missing at runtime(being {@code null}) and dependents must be
+   * ready to handle that.
+   */
+  public static Dependency optionalProvider(Qualified<?> anInterface) {
     return new Dependency(anInterface, Type.OPTIONAL, Injection.PROVIDER);
   }
 
@@ -117,6 +164,18 @@ public final class Dependency {
   }
 
   /**
+   * Declares a required dependency.
+   *
+   * <p>Such dependencies must be present in order for the dependent component to function. Any
+   * component with a required dependency should also declare a Maven dependency on an SDK that
+   * provides it. Failing to do so will result in a {@link MissingDependencyException} to be thrown
+   * at runtime.
+   */
+  public static Dependency requiredProvider(Qualified<?> anInterface) {
+    return new Dependency(anInterface, Type.REQUIRED, Injection.PROVIDER);
+  }
+
+  /**
    * Declares a Set multi-binding dependency.
    *
    * <p>Such dependencies provide access to a {@code Set<Foo>} to dependent components. Note that
@@ -127,7 +186,18 @@ public final class Dependency {
     return new Dependency(anInterface, Type.SET, Injection.PROVIDER);
   }
 
-  public Class<?> getInterface() {
+  /**
+   * Declares a Set multi-binding dependency.
+   *
+   * <p>Such dependencies provide access to a {@code Set<Foo>} to dependent components. Note that
+   * the set is only filled with components that explicitly declare the intent to be a "set"
+   * dependency via {@link Component#intoSet(Object, Class)}.
+   */
+  public static Dependency setOfProvider(Qualified<?> anInterface) {
+    return new Dependency(anInterface, Type.SET, Injection.PROVIDER);
+  }
+
+  public Qualified<?> getInterface() {
     return anInterface;
   }
 
@@ -151,7 +221,9 @@ public final class Dependency {
   public boolean equals(Object o) {
     if (o instanceof Dependency) {
       Dependency other = (Dependency) o;
-      return anInterface == other.anInterface && type == other.type && injection == other.injection;
+      return anInterface.equals(other.anInterface)
+          && type == other.type
+          && injection == other.injection;
     }
     return false;
   }

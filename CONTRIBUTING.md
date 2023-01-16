@@ -27,3 +27,7 @@ information on using pull requests.
 This project follows
 [Google's Open Source Community Guidelines](https://opensource.google.com/conduct/).
 
+## Contributor Documentation
+
+To know more about how to setup your environment, how Firebase internals work, and
+best practices, take a look at our detailed [contributor documentation](https://firebase.github.io/firebase-android-sdk/).

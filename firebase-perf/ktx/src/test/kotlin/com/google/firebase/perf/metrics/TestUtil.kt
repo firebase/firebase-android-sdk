@@ -15,9 +15,9 @@
 package com.google.firebase.perf.metrics
 
 fun getTraceCounter(trace: Trace): Map<String, Counter> {
-    return trace.getCounters()
+  return trace.getCounters()
 }
 
 fun getTraceCounterCount(trace: Trace, counterName: String): Long {
-    return trace.getCounters().get(counterName)!!.getCount()
+  return trace.getCounters().get(counterName)!!.getCount()
 }

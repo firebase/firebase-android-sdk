@@ -266,11 +266,8 @@ message AndroidMemoryReading {
 //
 // Next tag: 7
 message GaugeMetadata {
-  // The process in which Firebase instance is initialized and collecting data.
-  // Fireperf sdk collects information in the context of a process (instead of
-  // the whole app). The process name helps developer identifies which process
-  // are the gauge data coming from.
-  optional string process_name = 1;
+  // Deprecated on 09/2022.
+  optional string process_name = 1 [deprecated = true];
 
   // Clock rate of the cpu of the device, in kHz.
   optional int32 cpu_clock_rate_khz = 2;

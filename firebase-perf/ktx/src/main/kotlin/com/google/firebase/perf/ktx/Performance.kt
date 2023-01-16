@@ -26,33 +26,45 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 
 /** Returns the [FirebasePerformance] instance of the default [FirebaseApp]. */
 val Firebase.performance: FirebasePerformance
-    get() = FirebasePerformance.getInstance()
+  get() = FirebasePerformance.getInstance()
 
-/** Measures the time it takes to run the [block] wrapped by calls to [start] and [stop] using [HttpMetric]. */
+/**
+ * Measures the time it takes to run the [block] wrapped by calls to [start] and [stop] using
+ * [HttpMetric].
+ */
 inline fun HttpMetric.trace(block: HttpMetric.() -> Unit) {
-    start()
-    try {
-        block()
-    } finally {
-        stop()
-    }
+  start()
+  try {
+    block()
+  } finally {
+    stop()
+  }
 }
 
-/** Measures the time it takes to run the [block] wrapped by calls to [start] and [stop] using [Trace]. */
+/**
+ * Measures the time it takes to run the [block] wrapped by calls to [start] and [stop] using
+ * [Trace].
+ */
 inline fun <T> Trace.trace(block: Trace.() -> T): T {
-    start()
-    try {
-        return block()
-    } finally {
-        stop()
-    }
+  start()
+  try {
+    return block()
+  } finally {
+    stop()
+  }
 }
+
+/**
+ * Creates a [Trace] object with given [name] and measures the time it takes to run the [block]
+ * wrapped by calls to [start] and [stop].
+ */
+inline fun <T> trace(name: String, block: Trace.() -> T): T = Trace.create(name).trace(block)
 
 internal const val LIBRARY_NAME: String = "fire-perf-ktx"
 
 /** @suppress */
 @Keep
 class FirebasePerfKtxRegistrar : ComponentRegistrar {
-    override fun getComponents(): List<Component<*>> =
-            listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+  override fun getComponents(): List<Component<*>> =
+    listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 }

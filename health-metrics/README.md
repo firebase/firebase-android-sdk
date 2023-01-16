@@ -12,4 +12,14 @@ Refer to [README.md](apk-size/README.md) in the subdirectory `apk-size` for more
 
 ## App startup time
 
-**TODO(yifany)**: Add more details once the measurement tools and infrastructure is ready.
+Firebase runs during different
+[app lifecycle](https://d.android.com/guide/components/activities/process-lifecycle)
+phases, and contributes to the overall
+[app startup time](https://d.android.com/topic/performance/vitals/launch-time)
+in many ways.
+
+We are currently using
+[benchmarking](https://d.android.com/topic/performance/benchmarking/benchmarking-overview)
+and [tracing](https://d.android.com/topic/performance/tracing) to measure its
+latency impact. Refer to [README.md](benchmark/README.md) in the subdirectory
+`benchmark` for more details.

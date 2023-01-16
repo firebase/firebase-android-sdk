@@ -24,6 +24,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.internal.util.Logger;
+import com.google.firebase.components.Lazy;
 
 /**
  * Internal class used to persist {@link com.google.firebase.appcheck.AppCheckToken}s. Uses {@link
@@ -47,24 +48,27 @@ public class StorageHelper {
     UNKNOWN_APP_CHECK_TOKEN
   }
 
-  private SharedPreferences sharedPreferences;
+  private Lazy<SharedPreferences> sharedPreferences;
 
   public StorageHelper(@NonNull Context context, @NonNull String persistenceKey) {
     checkNotNull(context);
     checkNotEmpty(persistenceKey);
     String prefsName = String.format(PREFS_TEMPLATE, persistenceKey);
-    this.sharedPreferences = context.getSharedPreferences(prefsName, Context.MODE_PRIVATE);
+    this.sharedPreferences =
+        new Lazy(() -> context.getSharedPreferences(prefsName, Context.MODE_PRIVATE));
   }
 
   public void saveAppCheckToken(@NonNull AppCheckToken appCheckToken) {
     if (appCheckToken instanceof DefaultAppCheckToken) {
       sharedPreferences
+          .get()
           .edit()
           .putString(TOKEN_KEY, ((DefaultAppCheckToken) appCheckToken).serializeTokenToString())
           .putString(TOKEN_TYPE_KEY, TokenType.DEFAULT_APP_CHECK_TOKEN.name())
           .apply();
     } else {
       sharedPreferences
+          .get()
           .edit()
           .putString(TOKEN_KEY, appCheckToken.getToken())
           .putString(TOKEN_TYPE_KEY, TokenType.UNKNOWN_APP_CHECK_TOKEN.name())
@@ -74,8 +78,8 @@ public class StorageHelper {
 
   @Nullable
   public AppCheckToken retrieveAppCheckToken() {
-    String tokenType = sharedPreferences.getString(TOKEN_TYPE_KEY, null);
-    String serializedToken = sharedPreferences.getString(TOKEN_KEY, null);
+    String tokenType = sharedPreferences.get().getString(TOKEN_TYPE_KEY, null);
+    String serializedToken = sharedPreferences.get().getString(TOKEN_KEY, null);
     if (tokenType == null || serializedToken == null) {
       return null;
     }
@@ -101,6 +105,6 @@ public class StorageHelper {
   }
 
   void clearSharedPrefs() {
-    sharedPreferences.edit().remove(TOKEN_KEY).remove(TOKEN_TYPE_KEY).apply();
+    sharedPreferences.get().edit().remove(TOKEN_KEY).remove(TOKEN_TYPE_KEY).apply();
   }
 }

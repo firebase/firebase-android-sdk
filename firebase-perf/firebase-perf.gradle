@@ -92,6 +92,7 @@ android {
 
 dependencies {
     // Firebase Deps
+    implementation project(':firebase-annotations')
     implementation project(':firebase-common')
     implementation project(':firebase-components')
     implementation project(':firebase-config')
@@ -108,6 +109,7 @@ dependencies {
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation "androidx.annotation:annotation:1.1.0"
+    implementation "androidx.lifecycle:lifecycle-process:2.3.1"
 
     // 3rd Party Deps
     implementation 'com.squareup.okhttp3:okhttp:3.12.1'
@@ -119,9 +121,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.28.2'
     testImplementation 'org.mockito:mockito-inline:2.13.0'
-    testImplementation ("org.robolectric:robolectric:$robolectricVersion") {
-        exclude group: 'com.google.protobuf', module: 'protobuf-java'
-    }
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.6'
     testImplementation 'androidx.test:core:1.2.0'

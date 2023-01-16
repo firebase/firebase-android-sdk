@@ -32,11 +32,13 @@ import java.util.List;
  */
 @Keep
 public class AbtRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-abt";
 
   @Override
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(AbtComponent.class)
+            .name(LIBRARY_NAME)
             .add(Dependency.required(Context.class))
             .add(Dependency.optionalProvider(AnalyticsConnector.class))
             .factory(
@@ -45,6 +47,6 @@ public class AbtRegistrar implements ComponentRegistrar {
                         container.get(Context.class),
                         container.getProvider(AnalyticsConnector.class)))
             .build(),
-        LibraryVersionComponent.create("fire-abt", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }

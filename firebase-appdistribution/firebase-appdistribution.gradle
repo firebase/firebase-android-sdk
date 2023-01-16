@@ -51,7 +51,7 @@ dependencies {
     runtimeOnly project(':firebase-installations')
 
     testImplementation 'junit:junit:4.13.2'
-    testImplementation "org.robolectric:robolectric:4.8.1"
+    testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-inline:3.4.0'
     androidTestImplementation "org.mockito:mockito-android:3.4.0"

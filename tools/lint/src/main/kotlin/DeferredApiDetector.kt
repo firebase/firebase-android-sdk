@@ -14,6 +14,9 @@
 
 package com.google.firebase.lint.checks
 
+import com.android.tools.lint.detector.api.AnnotationInfo
+import com.android.tools.lint.detector.api.AnnotationOrigin
+import com.android.tools.lint.detector.api.AnnotationUsageInfo
 import com.android.tools.lint.detector.api.AnnotationUsageType
 import com.android.tools.lint.detector.api.Category
 import com.android.tools.lint.detector.api.Detector
@@ -24,67 +27,63 @@ import com.android.tools.lint.detector.api.Scope
 import com.android.tools.lint.detector.api.Severity
 import com.android.tools.lint.detector.api.SourceCodeScanner
 import com.intellij.psi.PsiMethod
-import org.jetbrains.uast.UAnnotation
 import org.jetbrains.uast.UCallExpression
 import org.jetbrains.uast.UElement
 
+@Suppress("DetectorIsMissingAnnotations")
 class DeferredApiDetector : Detector(), SourceCodeScanner {
-    override fun applicableAnnotations(): List<String> = listOf(ANNOTATION)
+  override fun applicableAnnotations(): List<String> = listOf(ANNOTATION)
 
-    override fun visitAnnotationUsage(
-        context: JavaContext,
-        usage: UElement,
-        type: AnnotationUsageType,
-        annotation: UAnnotation,
-        qualifiedName: String,
-        method: PsiMethod?,
-        annotations: List<UAnnotation>,
-        allMemberAnnotations: List<UAnnotation>,
-        allClassAnnotations: List<UAnnotation>,
-        allPackageAnnotations: List<UAnnotation>
+  override fun visitAnnotationUsage(
+    context: JavaContext,
+    element: UElement,
+    annotationInfo: AnnotationInfo,
+    usageInfo: AnnotationUsageInfo
+  ) {
+    if (
+      usageInfo.type == AnnotationUsageType.METHOD_CALL &&
+        annotationInfo.origin == AnnotationOrigin.METHOD
     ) {
-        if (method != null && type == AnnotationUsageType.METHOD_CALL) {
-            check(context, usage as UCallExpression, method)
-        }
+      check(context, usageInfo.usage as UCallExpression, annotationInfo.annotated as PsiMethod)
     }
+  }
 
-    private fun check(context: JavaContext, usage: UCallExpression, method: PsiMethod) {
-        val usageHasAnnotation = hasDeferredApiAnnotation(context, usage)
-        val methodHasAnnotation = hasDeferredApiAnnotation(context, method)
+  private fun check(context: JavaContext, usage: UCallExpression, method: PsiMethod) {
+    val usageHasAnnotation = hasDeferredApiAnnotation(context, usage)
+    val methodHasAnnotation = hasDeferredApiAnnotation(context, method)
 
-        if ((!usageHasAnnotation && methodHasAnnotation) || (usageHasAnnotation && !methodHasAnnotation))
-            context.report(
-                    INVALID_DEFERRED_API_USE,
-                    usage,
-                    context.getCallLocation(
-                            usage,
-                            includeReceiver = false,
-                            includeArguments = true),
-                    "${method.name} is only safe to call in the context of a Deferred<T> dependency.")
-    }
+    if (
+      (!usageHasAnnotation && methodHasAnnotation) || (usageHasAnnotation && !methodHasAnnotation)
+    )
+      context.report(
+        INVALID_DEFERRED_API_USE,
+        usage,
+        context.getCallLocation(usage, includeReceiver = false, includeArguments = true),
+        "${method.name} is only safe to call in the context of a Deferred`<T>` dependency"
+      )
+  }
 
-    companion object {
-        private val IMPLEMENTATION = Implementation(
-                DeferredApiDetector::class.java,
-                Scope.JAVA_FILE_SCOPE
-        )
+  companion object {
+    private val IMPLEMENTATION =
+      Implementation(DeferredApiDetector::class.java, Scope.JAVA_FILE_SCOPE)
 
-        /** Calling methods on the wrong thread  */
-        @JvmField
-        val INVALID_DEFERRED_API_USE = Issue.create(
-                id = "InvalidDeferredApiUse",
-                briefDescription = "Invalid use of @DeferredApi",
-
-                explanation = """
-                    Ensures that a method which expects to be called in the context of
-                Deferred#whenAvailable(), is actually called this way. This is important for
-                supporting dynamically loaded modules, where certain dependencies become available
+    /** Calling methods on the wrong thread */
+    @JvmField
+    val INVALID_DEFERRED_API_USE =
+      Issue.create(
+        id = "InvalidDeferredApiUse",
+        briefDescription = "Invalid use of @DeferredApi",
+        explanation =
+          """
+                Ensures that a method which expects to be called in the context of \
+                `Deferred#whenAvailable()`, is actually called this way. This is important for \
+                supporting dynamically loaded modules, where certain dependencies become available \
                 during app's runtime and not available upon app launch.
                 """,
-                category = Category.CORRECTNESS,
-                priority = 6,
-                severity = Severity.ERROR,
-                implementation = IMPLEMENTATION
-        )
-    }
+        category = Category.CORRECTNESS,
+        priority = 6,
+        severity = Severity.ERROR,
+        implementation = IMPLEMENTATION
+      )
+  }
 }

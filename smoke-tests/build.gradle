@@ -69,7 +69,6 @@ dependencies {
   implementation "com.google.firebase:firebase-annotations"
   implementation "com.google.firebase:firebase-appdistribution:16.0.0-beta03"
   implementation "com.google.firebase:firebase-appdistribution-api:16.0.0-beta03"
-  implementation "com.google.firebase:firebase-appindexing"
   implementation "com.google.firebase:firebase-auth"
   implementation "com.google.firebase:firebase-common"
   implementation "com.google.firebase:firebase-config"
@@ -83,6 +82,10 @@ dependencies {
   implementation "com.google.firebase:firebase-ml-modeldownloader"
   implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
+
+  // TODO(yifany): remove after the issue is fixed
+  // https://github.com/firebase/firebase-android-sdk/issues/4206
+  implementation "com.google.firebase:firebase-iid:21.1.0"
 
   // Common utilities (application side)
   implementation "androidx.test:rules:1.4.0"

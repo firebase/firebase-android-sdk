@@ -557,7 +557,7 @@ public class TestUploadHelper {
     final ByteArrayInputStream inputStream = new ByteArrayInputStream(data);
 
     // This test will upload 2 MB of data:
-    //  - it will read and upload one chunk of 256KB (258KB read, 258KB uploaded)
+    //  - it will read and upload one chunk of 256KB (256KB read, 256KB uploaded)
     //  - it will read and upload one chunk of 512KB (768KB read, 768KB uploaded)
     //  - it will read and fail the upload one chunk of 1MB (1.75MB read, 768KB uploaded)
     //  - it will upload 256KB from its local cache (1.75MB read, 1MB uploaded)
@@ -686,7 +686,8 @@ public class TestUploadHelper {
     List<UploadTask> globalUploadTasks = reference.getActiveUploadTasks();
     Preconditions.checkState(
         globalUploadTasks.size() == expectedTasks,
-        "Expected active upload task to contain %s item(s), but contained %s item(s)",
+        "Expected active upload task to contain %d item(s), but contained %d item(s)",
+        expectedTasks,
         globalUploadTasks.size());
     List<UploadTask> uploadTasksAtParent =
         StorageTaskManager.getInstance().getUploadTasksUnder(reference.getParent());

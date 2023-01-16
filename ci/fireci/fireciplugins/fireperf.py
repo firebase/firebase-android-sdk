@@ -52,7 +52,8 @@ def fireperf_e2e_test(target_environment, plugin_repo_dir):
     '--build-cache',
     '--parallel',
     '--continue',
-    ':firebase-perf:e2e-app:deviceCheck'
+    ':firebase-perf:e2e-app:deviceCheck',
+    gradle.P('instrumentFireperfE2ETest', 'true')
   ]
   if target_environment == 'autopush':
     fireperf_e2e_test_gradle_command += [gradle.P('fireperfBuildForAutopush', 'true')]

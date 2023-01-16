@@ -39,11 +39,14 @@ import java.util.List;
 @Keep
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class FirestoreRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-fst";
+
   @Override
   @Keep
   public List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirestoreMultiDbComponent.class)
+            .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(Context.class))
             .add(Dependency.optionalProvider(HeartBeatInfo.class))
@@ -63,6 +66,6 @@ public class FirestoreRegistrar implements ComponentRegistrar {
                             c.getProvider(HeartBeatInfo.class),
                             c.get(FirebaseOptions.class))))
             .build(),
-        LibraryVersionComponent.create("fire-fst", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 }

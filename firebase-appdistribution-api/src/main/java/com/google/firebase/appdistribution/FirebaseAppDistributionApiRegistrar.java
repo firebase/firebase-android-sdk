@@ -32,18 +32,20 @@ import java.util.List;
  */
 @Keep
 public class FirebaseAppDistributionApiRegistrar implements ComponentRegistrar {
+  private static final String LIBRARY_NAME = "fire-appdistribution-api";
 
   @Override
   public @NonNull List<Component<?>> getComponents() {
     return Arrays.asList(
         Component.builder(FirebaseAppDistributionProxy.class)
+            .name(LIBRARY_NAME)
             .add(Dependency.optionalProvider(FirebaseAppDistribution.class))
             .factory(this::buildFirebaseAppDistributionProxy)
             // construct FirebaseAppDistribution instance on startup so we can register for
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
             .build(),
-        LibraryVersionComponent.create("fire-appdistribution-api", BuildConfig.VERSION_NAME));
+        LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 
   private FirebaseAppDistributionProxy buildFirebaseAppDistributionProxy(
