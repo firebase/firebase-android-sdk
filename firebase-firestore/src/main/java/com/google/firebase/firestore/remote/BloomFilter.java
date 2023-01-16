@@ -22,10 +22,10 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class BloomFilter {
-  private final int size;
+  private final int bitCount;
   private final byte[] bitmap;
   private final int hashCount;
-  private static MessageDigest md5HashMessageDigest;
+  private final MessageDigest md5HashMessageDigest;
 
   public BloomFilter(@NonNull byte[] bitmap, int padding, int hashCount) {
     if (bitmap == null) {
@@ -52,18 +52,13 @@ public class BloomFilter {
     }
     this.bitmap = bitmap;
     this.hashCount = hashCount;
-    this.size = bitmap.length * 8 - padding;
-    this.md5HashMessageDigest = getMd5HashMessageDigest();
+    this.bitCount = bitmap.length * 8 - padding;
+    this.md5HashMessageDigest = createMd5HashMessageDigest();
   }
 
-  private boolean isEmpty() {
-    return this.size == 0;
-  }
-
-  /** Returns the number of bits in the bloom filter. */
   @VisibleForTesting
-  int getSize() {
-    return this.size;
+  int getBitCount() {
+    return this.bitCount;
   }
 
   /**
@@ -71,19 +66,19 @@ public class BloomFilter {
    * positive result, ie, the given string is not a member of the bloom filter, but the method
    * returned true.
    *
-   * @param value the string to be tested membership.
+   * @param value the string to be tested for membership.
    * @return true if the given string might be contained in the bloom filter.
    */
   public boolean mightContain(@NonNull String value) {
     // Empty bitmap or empty value should always return false on membership check.
-    if (this.isEmpty() || value.isEmpty()) {
+    if (this.bitCount == 0  || value.isEmpty()) {
       return false;
     }
 
     byte[] hashedValue = md5HashDigest(value);
     if (hashedValue.length != 16) {
       throw new RuntimeException(
-          "Invalid md5HashedValue.length: " + hashedValue.length + " (expected 16)");
+          "Invalid md5 hash array length: " + hashedValue.length + " (expected 16)");
     }
 
     long hash1 = getLongLittleEndian(hashedValue, 0);
@@ -100,19 +95,17 @@ public class BloomFilter {
 
   /** Hash a string using md5 hashing algorithm, and return an array of 16 bytes. */
   @NonNull
-  private static byte[] md5HashDigest(@NonNull String value) {
+  private byte[] md5HashDigest(@NonNull String value) {
     return md5HashMessageDigest.digest(value.getBytes(StandardCharsets.UTF_8));
   }
 
   @NonNull
-  private static MessageDigest getMd5HashMessageDigest() {
-    MessageDigest digest;
+  private MessageDigest createMd5HashMessageDigest() {
     try {
-      digest = MessageDigest.getInstance("MD5");
+      return  MessageDigest.getInstance("MD5");
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException("Missing MD5 MessageDigest provider.", e);
     }
-    return digest;
   }
 
   /** Interpret 8 bytes into a long, using little endian 2’s complement. */
@@ -125,14 +118,18 @@ public class BloomFilter {
   }
 
   /**
-   * Calculate the ith hash value based on the hashed 64bit integers, and calculate its
+   * Calculate the ith hash value based on the hashed 64 bit unsigned integers, and calculate its
    * corresponding bit index in the bitmap to be checked.
    */
   private int getBitIndex(long hash1, long hash2, int index) {
-    // Calculate hashed value h(i) = h1 + (i * h2).
+    /**
+     * Calculate hashed value h(i) = h1 + (i * h2).
+     * Even though we are interpreting hash1 and hash2 as unsigned, the addition and multiplication
+     * operators still perform the correct operation and give the desired overflow behavior.
+     */
     long combinedHash = hash1 + (hash2 * index);
-    long mod = unsignedRemainder(combinedHash, this.size);
-    return (int) mod;
+    long modulo = unsignedRemainder(combinedHash, this.bitCount);
+    return (int) modulo;
   }
 
   /**
@@ -141,7 +138,6 @@ public class BloomFilter {
    * <p>The implementation is taken from <a
    * href="https://github.com/google/guava/blob/553037486901cc60820ab7dcb38a25b6f34eba43/android/guava/src/com/google/common/primitives/UnsignedLongs.java">Guava</a>,
    * simplified to our needs.
-   *
    * <p>
    */
   private static long unsignedRemainder(long dividend, long divisor) {
@@ -164,7 +160,7 @@ public class BloomFilter {
         + "hashCount="
         + hashCount
         + ", size="
-        + size
+        + bitCount
         + ", bitmap=\""
         + Base64.encodeToString(bitmap, Base64.NO_WRAP)
         + "\"}";

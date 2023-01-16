@@ -43,15 +43,15 @@ public class BloomFilterTest {
   @Test
   public void instantiateEmptyBloomFilter() {
     BloomFilter bloomFilter = new BloomFilter(new byte[0], 0, 0);
-    assertEquals(bloomFilter.getSize(), 0);
+    assertEquals(bloomFilter.getBitCount(), 0);
   }
 
   @Test
   public void instantiateNonEmptyBloomFilter() {
     BloomFilter bloomFilter1 = new BloomFilter(new byte[] {1}, 0, 1);
-    assertEquals(bloomFilter1.getSize(), 8);
+    assertEquals(bloomFilter1.getBitCount(), 8);
     BloomFilter bloomFilter2 = new BloomFilter(new byte[] {1}, 7, 1);
-    assertEquals(bloomFilter2.getSize(), 1);
+    assertEquals(bloomFilter2.getBitCount(), 1);
   }
 
   @Test
@@ -89,7 +89,7 @@ public class BloomFilterTest {
   }
 
   @Test
-  public void constructorShouldThrowIAEOnNegativeHashValue() {
+  public void constructorShouldThrowIAEOnNegativeHashCount() {
     IllegalArgumentException emptyBloomFilterException =
         assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[0], 0, -1));
     assertThat(emptyBloomFilterException).hasMessageThat().contains("Invalid hash count: -1");
