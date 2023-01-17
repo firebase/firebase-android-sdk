@@ -75,12 +75,12 @@ public class ConfigRealtimeHandler {
   }
 
   private synchronized Runnable createRealtimeHttpClientTask(
-      ConfigRealtimeHttpClient configRealtimeHttpClient) {
+      ConfigRealtimeHttpClient realtimeHttpClient) {
     return new Runnable() {
       @Override
       public void run() {
-        configRealtimeHttpClient.beginRealtimeHttpStream();
-        while (configRealtimeHttpClient.getRetryState()) {}
+        realtimeHttpClient.beginRealtimeHttpStream();
+        while (realtimeHttpClient.getRetryState()) {}
       }
     };
   }
