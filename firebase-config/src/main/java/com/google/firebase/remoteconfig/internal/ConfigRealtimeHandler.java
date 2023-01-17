@@ -134,6 +134,10 @@ public class ConfigRealtimeHandler {
     }
   }
 
+  private synchronized void closeRealtime() {
+    realtimeHttpClientTask = null;
+  }
+
   private class RealtimeHttpClientFutureTask extends FutureTask<String> {
     private final ConfigRealtimeHttpClient configRealtimeHttpClient;
 
@@ -146,7 +150,7 @@ public class ConfigRealtimeHandler {
     @Override
     protected void done() {
       super.done();
-      realtimeHttpClientTask = null;
+      closeRealtime();
     }
   }
 
