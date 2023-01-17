@@ -1192,7 +1192,7 @@ public final class FirebaseRemoteConfigTest {
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(mockRetryListener).onUpdate(any());
+    verify(mockHttpURLConnection).disconnect();
   }
 
   @Test
