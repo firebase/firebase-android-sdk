@@ -116,6 +116,7 @@ public class ConfigAutoFetch {
       }
     }
 
+    // TODO: Factor ConfigUpdateListener out of internal retry logic.
     retryCallback.onUpdate(ConfigUpdate.create(new HashSet<>()));
     scheduledExecutorService.shutdownNow();
     try {
