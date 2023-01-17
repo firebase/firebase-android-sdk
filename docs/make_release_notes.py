@@ -244,6 +244,8 @@ def main():
         products = releasing_products(args.releasecfg)
 
     for product in products:
+        if product.startswith(':'):
+            product = product.removeprefix(':')
         if not product in PRODUCTS:
             print(f'Ignored: {product}')
             continue
