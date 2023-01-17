@@ -21,119 +21,201 @@ import configparser
 import re
 import os
 import string
-import dataclasses
+from dataclasses import dataclass, field
 
 
-@dataclasses.dataclass
+@dataclass
 class Changelog:
     path: str
     target_path: str
     alt_name: str
+    version_name: str
+    has_ktx: bool = True
+    ktx_placeholder: str = None
+    version: str = field(init=False)
+
+    def __post_init__(self):
+        self.version = self._get_version()
+
+    def get_header(self):
+        version_str = f'{{: #{self.version_name}_v{self.version.replace(".", "-")}}}'
+        return f'### {self.alt_name} version {self.version} {version_str}\n'
+
+    def get_ktx_header(self):
+        if not self.has_ktx:
+            return ""
+        version_str = f'{{: #{self.version_name}-ktx_v{self.version.replace(".", "-")}}}'
+        return f'### {self.alt_name} Kotlin extensions version {self.version} {version_str}\n'
+
+    def _get_version(self):
+        properties = os.path.join(os.path.dirname(self.path),
+                                  'gradle.properties')
+        if not os.path.exists(properties):
+            return PLACEHOLDER_VERSION
+
+        with open(properties, 'r') as fd:
+            for line in fd:
+                if line.startswith('version='):
+                    return line.removeprefix('version=').strip()
+        return PLACEHOLDER_VERSION
 
 
 REPO = 'firebase/firebase-android-sdk'
 CHANGE_TYPE_MAPPING = {'added': 'feature'}
+PLACEHOLDER_VERSION = 'xx.x.x'
 PRODUCTS = {
     'firebase-abt':
         Changelog(path='firebase-abt/CHANGELOG.md',
                   target_path='firebase-abt',
-                  alt_name='{{ab_testing}}'),
+                  has_ktx=False,
+                  alt_name='{{ab_testing}}',
+                  version_name='ab-testing'),
     'firebase-appdistribution':
         Changelog(path='firebase-appdistribution/CHANGELOG.md',
                   target_path='firebase-appdistribution',
-                  alt_name='{{appdistro}}'),
+                  has_ktx=False,
+                  alt_name='{{appdistro}}',
+                  version_name='app-distro'),
     'firebase-appdistribution-api':
         Changelog(path='firebase-appdistribution-api/CHANGELOG.md',
                   target_path='firebase-appdistribution-api',
-                  alt_name='{{appdistro}} API'),
+                  alt_name='{{appdistro}} API',
+                  ktx_placeholder='firebase-appdistribution-api',
+                  version_name='app-distro-api'),
     'firebase-config':
         Changelog(path='firebase-config/CHANGELOG.md',
                   target_path='firebase-config',
-                  alt_name='{{remote_config}}'),
+                  alt_name='{{remote_config}}',
+                  ktx_placeholder='firebase-config',
+                  version_name='remote-config'),
     'firebase-crashlytics':
         Changelog(path='firebase-crashlytics/CHANGELOG.md',
                   target_path='firebase-crashlytics',
-                  alt_name='{{crashlytics}}'),
+                  alt_name='{{crashlytics}}',
+                  ktx_placeholder='firebase-crashlytics',
+                  version_name='crashlytics'),
     'firebase-crashlytics-ndk':
         Changelog(path='firebase-crashlytics-ndk/CHANGELOG.md',
                   target_path='firebase-crashlytics-ndk',
-                  alt_name='{{crashlytics}} NDK'),
+                  has_ktx=False,
+                  alt_name='{{crashlytics}} NDK',
+                  version_name='crashlytics-ndk'),
     'firebase-database':
         Changelog(path='firebase-database/CHANGELOG.md',
                   target_path='firebase-database',
-                  alt_name='{{database}}'),
+                  alt_name='{{database}}',
+                  ktx_placeholder='firebase-database',
+                  version_name='realtime-database'),
     'firebase-dynamic-links':
         Changelog(path='firebase-dynamic-links/CHANGELOG.md',
                   target_path='firebase-dynamic-links',
-                  alt_name='{{ddls}}'),
+                  alt_name='{{ddls}}',
+                  ktx_placeholder='firebase-dynamic-links',
+                  version_name='dynamic-links'),
     'firebase-firestore':
         Changelog(path='firebase-firestore/CHANGELOG.md',
                   target_path='firebase-firestore',
-                  alt_name='{{firestore}}'),
+                  alt_name='{{firestore}}',
+                  ktx_placeholder='firebase-firestore',
+                  version_name='firestore'),
     'firebase-functions':
         Changelog(path='firebase-functions/CHANGELOG.md',
                   target_path='firebase-functions',
-                  alt_name='{{functions_client}}'),
+                  alt_name='{{functions_client}}',
+                  ktx_placeholder='firebase-functions',
+                  version_name='functions-client'),
     'firebase-dynamic-module-support':
         Changelog(
             path=
             'firebase-components/firebase-dynamic-module-support/CHANGELOG.md',
             target_path='firebase-dynamic-module-support',
-            alt_name='Dynamic feature modules support'),
+            has_ktx=False,
+            alt_name='Dynamic feature modules support',
+            version_name='dynamic-feature-modules-support'),
     'firebase-inappmessaging':
         Changelog(path='firebase-inappmessaging/CHANGELOG.md',
                   target_path='firebase-inappmessaging',
-                  alt_name='{{inappmessaging}}'),
+                  alt_name='{{inappmessaging}}',
+                  ktx_placeholder='firebase-inappmessaging',
+                  version_name='inappmessaging'),
     'firebase-inappmessaging-display':
         Changelog(path='firebase-inappmessaging-display/CHANGELOG.md',
                   target_path='firebase-inappmessaging-display',
-                  alt_name='{{inappmessaging}} Display'),
+                  alt_name='{{inappmessaging}} Display',
+                  ktx_placeholder='firebase-inappmessaging-display',
+                  version_name='inappmessaging-display'),
     'firebase-installations':
         Changelog(path='firebase-installations/CHANGELOG.md',
                   target_path='firebase-installations',
-                  alt_name='{{firebase_installations}}'),
+                  alt_name='{{firebase_installations}}',
+                  ktx_placeholder='firebase-installations',
+                  version_name='installations'),
     'firebase-messaging':
         Changelog(path='firebase-messaging/CHANGELOG.md',
                   target_path='firebase-messaging',
-                  alt_name='{{messaging_longer}}'),
+                  alt_name='{{messaging_longer}}',
+                  ktx_placeholder='firebase-messaging',
+                  version_name='messaging'),
     'firebase-messaging-directboot':
         Changelog(path='firebase-messaging-directboot/CHANGELOG.md',
                   target_path='firebase-messaging-directboot',
-                  alt_name='Cloud Messaging Direct Boot'),
+                  has_ktx=False,
+                  alt_name='Cloud Messaging Direct Boot',
+                  version_name='messaging-directboot'),
     'firebase-ml-modeldownloader':
         Changelog(path='firebase-ml-modeldownloader/CHANGELOG.md',
                   target_path='firebase-ml-modeldownloader',
-                  alt_name='{{firebase_ml}}'),
+                  alt_name='{{firebase_ml}}',
+                  ktx_placeholder='firebase-ml-modeldownloader',
+                  version_name='firebaseml-modeldownloader'),
     'firebase-perf':
         Changelog(path='firebase-perf/CHANGELOG.md',
                   target_path='firebase-perf',
-                  alt_name='{{perfmon}}'),
+                  alt_name='{{perfmon}}',
+                  ktx_placeholder='firebase-performance',
+                  version_name='performance'),
     'firebase-storage':
         Changelog(path='firebase-storage/CHANGELOG.md',
                   target_path='firebase-storage-api',
-                  alt_name='{{firebase_storage_full}}'),
+                  alt_name='{{firebase_storage_full}}',
+                  ktx_placeholder='firebase-storage',
+                  version_name='storage'),
     'appcheck:firebase-appcheck':
         Changelog(path='appcheck/firebase-appcheck/CHANGELOG.md',
                   target_path='firebase-appcheck',
-                  alt_name='{{app_check}}'),
+                  alt_name='{{app_check}}',
+                  ktx_placeholder='firebase-appcheck',
+                  version_name='appcheck'),
     'appcheck:firebase-appcheck-debug':
         Changelog(path='appcheck/firebase-appcheck-debug/CHANGELOG.md',
                   target_path='firebase-appcheck-debug',
-                  alt_name='{{app_check}} Debug'),
+                  has_ktx=False,
+                  alt_name='{{app_check}} Debug',
+                  version_name='appcheck-debug'),
     'appcheck:firebase-appcheck-debug-testing':
         Changelog(path='appcheck/firebase-appcheck-debug-testing/CHANGELOG.md',
                   target_path='firebase-appcheck-debug-testing',
-                  alt_name='{{app_check}} Debug Testing'),
+                  has_ktx=False,
+                  alt_name='{{app_check}} Debug Testing',
+                  version_name='appcheck-debug-testing'),
     'appcheck:firebase-appcheck-playintegrity':
         Changelog(path='appcheck/firebase-appcheck-playintegrity/CHANGELOG.md',
                   target_path='firebase-appcheck-playintegrity',
-                  alt_name='{{app_check}} Play integrity'),
+                  has_ktx=False,
+                  alt_name='{{app_check}} Play integrity',
+                  version_name='appcheck-playintegrity'),
     'appcheck:firebase-appcheck-safetynet':
         Changelog(path='appcheck/firebase-appcheck-safetynet/CHANGELOG.md',
                   target_path='firebase-appcheck-safetynet',
-                  alt_name='{{app_check}} SafetyNet')
+                  has_ktx=False,
+                  alt_name='{{app_check}} SafetyNet',
+                  version_name='appcheck-safetynet')
 }
-
+KTX_PLACEHOLDER_TEXT =  """
+The Kotlin extensions library transitively includes the updated
+`PLACEHOLDER_NAME` library. The Kotlin extensions library has no additional
+updates.
+"""
 
 def releasing_products(release_cfg_path):
     config = configparser.ConfigParser(allow_no_value=True, delimiters=('=',))
@@ -174,7 +256,7 @@ def main():
         with open(f'{path}/{args.generated_name}.md', 'w') as fd:
             fd.write(
                 translator.translate(
-                    read_changelog_section(changelog.path, 'Unreleased')))
+                    read_changelog_section(changelog, 'Unreleased')))
 
 
 class Renderer(object):
@@ -183,9 +265,6 @@ class Renderer(object):
         self.changelog = changelog
 
     def heading(self, heading):
-        if self.changelog.alt_name:
-            return f'### {self.changelog.alt_name} version\n'
-
         return heading
 
     def bullet(self, spacing):
@@ -307,7 +386,7 @@ class Translator(object):
     ]
 
 
-def read_changelog_section(filename, single_version=None):
+def read_changelog_section(changelog, single_version=None):
     """Reads a single section of the changelog from the given filename.
 
   If single_version is None, reads the first section with a number in its
@@ -320,7 +399,7 @@ def read_changelog_section(filename, single_version=None):
   Returns:
     A string containing the heading and contents of the heading.
   """
-    with open(filename, 'r') as fd:
+    with open(changelog.path, 'r') as fd:
         # Discard all lines until we see a heading that either has the version the
         # user asked for or any version.
         if single_version:
@@ -337,7 +416,7 @@ def read_changelog_section(filename, single_version=None):
             if initial:
                 if initial_heading.match(line):
                     initial = False
-                    result.append(line)
+                    result.append(f'{changelog.get_header()}\n')
 
             else:
                 if heading.match(line):
@@ -348,6 +427,12 @@ def read_changelog_section(filename, single_version=None):
         # Prune extra newlines
         while result and result[-1] == '\n':
             result.pop()
+
+        # Append ktx section
+        if changelog.has_ktx:
+            result.append('\n')
+            result.append(changelog.get_ktx_header())
+            result.append(KTX_PLACEHOLDER_TEXT.replace('PLACEHOLDER_NAME', changelog.ktx_placeholder))
 
         return ''.join(result)
 
