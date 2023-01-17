@@ -31,53 +31,48 @@ class FireEscapeArtifactPlugin : Plugin<Project> {
 
   override fun apply(target: Project) {
     target.afterEvaluate {
-      if (!supportsMavenPublishing(target)) {
-        return@afterEvaluate
-      }
-      val apiTxtFile = registerApiTxtFileTask(project)
-      val proguardMappingFile = registerProguardMappingFileTask(project)
-      val javadoc = registerJavadocTask(project)
+      if (supportsMavenPublishing(target)) {
+        val apiTxtFile = registerApiTxtFileTask(project)
+        val proguardMappingFile = registerProguardMappingFileTask(project)
+        val javadoc = registerJavadocTask(project)
 
-      val zippedArtifact =
-        project.tasks.register<Zip>("maven") {
-          from(apiTxtFile)
-          if (project.isAndroid()) {
-            from(proguardMappingFile)
+        val zippedArtifact =
+          project.tasks.register<Zip>("maven") {
+            from(apiTxtFile)
+            if (project.isAndroid()) {
+              from(proguardMappingFile)
+            }
+          }
+
+        extensions.configure<PublishingExtension> {
+          publications.getByName<MavenPublication>("mavenAar") {
+            artifact(zippedArtifact)
+            artifact(javadoc)
           }
         }
-
-      extensions.configure<PublishingExtension> {
-        publications.getByName<MavenPublication>("mavenAar") {
-          artifact(zippedArtifact)
-          artifact(javadoc)
-        }
       }
     }
   }
-  private fun supportsMavenPublishing(project: Project): Boolean {
-    return project.plugins.hasPlugin(MavenPublishPlugin::class.java)
-  }
+  private fun supportsMavenPublishing(project: Project): Boolean =
+    project.plugins.hasPlugin(MavenPublishPlugin::class.java)
 
-  private fun registerProguardMappingFileTask(project: Project): TaskProvider<Task> {
-    return project.tasks.register("fireEscapeProguardMapping") {
+  private fun registerProguardMappingFileTask(project: Project): TaskProvider<Task> =
+    project.tasks.register("fireEscapeProguardMapping") {
       outputs.file(project.fileFromBuildDir("outputs/mapping/release/mapping.txt"))
     }
-  }
 
-  private fun registerApiTxtFileTask(project: Project): TaskProvider<Task> {
-    return project.tasks.register("fireEscapeApiText") {
+  private fun registerApiTxtFileTask(project: Project): TaskProvider<Task> =
+    project.tasks.register("fireEscapeApiText") {
       dependsOn(JAVADOC_TASK_NAME)
       outputs.file(project.fileFromBuildDir("tmp/javadoc/api.txt"))
     }
-  }
 
-  private fun registerJavadocTask(project: Project): TaskProvider<Jar> {
-    return project.tasks.register<Jar>("fireescapeJavadocJar") {
+  private fun registerJavadocTask(project: Project): TaskProvider<Jar> =
+    project.tasks.register<Jar>("fireescapeJavadocJar") {
       dependsOn(JAVADOC_TASK_NAME)
       project.fileFromBuildDir("/docs/javadoc/reference")
       include("**/*")
       archiveFileName.set("fireescape-javadoc.jar")
       archiveClassifier.set("javadoc")
     }
-  }
 }
