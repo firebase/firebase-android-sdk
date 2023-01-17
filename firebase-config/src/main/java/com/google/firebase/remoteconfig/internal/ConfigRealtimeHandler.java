@@ -37,6 +37,9 @@ public class ConfigRealtimeHandler {
   @GuardedBy("this")
   private Future<?> realtimeHttpClientTask;
 
+  @GuardedBy("this")
+  private ConfigRealtimeHttpClient configRealtimeHttpClient;
+
   private final ConfigFetchHandler configFetchHandler;
   private final FirebaseApp firebaseApp;
   private final FirebaseInstallationsApi firebaseInstallations;
@@ -56,6 +59,7 @@ public class ConfigRealtimeHandler {
 
     this.listeners = new LinkedHashSet<>();
     this.realtimeHttpClientTask = null;
+    this.configRealtimeHttpClient = null;
 
     this.firebaseApp = firebaseApp;
     this.configFetchHandler = configFetchHandler;
@@ -76,12 +80,7 @@ public class ConfigRealtimeHandler {
       @Override
       public void run() {
         configRealtimeHttpClient.beginRealtimeHttpStream();
-        boolean isRealtimeClientRunning = true;
-        while (isRealtimeClientRunning) {
-          if (Thread.currentThread().isInterrupted()) {
-            isRealtimeClientRunning = false;
-          }
-        }
+        while (configRealtimeHttpClient.getRetryState()) {}
       }
     };
   }
@@ -89,7 +88,7 @@ public class ConfigRealtimeHandler {
   // Kicks off Http stream listening and autofetch
   private synchronized void beginRealtime() {
     if (canCreateRealtimeHttpClientTask()) {
-      ConfigRealtimeHttpClient realtimeHttpClient =
+      configRealtimeHttpClient =
           new ConfigRealtimeHttpClient(
               firebaseApp,
               firebaseInstallations,
@@ -102,15 +101,18 @@ public class ConfigRealtimeHandler {
       this.realtimeHttpClientTask =
           this.scheduledExecutorService.submit(
               new RealtimeHttpClientFutureTask(
-                  createRealtimeHttpClientTask(realtimeHttpClient), realtimeHttpClient));
+                  createRealtimeHttpClientTask(configRealtimeHttpClient),
+                  configRealtimeHttpClient));
     }
   }
 
   // Pauses Http stream listening
   public synchronized void pauseRealtime() {
+    if (configRealtimeHttpClient != null) {
+      configRealtimeHttpClient.stopRealtimeRetry();
+    }
     if (realtimeHttpClientTask != null && !realtimeHttpClientTask.isCancelled()) {
-      realtimeHttpClientTask.cancel(true);
-      realtimeHttpClientTask = null;
+      realtimeHttpClientTask.cancel(false);
     }
   }
 
@@ -143,7 +145,8 @@ public class ConfigRealtimeHandler {
 
     @Override
     protected void done() {
-      this.configRealtimeHttpClient.stopRealtime();
+      super.done();
+      realtimeHttpClientTask = null;
     }
   }
 

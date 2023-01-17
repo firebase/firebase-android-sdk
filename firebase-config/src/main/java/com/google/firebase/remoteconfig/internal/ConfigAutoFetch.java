@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
@@ -114,15 +113,6 @@ public class ConfigAutoFetch {
       } finally {
         httpURLConnection.disconnect();
       }
-    }
-
-    // TODO: Factor ConfigUpdateListener out of internal retry logic.
-    retryCallback.onUpdate(ConfigUpdate.create(new HashSet<>()));
-    scheduledExecutorService.shutdownNow();
-    try {
-      scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
-    } catch (InterruptedException ex) {
-      Log.d(TAG, "Thread Interrupted.");
     }
   }
 

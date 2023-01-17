@@ -77,8 +77,12 @@ public class ConfigRealtimeHttpClient {
   @GuardedBy("this")
   private boolean isRealtimeDisabled;
 
-  private final int ORIGINAL_RETRIES = 7;
+  /*
+   * Controls whether or not the this client should retry. Disablement is permanent for the client.
+   */
+  private boolean canRetry;
 
+  private final int ORIGINAL_RETRIES = 7;
   private final ScheduledExecutorService scheduledExecutorService;
   private final ConfigFetchHandler configFetchHandler;
   private final FirebaseApp firebaseApp;
@@ -113,6 +117,7 @@ public class ConfigRealtimeHttpClient {
     this.context = context;
     this.namespace = namespace;
     this.isRealtimeDisabled = false;
+    this.canRetry = true;
   }
 
   /**
@@ -177,6 +182,7 @@ public class ConfigRealtimeHttpClient {
     // Headers to denote that the request body is a JSONObject.
     httpURLConnection.setRequestProperty("Content-Type", "application/json");
     httpURLConnection.setRequestProperty("Accept", "application/json");
+    httpURLConnection.setConnectTimeout(31000);
   }
 
   private JSONObject createRequestBody() {
@@ -201,6 +207,11 @@ public class ConfigRealtimeHttpClient {
     outputStream.close();
   }
 
+  private synchronized void resetRetryParameters() {
+    httpRetrySeconds = random.nextInt(5) + 1;
+    httpRetriesRemaining = ORIGINAL_RETRIES;
+  }
+
   private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
     for (ConfigUpdateListener listener : listeners) {
       listener.onError(exception);
@@ -216,13 +227,8 @@ public class ConfigRealtimeHttpClient {
     return random.nextInt(3) + 2;
   }
 
-  private synchronized void resetRetryParameters() {
-    httpRetrySeconds = random.nextInt(5) + 1;
-    httpRetriesRemaining = ORIGINAL_RETRIES;
-  }
-
   private synchronized boolean canMakeHttpStreamConnection() {
-    return !listeners.isEmpty() && httpURLConnection == null && !isRealtimeDisabled;
+    return !listeners.isEmpty() && httpURLConnection == null && !isRealtimeDisabled && canRetry;
   }
 
   private String getRealtimeURL(String namespace) {
@@ -271,7 +277,7 @@ public class ConfigRealtimeHttpClient {
           },
           httpRetrySeconds,
           TimeUnit.SECONDS);
-    } else {
+    } else if (canRetry) {
       propagateErrors(
           new FirebaseRemoteConfigClientException(
               "Unable to connect to the server. Check your connection and try again.",
@@ -279,9 +285,12 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  synchronized void stopRealtime() {
-    closeRealtimeHttpStream();
-    scheduledExecutorService.shutdownNow();
+  void stopRealtimeRetry() {
+    canRetry = false;
+  }
+
+  boolean getRetryState() {
+    return canRetry;
   }
 
   /**
@@ -293,10 +302,7 @@ public class ConfigRealtimeHttpClient {
     ConfigUpdateListener retryCallback =
         new ConfigUpdateListener() {
           @Override
-          public void onUpdate(ConfigUpdate configUpdate) {
-            closeRealtimeHttpStream();
-            retryHTTPConnection();
-          }
+          public void onUpdate(ConfigUpdate configUpdate) {}
 
           // This method will only be called when a realtimeDisabled message is sent down the
           // stream.
@@ -390,7 +396,9 @@ public class ConfigRealtimeHttpClient {
       // See github.com/firebase/firebase-android-sdk/pull/808.
       try {
         this.httpURLConnection.getInputStream().close();
-        this.httpURLConnection.getErrorStream().close();
+        if (this.httpURLConnection.getErrorStream() != null) {
+          this.httpURLConnection.getErrorStream().close();
+        }
       } catch (IOException e) {
       }
       this.httpURLConnection = null;
