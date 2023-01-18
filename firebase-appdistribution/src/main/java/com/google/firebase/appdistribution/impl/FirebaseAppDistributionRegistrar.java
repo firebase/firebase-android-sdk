@@ -34,6 +34,7 @@ import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Registers FirebaseAppDistribution and related components.
@@ -48,10 +49,12 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
 
   @Override
   public @NonNull List<Component<?>> getComponents() {
-    Qualified<Executor> backgroundExecutor = Qualified.qualified(Background.class, Executor.class);
-    Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
-    Qualified<Executor> lightweightExecutor =
-        Qualified.qualified(Lightweight.class, Executor.class);
+    Qualified<ScheduledExecutorService> backgroundExecutor =
+        Qualified.qualified(Background.class, ScheduledExecutorService.class);
+    Qualified<ScheduledExecutorService> blockingExecutor =
+        Qualified.qualified(Blocking.class, ScheduledExecutorService.class);
+    Qualified<ScheduledExecutorService> lightweightExecutor =
+        Qualified.qualified(Lightweight.class, ScheduledExecutorService.class);
     Qualified<Executor> uiThreadExecutor = Qualified.qualified(UiThread.class, Executor.class);
     return Arrays.asList(
         Component.builder(FirebaseAppDistribution.class)

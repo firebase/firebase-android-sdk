@@ -173,11 +173,6 @@ class MainActivity : AppCompatActivity() {
     )
   }
 
-  override fun onDestroy() {
-    firebaseAppDistribution.cancelFeedbackNotification()
-    super.onDestroy()
-  }
-
   private fun disableAllFeedbackTriggers() {
     Log.i(TAG, "Disabling all feedback triggers")
     ShakeDetectionFeedbackTrigger.disable(application)
