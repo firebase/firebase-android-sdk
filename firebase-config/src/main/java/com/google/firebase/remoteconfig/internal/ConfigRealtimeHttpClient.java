@@ -262,10 +262,11 @@ public class ConfigRealtimeHttpClient {
 
   /** Retries HTTP stream connection asyncly in random time intervals. */
   @SuppressLint("VisibleForTests")
-  public synchronized void retryHTTPConnection() {
+  public synchronized void retryHTTPConnection(long retrySeconds) {
     if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
       if (httpRetriesRemaining < ORIGINAL_RETRIES) {
-        httpRetrySeconds *= getRetryMultiplier();
+        retrySeconds *= getRetryMultiplier();
+        httpRetrySeconds = retrySeconds;
       }
       httpRetriesRemaining--;
       scheduledExecutorService.schedule(
@@ -275,7 +276,7 @@ public class ConfigRealtimeHttpClient {
               beginRealtimeHttpStream();
             }
           },
-          httpRetrySeconds,
+          retrySeconds,
           TimeUnit.SECONDS);
     } else if (canRetry) {
       propagateErrors(
@@ -285,12 +286,8 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  void stopRealtimeRetry() {
-    canRetry = false;
-  }
-
-  boolean getRetryState() {
-    return canRetry;
+  void setRealtimeRetryState(boolean retry) {
+    canRetry = retry;
   }
 
   /**
@@ -374,7 +371,7 @@ public class ConfigRealtimeHttpClient {
       if (responseCode == null
           || responseCode == HttpURLConnection.HTTP_OK
           || isStatusCodeRetryable(responseCode)) {
-        retryHTTPConnection();
+        retryHTTPConnection(httpRetrySeconds);
       } else {
         propagateErrors(
             new FirebaseRemoteConfigServerException(

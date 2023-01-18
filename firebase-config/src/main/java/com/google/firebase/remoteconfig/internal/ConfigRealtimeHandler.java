@@ -25,8 +25,6 @@ import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class ConfigRealtimeHandler {
@@ -35,10 +33,7 @@ public class ConfigRealtimeHandler {
   private final Set<ConfigUpdateListener> listeners;
 
   @GuardedBy("this")
-  private Future<?> realtimeHttpClientTask;
-
-  @GuardedBy("this")
-  private ConfigRealtimeHttpClient configRealtimeHttpClient;
+  private final ConfigRealtimeHttpClient configRealtimeHttpClient;
 
   private final ConfigFetchHandler configFetchHandler;
   private final FirebaseApp firebaseApp;
@@ -58,8 +53,16 @@ public class ConfigRealtimeHandler {
       ScheduledExecutorService scheduledExecutorService) {
 
     this.listeners = new LinkedHashSet<>();
-    this.realtimeHttpClientTask = null;
-    this.configRealtimeHttpClient = null;
+    this.configRealtimeHttpClient =
+        new ConfigRealtimeHttpClient(
+            firebaseApp,
+            firebaseInstallations,
+            configFetchHandler,
+            activatedCacheClient,
+            context,
+            namespace,
+            listeners,
+            scheduledExecutorService);
 
     this.firebaseApp = firebaseApp;
     this.configFetchHandler = configFetchHandler;
@@ -71,48 +74,21 @@ public class ConfigRealtimeHandler {
   }
 
   private synchronized boolean canCreateRealtimeHttpClientTask() {
-    return !listeners.isEmpty() && realtimeHttpClientTask == null;
-  }
-
-  private synchronized Runnable createRealtimeHttpClientTask(
-      ConfigRealtimeHttpClient realtimeHttpClient) {
-    return new Runnable() {
-      @Override
-      public void run() {
-        realtimeHttpClient.beginRealtimeHttpStream();
-        while (realtimeHttpClient.getRetryState()) {}
-      }
-    };
+    return !listeners.isEmpty() && configRealtimeHttpClient != null;
   }
 
   // Kicks off Http stream listening and autofetch
   private synchronized void beginRealtime() {
     if (canCreateRealtimeHttpClientTask()) {
-      configRealtimeHttpClient =
-          new ConfigRealtimeHttpClient(
-              firebaseApp,
-              firebaseInstallations,
-              configFetchHandler,
-              activatedCacheClient,
-              context,
-              namespace,
-              listeners,
-              scheduledExecutorService);
-      this.realtimeHttpClientTask =
-          this.scheduledExecutorService.submit(
-              new RealtimeHttpClientFutureTask(
-                  createRealtimeHttpClientTask(configRealtimeHttpClient),
-                  configRealtimeHttpClient));
+      configRealtimeHttpClient.setRealtimeRetryState(true);
+      configRealtimeHttpClient.retryHTTPConnection(0);
     }
   }
 
   // Pauses Http stream listening
   public synchronized void pauseRealtime() {
     if (configRealtimeHttpClient != null) {
-      configRealtimeHttpClient.stopRealtimeRetry();
-    }
-    if (realtimeHttpClientTask != null && !realtimeHttpClientTask.isCancelled()) {
-      realtimeHttpClientTask.cancel(false);
+      configRealtimeHttpClient.setRealtimeRetryState(false);
     }
   }
 
@@ -131,26 +107,6 @@ public class ConfigRealtimeHandler {
     listeners.remove(listener);
     if (listeners.isEmpty()) {
       pauseRealtime();
-    }
-  }
-
-  private synchronized void closeRealtime() {
-    realtimeHttpClientTask = null;
-  }
-
-  private class RealtimeHttpClientFutureTask extends FutureTask<String> {
-    private final ConfigRealtimeHttpClient configRealtimeHttpClient;
-
-    public RealtimeHttpClientFutureTask(
-        Runnable runnable, ConfigRealtimeHttpClient configRealtimeHttpClient) {
-      super(runnable, null);
-      this.configRealtimeHttpClient = configRealtimeHttpClient;
-    }
-
-    @Override
-    protected void done() {
-      super.done();
-      closeRealtime();
     }
   }
 
