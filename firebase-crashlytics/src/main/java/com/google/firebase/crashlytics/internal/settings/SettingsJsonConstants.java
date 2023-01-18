@@ -32,10 +32,12 @@ class SettingsJsonConstants {
   // Feature Switch Keys
   static final String FEATURES_COLLECT_REPORTS_KEY = "collect_reports";
   static final String FEATURES_COLLECT_ANRS_KEY = "collect_anrs";
+  static final String FEATURES_COLLECT_BUILD_IDS_KEY = "collect_build_ids";
 
   // Feature Switch Defaults
   static final boolean FEATURES_COLLECT_REPORTS_DEFAULT = true;
   static final boolean FEATURES_COLLECT_ANRS_DEFAULT = false;
+  static final boolean FEATURES_COLLECT_BUILD_IDS_DEFAULT = false;
 
   // App JSON Keys
   static final String APP_STATUS_KEY = "status";

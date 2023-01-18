@@ -180,6 +180,12 @@ abstract class ApiInformationTask : DefaultTask() {
         outputApiFile.get().absolutePath,
         "--check-compatibility:api:released",
         apiTxtFile.get().absolutePath,
+        "--error",
+        "AddedClass",
+        "--error",
+        "AddedMethod",
+        "--error",
+        "AddedField",
         "--format=v2",
         "--no-color"
       ) +

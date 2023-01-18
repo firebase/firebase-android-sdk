@@ -89,7 +89,9 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     testOptions.unitTests.includeAndroidResources = true
-    ext.useProdBackendForTests = false
+
+    // Acceptable values are: 'emulator', 'qa', 'nightly', and 'prod'.
+    ext.targetBackend = 'emulator'
 }
 
 tasks.withType(Test) {
@@ -97,10 +99,11 @@ tasks.withType(Test) {
 }
 
 android.libraryVariants.all { variant ->
-    if (findProperty("useProdBackendForTests")) {
-        variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "false")
+    if (findProperty('targetBackend')) {
+        variant.buildConfigField("String", "TARGET_BACKEND", "\"${property("targetBackend")}\"")
     } else {
-        variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "true")
+        // By default set the target backend to 'emulator'
+        variant.buildConfigField("String", "TARGET_BACKEND", "\"emulator\"")
     }
 
     def localProps = new Properties()

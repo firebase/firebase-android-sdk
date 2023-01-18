@@ -46,7 +46,8 @@ class DefaultSettingsJsonTransform implements SettingsJsonTransform {
     final Settings.FeatureFlagData featureFlagData =
         new Settings.FeatureFlagData(
             SettingsJsonConstants.FEATURES_COLLECT_REPORTS_DEFAULT,
-            SettingsJsonConstants.FEATURES_COLLECT_ANRS_DEFAULT);
+            SettingsJsonConstants.FEATURES_COLLECT_ANRS_DEFAULT,
+            SettingsJsonConstants.FEATURES_COLLECT_BUILD_IDS_DEFAULT);
 
     long expiresAtMillis =
         currentTimeProvider.getCurrentTimeMillis() + (cacheDurationSeconds * 1000);
