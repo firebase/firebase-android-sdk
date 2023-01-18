@@ -1,4 +1,4 @@
-// Copyright 2022 Google LLC
+// Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,23 +34,21 @@ public class BloomFilter {
     if (padding < 0 || padding >= 8) {
       throw new IllegalArgumentException("Invalid padding: " + padding);
     }
-
-    if (bitmap.length > 0) {
+    if (hashCount < 0) {
+      throw new IllegalArgumentException("Invalid hash count: " + hashCount);
+    }
+    if (bitmap.length > 0 && hashCount == 0) {
       // Only empty bloom filter can have 0 hash count.
-      if (hashCount <= 0) {
-        throw new IllegalArgumentException("Invalid hash count: " + hashCount);
-      }
-    } else {
-      if (hashCount < 0) {
-        throw new IllegalArgumentException("Invalid hash count: " + hashCount);
-      }
-
+      throw new IllegalArgumentException("Invalid hash count: " + hashCount);
+    }
+    if (bitmap.length == 0) {
       // Empty bloom filter should have 0 padding.
       if (padding != 0) {
         throw new IllegalArgumentException(
             "Expected padding of 0 when bitmap length is 0, but got " + padding);
       }
     }
+
     this.bitmap = bitmap;
     this.hashCount = hashCount;
     this.bitCount = bitmap.length * 8 - padding;
@@ -106,7 +104,7 @@ public class BloomFilter {
     try {
       return MessageDigest.getInstance("MD5");
     } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException("Missing MD5 MessageDigest provider.", e);
+      throw new RuntimeException("Missing MD5 MessageDigest provider: ", e);
     }
   }
 
@@ -124,11 +122,9 @@ public class BloomFilter {
    * corresponding bit index in the bitmap to be checked.
    */
   private int getBitIndex(long hash1, long hash2, int hashIndex) {
-
     // Calculate hashed value h(i) = h1 + (i * h2).
-    // Even though we are interpreting hash1 and hash2 as unsigned, the addition
-    // and multiplication operators still perform the correct operation and give
-    // the desired overflow behavior.
+    // Even though we are interpreting hash1 and hash2 as unsigned, the addition and multiplication
+    // operators still perform the correct operation and give the desired overflow behavior.
     long combinedHash = hash1 + (hash2 * hashIndex);
     long modulo = unsignedRemainder(combinedHash, this.bitCount);
     return (int) modulo;
