@@ -1,4 +1,5 @@
 # Unreleased
+* [fixed] Fixed issue where `Query.get()` resulted in query tags being added but not cleaned up, potentially causing errors when attempting to add a listener to the query the `get()` was performed on.
 
 # 20.1.0
 * [unchanged] Updated to accommodate the release of the updated
