@@ -72,7 +72,9 @@ public class BloomFilterTest {
   public void constructorShouldThrowIAEOnEmptyBloomFilterWithNonZeroPadding() {
     IllegalArgumentException exception =
         assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[0], 1, 0));
-    assertThat(exception).hasMessageThat().contains("Expected padding of 0 when bitmap length is 0, but got 1");
+    assertThat(exception)
+        .hasMessageThat()
+        .contains("Expected padding of 0 when bitmap length is 0, but got 1");
   }
 
   @Test
@@ -120,15 +122,16 @@ public class BloomFilterTest {
   @Test
   public void mightContainOnEmptyBloomFilterShouldReturnFalse() {
     BloomFilter bloomFilter = new BloomFilter(new byte[0], 0, 0);
+    assertFalse(bloomFilter.mightContain(""));
     assertFalse(bloomFilter.mightContain("a"));
   }
 
   @Test
-  public void mightContainWithEmptyStringShouldReturnFalse() {
-    BloomFilter emptyBloomFilter = new BloomFilter(new byte[0], 0, 0);
-    assertFalse(emptyBloomFilter.mightContain(""));
-    BloomFilter nonEmptyBloomFilter = new BloomFilter(new byte[] {(byte) 255}, 0, 1);
-    assertFalse(nonEmptyBloomFilter.mightContain(""));
+  public void mightContainWithEmptyStringMightReturnFalsePositiveResult() {
+    BloomFilter bloomFilter1 = new BloomFilter(new byte[] {1}, 1, 1);
+    assertFalse(bloomFilter1.mightContain(""));
+    BloomFilter bloomFilter2 = new BloomFilter(new byte[] {(byte) 255}, 0, 16);
+    assertTrue(bloomFilter2.mightContain(""));
   }
 
   @Test
@@ -153,7 +156,7 @@ public class BloomFilterTest {
    */
   private static void runGoldenTest(String testFile) throws Exception {
     String resultFile = testFile.replace("bloom_filter_proto", "membership_test_result");
-    if(resultFile.equals(testFile)){
+    if (resultFile.equals(testFile)) {
       throw new IllegalArgumentException("Cannot find corresponding result file for " + testFile);
     }
 
@@ -174,8 +177,13 @@ public class BloomFilterTest {
       boolean expectedResult = membershipTestResults.charAt(i) == '1';
       boolean mightContainResult = bloomFilter.mightContain(GOLDEN_DOCUMENT_PREFIX + i);
       assertEquals(
-          "For document " + GOLDEN_DOCUMENT_PREFIX + i + " mightContain() returned " + mightContainResult
-           + ", but expected " + expectedResult,
+          "For document "
+              + GOLDEN_DOCUMENT_PREFIX
+              + i
+              + " mightContain() returned "
+              + mightContainResult
+              + ", but expected "
+              + expectedResult,
           mightContainResult,
           expectedResult);
     }

@@ -47,8 +47,8 @@ public class BloomFilter {
 
       // Empty bloom filter should have 0 padding.
       if (padding != 0) {
-        throw new IllegalArgumentException("Expected padding of 0 when bitmap " +
-        "length is 0, but got " + padding);
+        throw new IllegalArgumentException(
+            "Expected padding of 0 when bitmap length is 0, but got " + padding);
       }
     }
     this.bitmap = bitmap;
@@ -63,17 +63,17 @@ public class BloomFilter {
   }
 
   /**
-   * Check whether the given string is a possible member of the bloom filter. It
-   * might return false positive result, ie, the given string is not a member of
-   * the bloom filter, but the method returned true.
+   * Check whether the given string is a possible member of the bloom filter. It might return false
+   * positive result, ie, the given string is not a member of the bloom filter, but the method
+   * returned true.
    *
    * @param value the string to be tested for membership.
-   * @return true if the given string might be contained in the bloom filter, or
-   * false if the given string is definitely not contained in the bloom filter.
+   * @return true if the given string might be contained in the bloom filter, or false if the given
+   *     string is definitely not contained in the bloom filter.
    */
   public boolean mightContain(@NonNull String value) {
-    // Empty bitmap or empty value should return false on membership check.
-    if (this.bitCount == 0  || value.isEmpty()) {
+    // Empty bitmap should return false on membership check.
+    if (this.bitCount == 0) {
       return false;
     }
 
@@ -95,10 +95,7 @@ public class BloomFilter {
     return true;
   }
 
-  /** 
-  * Hash a string using md5 hashing algorithm, and return an array of 16 
-  * bytes. 
-  */
+  /** Hash a string using md5 hashing algorithm, and return an array of 16 bytes. */
   @NonNull
   private byte[] md5HashDigest(@NonNull String value) {
     return md5HashMessageDigest.digest(value.getBytes(StandardCharsets.UTF_8));
@@ -123,11 +120,11 @@ public class BloomFilter {
   }
 
   /**
-   * Calculate the ith hash value based on the hashed 64 bit unsigned integers, 
-   * and calculate its corresponding bit index in the bitmap to be checked.
+   * Calculate the ith hash value based on the hashed 64 bit unsigned integers, and calculate its
+   * corresponding bit index in the bitmap to be checked.
    */
   private int getBitIndex(long hash1, long hash2, int hashIndex) {
-    
+
     // Calculate hashed value h(i) = h1 + (i * h2).
     // Even though we are interpreting hash1 and hash2 as unsigned, the addition
     // and multiplication operators still perform the correct operation and give
@@ -138,12 +135,12 @@ public class BloomFilter {
   }
 
   /**
-   * Calculate modulo, where the dividend and divisor are treated as unsigned 
-   * 64-bit longs.
+   * Calculate modulo, where the dividend and divisor are treated as unsigned 64-bit longs.
    *
    * <p>The implementation is taken from <a
    * href="https://github.com/google/guava/blob/553037486901cc60820ab7dcb38a25b6f34eba43/android/guava/src/com/google/common/primitives/UnsignedLongs.java">Guava</a>,
    * simplified to our needs.
+   *
    * <p>
    */
   private static long unsignedRemainder(long dividend, long divisor) {
