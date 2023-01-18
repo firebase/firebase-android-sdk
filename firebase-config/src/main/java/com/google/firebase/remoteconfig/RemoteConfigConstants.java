@@ -28,7 +28,7 @@ public final class RemoteConfigConstants {
   public static final String FETCH_REGEX_URL =
       "https://firebaseremoteconfig.googleapis.com/v1/projects/%s/namespaces/%s:fetch";
   public static final String REALTIME_REGEX_URL =
-      "https://firebaseremoteconfig.googleapis.com/v1/projects/%s/namespaces/%s:streamFetchInvalidations";
+      "https://firebaseremoteconfigrealtime.googleapis.com/v1/projects/%s/namespaces/%s:streamFetchInvalidations";
 
   /**
    * Keys of fields in the Fetch request body that the client sends to the Firebase Remote Config
