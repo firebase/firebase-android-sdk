@@ -79,7 +79,7 @@ public class Repo implements PersistentConnection.Delegate {
   public long dataUpdateCount = 0; // for testing.
   private long nextWriteId = 1;
   private SyncTree infoSyncTree;
-  @VisibleForTesting protected SyncTree serverSyncTree;
+  private SyncTree serverSyncTree;
   private FirebaseDatabase database;
   private boolean loggedTransactionPersistenceWarning = false;
 
