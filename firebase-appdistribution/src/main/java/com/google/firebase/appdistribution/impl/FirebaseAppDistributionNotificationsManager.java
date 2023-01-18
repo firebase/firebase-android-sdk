@@ -46,8 +46,8 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-class FirebaseAppDistributionNotificationsManager implements OnActivityPausedListener,
-    OnActivityResumedListener {
+class FirebaseAppDistributionNotificationsManager
+    implements OnActivityPausedListener, OnActivityResumedListener {
 
   private static final String TAG = "NotificationsManager";
 
@@ -55,7 +55,6 @@ class FirebaseAppDistributionNotificationsManager implements OnActivityPausedLis
 
   @VisibleForTesting
   static final String CHANNEL_GROUP_ID = prependPackage("notification_channel_group_id");
-
 
   @VisibleForTesting
   enum NotificationType {
@@ -76,10 +75,8 @@ class FirebaseAppDistributionNotificationsManager implements OnActivityPausedLis
   private final Context context;
   private final AppIconSource appIconSource;
   private final NotificationManagerCompat notificationManager;
-  @Lightweight
-  private final ScheduledExecutorService scheduledExecutorService;
-  @UiThread
-  private final Executor uiThreadExecutor;
+  @Lightweight private final ScheduledExecutorService scheduledExecutorService;
+  @UiThread private final Executor uiThreadExecutor;
 
   private Notification feedbackNotificationToBeShown;
   private ScheduledFuture<?> feedbackNotificationCancellationFuture;
@@ -172,12 +169,13 @@ class FirebaseAppDistributionNotificationsManager implements OnActivityPausedLis
       return;
     }
 
-    uiThreadExecutor.execute(() -> {
-      // ensure that class state is managed on same thread as lifecycle callbacks
-      cancelFeedbackCancellationFuture();
-      feedbackNotificationToBeShown = buildFeedbackNotification(infoText, interruptionLevel);
-      doShowFeedbackNotification();
-    });
+    uiThreadExecutor.execute(
+        () -> {
+          // ensure that class state is managed on same thread as lifecycle callbacks
+          cancelFeedbackCancellationFuture();
+          feedbackNotificationToBeShown = buildFeedbackNotification(infoText, interruptionLevel);
+          doShowFeedbackNotification();
+        });
   }
 
   // this must be run on the main (UI) thread
@@ -207,12 +205,13 @@ class FirebaseAppDistributionNotificationsManager implements OnActivityPausedLis
   }
 
   public void cancelFeedbackNotification() {
-    uiThreadExecutor.execute(() -> {
-      // ensure that class state is managed on same thread as lifecycle callbacks
-      feedbackNotificationToBeShown = null;
-      cancelFeedbackCancellationFuture();
-      doCancelFeedbackNotification();
-    });
+    uiThreadExecutor.execute(
+        () -> {
+          // ensure that class state is managed on same thread as lifecycle callbacks
+          feedbackNotificationToBeShown = null;
+          cancelFeedbackCancellationFuture();
+          doCancelFeedbackNotification();
+        });
   }
 
   public void doCancelFeedbackNotification() {
@@ -222,7 +221,9 @@ class FirebaseAppDistributionNotificationsManager implements OnActivityPausedLis
 
   @RequiresApi(Build.VERSION_CODES.O)
   private void createChannel(
-      NotificationType notification, int name, int description,
+      NotificationType notification,
+      int name,
+      int description,
       InterruptionLevel interruptionLevel) {
     notificationManager.createNotificationChannelGroup(
         new NotificationChannelGroup(

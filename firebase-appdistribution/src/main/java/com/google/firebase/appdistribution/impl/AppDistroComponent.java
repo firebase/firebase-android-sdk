@@ -88,23 +88,29 @@ interface AppDistroComponent {
   interface MainModule {
     @Binds
     FirebaseAppDistribution bindAppDistro(FirebaseAppDistributionImpl impl);
-    
-    @Binds @Background
+
+    @Binds
+    @Background
     ExecutorService bindBackgroundExecutorService(@Background ScheduledExecutorService ses);
 
-    @Binds @Background
+    @Binds
+    @Background
     Executor bindBackgroundExecutor(@Background ExecutorService es);
 
-    @Binds @Lightweight
+    @Binds
+    @Lightweight
     ExecutorService bindLightweightExecutorService(@Lightweight ScheduledExecutorService ses);
 
-    @Binds @Lightweight
+    @Binds
+    @Lightweight
     Executor bindLightweightExecutor(@Lightweight ExecutorService es);
 
-    @Binds @Blocking
+    @Binds
+    @Blocking
     ExecutorService bindBlockingExecutorService(@Blocking ScheduledExecutorService ses);
 
-    @Binds @Blocking
+    @Binds
+    @Blocking
     Executor bindBlockingExecutor(@Blocking ExecutorService es);
   }
 }

@@ -48,28 +48,22 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 
 @RunWith(RobolectricTestRunner.class)
 public class FirebaseAppDistributionNotificationsManagerTest {
 
-  @UiThread
-  private final Executor uiThreadExecutor = TestOnlyExecutors.ui();
+  @UiThread private final Executor uiThreadExecutor = TestOnlyExecutors.ui();
 
   private FirebaseAppDistributionNotificationsManager firebaseAppDistributionNotificationsManager;
   private NotificationManager notificationManager;
 
-  @Mock
-  private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
+  @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
 
-  @Lightweight
-  @Mock
-  private ScheduledExecutorService mockLightweightExecutorService;
+  @Lightweight @Mock private ScheduledExecutorService mockLightweightExecutorService;
 
-  @Mock
-  ScheduledFuture<?> mockScheduledFuture;
+  @Mock ScheduledFuture<?> mockScheduledFuture;
 
   @Before
   public void setup() {
@@ -80,8 +74,11 @@ public class FirebaseAppDistributionNotificationsManagerTest {
             ApplicationProvider.getApplicationContext().getSystemService(NOTIFICATION_SERVICE);
     firebaseAppDistributionNotificationsManager =
         new FirebaseAppDistributionNotificationsManager(
-            ApplicationProvider.getApplicationContext(), new AppIconSource(), mockLifecycleNotifier,
-            mockLightweightExecutorService, uiThreadExecutor);
+            ApplicationProvider.getApplicationContext(),
+            new AppIconSource(),
+            mockLifecycleNotifier,
+            mockLightweightExecutorService,
+            uiThreadExecutor);
   }
 
   @Test
@@ -170,7 +167,7 @@ public class FirebaseAppDistributionNotificationsManagerTest {
     Intent actualIntent = shadowOf(notification.contentIntent).getSavedIntent();
     assertThat(actualIntent.getComponent()).isEqualTo(expectedIntent.getComponent());
     assertThat(
-        actualIntent.getStringExtra(TakeScreenshotAndStartFeedbackActivity.INFO_TEXT_EXTRA_KEY))
+            actualIntent.getStringExtra(TakeScreenshotAndStartFeedbackActivity.INFO_TEXT_EXTRA_KEY))
         .isEqualTo("Terms and conditions");
   }
 
@@ -189,10 +186,11 @@ public class FirebaseAppDistributionNotificationsManagerTest {
   @Test
   public void onPaused_schedulesHideFeedbackNotification() {
     when(mockLightweightExecutorService.schedule(any(Runnable.class), anyLong(), any()))
-        .thenAnswer(invocation -> {
-          invocation.getArgument(0, Runnable.class).run(); // pretend enough time has passed
-          return mockScheduledFuture;
-        });
+        .thenAnswer(
+            invocation -> {
+              invocation.getArgument(0, Runnable.class).run(); // pretend enough time has passed
+              return mockScheduledFuture;
+            });
     firebaseAppDistributionNotificationsManager.showFeedbackNotification("feed me back", DEFAULT);
     shadowOf(getMainLooper()).idle(); // make sure main (UI) thread has finished executing
 
@@ -205,7 +203,8 @@ public class FirebaseAppDistributionNotificationsManagerTest {
   @Test
   public void onResumedBeforeTimeout_cancelsScheduledHideFeedbackNotification() {
     doReturn(mockScheduledFuture) // do not run runnable, pretend not enough time has passed
-        .when(mockLightweightExecutorService).schedule(any(Runnable.class), anyLong(), any());
+        .when(mockLightweightExecutorService)
+        .schedule(any(Runnable.class), anyLong(), any());
     firebaseAppDistributionNotificationsManager.showFeedbackNotification("feed me back", DEFAULT);
     shadowOf(getMainLooper()).idle(); // make sure main (UI) thread has finished executing
 
@@ -219,10 +218,11 @@ public class FirebaseAppDistributionNotificationsManagerTest {
   @Test
   public void onResumedAfterTimeout_showsFeedbackNotificationAgain() {
     when(mockLightweightExecutorService.schedule(any(Runnable.class), anyLong(), any()))
-        .thenAnswer(invocation -> {
-          invocation.getArgument(0, Runnable.class).run(); // pretend enough time has passed
-          return mockScheduledFuture;
-        });
+        .thenAnswer(
+            invocation -> {
+              invocation.getArgument(0, Runnable.class).run(); // pretend enough time has passed
+              return mockScheduledFuture;
+            });
     firebaseAppDistributionNotificationsManager.showFeedbackNotification("feed me back", DEFAULT);
     shadowOf(getMainLooper()).idle(); // make sure main (UI) thread has finished executing
 
