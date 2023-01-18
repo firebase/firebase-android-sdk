@@ -19,12 +19,9 @@ import com.google.firebase.components.Preconditions;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 
-class LimitedConcurrencyExecutor implements PausableExecutor {
+class LimitedConcurrencyExecutor implements Executor {
 
   private final Executor delegate;
-
-  @GuardedBy("queue")
-  private boolean paused = false;
 
   @GuardedBy("queue")
   private int activeCount;
@@ -38,53 +35,40 @@ class LimitedConcurrencyExecutor implements PausableExecutor {
   }
 
   @Override
-  public void pause() {
-    synchronized (queue) {
-      paused = true;
-    }
-  }
-
-  @Override
-  public void resume() {
-    synchronized (queue) {
-      paused = false;
-      maybeEnqueueNext();
-    }
-  }
-
-  @Override
   public void execute(Runnable command) {
+    Runnable toExecute = null;
     synchronized (queue) {
-      if (!paused && activeCount > 0) {
+      if (activeCount > 0) {
         activeCount--;
-        executeOnDelegate(command);
-        return;
+        toExecute =
+            () -> {
+              try {
+                command.run();
+              } finally {
+                activeCount++;
+                synchronized (queue) {
+                  maybeEnqueueNext();
+                }
+              }
+            };
       }
+    }
+    if (toExecute != null) {
+      delegate.execute(toExecute);
+    } else {
       queue.offer(command);
     }
   }
 
-  private void executeOnDelegate(Runnable runnable) {
-    delegate.execute(
-        () -> {
-          try {
-            runnable.run();
-          } finally {
-            synchronized (queue) {
-              activeCount++;
-              if (!paused) {
-                maybeEnqueueNext();
-              }
-            }
-          }
-        });
-  }
-
   private void maybeEnqueueNext() {
     synchronized (queue) {
-      Runnable next = queue.poll();
-      if (next != null) {
-        execute(next);
+      while (activeCount > 0) {
+        Runnable next = queue.poll();
+        if (next != null) {
+          execute(next);
+        } else {
+          break;
+        }
       }
     }
   }

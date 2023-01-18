@@ -27,4 +27,6 @@ public interface PausableExecutor extends Executor {
   void pause();
 
   void resume();
+
+  boolean isPaused();
 }

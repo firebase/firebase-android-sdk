@@ -10,13 +10,34 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-final class LimitedConcurrencyExecutorService extends LimitedConcurrencyExecutor
-    implements ExecutorService {
-  private final ExecutorService delegate;
+final class PausableExecutorServiceImpl implements PausableExecutorService {
 
-  LimitedConcurrencyExecutorService(ExecutorService delegate, int concurrency) {
-    super(delegate, concurrency);
-    this.delegate = delegate;
+  private final ExecutorService delegateService;
+  private final PausableExecutor pausableDelegate;
+
+  PausableExecutorServiceImpl(boolean paused, ExecutorService delegate) {
+    delegateService = delegate;
+    pausableDelegate = new PausableExecutorImpl(paused, delegate);
+  }
+
+  @Override
+  public void execute(Runnable command) {
+    pausableDelegate.execute(command);
+  }
+
+  @Override
+  public void pause() {
+    pausableDelegate.pause();
+  }
+
+  @Override
+  public void resume() {
+    pausableDelegate.resume();
+  }
+
+  @Override
+  public boolean isPaused() {
+    return pausableDelegate.isPaused();
   }
 
   @Override
@@ -31,17 +52,17 @@ final class LimitedConcurrencyExecutorService extends LimitedConcurrencyExecutor
 
   @Override
   public boolean isShutdown() {
-    return delegate.isShutdown();
+    return delegateService.isShutdown();
   }
 
   @Override
   public boolean isTerminated() {
-    return delegate.isTerminated();
+    return delegateService.isTerminated();
   }
 
   @Override
   public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-    return delegate.awaitTermination(timeout, unit);
+    return delegateService.awaitTermination(timeout, unit);
   }
 
   @Override
@@ -72,25 +93,25 @@ final class LimitedConcurrencyExecutorService extends LimitedConcurrencyExecutor
   @Override
   public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
       throws InterruptedException {
-    return delegate.invokeAll(tasks);
+    return delegateService.invokeAll(tasks);
   }
 
   @Override
   public <T> List<Future<T>> invokeAll(
       Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
       throws InterruptedException {
-    return delegate.invokeAll(tasks, timeout, unit);
+    return delegateService.invokeAll(tasks, timeout, unit);
   }
 
   @Override
   public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
       throws ExecutionException, InterruptedException {
-    return delegate.invokeAny(tasks);
+    return delegateService.invokeAny(tasks);
   }
 
   @Override
   public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit)
       throws ExecutionException, InterruptedException, TimeoutException {
-    return delegate.invokeAny(tasks, timeout, unit);
+    return delegateService.invokeAny(tasks, timeout, unit);
   }
 }
