@@ -92,6 +92,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 import org.junit.After;
 import org.junit.Before;
@@ -109,6 +110,7 @@ import org.robolectric.shadows.ShadowPackageManager;
 
 @RunWith(RobolectricTestRunner.class)
 public class FirebaseAppDistributionServiceImplTest {
+
   private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
   private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
   private static final String TEST_PROJECT_ID = "777777777777";
@@ -146,7 +148,10 @@ public class FirebaseAppDistributionServiceImplTest {
           .build();
 
   @Background private final ExecutorService backgroundExecutor = TestOnlyExecutors.background();
-  @Lightweight private final ExecutorService lightweightExecutor = TestOnlyExecutors.lite();
+
+  @Lightweight
+  private final ScheduledExecutorService lightweightExecutor = TestOnlyExecutors.lite();
+
   @UiThread private final Executor uiThreadExecutor = TestOnlyExecutors.ui();
 
   private FirebaseAppDistributionImpl firebaseAppDistribution;
@@ -197,7 +202,11 @@ public class FirebaseAppDistributionServiceImplTest {
                 mockReleaseIdentifier,
                 mockScreenshotTaker,
                 new FirebaseAppDistributionNotificationsManager(
-                    firebaseApp.getApplicationContext(), new AppIconSource()),
+                    firebaseApp.getApplicationContext(),
+                    new AppIconSource(),
+                    mockLifecycleNotifier,
+                    lightweightExecutor,
+                    uiThreadExecutor),
                 lightweightExecutor,
                 uiThreadExecutor));
 
