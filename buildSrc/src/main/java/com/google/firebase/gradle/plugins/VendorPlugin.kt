@@ -74,11 +74,6 @@ class VendorPlugin : Plugin<Project> {
 
     val androidComponents = project.extensions.getByType<LibraryAndroidComponentsExtension>()
 
-    androidComponents.beforeVariants(androidComponents.selector().withBuildType("vendor")) {
-      it.enableAndroidTest = false
-      it.enableUnitTest = false
-    }
-
     androidComponents.onVariants(androidComponents.selector().withBuildType("release")) { variant ->
       val vendorTask =
         project.tasks.register("${variant.name}VendorTransform", VendorTask::class.java) {
