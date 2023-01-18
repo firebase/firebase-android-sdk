@@ -38,6 +38,9 @@ import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.RepoManager;
 import com.google.firebase.database.future.ReadFuture;
 import com.google.firebase.database.future.WriteFuture;
+
+import junit.framework.TestFailure;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -55,6 +58,9 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+
+import kotlin.collections.builders.MapBuilder;
+
 
 @org.junit.runner.RunWith(AndroidJUnit4.class)
 public class QueryTest {
@@ -449,7 +455,7 @@ public class QueryTest {
 
   @Test
   public void listenerCanBeRemovedFromSpecificQuery()
-      throws DatabaseException, TestFailure, ExecutionException, TimeoutException,
+      throws DatabaseException,  ExecutionException, TimeoutException,
           InterruptedException {
     DatabaseReference ref = getRandomNode();
 
@@ -4615,6 +4621,16 @@ public class QueryTest {
       throws DatabaseException, InterruptedException, ExecutionException {
     FirebaseDatabase db = getNewDatabase();
     assertNull(await(db.getReference(UUID.randomUUID().toString()).get()).getValue());
+  }
+
+  @Test
+  public void testGetCleansUpTags()
+          throws DatabaseException, InterruptedException, ExecutionException {
+    FirebaseDatabase db = getNewDatabase();
+    DatabaseReference myRef = db.getReference(UUID.randomUUID().toString());
+    Query query = myRef.startAfter(1);
+    await(db.getReference(UUID.randomUUID().toString()).get()).getValue();
+    assertNull(myRef.repo.serverSyncTree.tagForQuery(query.getSpec()));
   }
 
   @Test

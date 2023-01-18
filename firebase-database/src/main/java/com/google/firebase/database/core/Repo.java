@@ -17,6 +17,8 @@ package com.google.firebase.database.core;
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
+
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.DataSnapshot;
@@ -78,7 +80,8 @@ public class Repo implements PersistentConnection.Delegate {
   public long dataUpdateCount = 0; // for testing.
   private long nextWriteId = 1;
   private SyncTree infoSyncTree;
-  private SyncTree serverSyncTree;
+  @VisibleForTesting
+  public SyncTree serverSyncTree;
   private FirebaseDatabase database;
   private boolean loggedTransactionPersistenceWarning = false;
 
