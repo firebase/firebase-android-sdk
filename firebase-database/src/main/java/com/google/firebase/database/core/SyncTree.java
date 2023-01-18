@@ -629,11 +629,8 @@ public class SyncTree {
             }
 
             boolean viewAlreadyExists = syncPoint.viewExistsForQuery(query);
-            System.out.println("Map: " + queryToTagMap);
-            System.out.println("Query: " + query);
             if (!viewAlreadyExists && !query.loadsAllData()) {
               // We need to track a tag for this query
-              System.out.println("assert" + !queryToTagMap.containsKey(query));
               hardAssert(
                   !queryToTagMap.containsKey(query), "View does not exist but we have a tag");
               Tag tag = getNextQueryTag();
