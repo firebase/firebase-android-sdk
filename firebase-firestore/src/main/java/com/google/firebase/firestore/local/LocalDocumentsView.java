@@ -160,6 +160,7 @@ class LocalDocumentsView {
     Map<DocumentKey, FieldMask> mutatedFields = new HashMap<>();
     for (MutableDocument doc : docs.values()) {
       Overlay overlay = overlays.get(doc.getKey());
+
       // Recalculate an overlay if the document's existence state is changed due to a remote
       // event *and* the overlay is a PatchMutation. This is because document existence state
       // can change if some patch mutation's preconditions are met.
@@ -174,6 +175,9 @@ class LocalDocumentsView {
         overlay
             .getMutation()
             .applyToLocalView(doc, overlay.getMutation().getFieldMask(), Timestamp.now());
+      } else { // overlay == null
+        // Using EMPTY to indicate there is no overlay for the document.
+        mutatedFields.put(doc.getKey(), FieldMask.EMPTY);
       }
     }
 

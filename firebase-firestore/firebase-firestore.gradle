@@ -49,6 +49,9 @@ protobuf {
         }
     }
 }
+// Acceptable values are: 'emulator', 'qa', 'nightly', and 'prod'.
+ext.targetBackend = 'emulator'
+
 android {
     adbOptions {
         timeOutInMs 60 * 1000
@@ -67,6 +70,13 @@ android {
             buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "false")
         } else {
             buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "true")
+        }
+
+        if (findProperty('targetBackend')) {
+            buildConfigField("String", "TARGET_BACKEND", "\"${property("targetBackend")}\"")
+        } else {
+            // By default set the target backend to 'emulator'
+            buildConfigField("String", "TARGET_BACKEND", "\"emulator\"")
         }
     }
 
@@ -95,7 +105,6 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     testOptions.unitTests.includeAndroidResources = true
-    ext.useProdBackendForTests = false
 }
 
 tasks.withType(Test) {

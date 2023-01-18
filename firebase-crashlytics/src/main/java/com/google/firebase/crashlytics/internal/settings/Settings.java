@@ -31,10 +31,12 @@ public class Settings {
   public static class FeatureFlagData {
     public final boolean collectReports;
     public final boolean collectAnrs;
+    public final boolean collectBuildIds;
 
-    public FeatureFlagData(boolean collectReports, boolean collectAnrs) {
+    public FeatureFlagData(boolean collectReports, boolean collectAnrs, boolean collectBuildIds) {
       this.collectReports = collectReports;
       this.collectAnrs = collectAnrs;
+      this.collectBuildIds = collectBuildIds;
     }
   }
 

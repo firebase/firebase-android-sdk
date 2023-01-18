@@ -31,6 +31,7 @@ android {
         targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
         versionName version
+        multiDexEnabled = true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArgument "firebaseAppCheckDebugSecret", System.getenv("FIREBASE_APP_CHECK_DEBUG_SECRET") ?: ''
     }

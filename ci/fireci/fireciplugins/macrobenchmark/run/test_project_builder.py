@@ -21,7 +21,7 @@ from .log_decorator import LogDecorator
 from .test_project import TestProject
 from .utils import execute
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 
 logger = logging.getLogger('fireci.macrobenchmark')
@@ -33,13 +33,15 @@ class TestProjectBuilder:
       test_config: Any,
       test_dir: Path,
       template_project_dir: Path,
-      product_versions: Dict[str, str]
+      product_versions: Dict[str, str],
+      changed_traces: List[str],
   ):
     self.test_config = test_config
     self.template_project_dir = template_project_dir
     self.product_versions = product_versions
+    self.changed_traces = changed_traces
 
-    self.name = test_config['name']
+    self.name = 'test-changed' if changed_traces else 'test-all'
     self.logger = LogDecorator(logger, self.name)
     self.project_dir = test_dir.joinpath(self.name)
 
@@ -66,7 +68,7 @@ class TestProjectBuilder:
     mustache_context = {
       'm2repository': os.path.abspath('build/m2repository'),
       'plugins': self.test_config.get('plugins', []),
-      'traces': self.test_config.get('traces', []),
+      'traces': [],
       'dependencies': [],
     }
 
@@ -78,6 +80,11 @@ class TestProjectBuilder:
         else:
           dependency = {'key': dep, 'version': self.product_versions[dep]}
         mustache_context['dependencies'].append(dependency)
+
+    if 'traces' in self.test_config:
+      for trace in self.test_config['traces']:
+        if not self.changed_traces or trace in self.changed_traces:
+          mustache_context['traces'].append(trace)
 
     renderer = pystache.Renderer()
     mustaches = self.project_dir.rglob('**/*.mustache')

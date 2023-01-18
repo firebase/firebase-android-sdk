@@ -11,7 +11,7 @@ package com.google.firebase.messaging {
     method public void send(@NonNull com.google.firebase.messaging.RemoteMessage);
     method public void setAutoInitEnabled(boolean);
     method public void setDeliveryMetricsExportToBigQuery(boolean);
-    method public com.google.android.gms.tasks.Task<java.lang.Void> setNotificationDelegationEnabled(boolean);
+    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setNotificationDelegationEnabled(boolean);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> subscribeToTopic(@NonNull String);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> unsubscribeFromTopic(@NonNull String);
     field @Deprecated public static final String INSTANCE_ID_SCOPE = "FCM";

@@ -14,11 +14,11 @@
 
 package com.google.firebase.inappmessaging.internal;
 
-import android.annotation.SuppressLint;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.AbtExperimentInfo;
 import com.google.firebase.abt.FirebaseABTesting;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.inappmessaging.ExperimentPayloadProto;
 import com.google.firebase.inappmessaging.internal.injection.scopes.FirebaseAppScope;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto;
@@ -26,7 +26,6 @@ import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCa
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import javax.inject.Inject;
 
 /** @hide */
@@ -34,10 +33,7 @@ import javax.inject.Inject;
 public class AbtIntegrationHelper {
   private final FirebaseABTesting abTesting;
 
-  // TODO(b/258280977): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
-  @VisibleForTesting
-  Executor executor = Executors.newSingleThreadExecutor();
+  @Inject @Blocking @VisibleForTesting Executor executor;
 
   @Inject
   public AbtIntegrationHelper(FirebaseABTesting abTesting) {

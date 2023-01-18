@@ -54,16 +54,13 @@ firebaseLibrary {
     testLab {
         enabled = true
 
-        device 'model=walleye,version=28' // Pixel2
+        device 'model=blueline,version=28' // Pixel3
         device 'model=walleye,version=27' // Pixel2
-        device 'model=victara,version=19' // Moto X
         device 'model=Nexus4,version=22'
         device 'model=Nexus7,version=21'
         device 'model=Nexus4,version=19'
         device 'model=starqlteue,version=26' // Galaxy S9
-        device 'model=m0,version=18' // Galaxy S3
-        device 'model=hero2lte,version=23' // Galaxy S7
-        device 'model=htc_m8,version=19' // HTC One (M8)
+        device 'model=harpia,version=23' // Moto G Play
     }
 }
 

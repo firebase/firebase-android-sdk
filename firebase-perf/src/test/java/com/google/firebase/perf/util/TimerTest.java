@@ -53,8 +53,8 @@ public class TimerTest {
     // Robolectric shadows SystemClock, which is paused and can only change via specific methods.
     long refElapsedRealtime = SystemClock.elapsedRealtime();
     Timer ref = new Timer();
-    Timer past = Timer.ofElapsedRealtime(refElapsedRealtime - 100, 0);
-    Timer future = Timer.ofElapsedRealtime(refElapsedRealtime + 100, 0);
+    Timer past = Timer.ofElapsedRealtime(refElapsedRealtime - 100);
+    Timer future = Timer.ofElapsedRealtime(refElapsedRealtime + 100);
 
     assertThat(past.getDurationMicros(ref)).isEqualTo(MILLISECONDS.toMicros(100));
     assertThat(ref.getDurationMicros(future)).isEqualTo(MILLISECONDS.toMicros(100));
@@ -67,10 +67,10 @@ public class TimerTest {
     ShadowSystemClock.advanceBy(Duration.ofMillis(10000000));
     long nowElapsedRealtime = SystemClock.elapsedRealtime();
     Timer now = new Timer();
-    Timer morePast = Timer.ofElapsedRealtime(nowElapsedRealtime - 2000, 0);
-    Timer past = Timer.ofElapsedRealtime(nowElapsedRealtime - 1000, 0);
-    Timer future = Timer.ofElapsedRealtime(nowElapsedRealtime + 1000, 0);
-    Timer moreFuture = Timer.ofElapsedRealtime(nowElapsedRealtime + 2000, 0);
+    Timer morePast = Timer.ofElapsedRealtime(nowElapsedRealtime - 2000);
+    Timer past = Timer.ofElapsedRealtime(nowElapsedRealtime - 1000);
+    Timer future = Timer.ofElapsedRealtime(nowElapsedRealtime + 1000);
+    Timer moreFuture = Timer.ofElapsedRealtime(nowElapsedRealtime + 2000);
 
     // We cannot manipulate System.currentTimeMillis() so multiple comparisons are used to test
     assertThat(morePast.getMicros()).isLessThan(past.getMicros());
@@ -103,7 +103,7 @@ public class TimerTest {
 
   @Test
   public void testGetCurrentTimestampMicros() {
-    Timer timer = new Timer(0, 0, 0);
+    Timer timer = new Timer(0, 0);
     long currentTimeSmallest = timer.getCurrentTimestampMicros();
 
     assertThat(timer.getMicros()).isEqualTo(0);
@@ -112,7 +112,7 @@ public class TimerTest {
 
   @Test
   public void testParcel() {
-    Timer timer1 = new Timer(1000, 1000000, 1000000);
+    Timer timer1 = new Timer(1000, 1000000);
 
     Parcel p1 = Parcel.obtain();
     timer1.writeToParcel(p1, 0);
@@ -132,6 +132,6 @@ public class TimerTest {
 
   /** Helper for other tests that returns elapsedRealtimeMicros from a Timer object */
   public static long getElapsedRealtimeMicros(Timer timer) {
-    return new Timer(0, 0, 0).getDurationMicros(timer);
+    return new Timer(0, 0).getDurationMicros(timer);
   }
 }
