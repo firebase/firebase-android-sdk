@@ -16,8 +16,6 @@ package com.google.firebase.database.core;
 
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
-import androidx.annotation.VisibleForTesting;
-
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.InternalHelpers;
@@ -158,10 +156,8 @@ public class SyncTree {
    */
   private final WriteTree pendingWriteTree;
 
-  // TODO(mtewani): Come back to this.
-  @VisibleForTesting
-  public final Map<Tag, QuerySpec> tagToQueryMap;
-  public final Map<QuerySpec, Tag> queryToTagMap;
+  private final Map<Tag, QuerySpec> tagToQueryMap;
+  private final Map<QuerySpec, Tag> queryToTagMap;
   private final Set<QuerySpec> keepSyncedQueries;
   private final ListenProvider listenProvider;
   private final PersistenceManager persistenceManager;
@@ -633,8 +629,11 @@ public class SyncTree {
             }
 
             boolean viewAlreadyExists = syncPoint.viewExistsForQuery(query);
+            System.out.println("Map: " + queryToTagMap);
+            System.out.println("Query: " + query);
             if (!viewAlreadyExists && !query.loadsAllData()) {
               // We need to track a tag for this query
+              System.out.println("assert" + !queryToTagMap.containsKey(query));
               hardAssert(
                   !queryToTagMap.containsKey(query), "View does not exist but we have a tag");
               Tag tag = getNextQueryTag();
@@ -723,13 +722,15 @@ public class SyncTree {
                * that location, listen would be called twice on the same query. skipDedup allows us
                * to skip this deduping process altogether.
                */
-              if(!skipDedup) {
+              if (!skipDedup) {
 
                 // We may have just removed one of many listeners and can short-circuit this whole
-                // process. We may also not have removed a default listener, in which case all of the
+                // process. We may also not have removed a default listener, in which case all of
+                // the
                 // descendant listeners should already be properly set up.
                 //
-                // Since indexed queries can shadow if they don't have other query constraints, check
+                // Since indexed queries can shadow if they don't have other query constraints,
+                // check
                 // for loadsAllData(), instead of isDefault().
                 boolean removingDefault = false;
                 for (QuerySpec queryRemoved : removed) {
@@ -737,16 +738,15 @@ public class SyncTree {
                   removingDefault = removingDefault || queryRemoved.loadsAllData();
                 }
 
-
                 ImmutableTree<SyncPoint> currentTree = syncPointTree;
                 boolean covered =
-                        currentTree.getValue() != null && currentTree.getValue().hasCompleteView();
+                    currentTree.getValue() != null && currentTree.getValue().hasCompleteView();
                 for (ChildKey component : path) {
                   currentTree = currentTree.getChild(component);
                   covered =
-                          covered
-                                  || (currentTree.getValue() != null
-                                  && currentTree.getValue().hasCompleteView());
+                      covered
+                          || (currentTree.getValue() != null
+                              && currentTree.getValue().hasCompleteView());
                   if (covered || currentTree.isEmpty()) {
                     break;
                   }
@@ -765,16 +765,18 @@ public class SyncTree {
                       ListenContainer container = new ListenContainer(view);
                       QuerySpec newQuery = view.getQuery();
                       listenProvider.startListening(
-                              queryForListening(newQuery), container.tag, container, container);
+                          queryForListening(newQuery), container.tag, container, container);
                     }
                   } else {
                     // There's nothing below us, so nothing we need to start listening on
                   }
                 }
-                // If we removed anything and we're not covered by a higher up listen, we need to stop
+                // If we removed anything and we're not covered by a higher up listen, we need to
+                // stop
                 // listening on this query. The above block has us covered in terms of making sure
                 // we're set up on listens lower in the tree.
-                // Also, note that if we have a cancelError, it's already been removed at the provider
+                // Also, note that if we have a cancelError, it's already been removed at the
+                // provider
                 // level.
                 if (!covered && !removed.isEmpty() && cancelError == null) {
                   // If we removed a default, then we weren't listening on any of the other queries

@@ -38,7 +38,6 @@ import com.google.firebase.database.core.Path;
 import com.google.firebase.database.core.RepoManager;
 import com.google.firebase.database.future.ReadFuture;
 import com.google.firebase.database.future.WriteFuture;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -56,7 +55,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-
 
 @org.junit.runner.RunWith(AndroidJUnit4.class)
 public class QueryTest {
@@ -4621,12 +4619,25 @@ public class QueryTest {
 
   @Test
   public void testGetCleansUpTags()
-          throws DatabaseException, InterruptedException, ExecutionException {
+      throws DatabaseException, InterruptedException, ExecutionException, TimeoutException,
+          TestFailure {
     FirebaseDatabase db = getNewDatabase();
     DatabaseReference myRef = db.getReference(UUID.randomUUID().toString());
     Query query = myRef.startAfter(1);
     await(query.get()).getValue();
-    assertNull(myRef.repo.serverSyncTree.tagForQuery(query.getSpec()));
+    /**
+     * If we add a listener for the same query and the tag still exists, but the view doesn't,
+     * {{@link com.google.firebase.database.core.SyncTree#addEventRegistration(EventRegistration,
+     * boolean)} throws an error
+     */
+    ReadFuture future =
+        new ReadFuture(
+            query,
+            events -> {
+              assertEquals(1, events.size());
+              return true;
+            });
+    future.timedGet(10000, TimeUnit.MILLISECONDS);
   }
 
   @Test
