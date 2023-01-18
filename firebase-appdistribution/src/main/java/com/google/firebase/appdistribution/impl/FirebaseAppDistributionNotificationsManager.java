@@ -14,6 +14,12 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static com.google.firebase.appdistribution.impl.FirebaseAppDistributionNotificationsManager.NotificationType.APP_UPDATE;
+import static com.google.firebase.appdistribution.impl.FirebaseAppDistributionNotificationsManager.NotificationType.FEEDBACK;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import android.app.Activity;
+import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationChannelGroup;
 import android.app.PendingIntent;
@@ -28,10 +34,21 @@ import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import com.google.firebase.annotations.concurrent.Lightweight;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appdistribution.InterruptionLevel;
+import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.OnActivityPausedListener;
+import com.google.firebase.appdistribution.impl.FirebaseAppDistributionLifecycleNotifier.OnActivityResumedListener;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-class FirebaseAppDistributionNotificationsManager {
+@Singleton
+class FirebaseAppDistributionNotificationsManager
+    implements OnActivityPausedListener, OnActivityResumedListener {
+
   private static final String TAG = "NotificationsManager";
 
   private static final String PACKAGE_PREFIX = "com.google.firebase.appdistribution";
@@ -40,7 +57,7 @@ class FirebaseAppDistributionNotificationsManager {
   static final String CHANNEL_GROUP_ID = prependPackage("notification_channel_group_id");
 
   @VisibleForTesting
-  enum Notification {
+  enum NotificationType {
     APP_UPDATE("notification_channel_id", "app_update_notification_tag"),
     FEEDBACK("feedback_notification_channel_id", "feedback_notification_tag");
 
@@ -48,7 +65,7 @@ class FirebaseAppDistributionNotificationsManager {
     final String tag;
     final int id;
 
-    Notification(String channelId, String tag) {
+    NotificationType(String channelId, String tag) {
       this.channelId = prependPackage(channelId);
       this.tag = prependPackage(tag);
       this.id = ordinal();
@@ -58,12 +75,26 @@ class FirebaseAppDistributionNotificationsManager {
   private final Context context;
   private final AppIconSource appIconSource;
   private final NotificationManagerCompat notificationManager;
+  @Lightweight private final ScheduledExecutorService scheduledExecutorService;
+  @UiThread private final Executor uiThreadExecutor;
+
+  private Notification feedbackNotificationToBeShown;
+  private ScheduledFuture<?> feedbackNotificationCancellationFuture;
 
   @Inject
-  FirebaseAppDistributionNotificationsManager(Context context, AppIconSource appIconSource) {
+  FirebaseAppDistributionNotificationsManager(
+      Context context,
+      AppIconSource appIconSource,
+      FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
+      @Lightweight ScheduledExecutorService scheduledExecutorService,
+      @UiThread Executor uiThreadExecutor) {
     this.context = context;
     this.appIconSource = appIconSource;
     this.notificationManager = NotificationManagerCompat.from(context);
+    lifecycleNotifier.addOnActivityPausedListener(this);
+    lifecycleNotifier.addOnActivityResumedListener(this);
+    this.scheduledExecutorService = scheduledExecutorService;
+    this.uiThreadExecutor = uiThreadExecutor;
   }
 
   void showAppUpdateNotification(long totalBytes, long downloadedBytes, int stringResourceId) {
@@ -72,7 +103,7 @@ class FirebaseAppDistributionNotificationsManager {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       LogWrapper.i(TAG, "Creating app update notification channel group");
       createChannel(
-          Notification.APP_UPDATE,
+          APP_UPDATE,
           R.string.app_update_notification_channel_name,
           R.string.app_update_notification_channel_description,
           InterruptionLevel.DEFAULT);
@@ -85,7 +116,7 @@ class FirebaseAppDistributionNotificationsManager {
     }
 
     NotificationCompat.Builder notificationBuilder =
-        new NotificationCompat.Builder(context, Notification.APP_UPDATE.channelId)
+        new NotificationCompat.Builder(context, APP_UPDATE.channelId)
             .setOnlyAlertOnce(true)
             .setSmallIcon(appIconSource.getNonAdaptiveIconOrDefault(context))
             .setContentTitle(context.getString(stringResourceId))
@@ -97,8 +128,7 @@ class FirebaseAppDistributionNotificationsManager {
     if (appLaunchIntent != null) {
       notificationBuilder.setContentIntent(appLaunchIntent);
     }
-    notificationManager.notify(
-        Notification.APP_UPDATE.tag, Notification.APP_UPDATE.id, notificationBuilder.build());
+    notificationManager.notify(APP_UPDATE.tag, APP_UPDATE.id, notificationBuilder.build());
   }
 
   @Nullable
@@ -128,7 +158,7 @@ class FirebaseAppDistributionNotificationsManager {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       LogWrapper.i(TAG, "Creating feedback notification channel group");
       createChannel(
-          Notification.FEEDBACK,
+          FEEDBACK,
           R.string.feedback_notification_channel_name,
           R.string.feedback_notification_channel_description,
           interruptionLevel);
@@ -139,36 +169,62 @@ class FirebaseAppDistributionNotificationsManager {
       return;
     }
 
+    uiThreadExecutor.execute(
+        () -> {
+          // ensure that class state is managed on same thread as lifecycle callbacks
+          cancelFeedbackCancellationFuture();
+          feedbackNotificationToBeShown = buildFeedbackNotification(infoText, interruptionLevel);
+          doShowFeedbackNotification();
+        });
+  }
+
+  // this must be run on the main (UI) thread
+  private void doShowFeedbackNotification() {
+    LogWrapper.i(TAG, "Showing feedback notification");
+    notificationManager.notify(FEEDBACK.tag, FEEDBACK.id, feedbackNotificationToBeShown);
+  }
+
+  private Notification buildFeedbackNotification(
+      @NonNull CharSequence infoText, @NonNull InterruptionLevel interruptionLevel) {
     Intent intent = new Intent(context, TakeScreenshotAndStartFeedbackActivity.class);
     intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
     intent.putExtra(TakeScreenshotAndStartFeedbackActivity.INFO_TEXT_EXTRA_KEY, infoText);
     ApplicationInfo applicationInfo = context.getApplicationInfo();
     PackageManager packageManager = context.getPackageManager();
     CharSequence appLabel = packageManager.getApplicationLabel(applicationInfo);
-    NotificationCompat.Builder builder =
-        new NotificationCompat.Builder(context, Notification.FEEDBACK.channelId)
-            .setSmallIcon(R.drawable.ic_baseline_rate_review_24)
-            .setContentTitle(context.getString(R.string.feedback_notification_title))
-            .setContentText(context.getString(R.string.feedback_notification_text, appLabel))
-            .setPriority(interruptionLevel.notificationPriority)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setAutoCancel(false)
-            .setContentIntent(getPendingIntent(intent, /* extraFlags= */ 0));
-    LogWrapper.i(TAG, "Showing feedback notification");
-    notificationManager.notify(
-        Notification.FEEDBACK.tag, Notification.FEEDBACK.id, builder.build());
+    return new NotificationCompat.Builder(context, FEEDBACK.channelId)
+        .setSmallIcon(R.drawable.ic_baseline_rate_review_24)
+        .setContentTitle(context.getString(R.string.feedback_notification_title))
+        .setContentText(context.getString(R.string.feedback_notification_text, appLabel))
+        .setPriority(interruptionLevel.notificationPriority)
+        .setOngoing(true)
+        .setOnlyAlertOnce(true)
+        .setAutoCancel(false)
+        .setContentIntent(getPendingIntent(intent, /* extraFlags= */ 0))
+        .build();
   }
 
   public void cancelFeedbackNotification() {
+    uiThreadExecutor.execute(
+        () -> {
+          // ensure that class state is managed on same thread as lifecycle callbacks
+          feedbackNotificationToBeShown = null;
+          cancelFeedbackCancellationFuture();
+          doCancelFeedbackNotification();
+        });
+  }
+
+  public void doCancelFeedbackNotification() {
     LogWrapper.i(TAG, "Cancelling feedback notification");
-    NotificationManagerCompat.from(context)
-        .cancel(Notification.FEEDBACK.tag, Notification.FEEDBACK.id);
+    NotificationManagerCompat.from(context).cancel(FEEDBACK.tag, FEEDBACK.id);
   }
 
   @RequiresApi(Build.VERSION_CODES.O)
   private void createChannel(
-      Notification notification, int name, int description, InterruptionLevel interruptionLevel) {
+      NotificationType notification,
+      int name,
+      int description,
+      InterruptionLevel interruptionLevel) {
     notificationManager.createNotificationChannelGroup(
         new NotificationChannelGroup(
             CHANNEL_GROUP_ID, context.getString(R.string.notifications_group_name)));
@@ -180,6 +236,37 @@ class FirebaseAppDistributionNotificationsManager {
     // Register the channel with the system; you can't change the importance
     // or other notification behaviors after this
     notificationManager.createNotificationChannel(channel);
+  }
+
+  // this runs on the main (UI) thread
+  @Override
+  public void onPaused(Activity activity) {
+    LogWrapper.d(TAG, "Activity paused");
+    if (feedbackNotificationToBeShown != null) {
+      LogWrapper.d(TAG, "Scheduling cancelFeedbackNotification");
+      cancelFeedbackCancellationFuture();
+      feedbackNotificationCancellationFuture =
+          scheduledExecutorService.schedule(this::doCancelFeedbackNotification, 1, SECONDS);
+    }
+  }
+
+  // this runs on the main (UI) thread
+  @Override
+  public void onResumed(Activity activity) {
+    LogWrapper.d(TAG, "Activity resumed");
+    if (feedbackNotificationToBeShown != null) {
+      cancelFeedbackCancellationFuture();
+      doShowFeedbackNotification();
+    }
+  }
+
+  // this must be run on the main (UI) thread
+  private void cancelFeedbackCancellationFuture() {
+    if (feedbackNotificationCancellationFuture != null) {
+      LogWrapper.d(TAG, "Canceling feedbackNotificationCancellationFuture");
+      feedbackNotificationCancellationFuture.cancel(false);
+      feedbackNotificationCancellationFuture = null;
+    }
   }
 
   private static String prependPackage(String id) {
