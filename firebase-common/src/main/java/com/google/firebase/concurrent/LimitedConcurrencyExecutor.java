@@ -45,8 +45,8 @@ class LimitedConcurrencyExecutor implements Executor {
               try {
                 command.run();
               } finally {
-                activeCount++;
                 synchronized (queue) {
+                  activeCount++;
                   maybeEnqueueNext();
                 }
               }
