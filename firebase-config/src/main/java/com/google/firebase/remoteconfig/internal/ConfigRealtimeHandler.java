@@ -74,22 +74,20 @@ public class ConfigRealtimeHandler {
   }
 
   private synchronized boolean canCreateRealtimeHttpClientTask() {
-    return !listeners.isEmpty() && configRealtimeHttpClient != null;
+    return !listeners.isEmpty();
   }
 
   // Kicks off Http stream listening and autofetch
   private synchronized void beginRealtime() {
     if (canCreateRealtimeHttpClientTask()) {
       configRealtimeHttpClient.setRealtimeRetryState(true);
-      configRealtimeHttpClient.retryHTTPConnection(0);
+      configRealtimeHttpClient.tryHttpConnection(0);
     }
   }
 
   // Pauses Http stream listening
   public synchronized void pauseRealtime() {
-    if (configRealtimeHttpClient != null) {
-      configRealtimeHttpClient.setRealtimeRetryState(false);
-    }
+    configRealtimeHttpClient.setRealtimeRetryState(false);
   }
 
   @NonNull
