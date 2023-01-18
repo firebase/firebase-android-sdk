@@ -92,6 +92,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Predicate;
 import org.junit.After;
 import org.junit.Before;
@@ -109,6 +110,7 @@ import org.robolectric.shadows.ShadowPackageManager;
 
 @RunWith(RobolectricTestRunner.class)
 public class FirebaseAppDistributionServiceImplTest {
+
   private static final String TEST_API_KEY = "AIzaSyabcdefghijklmnopqrstuvwxyz1234567";
   private static final String TEST_APP_ID_1 = "1:123456789:android:abcdef";
   private static final String TEST_PROJECT_ID = "777777777777";
@@ -145,25 +147,39 @@ public class FirebaseAppDistributionServiceImplTest {
           .setDownloadUrl(TEST_URL)
           .build();
 
-  @Background private final ExecutorService backgroundExecutor = TestOnlyExecutors.background();
-  @Lightweight private final ExecutorService lightweightExecutor = TestOnlyExecutors.lite();
-  @UiThread private final Executor uiThreadExecutor = TestOnlyExecutors.ui();
+  @Background
+  private final ExecutorService backgroundExecutor = TestOnlyExecutors.background();
+  @Lightweight
+  private final ScheduledExecutorService lightweightExecutor = TestOnlyExecutors.lite();
+  @UiThread
+  private final Executor uiThreadExecutor = TestOnlyExecutors.ui();
 
   private FirebaseAppDistributionImpl firebaseAppDistribution;
   private ActivityController<TestActivity> activityController;
   private TestActivity activity;
 
-  @Mock private InstallationTokenResult mockInstallationTokenResult;
-  @Mock private TesterSignInManager mockTesterSignInManager;
-  @Mock private NewReleaseFetcher mockNewReleaseFetcher;
-  @Mock private ApkUpdater mockApkUpdater;
-  @Mock private AabUpdater mockAabUpdater;
-  @Mock private SignInStorage signInStorage;
-  @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
-  @Mock private ReleaseIdentifier mockReleaseIdentifier;
-  @Mock private ScreenshotTaker mockScreenshotTaker;
+  @Mock
+  private InstallationTokenResult mockInstallationTokenResult;
+  @Mock
+  private TesterSignInManager mockTesterSignInManager;
+  @Mock
+  private NewReleaseFetcher mockNewReleaseFetcher;
+  @Mock
+  private ApkUpdater mockApkUpdater;
+  @Mock
+  private AabUpdater mockAabUpdater;
+  @Mock
+  private SignInStorage signInStorage;
+  @Mock
+  private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
+  @Mock
+  private ReleaseIdentifier mockReleaseIdentifier;
+  @Mock
+  private ScreenshotTaker mockScreenshotTaker;
 
-  static class TestActivity extends Activity {}
+  static class TestActivity extends Activity {
+
+  }
 
   @Before
   public void setup() throws FirebaseAppDistributionException {
@@ -197,7 +213,8 @@ public class FirebaseAppDistributionServiceImplTest {
                 mockReleaseIdentifier,
                 mockScreenshotTaker,
                 new FirebaseAppDistributionNotificationsManager(
-                    firebaseApp.getApplicationContext(), new AppIconSource()),
+                    firebaseApp.getApplicationContext(), new AppIconSource(),
+                    mockLifecycleNotifier, lightweightExecutor, uiThreadExecutor),
                 lightweightExecutor,
                 uiThreadExecutor));
 
@@ -664,8 +681,8 @@ public class FirebaseAppDistributionServiceImplTest {
 
   @Test
   public void
-      updateIfNewReleaseAvailable_whenSignInDialogShowingAndNewActivityStarts_signInTaskCancelled()
-          throws InterruptedException {
+  updateIfNewReleaseAvailable_whenSignInDialogShowingAndNewActivityStarts_signInTaskCancelled()
+      throws InterruptedException {
     TestActivity testActivity2 = new TestActivity();
     setSignInStatusSharedPreference(false);
 
@@ -682,8 +699,8 @@ public class FirebaseAppDistributionServiceImplTest {
 
   @Test
   public void
-      updateIfNewReleaseAvailable_whenUpdateDialogShowingAndNewActivityStarts_updateTaskCancelled()
-          throws InterruptedException {
+  updateIfNewReleaseAvailable_whenUpdateDialogShowingAndNewActivityStarts_updateTaskCancelled()
+      throws InterruptedException {
     TestActivity testActivity2 = new TestActivity();
     when(mockNewReleaseFetcher.checkForNewRelease())
         .thenReturn(Tasks.forResult(TEST_RELEASE_NEWER_AAB_INTERNAL));

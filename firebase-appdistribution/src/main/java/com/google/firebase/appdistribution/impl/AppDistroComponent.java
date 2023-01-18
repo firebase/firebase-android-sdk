@@ -29,6 +29,8 @@ import dagger.BindsInstance;
 import dagger.Component;
 import dagger.Module;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Singleton;
 
 @Component(modules = AppDistroComponent.MainModule.class)
@@ -63,13 +65,13 @@ interface AppDistroComponent {
     Builder setFis(Provider<FirebaseInstallationsApi> fis);
 
     @BindsInstance
-    Builder setBackgroundExecutor(@Background Executor executor);
+    Builder setBackgroundExecutor(@Background ScheduledExecutorService executor);
 
     @BindsInstance
-    Builder setBlockingExecutor(@Blocking Executor executor);
+    Builder setBlockingExecutor(@Blocking ScheduledExecutorService executor);
 
     @BindsInstance
-    Builder setLightweightExecutor(@Lightweight Executor executor);
+    Builder setLightweightExecutor(@Lightweight ScheduledExecutorService executor);
 
     @BindsInstance
     Builder setUiThreadExecutor(@UiThread Executor executor);
@@ -86,5 +88,23 @@ interface AppDistroComponent {
   interface MainModule {
     @Binds
     FirebaseAppDistribution bindAppDistro(FirebaseAppDistributionImpl impl);
+    
+    @Binds @Background
+    ExecutorService bindBackgroundExecutorService(@Background ScheduledExecutorService ses);
+
+    @Binds @Background
+    Executor bindBackgroundExecutor(@Background ExecutorService es);
+
+    @Binds @Lightweight
+    ExecutorService bindLightweightExecutorService(@Lightweight ScheduledExecutorService ses);
+
+    @Binds @Lightweight
+    Executor bindLightweightExecutor(@Lightweight ExecutorService es);
+
+    @Binds @Blocking
+    ExecutorService bindBlockingExecutorService(@Blocking ScheduledExecutorService ses);
+
+    @Binds @Blocking
+    Executor bindBlockingExecutor(@Blocking ExecutorService es);
   }
 }
