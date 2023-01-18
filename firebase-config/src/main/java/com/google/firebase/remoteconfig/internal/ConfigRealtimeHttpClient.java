@@ -77,8 +77,9 @@ public class ConfigRealtimeHttpClient {
   @GuardedBy("this")
   private boolean isRealtimeDisabled;
 
-  /*
-   * Controls whether or not the this client should retry. Disablement is permanent for the client.
+  /**
+   * Controls whether or not this client should retry. Does not need to be synchronized because
+   * ordering of thread actions is not important since all connections will timeout after 5 minutes.
    */
   private boolean canRetry;
 
