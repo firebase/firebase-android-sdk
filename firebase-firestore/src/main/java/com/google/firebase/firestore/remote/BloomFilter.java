@@ -47,7 +47,8 @@ public class BloomFilter {
 
       // Empty bloom filter should have 0 padding.
       if (padding != 0) {
-        throw new IllegalArgumentException("Invalid padding when bitmap length is 0: " + padding);
+        throw new IllegalArgumentException("Expected padding of 0 when bitmap " +
+        "length is 0, but got " + padding);
       }
     }
     this.bitmap = bitmap;
@@ -62,15 +63,16 @@ public class BloomFilter {
   }
 
   /**
-   * Check whether the given string is a possible member of the bloom filter. It might return false
-   * positive result, ie, the given string is not a member of the bloom filter, but the method
-   * returned true.
+   * Check whether the given string is a possible member of the bloom filter. It
+   * might return false positive result, ie, the given string is not a member of
+   * the bloom filter, but the method returned true.
    *
    * @param value the string to be tested for membership.
-   * @return true if the given string might be contained in the bloom filter.
+   * @return true if the given string might be contained in the bloom filter, or
+   * false if the given string is definitely not contained in the bloom filter.
    */
   public boolean mightContain(@NonNull String value) {
-    // Empty bitmap or empty value should always return false on membership check.
+    // Empty bitmap or empty value should return false on membership check.
     if (this.bitCount == 0  || value.isEmpty()) {
       return false;
     }
@@ -93,16 +95,19 @@ public class BloomFilter {
     return true;
   }
 
-  /** Hash a string using md5 hashing algorithm, and return an array of 16 bytes. */
+  /** 
+  * Hash a string using md5 hashing algorithm, and return an array of 16 
+  * bytes. 
+  */
   @NonNull
   private byte[] md5HashDigest(@NonNull String value) {
     return md5HashMessageDigest.digest(value.getBytes(StandardCharsets.UTF_8));
   }
 
   @NonNull
-  private MessageDigest createMd5HashMessageDigest() {
+  private static MessageDigest createMd5HashMessageDigest() {
     try {
-      return  MessageDigest.getInstance("MD5");
+      return MessageDigest.getInstance("MD5");
     } catch (NoSuchAlgorithmException e) {
       throw new RuntimeException("Missing MD5 MessageDigest provider.", e);
     }
@@ -118,22 +123,23 @@ public class BloomFilter {
   }
 
   /**
-   * Calculate the ith hash value based on the hashed 64 bit unsigned integers, and calculate its
-   * corresponding bit index in the bitmap to be checked.
+   * Calculate the ith hash value based on the hashed 64 bit unsigned integers, 
+   * and calculate its corresponding bit index in the bitmap to be checked.
    */
-  private int getBitIndex(long hash1, long hash2, int index) {
-    /**
-     * Calculate hashed value h(i) = h1 + (i * h2).
-     * Even though we are interpreting hash1 and hash2 as unsigned, the addition and multiplication
-     * operators still perform the correct operation and give the desired overflow behavior.
-     */
-    long combinedHash = hash1 + (hash2 * index);
+  private int getBitIndex(long hash1, long hash2, int hashIndex) {
+    
+    // Calculate hashed value h(i) = h1 + (i * h2).
+    // Even though we are interpreting hash1 and hash2 as unsigned, the addition
+    // and multiplication operators still perform the correct operation and give
+    // the desired overflow behavior.
+    long combinedHash = hash1 + (hash2 * hashIndex);
     long modulo = unsignedRemainder(combinedHash, this.bitCount);
     return (int) modulo;
   }
 
   /**
-   * Calculate modulo, where the dividend and divisor are treated as unsigned 64-bit longs.
+   * Calculate modulo, where the dividend and divisor are treated as unsigned 
+   * 64-bit longs.
    *
    * <p>The implementation is taken from <a
    * href="https://github.com/google/guava/blob/553037486901cc60820ab7dcb38a25b6f34eba43/android/guava/src/com/google/common/primitives/UnsignedLongs.java">Guava</a>,
@@ -149,7 +155,7 @@ public class BloomFilter {
   /** Return whether the bit at the given index in the bitmap is set to 1. */
   private boolean isBitSet(int index) {
     // To retrieve bit n, calculate: (bitmap[n / 8] & (0x01 << (n % 8))).
-    byte byteAtIndex = this.bitmap[(index / 8)];
+    byte byteAtIndex = this.bitmap[index / 8];
     int offset = index % 8;
     return (byteAtIndex & (0x01 << offset)) != 0;
   }

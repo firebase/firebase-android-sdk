@@ -48,10 +48,14 @@ public class BloomFilterTest {
 
   @Test
   public void instantiateNonEmptyBloomFilter() {
-    BloomFilter bloomFilter1 = new BloomFilter(new byte[] {1}, 0, 1);
-    assertEquals(bloomFilter1.getBitCount(), 8);
-    BloomFilter bloomFilter2 = new BloomFilter(new byte[] {1}, 7, 1);
-    assertEquals(bloomFilter2.getBitCount(), 1);
+    {
+      BloomFilter bloomFilter1 = new BloomFilter(new byte[] {1}, 0, 1);
+      assertEquals(bloomFilter1.getBitCount(), 8);
+    }
+    {
+      BloomFilter bloomFilter2 = new BloomFilter(new byte[] {1}, 7, 1);
+      assertEquals(bloomFilter2.getBitCount(), 1);
+    }
   }
 
   @Test
@@ -68,7 +72,7 @@ public class BloomFilterTest {
   public void constructorShouldThrowIAEOnEmptyBloomFilterWithNonZeroPadding() {
     IllegalArgumentException exception =
         assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[0], 1, 0));
-    assertThat(exception).hasMessageThat().contains("Invalid padding when bitmap length is 0: 1");
+    assertThat(exception).hasMessageThat().contains("Expected padding of 0 when bitmap length is 0, but got 1");
   }
 
   @Test
@@ -99,7 +103,7 @@ public class BloomFilterTest {
   }
 
   @Test
-  public void constructorShouldThrowIAEOnOverflowPadding() {
+  public void constructorShouldThrowIAEIfPaddingIsTooLarge() {
     IllegalArgumentException exception =
         assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[] {1}, 8, 1));
     assertThat(exception).hasMessageThat().contains("Invalid padding: 8");
@@ -147,8 +151,11 @@ public class BloomFilterTest {
    * to documentPrefix+2n. The membership results from 0 to n is expected to be true, and the
    * membership results from n to 2n is expected to be false with some false positive results.
    */
-  private void runGoldenTest(String testFile) throws Exception {
+  private static void runGoldenTest(String testFile) throws Exception {
     String resultFile = testFile.replace("bloom_filter_proto", "membership_test_result");
+    if(resultFile.equals(testFile)){
+      throw new IllegalArgumentException("Cannot find corresponding result file for " + testFile);
+    }
 
     JSONObject testJson = readJsonFile(testFile);
     JSONObject resultJSON = readJsonFile(resultFile);
@@ -164,21 +171,17 @@ public class BloomFilterTest {
 
     // Run and compare mightContain result with the expectation.
     for (int i = 0; i < membershipTestResults.length(); i++) {
-      boolean expectedMembershipResult = membershipTestResults.charAt(i) == '1';
-      boolean mightContain = bloomFilter.mightContain(GOLDEN_DOCUMENT_PREFIX + i);
+      boolean expectedResult = membershipTestResults.charAt(i) == '1';
+      boolean mightContainResult = bloomFilter.mightContain(GOLDEN_DOCUMENT_PREFIX + i);
       assertEquals(
-          "mightContain() result doesn't match the expectation. File: "
-              + testFile
-              + ". Document: "
-              + GOLDEN_DOCUMENT_PREFIX
-              + i,
-          mightContain,
-          expectedMembershipResult);
+          "For document " + GOLDEN_DOCUMENT_PREFIX + i + " mightContain() returned " + mightContainResult
+           + ", but expected " + expectedResult,
+          mightContainResult,
+          expectedResult);
     }
   }
 
-  private JSONObject readJsonFile(String fileName) throws Exception {
-    // Read the file into JSON object.
+  private static JSONObject readJsonFile(String fileName) throws Exception {
     StringBuilder builder = new StringBuilder();
     InputStreamReader streamReader =
         new InputStreamReader(
