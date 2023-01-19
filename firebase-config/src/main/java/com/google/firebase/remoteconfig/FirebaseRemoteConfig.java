@@ -648,7 +648,7 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Immediately stops all ConfigUpdateListeners from receiving update messages.
+   * Notifies Realtime handler if the app is in the background or not.
    *
    * @hide
    */
