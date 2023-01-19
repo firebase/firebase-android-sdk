@@ -205,8 +205,9 @@ public class ConfigContainer {
       if (this.getPersonalizationMetadata().has(key)
           && other.getPersonalizationMetadata().has(key)
           && !this.getPersonalizationMetadata()
-              .get(key)
-              .equals(other.getPersonalizationMetadata().get(key))) {
+              .getJSONObject(key)
+              .toString()
+              .equals(other.getPersonalizationMetadata().getJSONObject(key).toString())) {
         changed.add(key);
         continue;
       }
