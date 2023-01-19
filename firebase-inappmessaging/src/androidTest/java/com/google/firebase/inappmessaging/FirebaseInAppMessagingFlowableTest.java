@@ -274,7 +274,10 @@ public class FirebaseInAppMessagingFlowableTest {
                 new ProgrammaticContextualTriggerFlowableModule(
                     new ProgramaticContextualTriggers()))
             .executorsModule(
-                new ExecutorsModule(TestOnlyExecutors.background(), TestOnlyExecutors.blocking()));
+                new ExecutorsModule(
+                    TestOnlyExecutors.lite(),
+                    TestOnlyExecutors.background(),
+                    TestOnlyExecutors.blocking()));
 
     TestUniversalComponent universalComponent = universalComponentBuilder.build();
 
@@ -320,7 +323,10 @@ public class FirebaseInAppMessagingFlowableTest {
         universalComponentBuilder
             .appMeasurementModule(new AppMeasurementModule(handler -> {}, firebaseEventSubscriber))
             .executorsModule(
-                new ExecutorsModule(TestOnlyExecutors.background(), TestOnlyExecutors.blocking()))
+                new ExecutorsModule(
+                    TestOnlyExecutors.lite(),
+                    TestOnlyExecutors.background(),
+                    TestOnlyExecutors.blocking()))
             .build();
     TestAppComponent appComponent =
         appComponentBuilder.universalComponent(analyticsLessUniversalComponent).build();
@@ -498,7 +504,7 @@ public class FirebaseInAppMessagingFlowableTest {
     analyticsConnector.invokeListenerOnEvent(ANALYTICS_EVENT_NAME);
     analyticsConnector.invokeListenerOnEvent("some_other_event");
     analyticsConnector.invokeListenerOnEvent(ANALYTICS_EVENT_NAME);
-    await().timeout(2, SECONDS).until(() -> subscriber.valueCount() > 0);
+    await().timeout(2, SECONDS).until(() -> subscriber.valueCount() > 1);
 
     List<Object> triggeredMessages = getPlainValues(subscriber);
     assertThat(triggeredMessages.size()).isEqualTo(2);

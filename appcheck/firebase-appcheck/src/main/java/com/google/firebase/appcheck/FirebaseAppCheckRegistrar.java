@@ -18,6 +18,8 @@ import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appcheck.internal.DefaultFirebaseAppCheck;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.components.Component;
@@ -44,6 +46,8 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
 
   @Override
   public List<Component<?>> getComponents() {
+    Qualified<Executor> uiExecutor = Qualified.qualified(UiThread.class, Executor.class);
+    Qualified<Executor> liteExecutor = Qualified.qualified(Lightweight.class, Executor.class);
     Qualified<Executor> backgroundExecutor = Qualified.qualified(Background.class, Executor.class);
     Qualified<ScheduledExecutorService> blockingScheduledExecutorService =
         Qualified.qualified(Blocking.class, ScheduledExecutorService.class);
@@ -52,6 +56,8 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
         Component.builder(FirebaseAppCheck.class, (InternalAppCheckTokenProvider.class))
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.required(uiExecutor))
+            .add(Dependency.required(liteExecutor))
             .add(Dependency.required(backgroundExecutor))
             .add(Dependency.required(blockingScheduledExecutorService))
             .add(Dependency.optionalProvider(HeartBeatController.class))
@@ -60,6 +66,8 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
                     new DefaultFirebaseAppCheck(
                         container.get(FirebaseApp.class),
                         container.getProvider(HeartBeatController.class),
+                        container.get(uiExecutor),
+                        container.get(liteExecutor),
                         container.get(backgroundExecutor),
                         container.get(blockingScheduledExecutorService)))
             .alwaysEager()

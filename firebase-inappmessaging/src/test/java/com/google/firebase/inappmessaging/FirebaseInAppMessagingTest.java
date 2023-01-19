@@ -29,6 +29,7 @@ import static org.mockito.Mockito.when;
 
 import android.app.Application;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -56,10 +57,12 @@ import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCa
 import io.reactivex.Flowable;
 import io.reactivex.FlowableEmitter;
 import io.reactivex.Maybe;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
@@ -151,9 +154,8 @@ public class FirebaseInAppMessagingTest {
   @Mock private FirebaseInAppMessagingDisplayCallbacks displayCallbacks;
   @Mock private ProgramaticContextualTriggers programaticContextualTriggers;
 
-  @Mock
   DeveloperListenerManager developerListenerManager =
-      new DeveloperListenerManager(TestOnlyExecutors.background());
+      Mockito.spy(new DeveloperListenerManager(TestOnlyExecutors.background()));
 
   FirebaseApp firebaseApp1;
   FirebaseOptions options;
@@ -212,7 +214,10 @@ public class FirebaseInAppMessagingTest {
             dataCollectionHelper,
             firebaseInstallations,
             displayCallbacksFactory,
-            developerListenerManager);
+            developerListenerManager,
+            TestOnlyExecutors.lite());
+
+    developerListenerManager.removeAllListeners();
   }
 
   @Test
@@ -297,5 +302,81 @@ public class FirebaseInAppMessagingTest {
   public void addDisplayErrorListener_forwardsEventListenerRequestsToDeveloperListenerManager() {
     firebaseInAppMessaging.addDisplayErrorListener((inAppMessage, error) -> {});
     verify(developerListenerManager, times(1)).addDisplayErrorListener(any());
+  }
+
+  @Test
+  public void addRemoveListeners_WorksAsExpected() {
+    FirebaseInAppMessagingClickListener clickListener = (inAppMessage, action) -> {};
+    FirebaseInAppMessagingDismissListener dismissListener = inAppMessage -> {};
+    FirebaseInAppMessagingImpressionListener impressionListener = inAppMessage -> {};
+    FirebaseInAppMessagingDisplayErrorListener displayErrorListener = (inAppMessage, error) -> {};
+
+    verifyListenerPresenceAndListenersCountMatch(null, false, 0);
+
+    firebaseInAppMessaging.addClickListener(clickListener);
+    verifyListenerPresenceAndListenersCountMatch(clickListener, true, 1);
+
+    firebaseInAppMessaging.addDismissListener(dismissListener);
+    verifyListenerPresenceAndListenersCountMatch(dismissListener, true, 2);
+
+    firebaseInAppMessaging.addImpressionListener(impressionListener);
+    verifyListenerPresenceAndListenersCountMatch(impressionListener, true, 3);
+
+    firebaseInAppMessaging.addDisplayErrorListener(displayErrorListener);
+    verifyListenerPresenceAndListenersCountMatch(displayErrorListener, true, 4);
+
+    firebaseInAppMessaging.removeClickListener(clickListener);
+    verifyListenerPresenceAndListenersCountMatch(clickListener, false, 3);
+
+    firebaseInAppMessaging.removeDismissListener(dismissListener);
+    verifyListenerPresenceAndListenersCountMatch(dismissListener, false, 2);
+
+    firebaseInAppMessaging.removeImpressionListener(impressionListener);
+    verifyListenerPresenceAndListenersCountMatch(impressionListener, false, 1);
+
+    firebaseInAppMessaging.removeDisplayErrorListener(displayErrorListener);
+    verifyListenerPresenceAndListenersCountMatch(displayErrorListener, false, 0);
+
+    verifyListenerPresenceAndListenersCountMatch(null, false, 0);
+  }
+
+  @Test
+  public void addRemoveAllListeners_WorksAsExpected() {
+    FirebaseInAppMessagingClickListener clickListener = (inAppMessage, action) -> {};
+    FirebaseInAppMessagingDismissListener dismissListener = inAppMessage -> {};
+    FirebaseInAppMessagingImpressionListener impressionListener = inAppMessage -> {};
+    FirebaseInAppMessagingDisplayErrorListener displayErrorListener = (inAppMessage, error) -> {};
+
+    verifyListenerPresenceAndListenersCountMatch(null, false, 0);
+
+    firebaseInAppMessaging.addClickListener(clickListener);
+    firebaseInAppMessaging.addDismissListener(dismissListener);
+    firebaseInAppMessaging.addImpressionListener(impressionListener);
+    firebaseInAppMessaging.addDisplayErrorListener(displayErrorListener);
+
+    verifyListenerPresenceAndListenersCountMatch(null, false, 4);
+
+    firebaseInAppMessaging.removeAllListeners();
+
+    verifyListenerPresenceAndListenersCountMatch(null, false, 0);
+  }
+
+  /**
+   * Verifies the presence of the provided listener in the set of listeners inside
+   * DeveloperListenerManager.
+   *
+   * @param listener the listener object or null. If null, only count verification will be done.
+   * @param shouldPresent should be present or absent.
+   * @param listenersCount the number of listeners that should be present.
+   */
+  private void verifyListenerPresenceAndListenersCountMatch(
+      @Nullable Object listener, boolean shouldPresent, int listenersCount) {
+    Map listeners = developerListenerManager.getAllListeners();
+
+    if (listener != null) {
+      assertThat(listeners.containsKey(listener)).isEqualTo(shouldPresent);
+    }
+
+    assertThat(listeners.keySet().size()).isEqualTo(listenersCount);
   }
 }

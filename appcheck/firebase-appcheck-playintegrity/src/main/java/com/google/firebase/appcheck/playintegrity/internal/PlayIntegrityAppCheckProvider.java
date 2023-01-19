@@ -14,7 +14,6 @@
 
 package com.google.firebase.appcheck.playintegrity.internal;
 
-import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
@@ -25,6 +24,7 @@ import com.google.android.play.core.integrity.IntegrityTokenRequest;
 import com.google.android.play.core.integrity.IntegrityTokenResponse;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.internal.DefaultAppCheckToken;
@@ -39,15 +39,19 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
   private final String projectNumber;
   private final IntegrityManager integrityManager;
   private final NetworkClient networkClient;
+  private final Executor liteExecutor;
   private final Executor blockingExecutor;
   private final RetryManager retryManager;
 
   public PlayIntegrityAppCheckProvider(
-      @NonNull FirebaseApp firebaseApp, @Blocking Executor blockingExecutor) {
+      @NonNull FirebaseApp firebaseApp,
+      @Lightweight Executor liteExecutor,
+      @Blocking Executor blockingExecutor) {
     this(
         firebaseApp.getOptions().getGcmSenderId(),
         IntegrityManagerFactory.create(firebaseApp.getApplicationContext()),
         new NetworkClient(firebaseApp),
+        liteExecutor,
         blockingExecutor,
         new RetryManager());
   }
@@ -57,22 +61,23 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
       @NonNull String projectNumber,
       @NonNull IntegrityManager integrityManager,
       @NonNull NetworkClient networkClient,
+      @NonNull Executor liteExecutor,
       @NonNull Executor blockingExecutor,
       @NonNull RetryManager retryManager) {
     this.projectNumber = projectNumber;
     this.integrityManager = integrityManager;
     this.networkClient = networkClient;
+    this.liteExecutor = liteExecutor;
     this.blockingExecutor = blockingExecutor;
     this.retryManager = retryManager;
   }
 
-  // TODO(b/261013814): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<AppCheckToken> getToken() {
     return getPlayIntegrityAttestation()
         .onSuccessTask(
+            liteExecutor,
             integrityTokenResponse -> {
               ExchangePlayIntegrityTokenRequest request =
                   new ExchangePlayIntegrityTokenRequest(integrityTokenResponse.token());
@@ -85,32 +90,30 @@ public class PlayIntegrityAppCheckProvider implements AppCheckProvider {
                           retryManager));
             })
         .onSuccessTask(
-            appCheckTokenResponse -> {
-              return Tasks.forResult(
-                  DefaultAppCheckToken.constructFromAppCheckTokenResponse(appCheckTokenResponse));
-            });
+            liteExecutor,
+            appCheckTokenResponse ->
+                Tasks.forResult(
+                    DefaultAppCheckToken.constructFromAppCheckTokenResponse(
+                        appCheckTokenResponse)));
   }
 
-  // TODO(b/261013814): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   @NonNull
   private Task<IntegrityTokenResponse> getPlayIntegrityAttestation() {
     GeneratePlayIntegrityChallengeRequest generateChallengeRequest =
         new GeneratePlayIntegrityChallengeRequest();
-    Task<GeneratePlayIntegrityChallengeResponse> generateChallengeTask =
-        Tasks.call(
+    return Tasks.call(
             blockingExecutor,
             () ->
                 GeneratePlayIntegrityChallengeResponse.fromJsonString(
                     networkClient.generatePlayIntegrityChallenge(
-                        generateChallengeRequest.toJsonString().getBytes(UTF_8), retryManager)));
-    return generateChallengeTask.onSuccessTask(
-        generatePlayIntegrityChallengeResponse -> {
-          return integrityManager.requestIntegrityToken(
-              IntegrityTokenRequest.builder()
-                  .setCloudProjectNumber(Long.parseLong(projectNumber))
-                  .setNonce(generatePlayIntegrityChallengeResponse.getChallenge())
-                  .build());
-        });
+                        generateChallengeRequest.toJsonString().getBytes(UTF_8), retryManager)))
+        .onSuccessTask(
+            liteExecutor,
+            generatePlayIntegrityChallengeResponse ->
+                integrityManager.requestIntegrityToken(
+                    IntegrityTokenRequest.builder()
+                        .setCloudProjectNumber(Long.parseLong(projectNumber))
+                        .setNonce(generatePlayIntegrityChallengeResponse.getChallenge())
+                        .build()));
   }
 }

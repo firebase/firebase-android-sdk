@@ -16,7 +16,6 @@ package com.google.firebase.appcheck.debug.internal;
 
 import static com.google.android.gms.common.internal.Preconditions.checkNotNull;
 
-import android.annotation.SuppressLint;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
@@ -26,6 +25,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckToken;
 import com.google.firebase.appcheck.debug.InternalDebugSecretProvider;
@@ -42,6 +42,7 @@ public class DebugAppCheckProvider implements AppCheckProvider {
   private static final String UTF_8 = "UTF-8";
 
   private final NetworkClient networkClient;
+  private final Executor liteExecutor;
   private final Executor blockingExecutor;
   private final RetryManager retryManager;
   private final Task<String> debugSecretTask;
@@ -49,10 +50,12 @@ public class DebugAppCheckProvider implements AppCheckProvider {
   public DebugAppCheckProvider(
       @NonNull FirebaseApp firebaseApp,
       @NonNull Provider<InternalDebugSecretProvider> debugSecretProvider,
+      @Lightweight Executor liteExecutor,
       @Background Executor backgroundExecutor,
       @Blocking Executor blockingExecutor) {
     checkNotNull(firebaseApp);
     this.networkClient = new NetworkClient(firebaseApp);
+    this.liteExecutor = liteExecutor;
     this.blockingExecutor = blockingExecutor;
     this.retryManager = new RetryManager();
 
@@ -70,9 +73,11 @@ public class DebugAppCheckProvider implements AppCheckProvider {
   DebugAppCheckProvider(
       @NonNull String debugSecret,
       @NonNull NetworkClient networkClient,
+      @NonNull Executor liteExecutor,
       @NonNull Executor blockingExecutor,
       @NonNull RetryManager retryManager) {
     this.networkClient = networkClient;
+    this.liteExecutor = liteExecutor;
     this.blockingExecutor = blockingExecutor;
     this.retryManager = retryManager;
     this.debugSecretTask = Tasks.forResult(debugSecret);
@@ -102,15 +107,14 @@ public class DebugAppCheckProvider implements AppCheckProvider {
     return taskCompletionSource.getTask();
   }
 
-  // TODO(b/261013814): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
   @NonNull
   @Override
   public Task<AppCheckToken> getToken() {
     return debugSecretTask
-        .continueWithTask(
-            task -> {
-              ExchangeDebugTokenRequest request = new ExchangeDebugTokenRequest(task.getResult());
+        .onSuccessTask(
+            liteExecutor,
+            debugSecret -> {
+              ExchangeDebugTokenRequest request = new ExchangeDebugTokenRequest(debugSecret);
               return Tasks.call(
                   blockingExecutor,
                   () ->
@@ -119,14 +123,9 @@ public class DebugAppCheckProvider implements AppCheckProvider {
                           NetworkClient.DEBUG,
                           retryManager));
             })
-        .continueWithTask(
-            task -> {
-              if (task.isSuccessful()) {
-                return Tasks.forResult(
-                    DefaultAppCheckToken.constructFromAppCheckTokenResponse(task.getResult()));
-              }
-              // TODO: Surface more error details.
-              return Tasks.forException(task.getException());
-            });
+        .onSuccessTask(
+            liteExecutor,
+            response ->
+                Tasks.forResult(DefaultAppCheckToken.constructFromAppCheckTokenResponse(response)));
   }
 }

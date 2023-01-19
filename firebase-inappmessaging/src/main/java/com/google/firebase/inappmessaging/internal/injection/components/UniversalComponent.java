@@ -16,6 +16,8 @@ package com.google.firebase.inappmessaging.internal.injection.components;
 
 import android.app.Application;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.inappmessaging.internal.AnalyticsEventsManager;
 import com.google.firebase.inappmessaging.internal.CampaignCacheClient;
@@ -45,6 +47,7 @@ import com.google.firebase.inappmessaging.model.RateLimit;
 import dagger.Component;
 import io.grpc.Channel;
 import io.reactivex.flowables.ConnectableFlowable;
+import java.util.concurrent.Executor;
 import javax.inject.Singleton;
 
 /**
@@ -109,4 +112,10 @@ public interface UniversalComponent {
   RateLimit appForegroundRateLimit();
 
   DeveloperListenerManager developerListenerManager();
+
+  @Lightweight
+  Executor lightWeightExecutor();
+
+  @Blocking
+  Executor blockingExecutor();
 }

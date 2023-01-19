@@ -18,6 +18,7 @@ import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appcheck.debug.internal.DebugAppCheckProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
@@ -40,6 +41,7 @@ public class FirebaseAppCheckDebugRegistrar implements ComponentRegistrar {
 
   @Override
   public List<Component<?>> getComponents() {
+    Qualified<Executor> liteExecutor = Qualified.qualified(Lightweight.class, Executor.class);
     Qualified<Executor> backgroundExecutor = Qualified.qualified(Background.class, Executor.class);
     Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
 
@@ -48,6 +50,7 @@ public class FirebaseAppCheckDebugRegistrar implements ComponentRegistrar {
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.optionalProvider(InternalDebugSecretProvider.class))
+            .add(Dependency.required(liteExecutor))
             .add(Dependency.required(backgroundExecutor))
             .add(Dependency.required(blockingExecutor))
             .factory(
@@ -55,6 +58,7 @@ public class FirebaseAppCheckDebugRegistrar implements ComponentRegistrar {
                     new DebugAppCheckProvider(
                         container.get(FirebaseApp.class),
                         container.getProvider(InternalDebugSecretProvider.class),
+                        container.get(liteExecutor),
                         container.get(backgroundExecutor),
                         container.get(blockingExecutor)))
             .build(),

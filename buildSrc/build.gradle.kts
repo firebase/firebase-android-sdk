@@ -58,10 +58,12 @@ dependencies {
     implementation("org.eclipse.aether:aether-transport-http:1.0.0.v20140518")
     implementation("org.eclipse.aether:aether-transport-wagon:1.0.0.v20140518")
     implementation("org.apache.maven:maven-aether-provider:3.1.0")
+    
+    implementation("org.eclipse.jgit:org.eclipse.jgit:6.3.0.202209071007-r")
 
     implementation("com.google.code.gson:gson:2.8.9")
-    implementation("com.android.tools.build:gradle:7.2.2")
-    implementation("com.android.tools.build:builder-test-api:7.2.2")
+    implementation("com.android.tools.build:gradle:7.4.0")
+    implementation("com.android.tools.build:builder-test-api:7.4.0")
     implementation("gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9")
 
     testImplementation("junit:junit:4.13.2")
