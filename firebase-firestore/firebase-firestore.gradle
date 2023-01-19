@@ -80,25 +80,11 @@ android {
         }
     }
 
-    sourceSets {
-        main {
-            proto {
-                srcDir 'src/proto'
-            }
-            java {
-            }
-        }
-        test {
-            java {
-                srcDir 'src/testUtil/java'
-                srcDir 'src/roboUtil/java'
-            }
-        }
-        androidTest {
-            java {
-                srcDir 'src/testUtil/java'
-            }
-        }
+    testFixtures {
+        enable = true
+    }
+    lint {
+        ignoreTestFixturesSources = true
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -109,11 +95,6 @@ android {
 
 tasks.withType(Test) {
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
-}
-
-googleJavaFormat {
-    exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
-    exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
 }
 
 dependencies {
@@ -145,6 +126,15 @@ dependencies {
     compileOnly 'com.google.auto.value:auto-value-annotations:1.6.6'
     androidTestAnnotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
+
+    testFixturesImplementation project(":firebase-database-collection")
+    testFixturesImplementation project(":firebase-components")
+    testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
+    testFixturesImplementation libs.junit
+    testFixturesImplementation libs.truth
+    testFixturesImplementation libs.playservices.tasks
+    testFixturesImplementation libs.playservices.base
+    testFixturesImplementation "io.grpc:grpc-protobuf-lite:$grpcVersion"
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'androidx.test:core:1.2.0'
