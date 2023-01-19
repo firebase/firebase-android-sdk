@@ -19,10 +19,8 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
-import com.google.firebase.remoteconfig.ConfigUpdate;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
@@ -80,32 +78,29 @@ public class ConfigRealtimeHandler {
   // Kicks off Http stream listening and autofetch
   private synchronized void beginRealtime() {
     if (canCreateRealtimeHttpClientTask()) {
-      configRealtimeHttpClient.setRealtimeRetryState(true);
-      configRealtimeHttpClient.tryHttpConnection(0);
+      configRealtimeHttpClient.startHttpConnection();
     }
-  }
-
-  // Pauses Http stream listening
-  public synchronized void pauseRealtime() {
-    configRealtimeHttpClient.setRealtimeRetryState(false);
   }
 
   @NonNull
   public synchronized ConfigUpdateListenerRegistration addRealtimeConfigUpdateListener(
       @NonNull ConfigUpdateListener configUpdateListener) {
     listeners.add(configUpdateListener);
-    if (configUpdateListener.getClass() != EmptyConfigUpdateListener.class
-        || listeners.size() > 1) {
+    if (canCreateRealtimeHttpClientTask()) {
       beginRealtime();
     }
     return new ConfigUpdateListenerRegistrationInternal(configUpdateListener);
   }
 
+  public void setBackgroundState(boolean isInBackground) {
+    configRealtimeHttpClient.setRealtimeBackgroundState(isInBackground);
+    if (!isInBackground) {
+      beginRealtime();
+    }
+  }
+
   private synchronized void removeRealtimeConfigUpdateListener(ConfigUpdateListener listener) {
     listeners.remove(listener);
-    if (listeners.isEmpty()) {
-      pauseRealtime();
-    }
   }
 
   public class ConfigUpdateListenerRegistrationInternal
@@ -119,14 +114,5 @@ public class ConfigRealtimeHandler {
     public void remove() {
       removeRealtimeConfigUpdateListener(listener);
     }
-  }
-
-  public static class EmptyConfigUpdateListener implements ConfigUpdateListener {
-
-    @Override
-    public void onUpdate(ConfigUpdate configUpdate) {}
-
-    @Override
-    public void onError(@NonNull FirebaseRemoteConfigException error) {}
   }
 }

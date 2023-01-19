@@ -75,8 +75,6 @@ public class RemoteConfigComponent {
   private static final Clock DEFAULT_CLOCK = DefaultClock.getInstance();
   private static final Random DEFAULT_RANDOM = new Random();
 
-  private static final ConfigUpdateListener EMPTY_CONFIG_LISTENER = createEmptyConfigListener();
-
   @GuardedBy("this")
   private final Map<String, FirebaseRemoteConfig> frcNamespaceInstances = new HashMap<>();
 
@@ -335,20 +333,9 @@ public class RemoteConfigComponent {
     return firebaseApp.getName().equals(FirebaseApp.DEFAULT_APP_NAME);
   }
 
-  private static ConfigUpdateListener createEmptyConfigListener() {
-    return new ConfigRealtimeHandler.EmptyConfigUpdateListener();
-  }
-
   private static synchronized void notifyRCInstances(boolean isInBackground) {
     for (FirebaseRemoteConfig frc : frcNamespaceInstancesStatic.values()) {
-      if (!isInBackground) {
-        // Add dummy listener and remove to trigger http stream flow.
-        ConfigUpdateListenerRegistration registration =
-            frc.addOnConfigUpdateListener(EMPTY_CONFIG_LISTENER);
-        registration.remove();
-      } else {
-        frc.pauseAllConfigUpdateListeners();
-      }
+      frc.changeConfigUpdateBackgroundState(isInBackground);
     }
   }
 

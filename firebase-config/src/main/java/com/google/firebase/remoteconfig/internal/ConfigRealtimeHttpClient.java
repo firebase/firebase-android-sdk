@@ -81,7 +81,7 @@ public class ConfigRealtimeHttpClient {
    * Controls whether or not this client should retry. Does not need to be synchronized because
    * ordering of thread actions is not important since all connections will timeout after 5 minutes.
    */
-  private boolean canRetry;
+  private boolean isInBackground;
 
   private final int ORIGINAL_RETRIES = 7;
   private final ScheduledExecutorService scheduledExecutorService;
@@ -118,7 +118,7 @@ public class ConfigRealtimeHttpClient {
     this.context = context;
     this.namespace = namespace;
     this.isRealtimeDisabled = false;
-    this.canRetry = true;
+    this.isInBackground = false;
   }
 
   /**
@@ -183,7 +183,6 @@ public class ConfigRealtimeHttpClient {
     // Headers to denote that the request body is a JSONObject.
     httpURLConnection.setRequestProperty("Content-Type", "application/json");
     httpURLConnection.setRequestProperty("Accept", "application/json");
-    httpURLConnection.setConnectTimeout(31000);
   }
 
   private JSONObject createRequestBody() {
@@ -229,7 +228,10 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized boolean canMakeHttpStreamConnection() {
-    return !listeners.isEmpty() && httpURLConnection == null && !isRealtimeDisabled && canRetry;
+    return !listeners.isEmpty()
+        && httpURLConnection == null
+        && !isRealtimeDisabled
+        && !isInBackground;
   }
 
   private String getRealtimeURL(String namespace) {
@@ -261,14 +263,23 @@ public class ConfigRealtimeHttpClient {
     return httpURLConnection;
   }
 
+  /** Initial Http stream attempt. */
+  public void startHttpConnection() {
+    tryHttpConnection(0);
+  }
+
   /** Retries HTTP stream connection asyncly in random time intervals. */
   @SuppressLint("VisibleForTests")
-  public synchronized void tryHttpConnection(long retrySeconds) {
+  public void retryHttpConnection() {
+    if (httpRetriesRemaining < ORIGINAL_RETRIES) {
+      httpRetrySeconds *= getRetryMultiplier();
+    }
+
+    tryHttpConnection(httpRetrySeconds);
+  }
+
+  private synchronized void tryHttpConnection(long retrySeconds) {
     if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
-      if (httpRetriesRemaining < ORIGINAL_RETRIES && retrySeconds > 0) {
-        retrySeconds *= getRetryMultiplier();
-        httpRetrySeconds = retrySeconds;
-      }
       httpRetriesRemaining--;
       scheduledExecutorService.schedule(
           new Runnable() {
@@ -279,7 +290,7 @@ public class ConfigRealtimeHttpClient {
           },
           retrySeconds,
           TimeUnit.SECONDS);
-    } else if (canRetry) {
+    } else if (!isInBackground) {
       propagateErrors(
           new FirebaseRemoteConfigClientException(
               "Unable to connect to the server. Check your connection and try again.",
@@ -287,8 +298,8 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  void setRealtimeRetryState(boolean retry) {
-    canRetry = retry;
+  void setRealtimeBackgroundState(boolean backgroundState) {
+    isInBackground = backgroundState;
   }
 
   /**
@@ -372,7 +383,7 @@ public class ConfigRealtimeHttpClient {
       if (responseCode == null
           || responseCode == HttpURLConnection.HTTP_OK
           || isStatusCodeRetryable(responseCode)) {
-        tryHttpConnection(httpRetrySeconds);
+        retryHttpConnection();
       } else {
         propagateErrors(
             new FirebaseRemoteConfigServerException(
