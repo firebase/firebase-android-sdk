@@ -21,7 +21,6 @@ import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.HTTP_
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
@@ -32,6 +31,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import com.google.firebase.remoteconfig.BuildConfig;
 import com.google.firebase.remoteconfig.ConfigUpdate;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
@@ -188,7 +188,7 @@ public class ConfigRealtimeHttpClient {
     body.put(
         "lastKnownVersionNumber", Long.toString(configFetchHandler.getTemplateVersionNumber()));
     body.put("appId", firebaseApp.getOptions().getApplicationId());
-    body.put("sdkVersion", Integer.toString(Build.VERSION.SDK_INT));
+    body.put("sdkVersion", BuildConfig.VERSION_NAME);
 
     return new JSONObject(body);
   }
