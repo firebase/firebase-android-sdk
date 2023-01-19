@@ -332,7 +332,7 @@ public abstract class TargetCacheTestCase {
         version(version),
         version(version),
         resumeToken(version),
-            null);
+        null);
   }
 
   /** Adds the given query data to the targetCache under test, committing immediately. */

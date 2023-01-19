@@ -186,8 +186,7 @@ public final class TargetData {
         && purpose.equals(targetData.purpose)
         && snapshotVersion.equals(targetData.snapshotVersion)
         && lastLimboFreeSnapshotVersion.equals(targetData.lastLimboFreeSnapshotVersion)
-        && resumeToken.equals(targetData.resumeToken)
-        && (expectedCount==null && expectedCount.equals(targetData.expectedCount));
+        && resumeToken.equals(targetData.resumeToken);
   }
 
   @Override
