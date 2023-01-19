@@ -17,6 +17,7 @@ package com.google.firebase.firestore.testutil.provider;
 import android.content.Context;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.firestore.R;
+import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 
 /**
  * Provides locations of production Firestore and Firebase Rules.
@@ -35,8 +36,17 @@ public final class FirestoreProvider {
     this.context = context;
   }
 
-  public String firestoreHost() {
-    return "firestore.googleapis.com";
+  public String firestoreHost(IntegrationTestUtil.TargetBackend backend) {
+    switch (backend) {
+      case QA:
+        return "staging-firestore.sandbox.googleapis.com";
+      case NIGHTLY:
+        return "test-firestore.sandbox.googleapis.com";
+      case EMULATOR:
+      case PROD:
+      default:
+        return "firestore.googleapis.com";
+    }
   }
 
   public String projectId() {
