@@ -159,6 +159,7 @@ public final class TargetData {
     return resumeToken;
   }
 
+  @Nullable
   public Integer getExpectedCount() {
     return expectedCount;
   }
@@ -186,7 +187,8 @@ public final class TargetData {
         && purpose.equals(targetData.purpose)
         && snapshotVersion.equals(targetData.snapshotVersion)
         && lastLimboFreeSnapshotVersion.equals(targetData.lastLimboFreeSnapshotVersion)
-        && resumeToken.equals(targetData.resumeToken);
+        && resumeToken.equals(targetData.resumeToken)
+        && expectedCount == targetData.expectedCount;
   }
 
   @Override
@@ -198,7 +200,7 @@ public final class TargetData {
     result = 31 * result + snapshotVersion.hashCode();
     result = 31 * result + lastLimboFreeSnapshotVersion.hashCode();
     result = 31 * result + resumeToken.hashCode();
-    result = 31 * result + expectedCount.hashCode();
+    result = 31 * result + (expectedCount != null ? expectedCount.hashCode() : 0);
     return result;
   }
 

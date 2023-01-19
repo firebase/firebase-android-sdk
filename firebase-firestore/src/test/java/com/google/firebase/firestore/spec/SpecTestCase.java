@@ -1143,6 +1143,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       assertEquals(
           expectedTarget.getResumeToken().toStringUtf8(),
           actualTarget.getResumeToken().toStringUtf8());
+      if (expectedTarget.getExpectedCount() != null) {
+        assertEquals(expectedTarget.getExpectedCount(), actualTarget.getExpectedCount());
+      }
 
       actualTargets.remove(expected.getKey());
     }
