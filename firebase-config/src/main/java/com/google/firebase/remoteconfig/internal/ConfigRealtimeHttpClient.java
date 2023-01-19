@@ -270,7 +270,7 @@ public class ConfigRealtimeHttpClient {
 
   /** Retries HTTP stream connection asyncly in random time intervals. */
   @SuppressLint("VisibleForTests")
-  public void retryHttpConnection() {
+  public synchronized void retryHttpConnection() {
     if (httpRetriesRemaining < ORIGINAL_RETRIES) {
       httpRetrySeconds *= getRetryMultiplier();
     }
