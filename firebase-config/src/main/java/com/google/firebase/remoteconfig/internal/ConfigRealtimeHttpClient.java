@@ -265,7 +265,7 @@ public class ConfigRealtimeHttpClient {
   @SuppressLint("VisibleForTests")
   public synchronized void tryHttpConnection(long retrySeconds) {
     if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
-      if (httpRetriesRemaining < ORIGINAL_RETRIES) {
+      if (httpRetriesRemaining < ORIGINAL_RETRIES && retrySeconds > 0) {
         retrySeconds *= getRetryMultiplier();
         httpRetrySeconds = retrySeconds;
       }
