@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore;
 
-import static com.google.firebase.firestore.testutil.Assert.assertThrows;
+import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
