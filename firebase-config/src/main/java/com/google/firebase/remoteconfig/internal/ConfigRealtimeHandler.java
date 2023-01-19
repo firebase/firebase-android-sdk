@@ -92,7 +92,7 @@ public class ConfigRealtimeHandler {
     return new ConfigUpdateListenerRegistrationInternal(configUpdateListener);
   }
 
-  public void setBackgroundState(boolean isInBackground) {
+  public synchronized void setBackgroundState(boolean isInBackground) {
     configRealtimeHttpClient.setRealtimeBackgroundState(isInBackground);
     if (!isInBackground) {
       beginRealtime();
