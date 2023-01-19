@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.remote.WatchStream;
@@ -30,6 +31,7 @@ public final class TargetData {
   private final SnapshotVersion snapshotVersion;
   private final SnapshotVersion lastLimboFreeSnapshotVersion;
   private final ByteString resumeToken;
+  private final @Nullable Integer expectedCount;
 
   /**
    * Creates a new TargetData with the given values.
@@ -45,6 +47,9 @@ public final class TargetData {
    * @param resumeToken An opaque, server-assigned token that allows watching a target to be resumed
    *     after disconnecting without retransmitting all the data that matches the target. The resume
    *     token essentially identifies a point in time from which the server should resume sending
+   * @param expectedCount The number of documents that last matched the query at the resume token or
+   *     read time. Documents are counted only when making a listen request with resume token or
+   *     read time, otherwise, keep it null.
    */
   TargetData(
       Target target,
@@ -53,7 +58,8 @@ public final class TargetData {
       QueryPurpose purpose,
       SnapshotVersion snapshotVersion,
       SnapshotVersion lastLimboFreeSnapshotVersion,
-      ByteString resumeToken) {
+      ByteString resumeToken,
+      @Nullable Integer expectedCount) {
     this.target = checkNotNull(target);
     this.targetId = targetId;
     this.sequenceNumber = sequenceNumber;
@@ -61,6 +67,7 @@ public final class TargetData {
     this.purpose = purpose;
     this.snapshotVersion = checkNotNull(snapshotVersion);
     this.resumeToken = checkNotNull(resumeToken);
+    this.expectedCount = expectedCount;
   }
 
   /** Convenience constructor for use when creating a TargetData for the first time. */
@@ -72,7 +79,8 @@ public final class TargetData {
         purpose,
         SnapshotVersion.NONE,
         SnapshotVersion.NONE,
-        WatchStream.EMPTY_RESUME_TOKEN);
+        WatchStream.EMPTY_RESUME_TOKEN,
+        null);
   }
 
   /** Creates a new target data instance with an updated sequence number. */
@@ -84,7 +92,8 @@ public final class TargetData {
         purpose,
         snapshotVersion,
         lastLimboFreeSnapshotVersion,
-        resumeToken);
+        resumeToken,
+        expectedCount);
   }
 
   /** Creates a new target data instance with an updated resume token and snapshot version. */
@@ -96,7 +105,21 @@ public final class TargetData {
         purpose,
         snapshotVersion,
         lastLimboFreeSnapshotVersion,
-        resumeToken);
+        resumeToken,
+        expectedCount);
+  }
+
+  /** Creates a new target data instance with an updated expected count. */
+  public TargetData withExpectedCount(Integer expectedCount) {
+    return new TargetData(
+        target,
+        targetId,
+        sequenceNumber,
+        purpose,
+        snapshotVersion,
+        lastLimboFreeSnapshotVersion,
+        resumeToken,
+        expectedCount);
   }
 
   /** Creates a new target data instance with an updated last limbo free snapshot version number. */
@@ -108,7 +131,8 @@ public final class TargetData {
         purpose,
         snapshotVersion,
         lastLimboFreeSnapshotVersion,
-        resumeToken);
+        resumeToken,
+        expectedCount);
   }
 
   public Target getTarget() {
@@ -135,6 +159,10 @@ public final class TargetData {
     return resumeToken;
   }
 
+  public Integer getExpectedCount() {
+    return expectedCount;
+  }
+
   /**
    * Returns the last snapshot version for which the associated view contained no limbo documents.
    */
@@ -158,7 +186,8 @@ public final class TargetData {
         && purpose.equals(targetData.purpose)
         && snapshotVersion.equals(targetData.snapshotVersion)
         && lastLimboFreeSnapshotVersion.equals(targetData.lastLimboFreeSnapshotVersion)
-        && resumeToken.equals(targetData.resumeToken);
+        && resumeToken.equals(targetData.resumeToken)
+        && (expectedCount==null && expectedCount.equals(targetData.expectedCount));
   }
 
   @Override
@@ -170,6 +199,7 @@ public final class TargetData {
     result = 31 * result + snapshotVersion.hashCode();
     result = 31 * result + lastLimboFreeSnapshotVersion.hashCode();
     result = 31 * result + resumeToken.hashCode();
+    result = 31 * result + expectedCount.hashCode();
     return result;
   }
 
@@ -190,6 +220,8 @@ public final class TargetData {
         + lastLimboFreeSnapshotVersion
         + ", resumeToken="
         + resumeToken
+        + ", expectedCount="
+        + expectedCount
         + '}';
   }
 }

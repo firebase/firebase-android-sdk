@@ -499,6 +499,10 @@ public final class RemoteSerializer {
       builder.setResumeToken(targetData.getResumeToken());
     }
 
+    if (targetData.getExpectedCount() != null) {
+      builder.setExpectedCount(Int32Value.newBuilder().setValue(targetData.getExpectedCount()));
+    }
+
     return builder.build();
   }
 
