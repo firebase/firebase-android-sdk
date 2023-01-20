@@ -38,8 +38,8 @@ public class FirebaseExecutors {
   /**
    * Returns an {@link Executor} that limits the number of running tasks at a given time.
    *
-   * <p>The executor uses the {@code delegate} in order to {@link Executor#execute(Runnable) execute} each task,
-   * and does not create any threads of its own.
+   * <p>The executor uses the {@code delegate} in order to {@link Executor#execute(Runnable)
+   * execute} each task, and does not create any threads of its own.
    *
    * @param delegate {@link Executor} used to execute tasks
    * @param concurrency max number of tasks executing concurrently
@@ -86,7 +86,8 @@ public class FirebaseExecutors {
    * delegate} executor.
    *
    * <p>While {@link PausableExecutor#pause() paused}, the executor queues tasks which are executed
-   * when the executor is {@link PausableExecutor#resume() resumed}.
+   * when the executor is {@link PausableExecutor#resume() resumed}, tasks that are already being
+   * executed will not be paused and will run to completion.
    */
   public static PausableExecutor newPausableExecutor(Executor delegate) {
     return new PausableExecutorImpl(false, delegate);
@@ -99,7 +100,8 @@ public class FirebaseExecutors {
    * delegate} executor.
    *
    * <p>While {@link PausableExecutor#pause() paused}, the executor queues tasks which are executed
-   * when the executor is {@link PausableExecutor#resume() resumed}.
+   * when the executor is {@link PausableExecutor#resume() resumed}, tasks that are already being
+   * executed will not be paused and will run to completion.
    */
   public static PausableExecutorService newPausableExecutorService(ExecutorService delegate) {
     return new PausableExecutorServiceImpl(false, delegate);
@@ -112,7 +114,8 @@ public class FirebaseExecutors {
    * delegate} executor.
    *
    * <p>While {@link PausableExecutor#pause() paused}, the executor queues tasks which are executed
-   * when the executor is {@link PausableExecutor#resume() resumed}.
+   * when the executor is {@link PausableExecutor#resume() resumed}, tasks that are already being
+   * executed will not be paused and will run to completion.
    */
   public static PausableScheduledExecutorService newPausableScheduledExecutorService(
       ScheduledExecutorService delegate) {

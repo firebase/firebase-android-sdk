@@ -14,62 +14,59 @@
 
 package com.google.firebase.concurrent;
 
-import androidx.annotation.GuardedBy;
 import com.google.firebase.components.Preconditions;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
 
+/**
+ * An {@link Executor}that limits the number of concurrent tasks executing at a given time.
+ *
+ * <p>Delegates actual execution to the {@code delegate} executor and does not create threads of it
+ * own.
+ *
+ * <p>The executor is fair: has FIFO semantics for submitted tasks.
+ */
 class LimitedConcurrencyExecutor implements Executor {
 
   private final Executor delegate;
 
-  @GuardedBy("queue")
-  private int activeCount;
+  private final Semaphore semaphore;
 
   private final LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
 
   LimitedConcurrencyExecutor(Executor delegate, int concurrency) {
     Preconditions.checkArgument(concurrency > 0, "concurrency must be positive.");
     this.delegate = delegate;
-    activeCount = concurrency;
+    semaphore = new Semaphore(concurrency, true);
   }
 
   @Override
   public void execute(Runnable command) {
-    Runnable toExecute = null;
-    synchronized (queue) {
-      if (activeCount > 0) {
-        activeCount--;
-        toExecute =
-            () -> {
-              try {
-                command.run();
-              } finally {
-                synchronized (queue) {
-                  activeCount++;
-                  maybeEnqueueNext();
-                }
-              }
-            };
-      }
-    }
-    if (toExecute != null) {
-      delegate.execute(toExecute);
-    } else {
-      queue.offer(command);
-    }
+    queue.offer(command);
+    maybeEnqueueNext();
   }
 
   private void maybeEnqueueNext() {
-    synchronized (queue) {
-      while (activeCount > 0) {
-        Runnable next = queue.poll();
-        if (next != null) {
-          execute(next);
-        } else {
-          break;
-        }
+    while (semaphore.tryAcquire()) {
+      Runnable next = queue.poll();
+      if (next != null) {
+        delegate.execute(decorate(next));
+      } else {
+        semaphore.release();
+        break;
       }
     }
+  }
+
+  private Runnable decorate(Runnable command) {
+    return () -> {
+      try {
+        command.run();
+      } finally {
+        semaphore.release();
+        maybeEnqueueNext();
+      }
+    };
   }
 }

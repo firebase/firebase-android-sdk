@@ -15,6 +15,8 @@
 package com.google.firebase.concurrent;
 
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 final class PausableScheduledExecutorServiceImpl extends DelegatingScheduledExecutorService
     implements PausableScheduledExecutorService {
@@ -39,5 +41,21 @@ final class PausableScheduledExecutorServiceImpl extends DelegatingScheduledExec
   @Override
   public boolean isPaused() {
     return delegate.isPaused();
+  }
+
+  @Override
+  public ScheduledFuture<?> scheduleAtFixedRate(
+      Runnable command, long initialDelay, long period, TimeUnit unit) {
+    // TODO(vkryachko): There is currently no use case for it in our codebase and the pausing
+    // implementation is fairly involved. Revisit if/when needed.
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public ScheduledFuture<?> scheduleWithFixedDelay(
+      Runnable command, long initialDelay, long delay, TimeUnit unit) {
+    // TODO(vkryachko): There is currently no use case for it in our codebase and the pausing
+    // implementation is fairly involved. Revisit if/when needed.
+    throw new UnsupportedOperationException();
   }
 }

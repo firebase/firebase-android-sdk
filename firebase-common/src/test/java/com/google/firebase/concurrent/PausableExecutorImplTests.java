@@ -30,7 +30,7 @@ public class PausableExecutorImplTests {
   private final PausableExecutorImpl executor = new PausableExecutorImpl(false, testExecutor);
 
   @Test
-  public void foo() {
+  public void execute_whenPaused_enqueuesTaskToExecuteWhenResumed() {
     Runnable runnable1 = mock(Runnable.class);
     Runnable runnable2 = mock(Runnable.class);
     Runnable runnable3 = mock(Runnable.class);

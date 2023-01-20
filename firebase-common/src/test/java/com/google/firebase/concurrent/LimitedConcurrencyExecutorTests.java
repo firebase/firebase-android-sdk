@@ -32,7 +32,7 @@ public class LimitedConcurrencyExecutorTests {
       new LimitedConcurrencyExecutor(testExecutor, 2);
 
   @Test
-  public void foo() {
+  public void execute_doesNotExecuteTasks_withConcurrencyMoreThanSpecified() {
     Runnable runnable1 = mock(Runnable.class);
     Runnable runnable2 = mock(Runnable.class);
     Runnable runnable3 = mock(Runnable.class);

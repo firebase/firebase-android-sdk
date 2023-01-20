@@ -31,18 +31,8 @@ final class PausableExecutorImpl implements PausableExecutor {
 
   @Override
   public void execute(Runnable command) {
-    if (paused) {
-      queue.offer(command);
-    } else {
-      delegate.execute(
-          () -> {
-            try {
-              command.run();
-            } finally {
-              maybeEnqueueNext();
-            }
-          });
-    }
+    queue.offer(command);
+    maybeEnqueueNext();
   }
 
   private void maybeEnqueueNext() {
@@ -51,7 +41,7 @@ final class PausableExecutorImpl implements PausableExecutor {
     }
     Runnable next = queue.poll();
     while (next != null) {
-      execute(next);
+      delegate.execute(next);
       if (!paused) {
         next = queue.poll();
       } else {
