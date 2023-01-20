@@ -60,12 +60,16 @@ public class BloomFilterTest {
 
   @Test
   public void constructorShouldThrowNPEOnNullBitmap() {
-    NullPointerException emptyBloomFilterException =
-        assertThrows(NullPointerException.class, () -> new BloomFilter(null, 0, 0));
-    assertThat(emptyBloomFilterException).hasMessageThat().contains("Bitmap cannot be null.");
-    NullPointerException nonEmptyBloomFilterException =
-        assertThrows(NullPointerException.class, () -> new BloomFilter(null, 1, 1));
-    assertThat(nonEmptyBloomFilterException).hasMessageThat().contains("Bitmap cannot be null.");
+    {
+      NullPointerException emptyBloomFilterException =
+          assertThrows(NullPointerException.class, () -> new BloomFilter(null, 0, 0));
+      assertThat(emptyBloomFilterException).hasMessageThat().contains("Bitmap cannot be null.");
+    }
+    {
+      NullPointerException nonEmptyBloomFilterException =
+          assertThrows(NullPointerException.class, () -> new BloomFilter(null, 1, 1));
+      assertThat(nonEmptyBloomFilterException).hasMessageThat().contains("Bitmap cannot be null.");
+    }
   }
 
   @Test
@@ -86,22 +90,32 @@ public class BloomFilterTest {
 
   @Test
   public void constructorShouldThrowIAEOnNegativePadding() {
-    IllegalArgumentException emptyBloomFilterException =
-        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[0], -1, 0));
-    assertThat(emptyBloomFilterException).hasMessageThat().contains("Invalid padding: -1");
-    IllegalArgumentException nonEmptyBloomFilterException =
-        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[] {1}, -1, 1));
-    assertThat(nonEmptyBloomFilterException).hasMessageThat().contains("Invalid padding: -1");
+    {
+      IllegalArgumentException emptyBloomFilterException =
+          assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[0], -1, 0));
+      assertThat(emptyBloomFilterException).hasMessageThat().contains("Invalid padding: -1");
+    }
+    {
+      IllegalArgumentException nonEmptyBloomFilterException =
+          assertThrows(
+              IllegalArgumentException.class, () -> new BloomFilter(new byte[] {1}, -1, 1));
+      assertThat(nonEmptyBloomFilterException).hasMessageThat().contains("Invalid padding: -1");
+    }
   }
 
   @Test
   public void constructorShouldThrowIAEOnNegativeHashCount() {
-    IllegalArgumentException emptyBloomFilterException =
-        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[0], 0, -1));
-    assertThat(emptyBloomFilterException).hasMessageThat().contains("Invalid hash count: -1");
-    IllegalArgumentException nonEmptyBloomFilterException =
-        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[] {1}, 1, -1));
-    assertThat(nonEmptyBloomFilterException).hasMessageThat().contains("Invalid hash count: -1");
+    {
+      IllegalArgumentException emptyBloomFilterException =
+          assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[0], 0, -1));
+      assertThat(emptyBloomFilterException).hasMessageThat().contains("Invalid hash count: -1");
+    }
+    {
+      IllegalArgumentException nonEmptyBloomFilterException =
+          assertThrows(
+              IllegalArgumentException.class, () -> new BloomFilter(new byte[] {1}, 1, -1));
+      assertThat(nonEmptyBloomFilterException).hasMessageThat().contains("Invalid hash count: -1");
+    }
   }
 
   @Test
@@ -128,19 +142,27 @@ public class BloomFilterTest {
 
   @Test
   public void mightContainWithEmptyStringMightReturnFalsePositiveResult() {
-    BloomFilter bloomFilter1 = new BloomFilter(new byte[] {1}, 1, 1);
-    assertFalse(bloomFilter1.mightContain(""));
-    BloomFilter bloomFilter2 = new BloomFilter(new byte[] {(byte) 255}, 0, 16);
-    assertTrue(bloomFilter2.mightContain(""));
+    {
+      BloomFilter bloomFilter1 = new BloomFilter(new byte[] {1}, 1, 1);
+      assertFalse(bloomFilter1.mightContain(""));
+    }
+    {
+      BloomFilter bloomFilter2 = new BloomFilter(new byte[] {(byte) 255}, 0, 16);
+      assertTrue(bloomFilter2.mightContain(""));
+    }
   }
 
   @Test
   public void bloomFilterToString() {
-    BloomFilter emptyBloomFilter = new BloomFilter(new byte[0], 0, 0);
-    assertEquals(emptyBloomFilter.toString(), "BloomFilter{hashCount=0, size=0, bitmap=\"\"}");
-    BloomFilter nonEmptyBloomFilter = new BloomFilter(new byte[] {1}, 1, 1);
-    assertEquals(
-        nonEmptyBloomFilter.toString(), "BloomFilter{hashCount=1, size=7, bitmap=\"AQ==\"}");
+    {
+      BloomFilter emptyBloomFilter = new BloomFilter(new byte[0], 0, 0);
+      assertEquals(emptyBloomFilter.toString(), "BloomFilter{hashCount=0, size=0, bitmap=\"\"}");
+    }
+    {
+      BloomFilter nonEmptyBloomFilter = new BloomFilter(new byte[] {1}, 1, 1);
+      assertEquals(
+          nonEmptyBloomFilter.toString(), "BloomFilter{hashCount=1, size=7, bitmap=\"AQ==\"}");
+    }
   }
 
   /**
