@@ -41,7 +41,6 @@ public class PausableExecutorImplTests {
     executor.execute(runnable3);
     testExecutor.stepAll();
 
-    // assertThat(executor.queue).containsExactly(runnable3);
     verify(runnable1, times(1)).run();
     verify(runnable2, times(1)).run();
     verify(runnable3, never()).run();
