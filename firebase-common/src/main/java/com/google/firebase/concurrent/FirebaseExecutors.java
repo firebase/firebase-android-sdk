@@ -36,9 +36,9 @@ public class FirebaseExecutors {
   }
 
   /**
-   * Returns a {@link Executor} that limits the number of running tasks at a given time.
+   * Returns an {@link Executor} that limits the number of running tasks at a given time.
    *
-   * <p>The executor uses delegate in order to {@link Executor#execute(Runnable) execute} each task,
+   * <p>The executor uses the {@code delegate} in order to {@link Executor#execute(Runnable) execute} each task,
    * and does not create any threads of its own.
    *
    * @param delegate {@link Executor} used to execute tasks
