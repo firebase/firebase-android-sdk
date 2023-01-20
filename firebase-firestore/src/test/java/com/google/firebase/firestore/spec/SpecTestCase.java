@@ -1006,6 +1006,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
                   targetData.withResumeToken(
                       ByteString.EMPTY, version(queryDataJson.getInt("readTime")));
             }
+            if (queryDataJson.has("expectedCount")) {
+              targetData = targetData.withExpectedCount(queryDataJson.getInt("expectedCount"));
+            }
 
             expectedActiveTargets.get(targetId).add(targetData);
           }
@@ -1143,6 +1146,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       assertEquals(
           expectedTarget.getResumeToken().toStringUtf8(),
           actualTarget.getResumeToken().toStringUtf8());
+
       if (expectedTarget.getExpectedCount() != null) {
         assertEquals(expectedTarget.getExpectedCount(), actualTarget.getExpectedCount());
       }
