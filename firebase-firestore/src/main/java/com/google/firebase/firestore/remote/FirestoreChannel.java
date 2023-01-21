@@ -27,6 +27,7 @@ import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.util.AsyncQueue;
+import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
 import io.grpc.ClientCall;
 import io.grpc.ForwardingClientCall;
@@ -72,12 +73,15 @@ public class FirestoreChannel {
   private final CredentialsProvider<String> appCheckProvider;
 
   /** Manages the gRPC channel and provides all gRPC ClientCalls. */
-  private final GrpcCallProvider callProvider;
+  private GrpcCallProvider callProvider;
 
   /** The value to use as resource prefix header. */
   private final String resourcePrefixValue;
 
   private final GrpcMetadataProvider metadataProvider;
+
+  private final Context context;
+  private final DatabaseInfo databaseInfo;
 
   FirestoreChannel(
       AsyncQueue asyncQueue,
@@ -90,6 +94,9 @@ public class FirestoreChannel {
     this.metadataProvider = metadataProvider;
     this.authProvider = authProvider;
     this.appCheckProvider = appCheckProvider;
+
+    this.context = context;
+    this.databaseInfo = databaseInfo;
 
     FirestoreCallCredentials firestoreHeaders =
         new FirestoreCallCredentials(authProvider, appCheckProvider);
@@ -106,6 +113,15 @@ public class FirestoreChannel {
    */
   public void shutdown() {
     callProvider.shutdown();
+  }
+
+  public void resetChannel() {
+    callProvider.shutdown();
+    callProvider = null;
+
+    FirestoreCallCredentials firestoreHeaders =
+        new FirestoreCallCredentials(authProvider, appCheckProvider);
+    callProvider = new GrpcCallProvider(asyncQueue, context, databaseInfo, firestoreHeaders);
   }
 
   /**
@@ -159,6 +175,10 @@ public class FirestoreChannel {
                   // `onReady` indicates that the channel can transmit accepted messages directly,
                   // without needing to "excessively" buffer them internally. We currently
                   // ignore this notification in our client.
+                  Logger.debug(
+                      getClass().getSimpleName(),
+                      "(%x) Bidi stream ready",
+                      System.identityHashCode(this));
                 }
               },
               requestHeaders());

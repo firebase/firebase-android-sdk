@@ -174,6 +174,8 @@ public class IntegrationTestUtil {
       settings.setHost(provider.firestoreHost(backend));
     }
 
+    // settings.setProxy("10.0.2.2:8888");
+
     settings.setPersistenceEnabled(true);
 
     return settings.build();

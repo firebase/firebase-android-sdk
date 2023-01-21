@@ -1241,4 +1241,27 @@ public class FirestoreTest {
 
     assertTrue(awaitsPendingWrites.isComplete() && awaitsPendingWrites.isSuccessful());
   }
+
+  @Test
+  public void testUserRefreshALOT() {
+    FirebaseFirestore.setLoggingEnabled(true);
+    DocumentReference documentReference = testCollection("abc").document("123");
+    documentReference.set(map("foo", "bar"));
+    FirebaseFirestore firestore = documentReference.getFirestore();
+
+    for (int i = 0; i < 20; i++) {
+      /*TaskCompletionSource<String> tcs = new TaskCompletionSource();
+      final String[] v = {null};
+      ListenerRegistration reg = documentReference.addSnapshotListener(MetadataChanges.INCLUDE, (value, error) -> {
+        v[0] = value.getString("foo");
+        if(!value.getMetadata().isFromCache()) {
+          tcs.trySetResult(v[0]);
+        }
+      });
+      waitFor(tcs.getTask());
+       */
+      waitFor(documentReference.get(Source.SERVER));
+      testChangeUserTo(User.UNAUTHENTICATED);
+    }
+  }
 }

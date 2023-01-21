@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.core;
 
 import com.google.firebase.firestore.ListenerRegistration;
+import com.google.firebase.firestore.util.Logger;
 
 /** Implements the ListenerRegistration interface by removing a query from the listener. */
 public class ListenerRegistrationImpl implements ListenerRegistration {
@@ -38,6 +39,11 @@ public class ListenerRegistrationImpl implements ListenerRegistration {
 
   @Override
   public void remove() {
+    Logger.debug(
+        "ListenerRegistration",
+        "Removing QueryListener %x, for query %s",
+        System.identityHashCode(queryListener),
+        queryListener.getQuery());
     asyncEventListener.mute();
     client.stopListening(queryListener);
   }

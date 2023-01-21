@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
+import androidx.annotation.NonNull;
 import com.google.firebase.firestore.model.DatabaseId;
 
 /** Contains info about host, project id and database */
@@ -23,6 +24,7 @@ public final class DatabaseInfo {
   private final String persistenceKey;
   private final String host;
   private final boolean sslEnabled;
+  private String proxy = null;
 
   /**
    * Constructs a new DatabaseInfo.
@@ -41,6 +43,19 @@ public final class DatabaseInfo {
     this.sslEnabled = sslEnabled;
   }
 
+  public DatabaseInfo(
+      DatabaseId databaseId,
+      String persistenceKey,
+      String host,
+      boolean sslEnabled,
+      @NonNull String proxy) {
+    this.databaseId = databaseId;
+    this.persistenceKey = persistenceKey;
+    this.host = host;
+    this.sslEnabled = sslEnabled;
+    this.proxy = proxy;
+  }
+
   public DatabaseId getDatabaseId() {
     return databaseId;
   }
@@ -57,8 +72,12 @@ public final class DatabaseInfo {
     return sslEnabled;
   }
 
+  public String getProxy() {
+    return proxy;
+  }
+
   @Override
   public String toString() {
-    return "DatabaseInfo(databaseId:" + databaseId + " host:" + host + ")";
+    return "DatabaseInfo(databaseId:" + databaseId + " host:" + host + " proxy:" + proxy + " )";
   }
 }

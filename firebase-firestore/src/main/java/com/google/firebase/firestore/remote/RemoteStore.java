@@ -277,13 +277,17 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   /** Temporarily disables the network. The network can be re-enabled using enableNetwork(). */
   public void disableNetwork() {
     networkEnabled = false;
-    disableNetworkInternal();
+    disableNetworkInternal(false);
 
     // Set the OnlineState to OFFLINE so get()s return from cache, etc.
     onlineStateTracker.updateState(OnlineState.OFFLINE);
   }
 
-  private void disableNetworkInternal() {
+  private void disableNetworkInternal(boolean resetChannel) {
+    if (resetChannel) {
+      watchStream.resetChannel();
+    }
+
     watchStream.stop();
     writeStream.stop();
 
@@ -297,7 +301,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   private void restartNetwork() {
     networkEnabled = false;
-    disableNetworkInternal();
+    disableNetworkInternal(true);
     onlineStateTracker.updateState(OnlineState.UNKNOWN);
     writeStream.inhibitBackoff();
     watchStream.inhibitBackoff();
@@ -321,7 +325,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     Logger.debug(LOG_TAG, "Shutting down");
     connectivityMonitor.shutdown();
     networkEnabled = false;
-    this.disableNetworkInternal();
+    this.disableNetworkInternal(false);
     datastore.shutdown();
     // Set the OnlineState to UNKNOWN (rather than OFFLINE) to avoid potentially triggering
     // spurious listener events with cached data, etc.
@@ -493,10 +497,15 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
           !shouldStartWatchStream(), "Watch stream was stopped gracefully while still needed.");
     }
 
+    Logger.debug(LOG_TAG, "RemoteStore handling watch close");
+
     cleanUpWatchStreamState();
 
     // If we still need the watch stream, retry the connection.
     if (shouldStartWatchStream()) {
+      Logger.debug(
+          LOG_TAG,
+          "RemoteStore trying restart watch stream with status: " + status.getDescription());
       onlineStateTracker.handleWatchStreamFailure(status);
 
       startWatchStream();

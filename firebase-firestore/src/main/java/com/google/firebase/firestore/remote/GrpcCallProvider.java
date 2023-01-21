@@ -32,10 +32,17 @@ import io.grpc.CallCredentials;
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
 import io.grpc.ConnectivityState;
+import io.grpc.HttpConnectProxiedSocketAddress;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.MethodDescriptor;
+import io.grpc.ProxiedSocketAddress;
+import io.grpc.ProxyDetector;
 import io.grpc.android.AndroidChannelBuilder;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.URI;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
@@ -104,6 +111,27 @@ public class GrpcCallProvider {
       }
     }
 
+    if (databaseInfo.getProxy() != null) {
+      try {
+        URI proxy = new URI("http://" + databaseInfo.getProxy());
+        String host = proxy.getHost();
+        int port = proxy.getPort();
+        channelBuilder.proxyDetector(
+            new ProxyDetector() {
+              @Override
+              public ProxiedSocketAddress proxyFor(SocketAddress targetServerAddress)
+                  throws IOException {
+                return HttpConnectProxiedSocketAddress.newBuilder()
+                    .setTargetAddress((InetSocketAddress) targetServerAddress)
+                    .setProxyAddress(new InetSocketAddress(host, port))
+                    .build();
+              }
+            });
+      } catch (Exception e) {
+        Logger.warn(LOG_TAG, "Ignoring invalid proxy with error: %s", e);
+      }
+    }
+
     // Ensure gRPC recovers from a dead connection. (Not typically necessary, as the OS will
     // usually notify gRPC when a connection dies. But not always. This acts as a failsafe.)
     channelBuilder.keepAliveTime(30, TimeUnit.SECONDS);
@@ -114,6 +142,15 @@ public class GrpcCallProvider {
         AndroidChannelBuilder.usingBuilder(channelBuilder).context(context);
 
     return androidChannelBuilder.build();
+  }
+
+  public Task<Void> resetChannel() {
+    return channelTask.continueWithTask(
+        asyncQueue.getExecutor(),
+        task -> {
+          task.getResult().enterIdle();
+          return null;
+        });
   }
 
   /** Creates a new ClientCall. */
