@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.testutil.Assert.assertThrows;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
@@ -27,6 +26,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.unknownDoc;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;

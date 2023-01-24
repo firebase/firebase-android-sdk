@@ -33,19 +33,17 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     consumerProguardFiles("proguard.txt")
   }
-  sourceSets {
-    getByName("androidTest") {
-      java.srcDirs("src/testUtil")
-    }
-    getByName("test") {
-      java.srcDirs("src/testUtil")
-    }
-  }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
   testOptions.unitTests.isIncludeAndroidResources = true
+  testFixtures {
+    enable = true
+  }
+  lint {
+    ignoreTestFixturesSources = true
+  }
 }
 
 dependencies {
@@ -64,6 +62,9 @@ dependencies {
 
     // FirebaseApp references storage, so storage needs to be on classpath when dokka runs.
     javadocClasspath(project(":firebase-storage"))
+
+    testFixturesImplementation(libs.junit)
+    testFixturesImplementation(project(":firebase-components"))
 
     testImplementation(libs.androidx.test.junit)
     testImplementation(libs.androidx.test.junit)

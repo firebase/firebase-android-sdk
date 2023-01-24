@@ -21,7 +21,6 @@ import static com.google.firebase.firestore.Filter.greaterThan;
 import static com.google.firebase.firestore.Filter.inArray;
 import static com.google.firebase.firestore.Filter.notInArray;
 import static com.google.firebase.firestore.Filter.or;
-import static com.google.firebase.firestore.testutil.Assert.assertThrows;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testAlternateFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
@@ -34,6 +33,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 

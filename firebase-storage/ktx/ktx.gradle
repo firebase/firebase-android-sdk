@@ -36,10 +36,7 @@ android {
     }
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
-        test.java {
-            srcDir 'src/test/kotlin'
-            srcDir '../src/testUtil/java'
-        }
+        test.java.srcDirs += 'src/test/kotlin'
         androidTest.java.srcDirs += 'src/androidTest/kotlin'
     }
     testOptions.unitTests.includeAndroidResources = true
@@ -69,6 +66,7 @@ dependencies {
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'androidx.test:runner:1.2.0'
 
+    testImplementation testFixtures(project(":firebase-storage"))
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"

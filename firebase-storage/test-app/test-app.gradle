@@ -28,14 +28,6 @@ android {
     multiDexEnabled true
   }
 
-  sourceSets {
-    main {
-      java {
-        srcDir "../src/testUtil/java"
-      }
-    }
-  }
-
   compileOptions {
     sourceCompatibility JavaVersion.VERSION_1_8
     targetCompatibility JavaVersion.VERSION_1_8
@@ -47,6 +39,7 @@ dependencies {
     exclude group: 'com.google.firebase', module: 'firebase-common'
     exclude group: 'com.google.firebase', module: 'firebase-components'
   }
+  implementation testFixtures(project(":firebase-storage"))
 
   // We intentionally use an open ended version to pick up any SNAPSHOT
   // versions published to the root project' s build/ directory.

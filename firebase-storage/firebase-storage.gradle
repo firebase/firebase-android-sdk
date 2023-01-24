@@ -43,31 +43,13 @@ android {
         debug {
         }
     }
-    sourceSets {
-        androidTest {
-            java {
-                srcDir 'src/androidTest/java'
-                srcDir 'src/testUtil/java'
-                //We need this since FirebaseApp rule is externalized
-                //TODO(ashwinraghav) b/113079738
-                srcDir '../firebase-common/src/testUtil'
-            }
-        }
-
-        test {
-            java {
-                srcDir 'src/testUtil/java'
-                //We need this since FirebaseApp rule is externalized
-                //TODO(ashwinraghav) b/113079738
-                srcDir '../firebase-common/src/testUtil'
-            }
-            resources {
-                srcDirs "src/test/resources"
-            }
-        }
-
-        testOptions.unitTests.includeAndroidResources = true
+    testFixtures {
+        enable = true
     }
+    lint {
+        ignoreTestFixturesSources = true
+    }
+    testOptions.unitTests.includeAndroidResources = true
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -89,11 +71,15 @@ dependencies {
     javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
 
+    testFixturesImplementation 'com.google.android.gms:play-services-base:18.0.1'
+    testFixturesImplementation libs.errorprone.annotations
+
     androidTestImplementation "androidx.annotation:annotation:1.1.0"
     androidTestImplementation 'androidx.test:rules:1.2.0'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'junit:junit:4.12'
+    androidTestImplementation testFixtures(project(":firebase-common"))
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.25.0'
@@ -102,6 +88,7 @@ dependencies {
     testImplementation 'androidx.test:rules:1.2.0'
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation project(':appcheck:firebase-appcheck')
+    testImplementation testFixtures(project(":firebase-common"))
 }
 
 // ==========================================================================

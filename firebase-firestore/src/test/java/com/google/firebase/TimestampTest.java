@@ -15,7 +15,7 @@
 package com.google.firebase;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.firestore.testutil.Assert.assertThrows;
+import static org.junit.Assert.assertThrows;
 
 import android.os.Parcel;
 import java.util.Date;

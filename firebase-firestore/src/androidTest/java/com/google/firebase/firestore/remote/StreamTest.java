@@ -15,11 +15,11 @@
 package com.google.firebase.firestore.remote;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.firestore.testutil.Assert.assertThrows;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.setMutation;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;

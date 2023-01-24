@@ -15,11 +15,11 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
+import static org.junit.Assert.assertThrows;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.firestore.testutil.Assert;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.concurrent.ExecutionException;
 import org.junit.After;
@@ -75,13 +75,13 @@ public class IndexingTest {
   public void testBadJsonDoesNotCrashClient() {
     FirebaseFirestore db = testFirestore();
 
-    Assert.assertThrows(IllegalArgumentException.class, () -> db.setIndexConfiguration("{,"));
+    assertThrows(IllegalArgumentException.class, () -> db.setIndexConfiguration("{,"));
   }
 
   @Test
   public void testBadIndexDoesNotCrashClient() {
     FirebaseFirestore db = testFirestore();
-    Assert.assertThrows(
+    assertThrows(
         IllegalArgumentException.class,
         () ->
             db.setIndexConfiguration(
