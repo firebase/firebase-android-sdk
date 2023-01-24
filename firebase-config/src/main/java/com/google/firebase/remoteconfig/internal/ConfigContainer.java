@@ -166,20 +166,10 @@ public class ConfigContainer {
     // Make a copy of the other config before modifying it
     JSONObject otherConfig = ConfigContainer.copyOf(other.containerJson).getConfigs();
 
-    // Experiments aren't associated with params, so we can just compare arrays once
-    Boolean experimentsChanged = !this.getAbtExperiments().equals(other.getAbtExperiments());
-
     Set<String> changed = new HashSet<>();
     Iterator<String> keys = this.getConfigs().keys();
     while (keys.hasNext()) {
       String key = keys.next();
-
-      // If the ABT Experiments have changed, add all keys since we don't know which keys the ABT
-      // experiments apply to
-      if (experimentsChanged) {
-        changed.add(key);
-        continue;
-      }
 
       // If the other config doesn't have the key
       if (!other.getConfigs().has(key)) {

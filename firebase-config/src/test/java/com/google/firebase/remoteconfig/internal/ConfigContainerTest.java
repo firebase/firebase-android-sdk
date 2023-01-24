@@ -138,7 +138,7 @@ public class ConfigContainerTest {
   }
 
   @Test
-  public void getChangedParams_changedExperimentsMetadata_returnsAllParamKeys() throws Exception {
+  public void getChangedParams_changedExperimentsMetadata_returnsNoParamKeys() throws Exception {
     ConfigContainer config =
         ConfigContainer.newBuilder()
             .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
@@ -152,7 +152,7 @@ public class ConfigContainerTest {
 
     Set<String> changedParams = config.getChangedParams(other);
 
-    assertThat(changedParams).containsExactly("string_param");
+    assertThat(changedParams).isEmpty();
   }
 
   @Test
