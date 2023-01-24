@@ -319,7 +319,6 @@ public class ConfigRealtimeHttpClient {
             0,
             metadataClient.getRealtimeBackoffMetadata().getBackoffEndTime().getTime()
                 - currentTime.getTime());
-    Log.i(TAG, "re" + retrySeconds);
     makeRealtimeHttpConnection(retrySeconds);
   }
 
@@ -437,9 +436,9 @@ public class ConfigRealtimeHttpClient {
       if (responseCode == null
           || responseCode == HttpURLConnection.HTTP_OK
           || isStatusCodeRetryable(responseCode)) {
-        if (responseCode == null || isStatusCodeRetryable(responseCode)) {
+        if (responseCode == null || isStatusCodeRetryable(responseCode) {
           updateBackoffMetadataWithLastFailedStreamConnectionTime(
-                  new Date(clock.currentTimeMillis()));
+              new Date(clock.currentTimeMillis()));
         }
         retryHttpConnection();
       } else {
