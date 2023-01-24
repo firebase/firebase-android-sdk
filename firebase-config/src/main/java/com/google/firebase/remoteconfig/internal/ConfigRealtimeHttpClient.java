@@ -22,7 +22,6 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
@@ -36,6 +35,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import com.google.firebase.remoteconfig.BuildConfig;
 import com.google.firebase.remoteconfig.ConfigUpdate;
 import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
@@ -87,8 +87,10 @@ public class ConfigRealtimeHttpClient {
   @GuardedBy("this")
   private boolean isRealtimeDisabled;
 
-  private final int ORIGINAL_RETRIES = 7;
+  /** Flag to indicate whether or not the app is in the background or not. */
+  private boolean isInBackground;
 
+  private final int ORIGINAL_RETRIES = 7;
   private final ScheduledExecutorService scheduledExecutorService;
   private final ConfigFetchHandler configFetchHandler;
   private final FirebaseApp firebaseApp;
@@ -131,6 +133,7 @@ public class ConfigRealtimeHttpClient {
     this.namespace = namespace;
     this.metadataClient = metadataClient;
     this.isRealtimeDisabled = false;
+    this.isInBackground = false;
   }
 
   /**
@@ -206,7 +209,7 @@ public class ConfigRealtimeHttpClient {
     body.put(
         "lastKnownVersionNumber", Long.toString(configFetchHandler.getTemplateVersionNumber()));
     body.put("appId", firebaseApp.getOptions().getApplicationId());
-    body.put("sdkVersion", Integer.toString(Build.VERSION.SDK_INT));
+    body.put("sdkVersion", BuildConfig.VERSION_NAME);
 
     return new JSONObject(body);
   }
@@ -218,6 +221,11 @@ public class ConfigRealtimeHttpClient {
     outputStream.write(body);
     outputStream.flush();
     outputStream.close();
+  }
+
+  private synchronized void resetRetryParameters() {
+    httpRetrySeconds = random.nextInt(5) + 1;
+    httpRetriesRemaining = ORIGINAL_RETRIES;
   }
 
   private synchronized void propagateErrors(FirebaseRemoteConfigException exception) {
@@ -265,9 +273,12 @@ public class ConfigRealtimeHttpClient {
   private synchronized void enableBackoff() {
     this.isRealtimeDisabled = true;
   }
-
+  
   private synchronized boolean canMakeHttpStreamConnection() {
-    return !listeners.isEmpty() && httpURLConnection == null && !isRealtimeDisabled;
+    return !listeners.isEmpty()
+        && httpURLConnection == null
+        && !isRealtimeDisabled
+        && !isInBackground;
   }
 
   private String getRealtimeURL(String namespace) {
@@ -299,16 +310,26 @@ public class ConfigRealtimeHttpClient {
     return httpURLConnection;
   }
 
+  /** Initial Http stream attempt that makes call without waiting. */
+  public void startHttpConnection() {
+    makeRealtimeHttpConnection(/*retrySeconds*/ 0);
+  }
+
   /** Retries HTTP stream connection asyncly in random time intervals. */
   @SuppressLint("VisibleForTests")
-  public synchronized void retryHTTPConnection() {
-    if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
-      Date currentTime = new Date(clock.currentTimeMillis());
-      long retrySeconds =
+  public synchronized void retryHttpConnection() {
+     Date currentTime = new Date(clock.currentTimeMillis());
+     long retrySeconds =
           Math.max(
               0,
               metadataClient.getRealtimeBackoffMetadata().getBackoffEndTime().getTime()
                   - currentTime.getTime());
+
+    makeRealtimeHttpConnection(httpRetrySeconds);
+  }
+
+  private synchronized void makeRealtimeHttpConnection(long retrySeconds) {
+    if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
       httpRetriesRemaining--;
       scheduledExecutorService.schedule(
           new Runnable() {
@@ -319,7 +340,7 @@ public class ConfigRealtimeHttpClient {
           },
           retrySeconds,
           TimeUnit.MILLISECONDS);
-    } else {
+    } else if (!isInBackground) {
       propagateErrors(
           new FirebaseRemoteConfigClientException(
               "Unable to connect to the server. Check your connection and try again.",
@@ -327,9 +348,8 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  synchronized void stopRealtime() {
-    closeRealtimeHttpStream();
-    scheduledExecutorService.shutdownNow();
+  void setRealtimeBackgroundState(boolean backgroundState) {
+    isInBackground = backgroundState;
   }
 
   /**
@@ -422,9 +442,11 @@ public class ConfigRealtimeHttpClient {
       if (responseCode == null
           || responseCode == HttpURLConnection.HTTP_OK
           || isStatusCodeRetryable(responseCode)) {
-        updateBackoffMetadataWithLastFailedStreamConnectionTime(
-            new Date(clock.currentTimeMillis()));
-        retryHTTPConnection();
+        if responseCode == null || isStatusCodeRetryable(responseCode) {
+          updateBackoffMetadataWithLastFailedStreamConnectionTime(
+              new Date(clock.currentTimeMillis()));
+        }
+        retryHttpConnection();
       } else {
         propagateErrors(
             new FirebaseRemoteConfigServerException(
@@ -446,7 +468,9 @@ public class ConfigRealtimeHttpClient {
       // See github.com/firebase/firebase-android-sdk/pull/808.
       try {
         this.httpURLConnection.getInputStream().close();
-        this.httpURLConnection.getErrorStream().close();
+        if (this.httpURLConnection.getErrorStream() != null) {
+          this.httpURLConnection.getErrorStream().close();
+        }
       } catch (IOException e) {
       }
       this.httpURLConnection = null;

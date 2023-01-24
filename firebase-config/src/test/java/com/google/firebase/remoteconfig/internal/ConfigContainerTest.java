@@ -113,6 +113,31 @@ public class ConfigContainerTest {
   }
 
   @Test
+  public void getChangedParams_sameP13nMetadata_returnsEmptySet() throws Exception {
+    ConfigContainer config =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .withPersonalizationMetadata(
+                new JSONObject(
+                    ImmutableMap.of(
+                        "string_param", generateP13nMetadata("p13n-id-1", "1", "id1", "P13N"))))
+            .build();
+
+    ConfigContainer other =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .withPersonalizationMetadata(
+                new JSONObject(
+                    ImmutableMap.of(
+                        "string_param", generateP13nMetadata("p13n-id-1", "1", "id1", "P13N"))))
+            .build();
+
+    Set<String> changedParams = config.getChangedParams(other);
+
+    assertThat(changedParams).isEmpty();
+  }
+
+  @Test
   public void getChangedParams_changedExperimentsMetadata_returnsAllParamKeys() throws Exception {
     ConfigContainer config =
         ConfigContainer.newBuilder()
