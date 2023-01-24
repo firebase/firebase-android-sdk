@@ -240,14 +240,14 @@ public class ConfigAutoFetch {
                 activatedConfigs = ConfigContainer.newBuilder().build();
               }
 
-              Set<String> updatedParams =
+              Set<String> updatedKeys =
                   activatedConfigs.getChangedParams(fetchResponse.getFetchedConfigs());
-              if (updatedParams.isEmpty()) {
+              if (updatedKeys.isEmpty()) {
                 Log.d(TAG, "Config was fetched, but no params changed.");
                 return Tasks.forResult(null);
               }
 
-              ConfigUpdate configUpdate = ConfigUpdate.create(updatedParams);
+              ConfigUpdate configUpdate = ConfigUpdate.create(updatedKeys);
               executeAllListenerCallbacks(configUpdate);
               return Tasks.forResult(null);
             });
