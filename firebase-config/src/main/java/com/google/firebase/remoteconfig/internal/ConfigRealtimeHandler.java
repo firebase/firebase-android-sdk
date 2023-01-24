@@ -71,10 +71,6 @@ public class ConfigRealtimeHandler {
     this.scheduledExecutorService = scheduledExecutorService;
   }
 
-  private synchronized boolean canCreateRealtimeHttpClientTask() {
-    return !listeners.isEmpty();
-  }
-
   // Kicks off Http stream listening and autofetch
   private synchronized void beginRealtime() {
     if (!listeners.isEmpty()) {
