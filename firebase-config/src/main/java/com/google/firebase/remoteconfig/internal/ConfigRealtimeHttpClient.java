@@ -436,7 +436,7 @@ public class ConfigRealtimeHttpClient {
       if (responseCode == null
           || responseCode == HttpURLConnection.HTTP_OK
           || isStatusCodeRetryable(responseCode)) {
-        if (responseCode == null || isStatusCodeRetryable(responseCode) {
+        if (responseCode == null || isStatusCodeRetryable(responseCode)) {
           updateBackoffMetadataWithLastFailedStreamConnectionTime(
               new Date(clock.currentTimeMillis()));
         }
