@@ -652,7 +652,7 @@ public class FirebaseRemoteConfig {
    *
    * @hide
    */
-  void changeConfigUpdateBackgroundState(boolean backgroundState) {
+  void setConfigUpdateBackgroundState(boolean backgroundState) {
     configRealtimeHandler.setBackgroundState(backgroundState);
   }
 

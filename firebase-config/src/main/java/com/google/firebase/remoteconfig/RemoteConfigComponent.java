@@ -335,7 +335,7 @@ public class RemoteConfigComponent {
 
   private static synchronized void notifyRCInstances(boolean isInBackground) {
     for (FirebaseRemoteConfig frc : frcNamespaceInstancesStatic.values()) {
-      frc.changeConfigUpdateBackgroundState(isInBackground);
+      frc.setConfigUpdateBackgroundState(isInBackground);
     }
   }
 

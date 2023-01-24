@@ -77,7 +77,7 @@ public class ConfigRealtimeHandler {
 
   // Kicks off Http stream listening and autofetch
   private synchronized void beginRealtime() {
-    if (canCreateRealtimeHttpClientTask()) {
+    if (!listeners.isEmpty()) {
       configRealtimeHttpClient.startHttpConnection();
     }
   }
@@ -86,9 +86,7 @@ public class ConfigRealtimeHandler {
   public synchronized ConfigUpdateListenerRegistration addRealtimeConfigUpdateListener(
       @NonNull ConfigUpdateListener configUpdateListener) {
     listeners.add(configUpdateListener);
-    if (canCreateRealtimeHttpClientTask()) {
-      beginRealtime();
-    }
+    beginRealtime();
     return new ConfigUpdateListenerRegistrationInternal(configUpdateListener);
   }
 

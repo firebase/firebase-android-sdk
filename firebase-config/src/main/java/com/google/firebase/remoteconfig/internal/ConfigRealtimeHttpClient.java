@@ -77,10 +77,7 @@ public class ConfigRealtimeHttpClient {
   @GuardedBy("this")
   private boolean isRealtimeDisabled;
 
-  /**
-   * Controls whether or not this client should retry. Does not need to be synchronized because
-   * ordering of thread actions is not important since all connections will timeout after 5 minutes.
-   */
+  /** Flag to indicate whether or not the app is in the background or not. */
   private boolean isInBackground;
 
   private final int ORIGINAL_RETRIES = 7;
@@ -263,9 +260,9 @@ public class ConfigRealtimeHttpClient {
     return httpURLConnection;
   }
 
-  /** Initial Http stream attempt. */
+  /** Initial Http stream attempt that makes call without waiting. */
   public void startHttpConnection() {
-    tryHttpConnection(0);
+    makeRealtimeHttpConnection(/*retrySeconds*/ 0);
   }
 
   /** Retries HTTP stream connection asyncly in random time intervals. */
@@ -275,10 +272,10 @@ public class ConfigRealtimeHttpClient {
       httpRetrySeconds *= getRetryMultiplier();
     }
 
-    tryHttpConnection(httpRetrySeconds);
+    makeRealtimeHttpConnection(httpRetrySeconds);
   }
 
-  private synchronized void tryHttpConnection(long retrySeconds) {
+  private synchronized void makeRealtimeHttpConnection(long retrySeconds) {
     if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
       httpRetriesRemaining--;
       scheduledExecutorService.schedule(
