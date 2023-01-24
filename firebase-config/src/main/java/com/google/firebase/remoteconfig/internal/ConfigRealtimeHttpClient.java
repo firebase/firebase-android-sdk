@@ -313,14 +313,13 @@ public class ConfigRealtimeHttpClient {
   /** Retries HTTP stream connection asyncly in random time intervals. */
   @SuppressLint("VisibleForTests")
   public synchronized void retryHttpConnection() {
-      Date currentTime = new Date(clock.currentTimeMillis());
-      long retrySeconds =
-              Math.max(
-                      0,
-                      metadataClient.getRealtimeBackoffMetadata().getBackoffEndTime().getTime()
-                              - currentTime.getTime());
-
-
+    Date currentTime = new Date(clock.currentTimeMillis());
+    long retrySeconds =
+        Math.max(
+            0,
+            metadataClient.getRealtimeBackoffMetadata().getBackoffEndTime().getTime()
+                - currentTime.getTime());
+    Log.i(TAG, "re" + retrySeconds);
     makeRealtimeHttpConnection(retrySeconds);
   }
 
@@ -334,8 +333,8 @@ public class ConfigRealtimeHttpClient {
               beginRealtimeHttpStream();
             }
           },
-              retrySeconds,
-              TimeUnit.MILLISECONDS);
+          retrySeconds,
+          TimeUnit.MILLISECONDS);
     } else if (!isInBackground) {
       propagateErrors(
           new FirebaseRemoteConfigClientException(
@@ -438,8 +437,10 @@ public class ConfigRealtimeHttpClient {
       if (responseCode == null
           || responseCode == HttpURLConnection.HTTP_OK
           || isStatusCodeRetryable(responseCode)) {
-        updateBackoffMetadataWithLastFailedStreamConnectionTime(
-            new Date(clock.currentTimeMillis()));
+        if (responseCode == null || isStatusCodeRetryable(responseCode)) {
+          updateBackoffMetadataWithLastFailedStreamConnectionTime(
+                  new Date(clock.currentTimeMillis()));
+        }
         retryHttpConnection();
       } else {
         propagateErrors(
