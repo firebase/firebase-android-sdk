@@ -1,4 +1,6 @@
 [versions]
+# javalite, protoc and protobuffjavautil versions should be in sync while updating and
+# it needs to match the protobuff version which grpc has transitive dependency on.
 android-lint = "30.3.1"
 autovalue = "1.10.1"
 coroutines = "1.6.4"
@@ -9,6 +11,7 @@ kotlin = "1.7.10"
 protoc = "3.21.7"
 robolectric = "4.9"
 truth = "1.1.2"
+protobuffjavautil = "3.21.7"
 
 [libraries]
 android-lint = { module = "com.android.tools.lint:lint", version.ref = "android-lint"}
