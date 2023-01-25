@@ -23,6 +23,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Nonnull;
+
 /**
  * Represents cached documents received from the remote backend.
  *
@@ -87,5 +89,5 @@ interface RemoteDocumentCache {
    * @return A newly created map with the set of documents in the collection.
    */
   Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, Set<DocumentKey> mutatedKeys);
+      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys);
 }

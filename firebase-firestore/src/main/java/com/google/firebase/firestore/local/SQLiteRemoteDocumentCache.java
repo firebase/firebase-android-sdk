@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 interface DocumentFilter {
@@ -251,7 +253,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, Set<DocumentKey> mutatedKeys) {
+      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
     return getAll(
         Collections.singletonList(query.getPath()),
         offset,
