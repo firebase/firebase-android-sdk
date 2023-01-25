@@ -60,7 +60,7 @@ To build the debug APK, upload it to App Distribution, and install it on the run
 1. Run the following command from the repo's root directory:
 
     ```
-    ./gradlew clean :firebase-appdistribution:test-app:build :firebase-appdistribution:test-app:appDistributionUploadDebug && adb install firebase-appdistribution/test-app/build/outputs/apk/debug/test-app-debug.apk
+    ./gradlew clean :firebase-appdistribution:test-app:build :firebase-appdistribution:test-app:appDistributionUploadBetaDebug && adb install firebase-appdistribution/test-app/build/outputs/apk/debug/test-app-debug.apk
     ```
    
 This will build the debug variant of the app (which has the full SDK), upload it to App Distribution, and install it on the running emulator. Run the app in the emulator to test. As an alternative you can always download it using App Distribution, but using `adb` is just faster.
