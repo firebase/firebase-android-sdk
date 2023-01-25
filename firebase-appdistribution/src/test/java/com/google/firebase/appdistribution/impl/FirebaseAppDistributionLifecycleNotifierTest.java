@@ -71,7 +71,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     Task<Void> task = lifecycleNotifier.consumeForegroundActivity(consumer);
 
     // Simulate an activity resuming
-    lifecycleNotifier.onActivityResumed(activity);
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(activity);
 
     assertThat(task.isComplete()).isTrue();
     assertThat(task.isSuccessful()).isTrue();
@@ -83,7 +83,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
   public void consumeForegroundActivity_withCurrentActivity_succeedsAndCallsConsumer() {
     // Resume an activity so there is a current foreground activity already when
     // consumeForegroundActivity is called
-    lifecycleNotifier.onActivityResumed(activity);
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(activity);
 
     ActivityConsumer consumer = mock(ActivityConsumer.class);
     Task<Void> task = lifecycleNotifier.consumeForegroundActivity(consumer);
@@ -102,7 +102,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     Task<Void> task = lifecycleNotifier.consumeForegroundActivity(consumer);
 
     // Simulate an activity resuming
-    lifecycleNotifier.onActivityResumed(activity);
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(activity);
 
     awaitTaskFailure(task, Status.UNKNOWN, "Unknown", consumerException);
   }
@@ -115,7 +115,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     Task<String> task = lifecycleNotifier.applyToForegroundActivity(function);
 
     // Simulate an activity resuming
-    lifecycleNotifier.onActivityResumed(activity);
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(activity);
 
     assertThat(task.isComplete()).isTrue();
     assertThat(task.isSuccessful()).isTrue();
@@ -129,7 +129,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     when(function.apply(activity)).thenReturn("return-value");
     // Resume an activity so there is a current foreground activity already when
     // applyToForegroundActivity is called
-    lifecycleNotifier.onActivityResumed(activity);
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(activity);
 
     Task<String> task = lifecycleNotifier.applyToForegroundActivity(function);
 
@@ -147,7 +147,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     Task<String> task = lifecycleNotifier.applyToForegroundActivity(function);
 
     // Simulate an activity resuming
-    lifecycleNotifier.onActivityResumed(activity);
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(activity);
 
     awaitTaskFailure(task, Status.UNKNOWN, "Unknown", functionException);
   }
@@ -157,7 +157,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
       throws Exception {
     // Resume an activity so there is a current foreground activity already when
     // applyToForegroundActivityTask is called
-    lifecycleNotifier.onActivityResumed(activity);
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(activity);
 
     SuccessContinuation<Activity, String> continuation = mock(SuccessContinuation.class);
     when(continuation.then(activity)).thenReturn(Tasks.forResult("result"));
@@ -176,7 +176,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     Task<String> task = lifecycleNotifier.applyToForegroundActivityTask(continuation);
 
     // Simulate an activity resuming
-    lifecycleNotifier.onActivityResumed(activity);
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(activity);
 
     assertThat(task.isComplete()).isTrue();
     assertThat(task.isSuccessful()).isTrue();
@@ -193,7 +193,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     Task<String> task = lifecycleNotifier.applyToForegroundActivityTask(continuation);
 
     // Simulate an activity resuming
-    lifecycleNotifier.onActivityResumed(activity);
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(activity);
 
     awaitTaskFailure(task, Status.AUTHENTICATION_CANCELED, "exception in continuation task");
   }
@@ -207,7 +207,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     Task<String> task = lifecycleNotifier.applyToForegroundActivityTask(continuation);
 
     // Simulate an activity resuming
-    lifecycleNotifier.onActivityResumed(activity);
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(activity);
 
     awaitTaskFailure(task, Status.UNKNOWN, "Unknown", continuationException);
   }
@@ -221,7 +221,7 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
     Task<String> task = lifecycleNotifier.applyToForegroundActivityTask(continuation);
 
     // Simulate an activity resuming
-    lifecycleNotifier.onActivityResumed(activity);
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(activity);
 
     assertThat(task.isSuccessful()).isFalse();
     assertThat(task.getException()).isInstanceOf(RuntimeException.class);
@@ -234,7 +234,8 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
       throws FirebaseAppDistributionException {
     NullableActivityFunction<String> function = mock(NullableActivityFunction.class);
     when(function.apply(any())).thenReturn("return-value");
-    lifecycleNotifier.onActivityResumed(activity); // Current activity is a TestActivity
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(
+        activity); // Current activity is a TestActivity
 
     Task<String> task =
         lifecycleNotifier.applyToNullableForegroundActivity(OtherTestActivity.class, function);
@@ -251,9 +252,11 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
       throws FirebaseAppDistributionException {
     NullableActivityFunction<String> function = mock(NullableActivityFunction.class);
     when(function.apply(any())).thenReturn("return-value");
-    lifecycleNotifier.onActivityResumed(activity); // First activity is a TestActivity
-    lifecycleNotifier.onActivityPaused(activity);
-    lifecycleNotifier.onActivityResumed(otherActivity); // Second activity is a OtherTestActivity
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(
+        activity); // First activity is a TestActivity
+    lifecycleNotifier.lifecycleCallbacks.onActivityPaused(activity);
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(
+        otherActivity); // Second activity is a OtherTestActivity
 
     Task<String> task =
         lifecycleNotifier.applyToNullableForegroundActivity(OtherTestActivity.class, function);
@@ -270,10 +273,12 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
       throws FirebaseAppDistributionException {
     NullableActivityFunction<String> function = mock(NullableActivityFunction.class);
     when(function.apply(any())).thenReturn("return-value");
-    lifecycleNotifier.onActivityResumed(activity); // First activity is a TestActivity
-    lifecycleNotifier.onActivityPaused(activity);
-    lifecycleNotifier.onActivityResumed(otherActivity); // Second activity is a OtherTestActivity
-    lifecycleNotifier.onActivityDestroyed(activity);
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(
+        activity); // First activity is a TestActivity
+    lifecycleNotifier.lifecycleCallbacks.onActivityPaused(activity);
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(
+        otherActivity); // Second activity is a OtherTestActivity
+    lifecycleNotifier.lifecycleCallbacks.onActivityDestroyed(activity);
 
     Task<String> task =
         lifecycleNotifier.applyToNullableForegroundActivity(OtherTestActivity.class, function);
@@ -290,7 +295,8 @@ public class FirebaseAppDistributionLifecycleNotifierTest {
       throws FirebaseAppDistributionException {
     NullableActivityFunction<String> function = mock(NullableActivityFunction.class);
     when(function.apply(any())).thenReturn("return-value");
-    lifecycleNotifier.onActivityResumed(activity); // Current activity is a TestActivity
+    lifecycleNotifier.lifecycleCallbacks.onActivityResumed(
+        activity); // Current activity is a TestActivity
 
     Task<String> task =
         lifecycleNotifier.applyToNullableForegroundActivity(TestActivity.class, function);

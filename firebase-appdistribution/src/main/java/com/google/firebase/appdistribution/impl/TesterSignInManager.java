@@ -39,8 +39,11 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.util.List;
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /** Class that handles signing in the tester. */
+// TODO(b/266704696): This currently only supports one FirebaseAppDistribution instance app-wide
+@Singleton
 class TesterSignInManager {
   private static final String TAG = "TesterSignInManager";
 

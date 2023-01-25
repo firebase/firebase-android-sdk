@@ -18,11 +18,13 @@ import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
 
 import android.app.Activity;
 import android.app.Application;
+import android.app.Application.ActivityLifecycleCallbacks;
 import android.os.Bundle;
 import android.os.Looper;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -35,8 +37,8 @@ import java.util.concurrent.Executor;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-@Singleton
-class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLifecycleCallbacks {
+@Singleton // Only one lifecycle notifier is required across the entire app
+class FirebaseAppDistributionLifecycleNotifier {
 
   /** An {@link Executor} that runs tasks on the current thread. */
   private static final Executor DIRECT_EXECUTOR = Runnable::run;
@@ -59,7 +61,11 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   }
 
   @UiThread private final Executor uiThreadExecutor;
+  @VisibleForTesting final LifecycleCallbacks lifecycleCallbacks = new LifecycleCallbacks();
   private final Object lock = new Object();
+
+  @GuardedBy("lock")
+  private boolean lifecycleCallbacksRegistered = false;
 
   @GuardedBy("lock")
   private Activity currentActivity;
@@ -110,6 +116,21 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
 
   interface OnActivityDestroyedListener {
     void onDestroyed(Activity activity);
+  }
+
+  /**
+   * Register for activity lifecycle callbacks for the application.
+   *
+   * <p>This must be called for this class to provide information about activity state.
+   */
+  void registerActivityLifecycleCallbacks(Application application) {
+    synchronized (lock) {
+      // Make sure we register for callbacks only once, so callbacks are not called twice
+      if (!lifecycleCallbacksRegistered) {
+        application.registerActivityLifecycleCallbacks(lifecycleCallbacks);
+        lifecycleCallbacksRegistered = true;
+      }
+    }
   }
 
   /**
@@ -311,67 +332,71 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
     }
   }
 
-  @Override
-  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
-    synchronized (lock) {
-      updateCurrentActivity(activity);
-      for (OnActivityCreatedListener listener : onActivityCreatedListeners) {
-        listener.onCreated(activity);
+  @VisibleForTesting
+  class LifecycleCallbacks implements ActivityLifecycleCallbacks {
+
+    @Override
+    public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
+      synchronized (lock) {
+        updateCurrentActivity(activity);
+        for (OnActivityCreatedListener listener : onActivityCreatedListeners) {
+          listener.onCreated(activity);
+        }
       }
     }
-  }
 
-  @Override
-  public void onActivityStarted(@NonNull Activity activity) {
-    synchronized (lock) {
-      updateCurrentActivity(activity);
-      for (OnActivityStartedListener listener : onActivityStartedListeners) {
-        listener.onStarted(activity);
+    @Override
+    public void onActivityStarted(@NonNull Activity activity) {
+      synchronized (lock) {
+        updateCurrentActivity(activity);
+        for (OnActivityStartedListener listener : onActivityStartedListeners) {
+          listener.onStarted(activity);
+        }
       }
     }
-  }
 
-  @Override
-  public void onActivityResumed(@NonNull Activity activity) {
-    synchronized (lock) {
-      updateCurrentActivity(activity);
-      for (OnActivityResumedListener listener : onActivityResumedListeners) {
-        listener.onResumed(activity);
+    @Override
+    public void onActivityResumed(@NonNull Activity activity) {
+      synchronized (lock) {
+        updateCurrentActivity(activity);
+        for (OnActivityResumedListener listener : onActivityResumedListeners) {
+          listener.onResumed(activity);
+        }
       }
     }
-  }
 
-  @Override
-  public void onActivityPaused(@NonNull Activity activity) {
-    synchronized (lock) {
-      if (currentActivity == activity) {
-        updateCurrentActivity(null);
-      }
-      for (OnActivityPausedListener listener : onActivityPausedListeners) {
-        listener.onPaused(activity);
+    @Override
+    public void onActivityPaused(@NonNull Activity activity) {
+      synchronized (lock) {
+        if (currentActivity == activity) {
+          updateCurrentActivity(null);
+        }
+        for (OnActivityPausedListener listener : onActivityPausedListeners) {
+          listener.onPaused(activity);
+        }
       }
     }
-  }
 
-  @Override
-  public void onActivityStopped(@NonNull Activity activity) {}
+    @Override
+    public void onActivityStopped(@NonNull Activity activity) {}
 
-  @Override
-  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {}
+    @Override
+    public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {}
 
-  @Override
-  public void onActivityDestroyed(@NonNull Activity activity) {
-    synchronized (lock) {
-      // If an activity is destroyed, delete all references to it, including the previous activity
-      if (currentActivity == activity) {
-        updateCurrentActivity(null);
-      }
-      if (previousActivity == activity) {
-        previousActivity = null;
-      }
+    @Override
+    public void onActivityDestroyed(@NonNull Activity activity) {
+      synchronized (lock) {
+        // If an activity is destroyed, delete all references to it, including the previous activity
+        if (currentActivity == activity) {
+          updateCurrentActivity(null);
+        }
+        if (previousActivity == activity) {
+          previousActivity = null;
+        }
 
-      for (OnActivityDestroyedListener listener : onDestroyedListeners) {
-        listener.onDestroyed(activity);
+        for (OnActivityDestroyedListener listener : onDestroyedListeners) {
+          listener.onDestroyed(activity);
+        }
       }
     }
   }
