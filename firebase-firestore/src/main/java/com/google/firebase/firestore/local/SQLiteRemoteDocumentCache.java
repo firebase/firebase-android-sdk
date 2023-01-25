@@ -24,6 +24,7 @@ import android.database.Cursor;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
+import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
@@ -40,7 +41,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
+import javax.annotation.Nullable;
+
+interface DocumentFilter {
+  boolean apply(MutableDocument doc);
+}
 
 final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   /** The number of bind args per collection group in {@link #getAll(String, IndexOffset, int)} */
@@ -135,7 +142,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     while (longQuery.hasMoreSubqueries()) {
       longQuery
           .performNextSubquery()
-          .forEach(row -> processRowInBackground(backgroundQueue, results, row));
+          .forEach(row -> processRowInBackground(backgroundQueue, results, row, null));
     }
     backgroundQueue.drain();
     return results;
@@ -153,7 +160,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     if (collections.isEmpty()) {
       return Collections.emptyMap();
     } else if (BINDS_PER_STATEMENT * collections.size() < SQLitePersistence.MAX_ARGS) {
-      return getAll(collections, offset, limit);
+      return getAll(collections, offset, limit, null);
     } else {
       // We need to fan out our collection scan since SQLite only supports 999 binds per statement.
       Map<DocumentKey, MutableDocument> results = new HashMap<>();
@@ -161,7 +168,10 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       for (int i = 0; i < collections.size(); i += pageSize) {
         results.putAll(
             getAll(
-                collections.subList(i, Math.min(collections.size(), i + pageSize)), offset, limit));
+                collections.subList(i, Math.min(collections.size(), i + pageSize)),
+                offset,
+                limit,
+                null));
       }
       return firstNEntries(results, limit, IndexOffset.DOCUMENT_COMPARATOR);
     }
@@ -171,7 +181,10 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
    * Returns the next {@code count} documents from the provided collections, ordered by read time.
    */
   private Map<DocumentKey, MutableDocument> getAll(
-      List<ResourcePath> collections, IndexOffset offset, int count) {
+      List<ResourcePath> collections,
+      IndexOffset offset,
+      int count,
+      @Nullable DocumentFilter filter) {
     Timestamp readTime = offset.getReadTime().getTimestamp();
     DocumentKey documentKey = offset.getDocumentKey();
 
@@ -207,13 +220,16 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
     db.query(sql.toString())
         .binding(bindVars)
-        .forEach(row -> processRowInBackground(backgroundQueue, results, row));
+        .forEach(row -> processRowInBackground(backgroundQueue, results, row, filter));
     backgroundQueue.drain();
     return results;
   }
 
   private void processRowInBackground(
-      BackgroundQueue backgroundQueue, Map<DocumentKey, MutableDocument> results, Cursor row) {
+      BackgroundQueue backgroundQueue,
+      Map<DocumentKey, MutableDocument> results,
+      Cursor row,
+      @Nullable DocumentFilter filter) {
     byte[] rawDocument = row.getBlob(0);
     int readTimeSeconds = row.getInt(1);
     int readTimeNanos = row.getInt(2);
@@ -225,15 +241,22 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         () -> {
           MutableDocument document =
               decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
-          synchronized (results) {
-            results.put(document.getKey(), document);
+          if (filter == null || filter.apply(document)) {
+            synchronized (results) {
+              results.put(document.getKey(), document);
+            }
           }
         });
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset) {
-    return getAll(Collections.singletonList(collection), offset, Integer.MAX_VALUE);
+  public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+      Query query, IndexOffset offset, Set<DocumentKey> mutatedKeys) {
+    return getAll(
+        Collections.singletonList(query.getPath()),
+        offset,
+        Integer.MAX_VALUE,
+        (MutableDocument doc) -> query.matches(doc) || mutatedKeys.contains(doc.getKey()));
   }
 
   private MutableDocument decodeMaybeDocument(
