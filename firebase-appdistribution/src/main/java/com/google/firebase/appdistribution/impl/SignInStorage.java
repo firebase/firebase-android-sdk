@@ -23,8 +23,11 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.annotations.concurrent.Background;
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /** Class that handles storage for App Distribution SignIn persistence. */
+// TODO(b/266704696): This currently only supports one FirebaseAppDistribution instance app-wide
+@Singleton
 class SignInStorage {
   @VisibleForTesting
   static final String SIGNIN_PREFERENCES_NAME = "FirebaseAppDistributionSignInStorage";

@@ -32,9 +32,11 @@ import com.google.firebase.appdistribution.UpdateTask;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.net.ssl.HttpsURLConnection;
 
 /** Class that handles updateApp functionality for AABs in {@link FirebaseAppDistribution}. */
+@Singleton // Only one update should happen at a time, even across FirebaseAppDistribution instances
 class AabUpdater {
   private static final String TAG = "AabUpdater";
 

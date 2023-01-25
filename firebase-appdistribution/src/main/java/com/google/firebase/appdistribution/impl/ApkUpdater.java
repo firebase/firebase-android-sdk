@@ -37,9 +37,11 @@ import java.io.InputStream;
 import java.util.concurrent.Executor;
 import java.util.jar.JarFile;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import javax.net.ssl.HttpsURLConnection;
 
 /** Class that handles updateApp functionality for APKs in {@link FirebaseAppDistribution}. */
+@Singleton // Only one update should happen at a time, even across FirebaseAppDistribution instances
 class ApkUpdater {
   private static final String TAG = "ApkUpdater";
   private static final int UPDATE_INTERVAL_MS = 250;

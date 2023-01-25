@@ -55,11 +55,11 @@ dependencies {
     testImplementation project(':integ-testing')
     runtimeOnly project(':firebase-installations')
 
-    implementation 'javax.inject:javax.inject:1'
-    vendor ('com.google.dagger:dagger:2.43.2') {
+    implementation libs.javax.inject
+    vendor (libs.dagger.dagger) {
         exclude group: "javax.inject", module: "javax.inject"
     }
-    annotationProcessor 'com.google.dagger:dagger-compiler:2.43.2'
+    annotationProcessor libs.dagger.compiler
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
