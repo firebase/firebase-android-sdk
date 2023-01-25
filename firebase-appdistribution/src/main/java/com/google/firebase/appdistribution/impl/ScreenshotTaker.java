@@ -37,8 +37,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /** A class that takes screenshots of the host app. */
+@Singleton // All instances store images at the same URI, so there should really only be one
 class ScreenshotTaker {
 
   static final String SCREENSHOT_FILE_NAME =

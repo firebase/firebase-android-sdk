@@ -24,8 +24,10 @@ import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /** Class that handles installing APKs in {@link FirebaseAppDistribution}. */
+@Singleton // Only one update should happen at a time, even across FirebaseAppDistribution instances
 class ApkInstaller {
   private static final String TAG = "ApkInstaller";
 

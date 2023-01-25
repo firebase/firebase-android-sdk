@@ -48,11 +48,14 @@ import com.google.firebase.appdistribution.UpdateTask;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * This class is the "real" implementation of the Firebase App Distribution API which should only be
  * included in pre-release builds.
  */
+// TODO(b/266704696): This currently only supports one FirebaseAppDistribution instance app-wide
+@Singleton
 class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   private static final String TAG = "Impl";

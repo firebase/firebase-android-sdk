@@ -99,7 +99,7 @@ public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
 
     if (applicationContext instanceof Application) {
       Application application = (Application) applicationContext;
-      application.registerActivityLifecycleCallbacks(appDistroComponent.getLifecycleNotifier());
+      appDistroComponent.getLifecycleNotifier().registerActivityLifecycleCallbacks(application);
     } else {
       LogWrapper.e(
           TAG,
