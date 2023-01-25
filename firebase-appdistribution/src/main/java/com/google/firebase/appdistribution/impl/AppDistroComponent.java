@@ -39,7 +39,7 @@ interface AppDistroComponent {
 
   /** Get the default instance of AppDistroComponent. */
   static AppDistroComponent getInstance() {
-    // TODO(lkellogg): Support multiple FirebaseApp instances
+    // TODO(b/266704696): This currently only supports one FirebaseApp app-wide
     return FirebaseApp.getInstance().get(AppDistroComponent.class);
   }
 
