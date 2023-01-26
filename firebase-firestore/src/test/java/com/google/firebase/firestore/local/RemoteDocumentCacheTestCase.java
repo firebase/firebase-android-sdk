@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.TestUtil.assertDoesNotThrow;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
+import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
@@ -258,7 +259,10 @@ abstract class RemoteDocumentCacheTestCase {
 
     Map<DocumentKey, MutableDocument> results =
       remoteDocumentCache.getDocumentsMatchingQuery(
-        query("a").whereEquals("matches", true), IndexOffset.createSuccessor(version(1), -1), new HashSet<DocumentKey>());
+        query("a")
+          .filter(filter("matches", "==", true)),
+        IndexOffset.createSuccessor(version(1), -1),
+        new HashSet<DocumentKey>());
     assertThat(results.values()).containsExactly(doc("a/2", 2, map("matches", true)));
   }
 
@@ -269,7 +273,9 @@ abstract class RemoteDocumentCacheTestCase {
 
     Map<DocumentKey, MutableDocument> results =
       remoteDocumentCache.getDocumentsMatchingQuery(
-        query("a").whereEquals("matches", true), IndexOffset.createSuccessor(version(1), -1),
+        query("a")
+          .filter(filter("matches", "==", true)),
+        IndexOffset.createSuccessor(version(1), -1),
         new HashSet<DocumentKey>(Collections.singletonList(key("a/2"))));
     assertThat(results.values()).containsExactly(doc("a/2", 2, map("matches", false)));
   }
