@@ -125,7 +125,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
         continue;
       }
 
-      if (!query.matches(doc)) {
+      if (!mutatedKeys.contains(doc.getKey()) && !query.matches(doc)) {
         continue;
       }
 
