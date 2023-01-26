@@ -11,7 +11,7 @@ kotlin = "1.7.10"
 protoc = "3.21.7"
 robolectric = "4.9"
 truth = "1.1.2"
-protobuffjavautil = "3.21.7"
+protobufjavautil = "3.21.7"
 
 [libraries]
 android-lint = { module = "com.android.tools.lint:lint", version.ref = "android-lint"}

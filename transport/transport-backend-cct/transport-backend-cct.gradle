@@ -63,7 +63,7 @@ dependencies {
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"
     annotationProcessor project(':encoders:firebase-encoders-processor')
 
-    testImplementation "com.google.protobuf:protobuf-java-util:$protobuffJavaUtilVersion"
+    testImplementation "com.google.protobuf:protobuf-java-util:$protobufJavaUtilVersion"
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
