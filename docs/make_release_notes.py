@@ -43,7 +43,7 @@ class Changelog:
 
     def get_ktx_header(self):
         if not self.has_ktx:
-            return ""
+            return ''
         version_str = f'{{: #{self.version_name}-ktx_v{self.version.replace(".", "-")}}}'
         return f'### {self.alt_name} Kotlin extensions version {self.version} {version_str}\n'
 
@@ -211,16 +211,17 @@ PRODUCTS = {
                   alt_name='{{app_check}} SafetyNet',
                   version_name='appcheck-safetynet')
 }
-KTX_PLACEHOLDER_TEXT =  """
+KTX_PLACEHOLDER_TEXT = """
 The Kotlin extensions library transitively includes the updated
 `PLACEHOLDER_NAME` library. The Kotlin extensions library has no additional
 updates.
 """
 
-def releasing_products(release_cfg_path):
+
+def read_release_cfg(release_cfg_path):
     config = configparser.ConfigParser(allow_no_value=True, delimiters=('=',))
     config.read(release_cfg_path)
-    return list(config['modules'])
+    return config
 
 
 def main():
@@ -233,15 +234,24 @@ def main():
                         required=False,
                         help='Comma separated list of products to process')
     parser.add_argument('--generated_name',
-                        default='changelog',
                         required=False,
+                        default=None,
                         help='Name for generated files, without extension.')
     args = parser.parse_args()
+
+    release_cfg = None
+    if os.path.exists(args.releasecfg):
+        release_cfg = read_release_cfg(args.releasecfg)
 
     if args.products:
         products = args.products.split(',')
     else:
-        products = releasing_products(args.releasecfg)
+        products = list(release_cfg['modules'])
+
+    if args.generated_name:
+        generated_name = args.generated_name
+    else:
+        generated_name = release_cfg['release']['name'].lower().strip()
 
     for product in products:
         if product.startswith(':'):
@@ -255,7 +265,7 @@ def main():
         translator = Translator(renderer)
         path = f'build/changelog/android/client/{changelog.target_path}/_releases'
         os.makedirs(path, exist_ok=True)
-        with open(f'{path}/{args.generated_name}.md', 'w') as fd:
+        with open(f'{path}/{generated_name}.md', 'w') as fd:
             fd.write(
                 translator.translate(
                     read_changelog_section(changelog, 'Unreleased')))
@@ -434,7 +444,9 @@ def read_changelog_section(changelog, single_version=None):
         if changelog.has_ktx:
             result.append('\n')
             result.append(changelog.get_ktx_header())
-            result.append(KTX_PLACEHOLDER_TEXT.replace('PLACEHOLDER_NAME', changelog.ktx_placeholder))
+            result.append(
+                KTX_PLACEHOLDER_TEXT.replace('PLACEHOLDER_NAME',
+                                             changelog.ktx_placeholder))
 
         return ''.join(result)
 
