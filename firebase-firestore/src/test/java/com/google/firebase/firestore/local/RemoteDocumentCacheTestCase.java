@@ -258,12 +258,11 @@ abstract class RemoteDocumentCacheTestCase {
     addTestDocumentAtPath("a/3", 1, 3, map("matches", false));
 
     Map<DocumentKey, MutableDocument> results =
-      remoteDocumentCache.getDocumentsMatchingQuery(
-        query("a")
-          .filter(filter("matches", "==", true)),
-        IndexOffset.createSuccessor(version(1), -1),
-        new HashSet<DocumentKey>());
-    assertThat(results.values()).containsExactly(doc("a/2", 2, map("matches", true)));
+        remoteDocumentCache.getDocumentsMatchingQuery(
+            query("a").filter(filter("matches", "==", true)),
+            IndexOffset.createSuccessor(version(1), -1),
+            new HashSet<DocumentKey>());
+    assertThat(results.values()).containsExactly(doc("a/2", 1, map("matches", true)));
   }
 
   @Test
@@ -272,12 +271,11 @@ abstract class RemoteDocumentCacheTestCase {
     addTestDocumentAtPath("a/2", 1, 2, map("matches", false));
 
     Map<DocumentKey, MutableDocument> results =
-      remoteDocumentCache.getDocumentsMatchingQuery(
-        query("a")
-          .filter(filter("matches", "==", true)),
-        IndexOffset.createSuccessor(version(1), -1),
-        new HashSet<DocumentKey>(Collections.singletonList(key("a/2"))));
-    assertThat(results.values()).containsExactly(doc("a/2", 2, map("matches", false)));
+        remoteDocumentCache.getDocumentsMatchingQuery(
+            query("a").filter(filter("matches", "==", true)),
+            IndexOffset.createSuccessor(version(1), -1),
+            new HashSet<DocumentKey>(Collections.singletonList(key("a/2"))));
+    assertThat(results.values()).containsExactly(doc("a/2", 1, map("matches", false)));
   }
 
   protected MutableDocument addTestDocumentAtPath(String path) {
@@ -292,7 +290,8 @@ abstract class RemoteDocumentCacheTestCase {
     return addTestDocumentAtPath(path, updateTime, readTime, map("data", 2));
   }
 
-  protected MutableDocument addTestDocumentAtPath(String path, int updateTime, int readTime, Map<String, Object> data) {
+  protected MutableDocument addTestDocumentAtPath(
+      String path, int updateTime, int readTime, Map<String, Object> data) {
     MutableDocument doc = doc(path, updateTime, data);
     add(doc, version(readTime));
     return doc;
