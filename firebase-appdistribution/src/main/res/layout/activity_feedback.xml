@@ -102,15 +102,14 @@
 
                 <RelativeLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="5dp"
-                    android:layout_marginBottom="5dp">
+                    android:layout_height="wrap_content">
                     <CheckBox
                         android:id="@+id/screenshotCheckBox"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:layout_alignParentStart="true"
+                        android:layout_alignParentLeft="true"
                         android:text="@string/screenshot" />
                     <Button
                         style="@style/FeedbackTheme.Button.Stroked"
@@ -118,15 +117,15 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
+                        android:layout_alignParentRight="true"
                         android:text="Gallery"/>
                 </RelativeLayout>
 
                 <ImageView
                     android:id="@+id/screenshotImageView"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:scaleType="centerInside"
+                    android:layout_marginTop="12dp"
                     android:adjustViewBounds="true"
                     android:contentDescription="@string/screenshot_image_description"/>
             </LinearLayout>
