@@ -100,25 +100,34 @@
                 android:background="@drawable/card_background"
                 android:orientation="vertical">
 
-                <CheckBox
-                    android:id="@+id/screenshotCheckBox"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/screenshot" />
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+                    <CheckBox
+                        android:id="@+id/screenshotCheckBox"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_alignParentStart="true"
+                        android:layout_alignParentLeft="true"
+                        android:text="@string/screenshot" />
+                    <Button
+                        style="@style/FeedbackTheme.Button.Stroked"
+                        android:id="@+id/chooseScreenshotButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentRight="true"
+                        android:text="Gallery"/>
+                </RelativeLayout>
 
                 <ImageView
                     android:id="@+id/screenshotImageView"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:scaleType="centerInside"
+                    android:layout_marginTop="12dp"
                     android:adjustViewBounds="true"
-                    android:contentDescription="@string/screenshot_image_description" />
-
-                <Button
-                    android:id="@+id/chooseScreenshotButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Gallery" />
+                    android:contentDescription="@string/screenshot_image_description"/>
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
