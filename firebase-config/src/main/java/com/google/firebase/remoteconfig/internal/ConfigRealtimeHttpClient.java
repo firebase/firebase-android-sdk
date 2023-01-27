@@ -79,7 +79,7 @@ public class ConfigRealtimeHttpClient {
   private final Set<ConfigUpdateListener> listeners;
 
   @GuardedBy("this")
-  private HttpURLConnection httpURLConnection;
+  private boolean isHttpConnectionRunning;
 
   @GuardedBy("this")
   private int httpRetriesRemaining;
@@ -114,7 +114,7 @@ public class ConfigRealtimeHttpClient {
       ScheduledExecutorService scheduledExecutorService) {
 
     this.listeners = listeners;
-    this.httpURLConnection = null;
+    this.isHttpConnectionRunning = false;
     this.scheduledExecutorService = scheduledExecutorService;
 
     // Retry parameters
@@ -281,7 +281,7 @@ public class ConfigRealtimeHttpClient {
 
   private synchronized boolean canMakeHttpStreamConnection() {
     return !listeners.isEmpty()
-        && httpURLConnection == null
+        && !isHttpConnectionRunning
         && !isRealtimeDisabled
         && !isInBackground;
   }
@@ -333,7 +333,11 @@ public class ConfigRealtimeHttpClient {
   }
 
   private synchronized void makeRealtimeHttpConnection(long retryMilliseconds) {
-    if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
+    if (!canMakeHttpStreamConnection()) {
+      return;
+    }
+
+    if (httpRetriesRemaining > 0) {
       httpRetriesRemaining--;
       scheduledExecutorService.schedule(
           new Runnable() {
@@ -354,6 +358,10 @@ public class ConfigRealtimeHttpClient {
 
   void setRealtimeBackgroundState(boolean backgroundState) {
     isInBackground = backgroundState;
+  }
+
+  private synchronized void setIsHttpConnectionRunning(boolean connectionRunning) {
+    isHttpConnectionRunning = connectionRunning;
   }
 
   /**
@@ -402,7 +410,7 @@ public class ConfigRealtimeHttpClient {
    * chunk-encoded HTTP body. When the connection closes, it attempts to reestablish the stream.
    */
   @SuppressLint({"VisibleForTests", "DefaultLocale"})
-  public synchronized void beginRealtimeHttpStream() {
+  public void beginRealtimeHttpStream() {
     if (!canMakeHttpStreamConnection()) {
       return;
     }
@@ -416,6 +424,8 @@ public class ConfigRealtimeHttpClient {
     }
 
     Integer responseCode = null;
+    HttpURLConnection httpURLConnection = null;
+    setIsHttpConnectionRunning(true);
     try {
       // Create the open the connection.
       httpURLConnection = createRealtimeConnection();
@@ -439,7 +449,8 @@ public class ConfigRealtimeHttpClient {
               e.getCause(),
               FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
     } finally {
-      closeRealtimeHttpStream();
+      closeRealtimeHttpStream(httpURLConnection);
+      setIsHttpConnectionRunning(false);
 
       boolean connectionFailed = responseCode == null || isStatusCodeRetryable(responseCode);
       if (connectionFailed) {
@@ -464,20 +475,19 @@ public class ConfigRealtimeHttpClient {
   }
 
   // Pauses Http stream listening
-  public synchronized void closeRealtimeHttpStream() {
+  public void closeRealtimeHttpStream(HttpURLConnection httpURLConnection) {
     if (httpURLConnection != null) {
-      this.httpURLConnection.disconnect();
+      httpURLConnection.disconnect();
 
       // Explicitly close the input stream due to a bug in the Android okhttp implementation.
       // See github.com/firebase/firebase-android-sdk/pull/808.
       try {
-        this.httpURLConnection.getInputStream().close();
-        if (this.httpURLConnection.getErrorStream() != null) {
-          this.httpURLConnection.getErrorStream().close();
+        httpURLConnection.getInputStream().close();
+        if (httpURLConnection.getErrorStream() != null) {
+          httpURLConnection.getErrorStream().close();
         }
       } catch (IOException e) {
       }
-      this.httpURLConnection = null;
     }
   }
 }

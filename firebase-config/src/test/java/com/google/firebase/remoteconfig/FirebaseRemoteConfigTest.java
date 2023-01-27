@@ -1226,7 +1226,9 @@ public final class FirebaseRemoteConfigTest {
   public void realtime_redirectStatusCode_noRetries() throws Exception {
     ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
     doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(301);
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
 
@@ -1241,7 +1243,9 @@ public final class FirebaseRemoteConfigTest {
     doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
     doReturn(mockConfigAutoFetch).when(configRealtimeHttpClientSpy).startAutoFetch(any());
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnection();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
@@ -1254,7 +1258,9 @@ public final class FirebaseRemoteConfigTest {
     ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
     doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnection();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
@@ -1323,7 +1329,9 @@ public final class FirebaseRemoteConfigTest {
     ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
     doThrow(IOException.class).when(configRealtimeHttpClientSpy).createRealtimeConnection();
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnection();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
     verify(configRealtimeHttpClientSpy, never()).startAutoFetch(any());
