@@ -378,7 +378,8 @@ public final class LocalSerializerTest {
             QueryPurpose.LISTEN,
             snapshotVersion,
             limboFreeVersion,
-            resumeToken);
+            resumeToken,
+            null);
 
     // Let the RPC serializer test various permutations of query serialization.
     com.google.firestore.v1.Target.QueryTarget queryTarget =

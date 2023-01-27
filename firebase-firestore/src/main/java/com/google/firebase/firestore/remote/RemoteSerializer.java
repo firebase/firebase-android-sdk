@@ -499,6 +499,13 @@ public final class RemoteSerializer {
       builder.setResumeToken(targetData.getResumeToken());
     }
 
+    // TODO(Mila) Incorporate this into the if statement above.
+    if (targetData.getExpectedCount() != null
+        && (!targetData.getResumeToken().isEmpty()
+            || targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0)) {
+      builder.setExpectedCount(Int32Value.newBuilder().setValue(targetData.getExpectedCount()));
+    }
+
     return builder.build();
   }
 

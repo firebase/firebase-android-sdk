@@ -369,6 +369,12 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   private void sendWatchRequest(TargetData targetData) {
     watchChangeAggregator.recordPendingTargetRequest(targetData.getTargetId());
+    if (!targetData.getResumeToken().isEmpty()
+        || targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0) {
+      int expectedCount = this.getRemoteKeysForTarget(targetData.getTargetId()).size();
+      targetData = targetData.withExpectedCount(expectedCount);
+    }
+
     watchStream.watchQuery(targetData);
   }
 
