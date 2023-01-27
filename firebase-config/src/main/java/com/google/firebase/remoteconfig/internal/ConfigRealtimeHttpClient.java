@@ -360,6 +360,10 @@ public class ConfigRealtimeHttpClient {
     isInBackground = backgroundState;
   }
 
+  private synchronized void resetRetryCount() {
+    httpRetriesRemaining = ORIGINAL_RETRIES;
+  }
+
   private synchronized void setIsHttpConnectionRunning(boolean connectionRunning) {
     isHttpConnectionRunning = connectionRunning;
   }
@@ -434,7 +438,7 @@ public class ConfigRealtimeHttpClient {
       // If the connection returned a 200 response code, start listening for messages.
       if (responseCode == HttpURLConnection.HTTP_OK) {
         // Reset the retries remaining if we opened the connection without an exception.
-        httpRetriesRemaining = ORIGINAL_RETRIES;
+        resetRetryCount();
         metadataClient.resetRealtimeBackoff();
 
         // Start listening for realtime notifications.
