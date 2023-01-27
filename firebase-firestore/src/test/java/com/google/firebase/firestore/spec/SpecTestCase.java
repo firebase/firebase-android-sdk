@@ -930,13 +930,16 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         expectedChanges.add(parseChange(metadata.getJSONObject(i), Type.METADATA));
       }
 
-      List<DocumentViewChange> actualChanges = actual.view.getChanges();
-      Collections.sort(
-          expectedChanges, (a, b) -> a.getDocument().getKey().compareTo(b.getDocument().getKey()));
-      Collections.sort(
-          actualChanges, (a, b) -> a.getDocument().getKey().compareTo(b.getDocument().getKey()));
+      List<DocumentViewChange> sortedActualChanges =
+          actual.view.getChanges().stream()
+              .sorted((a, b) -> a.getDocument().getKey().compareTo(b.getDocument().getKey()))
+              .collect(Collectors.toList());
+      List<DocumentViewChange> sortedExpectedChanges =
+          expectedChanges.stream()
+              .sorted((a, b) -> a.getDocument().getKey().compareTo(b.getDocument().getKey()))
+              .collect(Collectors.toList());
 
-      assertEquals(expectedChanges, actualChanges);
+      assertEquals(sortedExpectedChanges, sortedActualChanges);
 
       boolean expectedHasPendingWrites = expected.optBoolean("hasPendingWrites", false);
       boolean expectedFromCache = expected.optBoolean("fromCache", false);

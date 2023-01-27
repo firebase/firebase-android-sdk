@@ -221,23 +221,19 @@ public class WatchChangeAggregator {
     int expectedCount = existenceFilter.getCount();
     com.google.firestore.v1.BloomFilter unchangedNames = existenceFilter.getUnchangedNames();
 
-    if (unchangedNames == null || unchangedNames.getBits() == null) {
+    if (unchangedNames == null || !unchangedNames.hasBits()) {
       return false;
     }
 
     byte[] bitmap = unchangedNames.getBits().getBitmap().toByteArray();
     BloomFilter bloomFilter;
-    System.out.println("bitmap");
+
     try {
       bloomFilter =
           new BloomFilter(
-              bitmap, unchangedNames.getBits().getPadding() | 0, unchangedNames.getHashCount() | 0);
-    } catch (Exception e) {
-      if (e instanceof BloomFilterException) {
-        Logger.warn("Firestore", "BloomFilter error: %s", e);
-      } else {
-        Logger.warn("Firestore", "Applying bloom filter failed: %s", e);
-      }
+              bitmap, unchangedNames.getBits().getPadding(), unchangedNames.getHashCount());
+    } catch (BloomFilterException e) {
+      Logger.warn("Firestore", "BloomFilter error: %s", e);
       return false;
     }
 
