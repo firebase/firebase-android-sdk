@@ -29,6 +29,7 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
+import com.google.firebase.firestore.util.Logger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -196,17 +197,73 @@ public class WatchChangeAggregator {
               expectedCount == 1, "Single document existence filter with count: %d", expectedCount);
         }
       } else {
-        long currentSize = getCurrentDocumentCountForTarget(targetId);
+        int currentSize = getCurrentDocumentCountForTarget(targetId);
         if (currentSize != expectedCount) {
-          // Existence filter mismatch: We reset the mapping and raise a new snapshot with
-          // `isFromCache:true`.
-          resetTarget(targetId);
-          pendingTargetResets.add(targetId);
+
+          // Apply bloom filter to identify and mark removed documents.
+          boolean bloomFilterApplied =
+              this.applyBloomFilter(watchChange.getExistenceFilter(), targetId, currentSize);
+
+          if (!bloomFilterApplied) {
+            // If bloom filter application fails, we reset the mapping and
+            // trigger re-run of the query.
+            resetTarget(targetId);
+            pendingTargetResets.add(targetId);
+          }
         }
       }
     }
   }
 
+  /** Returns whether a bloom filter removed the deleted documents successfully. */
+  private boolean applyBloomFilter(
+      ExistenceFilter existenceFilter, int targetId, int currentCount) {
+    int expectedCount = existenceFilter.getCount();
+    com.google.firestore.v1.BloomFilter unchangedNames = existenceFilter.getUnchangedNames();
+
+    if (unchangedNames == null || unchangedNames.getBits() == null) {
+      return false;
+    }
+
+    byte[] bitmap = unchangedNames.getBits().getBitmap().toByteArray();
+    BloomFilter bloomFilter;
+    System.out.println("bitmap");
+    try {
+      bloomFilter =
+          new BloomFilter(
+              bitmap, unchangedNames.getBits().getPadding() | 0, unchangedNames.getHashCount() | 0);
+    } catch (Exception e) {
+      if (e instanceof BloomFilterException) {
+        Logger.warn("Firestore", "BloomFilter error: %s", e);
+      } else {
+        Logger.warn("Firestore", "Applying bloom filter failed: %s", e);
+      }
+      return false;
+    }
+
+    int removedDocumentCount = this.filterRemovedDocuments(bloomFilter, targetId);
+
+    return expectedCount == (currentCount - removedDocumentCount);
+  }
+
+  /**
+   * Filter out removed documents based on bloom filter membership result and return number of
+   * documents removed.
+   */
+  private int filterRemovedDocuments(BloomFilter bloomFilter, int targetId) {
+    ImmutableSortedSet<DocumentKey> existingKeys =
+        targetMetadataProvider.getRemoteKeysForTarget(targetId);
+    int removalCount = 0;
+    for (DocumentKey key : existingKeys) {
+      if (!bloomFilter.mightContain(
+          "projects/test-project/databases/(default)/documents/"
+              + key.getPath().canonicalString())) {
+        this.removeDocumentFromTarget(targetId, key, /*updatedDocument=*/ null);
+        removalCount++;
+      }
+    }
+    return removalCount;
+  }
   /**
    * Converts the currently accumulated state into a remote event at the provided snapshot version.
    * Resets the accumulated changes before returning.

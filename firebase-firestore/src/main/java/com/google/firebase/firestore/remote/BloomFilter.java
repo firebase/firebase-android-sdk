@@ -27,26 +27,25 @@ public class BloomFilter {
   private final int hashCount;
   private final MessageDigest md5HashMessageDigest;
 
-  public BloomFilter(@NonNull byte[] bitmap, int padding, int hashCount) {
+  public BloomFilter(@NonNull byte[] bitmap, int padding, int hashCount)
+      throws BloomFilterException {
     if (bitmap == null) {
       throw new NullPointerException("Bitmap cannot be null.");
     }
     if (padding < 0 || padding >= 8) {
-      throw new IllegalArgumentException("Invalid padding: " + padding);
+      throw new BloomFilterException("Invalid padding: " + padding);
     }
     if (hashCount < 0) {
-      throw new IllegalArgumentException("Invalid hash count: " + hashCount);
+      throw new BloomFilterException("Invalid hash count: " + hashCount);
     }
     if (bitmap.length > 0 && hashCount == 0) {
       // Only empty bloom filter can have 0 hash count.
-      throw new IllegalArgumentException("Invalid hash count: " + hashCount);
+      throw new BloomFilterException("Invalid hash count: " + hashCount);
     }
-    if (bitmap.length == 0) {
+    if (bitmap.length == 0 && padding != 0) {
       // Empty bloom filter should have 0 padding.
-      if (padding != 0) {
-        throw new IllegalArgumentException(
-            "Expected padding of 0 when bitmap length is 0, but got " + padding);
-      }
+      throw new BloomFilterException(
+          "Expected padding of 0 when bitmap length is 0, but got " + padding);
     }
 
     this.bitmap = bitmap;

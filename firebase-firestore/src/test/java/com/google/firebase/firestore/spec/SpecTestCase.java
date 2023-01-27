@@ -31,6 +31,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import android.util.Base64;
 import android.util.Pair;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
@@ -81,6 +82,8 @@ import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
+import com.google.firestore.v1.BitSequence;
+import com.google.firestore.v1.BloomFilter;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import java.io.BufferedReader;
@@ -468,10 +471,33 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     return result;
   }
 
+  /** Deeply parses a JSONObject into a bloom filter proto type. */
+  private BloomFilter parseBloomFilter(JSONObject obj) throws JSONException {
+    BitSequence.Builder bitSequence = BitSequence.newBuilder();
+    JSONObject bits = obj.getJSONObject("bits");
+    if (bits.has("padding")) {
+      bitSequence.setPadding(bits.getInt("padding"));
+    }
+    if (bits.has("bitmap")) {
+      try {
+        bitSequence.setBitmap(
+            ByteString.copyFrom(Base64.decode(bits.getString("bitmap"), Base64.DEFAULT)));
+      } catch (Exception e) {
+        bitSequence.setBitmap(ByteString.EMPTY);
+      }
+    }
+
+    BloomFilter.Builder bloomFilter = BloomFilter.newBuilder();
+    bloomFilter.setBits(bitSequence);
+    if (obj.has("hashCount")) {
+      bloomFilter.setHashCount(obj.getInt("hashCount"));
+    }
+    return bloomFilter.build();
+  }
+
   //
   // Methods for doing the steps of the spec test.
   //
-
   private void doListen(JSONObject listenSpec) throws Exception {
     int expectedId = listenSpec.getInt("targetId");
     Query query = parseQuery(listenSpec.getJSONObject("query"));
@@ -654,15 +680,19 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
   }
 
-  private void doWatchFilter(JSONArray watchFilter) throws Exception {
-    List<Integer> targets = parseIntList(watchFilter.getJSONArray(0));
+  private void doWatchFilter(JSONObject watchFilter) throws Exception {
+    List<Integer> targets = parseIntList(watchFilter.getJSONArray("targetIds"));
     Assert.hardAssert(
         targets.size() == 1, "ExistenceFilters currently support exactly one target only.");
 
-    int keyCount = watchFilter.length() == 0 ? 0 : watchFilter.length() - 1;
+    int keyCount = watchFilter.getJSONArray("keys").length();
+    BloomFilter bloomFilterProto = null;
+    if (watchFilter.has("bloomFilter")) {
+      bloomFilterProto = parseBloomFilter(watchFilter.getJSONObject("bloomFilter"));
+    }
 
     // TODO: extend this with different existence filters over time.
-    ExistenceFilter filter = new ExistenceFilter(keyCount);
+    ExistenceFilter filter = new ExistenceFilter(keyCount, bloomFilterProto);
     ExistenceFilterWatchChange change = new ExistenceFilterWatchChange(targets.get(0), filter);
     writeWatchChange(change, SnapshotVersion.NONE);
   }
@@ -830,7 +860,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     } else if (step.has("watchEntity")) {
       doWatchEntity(step.getJSONObject("watchEntity"));
     } else if (step.has("watchFilter")) {
-      doWatchFilter(step.getJSONArray("watchFilter"));
+      doWatchFilter(step.getJSONObject("watchFilter"));
     } else if (step.has("watchReset")) {
       doWatchReset(step.getJSONArray("watchReset"));
     } else if (step.has("watchSnapshot")) {
@@ -899,7 +929,14 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       for (int i = 0; metadata != null && i < metadata.length(); ++i) {
         expectedChanges.add(parseChange(metadata.getJSONObject(i), Type.METADATA));
       }
-      assertEquals(expectedChanges, actual.view.getChanges());
+
+      List<DocumentViewChange> actualChanges = actual.view.getChanges();
+      Collections.sort(
+          expectedChanges, (a, b) -> a.getDocument().getKey().compareTo(b.getDocument().getKey()));
+      Collections.sort(
+          actualChanges, (a, b) -> a.getDocument().getKey().compareTo(b.getDocument().getKey()));
+
+      assertEquals(expectedChanges, actualChanges);
 
       boolean expectedHasPendingWrites = expected.optBoolean("hasPendingWrites", false);
       boolean expectedFromCache = expected.optBoolean("fromCache", false);
@@ -1160,6 +1197,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private void runSteps(JSONArray steps, JSONObject config) throws Exception {
     try {
       specSetUp(config);
+
       for (int i = 0; i < steps.length(); ++i) {
         JSONObject step = steps.getJSONObject(i);
         @Nullable JSONArray expectedSnapshotEvents = step.optJSONArray("expectedSnapshotEvents");
