@@ -1273,7 +1273,9 @@ public final class FirebaseRemoteConfigTest {
     ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
     doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnection();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
     int failedStreams = configRealtimeHttpClientSpy.getNumberOfFailedStream();
 
@@ -1286,7 +1288,9 @@ public final class FirebaseRemoteConfigTest {
     ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
     doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnection();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
     Date backoffDate = configRealtimeHttpClientSpy.getBackoffDate();
 
@@ -1301,7 +1305,9 @@ public final class FirebaseRemoteConfigTest {
     doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
     doReturn(mockConfigAutoFetch).when(configRealtimeHttpClientSpy).startAutoFetch(any());
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnection();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     int failedStreams = configRealtimeHttpClientSpy.getNumberOfFailedStream();
 
@@ -1316,7 +1322,9 @@ public final class FirebaseRemoteConfigTest {
     doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
     doReturn(mockConfigAutoFetch).when(configRealtimeHttpClientSpy).startAutoFetch(any());
     doNothing().when(configRealtimeHttpClientSpy).retryHttpConnection();
-    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     Date backoffDate = configRealtimeHttpClientSpy.getBackoffDate();
 
