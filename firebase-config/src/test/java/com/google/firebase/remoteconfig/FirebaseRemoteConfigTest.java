@@ -26,6 +26,7 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.LAST_FETCH_S
 import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.toExperimentInfoMaps;
 import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_ARM_VALUE_PARAM;
 import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_PERSONALIZATION_ID_PARAM;
+import static com.google.firebase.remoteconfig.testutil.Assert.assertFalse;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -1259,6 +1260,62 @@ public final class FirebaseRemoteConfigTest {
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
     verify(configRealtimeHttpClientSpy, never()).startAutoFetch(any());
     verify(configRealtimeHttpClientSpy).retryHttpConnection();
+  }
+
+  @Test
+  public void realtime_retryableStatusCode_increasesConfigMetadataFailedStreams() throws Exception {
+    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
+    doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
+    doNothing().when(configRealtimeHttpClientSpy).retryHttpConnection();
+    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
+    int failedStreams = configRealtimeHttpClientSpy.getNumberOfFailedStream();
+
+    configRealtimeHttpClientSpy.beginRealtimeHttpStream();
+    assertThat(configRealtimeHttpClientSpy.getNumberOfFailedStream()).isEqualTo(failedStreams + 1);
+  }
+
+  @Test
+  public void realtime_retryableStatusCode_increasesConfigMetadataBackoffDate() throws Exception {
+    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
+    doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
+    doNothing().when(configRealtimeHttpClientSpy).retryHttpConnection();
+    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
+    Date backoffDate = configRealtimeHttpClientSpy.getBackoffDate();
+
+    configRealtimeHttpClientSpy.beginRealtimeHttpStream();
+    assertTrue(configRealtimeHttpClientSpy.getBackoffDate().after(backoffDate));
+  }
+
+  @Test
+  public void realtime_successfulStatusCode_doesNotIncreaseConfigMetadataFailedStreams()
+      throws Exception {
+    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
+    doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
+    doReturn(mockConfigAutoFetch).when(configRealtimeHttpClientSpy).startAutoFetch(any());
+    doNothing().when(configRealtimeHttpClientSpy).retryHttpConnection();
+    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+    int failedStreams = configRealtimeHttpClientSpy.getNumberOfFailedStream();
+
+    configRealtimeHttpClientSpy.beginRealtimeHttpStream();
+    assertThat(configRealtimeHttpClientSpy.getNumberOfFailedStream()).isEqualTo(failedStreams);
+  }
+
+  @Test
+  public void realtime_successfulStatusCode_doesNotIncreaseConfigMetadataBackoffDate()
+      throws Exception {
+    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
+    doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
+    doReturn(mockConfigAutoFetch).when(configRealtimeHttpClientSpy).startAutoFetch(any());
+    doNothing().when(configRealtimeHttpClientSpy).retryHttpConnection();
+    doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+    Date backoffDate = configRealtimeHttpClientSpy.getBackoffDate();
+
+    configRealtimeHttpClientSpy.beginRealtimeHttpStream();
+    assertFalse(configRealtimeHttpClientSpy.getBackoffDate().after(backoffDate));
   }
 
   @Test

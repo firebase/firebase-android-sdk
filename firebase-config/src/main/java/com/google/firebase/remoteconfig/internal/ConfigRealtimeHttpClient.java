@@ -90,7 +90,7 @@ public class ConfigRealtimeHttpClient {
   /** Flag to indicate whether or not the app is in the background or not. */
   private boolean isInBackground;
 
-  private final int ORIGINAL_RETRIES = 7;
+  private final int ORIGINAL_RETRIES = 8;
   private final ScheduledExecutorService scheduledExecutorService;
   private final ConfigFetchHandler configFetchHandler;
   private final FirebaseApp firebaseApp;
@@ -229,6 +229,16 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
+  @SuppressLint("VisibleForTests")
+  public int getNumberOfFailedStream() {
+    return metadataClient.getRealtimeBackoffMetadata().getNumFailedStreams();
+  }
+
+  @SuppressLint("VisibleForTests")
+  public Date getBackoffDate() {
+    return metadataClient.getRealtimeBackoffMetadata().getBackoffEndTime();
+  }
+
   // TODO(issues/265): Make this an atomic operation within the Metadata class to avoid possible
   // concurrency issues.
   /**
@@ -255,11 +265,11 @@ public class ConfigRealtimeHttpClient {
    * #BACKOFF_TIME_DURATIONS_IN_MINUTES}{@code [numFailedStreams-1]}.
    */
   private long getRandomizedBackoffDurationInMillis(int numFailedStreams) {
-    // The backoff duration length after numFailedFetches.
-    long timeOutDurationInMillis =
-        MINUTES.toMillis(
-            BACKOFF_TIME_DURATIONS_IN_MINUTES[
-                Math.min(numFailedStreams, BACKOFF_TIME_DURATIONS_IN_MINUTES.length) - 1]);
+    // Index of backoff duration. Use the minimum of numFailedFetch or the max length of backoff
+    // duration array.
+    int idx = Math.min(numFailedStreams, BACKOFF_TIME_DURATIONS_IN_MINUTES.length);
+    // The backoff duration length after numFailedStreams.
+    long timeOutDurationInMillis = MINUTES.toMillis(BACKOFF_TIME_DURATIONS_IN_MINUTES[idx - 1]);
 
     // A random duration that is in the range: timeOutDuration +/- 50% of timeOutDuration.
     return timeOutDurationInMillis / 2 + random.nextInt((int) timeOutDurationInMillis);
@@ -322,7 +332,7 @@ public class ConfigRealtimeHttpClient {
     makeRealtimeHttpConnection(retrySeconds);
   }
 
-  private synchronized void makeRealtimeHttpConnection(long retrySeconds) {
+  private synchronized void makeRealtimeHttpConnection(long retryMilliseconds) {
     if (canMakeHttpStreamConnection() && httpRetriesRemaining > 0) {
       httpRetriesRemaining--;
       scheduledExecutorService.schedule(
@@ -332,7 +342,7 @@ public class ConfigRealtimeHttpClient {
               beginRealtimeHttpStream();
             }
           },
-          retrySeconds,
+          retryMilliseconds,
           TimeUnit.MILLISECONDS);
     } else if (!isInBackground) {
       propagateErrors(
@@ -431,15 +441,15 @@ public class ConfigRealtimeHttpClient {
     } finally {
       closeRealtimeHttpStream();
 
+      boolean connectionFailed = responseCode == null || isStatusCodeRetryable(responseCode);
+      if (connectionFailed) {
+        updateBackoffMetadataWithLastFailedStreamConnectionTime(
+            new Date(clock.currentTimeMillis()));
+      }
+
       // If responseCode is null then no connection was made to server and the SDK should still
       // retry.
-      if (responseCode == null
-          || responseCode == HttpURLConnection.HTTP_OK
-          || isStatusCodeRetryable(responseCode)) {
-        if (responseCode == null || isStatusCodeRetryable(responseCode)) {
-          updateBackoffMetadataWithLastFailedStreamConnectionTime(
-              new Date(clock.currentTimeMillis()));
-        }
+      if (connectionFailed || responseCode == HttpURLConnection.HTTP_OK) {
         retryHttpConnection();
       } else {
         propagateErrors(

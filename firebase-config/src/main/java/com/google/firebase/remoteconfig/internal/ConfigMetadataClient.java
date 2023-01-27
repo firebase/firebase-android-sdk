@@ -53,6 +53,7 @@ public class ConfigMetadataClient {
 
   static final Date LAST_FETCH_TIME_NO_FETCH_YET = new Date(LAST_FETCH_TIME_IN_MILLIS_NO_FETCH_YET);
 
+  static final int NO_FAILED_REALTIME_STREAMS = 0;
   @VisibleForTesting static final int NO_FAILED_FETCHES = 0;
   private static final long NO_BACKOFF_TIME_IN_MILLIS = -1L;
   @VisibleForTesting static final Date NO_BACKOFF_TIME = new Date(NO_BACKOFF_TIME_IN_MILLIS);
@@ -67,10 +68,12 @@ public class ConfigMetadataClient {
   private static final String BACKOFF_END_TIME_IN_MILLIS_KEY = "backoff_end_time_in_millis";
   private static final String NUM_FAILED_FETCHES_KEY = "num_failed_fetches";
   private static final String LAST_TEMPLATE_VERSION = "last_template_version";
-  private static final String NUM_FAILED_REALTIME_STREAMS_KEY = "num_failed_realtime_stream";
+
+  /** Realtime backoff key names. */
+  private static final String NUM_FAILED_REALTIME_STREAMS_KEY = "num_failed_realtime_streams";
+
   private static final String REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY =
       "realtime_backoff_end_time_in_millis";
-  static final int NO_FAILED_REALTIME_STREAMS = 0;
 
   private final SharedPreferences frcMetadata;
 
