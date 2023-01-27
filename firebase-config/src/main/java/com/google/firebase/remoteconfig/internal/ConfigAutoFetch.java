@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
@@ -114,15 +113,6 @@ public class ConfigAutoFetch {
       } finally {
         httpURLConnection.disconnect();
       }
-    }
-
-    // TODO: Factor ConfigUpdateListener out of internal retry logic.
-    retryCallback.onUpdate(ConfigUpdate.create(new HashSet<>()));
-    scheduledExecutorService.shutdownNow();
-    try {
-      scheduledExecutorService.awaitTermination(3L, TimeUnit.SECONDS);
-    } catch (InterruptedException ex) {
-      Log.d(TAG, "Thread Interrupted.");
     }
   }
 
@@ -250,14 +240,14 @@ public class ConfigAutoFetch {
                 activatedConfigs = ConfigContainer.newBuilder().build();
               }
 
-              Set<String> updatedParams =
+              Set<String> updatedKeys =
                   activatedConfigs.getChangedParams(fetchResponse.getFetchedConfigs());
-              if (updatedParams.isEmpty()) {
+              if (updatedKeys.isEmpty()) {
                 Log.d(TAG, "Config was fetched, but no params changed.");
                 return Tasks.forResult(null);
               }
 
-              ConfigUpdate configUpdate = ConfigUpdate.create(updatedParams);
+              ConfigUpdate configUpdate = ConfigUpdate.create(updatedKeys);
               executeAllListenerCallbacks(configUpdate);
               return Tasks.forResult(null);
             });

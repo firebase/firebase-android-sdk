@@ -1192,7 +1192,7 @@ public final class FirebaseRemoteConfigTest {
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(mockRetryListener).onUpdate(any());
+    verify(mockHttpURLConnection).disconnect();
   }
 
   @Test
@@ -1225,7 +1225,7 @@ public final class FirebaseRemoteConfigTest {
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
 
     verify(configRealtimeHttpClientSpy, never()).startAutoFetch(any());
-    verify(configRealtimeHttpClientSpy, never()).retryHTTPConnection();
+    verify(configRealtimeHttpClientSpy, never()).retryHttpConnection();
     verify(mockStreamErrorEventListener).onError(any(FirebaseRemoteConfigServerException.class));
   }
 
@@ -1234,38 +1234,38 @@ public final class FirebaseRemoteConfigTest {
     ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
     doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
     doReturn(mockConfigAutoFetch).when(configRealtimeHttpClientSpy).startAutoFetch(any());
-    doNothing().when(configRealtimeHttpClientSpy).retryHTTPConnection();
+    doNothing().when(configRealtimeHttpClientSpy).retryHttpConnection();
     doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
     verify(mockConfigAutoFetch).listenForNotifications();
-    verify(configRealtimeHttpClientSpy).retryHTTPConnection();
+    verify(configRealtimeHttpClientSpy).retryHttpConnection();
   }
 
   @Test
   public void realtime_badGatewayStatusCode_noAutofetchButRetries() throws Exception {
     ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
     doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
-    doNothing().when(configRealtimeHttpClientSpy).retryHTTPConnection();
+    doNothing().when(configRealtimeHttpClientSpy).retryHttpConnection();
     doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
     when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
     verify(configRealtimeHttpClientSpy, never()).startAutoFetch(any());
-    verify(configRealtimeHttpClientSpy).retryHTTPConnection();
+    verify(configRealtimeHttpClientSpy).retryHttpConnection();
   }
 
   @Test
   public void realtime_exceptionThrown_noAutofetchButRetries() throws Exception {
     ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
     doThrow(IOException.class).when(configRealtimeHttpClientSpy).createRealtimeConnection();
-    doNothing().when(configRealtimeHttpClientSpy).retryHTTPConnection();
+    doNothing().when(configRealtimeHttpClientSpy).retryHttpConnection();
     doNothing().when(configRealtimeHttpClientSpy).closeRealtimeHttpStream();
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
     verify(configRealtimeHttpClientSpy, never()).startAutoFetch(any());
-    verify(configRealtimeHttpClientSpy).retryHTTPConnection();
+    verify(configRealtimeHttpClientSpy).retryHttpConnection();
   }
 
   @Test
@@ -1326,9 +1326,9 @@ public final class FirebaseRemoteConfigTest {
 
     flushScheduledTasks();
 
-    Set<String> updatedParams = Sets.newHashSet("realtime_param");
+    Set<String> updatedKeys = Sets.newHashSet("realtime_param");
     verify(mockOnUpdateListener)
-        .onUpdate(argThat(configUpdate -> configUpdate.getUpdatedParams().equals(updatedParams)));
+        .onUpdate(argThat(configUpdate -> configUpdate.getUpdatedKeys().equals(updatedKeys)));
   }
 
   @Test
@@ -1344,9 +1344,9 @@ public final class FirebaseRemoteConfigTest {
     configAutoFetch.fetchLatestConfig(1, 1);
     flushScheduledTasks();
 
-    Set<String> updatedParams = Sets.newHashSet("string_param", "long_param", "realtime_param");
+    Set<String> updatedKeys = Sets.newHashSet("string_param", "long_param", "realtime_param");
     verify(mockOnUpdateListener)
-        .onUpdate(argThat(configUpdate -> configUpdate.getUpdatedParams().equals(updatedParams)));
+        .onUpdate(argThat(configUpdate -> configUpdate.getUpdatedKeys().equals(updatedKeys)));
   }
 
   @Test
