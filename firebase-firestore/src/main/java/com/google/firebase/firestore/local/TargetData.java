@@ -21,6 +21,7 @@ import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.remote.WatchStream;
 import com.google.protobuf.ByteString;
+import java.util.Objects;
 
 /** An immutable set of metadata that the store will need to keep track of for each target. */
 public final class TargetData {
@@ -93,7 +94,7 @@ public final class TargetData {
         snapshotVersion,
         lastLimboFreeSnapshotVersion,
         resumeToken,
-        expectedCount);
+        /* expectedCount= */ null);
   }
 
   /** Creates a new target data instance with an updated resume token and snapshot version. */
@@ -110,7 +111,7 @@ public final class TargetData {
   }
 
   /** Creates a new target data instance with an updated expected count. */
-  public TargetData withExpectedCount(Integer expectedCount) {
+  public TargetData withExpectedCount(@Nullable Integer expectedCount) {
     return new TargetData(
         target,
         targetId,
@@ -188,7 +189,7 @@ public final class TargetData {
         && snapshotVersion.equals(targetData.snapshotVersion)
         && lastLimboFreeSnapshotVersion.equals(targetData.lastLimboFreeSnapshotVersion)
         && resumeToken.equals(targetData.resumeToken)
-        && expectedCount == targetData.expectedCount;
+        && Objects.equals(expectedCount, targetData.expectedCount);
   }
 
   @Override
@@ -200,7 +201,7 @@ public final class TargetData {
     result = 31 * result + snapshotVersion.hashCode();
     result = 31 * result + lastLimboFreeSnapshotVersion.hashCode();
     result = 31 * result + resumeToken.hashCode();
-    result = 31 * result + (expectedCount != null ? expectedCount.hashCode() : 0);
+    result = 31 * result + Objects.hashCode(expectedCount);
     return result;
   }
 
