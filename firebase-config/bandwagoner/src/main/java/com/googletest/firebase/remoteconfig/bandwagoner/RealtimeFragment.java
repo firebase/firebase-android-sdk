@@ -81,8 +81,8 @@ public class RealtimeFragment extends Fragment {
             new ConfigUpdateListener() {
               @Override
               public void onUpdate(ConfigUpdate configUpdate) {
-                Log.d(TAG, String.join(", ", configUpdate.getUpdatedParams()));
-                updatedParamsText.setText(String.join(", ", configUpdate.getUpdatedParams()));
+                Log.d(TAG, String.join(", ", configUpdate.getUpdatedKeys()));
+                updatedParamsText.setText(String.join(", ", configUpdate.getUpdatedKeys()));
               }
 
               @Override

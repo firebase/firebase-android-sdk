@@ -26,7 +26,7 @@ android {
     testBuildType 'release'
 
     defaultConfig {
-        applicationId "com.googletest.firebase.remoteconfig.bandwagoner"
+        applicationId "com.danasilver.quickstart"
         minSdkVersion 19
         targetSdkVersion project.targetSdkVersion
         versionCode 1

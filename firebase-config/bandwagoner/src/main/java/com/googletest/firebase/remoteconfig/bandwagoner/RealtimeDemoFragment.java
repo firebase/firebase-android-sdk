@@ -56,7 +56,7 @@ public class RealtimeDemoFragment extends Fragment {
                 .build())
         .addOnCompleteListener(
             unused -> {
-              //            fetch();
+              fetch();
             });
     return rootView;
   }
@@ -97,11 +97,12 @@ public class RealtimeDemoFragment extends Fragment {
             new ConfigUpdateListener() {
               @Override
               public void onUpdate(ConfigUpdate configUpdate) {
-                Log.d(TAG, String.join(", ", configUpdate.getUpdatedParams()));
+                Log.d(TAG, String.join(", ", configUpdate.getUpdatedKeys()));
 
-                if (!configUpdate.getUpdatedParams().contains("signup_button_enabled")) {
-                  return;
-                }
+                //                if
+                // (!configUpdate.getUpdatedKeys().contains("signup_button_enabled")) {
+                //                  return;
+                //                }
 
                 frc.activate()
                     .addOnCompleteListener(
