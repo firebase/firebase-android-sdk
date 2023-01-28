@@ -164,7 +164,8 @@ public class ConfigContainer {
    */
   public Set<String> getChangedParams(ConfigContainer other) throws JSONException {
     // Make a copy of the other config before modifying it
-    JSONObject otherConfig = ConfigContainer.copyOf(other.containerJson).getConfigs();
+    JSONObject otherConfig =
+        ConfigContainer.copyOf(new JSONObject(other.containerJson.toString())).getConfigs();
 
     Set<String> changed = new HashSet<>();
     Iterator<String> keys = this.getConfigs().keys();
