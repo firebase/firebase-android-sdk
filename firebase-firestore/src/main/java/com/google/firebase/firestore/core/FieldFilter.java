@@ -173,6 +173,11 @@ public class FieldFilter extends Filter {
   }
 
   @Override
+  public boolean containsDisjunction() {
+    return false;
+  }
+
+  @Override
   public FieldPath getFirstInequalityField() {
     if (isInequality()) {
       return getField();

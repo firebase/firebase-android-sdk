@@ -48,6 +48,10 @@ public class CompositeFilter extends Filter {
   // contained in this composite filter.
   private List<FieldFilter> memoizedFlattenedFilters;
 
+  // Memoized boolean indicating whether any disjunction operations exist in the tree of this
+  // filter.
+  private Boolean memoizedContainsDisjunction;
+
   public CompositeFilter(List<Filter> filters, Operator operator) {
     this.filters = new ArrayList<>(filters);
     this.operator = operator;
@@ -72,6 +76,26 @@ public class CompositeFilter extends Filter {
       memoizedFlattenedFilters.addAll(subfilter.getFlattenedFilters());
     }
     return Collections.unmodifiableList(memoizedFlattenedFilters);
+  }
+
+  @Override
+  public boolean containsDisjunction() {
+    if (memoizedContainsDisjunction != null) {
+      return memoizedContainsDisjunction;
+    }
+
+    if (isDisjunction()) {
+      memoizedContainsDisjunction = true;
+      return true;
+    }
+    for (Filter subfilter : filters) {
+      if (subfilter.containsDisjunction()) {
+        memoizedContainsDisjunction = true;
+        return true;
+      }
+    }
+    memoizedContainsDisjunction = false;
+    return false;
   }
 
   /**

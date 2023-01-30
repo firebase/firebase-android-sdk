@@ -32,6 +32,9 @@ public abstract class Filter {
   /** Returns a list of all filters that are contained within this filter */
   public abstract List<Filter> getFilters();
 
+  /** Returns true if there exists any disjunction operation in the tree of this filter */
+  public abstract boolean containsDisjunction();
+
   /** Returns the field of the first filter that's an inequality, or null if none. */
   @Nullable
   public abstract FieldPath getFirstInequalityField();
