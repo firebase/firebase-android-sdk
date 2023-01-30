@@ -47,10 +47,6 @@ import java.util.concurrent.Executor;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-interface DocumentFilter {
-  boolean apply(MutableDocument doc);
-}
-
 final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   /** The number of bind args per collection group in {@link #getAll(String, IndexOffset, int)} */
   @VisibleForTesting static final int BINDS_PER_STATEMENT = 9;
