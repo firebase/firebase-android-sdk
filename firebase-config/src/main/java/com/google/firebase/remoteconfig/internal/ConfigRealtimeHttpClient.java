@@ -265,11 +265,14 @@ public class ConfigRealtimeHttpClient {
    * #BACKOFF_TIME_DURATIONS_IN_MINUTES}{@code [numFailedStreams-1]}.
    */
   private long getRandomizedBackoffDurationInMillis(int numFailedStreams) {
-    // Index of backoff duration. Use the minimum of numFailedFetch or the max length of backoff
-    // duration array.
-    int idx = Math.min(numFailedStreams, BACKOFF_TIME_DURATIONS_IN_MINUTES.length);
+    int backoffIndex = BACKOFF_TIME_DURATIONS_IN_MINUTES.length;
+    if (numFailedStreams < backoffIndex) {
+      backoffIndex = numFailedStreams;
+    }
+
     // The backoff duration length after numFailedStreams.
-    long timeOutDurationInMillis = MINUTES.toMillis(BACKOFF_TIME_DURATIONS_IN_MINUTES[idx - 1]);
+    long timeOutDurationInMillis =
+        MINUTES.toMillis(BACKOFF_TIME_DURATIONS_IN_MINUTES[backoffIndex - 1]);
 
     // A random duration that is in the range: timeOutDuration +/- 50% of timeOutDuration.
     return timeOutDurationInMillis / 2 + random.nextInt((int) timeOutDurationInMillis);
