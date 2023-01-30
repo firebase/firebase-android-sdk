@@ -92,7 +92,7 @@ public class ConfigContainer {
   /**
    * Returns a {@link ConfigContainer} that wraps the {@code containerJson}.
    *
-   * <p>The {@code containerJson} must not be modified.
+   * <p>This is a shallow copy so {@code containerJson} must not be modified.
    */
   static ConfigContainer copyOf(JSONObject containerJson) throws JSONException {
     // Personalization metadata may not have been written yet.
@@ -108,6 +108,16 @@ public class ConfigContainer {
         containerJson.getJSONArray(ABT_EXPERIMENTS_KEY),
         personalizationMetadataJSON,
         containerJson.getLong(TEMPLATE_VERSION_NUMBER_KEY));
+  }
+
+  /**
+   * Returns a new {@link ConfigContainer} containing a deep copy of {@code containerJson}.
+   *
+   * <p>This is a deep copy so it may be modified without affecting the original.
+   */
+  private static ConfigContainer deepCopyOf(JSONObject containerJson) throws JSONException {
+    JSONObject deepCopyJson = new JSONObject(containerJson.toString());
+    return ConfigContainer.copyOf(deepCopyJson);
   }
 
   /**
@@ -163,8 +173,8 @@ public class ConfigContainer {
    * @throws JSONException
    */
   public Set<String> getChangedParams(ConfigContainer other) throws JSONException {
-    // Make a copy of the other config before modifying it
-    JSONObject otherConfig = ConfigContainer.copyOf(other.containerJson).getConfigs();
+    // Make a deep copy of the other config before modifying it
+    JSONObject otherConfig = ConfigContainer.deepCopyOf(other.containerJson).getConfigs();
 
     Set<String> changed = new HashSet<>();
     Iterator<String> keys = this.getConfigs().keys();

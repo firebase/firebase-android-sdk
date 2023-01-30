@@ -235,6 +235,26 @@ public class ConfigContainerTest {
         .containsExactly("string_param", "long_param", "bool_param", "feature_1");
   }
 
+  @Test
+  public void getChangedParams_configsUnmodified() throws Exception {
+    ConfigContainer config =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .build();
+
+    ConfigContainer other =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .build();
+
+    // ConfigContainer#getChangedParams should not modify either comparison argument.
+    config.getChangedParams(other);
+
+    String configsString = new JSONObject("{string_param: value_1}").toString();
+    assertThat(config.getConfigs().toString()).isEqualTo(configsString);
+    assertThat(other.getConfigs().toString()).isEqualTo(configsString);
+  }
+
   private static JSONArray generateAbtExperiments(int numExperiments) throws JSONException {
     JSONArray experiments = new JSONArray();
     for (int experimentNum = 1; experimentNum <= numExperiments; experimentNum++) {
