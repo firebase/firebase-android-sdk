@@ -91,11 +91,13 @@ public class MutableData {
   }
 
   /**
-   * Used to iterate over the immediate children at this location <code>
-   *     <br>for (MutableData child : parent.getChildren()) {
-   *         <br>&nbsp;&nbsp;&nbsp;&nbsp;...
-   *     <br>}
-   * </code>
+   * Used to iterate over the immediate children at this location
+   *
+   * <pre>
+   *     for (MutableData child : parent.getChildren()) {
+   *         &nbsp;&nbsp;&nbsp;&nbsp;...
+   *     }
+   * </pre>
    *
    * @return The immediate children at this location
    */
@@ -164,12 +166,12 @@ public class MutableData {
    * returned are:
    *
    * <ul>
-   *   <li>Boolean
-   *   <li>String
-   *   <li>Long
-   *   <li>Double
-   *   <li>Map&lt;String, Object&gt;
-   *   <li>List&lt;Object&gt;
+   *   <li><code>Boolean</code>
+   *   <li><code>Long</code>
+   *   <li><code>Double</code>
+   *   <li><code>String</code>
+   *   <li><code>Map&lt;String, Object&gt;</code>
+   *   <li><code>List&lt;Object&gt;</code>
    * </ul>
    *
    * This list is recursive; the possible types for {@link java.lang.Object} in the above list is
@@ -196,7 +198,7 @@ public class MutableData {
    *
    * An example class might look like:
    *
-   * <pre><code>
+   * <pre>
    *     class Message {
    *         private String author;
    *         private String text;
@@ -220,7 +222,7 @@ public class MutableData {
    *
    *     // Later
    *     Message m = mutableData.getValue(Message.class);
-   * </code></pre>
+   * </pre>
    *
    * @param valueType The class into which this data in this instance should be marshalled
    * @param <T> The type to return. Implicitly defined from the class passed in
@@ -238,11 +240,11 @@ public class MutableData {
    * properly-typed Collection. So, in the case where you want a {@link java.util.List} of Message
    * instances, you will need to do something like the following:
    *
-   * <pre><code>
+   * <pre>
    *     GenericTypeIndicator&lt;List&lt;Message&gt;&gt; t =
    *         new GenericTypeIndicator&lt;List&lt;Message&gt;&gt;() {};
    *     List&lt;Message&gt; messages = mutableData.getValue(t);
-   * </code></pre>
+   * </pre>
    *
    * It is important to use a subclass of {@link GenericTypeIndicator}. See {@link
    * GenericTypeIndicator} for more details
@@ -265,11 +267,11 @@ public class MutableData {
    * the value correspond to the JSON types:
    *
    * <ul>
-   *   <li>Boolean
-   *   <li>Long
-   *   <li>Double
-   *   <li>Map&lt;String, Object&gt;
-   *   <li>List&lt;Object&gt;
+   *   <li><code>Boolean</code>
+   *   <li><code>Long</code>
+   *   <li><code>Double</code>
+   *   <li><code>Map&lt;String, Object&gt;</code>
+   *   <li><code>List&lt;Object&gt;</code>
    * </ul>
    *
    * <br>
@@ -315,8 +317,8 @@ public class MutableData {
    * Gets the current priority at this location. The possible return types are:
    *
    * <ul>
-   *   <li>Double
-   *   <li>String
+   *   <li><code>Double</code>
+   *   <li><code>String</code>
    * </ul>
    *
    * Note that null is allowed

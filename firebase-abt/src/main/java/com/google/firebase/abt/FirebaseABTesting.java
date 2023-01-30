@@ -30,10 +30,8 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Manages Firebase A/B Testing Experiments.
@@ -144,11 +142,11 @@ public class FirebaseABTesting {
   }
 
   /**
-   * Gets the origin service's list of experiments in the app.
+   * Gets the origin service's list of experiments in the app via the Analytics SDK.
    *
    * <p>Note: This is a blocking call and therefore should be called from a worker thread.
    *
-   * @return the origin service's list of experiments in the app.
+   * @return the origin service's list of experiments in the app as {@link AbtExperimentInfo}s.
    * @throws AbtException If there is no Analytics SDK.
    */
   @WorkerThread
@@ -204,12 +202,10 @@ public class FirebaseABTesting {
   public void validateRunningExperiments(List<AbtExperimentInfo> runningExperiments)
       throws AbtException {
     throwAbtExceptionIfAnalyticsIsNull();
-    Set<String> runningExperimentIds = new HashSet<>();
-    for (AbtExperimentInfo runningExperiment : runningExperiments) {
-      runningExperimentIds.add(runningExperiment.getExperimentId());
-    }
+
+    // Get all experiments in Analytics and remove the ones that aren't running.
     List<ConditionalUserProperty> experimentsToRemove =
-        getExperimentsToRemove(getAllExperimentsInAnalytics(), runningExperimentIds);
+        getExperimentsToRemove(getAllExperiments(), runningExperiments);
     removeExperiments(experimentsToRemove);
   }
 
@@ -245,34 +241,29 @@ public class FirebaseABTesting {
       return;
     }
 
-    Set<String> replacementExperimentIds = new HashSet<>();
-    for (AbtExperimentInfo replacementExperiment : replacementExperiments) {
-      replacementExperimentIds.add(replacementExperiment.getExperimentId());
-    }
+    // Get all experiments in Analytics.
+    List<AbtExperimentInfo> experimentsInAnalytics = getAllExperiments();
 
-    List<ConditionalUserProperty> experimentsInAnalytics = getAllExperimentsInAnalytics();
-    Set<String> idsOfExperimentsInAnalytics = new HashSet<>();
-    for (ConditionalUserProperty experimentInAnalytics : experimentsInAnalytics) {
-      idsOfExperimentsInAnalytics.add(experimentInAnalytics.name);
-    }
-
+    // Remove experiments no longer assigned.
     List<ConditionalUserProperty> experimentsToRemove =
-        getExperimentsToRemove(experimentsInAnalytics, replacementExperimentIds);
+        getExperimentsToRemove(experimentsInAnalytics, replacementExperiments);
     removeExperiments(experimentsToRemove);
 
+    // Add newly assigned or updated (changed variant id).
     List<AbtExperimentInfo> experimentsToAdd =
-        getExperimentsToAdd(replacementExperiments, idsOfExperimentsInAnalytics);
+        getExperimentsToAdd(replacementExperiments, experimentsInAnalytics);
     addExperiments(experimentsToAdd);
   }
 
   /** Returns this origin's experiments in Analytics that are no longer assigned to this App. */
   private ArrayList<ConditionalUserProperty> getExperimentsToRemove(
-      List<ConditionalUserProperty> experimentsInAnalytics, Set<String> replacementExperimentIds) {
+      List<AbtExperimentInfo> experimentsInAnalytics,
+      List<AbtExperimentInfo> replacementExperiments) {
 
     ArrayList<ConditionalUserProperty> experimentsToRemove = new ArrayList<>();
-    for (ConditionalUserProperty experimentInAnalytics : experimentsInAnalytics) {
-      if (!replacementExperimentIds.contains(experimentInAnalytics.name)) {
-        experimentsToRemove.add(experimentInAnalytics);
+    for (AbtExperimentInfo experimentInAnalytics : experimentsInAnalytics) {
+      if (!experimentsListContainsExperiment(replacementExperiments, experimentInAnalytics)) {
+        experimentsToRemove.add(experimentInAnalytics.toConditionalUserProperty(originService));
       }
     }
     return experimentsToRemove;
@@ -283,15 +274,31 @@ public class FirebaseABTesting {
    * to this origin's list of experiments in Analytics.
    */
   private ArrayList<AbtExperimentInfo> getExperimentsToAdd(
-      List<AbtExperimentInfo> replacementExperiments, Set<String> idsOfExperimentsInAnalytics) {
+      List<AbtExperimentInfo> replacementExperiments,
+      List<AbtExperimentInfo> experimentInfoFromAnalytics) {
 
     ArrayList<AbtExperimentInfo> experimentsToAdd = new ArrayList<>();
     for (AbtExperimentInfo replacementExperiment : replacementExperiments) {
-      if (!idsOfExperimentsInAnalytics.contains(replacementExperiment.getExperimentId())) {
+      if (!experimentsListContainsExperiment(experimentInfoFromAnalytics, replacementExperiment)) {
         experimentsToAdd.add(replacementExperiment);
       }
     }
     return experimentsToAdd;
+  }
+
+  private boolean experimentsListContainsExperiment(
+      List<AbtExperimentInfo> experiments, AbtExperimentInfo experiment) {
+    String experimentId = experiment.getExperimentId();
+    String variantId = experiment.getVariantId();
+
+    for (AbtExperimentInfo experimentInfo : experiments) {
+      if (experimentInfo.getExperimentId().equals(experimentId)
+          && experimentInfo.getVariantId().equals(variantId)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /** Adds the given experiments to the origin's list in Analytics. */
@@ -369,7 +376,7 @@ public class FirebaseABTesting {
    * Returns a list of all this origin's experiments in this App's Analytics SDK.
    *
    * <p>The list is sorted chronologically by the experiment start time, with the oldest experiment
-   * at index 0.
+   * at index 0. Experiments are stored as {@link ConditionalUserProperty}s in Analytics.
    */
   @WorkerThread
   private List<ConditionalUserProperty> getAllExperimentsInAnalytics() {

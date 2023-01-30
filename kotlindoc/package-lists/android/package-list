@@ -3,6 +3,7 @@ android.accessibilityservice
 android.accounts
 android.animation
 android.annotation
+androidx.annotation
 android.app
 android.app.admin
 android.app.assist

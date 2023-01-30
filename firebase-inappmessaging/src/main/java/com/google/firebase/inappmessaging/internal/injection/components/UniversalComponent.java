@@ -16,6 +16,8 @@ package com.google.firebase.inappmessaging.internal.injection.components;
 
 import android.app.Application;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.inappmessaging.internal.AnalyticsEventsManager;
 import com.google.firebase.inappmessaging.internal.CampaignCacheClient;
@@ -28,6 +30,7 @@ import com.google.firebase.inappmessaging.internal.Schedulers;
 import com.google.firebase.inappmessaging.internal.injection.modules.AnalyticsEventsModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.AppMeasurementModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ApplicationModule;
+import com.google.firebase.inappmessaging.internal.injection.modules.ExecutorsModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ForegroundFlowableModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.GrpcChannelModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ProgrammaticContextualTriggerFlowableModule;
@@ -44,6 +47,7 @@ import com.google.firebase.inappmessaging.model.RateLimit;
 import dagger.Component;
 import io.grpc.Channel;
 import io.reactivex.flowables.ConnectableFlowable;
+import java.util.concurrent.Executor;
 import javax.inject.Singleton;
 
 /**
@@ -64,7 +68,8 @@ import javax.inject.Singleton;
       ProtoStorageClientModule.class,
       SystemClockModule.class,
       RateLimitModule.class,
-      AppMeasurementModule.class
+      AppMeasurementModule.class,
+      ExecutorsModule.class
     })
 public interface UniversalComponent {
   ProviderInstaller probiderInstaller();
@@ -107,4 +112,10 @@ public interface UniversalComponent {
   RateLimit appForegroundRateLimit();
 
   DeveloperListenerManager developerListenerManager();
+
+  @Lightweight
+  Executor lightWeightExecutor();
+
+  @Blocking
+  Executor blockingExecutor();
 }

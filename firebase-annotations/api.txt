@@ -6,3 +6,19 @@ package com.google.firebase.annotations {
 
 }
 
+package com.google.firebase.annotations.concurrent {
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @javax.inject.Qualifier public @interface Background {
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @javax.inject.Qualifier public @interface Blocking {
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @javax.inject.Qualifier public @interface Lightweight {
+  }
+
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @javax.inject.Qualifier public @interface UiThread {
+  }
+
+}
+

@@ -49,6 +49,7 @@ android {
 }
 
 dependencies {
+    implementation project(':firebase-annotations')
     implementation project(':firebase-common')
     implementation project(':firebase-abt')
     implementation project(':firebase-components')

@@ -35,10 +35,6 @@ public final class FirestoreProvider {
     this.context = context;
   }
 
-  public String firestoreHost() {
-    return "firestore.googleapis.com";
-  }
-
   public String projectId() {
     return context.getString(R.string.project_id);
   }

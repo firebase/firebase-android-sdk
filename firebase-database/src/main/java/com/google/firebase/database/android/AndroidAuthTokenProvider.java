@@ -14,6 +14,7 @@
 
 package com.google.firebase.database.android;
 
+import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApiNotAvailableException;
@@ -36,6 +37,8 @@ public class AndroidAuthTokenProvider implements TokenProvider {
     deferredAuthProvider.whenAvailable(authProvider -> internalAuth.set(authProvider.get()));
   }
 
+  // TODO(b/261014172): Use an explicit executor in continuations.
+  @SuppressLint("TaskMainThread")
   @Override
   public void getToken(boolean forceRefresh, @NonNull final GetTokenCompletionListener listener) {
     InternalAuthProvider authProvider = internalAuth.get();

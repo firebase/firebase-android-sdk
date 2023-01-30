@@ -14,6 +14,7 @@
 
 package com.google.firebase.installations;
 
+import android.annotation.SuppressLint;
 import android.text.TextUtils;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
@@ -43,11 +44,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -70,7 +69,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final RandomFidGenerator fidGenerator;
   private final Object lock = new Object();
   private final ExecutorService backgroundExecutor;
-  private final ExecutorService networkExecutor;
+  private final Executor networkExecutor;
   /* FID of this Firebase Installations instance. Cached after successfully registering and
   persisting the FID locally. NOTE: cachedFid resets if FID is deleted.*/
   @GuardedBy("this")
@@ -96,6 +95,8 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         private final AtomicInteger mCount = new AtomicInteger(1);
 
         @Override
+        // TODO(b/258422917): Migrate to go/firebase-android-executors
+        @SuppressLint("ThreadPoolCreation")
         public Thread newThread(Runnable r) {
           return new Thread(
               r, String.format("firebase-installations-executor-%d", mCount.getAndIncrement()));
@@ -123,16 +124,16 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
           + "Please retry your last request.";
 
   /** package private constructor. */
+  // TODO(b/258422917): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   FirebaseInstallations(
-      FirebaseApp firebaseApp, @NonNull Provider<HeartBeatController> heartBeatProvider) {
+      FirebaseApp firebaseApp,
+      @NonNull Provider<HeartBeatController> heartBeatProvider,
+      @NonNull ExecutorService backgroundExecutor,
+      @NonNull Executor networkExecutor) {
     this(
-        new ThreadPoolExecutor(
-            CORE_POOL_SIZE,
-            MAXIMUM_POOL_SIZE,
-            KEEP_ALIVE_TIME_IN_SECONDS,
-            TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(),
-            THREAD_FACTORY),
+        backgroundExecutor,
+        networkExecutor,
         firebaseApp,
         new FirebaseInstallationServiceClient(
             firebaseApp.getApplicationContext(), heartBeatProvider),
@@ -142,8 +143,11 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
         new RandomFidGenerator());
   }
 
+  // TODO(b/258422917): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   FirebaseInstallations(
       ExecutorService backgroundExecutor,
+      Executor networkExecutor,
       FirebaseApp firebaseApp,
       FirebaseInstallationServiceClient serviceClient,
       PersistedInstallation persistedInstallation,
@@ -157,14 +161,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     this.iidStore = iidStore;
     this.fidGenerator = fidGenerator;
     this.backgroundExecutor = backgroundExecutor;
-    this.networkExecutor =
-        new ThreadPoolExecutor(
-            CORE_POOL_SIZE,
-            MAXIMUM_POOL_SIZE,
-            KEEP_ALIVE_TIME_IN_SECONDS,
-            TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(),
-            THREAD_FACTORY);
+    this.networkExecutor = networkExecutor;
   }
 
   /**

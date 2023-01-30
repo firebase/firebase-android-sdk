@@ -17,25 +17,23 @@ package com.google.firebase.crashlytics.ktx
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 
 /** Helper class to enable fluent syntax in [setCustomKeys] */
-class KeyValueBuilder(
-    private val crashlytics: FirebaseCrashlytics
-) {
+class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
 
-    /** Sets a custom key and value that are associated with reports.  */
-    fun key(key: String, value: Boolean) = crashlytics.setCustomKey(key, value)
+  /** Sets a custom key and value that are associated with reports. */
+  fun key(key: String, value: Boolean) = crashlytics.setCustomKey(key, value)
 
-    /** Sets a custom key and value that are associated with reports.  */
-    fun key(key: String, value: Double) = crashlytics.setCustomKey(key, value)
+  /** Sets a custom key and value that are associated with reports. */
+  fun key(key: String, value: Double) = crashlytics.setCustomKey(key, value)
 
-    /** Sets a custom key and value that are associated with reports.  */
-    fun key(key: String, value: Float) = crashlytics.setCustomKey(key, value)
+  /** Sets a custom key and value that are associated with reports. */
+  fun key(key: String, value: Float) = crashlytics.setCustomKey(key, value)
 
-    /** Sets a custom key and value that are associated with reports.  */
-    fun key(key: String, value: Int) = crashlytics.setCustomKey(key, value)
+  /** Sets a custom key and value that are associated with reports. */
+  fun key(key: String, value: Int) = crashlytics.setCustomKey(key, value)
 
-    /** Sets a custom key and value that are associated with reports.  */
-    fun key(key: String, value: Long) = crashlytics.setCustomKey(key, value)
+  /** Sets a custom key and value that are associated with reports. */
+  fun key(key: String, value: Long) = crashlytics.setCustomKey(key, value)
 
-    /** Sets a custom key and value that are associated with reports.  */
-    fun key(key: String, value: String) = crashlytics.setCustomKey(key, value)
+  /** Sets a custom key and value that are associated with reports. */
+  fun key(key: String, value: String) = crashlytics.setCustomKey(key, value)
 }

@@ -62,6 +62,8 @@ final class ReportQueue {
         onDemandCounter);
   }
 
+  // TODO(b/258263226): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   ReportQueue(
       double ratePerMinute,
       double base,
@@ -120,7 +122,8 @@ final class ReportQueue {
     }
   }
 
-  @SuppressLint("DiscouragedApi") // best effort only
+  // TODO(b/258263226): Migrate to go/firebase-android-executors
+  @SuppressLint({"DiscouragedApi", "ThreadPoolCreation"}) // best effort only
   public void flushScheduledReportsIfAble() {
     CountDownLatch latch = new CountDownLatch(1);
     new Thread(

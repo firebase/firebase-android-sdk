@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics.internal.common;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+import android.annotation.SuppressLint;
 import com.google.firebase.crashlytics.internal.Logger;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -43,6 +44,8 @@ public final class ExecutorUtils {
 
   public static ScheduledExecutorService buildSingleThreadScheduledExecutorService(String name) {
     final ThreadFactory threadFactory = ExecutorUtils.getNamedThreadFactory(name);
+    // TODO(b/258263226): Migrate to go/firebase-android-executors
+    @SuppressLint("ThreadPoolCreation")
     final ScheduledExecutorService executor =
         Executors.newSingleThreadScheduledExecutor(threadFactory);
     ExecutorUtils.addDelayedShutdownHook(name, executor);
@@ -70,6 +73,8 @@ public final class ExecutorUtils {
     };
   }
 
+  // TODO(b/258263226): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   private static ExecutorService newSingleThreadExecutor(
       ThreadFactory threadFactory, RejectedExecutionHandler rejectedExecutionHandler) {
     return Executors.unconfigurableExecutorService(
@@ -88,11 +93,14 @@ public final class ExecutorUtils {
         serviceName, service, DEFAULT_TERMINATION_TIMEOUT, SECONDS);
   }
 
+  // TODO(b/258263226): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   private static void addDelayedShutdownHook(
       final String serviceName,
       final ExecutorService service,
       final long terminationTimeout,
       final TimeUnit timeUnit) {
+
     Runtime.getRuntime()
         .addShutdownHook(
             new Thread(

@@ -32,56 +32,60 @@ const val API_KEY = "API_KEY"
 
 @RunWith(AndroidJUnit4::class)
 class CallTests {
-    companion object {
-        lateinit var app: FirebaseApp
+  companion object {
+    lateinit var app: FirebaseApp
 
-        @BeforeClass @JvmStatic fun setup() {
-            app = Firebase.initialize(InstrumentationRegistry.getContext())!!
-        }
-
-        @AfterClass @JvmStatic fun cleanup() {
-            app.delete()
-        }
+    @BeforeClass
+    @JvmStatic
+    fun setup() {
+      app = Firebase.initialize(InstrumentationRegistry.getContext())!!
     }
 
-    @Test
-    fun testDataCall() {
-        val functions = Firebase.functions(app)
-        val input = hashMapOf(
-            "bool" to true,
-            "int" to 2,
-            "long" to 3L,
-            "string" to "four",
-            "array" to listOf(5, 6),
-            "null" to null
-        )
-
-        var function = functions.getHttpsCallable("dataTest")
-        val actual = Tasks.await(function.call(input)).getData()
-
-        assertThat(actual).isInstanceOf(Map::class.java)
-        @Suppress("UNCHECKED_CAST")
-        val map = actual as Map<String, *>
-        assertThat(map["message"]).isEqualTo("stub response")
-        assertThat(map["code"]).isEqualTo(42)
-        assertThat(map["long"]).isEqualTo(420L)
+    @AfterClass
+    @JvmStatic
+    fun cleanup() {
+      app.delete()
     }
+  }
 
-    @Test
-    fun testNullDataCall() {
-        val functions = Firebase.functions(app)
-        var function = functions.getHttpsCallable("nullTest")
-        val actual = Tasks.await(function.call(null)).getData()
+  @Test
+  fun testDataCall() {
+    val functions = Firebase.functions(app)
+    val input =
+      hashMapOf(
+        "bool" to true,
+        "int" to 2,
+        "long" to 3L,
+        "string" to "four",
+        "array" to listOf(5, 6),
+        "null" to null
+      )
 
-        assertThat(actual).isNull()
-    }
+    var function = functions.getHttpsCallable("dataTest")
+    val actual = Tasks.await(function.call(input)).getData()
 
-    @Test
-    fun testEmptyDataCall() {
-        val functions = Firebase.functions(app)
-        var function = functions.getHttpsCallable("nullTest")
-        val actual = Tasks.await(function.call()).getData()
+    assertThat(actual).isInstanceOf(Map::class.java)
+    @Suppress("UNCHECKED_CAST") val map = actual as Map<String, *>
+    assertThat(map["message"]).isEqualTo("stub response")
+    assertThat(map["code"]).isEqualTo(42)
+    assertThat(map["long"]).isEqualTo(420L)
+  }
 
-        assertThat(actual).isNull()
-    }
+  @Test
+  fun testNullDataCall() {
+    val functions = Firebase.functions(app)
+    var function = functions.getHttpsCallable("nullTest")
+    val actual = Tasks.await(function.call(null)).getData()
+
+    assertThat(actual).isNull()
+  }
+
+  @Test
+  fun testEmptyDataCall() {
+    val functions = Firebase.functions(app)
+    var function = functions.getHttpsCallable("nullTest")
+    val actual = Tasks.await(function.call()).getData()
+
+    assertThat(actual).isNull()
+  }
 }

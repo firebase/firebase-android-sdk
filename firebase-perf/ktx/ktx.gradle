@@ -50,7 +50,7 @@ dependencies {
     implementation project(':firebase-perf')
     implementation 'androidx.annotation:annotation:1.1.0'
 
-    testCompileOnly "com.google.protobuf:protobuf-java:$protocVersion"
+    testCompileOnly "com.google.protobuf:protobuf-java:3.21.9"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"

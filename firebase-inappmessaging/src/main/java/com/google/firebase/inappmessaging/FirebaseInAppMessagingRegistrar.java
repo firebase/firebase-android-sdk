@@ -22,10 +22,14 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.abt.FirebaseABTesting;
 import com.google.firebase.abt.component.AbtComponent;
 import com.google.firebase.analytics.connector.AnalyticsConnector;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.inappmessaging.internal.AbtIntegrationHelper;
 import com.google.firebase.inappmessaging.internal.ProgramaticContextualTriggers;
@@ -37,6 +41,7 @@ import com.google.firebase.inappmessaging.internal.injection.modules.AnalyticsEv
 import com.google.firebase.inappmessaging.internal.injection.modules.ApiClientModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.AppMeasurementModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ApplicationModule;
+import com.google.firebase.inappmessaging.internal.injection.modules.ExecutorsModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.GrpcClientModule;
 import com.google.firebase.inappmessaging.internal.injection.modules.ProgrammaticContextualTriggerFlowableModule;
 import com.google.firebase.inject.Deferred;
@@ -44,6 +49,7 @@ import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 /**
  * Registers {@link FirebaseInAppMessaging}.
@@ -53,6 +59,12 @@ import java.util.List;
 @Keep
 public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-fiam";
+  private Qualified<Executor> backgroundExecutor =
+      Qualified.qualified(Background.class, Executor.class);
+  private Qualified<Executor> blockingExecutor =
+      Qualified.qualified(Blocking.class, Executor.class);
+  private Qualified<Executor> lightWeightExecutor =
+      Qualified.qualified(Lightweight.class, Executor.class);
 
   @Override
   @Keep
@@ -67,6 +79,9 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
             .add(Dependency.deferred(AnalyticsConnector.class))
             .add(Dependency.required(TransportFactory.class))
             .add(Dependency.required(Subscriber.class))
+            .add(Dependency.required(backgroundExecutor))
+            .add(Dependency.required(blockingExecutor))
+            .add(Dependency.required(lightWeightExecutor))
             .factory(this::providesFirebaseInAppMessaging)
             .eagerInDefaultApp()
             .build(),
@@ -91,6 +106,11 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
             .programmaticContextualTriggerFlowableModule(
                 new ProgrammaticContextualTriggerFlowableModule(
                     new ProgramaticContextualTriggers()))
+            .executorsModule(
+                new ExecutorsModule(
+                    container.get(lightWeightExecutor),
+                    container.get(backgroundExecutor),
+                    container.get(blockingExecutor)))
             .build();
 
     AppComponent instance =

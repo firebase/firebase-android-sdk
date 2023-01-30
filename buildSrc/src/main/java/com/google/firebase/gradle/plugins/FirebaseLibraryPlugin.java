@@ -90,20 +90,6 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                           test.systemProperty("javax.net.ssl.trustStoreType", "JKS");
                         })));
 
-    // skip debug tests in CI
-    // TODO(vkryachko): provide ability for teams to control this if needed
-    if (System.getenv().containsKey("FIREBASE_CI")) {
-      android.setTestBuildType("release");
-      project
-          .getTasks()
-          .all(
-              task -> {
-                if ("testDebugUnitTest".equals(task.getName())) {
-                  task.setEnabled(false);
-                }
-              });
-    }
-
     setupApiInformationAnalysis(project, android);
     android.testServer(new FirebaseTestServer(project, firebaseLibrary.testLab, android));
 
@@ -213,13 +199,6 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                 .getConfigurations()
                 .all(
                     c -> {
-                      if ("annotationProcessor".equals(c.getName())) {
-                        for (String checkProject : library.staticAnalysis.errorproneCheckProjects) {
-                          project
-                              .getDependencies()
-                              .add("annotationProcessor", project.project(checkProject));
-                        }
-                      }
                       if ("lintChecks".equals(c.getName())) {
                         for (String checkProject :
                             library.staticAnalysis.androidLintCheckProjects) {

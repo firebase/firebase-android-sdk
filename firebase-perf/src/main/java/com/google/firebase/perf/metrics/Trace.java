@@ -689,8 +689,7 @@ public class Trace extends AppStateUpdateHandler
    * Describes the kinds of special objects contained in this Parcelable's marshalled
    * representation.
    *
-   * @see <a href="https://developer.android.com/reference/android/os/Parcelable.html">
-   *     https://developer.android.com/reference/android/os/Parcelable.html</a>
+   * @see Parcelable
    * @return always returns 0.
    */
   @Keep

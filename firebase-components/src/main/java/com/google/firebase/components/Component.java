@@ -80,7 +80,7 @@ public final class Component<T> {
   }
 
   private final String name;
-  private final Set<Class<? super T>> providedInterfaces;
+  private final Set<Qualified<? super T>> providedInterfaces;
   private final Set<Dependency> dependencies;
   private final @Instantiation int instantiation;
   private final @ComponentType int type;
@@ -89,7 +89,7 @@ public final class Component<T> {
 
   private Component(
       @Nullable String name,
-      Set<Class<? super T>> providedInterfaces,
+      Set<Qualified<? super T>> providedInterfaces,
       Set<Dependency> dependencies,
       @Instantiation int instantiation,
       @ComponentType int type,
@@ -119,7 +119,7 @@ public final class Component<T> {
    *
    * <p>Note: T conforms to all of these interfaces.
    */
-  public Set<Class<? super T>> getProvidedInterfaces() {
+  public Set<Qualified<? super T>> getProvidedInterfaces() {
     return providedInterfaces;
   }
 
@@ -202,6 +202,18 @@ public final class Component<T> {
     return new Builder<>(anInterface, additionalInterfaces);
   }
 
+  /** Returns a Component<T> builder. */
+  public static <T> Component.Builder<T> builder(Qualified<T> anInterface) {
+    return new Builder<>(anInterface);
+  }
+
+  /** Returns a Component<T> builder. */
+  @SafeVarargs
+  public static <T> Component.Builder<T> builder(
+      Qualified<T> anInterface, Qualified<? super T>... additionalInterfaces) {
+    return new Builder<>(anInterface, additionalInterfaces);
+  }
+
   /**
    * Wraps a value in a {@link Component} with no dependencies.
    *
@@ -219,6 +231,13 @@ public final class Component<T> {
     return builder(anInterface, additionalInterfaces).factory((args) -> value).build();
   }
 
+  /** Wraps a value in a {@link Component} with no dependencies. */
+  @SafeVarargs
+  public static <T> Component<T> of(
+      T value, Qualified<T> anInterface, Qualified<? super T>... additionalInterfaces) {
+    return builder(anInterface, additionalInterfaces).factory((args) -> value).build();
+  }
+
   /**
    * Provides a builder for a {@link Set}-multibinding {@link Component}.
    *
@@ -226,6 +245,16 @@ public final class Component<T> {
    * or {@link ComponentContainer#setOfProvider(Class)}.
    */
   public static <T> Component.Builder<T> intoSetBuilder(Class<T> anInterface) {
+    return builder(anInterface).intoSet();
+  }
+
+  /**
+   * Provides a builder for a {@link Set}-multibinding {@link Component}.
+   *
+   * <p>Such components can be requested by dependents via {@link ComponentContainer#setOf(Class)} *
+   * or {@link ComponentContainer#setOfProvider(Class)}.
+   */
+  public static <T> Component.Builder<T> intoSetBuilder(Qualified<T> anInterface) {
     return builder(anInterface).intoSet();
   }
 
@@ -239,21 +268,41 @@ public final class Component<T> {
     return intoSetBuilder(anInterface).factory(c -> value).build();
   }
 
+  /**
+   * Wraps a value in a {@link Set}-multibinding {@link Component} with no dependencies. *
+   *
+   * <p>Such components can be requested by dependents via {@link ComponentContainer#setOf(Class)} *
+   * or {@link ComponentContainer#setOfProvider(Class)}.
+   */
+  public static <T> Component<T> intoSet(T value, Qualified<T> anInterface) {
+    return intoSetBuilder(anInterface).factory(c -> value).build();
+  }
+
   /** FirebaseComponent builder. */
   public static class Builder<T> {
     private String name = null;
-    private final Set<Class<? super T>> providedInterfaces = new HashSet<>();
+    private final Set<Qualified<? super T>> providedInterfaces = new HashSet<>();
     private final Set<Dependency> dependencies = new HashSet<>();
     private @Instantiation int instantiation = Instantiation.LAZY;
     private @ComponentType int type = ComponentType.VALUE;
     private ComponentFactory<T> factory;
-    private Set<Class<?>> publishedEvents = new HashSet<>();
+    private final Set<Class<?>> publishedEvents = new HashSet<>();
 
     @SafeVarargs
     private Builder(Class<T> anInterface, Class<? super T>... additionalInterfaces) {
       Preconditions.checkNotNull(anInterface, "Null interface");
-      providedInterfaces.add(anInterface);
+      providedInterfaces.add(Qualified.unqualified(anInterface));
       for (Class<? super T> iface : additionalInterfaces) {
+        Preconditions.checkNotNull(iface, "Null interface");
+        providedInterfaces.add(Qualified.unqualified(iface));
+      }
+    }
+
+    @SafeVarargs
+    private Builder(Qualified<T> anInterface, Qualified<? super T>... additionalInterfaces) {
+      Preconditions.checkNotNull(anInterface, "Null interface");
+      providedInterfaces.add(anInterface);
+      for (Qualified<? super T> iface : additionalInterfaces) {
         Preconditions.checkNotNull(iface, "Null interface");
       }
       Collections.addAll(providedInterfaces, additionalInterfaces);
@@ -301,7 +350,7 @@ public final class Component<T> {
       return this;
     }
 
-    private void validateInterface(Class<?> anInterface) {
+    private void validateInterface(Qualified<?> anInterface) {
       Preconditions.checkArgument(
           !providedInterfaces.contains(anInterface),
           "Components are not allowed to depend on interfaces they themselves provide.");

@@ -39,6 +39,7 @@ public class ViewSnapshot {
   private final ImmutableSortedSet<DocumentKey> mutatedKeys;
   private final boolean didSyncStateChange;
   private boolean excludesMetadataChanges;
+  private boolean hasCachedResults;
 
   public ViewSnapshot(
       Query query,
@@ -48,7 +49,8 @@ public class ViewSnapshot {
       boolean isFromCache,
       ImmutableSortedSet<DocumentKey> mutatedKeys,
       boolean didSyncStateChange,
-      boolean excludesMetadataChanges) {
+      boolean excludesMetadataChanges,
+      boolean hasCachedResults) {
     this.query = query;
     this.documents = documents;
     this.oldDocuments = oldDocuments;
@@ -57,6 +59,7 @@ public class ViewSnapshot {
     this.mutatedKeys = mutatedKeys;
     this.didSyncStateChange = didSyncStateChange;
     this.excludesMetadataChanges = excludesMetadataChanges;
+    this.hasCachedResults = hasCachedResults;
   }
 
   /** Returns a view snapshot as if all documents in the snapshot were added. */
@@ -65,7 +68,8 @@ public class ViewSnapshot {
       DocumentSet documents,
       ImmutableSortedSet<DocumentKey> mutatedKeys,
       boolean fromCache,
-      boolean excludesMetadataChanges) {
+      boolean excludesMetadataChanges,
+      boolean hasCachedResults) {
     List<DocumentViewChange> viewChanges = new ArrayList<>();
     for (Document doc : documents) {
       viewChanges.add(DocumentViewChange.create(DocumentViewChange.Type.ADDED, doc));
@@ -78,7 +82,8 @@ public class ViewSnapshot {
         fromCache,
         mutatedKeys,
         /* didSyncStateChange= */ true,
-        excludesMetadataChanges);
+        excludesMetadataChanges,
+        hasCachedResults);
   }
 
   public Query getQuery() {
@@ -117,6 +122,10 @@ public class ViewSnapshot {
     return excludesMetadataChanges;
   }
 
+  public boolean hasCachedResults() {
+    return hasCachedResults;
+  }
+
   @Override
   public final boolean equals(Object o) {
     if (this == o) {
@@ -149,6 +158,9 @@ public class ViewSnapshot {
     if (!oldDocuments.equals(that.oldDocuments)) {
       return false;
     }
+    if (hasCachedResults != that.hasCachedResults) {
+      return false;
+    }
     return changes.equals(that.changes);
   }
 
@@ -162,6 +174,7 @@ public class ViewSnapshot {
     result = 31 * result + (isFromCache ? 1 : 0);
     result = 31 * result + (didSyncStateChange ? 1 : 0);
     result = 31 * result + (excludesMetadataChanges ? 1 : 0);
+    result = 31 * result + (hasCachedResults ? 1 : 0);
     return result;
   }
 
@@ -183,6 +196,8 @@ public class ViewSnapshot {
         + didSyncStateChange
         + ", excludesMetadataChanges="
         + excludesMetadataChanges
+        + ", hasCachedResults="
+        + hasCachedResults
         + ")";
   }
 }

@@ -134,7 +134,11 @@ public class FirebaseSegmentationTest {
   public void testUpdateCustomInstallationId_CacheOk_BackendOk() throws Exception {
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
-            firebaseApp, firebaseInstallationsApi, actualCache, backendClientReturnsOk);
+            firebaseApp,
+            firebaseInstallationsApi,
+            actualCache,
+            backendClientReturnsOk,
+            taskExecutor);
 
     // No exception, means success.
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
@@ -153,7 +157,11 @@ public class FirebaseSegmentationTest {
       throws InterruptedException {
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
-            firebaseApp, firebaseInstallationsApi, actualCache, backendClientReturnsError);
+            firebaseApp,
+            firebaseInstallationsApi,
+            actualCache,
+            backendClientReturnsError,
+            taskExecutor);
 
     // Expect exception
     try {
@@ -185,7 +193,11 @@ public class FirebaseSegmentationTest {
         .thenReturn(SegmentationServiceClient.Code.CONFLICT);
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
-            firebaseApp, firebaseInstallationsApi, actualCache, backendClientReturnsError);
+            firebaseApp,
+            firebaseInstallationsApi,
+            actualCache,
+            backendClientReturnsError,
+            taskExecutor);
 
     // Expect exception
     try {
@@ -210,7 +222,11 @@ public class FirebaseSegmentationTest {
   public void testUpdateCustomInstallationId_CacheError_BackendOk() throws InterruptedException {
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
-            firebaseApp, firebaseInstallationsApi, cacheReturnsError, backendClientReturnsOk);
+            firebaseApp,
+            firebaseInstallationsApi,
+            cacheReturnsError,
+            backendClientReturnsOk,
+            taskExecutor);
 
     // Expect exception
     try {
@@ -237,7 +253,11 @@ public class FirebaseSegmentationTest {
             CustomInstallationIdCache.CacheStatus.SYNCED));
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
-            firebaseApp, firebaseInstallationsApi, actualCache, backendClientReturnsOk);
+            firebaseApp,
+            firebaseInstallationsApi,
+            actualCache,
+            backendClientReturnsOk,
+            taskExecutor);
 
     // No exception, means success.
     TestOnCompleteListener<Void> onCompleteListener = new TestOnCompleteListener<>();
@@ -258,7 +278,11 @@ public class FirebaseSegmentationTest {
             CustomInstallationIdCache.CacheStatus.SYNCED));
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
-            firebaseApp, firebaseInstallationsApi, actualCache, backendClientReturnsError);
+            firebaseApp,
+            firebaseInstallationsApi,
+            actualCache,
+            backendClientReturnsError,
+            taskExecutor);
 
     // Expect exception
     try {
@@ -286,7 +310,11 @@ public class FirebaseSegmentationTest {
   public void testClearCustomInstallationId_CacheError_BackendOk() throws InterruptedException {
     FirebaseSegmentation firebaseSegmentation =
         new FirebaseSegmentation(
-            firebaseApp, firebaseInstallationsApi, cacheReturnsError, backendClientReturnsOk);
+            firebaseApp,
+            firebaseInstallationsApi,
+            cacheReturnsError,
+            backendClientReturnsOk,
+            taskExecutor);
 
     // Expect exception
     try {

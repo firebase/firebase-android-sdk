@@ -14,6 +14,7 @@
 
 plugins {
     id 'firebase-library'
+    id 'firebase-vendor'
     id 'com.google.protobuf'
 }
 
@@ -63,6 +64,7 @@ dependencies {
     implementation project(':encoders:firebase-encoders-json')
     implementation project(':firebase-common')
     implementation project(':firebase-components')
+    implementation project(':firebase-annotations')
     implementation project(':firebase-datatransport')
     implementation project(':firebase-installations-interop')
     implementation project(':transport:transport-api')
@@ -76,10 +78,17 @@ dependencies {
     implementation 'com.google.auto.service:auto-service-annotations:1.0-rc6'
     implementation 'javax.inject:javax.inject:1'
 
+    implementation 'javax.inject:javax.inject:1'
+    vendor ('com.google.dagger:dagger:2.43.2') {
+        exclude group: "javax.inject", module: "javax.inject"
+    }
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.43.2'
+
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"
     annotationProcessor project(":encoders:firebase-encoders-processor")
 
+    testImplementation(project(":integ-testing"))
     testImplementation 'androidx.test:core:1.3.0'
     testImplementation 'com.github.tomakehurst:wiremock-standalone:2.26.3'
     testImplementation "com.google.truth:truth:$googleTruthVersion"

@@ -15,6 +15,7 @@ package com.google.firebase.messaging;
 
 import static com.google.firebase.messaging.Constants.TAG;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Intent;
@@ -34,6 +35,8 @@ class FcmLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
   private final Set<Intent> seenIntents =
       Collections.newSetFromMap(new WeakHashMap<Intent, Boolean>());
 
+  // TODO(b/258424124): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
   @Override
   public void onActivityCreated(Activity createdActivity, Bundle instanceState) {
     Intent startingIntent = createdActivity.getIntent();
