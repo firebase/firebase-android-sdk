@@ -1,4 +1,6 @@
 # Unreleased
+* [changed] Improved crash reporting reliability for crashes that occur early in the app's
+  lifecycle.
 
 # 18.3.2
 * [unchanged] Updated to accommodate the release of the updated
