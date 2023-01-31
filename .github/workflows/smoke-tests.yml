@@ -55,6 +55,7 @@ jobs:
         with:
           name: smoke-tests-artifacts
           path: |
+            build/m2repository
             ${{ runner.temp }}/**/*.apk
             ${{ runner.temp }}/**/changed-artifacts.json
             ${{ runner.temp }}/**/smoke-test-dependencies.log
