@@ -25,7 +25,7 @@ jobs:
       # TODO(yifany): make it a fireci plugin and remove the separately distributed jar file
       - name: Download smoke tests runner
         run: |
-          SMOKE_TESTS_RUNNER_URL="https://storage.googleapis.com/android-ci/smoke-tests-runner.jar"
+          SMOKE_TESTS_RUNNER_URL="https://storage.googleapis.com/android-ci/smoke-tests-runner-debug.jar"
           curl ${SMOKE_TESTS_RUNNER_URL} --output runner.jar
 
       # TODO(yifany): remove hardcoded reference to /smoke-tests-google-services from the runner
