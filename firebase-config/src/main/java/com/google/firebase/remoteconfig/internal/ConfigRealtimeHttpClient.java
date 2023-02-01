@@ -325,7 +325,7 @@ public class ConfigRealtimeHttpClient {
 
   /** Retries HTTP stream connection asyncly in random time intervals. */
   @SuppressLint("VisibleForTests")
-  public synchronized void retryHttpConnection() {
+  public synchronized void retryHttpConnectionWhenBackoffEnds() {
     Date currentTime = new Date(clock.currentTimeMillis());
     long retrySeconds =
         Math.max(
@@ -426,7 +426,7 @@ public class ConfigRealtimeHttpClient {
         metadataClient.getRealtimeBackoffMetadata();
     Date currentTime = new Date(clock.currentTimeMillis());
     if (currentTime.before(backoffMetadata.getBackoffEndTime())) {
-      retryHttpConnection();
+      retryHttpConnectionWhenBackoffEnds();
       return;
     }
 
@@ -468,7 +468,7 @@ public class ConfigRealtimeHttpClient {
       // If responseCode is null then no connection was made to server and the SDK should still
       // retry.
       if (connectionFailed || responseCode == HttpURLConnection.HTTP_OK) {
-        retryHttpConnection();
+        retryHttpConnectionWhenBackoffEnds();
       } else {
         propagateErrors(
             new FirebaseRemoteConfigServerException(
