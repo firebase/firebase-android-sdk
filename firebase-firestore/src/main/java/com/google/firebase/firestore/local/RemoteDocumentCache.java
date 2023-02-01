@@ -14,13 +14,15 @@
 
 package com.google.firebase.firestore.local;
 
+import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
-import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
+import javax.annotation.Nonnull;
 
 /**
  * Represents cached documents received from the remote backend.
@@ -77,11 +79,14 @@ interface RemoteDocumentCache {
   Map<DocumentKey, MutableDocument> getAll(String collectionGroup, IndexOffset offset, int limit);
 
   /**
-   * Returns the documents from the provided collection.
+   * Returns the documents that match the given query.
    *
-   * @param collection The collection to read.
+   * @param query The query to match against remote documents.
    * @param offset The read time and document key to start scanning at (exclusive).
+   * @param mutatedKeys The keys of documents who have mutations attached, they should be read
+   *     regardless whether they match the given query.
    * @return A newly created map with the set of documents in the collection.
    */
-  Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset);
+  Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys);
 }
