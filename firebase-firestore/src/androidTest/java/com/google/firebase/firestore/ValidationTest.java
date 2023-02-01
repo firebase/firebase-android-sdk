@@ -900,7 +900,7 @@ public class ValidationTest {
     String reason =
         "Performing an equality ('in' and '==') and an inequality (notEqualTo, notIn, "
             + "lessThan, lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) on the same field "
-            + "is not yet allowed in disjunctions.";
+            + "is not allowed in disjunctions.";
     // Using ==
     expectError(() -> collection.where(or(equalTo("a", "b"), notEqualTo("a", "c"))), reason);
     expectError(

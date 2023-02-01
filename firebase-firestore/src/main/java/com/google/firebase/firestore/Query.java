@@ -679,7 +679,7 @@ public class Query {
           throw new IllegalArgumentException(
               "Performing an equality ('in' and '==') and an inequality (notEqualTo, notIn, "
                   + "lessThan, lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) on the same "
-                  + "field is not yet allowed in disjunctions.");
+                  + "field is not allowed in disjunctions.");
         }
       }
     }
