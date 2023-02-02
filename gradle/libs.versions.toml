@@ -48,3 +48,4 @@ mockito-core = { module = "org.mockito:mockito-core", version = "2.28.2"}
 mockito-dexmaker = { module = "com.linkedin.dexmaker:dexmaker-mockito", version = "2.28.3"}
 robolectric = {module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth"}
+protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobufjavautil" }
