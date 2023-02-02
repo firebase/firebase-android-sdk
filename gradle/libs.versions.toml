@@ -6,12 +6,12 @@ autovalue = "1.10.1"
 coroutines = "1.6.4"
 dagger = "2.43.2"
 grpc = "1.52.1"
-javalite = "3.21.7"
+javalite = "3.21.11"
 kotlin = "1.7.10"
-protoc = "3.21.7"
+protoc = "3.21.11"
 robolectric = "4.9"
 truth = "1.1.2"
-protobufjavautil = "3.21.7"
+protobufjavautil = "3.21.11"
 
 [libraries]
 android-lint = { module = "com.android.tools.lint:lint", version.ref = "android-lint"}
