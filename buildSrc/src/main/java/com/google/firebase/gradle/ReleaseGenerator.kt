@@ -19,10 +19,29 @@ import org.eclipse.jgit.api.ListBranchCommand
 import org.eclipse.jgit.api.errors.GitAPIException
 import org.eclipse.jgit.lib.Constants
 import org.eclipse.jgit.lib.ObjectId
+import org.eclipse.jgit.revwalk.RevCommit
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.TaskAction
 
 data class FirebaseLibrary(val moduleNames: List<String>, val directories: List<String>)
+
+data class CommitDiff(
+  val commitId: String,
+  val author: String,
+  val message: String,
+  val changes: List<String>
+) {
+  override fun toString(): String {
+    return """
+      https://github.com/firebase/firebase-android-sdk/commit/${commitId}  [${author}]
+      ${message}
+      
+      Changes:
+      ${changes.joinToString("\n")}
+    """
+      .trimIndent()
+  }
+}
 
 open class ReleaseGenerator : DefaultTask() {
   @TaskAction
@@ -40,11 +59,30 @@ open class ReleaseGenerator : DefaultTask() {
     val branchRef = getObjectRefForBranchName(repo, pastRelease)
 
     val changedLibraries = getChangedLibraries(repo, branchRef, headRef, firebaseLibraries)
+    val changes = getChangesForLibraries(repo, branchRef, headRef, changedLibraries)
     writeReleaseConfig(rootDir, changedLibraries, currentRelease)
     if (printReleaseConfig) {
-      println(changedLibraries.joinToString(",", "LIBRARIES TO RELEASE: "))
+      println(generatePrintOutput(changes))
     }
   }
+
+  private fun generatePrintOutput(changes: Map<String, List<CommitDiff>>): String {
+    return changes.entries.joinToString {
+      """
+      ${it.key}
+      
+      ${it.value.joinToString("\n") { it.toString() }}
+    """
+        .trimIndent()
+    }
+  }
+
+  private fun getChangesForLibraries(
+    repo: Git,
+    branchRef: ObjectId,
+    headRef: ObjectId,
+    changedLibraries: List<String>
+  ) = changedLibraries.map { it to getDirChanges(repo, branchRef, headRef, it) }.toMap()
 
   private fun extractLibraries(
     availableModules: Set<String>,
@@ -107,6 +145,29 @@ open class ReleaseGenerator : DefaultTask() {
       .call()
       .iterator()
       .hasNext()
+
+  private fun getDirChanges(
+    repo: Git,
+    previousReleaseRef: ObjectId,
+    currentReleaseRef: ObjectId,
+    directory: String
+  ) =
+    repo
+      .log()
+      .addPath("$directory/")
+      .addRange(previousReleaseRef, currentReleaseRef)
+      .call()
+      .map { toCommitDiff(repo, it) }
+      .toList()
+
+  private fun toCommitDiff(repo: Git, revCommit: RevCommit): CommitDiff {
+    return CommitDiff(
+      revCommit.id.toString(),
+      revCommit.authorIdent.toString(),
+      revCommit.fullMessage.toString(),
+      emptyList()
+    )
+  }
 
   private fun writeReleaseConfig(configPath: File, libraries: List<String>, releaseName: String) {
     File(configPath, "release.cfg")
