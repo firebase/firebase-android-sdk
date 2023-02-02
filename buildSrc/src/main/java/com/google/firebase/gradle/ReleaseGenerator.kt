@@ -33,13 +33,11 @@ data class CommitDiff(
 ) {
   override fun toString(): String {
     return """
-      https://github.com/firebase/firebase-android-sdk/commit/${commitId}  [${author}]
-      ${message}
-      
-      Changes:
-      ${changes.joinToString("\n")}
+      |${message.split("\n")[0]}
+      |    https://github.com/firebase/firebase-android-sdk/commit/${commitId}  [${author}]
+
     """
-      .trimIndent()
+      .trimMargin()
   }
 }
 
@@ -67,13 +65,13 @@ open class ReleaseGenerator : DefaultTask() {
   }
 
   private fun generatePrintOutput(changes: Map<String, List<CommitDiff>>): String {
-    return changes.entries.joinToString {
+    return changes.entries.joinToString("\n") {
       """
-      ${it.key}
+      |### ${it.key}
       
-      ${it.value.joinToString("\n") { it.toString() }}
+      |  ${it.value.joinToString("\n  ") { it.toString() }}
     """
-        .trimIndent()
+        .trimMargin()
     }
   }
 
@@ -82,7 +80,11 @@ open class ReleaseGenerator : DefaultTask() {
     branchRef: ObjectId,
     headRef: ObjectId,
     changedLibraries: List<String>
-  ) = changedLibraries.map { it to getDirChanges(repo, branchRef, headRef, it) }.toMap()
+  ) =
+    changedLibraries
+      .map { it to getDirChanges(repo, branchRef, headRef, it) }
+      .filterNot { it.second.isEmpty() }
+      .toMap()
 
   private fun extractLibraries(
     availableModules: Set<String>,
@@ -162,25 +164,26 @@ open class ReleaseGenerator : DefaultTask() {
 
   private fun toCommitDiff(repo: Git, revCommit: RevCommit): CommitDiff {
     return CommitDiff(
-      revCommit.id.toString(),
-      revCommit.authorIdent.toString(),
+      revCommit.id.name,
+      revCommit.authorIdent.name,
       revCommit.fullMessage.toString(),
       emptyList()
     )
   }
 
   private fun writeReleaseConfig(configPath: File, libraries: List<String>, releaseName: String) {
-    File(configPath, "release.cfg")
-      .writeText(
-        """
-                    [release]
-                    name = $releaseName
-                    mode = RELEASE
+    String to
+      File(configPath, "release.cfg")
+        .writeText(
+          """
+                    |[release]
+                    |name = $releaseName
+                    |mode = RELEASE
                     
-                    [modules]
-                    ${libraries.joinToString("\n".padEnd(21, ' '))}
+                    |[modules]
+                    |${libraries.joinToString("\n")}
                 """
-          .trimIndent()
-      )
+            .trimMargin()
+        )
   }
 }
