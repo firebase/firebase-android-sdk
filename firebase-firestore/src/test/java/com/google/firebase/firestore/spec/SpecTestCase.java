@@ -478,14 +478,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     if (bits.has("padding")) {
       bitSequence.setPadding(bits.getInt("padding"));
     }
-    if (bits.has("bitmap")) {
-      try {
-        bitSequence.setBitmap(
-            ByteString.copyFrom(Base64.decode(bits.getString("bitmap"), Base64.DEFAULT)));
-      } catch (Exception e) {
-        bitSequence.setBitmap(ByteString.EMPTY);
-      }
-    }
+    bitSequence.setBitmap(
+        ByteString.copyFrom(Base64.decode(bits.getString("bitmap"), Base64.DEFAULT)));
 
     BloomFilter.Builder bloomFilter = BloomFilter.newBuilder();
     bloomFilter.setBits(bitSequence);

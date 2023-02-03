@@ -6413,6 +6413,8 @@
     "describeName": "Existence Filters:",
     "itName": "Full re-query is triggered when bloom filter bitmap is invalid",
     "tags": [
+      "no-ios",
+      "no-android"
     ],
     "config": {
       "numClients": 1,
