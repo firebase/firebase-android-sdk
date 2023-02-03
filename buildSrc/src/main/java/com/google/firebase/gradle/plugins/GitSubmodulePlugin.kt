@@ -11,8 +11,7 @@ import org.gradle.kotlin.dsl.register
 /**
  * Exposes configuration for [GitSubmodulePlugin].
  *
- * @param submodules the parent directory of the given SDK's Git Submodules.
- * This defaults to `src/third_party`
+ * @param submodules the parent directory of the SDK's Git Submodules. Defaults to `src/third_party`
  */
 interface GitSubmodulePluginExtension {
   val submodules: Property<File>
@@ -29,9 +28,9 @@ interface GitSubmodulePluginExtension {
  * subsequently bound to the `preBuild` task that is apart of all gradle modules.
  *
  * The following tasks are registered when this plugin is applied:
- *  - [initializeGitSubmodules][registerInitializeGitSubmodulesTask]
- *  - [updateGitSubmodules][registerUpdateGitSubmodulesTask]
- *  - [removeGitSubmodules][registerRemoveGitSubmodulesTask]
+ * - [initializeGitSubmodules][registerInitializeGitSubmodulesTask]
+ * - [updateGitSubmodules][registerUpdateGitSubmodulesTask]
+ * - [removeGitSubmodules][registerRemoveGitSubmodulesTask]
  *
  * __Documentation explaining each task is provided in the annotation for each task__
  *
