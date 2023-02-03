@@ -439,7 +439,6 @@ public class TestUtil {
     TargetData targetData = TestUtil.targetData(targetId, QueryPurpose.LISTEN, "foo/bar");
     TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
     testTargetMetadataProvider.setSyncedKeys(targetData, DocumentKey.emptyKeySet());
-    testTargetMetadataProvider.setDatabaseId(DatabaseId.forProject("test-project"));
 
     WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
 
@@ -460,8 +459,6 @@ public class TestUtil {
     TargetData targetData = TestUtil.targetData(targetId, QueryPurpose.LISTEN, "foo");
     TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
     testTargetMetadataProvider.setSyncedKeys(targetData, syncedKeys);
-    testTargetMetadataProvider.setDatabaseId(DatabaseId.forProject("test-project"));
-
 
     ExistenceFilter existenceFilter = new ExistenceFilter(remoteCount);
     WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
