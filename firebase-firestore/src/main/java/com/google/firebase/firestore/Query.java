@@ -677,7 +677,7 @@ public class Query {
                 || fieldFilter.getOperator().equals(Operator.EQUAL))
             && fieldFilter.getField().equals(inequalityField)) {
           throw new IllegalArgumentException(
-              "Performing an equality ('in' and '==') and an inequality (notEqualTo, notIn, "
+              "Performing an equality ('in' or '==') and an inequality (notEqualTo, notIn, "
                   + "lessThan, lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) on the same "
                   + "field is not allowed in disjunctions.");
         }
