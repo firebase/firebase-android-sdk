@@ -215,7 +215,7 @@ class FirebaseAppDistributionNotificationsManager
   }
 
   public void doCancelFeedbackNotification() {
-    LogWrapper.i(TAG, "Cancelling feedback notification");
+    LogWrapper.i(TAG, "Canceling feedback notification");
     NotificationManagerCompat.from(context).cancel(FEEDBACK.tag, FEEDBACK.id);
   }
 
