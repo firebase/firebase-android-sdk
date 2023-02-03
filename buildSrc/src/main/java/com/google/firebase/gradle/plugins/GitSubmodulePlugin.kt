@@ -21,10 +21,9 @@ interface GitSubmodulePluginExtension {
 /**
  * Helper plugin for common actions regarding Git Submodules
  *
- * At the time of writing this, we only have one SDK with submodules. Although, that could go
- * grow in the future. More importantly though, this provides a way for us to make sure the
- * submodules are initilized whenever we are building said SDKs- while keeping our system clean
- * and modular.
+ * At the time of writing this, we only have one SDK with submodules. Although, that could grow in
+ * the future. More importantly though, this provides a way for us to make sure the submodules are
+ * initilized whenever we are building said SDKs- while keeping our system clean and modular.
  *
  * This plugin is automatically applied to all SDKs that utilize [FirebaseLibraryPlugin], and is
  * subsequently bound to the `preBuild` task that is apart of all gradle modules.
