@@ -16,6 +16,7 @@ package com.google.firebase.firestore.testutil;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.local.TargetData;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.remote.WatchChangeAggregator;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ import java.util.Map;
 public class TestTargetMetadataProvider implements WatchChangeAggregator.TargetMetadataProvider {
   final Map<Integer, ImmutableSortedSet<DocumentKey>> syncedKeys = new HashMap<>();
   final Map<Integer, TargetData> queryData = new HashMap<>();
+  DatabaseId databaseId = null;
 
   @Override
   public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
@@ -41,9 +43,19 @@ public class TestTargetMetadataProvider implements WatchChangeAggregator.TargetM
     return queryData.get(targetId);
   }
 
+  @Override
+  public DatabaseId getDatabaseId() {
+    return databaseId;
+  }
+
   /** Sets or replaces the local state for the provided query data. */
   public void setSyncedKeys(TargetData targetData, ImmutableSortedSet<DocumentKey> keys) {
     this.queryData.put(targetData.getTargetId(), targetData);
     this.syncedKeys.put(targetData.getTargetId(), keys);
+  }
+
+  /** Sets or replaces the databaseId */
+  public void setDatabaseId(DatabaseId databaseId) {
+    this.databaseId = databaseId;
   }
 }

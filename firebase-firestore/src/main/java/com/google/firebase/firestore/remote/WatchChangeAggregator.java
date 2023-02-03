@@ -23,6 +23,7 @@ import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -57,6 +58,9 @@ public class WatchChangeAggregator {
      */
     @Nullable
     TargetData getTargetDataForTarget(int targetId);
+
+    /** Returns the database ID of the Firestore instance. */
+    DatabaseId getDatabaseId();
   }
 
   private final TargetMetadataProvider targetMetadataProvider;
@@ -201,8 +205,7 @@ public class WatchChangeAggregator {
         if (currentSize != expectedCount) {
 
           // Apply bloom filter to identify and mark removed documents.
-          boolean bloomFilterApplied =
-              this.applyBloomFilter(watchChange.getExistenceFilter(), targetId, currentSize);
+          boolean bloomFilterApplied = this.applyBloomFilter(watchChange, currentSize);
 
           if (!bloomFilterApplied) {
             // If bloom filter application fails, we reset the mapping and
@@ -216,10 +219,10 @@ public class WatchChangeAggregator {
   }
 
   /** Returns whether a bloom filter removed the deleted documents successfully. */
-  private boolean applyBloomFilter(
-      ExistenceFilter existenceFilter, int targetId, int currentCount) {
-    int expectedCount = existenceFilter.getCount();
-    com.google.firestore.v1.BloomFilter unchangedNames = existenceFilter.getUnchangedNames();
+  private boolean applyBloomFilter(ExistenceFilterWatchChange watchChange, int currentCount) {
+    int expectedCount = watchChange.getExistenceFilter().getCount();
+    com.google.firestore.v1.BloomFilter unchangedNames =
+        watchChange.getExistenceFilter().getUnchangedNames();
 
     if (unchangedNames == null || !unchangedNames.hasBits()) {
       return false;
@@ -232,12 +235,17 @@ public class WatchChangeAggregator {
       bloomFilter =
           new BloomFilter(
               bitmap, unchangedNames.getBits().getPadding(), unchangedNames.getHashCount());
-    } catch (BloomFilterException e) {
-      Logger.warn("Firestore", "BloomFilter error: %s", e);
+    } catch (Exception e) {
+      if (e instanceof BloomFilterException) {
+        Logger.warn("Firestore", "BloomFilter error: %s", e);
+
+      } else {
+        Logger.warn("Firestore", "Applying bloom filter failed: %s", e);
+      }
       return false;
     }
 
-    int removedDocumentCount = this.filterRemovedDocuments(bloomFilter, targetId);
+    int removedDocumentCount = this.filterRemovedDocuments(bloomFilter, watchChange.getTargetId());
 
     return expectedCount == (currentCount - removedDocumentCount);
   }
@@ -251,9 +259,11 @@ public class WatchChangeAggregator {
         targetMetadataProvider.getRemoteKeysForTarget(targetId);
     int removalCount = 0;
     for (DocumentKey key : existingKeys) {
-      if (!bloomFilter.mightContain(
-          "projects/test-project/databases/(default)/documents/"
-              + key.getPath().canonicalString())) {
+      String documentPath =
+          targetMetadataProvider.getDatabaseId().canonicalString()
+              + "/documents/"
+              + key.getPath().canonicalString();
+      if (!bloomFilter.mightContain(documentPath)) {
         this.removeDocumentFromTarget(targetId, key, /*updatedDocument=*/ null);
         removalCount++;
       }

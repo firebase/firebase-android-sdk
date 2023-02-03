@@ -28,6 +28,7 @@ import com.google.firebase.firestore.core.Transaction;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -756,6 +757,11 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   @Override
   public TargetData getTargetDataForTarget(int targetId) {
     return this.listenTargets.get(targetId);
+  }
+
+  @Override
+  public DatabaseId getDatabaseId() {
+    return this.datastore.getDatabaseInfo().getDatabaseId();
   }
 
   public Task<Long> runCountQuery(Query query) {

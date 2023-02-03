@@ -439,6 +439,7 @@ public class TestUtil {
     TargetData targetData = TestUtil.targetData(targetId, QueryPurpose.LISTEN, "foo/bar");
     TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
     testTargetMetadataProvider.setSyncedKeys(targetData, DocumentKey.emptyKeySet());
+    testTargetMetadataProvider.setDatabaseId(DatabaseId.forProject("test-project"));
 
     WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
 
@@ -459,6 +460,8 @@ public class TestUtil {
     TargetData targetData = TestUtil.targetData(targetId, QueryPurpose.LISTEN, "foo");
     TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
     testTargetMetadataProvider.setSyncedKeys(targetData, syncedKeys);
+    testTargetMetadataProvider.setDatabaseId(DatabaseId.forProject("test-project"));
+
 
     ExistenceFilter existenceFilter = new ExistenceFilter(remoteCount);
     WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
@@ -487,6 +490,11 @@ public class TestUtil {
               public TargetData getTargetDataForTarget(int targetId) {
                 ResourcePath collectionPath = docs.get(0).getKey().getCollectionPath();
                 return targetData(targetId, QueryPurpose.LISTEN, collectionPath.toString());
+              }
+
+              @Override
+              public DatabaseId getDatabaseId() {
+                return DatabaseId.forProject("test-project");
               }
             });
 
@@ -534,6 +542,11 @@ public class TestUtil {
                 return activeTargets.contains(targetId)
                     ? targetData(targetId, QueryPurpose.LISTEN, doc.getKey().toString())
                     : null;
+              }
+
+              @Override
+              public DatabaseId getDatabaseId() {
+                return DatabaseId.forProject("test-project");
               }
             });
     aggregator.handleDocumentChange(change);

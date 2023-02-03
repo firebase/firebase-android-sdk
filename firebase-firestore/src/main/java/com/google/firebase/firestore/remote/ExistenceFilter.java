@@ -42,6 +42,6 @@ public final class ExistenceFilter {
 
   @Override
   public String toString() {
-    return "ExistenceFilter{count=" + count + "unchangedNames=" + unchangedNames + '}';
+    return "ExistenceFilter{count=" + count + ", unchangedNames=" + unchangedNames + '}';
   }
 }

@@ -681,15 +681,18 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   }
 
   private void doWatchFilter(JSONObject watchFilter) throws Exception {
-    List<Integer> targets = parseIntList(watchFilter.getJSONArray("targetIds"));
+    List<Integer> targets =
+        watchFilter.has("targetIds")
+            ? parseIntList(watchFilter.getJSONArray("targetIds"))
+            : Collections.emptyList();
     Assert.hardAssert(
         targets.size() == 1, "ExistenceFilters currently support exactly one target only.");
 
-    int keyCount = watchFilter.getJSONArray("keys").length();
-    BloomFilter bloomFilterProto = null;
-    if (watchFilter.has("bloomFilter")) {
-      bloomFilterProto = parseBloomFilter(watchFilter.getJSONObject("bloomFilter"));
-    }
+    int keyCount = watchFilter.has("keys") ? watchFilter.getJSONArray("keys").length() : 0;
+    BloomFilter bloomFilterProto =
+        watchFilter.has("bloomFilter")
+            ? parseBloomFilter(watchFilter.getJSONObject("bloomFilter"))
+            : null;
 
     // TODO: extend this with different existence filters over time.
     ExistenceFilter filter = new ExistenceFilter(keyCount, bloomFilterProto);
