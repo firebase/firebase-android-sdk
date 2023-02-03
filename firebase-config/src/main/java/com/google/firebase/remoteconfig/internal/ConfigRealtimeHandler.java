@@ -39,6 +39,7 @@ public class ConfigRealtimeHandler {
   private final ConfigCacheClient activatedCacheClient;
   private final Context context;
   private final String namespace;
+  private final ConfigMetadataClient metadataClient;
   private final ScheduledExecutorService scheduledExecutorService;
 
   public ConfigRealtimeHandler(
@@ -48,6 +49,7 @@ public class ConfigRealtimeHandler {
       ConfigCacheClient activatedCacheClient,
       Context context,
       String namespace,
+      ConfigMetadataClient metadataClient,
       ScheduledExecutorService scheduledExecutorService) {
 
     this.listeners = new LinkedHashSet<>();
@@ -60,6 +62,7 @@ public class ConfigRealtimeHandler {
             context,
             namespace,
             listeners,
+            metadataClient,
             scheduledExecutorService);
 
     this.firebaseApp = firebaseApp;
@@ -68,6 +71,7 @@ public class ConfigRealtimeHandler {
     this.activatedCacheClient = activatedCacheClient;
     this.context = context;
     this.namespace = namespace;
+    this.metadataClient = metadataClient;
     this.scheduledExecutorService = scheduledExecutorService;
   }
 

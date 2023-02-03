@@ -80,6 +80,7 @@ public class RemoteConfigComponentTest {
   private ExecutorService directExecutor;
   private ScheduledExecutorService scheduledExecutorService;
   private FirebaseApp defaultApp;
+  private ConfigMetadataClient metadataClient;
 
   @Before
   public void setUp() {
@@ -91,6 +92,8 @@ public class RemoteConfigComponentTest {
 
     defaultApp = initializeFirebaseApp(context);
 
+    metadataClient = RemoteConfigComponent.getMetadataClient(context, APP_ID, "personalization");
+
     when(mockFirebaseApp.getOptions())
         .thenReturn(new FirebaseOptions.Builder().setApplicationId(APP_ID).build());
     when(mockFirebaseApp.getName()).thenReturn(FirebaseApp.DEFAULT_APP_NAME);
@@ -101,7 +104,8 @@ public class RemoteConfigComponentTest {
   public void frc2p_doesNotCallAbt() throws Exception {
 
     FirebaseRemoteConfig fireperfFrc =
-        getFrcInstanceFromComponent(getNewFrcComponent(), /* namespace= */ "fireperf");
+        getFrcInstanceFromComponentWithMetadataClient(
+            getNewFrcComponent(), /* namespace= */ "fireperf");
     loadConfigsWithExperimentsForActivate();
 
     assertWithMessage("Fireperf fetch and activate failed!")
@@ -117,7 +121,8 @@ public class RemoteConfigComponentTest {
 
     when(mockFirebaseApp.getName()).thenReturn("secondary");
     FirebaseRemoteConfig frc =
-        getFrcInstanceFromComponent(getNewFrcComponentWithoutLoadingDefault(), DEFAULT_NAMESPACE);
+        getFrcInstanceFromComponentWithMetadataClient(
+            getNewFrcComponentWithoutLoadingDefault(), DEFAULT_NAMESPACE);
     loadConfigsWithExperimentsForActivate();
 
     assertWithMessage("Fetch and activate failed!").that(frc.activate().getResult()).isTrue();
@@ -192,6 +197,22 @@ public class RemoteConfigComponentTest {
         mockFirebaseAbt,
         () -> mockAnalyticsConnector,
         /* loadGetDefault= */ false);
+  }
+
+  private FirebaseRemoteConfig getFrcInstanceFromComponentWithMetadataClient(
+      RemoteConfigComponent frcComponent, String namespace) {
+    return frcComponent.get(
+        mockFirebaseApp,
+        namespace,
+        mockFirebaseInstallations,
+        mockFirebaseAbt,
+        directExecutor,
+        mockFetchedCache,
+        mockActivatedCache,
+        mockDefaultsCache,
+        mockFetchHandler,
+        mockGetParameterHandler,
+        metadataClient);
   }
 
   private FirebaseRemoteConfig getFrcInstanceFromComponent(
