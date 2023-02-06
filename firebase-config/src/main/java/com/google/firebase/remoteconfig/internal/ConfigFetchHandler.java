@@ -693,8 +693,8 @@ public class ConfigFetchHandler {
   }
 
   public enum FetchType {
-    BASE("BASE"),
-    REALTIME("REALTIME");
+    BASE("Base"),
+    REALTIME("Realtime");
 
     private final String value;
 
