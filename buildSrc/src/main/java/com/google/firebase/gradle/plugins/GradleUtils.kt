@@ -14,6 +14,7 @@
 
 package com.google.firebase.gradle.plugins
 
+import com.google.firebase.gradle.plugins.ci.Coverage
 import java.io.File
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
@@ -26,7 +27,6 @@ fun Copy.fromDirectory(directory: Provider<File>) =
  * Creates a file at the buildDir for the given [Project].
  *
  * Syntax sugar for:
- *
  * ```
  * project.file("${project.buildDir}/$path)
  * ```
@@ -37,7 +37,6 @@ fun Project.fileFromBuildDir(path: String) = file("$buildDir/$path")
  * Maps a file provider to another file provider as a sub directory.
  *
  * Syntax sugar for:
- *
  * ```
  * fileProvider.map { project.file("${it.path}/$path") }
  * ```
@@ -56,3 +55,22 @@ fun Project.childFile(provider: Provider<File>, childPath: String) =
  * ```
  */
 fun File.listFilesOrEmpty() = listFiles().orEmpty()
+
+fun kotlinModuleName(project: Project): String {
+  val fullyQualifiedProjectPath = project.path.replace(":".toRegex(), "-")
+  return project.rootProject.name + fullyQualifiedProjectPath
+}
+
+fun setupStaticAnalysis(project: Project, library: FirebaseLibraryExtension) {
+  project.afterEvaluate {
+    configurations.all {
+      if ("lintChecks" == name) {
+        for (checkProject in library.staticAnalysis.androidLintCheckProjects) {
+          project.dependencies.add("lintChecks", project.project(checkProject!!))
+        }
+      }
+    }
+  }
+  project.tasks.register("firebaseLint") { dependsOn("lint") }
+  Coverage.apply(library)
+}
