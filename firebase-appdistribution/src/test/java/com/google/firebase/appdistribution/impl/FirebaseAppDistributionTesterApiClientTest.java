@@ -308,11 +308,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
     Map<String, String> extraHeaders = new HashMap<>();
     extraHeaders.put("X-APP-DISTRO-FEEDBACK-TRIGGER", "custom");
     when(mockTesterApiHttpClient.makePostRequest(
-            any(),
-            eq(CREATE_FEEDBACK_PATH),
-            eq(TEST_AUTH_TOKEN),
-            eq(postBody),
-            eq(extraHeaders)))
+            any(), eq(CREATE_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(postBody), eq(extraHeaders)))
         .thenReturn(buildFeedbackJson());
 
     Task<String> task =
@@ -354,11 +350,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
     Map<String, String> extraHeaders = new HashMap<>();
     extraHeaders.put("X-APP-DISTRO-FEEDBACK-TRIGGER", "custom");
     when(mockTesterApiHttpClient.makePostRequest(
-            any(),
-            eq(CREATE_FEEDBACK_PATH),
-            eq(TEST_AUTH_TOKEN),
-            eq(postBody),
-            eq(extraHeaders)))
+            any(), eq(CREATE_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(postBody), eq(extraHeaders)))
         .thenThrow(new FirebaseAppDistributionException("test ex", Status.UNKNOWN));
 
     Task<String> task =

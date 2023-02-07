@@ -16,7 +16,6 @@ package com.google.firebase.appdistribution.impl;
 
 import android.app.Activity;
 import android.os.Bundle;
-import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import javax.inject.Inject;
 
 public class TakeScreenshotAndStartFeedbackActivity extends Activity {

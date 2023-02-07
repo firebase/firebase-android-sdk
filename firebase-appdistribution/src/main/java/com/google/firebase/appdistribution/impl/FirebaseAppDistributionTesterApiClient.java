@@ -28,7 +28,6 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
