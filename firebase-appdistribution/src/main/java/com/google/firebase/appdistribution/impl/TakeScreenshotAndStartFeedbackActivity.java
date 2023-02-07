@@ -38,8 +38,13 @@ public class TakeScreenshotAndStartFeedbackActivity extends Activity {
     super.onCreate(savedInstanceState);
     infoText = getIntent().getCharSequenceExtra(INFO_TEXT_EXTRA_KEY);
     LogWrapper.i(TAG, "Capturing screenshot and starting feedback");
-    ((FirebaseAppDistributionImpl) firebaseAppDistribution)
-        .startFeedback(infoText, FeedbackTrigger.NOTIFICATION_FEEDBACK_TRIGGER);
+    if (firebaseAppDistribution instanceof FirebaseAppDistributionImpl) {
+      ((FirebaseAppDistributionImpl) firebaseAppDistribution)
+              .startFeedback(infoText, FeedbackTrigger.NOTIFICATION_FEEDBACK_TRIGGER);
+    } else  {
+      firebaseAppDistribution.startFeedback(infoText);
+    }
+
     finish();
   }
 }
