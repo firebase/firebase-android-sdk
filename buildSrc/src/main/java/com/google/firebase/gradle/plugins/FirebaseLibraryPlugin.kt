@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
+import java.io.File
 import org.gradle.api.JavaVersion
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -15,8 +16,6 @@ import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.kotlin.dsl.getByType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.io.File
-import java.nio.file.Paths
 
 class FirebaseLibraryPlugin : Plugin<Project> {
 
@@ -71,41 +70,11 @@ class FirebaseLibraryPlugin : Plugin<Project> {
   }
 
   private fun setupApiInformationAnalysis(project: Project, android: LibraryExtension) {
-    val mainSourceSet = android.sourceSets.getByName("main")
-    val outputFile =
-      project.rootProject.file(
-        Paths.get(
-          project.rootProject.buildDir.path,
-          "apiinfo",
-          project.path.substring(1).replace(":", "_")
-        )
-      )
-    val outputApiFile = File(outputFile.absolutePath + "_api.txt")
-    val apiTxt =
-      if (project.file("api.txt").exists()) project.file("api.txt")
-      else project.file(project.rootDir.toString() + "/empty-api.txt")
-    val apiInfo =
-      project.tasks.register("apiInformation", ApiInformationTask::class.java) {
-        sources.value(project.provider { mainSourceSet.java.srcDirs })
-        apiTxtFile.set(apiTxt)
-        baselineFile.set(project.file("baseline.txt"))
-        this.outputFile.set(outputFile)
-        this.outputApiFile.set(outputApiFile)
-        updateBaseline.set(project.hasProperty("updateBaseline"))
-      }
+    val srcDirs = android.sourceSets.getByName("main").java.srcDirs
 
-    val generateApiTxt =
-      project.tasks.register("generateApiTxtFile", GenerateApiTxtTask::class.java) {
-        sources.value(project.provider { mainSourceSet.java.srcDirs })
-        apiTxtFile.set(project.file("api.txt"))
-        baselineFile.set(project.file("baseline.txt"))
-        updateBaseline.set(project.hasProperty("updateBaseline"))
-      }
-
-    val docStubs =
-      project.tasks.register("docStubs", GenerateStubsTask::class.java) {
-        sources.value(project.provider { mainSourceSet.java.srcDirs })
-      }
+    val apiInfo = getApiInfo(project, srcDirs)
+    val generateApiTxt = getGenerateApiTxt(project, srcDirs)
+    val docStubs = getDocStubs(project, srcDirs)
 
     project.tasks.getByName("check").dependsOn(docStubs)
     android.libraryVariants.all {

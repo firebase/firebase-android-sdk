@@ -16,9 +16,12 @@ package com.google.firebase.gradle.plugins
 
 import com.google.firebase.gradle.plugins.ci.Coverage
 import java.io.File
+import java.nio.file.Paths
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.kotlin.dsl.register
 
 fun Copy.fromDirectory(directory: Provider<File>) =
   from(directory) { into(directory.map { it.name }) }
@@ -74,3 +77,41 @@ fun setupStaticAnalysis(project: Project, library: FirebaseLibraryExtension) {
   project.tasks.register("firebaseLint") { dependsOn("lint") }
   Coverage.apply(library)
 }
+
+fun getApiInfo(project: Project, srcDirs: Set<File>): TaskProvider<ApiInformationTask> {
+  val outputFile =
+    project.rootProject.file(
+      Paths.get(
+        project.rootProject.buildDir.path,
+        "apiinfo",
+        project.path.substring(1).replace(":", "_")
+      )
+    )
+  val outputApiFile = File(outputFile.absolutePath + "_api.txt")
+  val apiTxt =
+    if (project.file("api.txt").exists()) project.file("api.txt")
+    else project.file(project.rootDir.toString() + "/empty-api.txt")
+  val apiInfo =
+    project.tasks.register<ApiInformationTask>("apiInformation") {
+      sources.value(project.provider { srcDirs })
+      apiTxtFile.set(apiTxt)
+      baselineFile.set(project.file("baseline.txt"))
+      this.outputFile.set(outputFile)
+      this.outputApiFile.set(outputApiFile)
+      updateBaseline.set(project.hasProperty("updateBaseline"))
+    }
+  return apiInfo
+}
+
+fun getGenerateApiTxt(project: Project, srcDirs: Set<File>) =
+  project.tasks.register<GenerateApiTxtTask>("generateApiTxtFile") {
+    sources.value(project.provider { srcDirs })
+    apiTxtFile.set(project.file("api.txt"))
+    baselineFile.set(project.file("baseline.txt"))
+    updateBaseline.set(project.hasProperty("updateBaseline"))
+  }
+
+fun getDocStubs(project: Project, srcDirs: Set<File>) =
+  project.tasks.register<GenerateStubsTask>("docStubs") {
+    sources.value(project.provider { srcDirs })
+  }
