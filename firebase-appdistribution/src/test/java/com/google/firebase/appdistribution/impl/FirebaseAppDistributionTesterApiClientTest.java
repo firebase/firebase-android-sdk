@@ -305,15 +305,12 @@ public class FirebaseAppDistributionTesterApiClientTest {
   @Test
   public void createFeedback_whenResponseSuccessful_returnsFeedbackName() throws Exception {
     String postBody = String.format("{\"text\":\"%s\"}", FEEDBACK_TEXT);
-    Map<String, String> extraHeaders = new HashMap<>();
-    extraHeaders.put("X-APP-DISTRO-FEEDBACK-TRIGGER", "custom");
     when(mockTesterApiHttpClient.makePostRequest(
-            any(), eq(CREATE_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(postBody), eq(extraHeaders)))
+            any(), eq(CREATE_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(postBody)))
         .thenReturn(buildFeedbackJson());
 
     Task<String> task =
-        firebaseAppDistributionTesterApiClient.createFeedback(
-            RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM);
+        firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT);
     String result = awaitTask(task);
 
     assertThat(result).isEqualTo(FEEDBACK_NAME);
@@ -325,8 +322,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(expectedException));
 
     Task<String> task =
-        firebaseAppDistributionTesterApiClient.createFeedback(
-            RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM);
+        firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
@@ -338,8 +334,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
         .thenReturn(Tasks.forException(expectedException));
 
     Task<String> task =
-        firebaseAppDistributionTesterApiClient.createFeedback(
-            RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM);
+        firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
@@ -347,26 +342,29 @@ public class FirebaseAppDistributionTesterApiClientTest {
   @Test
   public void createFeedback_whenClientThrowsException_failsTask() throws Exception {
     String postBody = String.format("{\"text\":\"%s\"}", FEEDBACK_TEXT);
-    Map<String, String> extraHeaders = new HashMap<>();
-    extraHeaders.put("X-APP-DISTRO-FEEDBACK-TRIGGER", "custom");
+
     when(mockTesterApiHttpClient.makePostRequest(
-            any(), eq(CREATE_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(postBody), eq(extraHeaders)))
+            any(), eq(CREATE_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(postBody)))
         .thenThrow(new FirebaseAppDistributionException("test ex", Status.UNKNOWN));
 
     Task<String> task =
-        firebaseAppDistributionTesterApiClient.createFeedback(
-            RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM);
+        firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex");
   }
 
   @Test
   public void commitFeedback_whenResponseSuccessful_makesPostRequest() throws Exception {
-    Task<Void> task = firebaseAppDistributionTesterApiClient.commitFeedback(FEEDBACK_NAME);
+    Task<Void> task =
+        firebaseAppDistributionTesterApiClient.commitFeedback(
+            FEEDBACK_NAME, FeedbackTrigger.CUSTOM);
     awaitTask(task);
 
+    Map<String, String> extraHeaders = new HashMap<>();
+    extraHeaders.put("X-APP-DISTRO-FEEDBACK-TRIGGER", "custom");
     verify(mockTesterApiHttpClient)
-        .makePostRequest(any(), eq(COMMIT_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(""));
+        .makePostRequest(
+            any(), eq(COMMIT_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(""), eq(extraHeaders));
   }
 
   @Test
@@ -374,7 +372,9 @@ public class FirebaseAppDistributionTesterApiClientTest {
     Exception expectedException = new Exception("test ex");
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(expectedException));
 
-    Task<Void> task = firebaseAppDistributionTesterApiClient.commitFeedback(FEEDBACK_NAME);
+    Task<Void> task =
+        firebaseAppDistributionTesterApiClient.commitFeedback(
+            FEEDBACK_NAME, FeedbackTrigger.CUSTOM);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
@@ -385,18 +385,24 @@ public class FirebaseAppDistributionTesterApiClientTest {
     when(mockFirebaseInstallations.getToken(false))
         .thenReturn(Tasks.forException(expectedException));
 
-    Task<Void> task = firebaseAppDistributionTesterApiClient.commitFeedback(FEEDBACK_NAME);
+    Task<Void> task =
+        firebaseAppDistributionTesterApiClient.commitFeedback(
+            FEEDBACK_NAME, FeedbackTrigger.CUSTOM);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
 
   @Test
   public void commitFeedback_whenClientThrowsException_failsTask() throws Exception {
+    Map<String, String> extraHeaders = new HashMap<>();
+    extraHeaders.put("X-APP-DISTRO-FEEDBACK-TRIGGER", "custom");
     when(mockTesterApiHttpClient.makePostRequest(
-            any(), eq(COMMIT_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq("")))
+            any(), eq(COMMIT_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(""), eq(extraHeaders)))
         .thenThrow(new FirebaseAppDistributionException("test ex", Status.UNKNOWN));
 
-    Task<Void> task = firebaseAppDistributionTesterApiClient.commitFeedback(FEEDBACK_NAME);
+    Task<Void> task =
+        firebaseAppDistributionTesterApiClient.commitFeedback(
+            FEEDBACK_NAME, FeedbackTrigger.CUSTOM);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex");
   }
