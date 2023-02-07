@@ -772,7 +772,7 @@ public class FirebaseAppDistributionServiceImplTest {
         .isEqualTo(TEST_SCREENSHOT_URI.toString());
     assertThat(actualIntent.getStringExtra(INFO_TEXT_KEY)).isEqualTo("Some terms and conditions");
     assertThat(actualIntent.getStringExtra(FEEDBACK_TRIGGER_KEY))
-        .isEqualTo(FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER.toString());
+        .isEqualTo(FeedbackTrigger.CUSTOM.toString());
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isTrue();
   }
 
@@ -803,7 +803,7 @@ public class FirebaseAppDistributionServiceImplTest {
     assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_KEY)).isEqualTo(providedUri.toString());
     assertThat(actualIntent.getStringExtra(INFO_TEXT_KEY)).isEqualTo("Some terms and conditions");
     assertThat(actualIntent.getStringExtra(FEEDBACK_TRIGGER_KEY))
-        .isEqualTo(FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER.toString());
+        .isEqualTo(FeedbackTrigger.CUSTOM.toString());
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isTrue();
   }
 

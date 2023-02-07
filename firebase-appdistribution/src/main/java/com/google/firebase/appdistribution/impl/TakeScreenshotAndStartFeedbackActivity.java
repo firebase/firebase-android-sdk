@@ -40,7 +40,7 @@ public class TakeScreenshotAndStartFeedbackActivity extends Activity {
     LogWrapper.i(TAG, "Capturing screenshot and starting feedback");
     if (firebaseAppDistribution instanceof FirebaseAppDistributionImpl) {
       ((FirebaseAppDistributionImpl) firebaseAppDistribution)
-          .startFeedback(infoText, FeedbackTrigger.NOTIFICATION_FEEDBACK_TRIGGER);
+          .startFeedback(infoText, FeedbackTrigger.NOTIFICATION);
     } else {
       firebaseAppDistribution.startFeedback(infoText);
     }

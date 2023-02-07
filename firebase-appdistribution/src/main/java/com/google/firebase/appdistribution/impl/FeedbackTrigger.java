@@ -16,8 +16,9 @@ package com.google.firebase.appdistribution.impl;
 
 /** Feedback trigger type */
 enum FeedbackTrigger {
-  NOTIFICATION_FEEDBACK_TRIGGER("notification"),
-  CUSTOM_FEEDBACK_TRIGGER("custom");
+  NOTIFICATION("notification"),
+  CUSTOM("custom"),
+  UNKNOWN("unknown");
 
   private final String value;
 
@@ -28,5 +29,15 @@ enum FeedbackTrigger {
   @Override
   public String toString() {
     return value;
+  }
+
+  public static FeedbackTrigger fromString(String value) {
+    if (value.equals(NOTIFICATION.value)) {
+      return NOTIFICATION;
+    } else if(value.equals(CUSTOM.value))  {
+      return CUSTOM;
+    } else {
+      return UNKNOWN;
+    }
   }
 }

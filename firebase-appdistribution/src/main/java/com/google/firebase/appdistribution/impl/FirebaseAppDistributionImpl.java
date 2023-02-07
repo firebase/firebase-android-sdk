@@ -341,12 +341,12 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   @Override
   public void startFeedback(@StringRes int infoTextResourceId) {
     startFeedback(
-        applicationContext.getText(infoTextResourceId), FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
+        applicationContext.getText(infoTextResourceId), FeedbackTrigger.CUSTOM);
   }
 
   @Override
   public void startFeedback(@NonNull CharSequence infoText) {
-    startFeedback(infoText, FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
+    startFeedback(infoText, FeedbackTrigger.CUSTOM);
   }
 
   void startFeedback(@NonNull CharSequence infoText, FeedbackTrigger trigger) {
@@ -371,12 +371,12 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   @Override
   public void startFeedback(@StringRes int infoTextResourceId, @Nullable Uri screenshotUri) {
     startFeedback(
-        getText(infoTextResourceId), screenshotUri, FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
+        getText(infoTextResourceId), screenshotUri, FeedbackTrigger.CUSTOM);
   }
 
   @Override
   public void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri) {
-    startFeedback(infoText, screenshotUri, FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
+    startFeedback(infoText, screenshotUri, FeedbackTrigger.CUSTOM);
   }
 
   private void startFeedback(

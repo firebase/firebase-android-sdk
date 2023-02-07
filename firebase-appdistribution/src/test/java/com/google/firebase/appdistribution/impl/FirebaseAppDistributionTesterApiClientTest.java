@@ -308,12 +308,12 @@ public class FirebaseAppDistributionTesterApiClientTest {
             eq(CREATE_FEEDBACK_PATH),
             eq(TEST_AUTH_TOKEN),
             eq(postBody),
-            eq(FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER)))
+            eq(FeedbackTrigger.CUSTOM)))
         .thenReturn(buildFeedbackJson());
 
     Task<String> task =
         firebaseAppDistributionTesterApiClient.createFeedback(
-            RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
+            RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM);
     String result = awaitTask(task);
 
     assertThat(result).isEqualTo(FEEDBACK_NAME);
@@ -326,7 +326,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     Task<String> task =
         firebaseAppDistributionTesterApiClient.createFeedback(
-            RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
+            RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
@@ -339,7 +339,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
 
     Task<String> task =
         firebaseAppDistributionTesterApiClient.createFeedback(
-            RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
+            RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
@@ -352,12 +352,12 @@ public class FirebaseAppDistributionTesterApiClientTest {
             eq(CREATE_FEEDBACK_PATH),
             eq(TEST_AUTH_TOKEN),
             eq(postBody),
-            eq(FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER)))
+            eq(FeedbackTrigger.CUSTOM)))
         .thenThrow(new FirebaseAppDistributionException("test ex", Status.UNKNOWN));
 
     Task<String> task =
         firebaseAppDistributionTesterApiClient.createFeedback(
-            RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
+            RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex");
   }

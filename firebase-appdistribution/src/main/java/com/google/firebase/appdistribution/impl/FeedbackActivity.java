@@ -78,7 +78,7 @@ public class FeedbackActivity extends AppCompatActivity {
     if (savedInstanceState != null) {
       releaseName = savedInstanceState.getString(RELEASE_NAME_KEY);
       infoText = savedInstanceState.getCharSequence(INFO_TEXT_KEY);
-      feedbackTrigger = FeedbackTrigger.valueOf(savedInstanceState.getString(FEEDBACK_TRIGGER_KEY));
+      feedbackTrigger = FeedbackTrigger.fromString(savedInstanceState.getString(FEEDBACK_TRIGGER_KEY));
       String screenshotUriString = savedInstanceState.getString(SCREENSHOT_URI_KEY);
       if (screenshotUriString != null) {
         screenshotUri = Uri.parse(screenshotUriString);
@@ -86,6 +86,7 @@ public class FeedbackActivity extends AppCompatActivity {
     } else {
       releaseName = getIntent().getStringExtra(RELEASE_NAME_KEY);
       infoText = getIntent().getCharSequenceExtra(INFO_TEXT_KEY);
+      feedbackTrigger = FeedbackTrigger.fromString(getIntent().getStringExtra(FEEDBACK_TRIGGER_KEY));
       if (getIntent().hasExtra(SCREENSHOT_URI_KEY)) {
         screenshotUri = Uri.parse(getIntent().getStringExtra(SCREENSHOT_URI_KEY));
       }
