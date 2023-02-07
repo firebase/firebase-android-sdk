@@ -68,15 +68,11 @@ public class FeedbackSenderTest {
 
     Task<Void> task =
         feedbackSender.sendFeedback(
-            TEST_RELEASE_NAME,
-            TEST_FEEDBACK_TEXT,
-            TEST_SCREENSHOT_URI,
-            FeedbackTrigger.CUSTOM);
+            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI, FeedbackTrigger.CUSTOM);
     TestUtils.awaitTask(task);
 
     verify(mockTesterApiClient)
-        .createFeedback(
-            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, FeedbackTrigger.CUSTOM);
+        .createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, FeedbackTrigger.CUSTOM);
     verify(mockTesterApiClient).attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI);
     verify(mockTesterApiClient).commitFeedback(TEST_FEEDBACK_NAME);
   }
@@ -90,15 +86,11 @@ public class FeedbackSenderTest {
 
     Task<Void> task =
         feedbackSender.sendFeedback(
-            TEST_RELEASE_NAME,
-            TEST_FEEDBACK_TEXT,
-            /* screenshot= */ null,
-            FeedbackTrigger.CUSTOM);
+            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, /* screenshot= */ null, FeedbackTrigger.CUSTOM);
     TestUtils.awaitTask(task);
 
     verify(mockTesterApiClient)
-        .createFeedback(
-            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, FeedbackTrigger.CUSTOM);
+        .createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, FeedbackTrigger.CUSTOM);
     verify(mockTesterApiClient).commitFeedback(TEST_FEEDBACK_NAME);
     verify(mockTesterApiClient, never()).attachScreenshot(any(), any());
   }
@@ -113,10 +105,7 @@ public class FeedbackSenderTest {
 
     Task<Void> task =
         feedbackSender.sendFeedback(
-            TEST_RELEASE_NAME,
-            TEST_FEEDBACK_TEXT,
-            TEST_SCREENSHOT_URI,
-            FeedbackTrigger.CUSTOM);
+            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI, FeedbackTrigger.CUSTOM);
 
     TestUtils.awaitTaskFailure(task, Status.AUTHENTICATION_FAILURE, "test ex");
   }
@@ -133,10 +122,7 @@ public class FeedbackSenderTest {
 
     Task<Void> task =
         feedbackSender.sendFeedback(
-            TEST_RELEASE_NAME,
-            TEST_FEEDBACK_TEXT,
-            TEST_SCREENSHOT_URI,
-            FeedbackTrigger.CUSTOM);
+            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI, FeedbackTrigger.CUSTOM);
 
     TestUtils.awaitTaskFailure(task, Status.AUTHENTICATION_FAILURE, "test ex");
   }
@@ -155,10 +141,7 @@ public class FeedbackSenderTest {
 
     Task<Void> task =
         feedbackSender.sendFeedback(
-            TEST_RELEASE_NAME,
-            TEST_FEEDBACK_TEXT,
-            TEST_SCREENSHOT_URI,
-            FeedbackTrigger.CUSTOM);
+            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI, FeedbackTrigger.CUSTOM);
 
     TestUtils.awaitTaskFailure(task, Status.AUTHENTICATION_FAILURE, "test ex");
   }

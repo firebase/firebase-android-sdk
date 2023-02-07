@@ -340,8 +340,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void startFeedback(@StringRes int infoTextResourceId) {
-    startFeedback(
-        applicationContext.getText(infoTextResourceId), FeedbackTrigger.CUSTOM);
+    startFeedback(applicationContext.getText(infoTextResourceId), FeedbackTrigger.CUSTOM);
   }
 
   @Override
@@ -370,8 +369,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void startFeedback(@StringRes int infoTextResourceId, @Nullable Uri screenshotUri) {
-    startFeedback(
-        getText(infoTextResourceId), screenshotUri, FeedbackTrigger.CUSTOM);
+    startFeedback(getText(infoTextResourceId), screenshotUri, FeedbackTrigger.CUSTOM);
   }
 
   @Override

@@ -34,7 +34,7 @@ enum FeedbackTrigger {
   public static FeedbackTrigger fromString(String value) {
     if (value.equals(NOTIFICATION.value)) {
       return NOTIFICATION;
-    } else if(value.equals(CUSTOM.value))  {
+    } else if (value.equals(CUSTOM.value)) {
       return CUSTOM;
     } else {
       return UNKNOWN;
