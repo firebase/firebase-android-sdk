@@ -104,6 +104,12 @@ class TesterApiHttpClient {
    */
   JSONObject makePostRequest(String tag, String path, String token, String requestBody)
       throws FirebaseAppDistributionException {
+    return makePostRequest(tag, path, token, requestBody, new HashMap<>());
+  }
+
+  JSONObject makePostRequest(
+      String tag, String path, String token, String requestBody, Map<String, String> extraHeaders)
+      throws FirebaseAppDistributionException {
     byte[] bytes;
     try {
       bytes = requestBody.getBytes(UTF_8);
@@ -112,7 +118,7 @@ class TesterApiHttpClient {
           "Unsupported encoding: " + UTF_8, Status.UNKNOWN, e);
     }
     return makePostRequest(
-        tag, path, token, new HashMap<>(), outputStream -> outputStream.write(bytes));
+        tag, path, token, extraHeaders, outputStream -> outputStream.write(bytes));
   }
 
   /**

@@ -28,6 +28,8 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException.Stat
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
 import org.json.JSONArray;
@@ -60,6 +62,7 @@ class FirebaseAppDistributionTesterApiClient {
   private static final String CREATE_FEEDBACK_TAG = "Creating feedback";
   private static final String COMMIT_FEEDBACK_TAG = "Committing feedback";
   private static final String UPLOAD_SCREENSHOT_TAG = "Uploading screenshot";
+  private static final String X_APP_DISTRO_FEEDBACK_TRIGGER = "X-APP-DISTRO-FEEDBACK-TRIGGER";
 
   private final FirebaseOptions firebaseOptions;
   private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
@@ -136,14 +139,18 @@ class FirebaseAppDistributionTesterApiClient {
 
   /** Creates a new feedback from the given text, and returns the feedback name. */
   @NonNull
-  Task<String> createFeedback(String testerReleaseName, String feedbackText) {
+  Task<String> createFeedback(
+      String testerReleaseName, String feedbackText, FeedbackTrigger trigger) {
     return runWithFidAndToken(
         (unused, token) -> {
           LogWrapper.i(TAG, "Creating feedback for release: " + testerReleaseName);
           String path = String.format("v1alpha/%s/feedbackReports", testerReleaseName);
           String requestBody = buildCreateFeedbackBody(feedbackText).toString();
+          Map<String, String> extraHeaders = new HashMap<>();
+          extraHeaders.put(X_APP_DISTRO_FEEDBACK_TRIGGER, trigger.toString());
           JSONObject responseBody =
-              testerApiHttpClient.makePostRequest(CREATE_FEEDBACK_TAG, path, token, requestBody);
+              testerApiHttpClient.makePostRequest(
+                  CREATE_FEEDBACK_TAG, path, token, requestBody, extraHeaders);
           return parseJsonFieldFromResponse(responseBody, "name");
         });
   }
