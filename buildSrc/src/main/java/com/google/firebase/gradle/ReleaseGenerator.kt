@@ -141,7 +141,7 @@ open class ReleaseGenerator : DefaultTask() {
   ) =
     repo
       .log()
-      .addPath("$directory/")
+      .addPath("$directory/CHANGELOG.md")
       .addRange(previousReleaseRef, currentReleaseRef)
       .setMaxCount(1)
       .call()
@@ -156,7 +156,7 @@ open class ReleaseGenerator : DefaultTask() {
   ) =
     repo
       .log()
-      .addPath("$directory/")
+      .addPath("$directory/CHANGELOG.md")
       .addRange(previousReleaseRef, currentReleaseRef)
       .call()
       .map { toCommitDiff(repo, it) }
