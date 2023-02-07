@@ -148,9 +148,11 @@ public class UploadTest {
       // Task is not yet done.
     } catch (Exception e) {
       System.out.println("[DAYMON-DEBUG] Caught an exception");
-      StorageException storageException = (e instanceof StorageException ? (StorageException) e : null);
+      StorageException storageException = (e instanceof StorageException ? (StorageException) e
+          : null);
       if (storageException != null) {
-        System.out.println("[DAYMON-DEBUG] StorageException ErrorCode: " + storageException.getErrorCode());
+        System.out.println(
+            "[DAYMON-DEBUG] StorageException ErrorCode: " + storageException.getErrorCode());
       }
       e.printStackTrace();
       throw e;
