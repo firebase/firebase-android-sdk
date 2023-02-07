@@ -59,39 +59,37 @@ public class FeedbackSenderTest {
 
   @Test
   public void sendFeedback_success() throws Exception {
-    when(mockTesterApiClient.createFeedback(
-            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, FeedbackTrigger.CUSTOM))
+    when(mockTesterApiClient.createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT))
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
     when(mockTesterApiClient.attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI))
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
-    when(mockTesterApiClient.commitFeedback(TEST_FEEDBACK_NAME)).thenReturn(Tasks.forResult(null));
+    when(mockTesterApiClient.commitFeedback(TEST_FEEDBACK_NAME, FeedbackTrigger.CUSTOM))
+        .thenReturn(Tasks.forResult(null));
 
     Task<Void> task =
         feedbackSender.sendFeedback(
             TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI, FeedbackTrigger.CUSTOM);
     TestUtils.awaitTask(task);
 
-    verify(mockTesterApiClient)
-        .createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, FeedbackTrigger.CUSTOM);
+    verify(mockTesterApiClient).createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT);
     verify(mockTesterApiClient).attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI);
-    verify(mockTesterApiClient).commitFeedback(TEST_FEEDBACK_NAME);
+    verify(mockTesterApiClient).commitFeedback(TEST_FEEDBACK_NAME, FeedbackTrigger.CUSTOM);
   }
 
   @Test
   public void sendFeedback_withoutScreenshot_success() throws Exception {
-    when(mockTesterApiClient.createFeedback(
-            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, FeedbackTrigger.CUSTOM))
+    when(mockTesterApiClient.createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT))
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
-    when(mockTesterApiClient.commitFeedback(TEST_FEEDBACK_NAME)).thenReturn(Tasks.forResult(null));
+    when(mockTesterApiClient.commitFeedback(TEST_FEEDBACK_NAME, FeedbackTrigger.CUSTOM))
+        .thenReturn(Tasks.forResult(null));
 
     Task<Void> task =
         feedbackSender.sendFeedback(
             TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, /* screenshot= */ null, FeedbackTrigger.CUSTOM);
     TestUtils.awaitTask(task);
 
-    verify(mockTesterApiClient)
-        .createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, FeedbackTrigger.CUSTOM);
-    verify(mockTesterApiClient).commitFeedback(TEST_FEEDBACK_NAME);
+    verify(mockTesterApiClient).createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT);
+    verify(mockTesterApiClient).commitFeedback(TEST_FEEDBACK_NAME, FeedbackTrigger.CUSTOM);
     verify(mockTesterApiClient, never()).attachScreenshot(any(), any());
   }
 
@@ -99,8 +97,7 @@ public class FeedbackSenderTest {
   public void sendFeedback_createFeedbackFails_failsTask() {
     FirebaseAppDistributionException cause =
         new FirebaseAppDistributionException("test ex", Status.AUTHENTICATION_FAILURE);
-    when(mockTesterApiClient.createFeedback(
-            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, FeedbackTrigger.CUSTOM))
+    when(mockTesterApiClient.createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT))
         .thenReturn(Tasks.forException(cause));
 
     Task<Void> task =
@@ -112,8 +109,7 @@ public class FeedbackSenderTest {
 
   @Test
   public void sendFeedback_attachScreenshotFails_failsTask() {
-    when(mockTesterApiClient.createFeedback(
-            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, FeedbackTrigger.CUSTOM))
+    when(mockTesterApiClient.createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT))
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
     FirebaseAppDistributionException cause =
         new FirebaseAppDistributionException("test ex", Status.AUTHENTICATION_FAILURE);
@@ -129,14 +125,13 @@ public class FeedbackSenderTest {
 
   @Test
   public void sendFeedback_commitFeedbackFails_failsTask() {
-    when(mockTesterApiClient.createFeedback(
-            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, FeedbackTrigger.CUSTOM))
+    when(mockTesterApiClient.createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT))
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
     when(mockTesterApiClient.attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI))
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
     FirebaseAppDistributionException cause =
         new FirebaseAppDistributionException("test ex", Status.AUTHENTICATION_FAILURE);
-    when(mockTesterApiClient.commitFeedback(TEST_FEEDBACK_NAME))
+    when(mockTesterApiClient.commitFeedback(TEST_FEEDBACK_NAME, FeedbackTrigger.CUSTOM))
         .thenReturn(Tasks.forException(cause));
 
     Task<Void> task =
