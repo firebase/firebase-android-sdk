@@ -1,6 +1,7 @@
 package com.google.firebase.appdistribution.impl;
 
-public enum FeedbackTrigger {
+/** Feedback trigger type */
+enum FeedbackTrigger {
     NOTIFICATION_FEEDBACK_TRIGGER("notification"),
     CUSTOM_FEEDBACK_TRIGGER("custom");
 
