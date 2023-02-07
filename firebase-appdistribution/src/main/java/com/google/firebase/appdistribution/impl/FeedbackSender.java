@@ -47,7 +47,7 @@ class FeedbackSender {
             lightweightExecutor, feedbackName -> attachScreenshot(feedbackName, screenshotUri))
         .onSuccessTask(
             lightweightExecutor,
-            (feedbackName) -> testerApiClient.commitFeedback(feedbackName, trigger));
+            feedbackName -> testerApiClient.commitFeedback(feedbackName, trigger));
   }
 
   private Task<String> attachScreenshot(String feedbackName, @Nullable Uri screenshotUri) {
