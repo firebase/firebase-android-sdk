@@ -139,18 +139,14 @@ class FirebaseAppDistributionTesterApiClient {
 
   /** Creates a new feedback from the given text, and returns the feedback name. */
   @NonNull
-  Task<String> createFeedback(
-      String testerReleaseName, String feedbackText, FeedbackTrigger trigger) {
+  Task<String> createFeedback(String testerReleaseName, String feedbackText) {
     return runWithFidAndToken(
         (unused, token) -> {
           LogWrapper.i(TAG, "Creating feedback for release: " + testerReleaseName);
           String path = String.format("v1alpha/%s/feedbackReports", testerReleaseName);
           String requestBody = buildCreateFeedbackBody(feedbackText).toString();
-          Map<String, String> extraHeaders = new HashMap<>();
-          extraHeaders.put(X_APP_DISTRO_FEEDBACK_TRIGGER, trigger.toString());
           JSONObject responseBody =
-              testerApiHttpClient.makePostRequest(
-                  CREATE_FEEDBACK_TAG, path, token, requestBody, extraHeaders);
+              testerApiHttpClient.makePostRequest(CREATE_FEEDBACK_TAG, path, token, requestBody);
           return parseJsonFieldFromResponse(responseBody, "name");
         });
   }
@@ -174,13 +170,15 @@ class FirebaseAppDistributionTesterApiClient {
 
   /** Commits the feedback with the given name. */
   @NonNull
-  Task<Void> commitFeedback(String feedbackName) {
+  Task<Void> commitFeedback(String feedbackName, FeedbackTrigger trigger) {
     return runWithFidAndToken(
         (unused, token) -> {
           LogWrapper.i(TAG, "Committing feedback: " + feedbackName);
           String path = "v1alpha/" + feedbackName + ":commit";
+          Map<String, String> extraHeaders = new HashMap<>();
+          extraHeaders.put(X_APP_DISTRO_FEEDBACK_TRIGGER, trigger.toString());
           testerApiHttpClient.makePostRequest(
-              COMMIT_FEEDBACK_TAG, path, token, /* requestBody= */ "");
+              COMMIT_FEEDBACK_TAG, path, token, /* requestBody= */ "", extraHeaders);
           return null;
         });
   }

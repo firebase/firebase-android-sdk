@@ -42,10 +42,12 @@ class FeedbackSender {
       @Nullable Uri screenshotUri,
       FeedbackTrigger trigger) {
     return testerApiClient
-        .createFeedback(releaseName, feedbackText, trigger)
+        .createFeedback(releaseName, feedbackText)
         .onSuccessTask(
             lightweightExecutor, feedbackName -> attachScreenshot(feedbackName, screenshotUri))
-        .onSuccessTask(lightweightExecutor, testerApiClient::commitFeedback);
+        .onSuccessTask(
+            lightweightExecutor,
+            (feedbackName) -> testerApiClient.commitFeedback(feedbackName, trigger));
   }
 
   private Task<String> attachScreenshot(String feedbackName, @Nullable Uri screenshotUri) {
