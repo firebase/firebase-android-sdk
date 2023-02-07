@@ -114,23 +114,26 @@ class TesterApiHttpClient {
    *
    * @return the response body
    */
-  public JSONObject makePostRequest(String tag, String path, String token, String requestBody, FeedbackTrigger trigger) throws FirebaseAppDistributionException {
+  public JSONObject makePostRequest(
+      String tag, String path, String token, String requestBody, FeedbackTrigger trigger)
+      throws FirebaseAppDistributionException {
     Map<String, String> extraHeaders = new HashMap<>();
     extraHeaders.put(X_APP_DISTRO_FEEDBACK_TRIGGER, trigger.toString());
     return makePostRequest(tag, path, token, requestBody, extraHeaders);
   }
 
-  private JSONObject makePostRequest(String tag, String path, String token, String requestBody, Map<String, String> extraHeaders)
-          throws FirebaseAppDistributionException {
+  private JSONObject makePostRequest(
+      String tag, String path, String token, String requestBody, Map<String, String> extraHeaders)
+      throws FirebaseAppDistributionException {
     byte[] bytes;
     try {
       bytes = requestBody.getBytes(UTF_8);
     } catch (UnsupportedEncodingException e) {
       throw new FirebaseAppDistributionException(
-              "Unsupported encoding: " + UTF_8, Status.UNKNOWN, e);
+          "Unsupported encoding: " + UTF_8, Status.UNKNOWN, e);
     }
     return makePostRequest(
-            tag, path, token, extraHeaders, outputStream -> outputStream.write(bytes));
+        tag, path, token, extraHeaders, outputStream -> outputStream.write(bytes));
   }
 
   /**

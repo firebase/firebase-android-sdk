@@ -340,7 +340,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   @Override
   public void startFeedback(@StringRes int infoTextResourceId) {
-    startFeedback(applicationContext.getText(infoTextResourceId), FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
+    startFeedback(
+        applicationContext.getText(infoTextResourceId), FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
   }
 
   @Override
@@ -348,27 +349,29 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     startFeedback(infoText, FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
   }
 
-    protected void startFeedback(@NonNull CharSequence infoText, FeedbackTrigger trigger) {
-        if (!feedbackInProgress.compareAndSet(/* expect= */ false, /* update= */ true)) {
-            LogWrapper.i(TAG, "Ignoring startFeedback() call because feedback is already in progress");
-            return;
-        }
-        LogWrapper.i(TAG, "Starting feedback");
-        screenshotTaker
-                .takeScreenshot()
-                .addOnFailureListener(
-                        lightweightExecutor,
-                        e -> {
-                            LogWrapper.w(TAG, "Failed to take screenshot for feedback", e);
-                            doStartFeedback(infoText, null, trigger);
-                        })
-                .addOnSuccessListener(
-                        lightweightExecutor, screenshotUri -> doStartFeedback(infoText, screenshotUri, trigger));
+  void startFeedback(@NonNull CharSequence infoText, FeedbackTrigger trigger) {
+    if (!feedbackInProgress.compareAndSet(/* expect= */ false, /* update= */ true)) {
+      LogWrapper.i(TAG, "Ignoring startFeedback() call because feedback is already in progress");
+      return;
     }
+    LogWrapper.i(TAG, "Starting feedback");
+    screenshotTaker
+        .takeScreenshot()
+        .addOnFailureListener(
+            lightweightExecutor,
+            e -> {
+              LogWrapper.w(TAG, "Failed to take screenshot for feedback", e);
+              doStartFeedback(infoText, null, trigger);
+            })
+        .addOnSuccessListener(
+            lightweightExecutor,
+            screenshotUri -> doStartFeedback(infoText, screenshotUri, trigger));
+  }
 
   @Override
   public void startFeedback(@StringRes int infoTextResourceId, @Nullable Uri screenshotUri) {
-    startFeedback(getText(infoTextResourceId), screenshotUri, FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
+    startFeedback(
+        getText(infoTextResourceId), screenshotUri, FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
   }
 
   @Override
@@ -376,10 +379,11 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     startFeedback(infoText, screenshotUri, FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
   }
 
-  private void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri, FeedbackTrigger trigger) {
+  private void startFeedback(
+      @NonNull CharSequence infoText, @Nullable Uri screenshotUri, FeedbackTrigger trigger) {
     if (!feedbackInProgress.compareAndSet(/* expect= */ false, /* update= */ true)) {
-        LogWrapper.i(TAG, "Ignoring startFeedback() call because feedback is already in progress");
-        return;
+      LogWrapper.i(TAG, "Ignoring startFeedback() call because feedback is already in progress");
+      return;
     }
     doStartFeedback(infoText, screenshotUri, trigger);
   }
@@ -401,7 +405,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
     notificationsManager.cancelFeedbackNotification();
   }
 
-  private void doStartFeedback(CharSequence infoText, @Nullable Uri screenshotUri, FeedbackTrigger trigger) {
+  private void doStartFeedback(
+      CharSequence infoText, @Nullable Uri screenshotUri, FeedbackTrigger trigger) {
     testerSignInManager
         .signInTester()
         .addOnFailureListener(
@@ -445,7 +450,10 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   private Task<Void> launchFeedbackActivity(
-          @Nullable String releaseName, CharSequence infoText, @Nullable Uri screenshotUri, FeedbackTrigger trigger) {
+      @Nullable String releaseName,
+      CharSequence infoText,
+      @Nullable Uri screenshotUri,
+      FeedbackTrigger trigger) {
     return lifecycleNotifier.consumeForegroundActivity(
         activity -> {
           LogWrapper.i(TAG, "Launching feedback activity");

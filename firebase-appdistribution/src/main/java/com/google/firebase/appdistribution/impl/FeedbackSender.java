@@ -36,7 +36,11 @@ class FeedbackSender {
   }
 
   /** Send feedback text and optionally a screenshot to the Tester API for the given release. */
-  Task<Void> sendFeedback(String releaseName, String feedbackText, @Nullable Uri screenshotUri, FeedbackTrigger trigger) {
+  Task<Void> sendFeedback(
+      String releaseName,
+      String feedbackText,
+      @Nullable Uri screenshotUri,
+      FeedbackTrigger trigger) {
     return testerApiClient
         .createFeedback(releaseName, feedbackText, trigger)
         .onSuccessTask(

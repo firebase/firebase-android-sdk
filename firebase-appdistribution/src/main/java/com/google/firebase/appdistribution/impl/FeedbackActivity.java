@@ -53,8 +53,8 @@ public class FeedbackActivity extends AppCompatActivity {
       "com.google.firebase.appdistribution.FeedbackActivity.INFO_TEXT";
   public static final String SCREENSHOT_URI_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT_URI";
-  public static final String  FEEDBACK_TRIGGER_KEY =
-    "com.google.firebase.appdistribution.FeedbackActivity.FEEDBACK_TRIGGER";
+  public static final String FEEDBACK_TRIGGER_KEY =
+      "com.google.firebase.appdistribution.FeedbackActivity.FEEDBACK_TRIGGER";
 
   private final ActivityResultLauncher<Intent> chooseScreenshotLauncher =
       registerForActivityResult(new StartActivityForResult(), this::handleChooseScreenshotResult);
