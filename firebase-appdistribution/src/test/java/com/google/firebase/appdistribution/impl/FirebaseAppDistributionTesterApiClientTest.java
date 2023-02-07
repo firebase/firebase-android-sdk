@@ -304,11 +304,11 @@ public class FirebaseAppDistributionTesterApiClientTest {
   public void createFeedback_whenResponseSuccessful_returnsFeedbackName() throws Exception {
     String postBody = String.format("{\"text\":\"%s\"}", FEEDBACK_TEXT);
     when(mockTesterApiHttpClient.makePostRequest(
-            any(), eq(CREATE_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(postBody)))
+            any(), eq(CREATE_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(postBody), eq(FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER)))
         .thenReturn(buildFeedbackJson());
 
     Task<String> task =
-        firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT);
+        firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
     String result = awaitTask(task);
 
     assertThat(result).isEqualTo(FEEDBACK_NAME);
@@ -320,7 +320,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(expectedException));
 
     Task<String> task =
-        firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT);
+        firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
@@ -332,7 +332,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
         .thenReturn(Tasks.forException(expectedException));
 
     Task<String> task =
-        firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT);
+        firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
@@ -341,11 +341,11 @@ public class FirebaseAppDistributionTesterApiClientTest {
   public void createFeedback_whenClientThrowsException_failsTask() throws Exception {
     String postBody = String.format("{\"text\":\"%s\"}", FEEDBACK_TEXT);
     when(mockTesterApiHttpClient.makePostRequest(
-            any(), eq(CREATE_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(postBody)))
+            any(), eq(CREATE_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(postBody), eq(FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER)))
         .thenThrow(new FirebaseAppDistributionException("test ex", Status.UNKNOWN));
 
     Task<String> task =
-        firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT);
+        firebaseAppDistributionTesterApiClient.createFeedback(RELEASE_NAME, FEEDBACK_TEXT, FeedbackTrigger.CUSTOM_FEEDBACK_TRIGGER);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex");
   }

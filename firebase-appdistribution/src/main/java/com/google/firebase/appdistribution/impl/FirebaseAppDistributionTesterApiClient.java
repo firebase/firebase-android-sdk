@@ -136,14 +136,14 @@ class FirebaseAppDistributionTesterApiClient {
 
   /** Creates a new feedback from the given text, and returns the feedback name. */
   @NonNull
-  Task<String> createFeedback(String testerReleaseName, String feedbackText) {
+  Task<String> createFeedback(String testerReleaseName, String feedbackText, FeedbackTrigger trigger) {
     return runWithFidAndToken(
         (unused, token) -> {
           LogWrapper.i(TAG, "Creating feedback for release: " + testerReleaseName);
           String path = String.format("v1alpha/%s/feedbackReports", testerReleaseName);
           String requestBody = buildCreateFeedbackBody(feedbackText).toString();
           JSONObject responseBody =
-              testerApiHttpClient.makePostRequest(CREATE_FEEDBACK_TAG, path, token, requestBody);
+              testerApiHttpClient.makePostRequest(CREATE_FEEDBACK_TAG, path, token, requestBody, trigger);
           return parseJsonFieldFromResponse(responseBody, "name");
         });
   }
