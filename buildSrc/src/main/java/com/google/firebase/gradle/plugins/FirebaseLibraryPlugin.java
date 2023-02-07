@@ -123,6 +123,8 @@ public class FirebaseLibraryPlugin implements Plugin<Project> {
                         ImmutableList.of("-module-name", kotlinModuleName(project))));
 
     project.getPluginManager().apply(DackkaPlugin.class);
+    project.getPluginManager().apply(GitSubmodulePlugin.class);
+    project.getTasks().getByName("preBuild").dependsOn("updateGitSubmodules");
   }
 
   private static void setupApiInformationAnalysis(Project project, LibraryExtension android) {
