@@ -58,7 +58,6 @@ class TesterApiHttpClient {
   private static final String X_GOOG_UPLOAD_PROTOCOL_RAW = "raw";
   private static final String X_GOOG_UPLOAD_FILE_NAME_HEADER = "X-Goog-Upload-File-Name";
   private static final String X_GOOG_UPLOAD_FILE_NAME = "screenshot.png";
-  private static final String X_APP_DISTRO_FEEDBACK_TRIGGER = "X-APP-DISTRO-FEEDBACK-TRIGGER";
   // StandardCharsets.UTF_8 requires API level 19
   private static final String UTF_8 = "UTF-8";
 
@@ -108,21 +107,7 @@ class TesterApiHttpClient {
     return makePostRequest(tag, path, token, requestBody, new HashMap<>());
   }
 
-  /**
-   * Make a POST request to the tester API at the given path using a FIS token for auth with
-   * feedback trigger type.
-   *
-   * @return the response body
-   */
-  public JSONObject makePostRequest(
-      String tag, String path, String token, String requestBody, FeedbackTrigger trigger)
-      throws FirebaseAppDistributionException {
-    Map<String, String> extraHeaders = new HashMap<>();
-    extraHeaders.put(X_APP_DISTRO_FEEDBACK_TRIGGER, trigger.toString());
-    return makePostRequest(tag, path, token, requestBody, extraHeaders);
-  }
-
-  private JSONObject makePostRequest(
+  JSONObject makePostRequest(
       String tag, String path, String token, String requestBody, Map<String, String> extraHeaders)
       throws FirebaseAppDistributionException {
     byte[] bytes;

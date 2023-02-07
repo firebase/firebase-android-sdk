@@ -36,6 +36,8 @@ import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import java.io.FileNotFoundException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -303,12 +305,14 @@ public class FirebaseAppDistributionTesterApiClientTest {
   @Test
   public void createFeedback_whenResponseSuccessful_returnsFeedbackName() throws Exception {
     String postBody = String.format("{\"text\":\"%s\"}", FEEDBACK_TEXT);
+    Map<String, String> extraHeaders = new HashMap<>();
+    extraHeaders.put("X-APP-DISTRO-FEEDBACK-TRIGGER", "custom");
     when(mockTesterApiHttpClient.makePostRequest(
             any(),
             eq(CREATE_FEEDBACK_PATH),
             eq(TEST_AUTH_TOKEN),
             eq(postBody),
-            eq(FeedbackTrigger.CUSTOM)))
+            eq(extraHeaders)))
         .thenReturn(buildFeedbackJson());
 
     Task<String> task =
@@ -347,12 +351,14 @@ public class FirebaseAppDistributionTesterApiClientTest {
   @Test
   public void createFeedback_whenClientThrowsException_failsTask() throws Exception {
     String postBody = String.format("{\"text\":\"%s\"}", FEEDBACK_TEXT);
+    Map<String, String> extraHeaders = new HashMap<>();
+    extraHeaders.put("X-APP-DISTRO-FEEDBACK-TRIGGER", "custom");
     when(mockTesterApiHttpClient.makePostRequest(
             any(),
             eq(CREATE_FEEDBACK_PATH),
             eq(TEST_AUTH_TOKEN),
             eq(postBody),
-            eq(FeedbackTrigger.CUSTOM)))
+            eq(extraHeaders)))
         .thenThrow(new FirebaseAppDistributionException("test ex", Status.UNKNOWN));
 
     Task<String> task =
