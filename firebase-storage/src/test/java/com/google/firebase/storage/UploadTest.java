@@ -160,7 +160,8 @@ public class UploadTest {
       // Note: This test can be flaky due to the fact that the second .getCause() may be null.
       // Me no likey ^ TODO() why would this occur?
       Exception exception = taskException.get();
-      Throwable cause = exception.getCause();
+      exception.printStackTrace();
+      Throwable cause = exception.getCause(); // threw an npe
 
       Throwable otherException = e.getCause();
       Throwable otherCause = otherException.getCause();
