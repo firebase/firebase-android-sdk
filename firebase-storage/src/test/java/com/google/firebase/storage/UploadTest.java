@@ -149,10 +149,16 @@ public class UploadTest {
     } catch (Exception e) {
       System.out.println("[DAYMON-DEBUG] Caught an exception");
       StorageException storageException =
-          (e instanceof StorageException ? (StorageException) e : null);
+          (e.getCause() instanceof StorageException ? (StorageException) e.getCause() : null);
       if (storageException != null) {
         System.out.println(
             "[DAYMON-DEBUG] StorageException ErrorCode: " + storageException.getErrorCode());
+        System.out.println("[DAYMON-DEBUG] HTTP Code: " + storageException.getHttpResultCode());
+        System.out.println(
+            "[DAYMON-DEBUG] Caused by: "
+                + storageException.getCause()
+                + " | "
+                + storageException.getCause().getMessage());
       }
       e.printStackTrace();
       throw e;
