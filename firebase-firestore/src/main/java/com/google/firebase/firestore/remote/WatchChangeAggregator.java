@@ -235,12 +235,9 @@ public class WatchChangeAggregator {
       bloomFilter =
           new BloomFilter(
               bitmap, unchangedNames.getBits().getPadding(), unchangedNames.getHashCount());
-    } catch (Exception e) {
+    } catch (BloomFilterException e) {
       if (e instanceof BloomFilterException) {
         Logger.warn("Firestore", "BloomFilter error: %s", e);
-
-      } else {
-        Logger.warn("Firestore", "Applying bloom filter failed: %s", e);
       }
       return false;
     }
@@ -259,8 +256,12 @@ public class WatchChangeAggregator {
         targetMetadataProvider.getRemoteKeysForTarget(targetId);
     int removalCount = 0;
     for (DocumentKey key : existingKeys) {
+      DatabaseId databaseId = targetMetadataProvider.getDatabaseId();
       String documentPath =
-          targetMetadataProvider.getDatabaseId().canonicalString()
+          "projects/"
+              + databaseId.getProjectId()
+              + "/databases/"
+              + databaseId.getDatabaseId()
               + "/documents/"
               + key.getPath().canonicalString();
       if (!bloomFilter.mightContain(documentPath)) {

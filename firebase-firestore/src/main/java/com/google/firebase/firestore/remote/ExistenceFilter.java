@@ -26,7 +26,7 @@ public final class ExistenceFilter {
     this.count = count;
   }
 
-  public ExistenceFilter(int count, BloomFilter unchangedNames) {
+  public ExistenceFilter(int count, @Nullable BloomFilter unchangedNames) {
     this.count = count;
     this.unchangedNames = unchangedNames;
   }

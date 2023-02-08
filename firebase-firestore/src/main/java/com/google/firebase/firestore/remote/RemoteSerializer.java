@@ -945,7 +945,6 @@ public final class RemoteSerializer {
         break;
       case FILTER:
         com.google.firestore.v1.ExistenceFilter protoFilter = protoChange.getFilter();
-        // TODO: implement existence filter parsing (see b/33076578)
         ExistenceFilter filter =
             new ExistenceFilter(protoFilter.getCount(), protoFilter.getUnchangedNames());
         int targetId = protoFilter.getTargetId();

@@ -41,13 +41,13 @@ public class BloomFilterTest {
       "src/test/resources/bloom_filter_golden_test_data/";
 
   @Test
-  public void instantiateEmptyBloomFilter() throws BloomFilterException {
+  public void instantiateEmptyBloomFilter() {
     BloomFilter bloomFilter = new BloomFilter(new byte[0], 0, 0);
     assertEquals(bloomFilter.getBitCount(), 0);
   }
 
   @Test
-  public void instantiateNonEmptyBloomFilter() throws BloomFilterException {
+  public void instantiateNonEmptyBloomFilter() {
     {
       BloomFilter bloomFilter1 = new BloomFilter(new byte[] {1}, 0, 1);
       assertEquals(bloomFilter1.getBitCount(), 8);
@@ -124,7 +124,7 @@ public class BloomFilterTest {
   }
 
   @Test
-  public void mightContainCanProcessNonStandardCharacters() throws BloomFilterException {
+  public void mightContainCanProcessNonStandardCharacters() {
     // A non-empty BloomFilter object with 1 insertion : "ÀÒ∑"
     BloomFilter bloomFilter = new BloomFilter(new byte[] {(byte) 237, 5}, 5, 8);
     assertTrue(bloomFilter.mightContain("ÀÒ∑"));
@@ -132,15 +132,14 @@ public class BloomFilterTest {
   }
 
   @Test
-  public void mightContainOnEmptyBloomFilterShouldReturnFalse() throws BloomFilterException {
+  public void mightContainOnEmptyBloomFilterShouldReturnFalse() {
     BloomFilter bloomFilter = new BloomFilter(new byte[0], 0, 0);
     assertFalse(bloomFilter.mightContain(""));
     assertFalse(bloomFilter.mightContain("a"));
   }
 
   @Test
-  public void mightContainWithEmptyStringMightReturnFalsePositiveResult()
-      throws BloomFilterException {
+  public void mightContainWithEmptyStringMightReturnFalsePositiveResult() {
     {
       BloomFilter bloomFilter1 = new BloomFilter(new byte[] {1}, 1, 1);
       assertFalse(bloomFilter1.mightContain(""));
@@ -152,7 +151,7 @@ public class BloomFilterTest {
   }
 
   @Test
-  public void bloomFilterToString() throws BloomFilterException {
+  public void bloomFilterToString() {
     {
       BloomFilter emptyBloomFilter = new BloomFilter(new byte[0], 0, 0);
       assertEquals(emptyBloomFilter.toString(), "BloomFilter{hashCount=0, size=0, bitmap=\"\"}");

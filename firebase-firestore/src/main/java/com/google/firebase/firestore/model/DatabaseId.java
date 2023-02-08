@@ -60,10 +60,6 @@ public final class DatabaseId implements Comparable<DatabaseId> {
     return databaseId;
   }
 
-  public String canonicalString() {
-    return "projects/" + projectId + "/databases/" + databaseId;
-  }
-
   @Override
   public String toString() {
     return "DatabaseId(" + projectId + ", " + databaseId + ")";

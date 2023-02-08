@@ -122,8 +122,10 @@ public class BloomFilter {
    */
   private int getBitIndex(long hash1, long hash2, int hashIndex) {
     // Calculate hashed value h(i) = h1 + (i * h2).
-    // Even though we are interpreting hash1 and hash2 as unsigned, the addition and multiplication
-    // operators still perform the correct operation and give the desired overflow behavior.
+    // Even though we are interpreting hash1 and hash2 as unsigned, the addition and
+    // multiplication
+    // operators still perform the correct operation and give the desired overflow
+    // behavior.
     long combinedHash = hash1 + (hash2 * hashIndex);
     long modulo = unsignedRemainder(combinedHash, this.bitCount);
     return (int) modulo;
@@ -132,8 +134,8 @@ public class BloomFilter {
   /**
    * Calculate modulo, where the dividend and divisor are treated as unsigned 64-bit longs.
    *
-   * <p>The implementation is taken from <a
-   * href="https://github.com/google/guava/blob/553037486901cc60820ab7dcb38a25b6f34eba43/android/guava/src/com/google/common/primitives/UnsignedLongs.java">Guava</a>,
+   * <p>The implementation is taken from <a href=
+   * "https://github.com/google/guava/blob/553037486901cc60820ab7dcb38a25b6f34eba43/android/guava/src/com/google/common/primitives/UnsignedLongs.java">Guava</a>,
    * simplified to our needs.
    *
    * <p>
