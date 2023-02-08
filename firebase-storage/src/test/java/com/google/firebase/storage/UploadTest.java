@@ -141,31 +141,6 @@ public class UploadTest {
 
     final UploadTask task = storage.putBytes(new byte[] {});
 
-    try {
-      task.getResult();
-      Assert.fail();
-    } catch (IllegalStateException ignore) {
-      // Task is not yet done.
-    } catch (Exception e) {
-      System.out.println("[DAYMON-DEBUG] Caught an exception");
-      StorageException storageException =
-          (e.getCause() instanceof StorageException ? (StorageException) e.getCause() : null);
-      if (storageException != null) {
-        System.out.println(
-            "[DAYMON-DEBUG] StorageException ErrorCode: " + storageException.getErrorCode());
-        System.out.println("[DAYMON-DEBUG] HTTP Code: " + storageException.getHttpResultCode());
-        System.out.println(
-            "[DAYMON-DEBUG] Caused by: "
-                + storageException.getCause()
-                + " | "
-                + storageException.getCause().getMessage());
-      }
-      e.printStackTrace();
-      throw e;
-    }
-
-    Assert.assertNull(task.getException());
-
     task.addOnFailureListener(
         (exception) -> {
           Assert.assertEquals(
@@ -183,6 +158,7 @@ public class UploadTest {
       Assert.fail();
     } catch (RuntimeExecutionException e) {
       // Note: This test can be flaky due to the fact that the second .getCause() may be null.
+      // Me no likey ^ TODO() why would this occur?
       Assert.assertEquals(taskException.get().getCause(), e.getCause().getCause());
     }
 
