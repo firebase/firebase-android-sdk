@@ -141,14 +141,9 @@ public class UploadTest {
 
     final UploadTask task = storage.putBytes(new byte[] {});
 
-    task.addOnFailureListener(
-        (exception) -> {
-          Assert.assertEquals(
-              "Cannot upload to getRoot. You should upload to a storage location such as "
-                  + ".getReference('image.png').putFile...",
-              exception.getCause().getMessage());
-          taskException.set(exception);
-        });
+    // should be called on same thread as us, unless we're not on the main application thread?
+    // if this correctly sets the exception, then that may be the "issue" (assert not propagating)
+    task.addOnFailureListener(taskException::set);
 
     // TODO(mrschmidt): Lower the timeout
     TestUtil.await(task, 1, TimeUnit.MINUTES);
@@ -160,8 +155,8 @@ public class UploadTest {
       // Note: This test can be flaky due to the fact that the second .getCause() may be null.
       // Me no likey ^ TODO() why would this occur?
       Exception exception = taskException.get();
-      exception.printStackTrace();
-      Throwable cause = exception.getCause(); // threw an npe
+      Throwable cause = exception.getCause(); // exception == null
+      // issues with multi threading on GCA?
 
       Throwable otherException = e.getCause();
       Throwable otherCause = otherException.getCause();
