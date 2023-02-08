@@ -152,6 +152,7 @@ public class UploadTest {
       task.getResult();
       Assert.fail();
     } catch (RuntimeExecutionException e) {
+      System.out.println("[DAYMON] Exception caught: " + e + " | " + e.getMessage());
       // Note: This test can be flaky due to the fact that the second .getCause() may be null.
       // Me no likey ^ TODO() why would this occur?
       Exception exception = taskException.get();
