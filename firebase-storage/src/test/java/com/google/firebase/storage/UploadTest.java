@@ -146,7 +146,7 @@ public class UploadTest {
       task.getResult();
       Assert.fail();
     } catch (Exception notIgnore) {
-      System.out.println("MTEWANI: EXCEPTION: " + notIgnore);
+      System.out.println("MTEWANI: EXCEPTION: " + notIgnore.getCause());
       // Task is not yet done.
     }
 
