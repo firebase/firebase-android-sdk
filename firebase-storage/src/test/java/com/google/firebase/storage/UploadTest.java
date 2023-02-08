@@ -159,7 +159,13 @@ public class UploadTest {
     } catch (RuntimeExecutionException e) {
       // Note: This test can be flaky due to the fact that the second .getCause() may be null.
       // Me no likey ^ TODO() why would this occur?
-      Assert.assertEquals(taskException.get().getCause(), e.getCause().getCause());
+      Exception exception = taskException.get();
+      Throwable cause = exception.getCause();
+
+      Throwable otherException = e.getCause();
+      Throwable otherCause = otherException.getCause();
+
+      Assert.assertEquals(cause, otherCause);
     }
 
     try {
@@ -427,6 +433,13 @@ public class UploadTest {
 
     Task<StringBuilder> task =
         TestUploadHelper.fileUploadWithPauseResume(factory.getSemaphore(), sourceFile);
+
+    task.addOnFailureListener(
+        (failure) -> {
+          System.out.println("[ DAYMON DEBUG ] Caught fileUploadWithPauseResume failure");
+          failure.printStackTrace();
+          System.out.println(failure.getCause().toString());
+        });
 
     // This is 20 seconds due to a fairness bug where resumed tasks can be put at the end.
     TestUtil.await(task, 20, TimeUnit.SECONDS);
