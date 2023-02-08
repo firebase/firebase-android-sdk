@@ -697,7 +697,8 @@ public class TestUploadHelper {
             + "but contained %s item(s), here's the real: %s",
         reference.getParent(),
         expectedTasks,
-        uploadTasksAtParent.size(), uploadTasksAtParent.toString());
+        uploadTasksAtParent.size(),
+        uploadTasksAtParent.toString());
   }
 
   @SuppressWarnings("ThrowableResultOfMethodCallIgnored")

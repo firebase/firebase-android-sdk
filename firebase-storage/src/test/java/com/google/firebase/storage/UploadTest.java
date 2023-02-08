@@ -22,8 +22,6 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import androidx.test.core.app.ApplicationProvider;
-
-import com.google.android.gms.auth.api.signin.internal.Storage;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -144,17 +142,17 @@ public class UploadTest {
     final UploadTask task = storage.putBytes(new byte[] {});
 
     // This is a bad test. We assume at this stage that the task isn't done yet.
-//    try {
-//      task.getResult();
-//      Assert.fail();
-//    } catch (IllegalStateException notIgnore) {
-//      // Task is not yet done.
-//      notIgnore.printStackTrace();
-//    } catch(RuntimeExecutionException exception) {
-//      exception.printStackTrace();
-//    }
-//
-//    Assert.assertNull(task.getException());
+    //    try {
+    //      task.getResult();
+    //      Assert.fail();
+    //    } catch (IllegalStateException notIgnore) {
+    //      // Task is not yet done.
+    //      notIgnore.printStackTrace();
+    //    } catch(RuntimeExecutionException exception) {
+    //      exception.printStackTrace();
+    //    }
+    //
+    //    Assert.assertNull(task.getException());
 
     task.addOnFailureListener(
         (exception) -> {
@@ -608,7 +606,7 @@ public class UploadTest {
 
   @Test
   public void runTen() throws Exception {
-    for(int i = 0; i < 10000; i++) {
+    for (int i = 0; i < 10000; i++) {
       badConnectivitySmallUpload();
     }
   }
