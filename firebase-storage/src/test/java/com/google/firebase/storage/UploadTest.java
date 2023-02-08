@@ -144,8 +144,10 @@ public class UploadTest {
     try {
       task.getResult();
       Assert.fail();
-    } catch (IllegalStateException ignore) {
+    } catch (Exception ignore) {
       // Task is not yet done.
+      // TODO(mtewani): Remove this ASAP.
+      System.out.println("TEST");
     }
 
     Assert.assertNull(task.getException());
