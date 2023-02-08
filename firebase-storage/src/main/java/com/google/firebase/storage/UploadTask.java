@@ -226,6 +226,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     }
 
     if (mStorageRef.getParent() == null) {
+      System.out.println("Illegal!");
       mException =
           new IllegalArgumentException(
               "Cannot upload to getRoot. You should upload to a "
@@ -569,6 +570,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
   @NonNull
   /*package*/ TaskSnapshot snapStateImpl() {
     Exception error = mException != null ? mException : mServerException;
+    System.out.println(error);
     return new TaskSnapshot(
         StorageException.fromExceptionAndHttpCode(error, mResultCode),
         mBytesUploaded.get(),

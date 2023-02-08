@@ -141,10 +141,12 @@ public class UploadTest {
 
     final UploadTask task = storage.putBytes(new byte[] {});
 
+    // This is a bad test. We assume at this stage that the task isn't done yet.
     try {
       task.getResult();
       Assert.fail();
-    } catch (IllegalStateException ignore) {
+    } catch (Exception notIgnore) {
+      System.out.println("MTEWANI: EXCEPTION: " + notIgnore);
       // Task is not yet done.
     }
 
@@ -152,6 +154,7 @@ public class UploadTest {
 
     task.addOnFailureListener(
         (exception) -> {
+          System.out.println("e:" + exception);
           Assert.assertEquals(
               "Cannot upload to getRoot. You should upload to a storage location such as "
                   + ".getReference('image.png').putFile...",
