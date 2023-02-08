@@ -143,27 +143,18 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   // this tag and they'll all be run (but all others won't).
   private static final String EXCLUSIVE_TAG = "exclusive";
 
-  // The name of a Java system property ({@link System#getProperty(String)}) whose
-  // value is a filter
-  // that specifies which tests to execute. The value of this property is a
-  // regular expression that
-  // is matched against the name of each test. Using this property is an
-  // alternative to setting the
-  // {@link #EXCLUSIVE_TAG} tag, which requires modifying the JSON file. To use
-  // this property,
-  // specify -DspecTestFilter=<Regex> to the Java runtime, replacing <Regex> with
-  // a regular
-  // expression; a test will be executed if and only if its name matches this
-  // regular expression.
-  // In this context, a test's "name" is the result of appending its "itName" to
-  // its "describeName",
+  // The name of a Java system property ({@link System#getProperty(String)}) whose value is a filter
+  // that specifies which tests to execute. The value of this property is a regular expression that
+  // is matched against the name of each test. Using this property is an alternative to setting the
+  // {@link #EXCLUSIVE_TAG} tag, which requires modifying the JSON file. To use this property,
+  // specify -DspecTestFilter=<Regex> to the Java runtime, replacing <Regex> with a regular
+  // expression; a test will be executed if and only if its name matches this regular expression.
+  // In this context, a test's "name" is the result of appending its "itName" to its "describeName",
   // separated by a space character.
   private static final String TEST_FILTER_PROPERTY = "specTestFilter";
 
-  // Tags on tests that should be excluded from execution, useful to allow the
-  // platforms to
-  // temporarily diverge or for features that are designed to be platform specific
-  // (such as
+  // Tags on tests that should be excluded from execution, useful to allow the platforms to
+  // temporarily diverge or for features that are designed to be platform specific (such as
   // 'multi-client').
   private static final Set<String> DISABLED_TAGS =
       RUN_BENCHMARK_TESTS
@@ -242,8 +233,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
   public static void info(String line) {
     if (DEBUG) {
-      // Print log information out directly to cut down on logger-related cruft like
-      // the extra
+      // Print log information out directly to cut down on logger-related cruft like the extra
       // line for the date and class method which are always SpecTestCase+info
       System.err.println(line);
     } else {
@@ -502,6 +492,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   //
   // Methods for doing the steps of the spec test.
   //
+
   private void doListen(JSONObject listenSpec) throws Exception {
     int expectedId = listenSpec.getInt("targetId");
     Query query = parseQuery(listenSpec.getJSONObject("query"));
@@ -642,8 +633,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         new WatchTargetChange(
             WatchTargetChangeType.Removed, targetIds, WatchStream.EMPTY_RESUME_TOKEN, error);
     writeWatchChange(change, SnapshotVersion.NONE);
-    // Unlike web, the MockDatastore detects a watch removal with cause and will
-    // remove active
+    // Unlike web, the MockDatastore detects a watch removal with cause and will remove active
     // targets
   }
 
@@ -697,7 +687,6 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             ? parseBloomFilter(watchFilter.getJSONObject("bloomFilter"))
             : null;
 
-    // TODO: extend this with different existence filters over time.
     ExistenceFilter filter = new ExistenceFilter(keyCount, bloomFilterProto);
     ExistenceFilterWatchChange change = new ExistenceFilterWatchChange(targets.get(0), filter);
     writeWatchChange(change, SnapshotVersion.NONE);
@@ -710,8 +699,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   }
 
   private void doWatchSnapshot(JSONObject watchSnapshot) throws Exception {
-    // The client will only respond to watchSnapshots if they are on a target change
-    // with an empty
+    // The client will only respond to watchSnapshots if they are on a target change with an empty
     // set of target IDs.
     List<Integer> targets =
         watchSnapshot.has("targetIds")
@@ -734,8 +722,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     Status status =
         Status.fromCodeValue(error.getInt("code")).withDescription(error.getString("message"));
     queue.runSync(() -> datastore.failWatchStream(status));
-    // Unlike web, stream should re-open synchronously (if we have active
-    // listeners).
+    // Unlike web, stream should re-open synchronously (if we have active listeners).
     if (!this.queryListeners.isEmpty()) {
       assertTrue("Watch stream is open", datastore.isWatchStreamOpen());
     }
@@ -876,8 +863,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     } else if (step.has("watchStreamClose")) {
       doWatchStreamClose(step.getJSONObject("watchStreamClose"));
     } else if (step.has("watchProto")) {
-      // watchProto isn't yet used, and it's unclear how to create arbitrary protos
-      // from JSON.
+      // watchProto isn't yet used, and it's unclear how to create arbitrary protos from JSON.
       throw Assert.fail("watchProto is not yet supported.");
     } else if (step.has("writeAck")) {
       doWriteAck(step.getJSONObject("writeAck"));
@@ -894,12 +880,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         doDisableNetwork();
       }
     } else if (step.has("changeUser")) {
-      // NOTE: JSONObject.getString("foo") where "foo" is mapped to null will return
-      // "null".
-      // Explicitly testing for isNull here allows the null value to be preserved.
-      // This is important
-      // because the unauthenticated user is represented as having a null uid as a
-      // value for
+      // NOTE: JSONObject.getString("foo") where "foo" is mapped to null will return "null".
+      // Explicitly testing for isNull here allows the null value to be preserved. This is important
+      // because the unauthenticated user is represented as having a null uid as a value for
       // "changeUser".
       String uid = step.isNull("changeUser") ? null : step.getString("changeUser");
       doChangeUser(uid);
@@ -1042,10 +1025,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           expectedActiveTargets.put(targetId, new ArrayList<>());
           for (int i = 0; i < queryArrayJson.length(); i++) {
             Query query = parseQuery(queryArrayJson.getJSONObject(i));
-            // TODO: populate the purpose of the target once it's possible to encode that in
-            // the
-            // spec tests. For now, hard-code that it's a listen despite the fact that it's
-            // not
+            // TODO: populate the purpose of the target once it's possible to encode that in the
+            // spec tests. For now, hard-code that it's a listen despite the fact that it's not
             // always the right value.
             TargetData targetData =
                 new TargetData(
@@ -1075,8 +1056,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     // Always validate that the expected limbo docs match the actual limbo docs.
     validateActiveLimboDocs();
     validateEnqueuedLimboDocs();
-    // Always validate that the expected active targets match the actual active
-    // targets.
+    // Always validate that the expected active targets match the actual active targets.
     validateActiveTargets();
   }
 
@@ -1115,8 +1095,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   }
 
   private void validateActiveLimboDocs() {
-    // Make a copy so it can modified while checking against the expected limbo
-    // docs.
+    // Make a copy so it can modified while checking against the expected limbo docs.
     @SuppressWarnings("VisibleForTests")
     Map<DocumentKey, Integer> actualLimboDocs =
         new HashMap<>(syncEngine.getActiveLimboDocumentResolutions());
@@ -1193,8 +1172,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       TargetData expectedTarget = expectedQueries.get(0);
       TargetData actualTarget = actualTargets.get(expected.getKey());
 
-      // TODO: validate the purpose of the target once it's possible to encode that in
-      // the
+      // TODO: validate the purpose of the target once it's possible to encode that in the
       // spec tests. For now, only validate properties that can be validated.
       // assertEquals(expectedTarget, actualTarget);
       assertEquals(expectedTarget.getTarget(), actualTarget.getTarget());
@@ -1217,7 +1195,6 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private void runSteps(JSONArray steps, JSONObject config) throws Exception {
     try {
       specSetUp(config);
-
       for (int i = 0; i < steps.length(); ++i) {
         JSONObject step = steps.getJSONObject(i);
         @Nullable JSONArray expectedSnapshotEvents = step.optJSONArray("expectedSnapshotEvents");
@@ -1253,14 +1230,10 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     } catch (Exception e) {
       throw Assert.fail("Spec test failed with %s", e);
     } finally {
-      // Ensure that Persistence is torn down even if the test is failing due to a
-      // thrown exception
-      // so that any open databases are closed. This is important when the LocalStore
-      // is backed by
-      // SQLite because SQLite opens databases in exclusive mode. If tearDownForSpec
-      // were not called
-      // after an exception then subsequent attempts to open the SQLite database will
-      // fail, making
+      // Ensure that Persistence is torn down even if the test is failing due to a thrown exception
+      // so that any open databases are closed. This is important when the LocalStore is backed by
+      // SQLite because SQLite opens databases in exclusive mode. If tearDownForSpec were not called
+      // after an exception then subsequent attempts to open the SQLite database will fail, making
       // it harder to zero in on the spec tests as a culprit.
       specTearDown();
     }
@@ -1310,8 +1283,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       String fileName = parsedSpecFile.first;
       JSONObject fileJSON = parsedSpecFile.second;
 
-      // Print the names of the files and tests regardless of whether verbose logging
-      // is enabled.
+      // Print the names of the files and tests regardless of whether verbose logging is enabled.
       info("Spec test file: " + fileName);
 
       // Iterate over the tests in the file and run them.
