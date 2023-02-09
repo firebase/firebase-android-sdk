@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.send;
 
 import android.annotation.SuppressLint;
+import android.database.SQLException;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.Transport;
@@ -128,7 +129,11 @@ final class ReportQueue {
     CountDownLatch latch = new CountDownLatch(1);
     new Thread(
             () -> {
-              ForcedSender.sendBlocking(transport, Priority.HIGHEST);
+              try {
+                ForcedSender.sendBlocking(transport, Priority.HIGHEST);
+              } catch (SQLException ignored) {
+                // best effort only.
+              }
               latch.countDown();
             })
         .start();

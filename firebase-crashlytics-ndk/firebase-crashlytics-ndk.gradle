@@ -75,7 +75,6 @@ android {
             tasks.register("fixTrampolineFilenames${variant.baseName}${arch}", com.google.firebase.gradle.NdkBinaryFixTask) {
                 it.inputFile =
                         file("${buildDir}/intermediates/ndkBuild/${variant.baseName}/obj/local/${arch}/crashlytics-trampoline")
-                it.dependsOn(variant.externalNativeBuildProviders)
             }
         }
 
@@ -87,6 +86,11 @@ android {
                     into fix.map { it.into }
                 }
             }
+        }
+        tasks.findAll {
+            it.name.startsWith("externalNativeBuild") && !it.name.contains("Clean")
+        }.each { task ->
+            fixTasks.each { fix -> fix.configure { it.dependsOn task } }
         }
     }
 }
