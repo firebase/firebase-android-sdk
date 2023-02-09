@@ -1,4 +1,5 @@
 # Unreleased
+*   [changed] Internal changes to improve startup time
 
 # 17.1.0
 *   [changed] Internal changes to ensure functionality alignment with other
