@@ -27,8 +27,7 @@ public class BloomFilter {
   private final int hashCount;
   private final MessageDigest md5HashMessageDigest;
 
-  public BloomFilter(@NonNull byte[] bitmap, int padding, int hashCount)
-      throws BloomFilterException {
+  public BloomFilter(@NonNull byte[] bitmap, int padding, int hashCount) {
     if (bitmap == null) {
       throw new NullPointerException("Bitmap cannot be null.");
     }

@@ -80,6 +80,9 @@ public class WatchChangeAggregator {
    */
   private Set<Integer> pendingTargetResets = new HashSet<>();
 
+  /** The log tag to use for this class. */
+  private static final String LOG_TAG = "WatchChangeAggregator";
+
   public WatchChangeAggregator(TargetMetadataProvider targetMetadataProvider) {
     this.targetMetadataProvider = targetMetadataProvider;
   }
@@ -236,9 +239,11 @@ public class WatchChangeAggregator {
           new BloomFilter(
               bitmap, unchangedNames.getBits().getPadding(), unchangedNames.getHashCount());
     } catch (BloomFilterException e) {
-      if (e instanceof BloomFilterException) {
-        Logger.warn("Firestore", "BloomFilter error: %s", e);
-      }
+      Logger.warn(
+          LOG_TAG,
+          "Decoding the base64 bloom filter in existence filter failed ("
+              + e.getMessage()
+              + "); ignoring the bloom filter and falling back to full re-query.");
       return false;
     }
 
