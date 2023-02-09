@@ -694,9 +694,11 @@ public class TestUploadHelper {
     Preconditions.checkState(
         uploadTasksAtParent.size() == expectedTasks,
         "Expected active upload task at location %s to contain %s item(s), "
-            + "but contained %s item(s)",
+            + "but contained %s item(s), here's the real: %s",
         reference.getParent(),
-        uploadTasksAtParent.size());
+        expectedTasks,
+        uploadTasksAtParent.size(),
+        uploadTasksAtParent.toString());
   }
 
   @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
