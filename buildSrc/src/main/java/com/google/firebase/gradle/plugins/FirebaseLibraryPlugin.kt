@@ -86,8 +86,12 @@ class FirebaseLibraryPlugin : Plugin<Project> {
   private fun setupApiInformationAnalysis(project: Project, android: LibraryExtension) {
     val srcDirs = android.sourceSets.getByName("main").java.srcDirs
 
-    val apiInfo = getApiInfo(project, srcDirs)
-    val generateApiTxt = getGenerateApiTxt(project, srcDirs)
+    val mainSourceSets = android.sourceSets.getByName("main")
+    val getKotlinDirectories = mainSourceSets::class.java.getDeclaredMethod("getKotlinDirectories")
+    val kotlinSrcDirs = getKotlinDirectories.invoke(mainSourceSets)
+
+    val apiInfo = getApiInfo(project, kotlinSrcDirs as Set<File>)
+    val generateApiTxt = getGenerateApiTxt(project, kotlinSrcDirs as Set<File>)
     val docStubs = getDocStubs(project, srcDirs)
 
     project.tasks.getByName("check").dependsOn(docStubs)
