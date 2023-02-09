@@ -159,10 +159,11 @@ public class TestGetModelLocal {
     assertTrue(listModelTask.contains(modelUpdatedTask.getResult()));
 
     // delete the old model
-    Task deleteDownloadedModelTask = FirebaseModelDownloader.getInstance().deleteDownloadedModel(MODEL_NAME_LOCAL);
+    Task deleteDownloadedModelTask =
+        FirebaseModelDownloader.getInstance().deleteDownloadedModel(MODEL_NAME_LOCAL);
     Tasks.await(deleteDownloadedModelTask);
     listModelTask = getDownloadedModelList();
-    assertEquals( 1, listModelTask.size());
+    assertEquals(1, listModelTask.size());
 
     // verify model file was also deleted
     assertNull(modelTask.getResult().getFile());

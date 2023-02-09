@@ -370,7 +370,8 @@ public class FirebaseAppTest {
   }
 
   @Test
-  public void testDirectBoot_shouldInitializeEagerComponentsOnDeviceUnlock() throws InterruptedException {
+  public void testDirectBoot_shouldInitializeEagerComponentsOnDeviceUnlock()
+      throws InterruptedException {
     Context mockContext = createForwardingMockContext();
 
     isUserUnlocked.set(false);
