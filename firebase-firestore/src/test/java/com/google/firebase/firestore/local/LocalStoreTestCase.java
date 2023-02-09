@@ -1105,7 +1105,7 @@ public abstract class LocalStoreTestCase {
     // Execute the query, but note that we read all existing documents from the RemoteDocumentCache
     // since we do not yet have target mapping.
     executeQuery(query);
-    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 3);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
 
     // Issue a RemoteEvent to persist the target mapping.
     applyRemoteEvent(

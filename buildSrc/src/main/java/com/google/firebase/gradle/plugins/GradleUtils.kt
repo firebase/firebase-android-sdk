@@ -44,3 +44,15 @@ fun Project.fileFromBuildDir(path: String) = file("$buildDir/$path")
  */
 fun Project.childFile(provider: Provider<File>, childPath: String) =
   provider.map { file("${it.path}/$childPath") }
+
+/**
+ * Returns a list of children files, or an empty list if this [File] doesn't exist or doesn't have
+ * any children.
+ *
+ * Syntax sugar for:
+ *
+ * ```
+ * listFiles().orEmpty()
+ * ```
+ */
+fun File.listFilesOrEmpty() = listFiles().orEmpty()
