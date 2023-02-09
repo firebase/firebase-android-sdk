@@ -83,17 +83,18 @@ public class ConfigAutoFetch {
     }
   }
 
-  private String parseAndValidateConfigUpdateMessage(String message) {
-    int left = 0;
-    while (left < message.length() && message.charAt(left) != '{') {
-      left++;
-    }
-    int right = message.length() - 1;
-    while (right >= 0 && message.charAt(right) != '}') {
-      right--;
+  // Strip leading and trailing characters from a config update message segment.
+  // Config update message are objects in a chunked JSON array and may include
+  // the characters '[', ']', and ',' which must be stripped before parsing.
+  private JSONObject parseConfigUpdateMessage(String message) throws JSONException {
+    int beginning = message.indexOf('{');
+    int end = message.lastIndexOf('}');
+
+    if (end <= beginning) {
+      return new JSONObject();
     }
 
-    return left >= right ? "" : message.substring(left, right + 1);
+    return new JSONObject(message.substring(beginning, end + 1));
   }
 
   // Check connection and establish InputStream
@@ -131,35 +132,31 @@ public class ConfigAutoFetch {
 
       // Closing bracket indicates a full message has just finished.
       if (partialConfigUpdateMessage.contains("}")) {
-        // Strip beginning and ending of message. If there is not an open and closing bracket,
-        // parseMessage will return an empty message.
-        currentConfigUpdateMessage =
-            parseAndValidateConfigUpdateMessage(currentConfigUpdateMessage);
-        if (!currentConfigUpdateMessage.isEmpty()) {
-          try {
-            JSONObject jsonObject = new JSONObject(currentConfigUpdateMessage);
+        try {
+          // Try to parse the message by stripping anything outside "{ ... }".
+          JSONObject jsonObject = parseConfigUpdateMessage(currentConfigUpdateMessage);
 
-            if (jsonObject.has(REALTIME_DISABLED_KEY)
-                && jsonObject.getBoolean(REALTIME_DISABLED_KEY)) {
-              retryCallback.onError(
-                  new FirebaseRemoteConfigServerException(
-                      "The server is temporarily unavailable. Try again in a few minutes.",
-                      FirebaseRemoteConfigException.Code.CONFIG_UPDATE_UNAVAILABLE));
-              break;
-            }
-            if (jsonObject.has(TEMPLATE_VERSION_KEY)) {
-              long oldTemplateVersion = configFetchHandler.getTemplateVersionNumber();
-              long targetTemplateVersion = jsonObject.getLong(TEMPLATE_VERSION_KEY);
-              if (targetTemplateVersion > oldTemplateVersion) {
-                autoFetch(MAXIMUM_FETCH_ATTEMPTS, targetTemplateVersion);
-              }
-            }
-          } catch (JSONException ex) {
-            Log.e(TAG, "Unable to parse latest config update message." + ex.toString());
+          if (jsonObject.has(REALTIME_DISABLED_KEY)
+              && jsonObject.getBoolean(REALTIME_DISABLED_KEY)) {
+            retryCallback.onError(
+                new FirebaseRemoteConfigServerException(
+                    "The server is temporarily unavailable. Try again in a few minutes.",
+                    FirebaseRemoteConfigException.Code.CONFIG_UPDATE_UNAVAILABLE));
+            break;
           }
 
-          currentConfigUpdateMessage = "";
+          if (jsonObject.has(TEMPLATE_VERSION_KEY)) {
+            long oldTemplateVersion = configFetchHandler.getTemplateVersionNumber();
+            long targetTemplateVersion = jsonObject.getLong(TEMPLATE_VERSION_KEY);
+            if (targetTemplateVersion > oldTemplateVersion) {
+              autoFetch(MAXIMUM_FETCH_ATTEMPTS, targetTemplateVersion);
+            }
+          }
+        } catch (JSONException ex) {
+          Log.e(TAG, "Unable to parse latest config update message." + ex.toString());
         }
+
+        currentConfigUpdateMessage = "";
       }
     }
 
