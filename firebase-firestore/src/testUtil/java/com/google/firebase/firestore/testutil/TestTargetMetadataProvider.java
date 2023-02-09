@@ -16,6 +16,7 @@ package com.google.firebase.firestore.testutil;
 
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.local.TargetData;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.remote.WatchChangeAggregator;
 import java.util.HashMap;
@@ -39,6 +40,11 @@ public class TestTargetMetadataProvider implements WatchChangeAggregator.TargetM
   @Override
   public TargetData getTargetDataForTarget(int targetId) {
     return queryData.get(targetId);
+  }
+
+  @Override
+  public DatabaseId getDatabaseId() {
+    return DatabaseId.forProject("test-project");
   }
 
   /** Sets or replaces the local state for the provided query data. */

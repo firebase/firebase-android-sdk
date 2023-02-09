@@ -73,55 +73,53 @@ public class BloomFilterTest {
   }
 
   @Test
-  public void constructorShouldThrowIAEOnEmptyBloomFilterWithNonZeroPadding() {
-    IllegalArgumentException exception =
-        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[0], 1, 0));
+  public void constructorShouldThrowBFEOnEmptyBloomFilterWithNonZeroPadding() {
+    BloomFilterException exception =
+        assertThrows(BloomFilterException.class, () -> new BloomFilter(new byte[0], 1, 0));
     assertThat(exception)
         .hasMessageThat()
         .contains("Expected padding of 0 when bitmap length is 0, but got 1");
   }
 
   @Test
-  public void constructorShouldThrowIAEOnNonEmptyBloomFilterWithZeroHashCount() {
-    IllegalArgumentException zeroHashCountException =
-        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[] {1}, 1, 0));
+  public void constructorShouldThrowBFEOnNonEmptyBloomFilterWithZeroHashCount() {
+    BloomFilterException zeroHashCountException =
+        assertThrows(BloomFilterException.class, () -> new BloomFilter(new byte[] {1}, 1, 0));
     assertThat(zeroHashCountException).hasMessageThat().contains("Invalid hash count: 0");
   }
 
   @Test
-  public void constructorShouldThrowIAEOnNegativePadding() {
+  public void constructorShouldThrowBFEOnNegativePadding() {
     {
-      IllegalArgumentException emptyBloomFilterException =
-          assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[0], -1, 0));
+      BloomFilterException emptyBloomFilterException =
+          assertThrows(BloomFilterException.class, () -> new BloomFilter(new byte[0], -1, 0));
       assertThat(emptyBloomFilterException).hasMessageThat().contains("Invalid padding: -1");
     }
     {
-      IllegalArgumentException nonEmptyBloomFilterException =
-          assertThrows(
-              IllegalArgumentException.class, () -> new BloomFilter(new byte[] {1}, -1, 1));
+      BloomFilterException nonEmptyBloomFilterException =
+          assertThrows(BloomFilterException.class, () -> new BloomFilter(new byte[] {1}, -1, 1));
       assertThat(nonEmptyBloomFilterException).hasMessageThat().contains("Invalid padding: -1");
     }
   }
 
   @Test
-  public void constructorShouldThrowIAEOnNegativeHashCount() {
+  public void constructorShouldThrowBFEOnNegativeHashCount() {
     {
-      IllegalArgumentException emptyBloomFilterException =
-          assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[0], 0, -1));
+      BloomFilterException emptyBloomFilterException =
+          assertThrows(BloomFilterException.class, () -> new BloomFilter(new byte[0], 0, -1));
       assertThat(emptyBloomFilterException).hasMessageThat().contains("Invalid hash count: -1");
     }
     {
-      IllegalArgumentException nonEmptyBloomFilterException =
-          assertThrows(
-              IllegalArgumentException.class, () -> new BloomFilter(new byte[] {1}, 1, -1));
+      BloomFilterException nonEmptyBloomFilterException =
+          assertThrows(BloomFilterException.class, () -> new BloomFilter(new byte[] {1}, 1, -1));
       assertThat(nonEmptyBloomFilterException).hasMessageThat().contains("Invalid hash count: -1");
     }
   }
 
   @Test
-  public void constructorShouldThrowIAEIfPaddingIsTooLarge() {
-    IllegalArgumentException exception =
-        assertThrows(IllegalArgumentException.class, () -> new BloomFilter(new byte[] {1}, 8, 1));
+  public void constructorShouldThrowBFEIfPaddingIsTooLarge() {
+    BloomFilterException exception =
+        assertThrows(BloomFilterException.class, () -> new BloomFilter(new byte[] {1}, 8, 1));
     assertThat(exception).hasMessageThat().contains("Invalid padding: 8");
   }
 
@@ -179,7 +177,7 @@ public class BloomFilterTest {
   private static void runGoldenTest(String testFile) throws Exception {
     String resultFile = testFile.replace("bloom_filter_proto", "membership_test_result");
     if (resultFile.equals(testFile)) {
-      throw new IllegalArgumentException("Cannot find corresponding result file for " + testFile);
+      throw new BloomFilterException("Cannot find corresponding result file for " + testFile);
     }
 
     JSONObject testJson = readJsonFile(testFile);

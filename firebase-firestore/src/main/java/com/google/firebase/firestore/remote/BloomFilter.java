@@ -32,21 +32,19 @@ public class BloomFilter {
       throw new NullPointerException("Bitmap cannot be null.");
     }
     if (padding < 0 || padding >= 8) {
-      throw new IllegalArgumentException("Invalid padding: " + padding);
+      throw new BloomFilterException("Invalid padding: " + padding);
     }
     if (hashCount < 0) {
-      throw new IllegalArgumentException("Invalid hash count: " + hashCount);
+      throw new BloomFilterException("Invalid hash count: " + hashCount);
     }
     if (bitmap.length > 0 && hashCount == 0) {
       // Only empty bloom filter can have 0 hash count.
-      throw new IllegalArgumentException("Invalid hash count: " + hashCount);
+      throw new BloomFilterException("Invalid hash count: " + hashCount);
     }
-    if (bitmap.length == 0) {
+    if (bitmap.length == 0 && padding != 0) {
       // Empty bloom filter should have 0 padding.
-      if (padding != 0) {
-        throw new IllegalArgumentException(
-            "Expected padding of 0 when bitmap length is 0, but got " + padding);
-      }
+      throw new BloomFilterException(
+          "Expected padding of 0 when bitmap length is 0, but got " + padding);
     }
 
     this.bitmap = bitmap;
@@ -133,8 +131,8 @@ public class BloomFilter {
   /**
    * Calculate modulo, where the dividend and divisor are treated as unsigned 64-bit longs.
    *
-   * <p>The implementation is taken from <a
-   * href="https://github.com/google/guava/blob/553037486901cc60820ab7dcb38a25b6f34eba43/android/guava/src/com/google/common/primitives/UnsignedLongs.java">Guava</a>,
+   * <p>The implementation is taken from <a href=
+   * "https://github.com/google/guava/blob/553037486901cc60820ab7dcb38a25b6f34eba43/android/guava/src/com/google/common/primitives/UnsignedLongs.java">Guava</a>,
    * simplified to our needs.
    *
    * <p>
