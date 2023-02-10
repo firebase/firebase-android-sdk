@@ -21,6 +21,7 @@ import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.TaskProvider
+import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.register
 
 fun Copy.fromDirectory(directory: Provider<File>) =
@@ -115,3 +116,13 @@ fun getDocStubs(project: Project, srcDirs: Set<File>) =
   project.tasks.register<GenerateStubsTask>("docStubs") {
     sources.value(project.provider { srcDirs })
   }
+
+/**
+ * Syntax sugar for:
+ *
+ * ```kotlin
+ * pluginManager.apply(T::class)
+ * ```
+ */
+inline fun <reified T : Any> org.gradle.api.plugins.PluginManager.`apply`(): Unit =
+  `apply`(T::class)
