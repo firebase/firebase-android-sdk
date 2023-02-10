@@ -472,8 +472,17 @@ public final class FirebaseMessagingRoboTest {
 
   @Test
   public void testUnsubscribeFromTopic_withPrefix() {
-    firebaseMessaging.unsubscribeFromTopic(VALID_TOPIC);
+    Task<Void> task = firebaseMessaging.unsubscribeFromTopic(VALID_TOPIC);
     shadowOf(getMainLooper()).runToEndOfTasks();
+    if (!task.isComplete()) {
+      System.out.println("[DAYMON DEBUG] Task is not complete yet");
+    }
+    if (task.isCanceled()) {
+      System.out.println("[DAYMON DEBUG] Task is canceled");
+    }
+    if (!task.isSuccessful()) {
+      System.out.println("[DAYMON DEBUG] Task Failed");
+    }
     assertThat(topicSubscriber.getStore().getNextTopicOperation())
         .isEqualTo(TopicOperation.unsubscribe(VALID_TOPIC));
   }
