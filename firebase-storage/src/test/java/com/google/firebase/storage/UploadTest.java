@@ -143,15 +143,7 @@ public class UploadTest {
 
     // should be called on same thread as us, unless we're not on the main application thread?
     // if this correctly sets the exception, then that may be the "issue" (assert not propagating)
-    task.addOnFailureListener(
-        (exception) -> {
-          System.out.println("[DAYMON DEBUG] Got message: " + exception.getCause().getMessage());
-          Assert.assertEquals(
-              "Cannot upload to getRoot. You should upload to a storage location such as "
-                  + ".getReference('image.png').putFile...",
-              exception.getCause().getMessage());
-          taskException.set(exception);
-        });
+    task.addOnFailureListener(taskException::set);
 
     // TODO(mrschmidt): Lower the timeout
     TestUtil.await(task, 1, TimeUnit.MINUTES);
