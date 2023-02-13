@@ -15,40 +15,43 @@
 package com.google.firebase.gradle.plugins
 
 import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatExtension
+import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatPlugin
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
+import com.google.firebase.gradle.plugins.LibraryType.JAVA
 import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
+import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.kotlin.dsl.getPlugin
+import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 class FirebaseJavaLibraryPlugin : Plugin<Project> {
 
   override fun apply(project: Project) {
-    project.apply(ImmutableMap.of("plugin", "java-library"))
-    project.apply(ImmutableMap.of("plugin", "com.github.sherter.google-java-format"))
-    project.extensions.getByType(GoogleJavaFormatExtension::class.java).toolVersion = "1.10.0"
-    val firebaseLibrary =
-      project.extensions.create(
-        "firebaseLibrary",
-        FirebaseLibraryExtension::class.java,
-        project,
-        LibraryType.JAVA
-      )
+    project.apply<JavaLibraryPlugin>()
+    project.apply<GoogleJavaFormatPlugin>()
+    project.extensions.getByType<GoogleJavaFormatExtension>().toolVersion = "1.10.0"
+
+    setupFirebaseLibraryExtension(project)
 
     // reduce the likelihood of kotlin module files colliding.
-    project.tasks.withType(KotlinCompile::class.java) {
+    project.tasks.withType<KotlinCompile> {
       kotlinOptions.freeCompilerArgs = ImmutableList.of("-module-name", kotlinModuleName(project))
     }
+  }
+
+  private fun setupFirebaseLibraryExtension(project: Project) {
+    val firebaseLibrary =
+      project.extensions.create<FirebaseLibraryExtension>("firebaseLibrary", project, JAVA)
+
     setupStaticAnalysis(project, firebaseLibrary)
     setupApiInformationAnalysis(project)
     configurePublishing(project, firebaseLibrary)
-    project.tasks.register("kotlindoc")
   }
 
   private fun setupApiInformationAnalysis(project: Project) {

@@ -15,9 +15,10 @@
 package com.google.firebase.gradle.plugins
 
 import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.LibraryPlugin
 import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatExtension
-import com.google.common.collect.ImmutableList
-import com.google.common.collect.ImmutableMap
+import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatPlugin
+import com.google.firebase.gradle.plugins.LibraryType.ANDROID
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
 import java.io.File
@@ -27,24 +28,37 @@ import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
+import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 class FirebaseLibraryPlugin : Plugin<Project> {
 
   override fun apply(project: Project) {
-    project.apply(ImmutableMap.of("plugin", "com.android.library"))
-    project.apply(ImmutableMap.of("plugin", LicenseResolverPlugin::class.java))
-    project.apply(ImmutableMap.of("plugin", "com.github.sherter.google-java-format"))
-    project.extensions.getByType(GoogleJavaFormatExtension::class.java).toolVersion = "1.10.0"
+    project.apply<LibraryPlugin>()
+    project.apply<LicenseResolverPlugin>()
+    project.apply<GoogleJavaFormatPlugin>()
+    project.extensions.getByType<GoogleJavaFormatExtension>().toolVersion = "1.10.0"
+
+    setupAndroidLibraryExtension(project)
+
+    // reduce the likelihood of kotlin module files colliding.
+    project.tasks.withType<KotlinCompile> {
+      kotlinOptions.freeCompilerArgs = listOf("-module-name", kotlinModuleName(project))
+    }
+
+    project.pluginManager.apply(DackkaPlugin::class.java)
+    project.pluginManager.apply(GitSubmodulePlugin::class.java)
+    project.tasks.getByName("preBuild").dependsOn("updateGitSubmodules")
+  }
+
+  private fun setupAndroidLibraryExtension(project: Project) {
     val firebaseLibrary =
-      project.extensions.create(
-        "firebaseLibrary",
-        FirebaseLibraryExtension::class.java,
-        project,
-        LibraryType.ANDROID
-      )
+      project.extensions.create<FirebaseLibraryExtension>("firebaseLibrary", project, ANDROID)
     val android = project.extensions.getByType<LibraryExtension>()
     android.compileOptions {
       sourceCompatibility = JavaVersion.VERSION_1_8
@@ -60,27 +74,16 @@ class FirebaseLibraryPlugin : Plugin<Project> {
     }
 
     // see https://github.com/robolectric/robolectric/issues/5456
-    android.testOptions {
-      unitTests.all {
-        it.systemProperty("robolectric.dependency.repo.id", "central")
-        it.systemProperty("robolectric.dependency.repo.url", "https://repo1.maven.org/maven2")
-        it.systemProperty("javax.net.ssl.trustStoreType", "JKS")
-      }
+    android.testOptions.unitTests.all {
+      it.systemProperty("robolectric.dependency.repo.id", "central")
+      it.systemProperty("robolectric.dependency.repo.url", "https://repo1.maven.org/maven2")
+      it.systemProperty("javax.net.ssl.trustStoreType", "JKS")
     }
 
     setupApiInformationAnalysis(project, android)
     android.testServer(FirebaseTestServer(project, firebaseLibrary.testLab, android))
     setupStaticAnalysis(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary, android)
-
-    // reduce the likelihood of kotlin module files colliding.
-    project.tasks.withType(KotlinCompile::class.java) {
-      kotlinOptions.freeCompilerArgs = ImmutableList.of("-module-name", kotlinModuleName(project))
-    }
-
-    project.pluginManager.apply(DackkaPlugin::class.java)
-    project.pluginManager.apply(GitSubmodulePlugin::class.java)
-    project.tasks.getByName("preBuild").dependsOn("updateGitSubmodules")
   }
 
   private fun setupApiInformationAnalysis(project: Project, android: LibraryExtension) {
@@ -91,7 +94,7 @@ class FirebaseLibraryPlugin : Plugin<Project> {
     val kotlinSrcDirs = getKotlinDirectories.invoke(mainSourceSets)
 
     val apiInfo = getApiInfo(project, kotlinSrcDirs as Set<File>)
-    val generateApiTxt = getGenerateApiTxt(project, kotlinSrcDirs as Set<File>)
+    val generateApiTxt = getGenerateApiTxt(project, kotlinSrcDirs)
     val docStubs = getDocStubs(project, srcDirs)
 
     project.tasks.getByName("check").dependsOn(docStubs)
@@ -118,15 +121,11 @@ class FirebaseLibraryPlugin : Plugin<Project> {
     firebaseLibrary: FirebaseLibraryExtension,
     android: LibraryExtension
   ) {
-    android.publishing { singleVariant("release") { withSourcesJar() } }
-    project.tasks.withType(
-      GenerateModuleMetadata::class.java,
-    ) {
-      isEnabled = false
-    }
+    android.publishing.singleVariant("release") { withSourcesJar() }
+    project.tasks.withType<GenerateModuleMetadata> { isEnabled = false }
 
     project.afterEvaluate {
-      project.apply(ImmutableMap.of("plugin", "maven-publish"))
+      project.apply<MavenPublishPlugin>()
       val publishing = project.extensions.getByType(PublishingExtension::class.java)
       publishing.repositories {
         maven {
