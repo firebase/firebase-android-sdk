@@ -558,31 +558,6 @@ public class ValidationTest {
   }
 
   @Test
-  public void queriesWithMultipleArrayFiltersFail() {
-    expectError(
-        () -> testCollection().whereArrayContains("foo", 1).whereArrayContains("foo", 2),
-        "Invalid Query. You cannot use more than one 'array_contains' filter.");
-
-    expectError(
-        () ->
-            testCollection()
-                .whereArrayContains("foo", 1)
-                .whereArrayContainsAny("foo", asList(1, 2)),
-        "Invalid Query. You cannot use 'array_contains_any' filters with 'array_contains' filters.");
-
-    expectError(
-        () ->
-            testCollection()
-                .whereArrayContainsAny("foo", asList(1, 2))
-                .whereArrayContains("foo", 1),
-        "Invalid Query. You cannot use 'array_contains' filters with 'array_contains_any' filters.");
-
-    expectError(
-        () -> testCollection().whereNotIn("foo", asList(1, 2)).whereArrayContains("foo", 1),
-        "Invalid Query. You cannot use 'array_contains' filters with 'not_in' filters.");
-  }
-
-  @Test
   public void queriesWithNotEqualAndNotInFiltersFail() {
     expectError(
         () -> testCollection().whereNotIn("foo", asList(1, 2)).whereNotEqualTo("foo", 1),
@@ -604,20 +579,6 @@ public class ValidationTest {
     expectError(
         () ->
             testCollection()
-                .whereArrayContainsAny("foo", asList(1, 2))
-                .whereArrayContainsAny("bar", asList(1, 2)),
-        "Invalid Query. You cannot use more than one 'array_contains_any' filter.");
-
-    expectError(
-        () ->
-            testCollection()
-                .whereArrayContainsAny("foo", asList(1, 2))
-                .whereNotIn("bar", asList(1, 2)),
-        "Invalid Query. You cannot use 'not_in' filters with 'array_contains_any' filters.");
-
-    expectError(
-        () ->
-            testCollection()
                 .whereNotIn("bar", asList(1, 2))
                 .whereArrayContainsAny("foo", asList(1, 2)),
         "Invalid Query. You cannot use 'array_contains_any' filters with 'not_in' filters.");
@@ -629,53 +590,6 @@ public class ValidationTest {
     expectError(
         () -> testCollection().whereIn("bar", asList(1, 2)).whereNotIn("foo", asList(1, 2)),
         "Invalid Query. You cannot use 'not_in' filters with 'in' filters.");
-
-    // This is redundant with the above tests, but makes sure our validation doesn't get confused.
-    expectError(
-        () ->
-            testCollection()
-                .whereIn("bar", asList(1, 2))
-                .whereArrayContains("foo", 1)
-                .whereArrayContainsAny("foo", asList(1, 2)),
-        "Invalid Query. You cannot use 'array_contains_any' filters with 'array_contains' filters.");
-
-    expectError(
-        () ->
-            testCollection()
-                .whereArrayContains("foo", 1)
-                .whereIn("bar", asList(1, 2))
-                .whereArrayContainsAny("foo", asList(1, 2)),
-        "Invalid Query. You cannot use 'array_contains_any' filters with 'array_contains' filters.");
-
-    expectError(
-        () ->
-            testCollection()
-                .whereNotIn("bar", asList(1, 2))
-                .whereArrayContains("foo", 1)
-                .whereArrayContainsAny("foo", asList(1, 2)),
-        "Invalid Query. You cannot use 'array_contains' filters with 'not_in' filters.");
-
-    expectError(
-        () ->
-            testCollection()
-                .whereArrayContains("foo", 1)
-                .whereIn("foo", asList(1, 2))
-                .whereNotIn("bar", asList(1, 2)),
-        "Invalid Query. You cannot use 'not_in' filters with 'array_contains' filters.");
-  }
-
-  @Test
-  public void queriesCanUseInWithArrayContains() {
-    testCollection().whereArrayContains("foo", 1).whereIn("bar", asList(1, 2));
-    testCollection().whereIn("bar", asList(1, 2)).whereArrayContains("foo", 1);
-
-    expectError(
-        () ->
-            testCollection()
-                .whereIn("bar", asList(1, 2))
-                .whereArrayContains("foo", 1)
-                .whereArrayContains("foo", 1),
-        "Invalid Query. You cannot use more than one 'array_contains' filter.");
   }
 
   @Test
@@ -691,22 +605,6 @@ public class ValidationTest {
     expectError(
         () -> testCollection().whereArrayContainsAny("bar", asList()),
         "Invalid Query. A non-empty array is required for 'array_contains_any' filters.");
-
-    expectError(
-        // The 10 element max includes duplicates.
-        () -> testCollection().whereIn("bar", asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9)),
-        "Invalid Query. 'in' filters support a maximum of 10 elements in the value array.");
-
-    expectError(
-        // The 10 element max includes duplicates.
-        () -> testCollection().whereNotIn("bar", asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9)),
-        "Invalid Query. 'not_in' filters support a maximum of 10 elements in the value array.");
-
-    expectError(
-        // The 10 element max includes duplicates.
-        () ->
-            testCollection().whereArrayContainsAny("bar", asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9)),
-        "Invalid Query. 'array_contains_any' filters support a maximum of 10 elements in the value array.");
   }
 
   @Test
