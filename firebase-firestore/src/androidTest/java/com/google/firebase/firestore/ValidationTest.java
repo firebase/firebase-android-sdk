@@ -19,7 +19,6 @@ import static com.google.firebase.firestore.Filter.and;
 import static com.google.firebase.firestore.Filter.equalTo;
 import static com.google.firebase.firestore.Filter.greaterThan;
 import static com.google.firebase.firestore.Filter.inArray;
-import static com.google.firebase.firestore.Filter.notEqualTo;
 import static com.google.firebase.firestore.Filter.notInArray;
 import static com.google.firebase.firestore.Filter.or;
 import static com.google.firebase.firestore.testutil.Assert.assertThrows;
@@ -694,31 +693,20 @@ public class ValidationTest {
         "Invalid Query. A non-empty array is required for 'array_contains_any' filters.");
 
     expectError(
-        // The 30 element max includes duplicates.
-        () ->
-            testCollection()
-                .whereIn(
-                    "bar",
-                    asList(
-                        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-                        22, 23, 24, 25, 26, 27, 28, 29, 30, 31)),
-        "Invalid Query. 'in' filters support a maximum of 30 elements in the value array.");
+        // The 10 element max includes duplicates.
+        () -> testCollection().whereIn("bar", asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9)),
+        "Invalid Query. 'in' filters support a maximum of 10 elements in the value array.");
 
     expectError(
-        // The 30 element max includes duplicates.
-        () -> testCollection().whereNotIn("bar", asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)),
+        // The 10 element max includes duplicates.
+        () -> testCollection().whereNotIn("bar", asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9)),
         "Invalid Query. 'not_in' filters support a maximum of 10 elements in the value array.");
 
     expectError(
         // The 10 element max includes duplicates.
         () ->
-            testCollection()
-                .whereArrayContainsAny(
-                    "bar",
-                    asList(
-                        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-                        22, 23, 24, 25, 26, 27, 28, 29, 30, 31)),
-        "Invalid Query. 'array_contains_any' filters support a maximum of 30 elements in the value array.");
+            testCollection().whereArrayContainsAny("bar", asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 9, 9)),
+        "Invalid Query. 'array_contains_any' filters support a maximum of 10 elements in the value array.");
   }
 
   @Test
@@ -873,54 +861,6 @@ public class ValidationTest {
                     or(
                         and(equalTo("i", "j"), notInArray("l", Arrays.asList("m", "n"))),
                         and(equalTo("o", "p"), equalTo("q", "r")))),
-        reason);
-  }
-
-  @Test
-  public void testDisjunctionWithNotInFilter() {
-    CollectionReference collection = testCollection();
-    String reason = "The 'notIn' filter should not be used in a query that contains a disjunction.";
-    expectError(
-        () -> collection.where(or(equalTo("a", "b"), notInArray("c", asList(1, 2)))), reason);
-    expectError(
-        () ->
-            collection.where(
-                and(equalTo("x", "y"), or(equalTo("a", "b"), notInArray("c", asList(1, 2))))),
-        reason);
-    expectError(
-        () ->
-            collection.where(
-                or(equalTo("x", "y"), and(equalTo("a", "b"), notInArray("c", asList(1, 2))))),
-        reason);
-  }
-
-  @Test
-  public void testOrderByEqualityWithDisjunctions() {
-    CollectionReference collection = testCollection();
-    String reason =
-        "Performing an equality ('in' or '==') and an inequality (notEqualTo, notIn, "
-            + "lessThan, lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) on the same field "
-            + "is not allowed in disjunctions.";
-    // Using ==
-    expectError(() -> collection.where(or(equalTo("a", "b"), notEqualTo("a", "c"))), reason);
-    expectError(
-        () -> collection.where(and(greaterThan("a", 5), or(equalTo("a", 6), equalTo("b", "c")))),
-        reason);
-    expectError(
-        () -> collection.where(or(greaterThan("a", 5), and(equalTo("a", 6), equalTo("b", "c")))),
-        reason);
-
-    // Using 'in'
-    expectError(() -> collection.where(or(inArray("a", asList(1, 2)), notEqualTo("a", 5))), reason);
-    expectError(
-        () ->
-            collection.where(
-                and(greaterThan("a", 5), or(inArray("a", asList(1, 2)), equalTo("b", "c")))),
-        reason);
-    expectError(
-        () ->
-            collection.where(
-                or(greaterThan("a", 5), and(inArray("a", asList(1, 2)), equalTo("b", "c")))),
         reason);
   }
 

@@ -18,7 +18,6 @@ import static com.google.firebase.firestore.core.Query.LimitType.LIMIT_TO_LAST;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
-import static java.util.Collections.singletonList;
 
 import android.app.Activity;
 import androidx.annotation.NonNull;
@@ -541,18 +540,11 @@ public class Query {
       throw new IllegalArgumentException(
           "Invalid Query. A non-empty array is required for '" + op.toString() + "' filters.");
     }
-    if (op.equals(Operator.NOT_IN) && ((List) value).size() > 10) {
+    if (((List) value).size() > 10) {
       throw new IllegalArgumentException(
           "Invalid Query. '"
               + op.toString()
               + "' filters support a maximum of 10 elements in the value array.");
-    }
-    if ((op.equals(Operator.IN) || op.equals(Operator.ARRAY_CONTAINS_ANY))
-        && ((List) value).size() > 30) {
-      throw new IllegalArgumentException(
-          "Invalid Query. '"
-              + op.toString()
-              + "' filters support a maximum of 30 elements in the value array.");
     }
   }
 
@@ -653,35 +645,6 @@ public class Query {
     for (FieldFilter subfilter : filter.getFlattenedFilters()) {
       validateNewFieldFilter(testQuery, subfilter);
       testQuery = testQuery.filter(subfilter);
-    }
-
-    CompositeFilter existingQueryFilter =
-        new CompositeFilter(query.getFilters(), CompositeFilter.Operator.AND);
-    CompositeFilter newQueryFilter =
-        new CompositeFilter(
-            Arrays.asList(existingQueryFilter, filter), CompositeFilter.Operator.AND);
-    if (newQueryFilter.containsDisjunction()) {
-      // The NOT_IN FieldFilter operator may not be used in a query that contains a composite filter
-      // with a disjunction operator.
-      if (findOpInsideFilters(singletonList(newQueryFilter), singletonList(Operator.NOT_IN))
-          != null) {
-        throw new IllegalArgumentException(
-            "The 'notIn' filter should not be used in a query that " + "contains a disjunction.");
-      }
-
-      // The Early Preview Release of OR Queries does not support order-by-equality.
-      com.google.firebase.firestore.model.FieldPath inequalityField =
-          newQueryFilter.getFirstInequalityField();
-      for (FieldFilter fieldFilter : newQueryFilter.getFlattenedFilters()) {
-        if ((fieldFilter.getOperator().equals(Operator.IN)
-                || fieldFilter.getOperator().equals(Operator.EQUAL))
-            && fieldFilter.getField().equals(inequalityField)) {
-          throw new IllegalArgumentException(
-              "Performing an equality ('in' or '==') and an inequality (notEqualTo, notIn, "
-                  + "lessThan, lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) on the same "
-                  + "field is not allowed in disjunctions.");
-        }
-      }
     }
   }
 
