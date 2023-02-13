@@ -54,6 +54,7 @@ ext {
     robolectricVersion = libs.versions.robolectric.get()
     protocVersion = libs.versions.protoc.get()
     javaliteVersion = libs.versions.javalite.get()
+    protobufJavaUtilVersion = libs.versions.protobufjavautil.get()
 }
 
 apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
