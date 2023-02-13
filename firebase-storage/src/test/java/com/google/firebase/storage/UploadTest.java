@@ -161,6 +161,12 @@ public class UploadTest {
     }
 
     Assert.assertEquals(taskException.get().getCause(), task.getException().getCause());
+    Assert.assertTrue(
+        taskException
+            .get()
+            .getCause()
+            .getMessage()
+            .contains("Cannot upload to getRoot. You should upload to a storage location"));
   }
 
   @Test
