@@ -102,6 +102,7 @@ public class FeedbackActivity extends AppCompatActivity {
     outState.putString(RELEASE_NAME_KEY, releaseName);
     outState.putCharSequence(INFO_TEXT_KEY, infoText);
     outState.putString(SCREENSHOT_URI_KEY, screenshotUri.toString());
+    outState.putString(FEEDBACK_TRIGGER_KEY, feedbackTrigger.toString());
     super.onSaveInstanceState(outState);
   }
 
