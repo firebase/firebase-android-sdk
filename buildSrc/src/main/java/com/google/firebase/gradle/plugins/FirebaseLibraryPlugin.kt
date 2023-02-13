@@ -30,10 +30,7 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
-import org.gradle.kotlin.dsl.apply
-import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.getByType
-import org.gradle.kotlin.dsl.withType
+import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 class FirebaseLibraryPlugin : Plugin<Project> {
@@ -126,18 +123,13 @@ class FirebaseLibraryPlugin : Plugin<Project> {
 
     project.afterEvaluate {
       project.apply<MavenPublishPlugin>()
-      val publishing = project.extensions.getByType(PublishingExtension::class.java)
-      publishing.repositories {
-        maven {
+      project.extensions.configure<PublishingExtension> {
+        repositories.maven {
           val s = project.rootProject.buildDir.toString() + "/m2repository"
-          val file = File(s)
-          url = file.toURI()
+          url = File(s).toURI()
           name = "BuildDir"
         }
-      }
-
-      publishing.publications {
-        create("mavenAar", MavenPublication::class.java) {
+        publications.create<MavenPublication>("mavenAar") {
           from(project.components.findByName(firebaseLibrary.type.componentName))
           artifactId = firebaseLibrary.artifactId.get()
           groupId = firebaseLibrary.groupId.get()

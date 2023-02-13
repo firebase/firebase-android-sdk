@@ -27,6 +27,7 @@ import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -80,24 +81,18 @@ class FirebaseJavaLibraryPlugin : Plugin<Project> {
   }
 
   private fun configurePublishing(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
-    project.apply(ImmutableMap.of("plugin", "maven-publish"))
-    val publishing = project.extensions.getByType(PublishingExtension::class.java)
-    publishing.repositories {
-      maven {
+    project.apply<MavenPublishPlugin>()
+    project.extensions.configure<PublishingExtension> {
+      repositories.maven {
         val s = project.rootProject.buildDir.toString() + "/m2repository"
-        val file = File(s)
-        url = file.toURI()
+        url = File(s).toURI()
         name = "BuildDir"
       }
-    }
-    publishing.publications {
-      create("mavenAar", MavenPublication::class.java) {
+      publications.create<MavenPublication>("mavenAar") {
         from(project.components.findByName(firebaseLibrary.type.componentName))
-        project.afterEvaluate {
-          artifactId = firebaseLibrary.artifactId.get()
-          groupId = firebaseLibrary.groupId.get()
-          firebaseLibrary.applyPomCustomization(pom)
-        }
+        artifactId = firebaseLibrary.artifactId.get()
+        groupId = firebaseLibrary.groupId.get()
+        firebaseLibrary.applyPomCustomization(pom)
       }
     }
   }
