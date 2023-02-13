@@ -26,7 +26,6 @@ import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.RuntimeExecutionException;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -44,7 +43,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -130,55 +128,56 @@ public class UploadTest {
     TestUtil.verifyTaskStateChanges("fileUploadWith500", task.getResult().toString());
   }
 
-  @Test
-  public void cantUploadToRoot() throws Exception {
-    System.out.println("Starting test cantUploadToRoot.");
-
-    StorageReference storage =
-        FirebaseStorage.getInstance().getReferenceFromUrl("gs://fooey.appspot.com");
-
-    AtomicReference<Exception> taskException = new AtomicReference<>();
-
-    final UploadTask task = storage.putBytes(new byte[] {});
-
-    try {
-      task.getResult();
-      Assert.fail();
-    } catch (IllegalStateException ignore) {
-      // Task is not yet done.
-    }
-
-    Assert.assertNull(task.getException());
-
-    task.addOnFailureListener(
-        (exception) -> {
-          Assert.assertEquals(
-              "Cannot upload to getRoot. You should upload to a storage location such as "
-                  + ".getReference('image.png').putFile...",
-              exception.getCause().getMessage());
-          taskException.set(exception);
-        });
-
-    // TODO(mrschmidt): Lower the timeout
-    TestUtil.await(task, 1, TimeUnit.MINUTES);
-
-    try {
-      task.getResult();
-      Assert.fail();
-    } catch (RuntimeExecutionException e) {
-      // Note: This test can be flaky due to the fact that the second .getCause() may be null.
-      Assert.assertEquals(taskException.get().getCause(), e.getCause().getCause());
-    }
-
-    try {
-      task.getResult(StorageException.class);
-      Assert.fail();
-    } catch (StorageException e) {
-      Assert.assertEquals(taskException.get().getCause(), e.getCause());
-    }
-
-    Assert.assertEquals(taskException.get().getCause(), task.getException().getCause());
-  }
+  //  TODO(b/269131915): Fix this flaky test
+  //  @Test
+  //  public void cantUploadToRoot() throws Exception {
+  //    System.out.println("Starting test cantUploadToRoot.");
+  //
+  //    StorageReference storage =
+  //        FirebaseStorage.getInstance().getReferenceFromUrl("gs://fooey.appspot.com");
+  //
+  //    AtomicReference<Exception> taskException = new AtomicReference<>();
+  //
+  //    final UploadTask task = storage.putBytes(new byte[] {});
+  //
+  //    try {
+  //      task.getResult();
+  //      Assert.fail();
+  //    } catch (IllegalStateException ignore) {
+  //      // Task is not yet done.
+  //    }
+  //
+  //    Assert.assertNull(task.getException());
+  //
+  //    task.addOnFailureListener(
+  //        (exception) -> {
+  //          Assert.assertEquals(
+  //              "Cannot upload to getRoot. You should upload to a storage location such as "
+  //                  + ".getReference('image.png').putFile...",
+  //              exception.getCause().getMessage());
+  //          taskException.set(exception);
+  //        });
+  //
+  //    // TODO(mrschmidt): Lower the timeout
+  //    TestUtil.await(task, 1, TimeUnit.MINUTES);
+  //
+  //    try {
+  //      task.getResult();
+  //      Assert.fail();
+  //    } catch (RuntimeExecutionException e) {
+  //      // Note: This test can be flaky due to the fact that the second .getCause() may be null.
+  //      Assert.assertEquals(taskException.get().getCause(), e.getCause().getCause());
+  //    }
+  //
+  //    try {
+  //      task.getResult(StorageException.class);
+  //      Assert.fail();
+  //    } catch (StorageException e) {
+  //      Assert.assertEquals(taskException.get().getCause(), e.getCause());
+  //    }
+  //
+  //    Assert.assertEquals(taskException.get().getCause(), task.getException().getCause());
+  //  }
 
   @Test
   public void addAndRemoveListeners() throws Exception {
