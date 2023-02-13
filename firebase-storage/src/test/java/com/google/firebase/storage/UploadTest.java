@@ -141,8 +141,6 @@ public class UploadTest {
 
     final UploadTask task = storage.putBytes(new byte[] {});
 
-    // should be called on same thread as us, unless we're not on the main application thread?
-    // if this correctly sets the exception, then that may be the "issue" (assert not propagating)
     task.addOnFailureListener(taskException::set);
 
     // TODO(mrschmidt): Lower the timeout
@@ -152,17 +150,7 @@ public class UploadTest {
       task.getResult();
       Assert.fail();
     } catch (RuntimeExecutionException e) {
-      System.out.println("[DAYMON] Exception caught: " + e + " | " + e.getMessage());
-      // Note: This test can be flaky due to the fact that the second .getCause() may be null.
-      // Me no likey ^ TODO() why would this occur?
-      Exception exception = taskException.get();
-      Throwable cause = exception.getCause(); // exception == null
-      // issues with multi threading on GCA?
-
-      Throwable otherException = e.getCause();
-      Throwable otherCause = otherException.getCause();
-
-      Assert.assertEquals(cause, otherCause);
+      Assert.assertEquals(taskException.get().getCause(), e.getCause().getCause());
     }
 
     try {
@@ -429,14 +417,7 @@ public class UploadTest {
     Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
 
     Task<StringBuilder> task =
-        TestUploadHelper.fileUploadWithPauseResume(factory.getSemaphore(), sourceFile);
-
-    task.addOnFailureListener(
-        (failure) -> {
-          System.out.println("[ DAYMON DEBUG ] Caught fileUploadWithPauseResume failure");
-          failure.printStackTrace();
-          System.out.println(failure.getCause().toString());
-        });
+        TestUploadHelper.fileUploadWithPauseResume(factory.getSemaphore(), sourceFile);s
 
     // This is 20 seconds due to a fairness bug where resumed tasks can be put at the end.
     TestUtil.await(task, 20, TimeUnit.SECONDS);

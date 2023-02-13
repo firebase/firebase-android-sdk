@@ -60,7 +60,7 @@ jobs:
         env:
           FIREBASE_CI: 1
         run: |
-          ./gradlew ${{matrix.module}}:check withErrorProne --info
+          ./gradlew ${{matrix.module}}:check withErrorProne
       - name: Upload Test Results
         uses: actions/upload-artifact@v3
         if: always()
