@@ -417,7 +417,7 @@ public class UploadTest {
     Shadows.shadowOf(resolver).registerInputStream(sourceFile, imageStream);
 
     Task<StringBuilder> task =
-        TestUploadHelper.fileUploadWithPauseResume(factory.getSemaphore(), sourceFile);s
+        TestUploadHelper.fileUploadWithPauseResume(factory.getSemaphore(), sourceFile);
 
     // This is 20 seconds due to a fairness bug where resumed tasks can be put at the end.
     TestUtil.await(task, 20, TimeUnit.SECONDS);
