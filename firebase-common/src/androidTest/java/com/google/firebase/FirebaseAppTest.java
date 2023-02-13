@@ -388,8 +388,6 @@ public class FirebaseAppTest {
     Intent userUnlockBroadcast = new Intent(Intent.ACTION_USER_UNLOCKED);
     localBroadcastManager.sendBroadcastSync(userUnlockBroadcast);
 
-    Thread.sleep(1000);
-
     assertThat(sdkVerifier.isEagerInitialized()).isTrue();
     assertThat(sdkVerifier.isEagerInDefaultAppInitialized()).isTrue();
     assertThat(sdkVerifier.isLazyInitialized()).isFalse();
