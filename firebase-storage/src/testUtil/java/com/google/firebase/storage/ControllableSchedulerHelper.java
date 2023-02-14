@@ -60,7 +60,7 @@ public class ControllableSchedulerHelper extends StorageTaskScheduler {
   }
 
   /** Verify that all callbacks run on the same thread. */
-  public void verifyCallbackThread() {
+  public synchronized void verifyCallbackThread() {
     if (callbackThread == null) {
       callbackThread = Thread.currentThread().getId();
     }
