@@ -43,6 +43,8 @@ import javax.inject.Singleton;
 @Singleton // All instances store images at the same URI, so there should really only be one
 class ScreenshotTaker {
 
+  private static final String TAG = "ScreenshotTaker";
+
   static final String SCREENSHOT_FILE_NAME =
       "com.google.firebase.appdistribution_feedback_screenshot.png";
 

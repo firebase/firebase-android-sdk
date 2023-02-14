@@ -152,7 +152,7 @@ class FirebaseAppDistributionNotificationsManager
   }
 
   public void showFeedbackNotification(
-      @NonNull CharSequence infoText, @NonNull InterruptionLevel interruptionLevel) {
+      @NonNull CharSequence additionalFormText, @NonNull InterruptionLevel interruptionLevel) {
     // Create the NotificationChannel, but only on API 26+ because
     // the NotificationChannel class is new and not in the support library
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -173,7 +173,8 @@ class FirebaseAppDistributionNotificationsManager
         () -> {
           // ensure that class state is managed on same thread as lifecycle callbacks
           cancelFeedbackCancellationFuture();
-          feedbackNotificationToBeShown = buildFeedbackNotification(infoText, interruptionLevel);
+          feedbackNotificationToBeShown =
+              buildFeedbackNotification(additionalFormText, interruptionLevel);
           doShowFeedbackNotification();
         });
   }
@@ -185,10 +186,11 @@ class FirebaseAppDistributionNotificationsManager
   }
 
   private Notification buildFeedbackNotification(
-      @NonNull CharSequence infoText, @NonNull InterruptionLevel interruptionLevel) {
+      @NonNull CharSequence additionalFormText, @NonNull InterruptionLevel interruptionLevel) {
     Intent intent = new Intent(context, TakeScreenshotAndStartFeedbackActivity.class);
     intent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
-    intent.putExtra(TakeScreenshotAndStartFeedbackActivity.INFO_TEXT_EXTRA_KEY, infoText);
+    intent.putExtra(
+        TakeScreenshotAndStartFeedbackActivity.ADDITIONAL_FORM_TEXT_EXTRA_KEY, additionalFormText);
     ApplicationInfo applicationInfo = context.getApplicationInfo();
     PackageManager packageManager = context.getPackageManager();
     CharSequence appLabel = packageManager.getApplicationLabel(applicationInfo);

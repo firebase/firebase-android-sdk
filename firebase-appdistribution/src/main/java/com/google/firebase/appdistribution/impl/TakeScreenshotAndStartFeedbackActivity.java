@@ -22,12 +22,12 @@ public class TakeScreenshotAndStartFeedbackActivity extends Activity {
 
   private static final String TAG = "TakeScreenshotAndStartFeedbackActivity";
 
-  public static final String INFO_TEXT_EXTRA_KEY =
-      "com.google.firebase.appdistribution.TakeScreenshotAndStartFeedbackActivity.INFO_TEXT";
+  public static final String ADDITIONAL_FORM_TEXT_EXTRA_KEY =
+      "com.google.firebase.appdistribution.TakeScreenshotAndStartFeedbackActivity.ADDITIONAL_FORM_TEXT";
 
   @Inject FirebaseAppDistributionImpl firebaseAppDistribution;
 
-  private CharSequence infoText;
+  private CharSequence additionalFormText;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -35,9 +35,9 @@ public class TakeScreenshotAndStartFeedbackActivity extends Activity {
     AppDistroComponent.getInstance().inject(this);
 
     super.onCreate(savedInstanceState);
-    infoText = getIntent().getCharSequenceExtra(INFO_TEXT_EXTRA_KEY);
+    additionalFormText = getIntent().getCharSequenceExtra(ADDITIONAL_FORM_TEXT_EXTRA_KEY);
     LogWrapper.i(TAG, "Capturing screenshot and starting feedback");
-    firebaseAppDistribution.startFeedback(infoText, FeedbackTrigger.NOTIFICATION);
+    firebaseAppDistribution.startFeedback(additionalFormText, FeedbackTrigger.NOTIFICATION);
 
     finish();
   }

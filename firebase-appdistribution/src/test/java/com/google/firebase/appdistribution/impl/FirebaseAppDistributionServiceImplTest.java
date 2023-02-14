@@ -29,8 +29,8 @@ import static com.google.firebase.appdistribution.impl.ErrorMessages.JSON_PARSIN
 import static com.google.firebase.appdistribution.impl.ErrorMessages.NETWORK_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.RELEASE_NOT_FOUND_ERROR;
 import static com.google.firebase.appdistribution.impl.ErrorMessages.UPDATE_CANCELED;
+import static com.google.firebase.appdistribution.impl.FeedbackActivity.ADDITIONAL_FORM_TEXT_KEY;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.FEEDBACK_TRIGGER_KEY;
-import static com.google.firebase.appdistribution.impl.FeedbackActivity.INFO_TEXT_KEY;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.RELEASE_NAME_KEY;
 import static com.google.firebase.appdistribution.impl.FeedbackActivity.SCREENSHOT_URI_KEY;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitAsyncOperations;
@@ -770,7 +770,8 @@ public class FirebaseAppDistributionServiceImplTest {
     assertThat(actualIntent.getStringExtra(RELEASE_NAME_KEY)).isEqualTo("release-name");
     assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_KEY))
         .isEqualTo(TEST_SCREENSHOT_URI.toString());
-    assertThat(actualIntent.getStringExtra(INFO_TEXT_KEY)).isEqualTo("Some terms and conditions");
+    assertThat(actualIntent.getStringExtra(ADDITIONAL_FORM_TEXT_KEY))
+        .isEqualTo("Some terms and conditions");
     assertThat(actualIntent.getStringExtra(FEEDBACK_TRIGGER_KEY))
         .isEqualTo(FeedbackTrigger.CUSTOM.toString());
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isTrue();
@@ -801,7 +802,8 @@ public class FirebaseAppDistributionServiceImplTest {
     assertEquals(expectedIntent.getComponent(), actualIntent.getComponent());
     assertThat(actualIntent.getStringExtra(RELEASE_NAME_KEY)).isEqualTo("release-name");
     assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_KEY)).isEqualTo(providedUri.toString());
-    assertThat(actualIntent.getStringExtra(INFO_TEXT_KEY)).isEqualTo("Some terms and conditions");
+    assertThat(actualIntent.getStringExtra(ADDITIONAL_FORM_TEXT_KEY))
+        .isEqualTo("Some terms and conditions");
     assertThat(actualIntent.getStringExtra(FEEDBACK_TRIGGER_KEY))
         .isEqualTo(FeedbackTrigger.CUSTOM.toString());
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isTrue();
@@ -852,7 +854,8 @@ public class FirebaseAppDistributionServiceImplTest {
     assertEquals(expectedIntent.getComponent(), actualIntent.getComponent());
     assertThat(actualIntent.getStringExtra(RELEASE_NAME_KEY)).isEqualTo("release-name");
     assertThat(actualIntent.getStringExtra(SCREENSHOT_URI_KEY)).isNull();
-    assertThat(actualIntent.getStringExtra(INFO_TEXT_KEY)).isEqualTo("Some terms and conditions");
+    assertThat(actualIntent.getStringExtra(ADDITIONAL_FORM_TEXT_KEY))
+        .isEqualTo("Some terms and conditions");
     assertThat(firebaseAppDistribution.isFeedbackInProgress()).isTrue();
   }
 

@@ -14,7 +14,6 @@
 
 package com.google.firebase.appdistribution;
 
-import android.app.Activity;
 import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -125,12 +124,12 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * @param infoTextResourceId string resource ID of text that will be shown to the tester before
+   * @param additionalFormText string resource ID of text that will be shown to the tester before
    *     they submit feedback. If you’re a customer who would like to provide notice to your testers
    *     about collection and processing of their feedback data, you can use this text to provide
    *     such notice.
    */
-  void startFeedback(@StringRes int infoTextResourceId);
+  void startFeedback(@StringRes int additionalFormText);
 
   /**
    * Takes a screenshot, and starts an activity to collect and submit feedback from the tester.
@@ -143,11 +142,11 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * @param infoText text that will be shown to the tester before they submit feedback. If you’re a
-   *     customer who would like to provide notice to your testers about collection and processing
-   *     of their feedback data, you can use this text to provide such notice.
+   * @param additionalFormText text that will be shown to the tester before they submit feedback. If
+   *     you’re a customer who would like to provide notice to your testers about collection and
+   *     processing of their feedback data, you can use this text to provide such notice.
    */
-  void startFeedback(@NonNull CharSequence infoText);
+  void startFeedback(@NonNull CharSequence additionalFormText);
 
   /**
    * Starts an activity to collect and submit feedback from the tester, along with the given
@@ -160,14 +159,14 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * @param infoTextResourceId string resource ID of text that will be shown to the tester before
+   * @param additionalFormText string resource ID of text that will be shown to the tester before
    *     they submit feedback. If you’re a customer who would like to provide notice to your testers
    *     about collection and processing of their feedback data, you can use this text to provide
    *     such notice.
    * @param screenshot URI to a bitmap containing a screenshot that will be included with the
    *     report, or null to not include a screenshot
    */
-  void startFeedback(@StringRes int infoTextResourceId, @Nullable Uri screenshot);
+  void startFeedback(@StringRes int additionalFormText, @Nullable Uri screenshot);
 
   /**
    * Starts an activity to collect and submit feedback from the tester, along with the given
@@ -180,13 +179,13 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * @param infoText text that will be shown to the tester before they submit feedback. If you’re a
-   *     customer who would like to provide notice to your testers about collection and processing
-   *     of their feedback data, you can use this text to provide such notice.
+   * @param additionalFormText text that will be shown to the tester before they submit feedback. If
+   *     you’re a customer who would like to provide notice to your testers about collection and
+   *     processing of their feedback data, you can use this text to provide such notice.
    * @param screenshot URI to a bitmap containing a screenshot that will be included with the
    *     report, or null to not include a screenshot
    */
-  void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshot);
+  void startFeedback(@NonNull CharSequence additionalFormText, @Nullable Uri screenshot);
 
   /**
    * Displays a notification that, when tapped, will take a screenshot of the current activity, then
@@ -207,7 +206,7 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * @param infoTextResourceId string resource ID of text that will be shown to the tester before
+   * @param additionalFormText string resource ID of text that will be shown to the tester before
    *     they submit feedback. If you’re a customer who would like to provide notice to your testers
    *     about collection and processing of their feedback data, you can use this text to provide
    *     such notice.
@@ -216,7 +215,7 @@ public interface FirebaseAppDistribution {
    *     be changed except by the user.
    */
   void showFeedbackNotification(
-      @StringRes int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel);
+      @StringRes int additionalFormText, @NonNull InterruptionLevel interruptionLevel);
 
   /**
    * Displays a notification that, when tapped, will take a screenshot of the current activity, then
@@ -237,22 +236,17 @@ public interface FirebaseAppDistribution {
    *   <li>Starts a full screen activity for the tester to compose and submit the feedback
    * </ol>
    *
-   * @param infoText text that will be shown to the tester before they submit feedback. If you’re a
-   *     customer who would like to provide notice to your testers about collection and processing
-   *     of their feedback data, you can use this text to provide such notice.
+   * @param additionalFormText text that will be shown to the tester before they submit feedback. If
+   *     you’re a customer who would like to provide notice to your testers about collection and
+   *     processing of their feedback data, you can use this text to provide such notice.
    * @param interruptionLevel the level of interruption for the feedback notification. On platforms
    *     below Android 8, this corresponds to a notification channel importance and once set cannot
    *     be changed except by the user.
    */
   void showFeedbackNotification(
-      @NonNull CharSequence infoText, @NonNull InterruptionLevel interruptionLevel);
+      @NonNull CharSequence additionalFormText, @NonNull InterruptionLevel interruptionLevel);
 
-  /**
-   * Hides the notification shown with {@link #showFeedbackNotification}.
-   *
-   * <p>This should be called in the {@link Activity#onDestroy} of the activity that showed the
-   * notification.
-   */
+  /** Hides the notification shown with {@link #showFeedbackNotification}. */
   void cancelFeedbackNotification();
 
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */

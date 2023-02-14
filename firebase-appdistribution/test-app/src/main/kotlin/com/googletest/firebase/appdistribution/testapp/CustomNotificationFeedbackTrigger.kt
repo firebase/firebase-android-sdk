@@ -123,7 +123,7 @@ class CustomNotificationTakeScreenshotActivity : Activity() {
   override fun onResume() {
     super.onResume()
     val screenshotUri = Uri.fromFile(getFileStreamPath(SCREENSHOT_FILE_NAME))
-    Firebase.appDistribution.startFeedback(R.string.feedbackInfoText, screenshotUri)
+    Firebase.appDistribution.startFeedback(R.string.feedbackAdditionalFormText, screenshotUri)
     finish()
   }
 
