@@ -17,21 +17,15 @@ package com.google.firebase.gradle.plugins
 import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatExtension
 import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatPlugin
 import com.google.common.collect.ImmutableList
-import com.google.common.collect.ImmutableMap
 import com.google.firebase.gradle.plugins.LibraryType.JAVA
-import java.io.File
-import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.api.publish.PublishingExtension
-import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-class FirebaseJavaLibraryPlugin : Plugin<Project> {
+class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   override fun apply(project: Project) {
     project.apply<JavaLibraryPlugin>()
@@ -77,23 +71,6 @@ class FirebaseJavaLibraryPlugin : Plugin<Project> {
       apiInfo.configure { classPath = classpath }
       generateApiTxt.configure { classPath = classpath }
       docStubs.configure { classPath = classpath }
-    }
-  }
-
-  private fun configurePublishing(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
-    project.apply<MavenPublishPlugin>()
-    project.extensions.configure<PublishingExtension> {
-      repositories.maven {
-        val s = project.rootProject.buildDir.toString() + "/m2repository"
-        url = File(s).toURI()
-        name = "BuildDir"
-      }
-      publications.create<MavenPublication>("mavenAar") {
-        from(project.components.findByName(firebaseLibrary.type.componentName))
-        artifactId = firebaseLibrary.artifactId.get()
-        groupId = firebaseLibrary.groupId.get()
-        firebaseLibrary.applyPomCustomization(pom)
-      }
     }
   }
 }

@@ -23,17 +23,16 @@ import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
 import java.io.File
 import org.gradle.api.JavaVersion
-import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
-import org.gradle.api.publish.PublishingExtension
-import org.gradle.api.publish.maven.MavenPublication
-import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-class FirebaseLibraryPlugin : Plugin<Project> {
+class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   override fun apply(project: Project) {
     project.apply<LibraryPlugin>()
@@ -121,21 +120,6 @@ class FirebaseLibraryPlugin : Plugin<Project> {
     android.publishing.singleVariant("release") { withSourcesJar() }
     project.tasks.withType<GenerateModuleMetadata> { isEnabled = false }
 
-    project.afterEvaluate {
-      project.apply<MavenPublishPlugin>()
-      project.extensions.configure<PublishingExtension> {
-        repositories.maven {
-          val s = project.rootProject.buildDir.toString() + "/m2repository"
-          url = File(s).toURI()
-          name = "BuildDir"
-        }
-        publications.create<MavenPublication>("mavenAar") {
-          from(project.components.findByName(firebaseLibrary.type.componentName))
-          artifactId = firebaseLibrary.artifactId.get()
-          groupId = firebaseLibrary.groupId.get()
-          firebaseLibrary.applyPomCustomization(pom)
-        }
-      }
-    }
+    configurePublishing(project, firebaseLibrary)
   }
 }
