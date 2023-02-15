@@ -1,5 +1,5 @@
 # Unreleased
-* [deprecated] Added deprecation tagging to the `SafetyNetAppCheckProviderFactory` class.
+* [deprecated] Added deprecation tagging to the `SafetyNetAppCheckProviderFactory` class. (#4686)
 
 # 16.1.1
 * [changed] Migrated [app_check] SDKs to use standard Firebase executors. (#4431, #4449)
