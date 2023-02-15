@@ -696,6 +696,7 @@ public class TestUploadHelper {
         "Expected active upload task at location %s to contain %s item(s), "
             + "but contained %s item(s)",
         reference.getParent(),
+        expectedTasks,
         uploadTasksAtParent.size());
   }
 
