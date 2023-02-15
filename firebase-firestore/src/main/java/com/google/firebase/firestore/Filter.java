@@ -16,14 +16,10 @@ package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RestrictTo;
 import com.google.firebase.firestore.core.FieldFilter.Operator;
 import java.util.Arrays;
 import java.util.List;
 
-// TODO(orquery): Remove the `hide` and scope annotations.
-/** @hide */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 /**
  * A {@code Filter} represents a restriction on one or more field values and can be used to refine
  * the results of a {@code Query}.
