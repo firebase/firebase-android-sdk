@@ -1,4 +1,7 @@
 # Unreleased
+*   [fixed] NPE if firebase-common is at too low a version
+
+#17.1.1
 *   [changed] Internal changes to improve startup time
 
 # 17.1.0

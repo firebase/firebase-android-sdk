@@ -1,4 +1,7 @@
 # Unreleased
+* [fixed] Fixed NPE if firebase-common is at too low a version
+
+# 18.3.4
 * [changed] Improved crash reporting reliability for crashes that occur early in the app's
   lifecycle.
 * [changed] Add improved support capturing build ids for Native ANRs on older
