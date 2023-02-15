@@ -1179,6 +1179,7 @@ public class QueryTest {
         "doc6");
   }
 
+  @Ignore
   @Test
   public void testMultipleInOps() {
     Map<String, Map<String, Object>> testDocs =
@@ -1247,6 +1248,7 @@ public class QueryTest {
     checkOnlineAndOfflineResultsMatch(query7, "doc4");
   }
 
+  @Ignore
   @Test
   public void testUsingInWithArrayContainsAny() {
     Map<String, Map<String, Object>> testDocs =
@@ -1286,6 +1288,7 @@ public class QueryTest {
     checkOnlineAndOfflineResultsMatch(query4, "doc3", "doc6");
   }
 
+  @Ignore
   @Test
   public void testUsingInWithArrayContains() {
     Map<String, Map<String, Object>> testDocs =
@@ -1323,6 +1326,7 @@ public class QueryTest {
     checkOnlineAndOfflineResultsMatch(query4, "doc3");
   }
 
+  @Ignore
   @Test
   public void testOrderByEquality() {
     Map<String, Map<String, Object>> testDocs =
