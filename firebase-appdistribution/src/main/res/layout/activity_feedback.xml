@@ -139,7 +139,7 @@
         android:background="?android:attr/listDivider" />
 
     <TextView
-        android:id="@+id/infoText"
+        android:id="@+id/additionalFormText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="16sp"

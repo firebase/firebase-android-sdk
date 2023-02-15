@@ -31,7 +31,7 @@ class ScreenshotDetectionActivity : AppCompatActivity() {
   private var screenshotDetectionFeedbackTrigger =
     ScreenshotDetectionFeedbackTrigger(
       this,
-      R.string.feedbackInfoText,
+      R.string.feedbackAdditionalFormText,
       Handler(handlerThread.looper)
     )
 

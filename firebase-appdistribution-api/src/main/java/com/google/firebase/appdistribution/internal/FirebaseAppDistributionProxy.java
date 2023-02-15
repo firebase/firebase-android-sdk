@@ -77,35 +77,35 @@ public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback(@StringRes int infoTextResourceId) {
-    delegate.startFeedback(infoTextResourceId);
+  public void startFeedback(@StringRes int additionalFormText) {
+    delegate.startFeedback(additionalFormText);
   }
 
   @Override
-  public void startFeedback(@NonNull CharSequence infoText) {
-    delegate.startFeedback(infoText);
+  public void startFeedback(@NonNull CharSequence additionalFormText) {
+    delegate.startFeedback(additionalFormText);
   }
 
   @Override
-  public void startFeedback(@StringRes int infoTextResourceId, @Nullable Uri screenshotUri) {
-    delegate.startFeedback(infoTextResourceId, screenshotUri);
+  public void startFeedback(@StringRes int additionalFormText, @Nullable Uri screenshotUri) {
+    delegate.startFeedback(additionalFormText, screenshotUri);
   }
 
   @Override
-  public void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri) {
-    delegate.startFeedback(infoText, screenshotUri);
-  }
-
-  @Override
-  public void showFeedbackNotification(
-      @StringRes int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel) {
-    delegate.showFeedbackNotification(infoTextResourceId, interruptionLevel);
+  public void startFeedback(@NonNull CharSequence additionalFormText, @Nullable Uri screenshotUri) {
+    delegate.startFeedback(additionalFormText, screenshotUri);
   }
 
   @Override
   public void showFeedbackNotification(
-      @NonNull CharSequence infoText, @NonNull InterruptionLevel interruptionLevel) {
-    delegate.showFeedbackNotification(infoText, interruptionLevel);
+      @StringRes int additionalFormText, @NonNull InterruptionLevel interruptionLevel) {
+    delegate.showFeedbackNotification(additionalFormText, interruptionLevel);
+  }
+
+  @Override
+  public void showFeedbackNotification(
+      @NonNull CharSequence additionalFormText, @NonNull InterruptionLevel interruptionLevel) {
+    delegate.showFeedbackNotification(additionalFormText, interruptionLevel);
   }
 
   @Override

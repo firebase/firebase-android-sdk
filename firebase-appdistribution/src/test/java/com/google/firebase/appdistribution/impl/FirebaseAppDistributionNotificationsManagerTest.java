@@ -167,7 +167,8 @@ public class FirebaseAppDistributionNotificationsManagerTest {
     Intent actualIntent = shadowOf(notification.contentIntent).getSavedIntent();
     assertThat(actualIntent.getComponent()).isEqualTo(expectedIntent.getComponent());
     assertThat(
-            actualIntent.getStringExtra(TakeScreenshotAndStartFeedbackActivity.INFO_TEXT_EXTRA_KEY))
+            actualIntent.getStringExtra(
+                TakeScreenshotAndStartFeedbackActivity.ADDITIONAL_FORM_TEXT_EXTRA_KEY))
         .isEqualTo("Terms and conditions");
   }
 
