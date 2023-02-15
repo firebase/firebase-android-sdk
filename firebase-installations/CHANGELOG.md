@@ -1,5 +1,6 @@
 # Unreleased
-*   [fixed] NPE if firebase-common is at too low a version
+*   [fixed] Updated `firebase-common` to its latest version (v20.3.0) to fix an issue that was 
+    causing a nondeterministic crash on startup.
 
 #17.1.1
 *   [changed] Internal changes to improve startup time

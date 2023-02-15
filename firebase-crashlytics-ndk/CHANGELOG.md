@@ -1,5 +1,8 @@
 # Unreleased
-
+* [fixed] Updated `firebase-common` to its latest version (v20.3.0) to fix an issue that was 
+  causing a nondeterministic crash on startup.
+  
+# 18.3.4
 * [changed] Updated internal Crashpad version to commit `c902f6`.
 
 # 18.3.2
