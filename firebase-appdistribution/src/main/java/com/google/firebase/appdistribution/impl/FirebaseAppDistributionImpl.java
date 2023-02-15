@@ -339,16 +339,16 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   @Override
-  public void startFeedback(@StringRes int infoTextResourceId) {
-    startFeedback(applicationContext.getText(infoTextResourceId), FeedbackTrigger.CUSTOM);
+  public void startFeedback(@StringRes int additionalFormText) {
+    startFeedback(applicationContext.getText(additionalFormText), FeedbackTrigger.CUSTOM);
   }
 
   @Override
-  public void startFeedback(@NonNull CharSequence infoText) {
-    startFeedback(infoText, FeedbackTrigger.CUSTOM);
+  public void startFeedback(@NonNull CharSequence additionalFormText) {
+    startFeedback(additionalFormText, FeedbackTrigger.CUSTOM);
   }
 
-  void startFeedback(@NonNull CharSequence infoText, FeedbackTrigger trigger) {
+  void startFeedback(@NonNull CharSequence additionalFormText, FeedbackTrigger trigger) {
     if (!feedbackInProgress.compareAndSet(/* expect= */ false, /* update= */ true)) {
       LogWrapper.i(TAG, "Ignoring startFeedback() call because feedback is already in progress");
       return;
@@ -359,43 +359,49 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
         .addOnFailureListener(
             lightweightExecutor,
             e -> {
-              LogWrapper.w(TAG, "Failed to take screenshot for feedback", e);
-              doStartFeedback(infoText, null, trigger);
+              LogWrapper.e(TAG, "Failed to take screenshot for feedback", e);
+              doStartFeedback(additionalFormText, null, trigger);
             })
         .addOnSuccessListener(
             lightweightExecutor,
-            screenshotUri -> doStartFeedback(infoText, screenshotUri, trigger));
+            screenshotUri -> doStartFeedback(additionalFormText, screenshotUri, trigger));
   }
 
   @Override
-  public void startFeedback(@StringRes int infoTextResourceId, @Nullable Uri screenshotUri) {
-    startFeedback(getText(infoTextResourceId), screenshotUri, FeedbackTrigger.CUSTOM);
+  public void startFeedback(@StringRes int additionalFormText, @Nullable Uri screenshotUri) {
+    startFeedback(getText(additionalFormText), screenshotUri, FeedbackTrigger.CUSTOM);
   }
 
   @Override
-  public void startFeedback(@NonNull CharSequence infoText, @Nullable Uri screenshotUri) {
-    startFeedback(infoText, screenshotUri, FeedbackTrigger.CUSTOM);
+  public void startFeedback(@NonNull CharSequence additionalFormText, @Nullable Uri screenshotUri) {
+    startFeedback(additionalFormText, screenshotUri, FeedbackTrigger.CUSTOM);
   }
 
   private void startFeedback(
-      @NonNull CharSequence infoText, @Nullable Uri screenshotUri, FeedbackTrigger trigger) {
+      @NonNull CharSequence additionalFormText,
+      @Nullable Uri screenshotUri,
+      FeedbackTrigger trigger) {
     if (!feedbackInProgress.compareAndSet(/* expect= */ false, /* update= */ true)) {
       LogWrapper.i(TAG, "Ignoring startFeedback() call because feedback is already in progress");
       return;
     }
-    doStartFeedback(infoText, screenshotUri, trigger);
+    if (screenshotUri == null) {
+      LogWrapper.w(
+          TAG, "Screenshot URI was null. No default screenshot will be provided for feedback.");
+    }
+    doStartFeedback(additionalFormText, screenshotUri, trigger);
   }
 
   @Override
   public void showFeedbackNotification(
-      @StringRes int infoTextResourceId, @NonNull InterruptionLevel interruptionLevel) {
-    showFeedbackNotification(getText(infoTextResourceId), interruptionLevel);
+      @StringRes int additionalFormText, @NonNull InterruptionLevel interruptionLevel) {
+    showFeedbackNotification(getText(additionalFormText), interruptionLevel);
   }
 
   @Override
   public void showFeedbackNotification(
-      @NonNull CharSequence infoText, @NonNull InterruptionLevel interruptionLevel) {
-    notificationsManager.showFeedbackNotification(infoText, interruptionLevel);
+      @NonNull CharSequence additionalFormText, @NonNull InterruptionLevel interruptionLevel) {
+    notificationsManager.showFeedbackNotification(additionalFormText, interruptionLevel);
   }
 
   @Override
@@ -404,7 +410,7 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
   }
 
   private void doStartFeedback(
-      CharSequence infoText, @Nullable Uri screenshotUri, FeedbackTrigger trigger) {
+      CharSequence additionalFormText, @Nullable Uri screenshotUri, FeedbackTrigger trigger) {
     testerSignInManager
         .signInTester()
         .addOnFailureListener(
@@ -433,7 +439,8 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
                         lightweightExecutor,
                         releaseName ->
                             // in development-mode the releaseName might be null
-                            launchFeedbackActivity(releaseName, infoText, screenshotUri, trigger)
+                            launchFeedbackActivity(
+                                    releaseName, additionalFormText, screenshotUri, trigger)
                                 .addOnFailureListener(
                                     uiThreadExecutor,
                                     e -> {
@@ -449,16 +456,17 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
 
   private Task<Void> launchFeedbackActivity(
       @Nullable String releaseName,
-      CharSequence infoText,
+      CharSequence additionalFormText,
       @Nullable Uri screenshotUri,
       FeedbackTrigger trigger) {
+    LogWrapper.d(TAG, "Getting activity to launch feedback");
     return lifecycleNotifier.consumeForegroundActivity(
         activity -> {
           LogWrapper.i(TAG, "Launching feedback activity");
           Intent intent = new Intent(activity, FeedbackActivity.class);
           // in development-mode the releaseName might be null
           intent.putExtra(FeedbackActivity.RELEASE_NAME_KEY, releaseName);
-          intent.putExtra(FeedbackActivity.INFO_TEXT_KEY, infoText);
+          intent.putExtra(FeedbackActivity.ADDITIONAL_FORM_TEXT_KEY, additionalFormText);
           intent.putExtra(FeedbackActivity.FEEDBACK_TRIGGER_KEY, trigger.toString());
           if (screenshotUri != null) {
             intent.putExtra(FeedbackActivity.SCREENSHOT_URI_KEY, screenshotUri.toString());

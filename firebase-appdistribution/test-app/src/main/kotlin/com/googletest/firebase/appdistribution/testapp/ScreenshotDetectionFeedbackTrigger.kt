@@ -32,7 +32,7 @@ import java.util.*
 
 class ScreenshotDetectionFeedbackTrigger(
   private val activity: Activity,
-  private val infoTextResourceId: Int,
+  private val additionalFormText: Int,
   handler: Handler
 ) : ContentObserver(handler) {
   private val seenImages = HashSet<Uri>()
@@ -60,7 +60,7 @@ class ScreenshotDetectionFeedbackTrigger(
           val path = cursor.getString(cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA))
           Log.i(TAG, "Path: $path")
           if (path.lowercase(Locale.getDefault()).contains("screenshot")) {
-            Firebase.appDistribution.startFeedback(infoTextResourceId, uri)
+            Firebase.appDistribution.startFeedback(additionalFormText, uri)
           }
         }
       }

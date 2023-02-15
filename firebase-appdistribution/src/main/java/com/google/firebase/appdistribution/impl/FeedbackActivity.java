@@ -49,8 +49,8 @@ public class FeedbackActivity extends AppCompatActivity {
 
   public static final String RELEASE_NAME_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.RELEASE_NAME";
-  public static final String INFO_TEXT_KEY =
-      "com.google.firebase.appdistribution.FeedbackActivity.INFO_TEXT";
+  public static final String ADDITIONAL_FORM_TEXT_KEY =
+      "com.google.firebase.appdistribution.FeedbackActivity.ADDITIONAL_FORM_TEXT";
   public static final String SCREENSHOT_URI_KEY =
       "com.google.firebase.appdistribution.FeedbackActivity.SCREENSHOT_URI";
   public static final String FEEDBACK_TRIGGER_KEY =
@@ -64,7 +64,7 @@ public class FeedbackActivity extends AppCompatActivity {
   @Inject @UiThread Executor uiThreadExecutor;
 
   @Nullable private String releaseName; // in development-mode the releaseName might be null
-  private CharSequence infoText;
+  private CharSequence additionalFormText;
   @Nullable private Uri screenshotUri;
   private FeedbackTrigger feedbackTrigger;
 
@@ -77,7 +77,7 @@ public class FeedbackActivity extends AppCompatActivity {
 
     if (savedInstanceState != null) {
       releaseName = savedInstanceState.getString(RELEASE_NAME_KEY);
-      infoText = savedInstanceState.getCharSequence(INFO_TEXT_KEY);
+      additionalFormText = savedInstanceState.getCharSequence(ADDITIONAL_FORM_TEXT_KEY);
       feedbackTrigger =
           FeedbackTrigger.fromString(savedInstanceState.getString(FEEDBACK_TRIGGER_KEY));
       String screenshotUriString = savedInstanceState.getString(SCREENSHOT_URI_KEY);
@@ -86,7 +86,7 @@ public class FeedbackActivity extends AppCompatActivity {
       }
     } else {
       releaseName = getIntent().getStringExtra(RELEASE_NAME_KEY);
-      infoText = getIntent().getCharSequenceExtra(INFO_TEXT_KEY);
+      additionalFormText = getIntent().getCharSequenceExtra(ADDITIONAL_FORM_TEXT_KEY);
       feedbackTrigger =
           FeedbackTrigger.fromString(getIntent().getStringExtra(FEEDBACK_TRIGGER_KEY));
       if (getIntent().hasExtra(SCREENSHOT_URI_KEY)) {
@@ -100,7 +100,7 @@ public class FeedbackActivity extends AppCompatActivity {
   @Override
   protected void onSaveInstanceState(@NonNull Bundle outState) {
     outState.putString(RELEASE_NAME_KEY, releaseName);
-    outState.putCharSequence(INFO_TEXT_KEY, infoText);
+    outState.putCharSequence(ADDITIONAL_FORM_TEXT_KEY, additionalFormText);
     outState.putString(SCREENSHOT_URI_KEY, screenshotUri.toString());
     outState.putString(FEEDBACK_TRIGGER_KEY, feedbackTrigger.toString());
     super.onSaveInstanceState(outState);
@@ -110,9 +110,9 @@ public class FeedbackActivity extends AppCompatActivity {
     setTheme(R.style.FeedbackTheme);
     setContentView(R.layout.activity_feedback);
 
-    TextView infoTextView = this.findViewById(R.id.infoText);
-    infoTextView.setText(infoText);
-    infoTextView.setMovementMethod(LinkMovementMethod.getInstance());
+    TextView additionalFormTextView = this.findViewById(R.id.additionalFormText);
+    additionalFormTextView.setText(additionalFormText);
+    additionalFormTextView.setMovementMethod(LinkMovementMethod.getInstance());
 
     findViewById(R.id.backButton).setOnClickListener(v -> finish());
     findViewById(R.id.sendButton).setOnClickListener(this::submitFeedback);
@@ -146,7 +146,6 @@ public class FeedbackActivity extends AppCompatActivity {
                       v -> imageView.setVisibility(checkBox.isChecked() ? VISIBLE : GONE));
                 });
           } else {
-            LogWrapper.e(TAG, "No screenshot available");
             runOnUiThread(
                 () -> {
                   CheckBox checkBox = findViewById(R.id.screenshotCheckBox);
@@ -186,7 +185,7 @@ public class FeedbackActivity extends AppCompatActivity {
       return null;
     }
     if (bitmap == null) {
-      LogWrapper.e(TAG, "Could not decode screenshot image: " + uri);
+      LogWrapper.e(TAG, "Could not decode screenshot image from URI: " + uri);
     }
     return bitmap;
   }
