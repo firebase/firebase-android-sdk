@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToValues;
@@ -29,6 +30,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -42,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -1029,8 +1030,6 @@ public class QueryTest {
     assertEquals(asList(map("foo", "zzyzx", "bar", "2")), querySnapshotToValues(snapshot2));
   }
 
-  // TODO(orquery): Enable this test when prod supports OR queries.
-  @Ignore
   @Test
   public void testOrQueries() {
     Map<String, Map<String, Object>> testDocs =
@@ -1049,13 +1048,6 @@ public class QueryTest {
         "doc2",
         "doc4",
         "doc5");
-
-    // with one inequality: a>2 || b==1.
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.greaterThan("a", 2), Filter.equalTo("b", 1))),
-        "doc5",
-        "doc2",
-        "doc3");
 
     // (a==1 && b==0) || (a==3 && b==2)
     checkOnlineAndOfflineResultsMatch(
@@ -1080,6 +1072,35 @@ public class QueryTest {
             Filter.and(
                 Filter.or(Filter.equalTo("a", 2), Filter.equalTo("b", 2)),
                 Filter.or(Filter.equalTo("a", 3), Filter.equalTo("b", 3)))),
+        "doc3");
+
+    // Test with limits without orderBy (the __name__ ordering is the tie breaker).
+    checkOnlineAndOfflineResultsMatch(
+        collection.where(Filter.or(Filter.equalTo("a", 2), Filter.equalTo("b", 1))).limit(1),
+        "doc2");
+  }
+
+  @Test
+  public void testOrQueriesWithCompositeIndexes() {
+    assumeTrue(
+        "Skip this test if running against production because it results in a "
+            + "'missing index' error. The Firestore Emulator, however, does serve these "
+            + " queries.",
+        isRunningAgainstEmulator());
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "doc1", map("a", 1, "b", 0),
+            "doc2", map("a", 2, "b", 1),
+            "doc3", map("a", 3, "b", 2),
+            "doc4", map("a", 1, "b", 3),
+            "doc5", map("a", 1, "b", 1));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+
+    // with one inequality: a>2 || b==1.
+    checkOnlineAndOfflineResultsMatch(
+        collection.where(Filter.or(Filter.greaterThan("a", 2), Filter.equalTo("b", 1))),
+        "doc5",
+        "doc2",
         "doc3");
 
     // Test with limits (implicit order by ASC): (a==1) || (b > 0) LIMIT 2
@@ -1113,17 +1134,10 @@ public class QueryTest {
             .limitToLast(1)
             .orderBy("a"),
         "doc2");
-
-    // Test with limits without orderBy (the __name__ ordering is the tie breaker).
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.equalTo("a", 2), Filter.equalTo("b", 1))).limit(1),
-        "doc2");
   }
 
-  // TODO(orquery): Enable this test when prod supports OR queries.
-  @Ignore
   @Test
-  public void testOrQueriesWithInAndNotIn() {
+  public void testOrQueriesWithIn() {
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", 0),
@@ -1140,6 +1154,24 @@ public class QueryTest {
         "doc3",
         "doc4",
         "doc6");
+  }
+
+  @Test
+  public void testOrQueriesWithNotIn() {
+    assumeTrue(
+        "Skip this test if running against production because it results in a "
+            + "'missing index' error. The Firestore Emulator, however, does serve these "
+            + " queries",
+        isRunningAgainstEmulator());
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "doc1", map("a", 1, "b", 0),
+            "doc2", map("b", 1),
+            "doc3", map("a", 3, "b", 2),
+            "doc4", map("a", 1, "b", 3),
+            "doc5", map("a", 1),
+            "doc6", map("a", 2));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
 
     // a==2 || b not-in [2,3]
     // Has implicit orderBy b.
@@ -1149,8 +1181,6 @@ public class QueryTest {
         "doc2");
   }
 
-  // TODO(orquery): Enable this test when prod supports OR queries.
-  @Ignore
   @Test
   public void testOrQueriesWithArrayMembership() {
     Map<String, Map<String, Object>> testDocs =
@@ -1179,7 +1209,6 @@ public class QueryTest {
         "doc6");
   }
 
-  @Ignore
   @Test
   public void testMultipleInOps() {
     Map<String, Map<String, Object>> testDocs =
@@ -1194,16 +1223,14 @@ public class QueryTest {
 
     // Two IN operations on different fields with disjunction.
     Query query1 =
-        collection
-            .where(Filter.or(Filter.inArray("a", asList(2, 3)), Filter.inArray("b", asList(0, 2))))
-            .orderBy("a");
-    checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc6", "doc3");
+        collection.where(
+            Filter.or(Filter.inArray("a", asList(2, 3)), Filter.inArray("b", asList(0, 2))));
+    checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc3", "doc6");
 
     // Two IN operations on different fields with conjunction.
     Query query2 =
-        collection
-            .where(Filter.and(Filter.inArray("a", asList(2, 3)), Filter.inArray("b", asList(0, 2))))
-            .orderBy("a");
+        collection.where(
+            Filter.and(Filter.inArray("a", asList(2, 3)), Filter.inArray("b", asList(0, 2))));
     checkOnlineAndOfflineResultsMatch(query2, "doc3");
 
     // Two IN operations on the same field.
@@ -1232,9 +1259,8 @@ public class QueryTest {
                 Filter.inArray("a", asList(1, 3)),
                 Filter.or(
                     Filter.inArray("a", asList(0, 2)),
-                    Filter.and(
-                        Filter.greaterThanOrEqualTo("b", 1), Filter.inArray("a", asList(1, 3))))));
-    checkOnlineAndOfflineResultsMatch(query6, "doc3", "doc4");
+                    Filter.and(Filter.equalTo("b", 2), Filter.inArray("a", asList(1, 3))))));
+    checkOnlineAndOfflineResultsMatch(query6, "doc3");
 
     // Nested composite filter on different fields.
     Query query7 =
@@ -1248,7 +1274,6 @@ public class QueryTest {
     checkOnlineAndOfflineResultsMatch(query7, "doc4");
   }
 
-  @Ignore
   @Test
   public void testUsingInWithArrayContainsAny() {
     Map<String, Map<String, Object>> testDocs =
@@ -1288,7 +1313,6 @@ public class QueryTest {
     checkOnlineAndOfflineResultsMatch(query4, "doc3", "doc6");
   }
 
-  @Ignore
   @Test
   public void testUsingInWithArrayContains() {
     Map<String, Map<String, Object>> testDocs =
@@ -1326,9 +1350,12 @@ public class QueryTest {
     checkOnlineAndOfflineResultsMatch(query4, "doc3");
   }
 
-  @Ignore
   @Test
   public void testOrderByEquality() {
+    assumeTrue(
+        "Skip this test if running against production because order-by-equality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", asList(0)),
