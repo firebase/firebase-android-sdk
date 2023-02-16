@@ -31,6 +31,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
+import com.google.firebase.concurrent.FirebaseExecutors;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Executor;
@@ -39,9 +40,6 @@ import javax.inject.Singleton;
 
 @Singleton // Only one lifecycle notifier is required across the entire app
 class FirebaseAppDistributionLifecycleNotifier {
-
-  /** An {@link Executor} that runs tasks on the current thread. */
-  private static final Executor DIRECT_EXECUTOR = Runnable::run;
 
   /** A functional interface for a function that takes an activity and does something with it. */
   interface ActivityConsumer {
@@ -140,10 +138,10 @@ class FirebaseAppDistributionLifecycleNotifier {
    * <p>The function will always be called on the UI thread.
    */
   <T> Task<T> applyToForegroundActivity(ActivityFunction<T> function) {
-    return getForegroundActivity(null)
+    return getForegroundActivity()
         .onSuccessTask(
             // Use direct executor to ensure the consumer is called while Activity is in foreground
-            DIRECT_EXECUTOR,
+            FirebaseExecutors.directExecutor(),
             activity -> {
               try {
                 return Tasks.forResult(function.apply(activity));
@@ -168,7 +166,7 @@ class FirebaseAppDistributionLifecycleNotifier {
     return getForegroundActivity(classToIgnore)
         .onSuccessTask(
             // Use direct executor to ensure the consumer is called while Activity is in foreground
-            DIRECT_EXECUTOR,
+            FirebaseExecutors.directExecutor(),
             activity -> {
               try {
                 return Tasks.forResult(function.apply(activity));
@@ -193,7 +191,7 @@ class FirebaseAppDistributionLifecycleNotifier {
     return getForegroundActivity(classToIgnore)
         .onSuccessTask(
             // Use direct executor to ensure the consumer is called while Activity is in foreground
-            DIRECT_EXECUTOR,
+            FirebaseExecutors.directExecutor(),
             activity -> {
               try {
                 return continuation.then(activity);
@@ -208,7 +206,7 @@ class FirebaseAppDistributionLifecycleNotifier {
     return getForegroundActivity()
         .onSuccessTask(
             // Use direct executor to ensure the consumer is called while Activity is in foreground
-            DIRECT_EXECUTOR,
+            FirebaseExecutors.directExecutor(),
             activity -> {
               try {
                 consumer.consume(activity);
@@ -229,7 +227,7 @@ class FirebaseAppDistributionLifecycleNotifier {
     return getForegroundActivity()
         .onSuccessTask(
             // Use direct executor to ensure the consumer is called while Activity is in foreground
-            DIRECT_EXECUTOR,
+            FirebaseExecutors.directExecutor(),
             activity -> {
               try {
                 return continuation.then(activity);
@@ -240,7 +238,7 @@ class FirebaseAppDistributionLifecycleNotifier {
   }
 
   Task<Activity> getForegroundActivity() {
-    return getForegroundActivity(null);
+    return getForegroundActivity(/* classToIgnore= */ null);
   }
 
   <A extends Activity> Task<Activity> getForegroundActivity(@Nullable Class<A> classToIgnore) {
