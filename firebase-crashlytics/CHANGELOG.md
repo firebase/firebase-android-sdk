@@ -1,4 +1,8 @@
 # Unreleased
+* [changed] Improved crash reporting reliability for crashes that occur early in the app's
+  lifecycle.
+* [changed] Add improved support capturing build ids for Native ANRs on older
+  Android versions.
 
 # 18.3.5
 * [fixed] Updated `firebase-common` to its latest version (v20.3.0) to fix an issue that was 

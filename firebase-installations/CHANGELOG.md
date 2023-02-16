@@ -1,4 +1,5 @@
 # Unreleased
+*   [changed] Internal changes to improve startup time
 
 # 17.1.2
 *   [fixed] Updated `firebase-common` to its latest version (v20.3.0) to fix an issue that was 

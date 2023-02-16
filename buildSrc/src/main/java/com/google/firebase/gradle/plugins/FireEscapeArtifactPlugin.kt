@@ -46,7 +46,7 @@ class FireEscapeArtifactPlugin : Plugin<Project> {
 
         extensions.configure<PublishingExtension> {
           publications.getByName<MavenPublication>("mavenAar") {
-            artifact(zippedArtifact)
+            artifact(zippedArtifact) { classifier = "fireescape" }
             artifact(javadoc)
           }
         }
