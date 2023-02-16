@@ -15,6 +15,7 @@ plugins {
     id 'com.android.application'
     id 'kotlin-android'
     id 'com.google.gms.google-services'
+    id 'com.google.firebase.appdistribution'
 }
 
 android {
@@ -22,19 +23,38 @@ android {
 
     defaultConfig {
         applicationId "com.googletest.firebase.appdistribution.testapp"
-        minSdkVersion 19
+        minSdkVersion 23
         targetSdkVersion 33
-        versionName "1.0"
-        versionCode 1
+        versionName "3.2"
+        versionCode 7
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
-        // This is so we can build the "release" variant for the "test-app" (and the SDK) without
-        // needing to have the app signed.
         release {
+            // This is so we can build the "release" variant for the "test-app" (and the SDK) without
+            // needing to have the app signed.
             initWith debug
+        }
+    }
+
+    flavorDimensions.add("environment")
+
+    productFlavors {
+        prod {
+            dimension "environment"
+            versionNameSuffix "-prod"
+        }
+
+        beta {
+            dimension "environment"
+            versionNameSuffix "-beta"
+
+            firebaseAppDistribution {
+                releaseNotes "Beta variant of Android SDK test app"
+                // testers "your email here"
+            }
         }
     }
 
@@ -59,17 +79,23 @@ dependencies {
     implementation project(':firebase-common:ktx')
     implementation "com.google.android.gms:play-services-tasks:18.0.2"
 
-    // Debug uses the full implementation
-    debugImplementation project(':firebase-appdistribution')
+    // Beta flavor uses the full implementation
+    betaImplementation project(':firebase-appdistribution')
 
     // Other dependencies
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    implementation "androidx.activity:activity-ktx:1.6.0"
+    implementation "androidx.fragment:fragment-ktx:1.5.3"
     implementation 'androidx.core:core-ktx:1.9.0'
     implementation "androidx.core:core:1.9.0"
     implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'com.google.android.material:material:1.6.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    testImplementation 'junit:junit:4.+'
+
+    testImplementation 'junit:junit:4.13.2'
+
+    // Shake detection
+    implementation 'com.squareup:seismic:1.0.3'
 }
 
 // This allows the app to connect to Firebase on the CI.

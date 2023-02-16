@@ -21,10 +21,11 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.appdistribution.UpdateTask;
+import com.google.firebase.concurrent.FirebaseExecutors;
 import java.util.concurrent.Executor;
 
 class TaskUtils {
-  private static final String TAG = "TaskUtils:";
+  private static final String TAG = "TaskUtils";
 
   /**
    * A functional interface to wrap a function that returns some result of a possibly long-running
@@ -88,7 +89,7 @@ class TaskUtils {
   static <TResult> Task<TResult> handleTaskFailure(Task<TResult> task) {
     if (task.isComplete() && !task.isSuccessful()) {
       Exception e = task.getException();
-      LogWrapper.getInstance().e(TAG + "Task failed to complete due to " + e.getMessage(), e);
+      LogWrapper.e(TAG, "Task failed to complete", e);
       return e instanceof FirebaseAppDistributionException
           ? task
           : Tasks.forException(FirebaseAppDistributionExceptions.wrap(e));
@@ -132,15 +133,26 @@ class TaskUtils {
       Task<T> task, Executor executor, UpdateTaskContinuation<T> continuation) {
     UpdateTaskImpl updateTask = new UpdateTaskImpl();
     task.addOnSuccessListener(
-        executor,
-        result -> {
-          try {
-            updateTask.shadow(continuation.then(result));
-          } catch (Throwable t) {
-            updateTask.setException(FirebaseAppDistributionExceptions.wrap(t));
-          }
-        });
+            executor,
+            result -> {
+              try {
+                updateTask.shadow(continuation.then(result));
+              } catch (Throwable t) {
+                updateTask.setException(FirebaseAppDistributionExceptions.wrap(t));
+              }
+            })
+        .addOnFailureListener(executor, updateTask::setException);
     return updateTask;
+  }
+
+  /** Set a {@link TaskCompletionSource} to be resolved with the result of another {@link Task}. */
+  static <T> void shadowTask(TaskCompletionSource<T> taskCompletionSource, Task<T> task) {
+    // Using direct executor here ensures that any handlers that were themselves added using a
+    // direct executor will behave as expected: they'll be executed on the thread that sets the
+    // result.
+    task.addOnSuccessListener(FirebaseExecutors.directExecutor(), taskCompletionSource::setResult)
+        .addOnFailureListener(
+            FirebaseExecutors.directExecutor(), taskCompletionSource::setException);
   }
 
   private TaskUtils() {}

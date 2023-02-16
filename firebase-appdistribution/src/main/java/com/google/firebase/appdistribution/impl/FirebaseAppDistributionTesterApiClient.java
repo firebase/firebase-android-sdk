@@ -16,24 +16,29 @@ package com.google.firebase.appdistribution.impl;
 
 import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
 
+import android.net.Uri;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.appdistribution.BinaryType;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
-import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executor;
+import javax.inject.Inject;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 /** Client that makes requests to the App Distribution Tester API. */
 class FirebaseAppDistributionTesterApiClient {
+  private static final String TAG = "TesterApiClient";
 
   /** A potentially long-running job that requires a FID and a FIS auth token */
   private interface FidDependentJob<TResult> {
@@ -52,24 +57,25 @@ class FirebaseAppDistributionTesterApiClient {
   private static final String IAS_ARTIFACT_ID_KEY = "iasArtifactId";
   private static final String DOWNLOAD_URL_KEY = "downloadUrl";
 
-  private static final String TAG = "FirebaseAppDistributionTesterApiClient";
   private static final String FETCH_NEW_RELEASE_TAG = "Fetching new release";
   private static final String FIND_RELEASE_TAG = "Finding installed release";
   private static final String CREATE_FEEDBACK_TAG = "Creating feedback";
   private static final String COMMIT_FEEDBACK_TAG = "Committing feedback";
   private static final String UPLOAD_SCREENSHOT_TAG = "Uploading screenshot";
+  private static final String X_APP_DISTRO_FEEDBACK_TRIGGER = "X-APP-DISTRO-FEEDBACK-TRIGGER";
 
-  private final FirebaseApp firebaseApp;
+  private final FirebaseOptions firebaseOptions;
   private final Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider;
   private final TesterApiHttpClient testerApiHttpClient;
   private final Executor blockingExecutor;
 
+  @Inject
   FirebaseAppDistributionTesterApiClient(
-      @NonNull FirebaseApp firebaseApp,
+      @NonNull FirebaseOptions firebaseOptions,
       @NonNull Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       @NonNull TesterApiHttpClient testerApiHttpClient,
-      @NonNull Executor blockingExecutor) {
-    this.firebaseApp = firebaseApp;
+      @NonNull @Blocking Executor blockingExecutor) {
+    this.firebaseOptions = firebaseOptions;
     this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.testerApiHttpClient = testerApiHttpClient;
     this.blockingExecutor = blockingExecutor;
@@ -86,7 +92,7 @@ class FirebaseAppDistributionTesterApiClient {
           String path =
               String.format(
                   "v1alpha/devices/-/testerApps/%s/installations/%s/releases",
-                  firebaseApp.getOptions().getApplicationId(), fid);
+                  firebaseOptions.getApplicationId(), fid);
           JSONObject responseBody =
               testerApiHttpClient.makeGetRequest(FETCH_NEW_RELEASE_TAG, path, token);
           return parseNewRelease(responseBody);
@@ -123,7 +129,7 @@ class FirebaseAppDistributionTesterApiClient {
     String path =
         String.format(
             "v1alpha/projects/%s/installations/%s/releases:find?%s=%s",
-            firebaseApp.getOptions().getGcmSenderId(), // Project number
+            firebaseOptions.getGcmSenderId(), // Project number
             fid,
             binaryIdParam,
             binaryIdValue);
@@ -136,7 +142,7 @@ class FirebaseAppDistributionTesterApiClient {
   Task<String> createFeedback(String testerReleaseName, String feedbackText) {
     return runWithFidAndToken(
         (unused, token) -> {
-          LogWrapper.getInstance().i("Creating feedback for release: " + testerReleaseName);
+          LogWrapper.i(TAG, "Creating feedback for release: " + testerReleaseName);
           String path = String.format("v1alpha/%s/feedbackReports", testerReleaseName);
           String requestBody = buildCreateFeedbackBody(feedbackText).toString();
           JSONObject responseBody =
@@ -151,26 +157,28 @@ class FirebaseAppDistributionTesterApiClient {
    * @return a {@link Task} containing the feedback name, for convenience when chaining subsequent
    *     requests off of this task
    */
-  Task<String> attachScreenshot(String feedbackName, File screenshotFile) {
+  Task<String> attachScreenshot(String feedbackName, Uri screenshotUri) {
     return runWithFidAndToken(
         (unused, token) -> {
-          LogWrapper.getInstance().i("Uploading screenshot for feedback: " + feedbackName);
+          LogWrapper.i(TAG, "Uploading screenshot for feedback: " + feedbackName);
           String path =
               String.format("upload/v1alpha/%s:uploadArtifact?type=SCREENSHOT", feedbackName);
-          testerApiHttpClient.makeUploadRequest(UPLOAD_SCREENSHOT_TAG, path, token, screenshotFile);
+          testerApiHttpClient.makeUploadRequest(UPLOAD_SCREENSHOT_TAG, path, token, screenshotUri);
           return feedbackName;
         });
   }
 
   /** Commits the feedback with the given name. */
   @NonNull
-  Task<Void> commitFeedback(String feedbackName) {
+  Task<Void> commitFeedback(String feedbackName, FeedbackTrigger trigger) {
     return runWithFidAndToken(
         (unused, token) -> {
-          LogWrapper.getInstance().i("Committing feedback: " + feedbackName);
+          LogWrapper.i(TAG, "Committing feedback: " + feedbackName);
           String path = "v1alpha/" + feedbackName + ":commit";
+          Map<String, String> extraHeaders = new HashMap<>();
+          extraHeaders.put(X_APP_DISTRO_FEEDBACK_TRIGGER, trigger.toString());
           testerApiHttpClient.makePostRequest(
-              COMMIT_FEEDBACK_TAG, path, token, /* requestBody= */ "");
+              COMMIT_FEEDBACK_TAG, path, token, /* requestBody= */ "", extraHeaders);
           return null;
         });
   }
@@ -223,10 +231,10 @@ class FirebaseAppDistributionTesterApiClient {
               .setDownloadUrl(downloadUrl)
               .build();
 
-      LogWrapper.getInstance().v("Zip hash for the new release " + newRelease.getApkHash());
+      LogWrapper.v(TAG, "Zip hash for the new release " + newRelease.getApkHash());
       return newRelease;
     } catch (JSONException e) {
-      LogWrapper.getInstance().e(TAG, "Error parsing the new release.", e);
+      LogWrapper.e(TAG, "Error parsing the new release.", e);
       throw new FirebaseAppDistributionException(
           ErrorMessages.JSON_PARSING_ERROR, Status.UNKNOWN, e);
     }
@@ -237,8 +245,7 @@ class FirebaseAppDistributionTesterApiClient {
     try {
       return responseJson.getString(fieldName);
     } catch (JSONException e) {
-      LogWrapper.getInstance()
-          .e(TAG, String.format("Field '%s' missing from response", fieldName), e);
+      LogWrapper.e(TAG, String.format("Field '%s' missing from response", fieldName), e);
       throw new FirebaseAppDistributionException(
           ErrorMessages.JSON_PARSING_ERROR, Status.UNKNOWN, e);
     }
