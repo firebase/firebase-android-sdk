@@ -4,6 +4,10 @@
 * [changed] Add improved support capturing build ids for Native ANRs on older
   Android versions.
 
+# 18.3.5
+* [fixed] Updated `firebase-common` to its latest version (v20.3.0) to fix an issue that was 
+  causing a nondeterministic crash on startup.
+
 # 18.3.2
 * [unchanged] Updated to accommodate the release of the updated
   `firebase-crashlytics-ndk` v18.3.2.
