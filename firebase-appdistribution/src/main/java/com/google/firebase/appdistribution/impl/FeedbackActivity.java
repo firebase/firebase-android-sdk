@@ -66,7 +66,7 @@ public class FeedbackActivity extends AppCompatActivity {
   @Nullable private String releaseName; // in development-mode the releaseName might be null
   private CharSequence additionalFormText;
   @Nullable private Uri screenshotUri;
-  private FeedbackTrigger feedbackTrigger;
+  private FeedbackTrigger feedbackTrigger = FeedbackTrigger.UNKNOWN;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -78,8 +78,10 @@ public class FeedbackActivity extends AppCompatActivity {
     if (savedInstanceState != null) {
       releaseName = savedInstanceState.getString(RELEASE_NAME_KEY);
       additionalFormText = savedInstanceState.getCharSequence(ADDITIONAL_FORM_TEXT_KEY);
-      feedbackTrigger =
-          FeedbackTrigger.fromString(savedInstanceState.getString(FEEDBACK_TRIGGER_KEY));
+      String feedbackTriggerKey = savedInstanceState.getString(FEEDBACK_TRIGGER_KEY);
+      if (feedbackTriggerKey != null) {
+        feedbackTrigger = FeedbackTrigger.fromString(feedbackTriggerKey);
+      }
       String screenshotUriString = savedInstanceState.getString(SCREENSHOT_URI_KEY);
       if (screenshotUriString != null) {
         screenshotUri = Uri.parse(screenshotUriString);
@@ -87,8 +89,10 @@ public class FeedbackActivity extends AppCompatActivity {
     } else {
       releaseName = getIntent().getStringExtra(RELEASE_NAME_KEY);
       additionalFormText = getIntent().getCharSequenceExtra(ADDITIONAL_FORM_TEXT_KEY);
-      feedbackTrigger =
-          FeedbackTrigger.fromString(getIntent().getStringExtra(FEEDBACK_TRIGGER_KEY));
+      if (getIntent().hasExtra(FEEDBACK_TRIGGER_KEY)) {
+        feedbackTrigger =
+            FeedbackTrigger.fromString(getIntent().getStringExtra(FEEDBACK_TRIGGER_KEY));
+      }
       if (getIntent().hasExtra(SCREENSHOT_URI_KEY)) {
         screenshotUri = Uri.parse(getIntent().getStringExtra(SCREENSHOT_URI_KEY));
       }
