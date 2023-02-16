@@ -30,6 +30,10 @@ public final class RemoteConfigConstants {
   public static final String REALTIME_REGEX_URL =
       "https://firebaseremoteconfigrealtime.googleapis.com/v1/projects/%s/namespaces/%s:streamFetchInvalidations";
 
+  // Realtime error messages returned back to the user.
+  public static final String API_DISABLED =
+      "The Remote Config Realtime API is disabled. It must be enabled in the Google Cloud Console. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry. You can enable the API by following this URL: %s";
+
   /**
    * Keys of fields in the Fetch request body that the client sends to the Firebase Remote Config
    * server.

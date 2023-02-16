@@ -41,8 +41,12 @@ import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
+import com.google.firebase.remoteconfig.RemoteConfigConstants;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -74,6 +78,9 @@ public class ConfigRealtimeHttpClient {
   private static final String INSTALLATIONS_AUTH_TOKEN_HEADER =
       "X-Goog-Firebase-Installations-Auth";
   private static final String X_ACCEPT_RESPONSE_STREAMING = "X-Accept-Response-Streaming";
+
+  private static final String ENABLE_REALTIME_URL =
+      "https://console.developers.google.com/apis/api/firebaseremoteconfigrealtime.googleapis.com/overview?project=";
 
   @GuardedBy("this")
   private final Set<ConfigUpdateListener> listeners;
@@ -409,6 +416,22 @@ public class ConfigRealtimeHttpClient {
         || statusCode == HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
   }
 
+  private String parseErrorResponseMessage(InputStream inputStream) {
+    StringBuilder response = new StringBuilder();
+
+    try {
+      BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+      String message = "";
+      while ((message = bufferedReader.readLine()) != null) {
+        response.append(message);
+      }
+    } catch (IOException ex) {
+      // Unable to parse error message.
+    }
+
+    return response.toString();
+  }
+
   /**
    * Open the realtime connection, begin listening for updates, and auto-fetch when an update is
    * received.
@@ -470,12 +493,23 @@ public class ConfigRealtimeHttpClient {
       if (connectionFailed || responseCode == HttpURLConnection.HTTP_OK) {
         retryHttpConnectionWhenBackoffEnds();
       } else {
+        String errorMessage =
+            String.format(
+                "Unable to connect to the server. Try again in a few minutes. Http Status code: %d",
+                responseCode);
+        if (responseCode == 403) {
+          String errorResponseMessage =
+              parseErrorResponseMessage(httpURLConnection.getErrorStream());
+          if (errorResponseMessage.contains(ENABLE_REALTIME_URL)) {
+            String enableRealtimeUrlLink =
+                ENABLE_REALTIME_URL + this.firebaseApp.getOptions().getApplicationId();
+            errorMessage = String.format(RemoteConfigConstants.API_DISABLED, enableRealtimeUrlLink);
+          }
+        }
         propagateErrors(
             new FirebaseRemoteConfigServerException(
                 responseCode,
-                String.format(
-                    "Unable to connect to the server. Try again in a few minutes. Http Status code: %d",
-                    responseCode),
+                errorMessage,
                 FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
       }
     }
