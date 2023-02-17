@@ -41,7 +41,6 @@ import com.google.firebase.remoteconfig.ConfigUpdateListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
-import com.google.firebase.remoteconfig.RemoteConfigConstants;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -78,9 +77,6 @@ public class ConfigRealtimeHttpClient {
   private static final String INSTALLATIONS_AUTH_TOKEN_HEADER =
       "X-Goog-Firebase-Installations-Auth";
   private static final String X_ACCEPT_RESPONSE_STREAMING = "X-Accept-Response-Streaming";
-
-  private static final String ENABLE_REALTIME_URL =
-      "https://console.developers.google.com/apis/api/firebaseremoteconfigrealtime.googleapis.com/overview?project=";
 
   @GuardedBy("this")
   private final Set<ConfigUpdateListener> listeners;
@@ -498,13 +494,7 @@ public class ConfigRealtimeHttpClient {
                 "Unable to connect to the server. Try again in a few minutes. Http Status code: %d",
                 responseCode);
         if (responseCode == 403) {
-          String errorResponseMessage =
-              parseErrorResponseMessage(httpURLConnection.getErrorStream());
-          if (errorResponseMessage.contains(ENABLE_REALTIME_URL)) {
-            String enableRealtimeUrlLink =
-                ENABLE_REALTIME_URL + this.firebaseApp.getOptions().getApplicationId();
-            errorMessage = String.format(RemoteConfigConstants.API_DISABLED, enableRealtimeUrlLink);
-          }
+          errorMessage = parseErrorResponseMessage(httpURLConnection.getErrorStream());
         }
         propagateErrors(
             new FirebaseRemoteConfigServerException(
