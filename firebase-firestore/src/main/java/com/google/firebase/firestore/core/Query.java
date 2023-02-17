@@ -507,16 +507,6 @@ public final class Query {
     return this.memoizedTarget;
   }
 
-  /** Returns true if the query contains any composite filters (AND/OR). Returns false otherwise. */
-  public boolean containsCompositeFilters() {
-    for (Filter filter : filters) {
-      if (filter instanceof CompositeFilter) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   /**
    * Returns a canonical string representing this query. This should match the iOS and Android
    * canonical ids for a query exactly.
