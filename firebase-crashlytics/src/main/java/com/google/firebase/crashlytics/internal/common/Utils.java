@@ -14,8 +14,6 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
-import static java.util.Objects.requireNonNull;
-
 import android.annotation.SuppressLint;
 import android.os.Looper;
 import com.google.android.gms.tasks.Continuation;
@@ -43,8 +41,8 @@ public final class Utils {
         task -> {
           if (task.isSuccessful()) {
             result.trySetResult(task.getResult());
-          } else {
-            result.trySetException(requireNonNull(task.getException()));
+          } else if (task.getException() != null) {
+            result.trySetException(task.getException());
           }
           return null;
         };
@@ -60,8 +58,8 @@ public final class Utils {
         task -> {
           if (task.isSuccessful()) {
             result.trySetResult(task.getResult());
-          } else {
-            result.trySetException(requireNonNull(task.getException()));
+          } else if (task.getException() != null) {
+            result.trySetException(task.getException());
           }
           return null;
         };
@@ -72,28 +70,27 @@ public final class Utils {
 
   /** Similar to Tasks.call, but takes a Callable that returns a Task. */
   public static <T> Task<T> callTask(Executor executor, Callable<Task<T>> callable) {
-    final TaskCompletionSource<T> tcs = new TaskCompletionSource<>();
-    // TODO(b/261014167): Use an explicit executor in continuations.
+    final TaskCompletionSource<T> result = new TaskCompletionSource<>();
     executor.execute(
         () -> {
           try {
             callable
                 .call()
                 .continueWith(
-                    (Continuation<T, Void>)
-                        task -> {
-                          if (task.isSuccessful()) {
-                            tcs.setResult(task.getResult());
-                          } else if (task.getException() != null) {
-                            tcs.setException(task.getException());
-                          }
-                          return null;
-                        });
+                    executor,
+                    task -> {
+                      if (task.isSuccessful()) {
+                        result.setResult(task.getResult());
+                      } else if (task.getException() != null) {
+                        result.setException(task.getException());
+                      }
+                      return null;
+                    });
           } catch (Exception e) {
-            tcs.setException(e);
+            result.setException(e);
           }
         });
-    return tcs.getTask();
+    return result.getTask();
   }
 
   /**
