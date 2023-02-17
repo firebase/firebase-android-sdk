@@ -163,7 +163,7 @@ class HeartBeatInfoStorage {
         return;
       }
       if (storedUserAgentString.equals(userAgentString)) {
-        // UserAgent not upated.
+        // UserAgent not updated.
         return;
       } else {
         updateStoredUserAgent(userAgentString, dateString);
