@@ -77,6 +77,30 @@ public class HeartBeatInfoStorageTest {
 
   @Config(sdk = 29)
   @Test
+  public void storeOneHeartbeat_updatesProperly() {
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
+    heartBeatInfoStorage.storeHeartBeat(0, "test-agent");
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(1);
+    heartBeatInfoStorage.storeHeartBeat(10, "test-agent-1");
+    ArrayList<HeartBeatResult> results =
+            (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
+    assertThat(results.size()).isEqualTo(1);
+    assertThat(results.get(0).getUserAgent()).isEqualTo("test-agent-1");
+    assertThat(results.get(0).getUsedDates())
+            .isEqualTo(new ArrayList<String>(Collections.singleton("1970-01-01")));
+    heartBeatInfoStorage.deleteAllHeartBeats();
+    heartBeatInfoStorage.storeHeartBeat(100, "test-agent-2");
+    heartBeatInfoStorage.storeHeartBeat(1000, "test-agent-1");
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
+    results = (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
+    assertThat(results.size()).isEqualTo(0);
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
+    results = (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
+    assertThat(results.size()).isEqualTo(0);
+  }
+
+  @Config(sdk = 29)
+  @Test
   public void storeTwoHeartbeat_storesProperly() {
     assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
     heartBeatInfoStorage.storeHeartBeat(0, "test-agent");
