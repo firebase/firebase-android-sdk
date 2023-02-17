@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    releaseWith project(":firebase-inappmessaging")
+    releaseWith project(':firebase-inappmessaging')
     publishJavadoc = true
     publishSources = true
 }
@@ -46,7 +46,7 @@ dependencies {
 
     implementation 'com.google.firebase:firebase-common:20.3.0'
     implementation 'com.google.firebase:firebase-common-ktx:20.3.0'
-    implementation project(":firebase-inappmessaging")
+    implementation project(':firebase-inappmessaging')
     implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'

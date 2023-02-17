@@ -48,7 +48,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
     implementation 'com.google.firebase:firebase-common:20.3.0'
     testImplementation project(path: ':firebase-appdistribution')
-    runtimeOnly 'com.google.firebase:firebase-installations:17.1.2'
+    runtimeOnly project(':firebase-installations')
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"

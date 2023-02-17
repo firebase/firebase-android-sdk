@@ -69,7 +69,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
     implementation 'com.google.android.datatransport:transport-api:3.0.0'
     implementation 'com.google.android.datatransport:transport-runtime:3.1.8'
-    runtimeOnly 'com.google.firebase:firebase-installations:17.1.2'
+    runtimeOnly project(':firebase-installations')
 
     javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
 

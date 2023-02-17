@@ -68,7 +68,7 @@ dependencies {
     implementation 'com.google.android.datatransport:transport-runtime:3.1.8'
     implementation 'com.google.android.datatransport:transport-backend-cct:3.1.8'
     implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
-    runtimeOnly 'com.google.firebase:firebase-installations:17.1.2'
+    runtimeOnly project(':firebase-installations')
     implementation 'com.google.firebase:firebase-measurement-connector:18.0.2'
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
 
@@ -84,7 +84,7 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:3.4.3'
 
 
-    androidTestImplementation 'com.google.firebase:firebase-encoders-json:18.0.0'
+    androidTestImplementation project(':encoders:firebase-encoders-json')
     androidTestImplementation 'androidx.test:runner:1.4.0'
     androidTestImplementation 'androidx.test:core:1.4.0'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
