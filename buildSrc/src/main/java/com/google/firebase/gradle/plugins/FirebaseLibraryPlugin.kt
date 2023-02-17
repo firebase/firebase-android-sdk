@@ -47,8 +47,8 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
       kotlinOptions.freeCompilerArgs = listOf("-module-name", kotlinModuleName(project))
     }
 
-    project.pluginManager.apply(DackkaPlugin::class.java)
-    project.pluginManager.apply(GitSubmodulePlugin::class.java)
+    project.apply<DackkaPlugin>()
+    project.apply<GitSubmodulePlugin>()
     project.tasks.getByName("preBuild").dependsOn("updateGitSubmodules")
   }
 
