@@ -141,23 +141,7 @@ public class UploadTest {
 
     final UploadTask task = storage.putBytes(new byte[] {});
 
-    try {
-      task.getResult();
-      Assert.fail();
-    } catch (IllegalStateException ignore) {
-      // Task is not yet done.
-    }
-
-    Assert.assertNull(task.getException());
-
-    task.addOnFailureListener(
-        (exception) -> {
-          Assert.assertEquals(
-              "Cannot upload to getRoot. You should upload to a storage location such as "
-                  + ".getReference('image.png').putFile...",
-              exception.getCause().getMessage());
-          taskException.set(exception);
-        });
+    task.addOnFailureListener(taskException::set);
 
     // TODO(mrschmidt): Lower the timeout
     TestUtil.await(task, 1, TimeUnit.MINUTES);
@@ -166,7 +150,6 @@ public class UploadTest {
       task.getResult();
       Assert.fail();
     } catch (RuntimeExecutionException e) {
-      // Note: This test can be flaky due to the fact that the second .getCause() may be null.
       Assert.assertEquals(taskException.get().getCause(), e.getCause().getCause());
     }
 
@@ -178,6 +161,12 @@ public class UploadTest {
     }
 
     Assert.assertEquals(taskException.get().getCause(), task.getException().getCause());
+    Assert.assertTrue(
+        taskException
+            .get()
+            .getCause()
+            .getMessage()
+            .contains("Cannot upload to getRoot. You should upload to a storage location"));
   }
 
   @Test

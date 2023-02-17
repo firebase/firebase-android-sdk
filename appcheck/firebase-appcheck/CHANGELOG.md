@@ -1,4 +1,7 @@
 # Unreleased
+* [unchanged] Updated to keep [app_check] SDK versions aligned.
+
+# 16.1.1
 * [changed] Migrated [app_check] SDKs to use standard Firebase executors. (#4431, #4449)
 * [changed] Moved Task continuations off the main thread. (#4453)
 

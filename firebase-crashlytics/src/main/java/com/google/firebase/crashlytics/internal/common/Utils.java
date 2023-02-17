@@ -14,10 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
-import static java.util.Objects.requireNonNull;
-
 import android.annotation.SuppressLint;
-import androidx.annotation.NonNull;
+import android.os.Looper;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -30,9 +28,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /** Utils */
+@SuppressWarnings({"ResultOfMethodCallIgnored", "UnusedReturnValue"})
 public final class Utils {
-
-  private Utils() {}
+  private static final int TIMEOUT_SEC = 4;
 
   /** @return A tasks that is resolved when either of the given tasks is resolved. */
   // TODO(b/261014167): Use an explicit executor in continuations.
@@ -43,8 +41,8 @@ public final class Utils {
         task -> {
           if (task.isSuccessful()) {
             result.trySetResult(task.getResult());
-          } else {
-            result.trySetException(requireNonNull(task.getException()));
+          } else if (task.getException() != null) {
+            result.trySetException(task.getException());
           }
           return null;
         };
@@ -60,8 +58,8 @@ public final class Utils {
         task -> {
           if (task.isSuccessful()) {
             result.trySetResult(task.getResult());
-          } else {
-            result.trySetException(requireNonNull(task.getException()));
+          } else if (task.getException() != null) {
+            result.trySetException(task.getException());
           }
           return null;
         };
@@ -72,34 +70,27 @@ public final class Utils {
 
   /** Similar to Tasks.call, but takes a Callable that returns a Task. */
   public static <T> Task<T> callTask(Executor executor, Callable<Task<T>> callable) {
-    final TaskCompletionSource<T> tcs = new TaskCompletionSource<T>();
+    final TaskCompletionSource<T> result = new TaskCompletionSource<>();
     executor.execute(
-        new Runnable() {
-          // TODO(b/261014167): Use an explicit executor in continuations.
-          @SuppressLint("TaskMainThread")
-          @Override
-          public void run() {
-            try {
-              callable
-                  .call()
-                  .continueWith(
-                      new Continuation<T, Void>() {
-                        @Override
-                        public Void then(@NonNull Task<T> task) throws Exception {
-                          if (task.isSuccessful()) {
-                            tcs.setResult(task.getResult());
-                          } else {
-                            tcs.setException(task.getException());
-                          }
-                          return null;
-                        }
-                      });
-            } catch (Exception e) {
-              tcs.setException(e);
-            }
+        () -> {
+          try {
+            callable
+                .call()
+                .continueWith(
+                    executor,
+                    task -> {
+                      if (task.isSuccessful()) {
+                        result.setResult(task.getResult());
+                      } else if (task.getException() != null) {
+                        result.setException(task.getException());
+                      }
+                      return null;
+                    });
+          } catch (Exception e) {
+            result.setException(e);
           }
         });
-    return tcs.getTask();
+    return result.getTask();
   }
 
   /**
@@ -126,7 +117,11 @@ public final class Utils {
           return null;
         });
 
-    latch.await(CrashlyticsCore.DEFAULT_MAIN_HANDLER_TIMEOUT_SEC, TimeUnit.SECONDS);
+    if (Looper.getMainLooper() == Looper.myLooper()) {
+      latch.await(CrashlyticsCore.DEFAULT_MAIN_HANDLER_TIMEOUT_SEC, TimeUnit.SECONDS);
+    } else {
+      latch.await(TIMEOUT_SEC, TimeUnit.SECONDS);
+    }
 
     if (task.isSuccessful()) {
       return task.getResult();
@@ -170,4 +165,6 @@ public final class Utils {
   private static final ExecutorService TASK_CONTINUATION_EXECUTOR_SERVICE =
       ExecutorUtils.buildSingleThreadExecutorService(
           "awaitEvenIfOnMainThread task continuation executor");
+
+  private Utils() {}
 }
