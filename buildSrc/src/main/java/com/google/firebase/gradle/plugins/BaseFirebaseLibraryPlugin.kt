@@ -59,8 +59,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
       )
     val outputApiFile = File(outputFile.absolutePath + "_api.txt")
     val apiTxt =
-      if (project.file("api.txt").exists()) project.file("api.txt")
-      else project.file(project.rootDir.toString() + "/empty-api.txt")
+      project.file("api.txt").takeIf { it.exists() } ?: project.rootProject.file("empty-api.txt")
     val apiInfo =
       project.tasks.register<ApiInformationTask>("apiInformation") {
         sources.value(project.provider { srcDirs })
