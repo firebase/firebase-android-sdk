@@ -43,12 +43,12 @@ android {
 
 dependencies {
     implementation 'org.jetbrains:annotations:15.0'
-    implementation project(':firebase-appdistribution-api')
-    implementation project(':firebase-components')
-    implementation project(':firebase-installations-interop')
-    implementation project(':firebase-common')
+    implementation 'com.google.firebase:firebase-appdistribution-api:16.0.0-beta05'
+    implementation 'com.google.firebase:firebase-components:17.1.0'
+    implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
+    implementation 'com.google.firebase:firebase-common:20.3.0'
     testImplementation project(path: ':firebase-appdistribution')
-    runtimeOnly project(':firebase-installations')
+    runtimeOnly 'com.google.firebase:firebase-installations:17.1.2'
 
     testImplementation 'junit:junit:4.13.2'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"

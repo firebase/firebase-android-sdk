@@ -92,16 +92,16 @@ android {
 
 dependencies {
     // Firebase Deps
-    implementation project(':firebase-annotations')
-    implementation project(':firebase-common')
-    implementation project(':firebase-components')
-    implementation project(':firebase-config')
-    implementation project(':firebase-installations-interop')
-    implementation project(':protolite-well-known-types')
+    implementation 'com.google.firebase:firebase-annotations:16.2.0'
+    implementation 'com.google.firebase:firebase-common:20.3.0'
+    implementation 'com.google.firebase:firebase-components:17.1.0'
+    implementation 'com.google.firebase:firebase-config:21.2.1'
+    implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
+    implementation 'com.google.firebase:protolite-well-known-types:18.0.0'
     implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
-    runtimeOnly project(':firebase-installations')
-    implementation project(':transport:transport-api')
-    runtimeOnly project(':firebase-datatransport')
+    runtimeOnly 'com.google.firebase:firebase-installations:17.1.2'
+    implementation 'com.google.android.datatransport:transport-api:3.0.0'
+    runtimeOnly 'com.google.firebase:firebase-datatransport:18.1.7'
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
     javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
 

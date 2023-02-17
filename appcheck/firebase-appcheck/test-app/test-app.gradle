@@ -40,11 +40,11 @@ dependencies {
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
 
     // Firebase dependencies
-    implementation project(':firebase-common')
-    implementation project(':firebase-components')
+    implementation 'com.google.firebase:firebase-common:20.3.0'
+    implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation project(":appcheck:firebase-appcheck")
     implementation project(":appcheck:firebase-appcheck-debug")
-    implementation project(":appcheck:firebase-appcheck-interop")
+    implementation "com.google.firebase:firebase-appcheck-interop:16.1.1"
     implementation project(":appcheck:firebase-appcheck-playintegrity")
     implementation project(":appcheck:firebase-appcheck-safetynet")
     implementation project(":firebase-storage")

@@ -49,8 +49,8 @@ android {
 }
 
 dependencies {
-    implementation(project(":firebase-annotations"))
-    implementation(project(":firebase-components"))
+    implementation("com.google.firebase:firebase-annotations:16.2.0")
+    implementation("com.google.firebase:firebase-components:17.1.0")
     implementation(libs.androidx.futures)
     implementation(libs.playservices.basement)
     implementation(libs.playservices.tasks)

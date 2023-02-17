@@ -21,7 +21,7 @@ Note: For the same reasons, this project also contains the google cloud well kno
 If you have a direct protobuf dependency like shown above, it can be removed and replaced with
 
 ```groovy
-implementation project(':protolite-well-known-types')
+implementation 'com.google.firebase:protolite-well-known-types:18.0.0'
 ```
 
 A typical grpc and protobuf-lite configuration should look like
@@ -73,7 +73,7 @@ android {
 }
 
 dependencies {
-    implementation project(':protolite-well-known-types')
+    implementation 'com.google.firebase:protolite-well-known-types:18.0.0'
     implementation "io.grpc:grpc-stub:$grpcVersion"
 
     // optionally override grpc's protobuf-lite runtime

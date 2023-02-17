@@ -120,12 +120,12 @@ googleJavaFormat {
 }
 
 dependencies {
-    implementation project(':firebase-annotations')
-    implementation project(':firebase-common')
-    implementation project(':protolite-well-known-types')
-    implementation project(':firebase-database-collection')
-    implementation project(':firebase-components')
-    implementation project(':appcheck:firebase-appcheck-interop')
+    implementation 'com.google.firebase:firebase-annotations:16.2.0'
+    implementation 'com.google.firebase:firebase-common:20.3.0'
+    implementation 'com.google.firebase:protolite-well-known-types:18.0.0'
+    implementation 'com.google.firebase:firebase-database-connection:16.0.2'
+    implementation 'com.google.firebase:firebase-components:17.1.0'
+    implementation 'com.google.firebase:firebase-appcheck-interop:16.1.1'
 
     //To provide @Generated annotations
     compileOnly 'javax.annotation:jsr250-api:1.0'

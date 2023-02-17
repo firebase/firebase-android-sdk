@@ -38,10 +38,10 @@ android {
 }
 
 dependencies {
-    implementation project(':firebase-common')
-    implementation project(':firebase-installations-interop')
-    implementation project(':firebase-components')
-    implementation project(':firebase-annotations')
+    implementation 'com.google.firebase:firebase-common:20.3.0'
+    implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
+    implementation 'com.google.firebase:firebase-components:17.1.0'
+    implementation 'com.google.firebase:firebase-annotations:16.2.0'
 
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'

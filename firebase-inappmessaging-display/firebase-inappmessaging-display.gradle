@@ -71,9 +71,9 @@ thirdPartyLicenses {
 }
 
 dependencies {
-    implementation project(':firebase-common')
-    implementation project(':firebase-components')
-    implementation project(':firebase-inappmessaging')
+    implementation 'com.google.firebase:firebase-common:20.3.0'
+    implementation 'com.google.firebase:firebase-components:17.1.0'
+    implementation 'com.google.firebase:firebase-inappmessaging:20.3.0'
 
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation 'androidx.appcompat:appcompat:1.1.0'

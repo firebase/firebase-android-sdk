@@ -78,8 +78,8 @@ protobuf {
 }
 
 dependencies {
-    implementation project(":encoders:firebase-encoders")
-    implementation project(":encoders:firebase-encoders-proto")
+    implementation 'com.google.firebase:firebase-encoders:17.0.0'
+    implementation "com.google.firebase:firebase-encoders-proto:16.0.0"
     annotationProcessor project(":encoders:firebase-encoders-processor")
 }
 ```

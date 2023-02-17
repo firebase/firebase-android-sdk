@@ -70,10 +70,10 @@ android {
 }
 
 dependencies {
-    implementation project(':firebase-common')
-    implementation project(':firebase-database-collection')
-    implementation project(':firebase-components')
-    implementation project(':appcheck:firebase-appcheck-interop')
+    implementation 'com.google.firebase:firebase-common:20.3.0'
+    implementation 'com.google.firebase:firebase-database-connection:16.0.2'
+    implementation 'com.google.firebase:firebase-components:17.1.0'
+    implementation 'com.google.firebase:firebase-appcheck-interop:16.1.1'
 
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-basement:18.1.0'
