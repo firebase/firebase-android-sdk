@@ -21,8 +21,10 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCol
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.writeAllDocs;
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.util.Util.autoId;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -1027,6 +1029,46 @@ public class QueryTest {
 
     QuerySnapshot snapshot2 = waitFor(collection.get(Source.CACHE));
     assertEquals(asList(map("foo", "zzyzx", "bar", "2")), querySnapshotToValues(snapshot2));
+  }
+
+  @Test
+  public void resumingQueryShouldRemoveDeletedDocumentsIndicatedByExistenceFilter() {
+    Map<String, Map<String, Object>> testDocs = new LinkedHashMap<>();
+    for (int i = 1; i <= 100; i++) {
+      testDocs.put("doc" + i, map("key", i));
+    }
+
+    // Setup firestore with disabled persistence and populate a collection with testDocs.
+    FirebaseFirestore firestore = testFirestore();
+    firestore.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder().setPersistenceEnabled(false).build());
+    CollectionReference collection = firestore.collection(autoId());
+    writeAllDocs(collection, testDocs);
+
+    QuerySnapshot snapshot1 = waitFor(collection.get());
+    assertEquals(snapshot1.size(), 100);
+
+    // Delete 50 docs in transaction so that it doesn't affect local cache.
+    waitFor(
+        firestore.runTransaction(
+            transaction -> {
+              for (int i = 1; i <= 50; i++) {
+                DocumentReference docRef = collection.document("doc" + i);
+                transaction.delete(docRef);
+              }
+              return null;
+            }));
+
+    // Wait 10 seconds, during which Watch will stop tracking the query
+    // and will send an existence filter rather than "delete" events.
+    try {
+      Thread.sleep(10000);
+    } catch (InterruptedException ex) {
+      Thread.currentThread().interrupt();
+    }
+
+    QuerySnapshot snapshot2 = waitFor(collection.get());
+    assertEquals(snapshot2.size(), 50);
   }
 
   // TODO(orquery): Enable this test when prod supports OR queries.
