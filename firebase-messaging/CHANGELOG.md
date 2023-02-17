@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Fix a breakage related to Jetpack core library related to [upstream update](https://android-review.googlesource.com/c/platform/frameworks/support/+/2399893)
 
 # 23.1.1
 * [fixed] Fixed deadlock when handling simultaneous messages.
