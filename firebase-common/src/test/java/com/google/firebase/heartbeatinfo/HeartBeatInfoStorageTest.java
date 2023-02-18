@@ -91,9 +91,7 @@ public class HeartBeatInfoStorageTest {
     heartBeatInfoStorage.deleteAllHeartBeats();
     heartBeatInfoStorage.storeHeartBeat(100, "test-agent-2");
     heartBeatInfoStorage.storeHeartBeat(1000, "test-agent-1");
-    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
-    results = (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
-    assertThat(results.size()).isEqualTo(0);
+    // Since the heartbeat is already sent for today no new heartbeats should be sent.
     assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
     results = (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
     assertThat(results.size()).isEqualTo(0);
