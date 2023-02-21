@@ -292,6 +292,12 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   // it is safe to ignore this warning
   @SuppressLint("ClickableViewAccessibility")
   private void inflateBinding(final Activity activity, final BindingWrapper bindingWrapper) {
+    if (inAppMessage == null) {
+      // inAppMessage could get null because of race conditions from prior inapp message timers. So
+      // adding a safety null check. See b/269599986
+      return;
+    }
+
     // On click listener when X button or collapse button is clicked
     final View.OnClickListener dismissListener =
         new View.OnClickListener() {
