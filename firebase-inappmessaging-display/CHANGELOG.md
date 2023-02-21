@@ -2,6 +2,24 @@
 * [changed] Migrate firebase-inappmessaging SDK to use common executor pool.
 * [changed] Refactoring to reduce load on app's Main thread.
 
+
+# 20.3.0
+* [changed] Migrated [inappmessaging] Display to use standard Firebase
+  executors.
+
+* [changed] Moved Task continuations off the main thread.
+
+* [feature] Added a new API for
+  [removing a dismiss listener](/docs/reference/android/com/google/firebase/inappmessaging/FirebaseInAppMessaging#removeDismissListener(com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener)).
+  (GitHub
+  [#4492](//github.com/firebase/firebase-android-sdk/issues/4492){: .external})
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging-display` library. The Kotlin extensions library has no additional
+updates.
+
 # 20.2.0
 * [fixed] Fixed a bug that prevented marking more than one message as
   impressed.
