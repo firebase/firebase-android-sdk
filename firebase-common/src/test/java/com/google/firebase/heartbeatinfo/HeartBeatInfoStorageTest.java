@@ -83,11 +83,11 @@ public class HeartBeatInfoStorageTest {
     assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(1);
     heartBeatInfoStorage.storeHeartBeat(10, "test-agent-1");
     ArrayList<HeartBeatResult> results =
-            (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
+        (ArrayList<HeartBeatResult>) heartBeatInfoStorage.getAllHeartBeats();
     assertThat(results.size()).isEqualTo(1);
     assertThat(results.get(0).getUserAgent()).isEqualTo("test-agent-1");
     assertThat(results.get(0).getUsedDates())
-            .isEqualTo(new ArrayList<String>(Collections.singleton("1970-01-01")));
+        .isEqualTo(new ArrayList<String>(Collections.singleton("1970-01-01")));
     heartBeatInfoStorage.deleteAllHeartBeats();
     heartBeatInfoStorage.storeHeartBeat(100, "test-agent-2");
     heartBeatInfoStorage.storeHeartBeat(1000, "test-agent-1");
