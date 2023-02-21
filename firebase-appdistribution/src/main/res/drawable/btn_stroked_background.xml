@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- Drawable state list for background of basic button -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- disabled button background -->
+    <item android:state_enabled="false" android:drawable="@drawable/btn_disabled_stroked" />
+    <!-- default button background -->
+    <item android:drawable="@drawable/btn_stroked" />
+</selector>
