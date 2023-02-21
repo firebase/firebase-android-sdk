@@ -23,12 +23,12 @@ import androidx.appcompat.app.AppCompatActivity;
  * when SignInResultActivity is created.
  */
 public class SignInResultActivity extends AppCompatActivity {
-  private static final String TAG = "SignInResultActivity:";
+  private static final String TAG = "SignInResultActivity";
 
   @Override
   public void onCreate(@NonNull Bundle savedInstanceBundle) {
     super.onCreate(savedInstanceBundle);
-    LogWrapper.getInstance().v(TAG + "The tester is signing in");
+    LogWrapper.v(TAG, "The tester is signing in");
     // While this does not appear to be achieving much, handling the redirect in this way
     // ensures that we can remove the browser tab from the back stack. See the documentation
     // on AuthorizationManagementActivity for more details.

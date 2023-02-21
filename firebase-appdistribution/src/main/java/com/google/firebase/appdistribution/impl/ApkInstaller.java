@@ -14,81 +14,56 @@
 
 package com.google.firebase.appdistribution.impl;
 
-import static com.google.firebase.appdistribution.impl.TaskUtils.safeSetTaskException;
-
 import android.app.Activity;
 import android.content.Intent;
-import androidx.annotation.GuardedBy;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
+import java.util.concurrent.Executor;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /** Class that handles installing APKs in {@link FirebaseAppDistribution}. */
+@Singleton // Only one update should happen at a time, even across FirebaseAppDistribution instances
 class ApkInstaller {
-  private static final String TAG = "ApkInstaller:";
-  private final FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier;
+  private static final String TAG = "ApkInstaller";
 
-  @GuardedBy("installTaskLock")
-  private TaskCompletionSource<Void> installTaskCompletionSource;
+  private final TaskCompletionSourceCache<Void> installTaskCompletionSourceCache;
 
-  private final Object installTaskLock = new Object();
-
-  ApkInstaller(FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier) {
-    this.lifeCycleNotifier = lifeCycleNotifier;
-    lifeCycleNotifier.addOnActivityStartedListener(this::onActivityStarted);
+  @Inject
+  ApkInstaller(
+      FirebaseAppDistributionLifecycleNotifier lifeCycleNotifier,
+      @Lightweight Executor lightweightExecutor) {
+    this.installTaskCompletionSourceCache = new TaskCompletionSourceCache<>(lightweightExecutor);
     lifeCycleNotifier.addOnActivityDestroyedListener(this::onActivityDestroyed);
-  }
-
-  ApkInstaller() {
-    this(FirebaseAppDistributionLifecycleNotifier.getInstance());
-  }
-
-  void onActivityStarted(@Nullable Activity activity) {
-    synchronized (installTaskLock) {
-      if (installTaskCompletionSource == null
-          || installTaskCompletionSource.getTask().isComplete()
-          || activity == null) {
-        return;
-      }
-    }
   }
 
   void onActivityDestroyed(@Nullable Activity activity) {
     if (activity instanceof InstallActivity) {
       // Since install activity is destroyed but app is still active, installation has failed /
       // cancelled.
-      this.trySetInstallTaskError();
+      installTaskCompletionSourceCache.setException(
+          new FirebaseAppDistributionException(
+              ErrorMessages.APK_INSTALLATION_FAILED,
+              FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
     }
   }
 
   Task<Void> installApk(String path, Activity currentActivity) {
-    synchronized (installTaskLock) {
-      startInstallActivity(path, currentActivity);
-
-      if (this.installTaskCompletionSource == null
-          || this.installTaskCompletionSource.getTask().isComplete()) {
-        this.installTaskCompletionSource = new TaskCompletionSource<>();
-      }
-      return installTaskCompletionSource.getTask();
-    }
+    return installTaskCompletionSourceCache.getOrCreateTaskFromCompletionSource(
+        () -> {
+          startInstallActivity(path, currentActivity);
+          return new TaskCompletionSource<>();
+        });
   }
 
   private void startInstallActivity(String path, Activity currentActivity) {
     Intent intent = new Intent(currentActivity, InstallActivity.class);
     intent.putExtra("INSTALL_PATH", path);
     currentActivity.startActivity(intent);
-    LogWrapper.getInstance().v(TAG + "Prompting tester with install activity ");
-  }
-
-  void trySetInstallTaskError() {
-    synchronized (installTaskLock) {
-      safeSetTaskException(
-          installTaskCompletionSource,
-          new FirebaseAppDistributionException(
-              ErrorMessages.APK_INSTALLATION_FAILED,
-              FirebaseAppDistributionException.Status.INSTALLATION_FAILURE));
-    }
+    LogWrapper.v(TAG, "Prompting tester with install activity");
   }
 }

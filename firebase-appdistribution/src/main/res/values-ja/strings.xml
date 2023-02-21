@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2022 Google LLC -->
+<!-- -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License"); -->
+<!-- you may not use this file except in compliance with the License. -->
+<!-- You may obtain a copy of the License at -->
+<!-- -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0 -->
+<!-- -->
+<!-- Unless required by applicable law or agreed to in writing, software -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS, -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. -->
+<!-- See the License for the specific language governing permissions and -->
+<!-- limitations under the License. -->
+
+<resources>
+  <string name="signin_dialog_title" translation_description="Title of the dialog encouraging the user to enable Firebase App Distribution features">テスト機能の有効化</string>
+  <string name="singin_dialog_message" translation_description="Content of the dialog encouraging the user to enable Firebase App Distribution features">新しいビルドのアラートやアプリ内フィードバックなどのテスト機能を有効にします。</string>
+  <string name="singin_yes_button" translation_description="Text on button to enable Firebase App Distribution features">有効にする</string>
+  <string name="singin_no_button" translation_description="Text on button to decline Firebase App Distribution features">後で行う</string>
+  <string name="update_dialog_title" translation_description="Title of the dialog explaining to the user that a new version of the application is available">新しいバージョンが利用可能</string>
+  <string name="update_version_available" translation_description="Version string (and code) of the available update">バージョン %1$s（%2$d）が利用可能です。</string>
+  <string name="update_release_notes" translation_description="Text prefixing release notes">リリースノート: </string>
+  <string name="update_yes_button" translation_description="Text on button to start update">更新</string>
+  <string name="update_no_button" translation_description="Text on button to cancel update">キャンセル</string>
+  <string name="downloading_app_update" translation_description="Title of the notification showing during download of update">アプリ内アップデートをダウンロードしています…</string>
+  <string name="download_completed" translation_description="Title of notification when download of update has completed">ダウンロードが完了しました</string>
+  <string name="download_failed" translation_description="Title of notification when download of update has failed">ダウンロードが失敗しました</string>
+  <string name="install_failed" translation_description="Title of notification when installation of update has failed">インストールに失敗しました</string>
+  <string name="notifications_group_name" translation_description="Title of the notification channel group for the SDK">Firebase App Distribution</string>
+  <string name="app_update_notification_channel_name" translation_description="Name of the notification channel for in-app updates">アプリのアップデート</string>
+  <string name="app_update_notification_channel_description" translation_description="Description of the notification channel for in-app updates">アプリ内アップデートの進行状況を表示します</string>
+  <string name="feedback_launch_failed" translation_description="Toast explaining that launching the feedback functionality failed">フィードバックを開始できませんでした</string>
+  <string name="feedback_unidentified_release" translation_description="Toast explaining feedback can't be provided, because release can't be found">リリースが見つかりませんでした。このアプリは App Distribution によってインストールされていないか、アクセスできなくなっている可能性があります。</string>
+  <string name="feedback_no_release" translation_description="Toast explaining that feedback would have been sent, but was not, since development mode was active">開発モードのためフィードバックが送信されませんでした。</string>
+  <string name="feedback_notification_channel_name" translation_description="Name of the notification channel for in-app feedback">フィードバック</string>
+  <string name="feedback_notification_channel_description" translation_description="Description of the notification channel for in-app feedback">アプリに関するフィードバックを入力するための通知を表示します</string>
+  <string name="feedback_notification_title" translation_description="Title of notification encouraging testers to enter feedback">フィードバックをお寄せください</string>
+  <string name="feedback_notification_text" translation_description="Text of notification encouraging testers to enter feedback for the app">タップして %1$s のフィードバックを入力</string>
+  <string name="unknown_sources_dialog_title" translation_description="Title of dialog describing that installation from unknown sources needs to be enabled">提供元不明のアプリのインストール</string>
+  <string name="unknown_sources_dialog_description" translation_description="Text of dialog describing why installation from unknown sources needs to be enabled">アップデートをインストールするには、提供元不明のアプリのインストールを有効にしてください</string>
+  <string name="unknown_sources_yes_button" translation_description="Label on button launching settings to enable installation from unknown sources">設定</string>
+  <string name="back_button_description" translation_description="Description for image button (back) which aborts feedback">戻る</string>
+  <string name="send_feedback" translation_description="Text next to send button which sends feedback">フィードバックを送信</string>
+  <string name="send_button_description" translation_description="Description of image button (send) which sends feedback">送信</string>
+  <string name="feedback_text_hint" translation_description="Default text hint displayed in the text box where user should type their feedback">アプリ改善のために役立つフィードバックがありましたら、お知らせください。</string>
+  <string name="screenshot" translation_description="Text displayed next to the checkbox which can be toggled to include/exclude a screenshot with the feedback">スクリーンショット</string>
+  <string name="no_screenshot" translation_description="Text displayed when there is no screenshot available to be included with the feedback">スクリーンショット（利用不可）</string>
+  <string name="screenshot_image_description" translation_description="Description for the screenshot image">スクリーンショット画像</string>
+</resources>
