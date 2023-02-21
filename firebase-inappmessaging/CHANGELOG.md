@@ -1,4 +1,8 @@
 # Unreleased
+* [fixed] Fixed nullpointer crash #4214
+* [changed] Updated grpc to 1.52.1 and javalite, protoc, protobufjavautil to 3.21.11.
+
+# 20.3.0
 * [changed] Migrate firebase-inappmessaging SDK to use common executor pool.
 * [changed] Refactoring to reduce load on app's Main thread.
 * [feature] Added new api for removing dismiss listener.
