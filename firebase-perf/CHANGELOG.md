@@ -1,9 +1,19 @@
 # Unreleased
 
+# 20.3.1
+* [changed] Migrated [perfmon] to use standard Firebase executors.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
+
 # 20.3.0
 * [fixed] Fixed a `NullPointerException` crash when instrumenting screen
   traces on Android 7, 8, and 9.
   (#4146)
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated

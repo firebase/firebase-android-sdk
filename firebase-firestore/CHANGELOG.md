@@ -1,6 +1,26 @@
 # Unreleased
-* [fixed] Fix a potential high-memory usage issue.
-* [fixed] Fix an issue that stops some performance optimization being applied.
+
+
+# 24.4.3
+* [fixed] Fixed a potential high-memory usage issue.
+* [fixed] Fixed an issue that stopped some performance optimization from being
+  applied.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
+
+# 24.4.2
+* [fixed] Fixed an issue that stopped some performance optimization from being
+  applied.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.4.1
 * [fixed] Fix `FAILED_PRECONDITION` when writing to a deleted document in a
@@ -17,6 +37,7 @@
 
 * [changed] Updated dependency of `io.grpc.*` to its latest version
   (v1.50.2).
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
