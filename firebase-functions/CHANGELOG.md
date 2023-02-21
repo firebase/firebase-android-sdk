@@ -1,6 +1,4 @@
 # Unreleased
-* [changed] Avoid executing code on the UI thread as much as possible.
-* [changed] Internal infrastructure improvements.
 
 
 # 20.2.2

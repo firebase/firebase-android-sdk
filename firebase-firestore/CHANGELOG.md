@@ -1,6 +1,4 @@
 # Unreleased
-* [fixed] Fix a potential high-memory usage issue.
-* [fixed] Fix an issue that stops some performance optimization being applied.
 
 
 # 24.4.3

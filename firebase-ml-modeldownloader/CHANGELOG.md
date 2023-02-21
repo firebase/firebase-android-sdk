@@ -1,5 +1,4 @@
 # Unreleased
-- [changed] Internal infrastructure improvements.
 
 
 # 24.1.2
