@@ -1,5 +1,6 @@
 # Unreleased
-
+* [fixed] Fixed nullpointer crash #4214
+* [changed] Updated grpc to 1.52.1 and javalite, protoc, protobufjavautil to 3.21.11.
 
 # 20.3.0
 * [changed] Migrated [inappmessaging] Display to use standard Firebase
@@ -17,6 +18,7 @@
 The Kotlin extensions library transitively includes the updated
 `firebase-inappmessaging-display` library. The Kotlin extensions library has no additional
 updates.
+
 
 # 20.2.0
 * [fixed] Fixed a bug that prevented marking more than one message as

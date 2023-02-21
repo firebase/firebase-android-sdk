@@ -1,5 +1,6 @@
 # Unreleased
-
+* [fixed] Fixed nullpointer crash #4214
+* [changed] Updated grpc to 1.52.1 and javalite, protoc, protobufjavautil to 3.21.11.
 
 # 20.3.0
 * [changed] Migrated [inappmessaging] to use standard Firebase executors.
