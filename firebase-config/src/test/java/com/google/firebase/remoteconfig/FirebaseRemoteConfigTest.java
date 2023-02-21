@@ -1333,6 +1333,23 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void realtime_forbiddenStatusCode_returnsStreamError() throws Exception {
+    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
+    doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
+    when(mockHttpURLConnection.getErrorStream())
+        .thenReturn(new ByteArrayInputStream("{ \"code\": 403 }".getBytes(StandardCharsets.UTF_8)));
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(403);
+    configRealtimeHttpClientSpy.beginRealtimeHttpStream();
+
+    verify(configRealtimeHttpClientSpy, never()).startAutoFetch(any());
+    verify(configRealtimeHttpClientSpy, never()).retryHttpConnectionWhenBackoffEnds();
+    verify(mockStreamErrorEventListener).onError(any(FirebaseRemoteConfigServerException.class));
+  }
+
+  @Test
   public void realtime_exceptionThrown_noAutofetchButRetries() throws Exception {
     ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
     doThrow(IOException.class).when(configRealtimeHttpClientSpy).createRealtimeConnection();

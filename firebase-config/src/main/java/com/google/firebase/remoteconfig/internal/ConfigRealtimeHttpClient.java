@@ -423,6 +423,7 @@ public class ConfigRealtimeHttpClient {
       }
     } catch (IOException ex) {
       // Unable to parse error message.
+      return "Unable to connect to the server, access is forbidden. Http Status code: 403";
     }
 
     return response.toString();
@@ -491,7 +492,7 @@ public class ConfigRealtimeHttpClient {
       } else {
         String errorMessage =
             String.format(
-                "Unable to connect to the server. Try again in a few minutes. Http Status code: %d",
+                "Unable to connect to the server. Try again in a few minutes. HTTP Status code: %d",
                 responseCode);
         if (responseCode == 403) {
           errorMessage = parseErrorResponseMessage(httpURLConnection.getErrorStream());
