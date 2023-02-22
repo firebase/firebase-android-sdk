@@ -492,7 +492,7 @@ public class ConfigRealtimeHttpClient {
       } else {
         String errorMessage =
             String.format(
-                "Unable to connect to the server. Try again in a few minutes. HTTP Status code: %d",
+                "Unable to connect to the server. Try again in a few minutes. HTTP status code: %d",
                 responseCode);
         if (responseCode == 403) {
           errorMessage = parseErrorResponseMessage(httpURLConnection.getErrorStream());
