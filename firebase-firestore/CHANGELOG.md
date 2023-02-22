@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Relaxed certain query validations performed by the SDK (#4231).
 * [changed] Updated grpc to 1.52.1 and javalite, protoc, protobufjavautil to 3.21.11.
 
 # 24.4.3
