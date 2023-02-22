@@ -1,5 +1,6 @@
 # Unreleased
-
+* [changed] Relaxed certain query validations performed by the SDK (#4231).
+* [changed] Updated grpc to 1.52.1 and javalite, protoc, protobufjavautil to 3.21.11.
 
 # 24.4.3
 * [fixed] Fixed a potential high-memory usage issue.
@@ -349,7 +350,7 @@ updates.
   and
   [`Query.whereNotEqualTo()`](/docs/reference/android/com/google/firebase/firestore/Query#whereNotEqualTo(java.lang.String,%20java.lang.Object))
   query operators.
-  
+
   * `Query.whereNotIn()` finds documents where a specified field's value is
     not in a specified array.
   * `Query.whereNotEqualTo()` finds documents where a specified field's value
@@ -461,7 +462,7 @@ updates.
   is IN a specified array. `Query.whereArrayContainsAny()` finds documents
   where a specified field is an array and contains ANY element of a specified
   array.
-  
+
 - [changed] Improved the performance of repeatedly executed queries. Recently
   executed queries should see dramatic improvements. This benefit is reduced
   if changes accumulate while the query is inactive. Queries that use the
@@ -719,7 +720,7 @@ updates.
   https://github.com/firebase/firebase-android-sdk/issues/134
 
 # 17.1.4
-* [fixed] Fixed a SQLite transaction-handling issue that occasionally masked 
+* [fixed] Fixed a SQLite transaction-handling issue that occasionally masked
   exceptions when Firestore closed a transaction that was never started. For
   more information, see the [issue report in GitHub](https://github.com/firebase/firebase-android-sdk/issues/115).
 * [fixed] Fixed a race condition that caused a `SQLiteDatabaseLockedException`
@@ -767,4 +768,3 @@ updates.
   or
   [`FieldValue.serverTimestamp()`](/docs/reference/android/com/google/firebase/firestore/FieldValue.html#serverTimestamp())
   values.
-

@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Updated javalite, protoc, protobufjavautil to 3.21.11.
 
 # 20.3.1
 * [changed] Migrated [perfmon] to use standard Firebase executors.
@@ -332,4 +333,3 @@ updates.
 
 # 16.1.0
 * [fixed] Fixed a `SecurityException` crash on certain devices that do not have Google Play Services on them.
-
