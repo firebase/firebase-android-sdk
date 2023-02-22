@@ -1,6 +1,7 @@
 # Unreleased
 * [fixed] Fix a potential high-memory usage issue.
 * [fixed] Fix an issue that stops some performance optimization being applied.
+* [changed] Relaxed certain query validations performed by the SDK (#4231).
 
 # 24.4.1
 * [fixed] Fix `FAILED_PRECONDITION` when writing to a deleted document in a
