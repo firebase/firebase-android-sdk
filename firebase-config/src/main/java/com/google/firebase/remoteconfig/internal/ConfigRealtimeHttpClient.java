@@ -412,7 +412,7 @@ public class ConfigRealtimeHttpClient {
         || statusCode == HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
   }
 
-  private String parseErrorResponseMessage(InputStream inputStream) {
+  private String parseForbiddenErrorResponseMessage(InputStream inputStream) {
     StringBuilder response = new StringBuilder();
 
     try {
@@ -420,10 +420,13 @@ public class ConfigRealtimeHttpClient {
       String message = "";
       while ((message = bufferedReader.readLine()) != null) {
         response.append(message);
+        Log.i(TAG, message);
       }
     } catch (IOException ex) {
       // Unable to parse error message.
-      return "Unable to connect to the server, access is forbidden. Http Status code: 403";
+      if (response.length() == 0) {
+        return "Unable to connect to the server, access is forbidden. HTTP status code: 403";
+      }
     }
 
     return response.toString();
@@ -494,8 +497,9 @@ public class ConfigRealtimeHttpClient {
             String.format(
                 "Unable to connect to the server. Try again in a few minutes. HTTP status code: %d",
                 responseCode);
+        // Return server message for when the Realtime API is disabled and the server returns a 403
         if (responseCode == 403) {
-          errorMessage = parseErrorResponseMessage(httpURLConnection.getErrorStream());
+          errorMessage = parseForbiddenErrorResponseMessage(httpURLConnection.getErrorStream());
         }
         propagateErrors(
             new FirebaseRemoteConfigServerException(
