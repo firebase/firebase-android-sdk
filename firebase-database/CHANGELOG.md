@@ -3,6 +3,7 @@
 # 20.1.0
 * [unchanged] Updated to accommodate the release of the updated
 [database] Kotlin extensions library.
+* [fixed] Remove redundant gradle sourceSet to clear spurious Android Studio unbound reference errors.
 
 
 ## Kotlin
