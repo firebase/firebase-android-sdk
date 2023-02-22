@@ -47,11 +47,6 @@ android {
             java {
                 srcDir 'src/testUtil/java'
             }
-        }
-        test {
-            java {
-                srcDir 'src/testUtil/java'
-            }
             resources {
                 srcDirs "src/test/resources"
             }
