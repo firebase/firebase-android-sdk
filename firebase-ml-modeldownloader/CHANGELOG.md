@@ -1,5 +1,4 @@
 # Unreleased
-* [changed] Updated javalite, protoc, protobufjavautil to 3.21.11.
 
 # 24.1.2
 * [changed] Internal infrastructure improvements.
