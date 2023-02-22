@@ -420,7 +420,6 @@ public class ConfigRealtimeHttpClient {
       String message = "";
       while ((message = bufferedReader.readLine()) != null) {
         response.append(message);
-        Log.i(TAG, message);
       }
     } catch (IOException ex) {
       // Unable to parse error message.
