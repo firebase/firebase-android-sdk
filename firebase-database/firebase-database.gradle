@@ -71,7 +71,7 @@ android {
 
 dependencies {
     implementation 'com.google.firebase:firebase-common:20.3.0'
-    implementation 'com.google.firebase:firebase-database-connection:16.0.2'
+    implementation 'com.google.firebase:firebase-database-connection:18.0.1'
     implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation 'com.google.firebase:firebase-appcheck-interop:16.1.1'
 
