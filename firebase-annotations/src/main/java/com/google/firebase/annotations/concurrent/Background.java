@@ -24,6 +24,8 @@ import javax.inject.Qualifier;
  *
  * <p>For operations that can block for long periods of time, like network requests, use the {@link
  * Blocking} executor.
+ *
+ * @hide
  */
 @Qualifier
 @Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD})
