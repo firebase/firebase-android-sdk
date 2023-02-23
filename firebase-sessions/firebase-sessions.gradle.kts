@@ -40,7 +40,6 @@ android {
 }
 
 dependencies {
-  implementation(project(":firebase-common"))
   implementation(project(":firebase-common:ktx"))
   implementation(project(":firebase-components"))
   implementation(libs.androidx.annotation)
