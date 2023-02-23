@@ -21,7 +21,7 @@ import com.google.firebase.appcheck.AppCheckProviderFactory;
 import com.google.firebase.appcheck.debug.internal.DebugAppCheckProvider;
 
 /**
- * Implementation of an {@link AppCheckProviderFactory} that builds {@link DebugAppCheckProvider}s.
+ * Implementation of an {@link AppCheckProviderFactory} that builds {@code DebugAppCheckProvider}s.
  */
 public class DebugAppCheckProviderFactory implements AppCheckProviderFactory {
 
