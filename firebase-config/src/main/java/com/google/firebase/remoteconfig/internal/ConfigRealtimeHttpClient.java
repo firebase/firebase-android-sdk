@@ -42,7 +42,10 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigServerException;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -409,6 +412,25 @@ public class ConfigRealtimeHttpClient {
         || statusCode == HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
   }
 
+  private String parseForbiddenErrorResponseMessage(InputStream inputStream) {
+    StringBuilder response = new StringBuilder();
+
+    try {
+      BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+      String message = "";
+      while ((message = bufferedReader.readLine()) != null) {
+        response.append(message);
+      }
+    } catch (IOException ex) {
+      // Unable to parse error message.
+      if (response.length() == 0) {
+        return "Unable to connect to the server, access is forbidden. HTTP status code: 403";
+      }
+    }
+
+    return response.toString();
+  }
+
   /**
    * Open the realtime connection, begin listening for updates, and auto-fetch when an update is
    * received.
@@ -470,12 +492,18 @@ public class ConfigRealtimeHttpClient {
       if (connectionFailed || responseCode == HttpURLConnection.HTTP_OK) {
         retryHttpConnectionWhenBackoffEnds();
       } else {
+        String errorMessage =
+            String.format(
+                "Unable to connect to the server. Try again in a few minutes. HTTP status code: %d",
+                responseCode);
+        // Return server message for when the Realtime API is disabled and the server returns a 403
+        if (responseCode == 403) {
+          errorMessage = parseForbiddenErrorResponseMessage(httpURLConnection.getErrorStream());
+        }
         propagateErrors(
             new FirebaseRemoteConfigServerException(
                 responseCode,
-                String.format(
-                    "Unable to connect to the server. Try again in a few minutes. Http Status code: %d",
-                    responseCode),
+                errorMessage,
                 FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
       }
     }
