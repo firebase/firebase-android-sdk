@@ -21,8 +21,8 @@ import com.google.firebase.appcheck.AppCheckProviderFactory;
 import com.google.firebase.appcheck.safetynet.internal.SafetyNetAppCheckProvider;
 
 /**
- * Implementation of an {@link AppCheckProviderFactory} that builds {@link
- * SafetyNetAppCheckProvider}s. This is the default implementation.
+ * Implementation of an {@link AppCheckProviderFactory} that builds <br>
+ * {@link SafetyNetAppCheckProvider}s. This is the default implementation.
  *
  * @deprecated Use {@code PlayIntegrityAppCheckProviderFactory} instead.
  */

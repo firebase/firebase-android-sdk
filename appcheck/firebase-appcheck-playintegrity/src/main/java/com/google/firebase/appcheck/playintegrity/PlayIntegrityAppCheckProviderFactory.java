@@ -21,8 +21,8 @@ import com.google.firebase.appcheck.AppCheckProviderFactory;
 import com.google.firebase.appcheck.playintegrity.internal.PlayIntegrityAppCheckProvider;
 
 /**
- * Implementation of an {@link AppCheckProviderFactory} that builds {@link
- * PlayIntegrityAppCheckProvider}s. This is the default implementation.
+ * Implementation of an {@link AppCheckProviderFactory} that builds <br>
+ * {@link PlayIntegrityAppCheckProvider}s. This is the default implementation.
  */
 public class PlayIntegrityAppCheckProviderFactory implements AppCheckProviderFactory {
 
