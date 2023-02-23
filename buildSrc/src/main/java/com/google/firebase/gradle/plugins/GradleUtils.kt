@@ -19,6 +19,7 @@ import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.provider.Provider
+import org.gradle.kotlin.dsl.apply
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkQueue
@@ -92,3 +93,12 @@ inline fun <reified T> attributeFrom(name: String) = Attribute.of(name, T::class
  */
 inline fun <reified T> AttributeContainer.attribute(name: String, value: T) =
   attribute(attributeFrom(name), value)
+
+/**
+ * Syntax sugar for:
+ * ```kotlin
+ * pluginManager.apply(T::class)
+ * ```
+ */
+inline fun <reified T : Any> org.gradle.api.plugins.PluginManager.`apply`(): Unit =
+  `apply`(T::class)

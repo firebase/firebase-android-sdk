@@ -1,0 +1,9 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="FeedbackTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorAccent">#000000</item>
+    </style>
+    <style name="FeedbackTheme.Button.Stroked" parent="Widget.AppCompat.Button.Colored">
+        <item name="android:background">@drawable/btn_stroked_background</item>
+        <item name="android:textColor">#1a73e8</item>
+    </style>
+</resources>

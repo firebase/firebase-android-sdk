@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2022 Google LLC -->
+<!-- -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License"); -->
+<!-- you may not use this file except in compliance with the License. -->
+<!-- You may obtain a copy of the License at -->
+<!-- -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0 -->
+<!-- -->
+<!-- Unless required by applicable law or agreed to in writing, software -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS, -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. -->
+<!-- See the License for the specific language governing permissions and -->
+<!-- limitations under the License. -->
+
+<resources>
+  <string name="signin_dialog_title" translation_description="Title of the dialog encouraging the user to enable Firebase App Distribution features">เปิดใช้ฟีเจอร์การทดสอบ</string>
+  <string name="singin_dialog_message" translation_description="Content of the dialog encouraging the user to enable Firebase App Distribution features">เปิดใช้ฟีเจอร์การทดสอบ เช่น การแจ้งเตือนเกี่ยวกับเวอร์ชันใหม่และความคิดเห็นในแอป</string>
+  <string name="singin_yes_button" translation_description="Text on button to enable Firebase App Distribution features">เปิดใช้</string>
+  <string name="singin_no_button" translation_description="Text on button to decline Firebase App Distribution features">ไว้ทีหลัง</string>
+  <string name="update_dialog_title" translation_description="Title of the dialog explaining to the user that a new version of the application is available">มีเวอร์ชันใหม่พร้อมใช้งาน</string>
+  <string name="update_version_available" translation_description="Version string (and code) of the available update">เวอร์ชัน %1$s (%2$d) พร้อมใช้งานแล้ว</string>
+  <string name="update_release_notes" translation_description="Text prefixing release notes">บันทึกประจำรุ่น:</string>
+  <string name="update_yes_button" translation_description="Text on button to start update">อัปเดต</string>
+  <string name="update_no_button" translation_description="Text on button to cancel update">ยกเลิก</string>
+  <string name="downloading_app_update" translation_description="Title of the notification showing during download of update">กำลังดาวน์โหลดการอัปเดตในแอป…</string>
+  <string name="download_completed" translation_description="Title of notification when download of update has completed">ดาวน์โหลดเรียบร้อย</string>
+  <string name="download_failed" translation_description="Title of notification when download of update has failed">ดาวน์โหลดไม่สำเร็จ</string>
+  <string name="install_failed" translation_description="Title of notification when installation of update has failed">ติดตั้งไม่สำเร็จ</string>
+  <string name="notifications_group_name" translation_description="Title of the notification channel group for the SDK">Firebase App Distribution</string>
+  <string name="app_update_notification_channel_name" translation_description="Name of the notification channel for in-app updates">การอัปเดตแอป</string>
+  <string name="app_update_notification_channel_description" translation_description="Description of the notification channel for in-app updates">แสดงความคืบหน้าของการอัปเดตในแอป</string>
+  <string name="feedback_launch_failed" translation_description="Toast explaining that launching the feedback functionality failed">เปิดใช้งานความคิดเห็นไม่สำเร็จ</string>
+  <string name="feedback_unidentified_release" translation_description="Toast explaining feedback can't be provided, because release can't be found">ไม่พบรุ่น แอปนี้อาจไม่ได้รับการติดตั้งโดย App Distribution หรือคุณอาจไม่มีสิทธิ์เข้าถึงแล้ว</string>
+  <string name="feedback_no_release" translation_description="Toast explaining that feedback would have been sent, but was not, since development mode was active">ระบบอาจส่งความคิดเห็นแล้ว แต่อาจไม่ได้ใช้โหมดการพัฒนาซอฟต์แวร์</string>
+  <string name="feedback_notification_channel_name" translation_description="Name of the notification channel for in-app feedback">ความคิดเห็น</string>
+  <string name="feedback_notification_channel_description" translation_description="Description of the notification channel for in-app feedback">แสดงการแจ้งเตือนเพื่อป้อนความคิดเห็นเกี่ยวกับแอป</string>
+  <string name="feedback_notification_title" translation_description="Title of notification encouraging testers to enter feedback">เราอยากฟังความคิดเห็นจากคุณ</string>
+  <string name="feedback_notification_text" translation_description="Text of notification encouraging testers to enter feedback for the app">แตะเพื่อป้อนความคิดเห็นสำหรับ %1$s</string>
+  <string name="unknown_sources_dialog_title" translation_description="Title of dialog describing that installation from unknown sources needs to be enabled">การติดตั้งจากแหล่งที่มาที่ไม่รู้จัก</string>
+  <string name="unknown_sources_dialog_description" translation_description="Text of dialog describing why installation from unknown sources needs to be enabled">หากต้องการติดตั้งการอัปเดต ให้เปิดใช้การติดตั้งจากแหล่งที่มาที่ไม่รู้จัก</string>
+  <string name="unknown_sources_yes_button" translation_description="Label on button launching settings to enable installation from unknown sources">การตั้งค่า</string>
+  <string name="back_button_description" translation_description="Description for image button (back) which aborts feedback">กลับ</string>
+  <string name="send_feedback" translation_description="Text next to send button which sends feedback">ส่งความคิดเห็น</string>
+  <string name="send_button_description" translation_description="Description of image button (send) which sends feedback">ส่ง</string>
+  <string name="feedback_text_hint" translation_description="Default text hint displayed in the text box where user should type their feedback">หากคุณมีความคิดเห็น โปรดแจ้งให้เราทราบว่าควรปรับปรุงแอปนี้ให้ดีขึ้นอย่างไร</string>
+  <string name="screenshot" translation_description="Text displayed next to the checkbox which can be toggled to include/exclude a screenshot with the feedback">ภาพหน้าจอ</string>
+  <string name="no_screenshot" translation_description="Text displayed when there is no screenshot available to be included with the feedback">ภาพหน้าจอ (ไม่มี)</string>
+  <string name="screenshot_image_description" translation_description="Description for the screenshot image">ภาพหน้าจอ</string>
+</resources>

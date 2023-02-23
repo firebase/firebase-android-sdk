@@ -1,7 +1,22 @@
 # Unreleased
-* [changed] Migrate firebase-inappmessaging SDK to use common executor pool.
-* [changed] Refactoring to reduce load on app's Main thread.
-* [feature] Added new api for removing dismiss listener.
+* [fixed] Fixed nullpointer crash #4214
+* [changed] Updated grpc to 1.52.1 and javalite, protoc, protobufjavautil to 3.21.11.
+
+# 20.3.0
+* [changed] Migrated [inappmessaging] to use standard Firebase executors.
+
+* [changed] Moved Task continuations off the main thread.
+
+* [feature] Added a new API for
+  [removing a dismiss listener](/docs/reference/android/com/google/firebase/inappmessaging/FirebaseInAppMessaging#removeDismissListener(com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener)).
+  (GitHub
+  [#4492](//github.com/firebase/firebase-android-sdk/issues/4492){: .external})
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.2.0
 * [fixed] Fixed a bug that prevented marking more than one message as

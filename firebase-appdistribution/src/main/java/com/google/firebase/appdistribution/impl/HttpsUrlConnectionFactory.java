@@ -16,9 +16,14 @@ package com.google.firebase.appdistribution.impl;
 
 import java.io.IOException;
 import java.net.URL;
+import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 
 class HttpsUrlConnectionFactory {
+
+  @Inject
+  HttpsUrlConnectionFactory() {}
+
   HttpsURLConnection openConnection(String url) throws IOException {
     return (HttpsURLConnection) new URL(url).openConnection();
   }
