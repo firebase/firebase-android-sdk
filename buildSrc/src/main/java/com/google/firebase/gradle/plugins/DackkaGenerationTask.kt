@@ -135,6 +135,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
     val linksMap =
       mapOf(
         "android" to "https://developer.android.com/reference/kotlin/",
+        "androidx" to "https://developer.android.com/reference/kotlin/",
         "google" to "https://developers.google.com/android/reference/",
         "firebase" to "https://firebase.google.com/docs/reference/kotlin/",
         "coroutines" to "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/",
