@@ -211,7 +211,7 @@ public class FirebaseDatabase {
               + url
               + ") passed to getReference().  "
               + "URL was expected to match configured Database URL: "
-              + getReference().toString());
+              + getReference());
     }
 
     return new DatabaseReference(this.repo, parsedUrl.path);
