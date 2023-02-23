@@ -99,7 +99,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
     implementation 'com.google.firebase:protolite-well-known-types:18.0.0'
     implementation "com.google.protobuf:protobuf-javalite:$javaliteVersion"
-    runtimeOnly project(':firebase-installations')
+    runtimeOnly 'com.google.firebase:firebase-installations:17.1.2'
     implementation 'com.google.android.datatransport:transport-api:3.0.0'
     runtimeOnly project(':firebase-datatransport')
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'

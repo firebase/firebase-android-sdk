@@ -123,7 +123,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-annotations:16.2.0'
     implementation 'com.google.firebase:firebase-common:20.3.0'
     implementation 'com.google.firebase:protolite-well-known-types:18.0.0'
-    implementation 'com.google.firebase:firebase-database-connection:18.0.1'
+    implementation 'com.google.firebase:firebase-database-collection:18.0.1'
     implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation 'com.google.firebase:firebase-appcheck-interop:16.1.1'
 

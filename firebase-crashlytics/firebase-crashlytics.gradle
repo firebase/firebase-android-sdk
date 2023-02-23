@@ -84,7 +84,7 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:3.4.3'
 
 
-    androidTestImplementation project(':encoders:firebase-encoders-json')
+    androidTestImplementation 'com.google.firebase:firebase-encoders-json:18.0.0'
     androidTestImplementation 'androidx.test:runner:1.4.0'
     androidTestImplementation 'androidx.test:core:1.4.0'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
