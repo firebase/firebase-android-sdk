@@ -80,8 +80,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * returned by {@link FirebaseApp#getInstance(String)}, passing it the same name used with <code>
  * initializeApp</code>. This object must be passed to the static accessor of the feature that
  * provides the resource. For example, {@link
- * com.google.firebase.storage.FirebaseStorage#getInstance(FirebaseApp)} is used to access the
- * storage bucket provided by the additional project, whereas {@link
+ * com.google.firebase.storage.FirebaseStorage#getInstance(FirebaseApp)getInstance(FirebaseApp)} is
+ * used to access the storage bucket provided by the additional project, whereas {@link
  * com.google.firebase.storage.FirebaseStorage#getInstance()} is used to access the default project.
  *
  * <p>Any <code>FirebaseApp</code> initialization must occur only in the main process of the app.
@@ -219,9 +219,8 @@ public class FirebaseApp {
    * Initializes the default FirebaseApp instance using string resource values - populated from
    * google-services.json. It also initializes Firebase Analytics for the current process.
    *
-   * <p>This method is called at app startup time by {@link
-   * com.google.firebase.provider.FirebaseInitProvider}. Call this method before any Firebase APIs
-   * in components outside the main process.
+   * <p>This method is called at app startup time by {@link FirebaseInitProvider}. Call this method
+   * before any Firebase APIs in components outside the main process.
    *
    * <p>The {@link FirebaseOptions} values used by the default app instance are read from string
    * resources.
