@@ -39,6 +39,7 @@ import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -1032,10 +1033,11 @@ public class QueryTest {
   }
 
   @Test
-  public void resumingQueryShouldRemoveDeletedDocumentsIndicatedByExistenceFilter() {
-    Map<String, Map<String, Object>> testDocs = new LinkedHashMap<>();
+  public void resumingQueryShouldRemoveDeletedDocumentsIndicatedByExistenceFilter()
+      throws InterruptedException {
+    Map<String, Map<String, Object>> testData = new HashMap<>();
     for (int i = 1; i <= 100; i++) {
-      testDocs.put("doc" + i, map("key", i));
+      testData.put("doc" + i, map("key", i));
     }
 
     // Setup firestore with disabled persistence and populate a collection with testDocs.
@@ -1043,17 +1045,19 @@ public class QueryTest {
     firestore.setFirestoreSettings(
         new FirebaseFirestoreSettings.Builder().setPersistenceEnabled(false).build());
     CollectionReference collection = firestore.collection(autoId());
-    writeAllDocs(collection, testDocs);
+    writeAllDocs(collection, testData);
 
+    // Populate the cache and save the resume token.
     QuerySnapshot snapshot1 = waitFor(collection.get());
     assertEquals(snapshot1.size(), 100);
+    List<DocumentSnapshot> documents = snapshot1.getDocuments();
 
     // Delete 50 docs in transaction so that it doesn't affect local cache.
     waitFor(
         firestore.runTransaction(
             transaction -> {
               for (int i = 1; i <= 50; i++) {
-                DocumentReference docRef = collection.document("doc" + i);
+                DocumentReference docRef = documents.get(i).getReference();
                 transaction.delete(docRef);
               }
               return null;
@@ -1061,11 +1065,7 @@ public class QueryTest {
 
     // Wait 10 seconds, during which Watch will stop tracking the query
     // and will send an existence filter rather than "delete" events.
-    try {
-      Thread.sleep(10000);
-    } catch (InterruptedException ex) {
-      Thread.currentThread().interrupt();
-    }
+    Thread.sleep(10000);
 
     QuerySnapshot snapshot2 = waitFor(collection.get());
     assertEquals(snapshot2.size(), 50);
