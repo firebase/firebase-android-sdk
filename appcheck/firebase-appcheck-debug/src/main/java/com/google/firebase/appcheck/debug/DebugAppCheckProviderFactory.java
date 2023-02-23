@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
+import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.debug.internal.DebugAppCheckProvider;
 
 /**
@@ -30,10 +31,10 @@ public class DebugAppCheckProviderFactory implements AppCheckProviderFactory {
   private DebugAppCheckProviderFactory() {}
 
   /**
-   * Gets an instance of this class for installation into a {@link
-   * com.google.firebase.appcheck.FirebaseAppCheck} instance. If no debug secret is found in {@link
-   * android.content.SharedPreferences}, a new debug secret will be generated and printed to the
-   * logcat. The debug secret should then be added to the allow list in the Firebase Console.
+   * Gets an instance of this class for installation into a {@link FirebaseAppCheck} instance. If no
+   * debug secret is found in {@link android.content.SharedPreferences}, a new debug secret will be
+   * generated and printed to the logcat. The debug secret should then be added to the allow list in
+   * the Firebase Console.
    */
   @NonNull
   public static DebugAppCheckProviderFactory getInstance() {

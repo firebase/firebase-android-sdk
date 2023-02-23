@@ -66,9 +66,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * The entry point of Firebase SDKs. It holds common configuration and state for Firebase APIs. Most
  * applications don't need to directly interact with FirebaseApp.
  *
- * <p>For a vast majority of apps, {@link com.google.firebase.provider.FirebaseInitProvider} will
- * handle the initialization of Firebase for the default project that it's configured to work with,
- * via the data contained in the app's <code>google-services.json</code> file. This <code>
+ * <p>For a vast majority of apps, {@link FirebaseInitProvider} will handle the initialization of
+ * Firebase for the default project that it's configured to work with, via the data contained in the
+ * app's <code>google-services.json</code> file. This <code>
  * ContentProvider</code> is merged into the app's manifest by default when building with Gradle,
  * and it runs automatically at app launch. <strong>No additional lines of code are needed in this
  * case.</strong>
@@ -255,8 +255,8 @@ public class FirebaseApp {
    * FirebaseOptions, String)}, but it uses {@link #DEFAULT_APP_NAME} as name.
    *
    * <p>It's only required to call this to initialize Firebase if it's <strong>not possible</strong>
-   * to do so automatically in {@link com.google.firebase.provider.FirebaseInitProvider}. Automatic
-   * initialization that way is the expected situation.
+   * to do so automatically in {@link FirebaseInitProvider}. Automatic initialization that way is
+   * the expected situation.
    */
   @NonNull
   public static FirebaseApp initializeApp(

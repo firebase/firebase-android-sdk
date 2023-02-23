@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
+import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.safetynet.internal.SafetyNetAppCheckProvider;
 
 /**
@@ -35,8 +36,7 @@ public class SafetyNetAppCheckProviderFactory implements AppCheckProviderFactory
   private SafetyNetAppCheckProviderFactory() {}
 
   /**
-   * Gets an instance of this class for installation into a {@link
-   * com.google.firebase.appcheck.FirebaseAppCheck} instance.
+   * Gets an instance of this class for installation into a {@link FirebaseAppCheck} instance.
    *
    * @deprecated Use {@code PlayIntegrityAppCheckProviderFactory#getInstance} instead.
    */
