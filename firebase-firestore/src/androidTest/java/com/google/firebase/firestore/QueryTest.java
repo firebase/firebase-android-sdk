@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToValues;
@@ -21,16 +22,15 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCol
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.writeAllDocs;
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
-import static com.google.firebase.firestore.util.Util.autoId;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -1035,17 +1035,19 @@ public class QueryTest {
   @Test
   public void resumingQueryShouldRemoveDeletedDocumentsIndicatedByExistenceFilter()
       throws InterruptedException {
+    // TODO(Mila):Remove this condition once the bug is resolved.
+    assumeFalse(
+        "Skip this test when running against the Firestore emulator as there is a bug related to "
+            + "sending existence filter in response: b/270731363.",
+        isRunningAgainstEmulator());
+
     Map<String, Map<String, Object>> testData = new HashMap<>();
     for (int i = 1; i <= 100; i++) {
       testData.put("doc" + i, map("key", i));
     }
 
-    // Setup firestore with disabled persistence and populate a collection with testDocs.
-    FirebaseFirestore firestore = testFirestore();
-    firestore.setFirestoreSettings(
-        new FirebaseFirestoreSettings.Builder().setPersistenceEnabled(false).build());
-    CollectionReference collection = firestore.collection(autoId());
-    writeAllDocs(collection, testData);
+    CollectionReference collection = testCollectionWithDocs(testData);
+    FirebaseFirestore firestore = collection.getFirestore();
 
     // Populate the cache and save the resume token.
     QuerySnapshot snapshot1 = waitFor(collection.get());
