@@ -1045,9 +1045,7 @@ public class QueryTest {
     for (int i = 1; i <= 100; i++) {
       testData.put("doc" + i, map("key", i));
     }
-
     CollectionReference collection = testCollectionWithDocs(testData);
-    FirebaseFirestore firestore = collection.getFirestore();
 
     // Populate the cache and save the resume token.
     QuerySnapshot snapshot1 = waitFor(collection.get());
@@ -1056,14 +1054,16 @@ public class QueryTest {
 
     // Delete 50 docs in transaction so that it doesn't affect local cache.
     waitFor(
-        firestore.runTransaction(
-            transaction -> {
-              for (int i = 1; i <= 50; i++) {
-                DocumentReference docRef = documents.get(i).getReference();
-                transaction.delete(docRef);
-              }
-              return null;
-            }));
+        collection
+            .getFirestore()
+            .runTransaction(
+                transaction -> {
+                  for (int i = 1; i <= 50; i++) {
+                    DocumentReference docRef = documents.get(i).getReference();
+                    transaction.delete(docRef);
+                  }
+                  return null;
+                }));
 
     // Wait 10 seconds, during which Watch will stop tracking the query
     // and will send an existence filter rather than "delete" events.
