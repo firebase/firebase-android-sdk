@@ -28,7 +28,7 @@ jobs:
         id: changed-modules
         run: |
           git diff --name-only HEAD~1 | xargs printf -- '--changed-git-paths %s\n' | xargs ./gradlew writeChangedProjects --output-file-path=modules.json --only-firebase-sdks
-          echo "run=$(cat modules.json | sed "s/[]\"[]//g" | sed "s/,/\n/g" | xargs printf -- "%s:kotlinDoc ")" >> $GITHUB_OUTPUT
+          echo "run=$(cat modules.json | sed "s/[]\"[]//g" | sed "s/,/\n/g" | xargs printf -- "%s:kotlindoc ")" >> $GITHUB_OUTPUT
 
       - name: Build
         # Certain SDKs won't export docs, make a blank folder to diff if that's the case
