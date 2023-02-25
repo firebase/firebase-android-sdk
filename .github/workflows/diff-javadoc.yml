@@ -9,9 +9,10 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - name: Make Dir
+      - name: Make diff directory
         run: mkdir ~/diff
 
+      - name: Checkout PR branch
       - uses: actions/checkout@v3
         with:
           fetch-depth: 2
@@ -24,23 +25,24 @@ jobs:
           distribution: temurin
           cache: gradle
 
-      - name: Build
+      - name: Generate docs for PR branch
         run: ./gradlew kotlindoc
 
-      - name: Move original docs
+      - name: Move branch docs to diff directory
         run: mv build ~/diff/modified
 
+      - name: Checkout master
       - uses: actions/checkout@v3
         with:
           ref: ${{ github.base_ref }}
 
-      - name: Build
+      - name: Generate docs for Master
         run: ./gradlew kotlindoc
 
-      - name: Move modified docs
+      - name: Move master docs to diff directory
         run: mv build ~/diff/original
 
-      - name: Diff docs
+      - name: Get diff between Master and Branch docs
         run: >
           `# Recursively diff directories, including new files, git style, with 3 lines of context`
           diff -wEburN ~/diff/original ~/diff/modified
