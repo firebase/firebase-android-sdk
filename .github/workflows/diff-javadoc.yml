@@ -24,15 +24,8 @@ jobs:
           distribution: temurin
           cache: gradle
 
-      - name: Changed Modules
-        id: changed-modules
-        run: |
-          git diff --name-only HEAD~1 | xargs printf -- '--changed-git-paths %s\n' | xargs ./gradlew writeChangedProjects --output-file-path=modules.json --only-firebase-sdks
-          echo "run=$(cat modules.json | sed "s/[]\"[]//g" | sed "s/,/\n/g" | xargs printf -- "%s:kotlindoc ")" >> $GITHUB_OUTPUT
-
       - name: Build
-        # Certain SDKs won't export docs, make a blank folder to diff if that's the case
-        run: mkdir build && ./gradlew ${{ steps.changed-modules.outputs.run }}
+        run: ./gradlew kotlindoc
 
       - name: Move original docs
         run: mv build ~/diff/modified
@@ -42,8 +35,7 @@ jobs:
           ref: ${{ github.base_ref }}
 
       - name: Build
-        # Certain SDKs won't export docs, make a blank folder to diff if that's the case
-        run: mkdir build && ./gradlew ${{ steps.changed-modules.outputs.run }}
+        run: ./gradlew kotlindoc
 
       - name: Move modified docs
         run: mv build ~/diff/original
