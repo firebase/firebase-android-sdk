@@ -1035,7 +1035,6 @@ public class QueryTest {
   @Test
   public void resumingQueryShouldRemoveDeletedDocumentsIndicatedByExistenceFilter()
       throws InterruptedException {
-    // TODO(Mila):Remove this condition once the bug is resolved.
     assumeFalse(
         "Skip this test when running against the Firestore emulator as there is a bug related to "
             + "sending existence filter in response: b/270731363.",
