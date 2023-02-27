@@ -18,7 +18,6 @@ import android.util.Base64;
 import android.util.JsonReader;
 import androidx.annotation.NonNull;
 
-import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.model.AutoCrashlyticsReportEncoder;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch;
@@ -88,49 +87,43 @@ public class CrashlyticsReportJsonTransform {
   private static CrashlyticsReport parseReport(@NonNull JsonReader jsonReader) throws IOException {
     final CrashlyticsReport.Builder builder = CrashlyticsReport.builder();
 
-    try {
-      jsonReader.beginObject();
-      while (jsonReader.hasNext()) {
-        String name = jsonReader.nextName();
-        Logger.getLogger().i("(MTE); name = " + name);
-        switch (name) {
-          case "sdkVersion":
-            builder.setSdkVersion(jsonReader.nextString());
-            break;
-          case "gmpAppId":
-            builder.setGmpAppId(jsonReader.nextString());
-            break;
-          case "platform":
-            builder.setPlatform(jsonReader.nextInt());
-            break;
-          case "installationUuid":
-            builder.setInstallationUuid(jsonReader.nextString());
-            break;
-          case "buildVersion":
-            builder.setBuildVersion(jsonReader.nextString());
-            break;
-          case "displayVersion":
-            builder.setDisplayVersion(jsonReader.nextString());
-            break;
-          case "session":
-            builder.setSession(parseSession(jsonReader));
-            break;
-          case "ndkPayload":
-            builder.setNdkPayload(parseNdkPayload(jsonReader));
-            break;
-          case "appExitInfo":
-            builder.setAppExitInfo(parseAppExitInfo(jsonReader));
-            break;
-          default:
-            jsonReader.skipValue();
-            break;
-        }
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "sdkVersion":
+          builder.setSdkVersion(jsonReader.nextString());
+          break;
+        case "gmpAppId":
+          builder.setGmpAppId(jsonReader.nextString());
+          break;
+        case "platform":
+          builder.setPlatform(jsonReader.nextInt());
+          break;
+        case "installationUuid":
+          builder.setInstallationUuid(jsonReader.nextString());
+          break;
+        case "buildVersion":
+          builder.setBuildVersion(jsonReader.nextString());
+          break;
+        case "displayVersion":
+          builder.setDisplayVersion(jsonReader.nextString());
+          break;
+        case "session":
+          builder.setSession(parseSession(jsonReader));
+          break;
+        case "ndkPayload":
+          builder.setNdkPayload(parseNdkPayload(jsonReader));
+          break;
+        case "appExitInfo":
+          builder.setAppExitInfo(parseAppExitInfo(jsonReader));
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
       }
-      jsonReader.endObject();
-    } catch (IllegalStateException e) {
-      Logger.getLogger().w("(MTE; parseReport()): " + e);
-      throw e;
     }
+    jsonReader.endObject();
     return builder.build();
   }
 
@@ -218,50 +211,44 @@ public class CrashlyticsReportJsonTransform {
     final CrashlyticsReport.ApplicationExitInfo.Builder builder =
         CrashlyticsReport.ApplicationExitInfo.builder();
 
-    try {
-      jsonReader.beginObject();
-      while (jsonReader.hasNext()) {
-        String name = jsonReader.nextName();
-        switch (name) {
-          case "pid":
-            builder.setPid(jsonReader.nextInt());
-            break;
-          case "processName":
-            builder.setProcessName(jsonReader.nextString());
-            break;
-          case "reasonCode":
-            builder.setReasonCode(jsonReader.nextInt());
-            break;
-          case "importance":
-            builder.setImportance(jsonReader.nextInt());
-            break;
-          case "pss":
-            builder.setPss(jsonReader.nextLong());
-            break;
-          case "rss":
-            builder.setRss(jsonReader.nextLong());
-            break;
-          case "timestamp":
-            builder.setTimestamp(jsonReader.nextLong());
-            break;
-          case "traceFile":
-            builder.setTraceFile(jsonReader.nextString());
-            break;
-          case "buildIdMappingForArch":
-            builder.setBuildIdMappingForArch(
-                    parseArray(jsonReader, CrashlyticsReportJsonTransform::parseBuildIdMappingForArch));
-            break;
-          default:
-            jsonReader.skipValue();
-            break;
-        }
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "pid":
+          builder.setPid(jsonReader.nextInt());
+          break;
+        case "processName":
+          builder.setProcessName(jsonReader.nextString());
+          break;
+        case "reasonCode":
+          builder.setReasonCode(jsonReader.nextInt());
+          break;
+        case "importance":
+          builder.setImportance(jsonReader.nextInt());
+          break;
+        case "pss":
+          builder.setPss(jsonReader.nextLong());
+          break;
+        case "rss":
+          builder.setRss(jsonReader.nextLong());
+          break;
+        case "timestamp":
+          builder.setTimestamp(jsonReader.nextLong());
+          break;
+        case "traceFile":
+          builder.setTraceFile(jsonReader.nextString());
+          break;
+        case "buildIdMappingForArch":
+          builder.setBuildIdMappingForArch(
+                  parseArray(jsonReader, CrashlyticsReportJsonTransform::parseBuildIdMappingForArch));
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
       }
-      jsonReader.endObject();
-    } catch (IllegalStateException e) {
-      Logger.getLogger().w("(MTE; parseAppExitInfo()) " + e);
-      throw e;
     }
-    Logger.getLogger().i("(MTE) parsed applicationExitInfo correctly");
+    jsonReader.endObject();
     return builder.build();
   }
 
