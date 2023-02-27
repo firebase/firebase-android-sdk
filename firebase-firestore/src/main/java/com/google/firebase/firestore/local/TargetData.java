@@ -94,7 +94,7 @@ public final class TargetData {
         snapshotVersion,
         lastLimboFreeSnapshotVersion,
         resumeToken,
-        /* expectedCount= */ null);
+        expectedCount);
   }
 
   /** Creates a new target data instance with an updated resume token and snapshot version. */
@@ -107,7 +107,7 @@ public final class TargetData {
         snapshotVersion,
         lastLimboFreeSnapshotVersion,
         resumeToken,
-        expectedCount);
+        /* expectedCount= */ null);
   }
 
   /** Creates a new target data instance with an updated expected count. */
