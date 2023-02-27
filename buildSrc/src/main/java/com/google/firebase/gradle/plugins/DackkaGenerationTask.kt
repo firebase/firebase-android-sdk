@@ -20,7 +20,6 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
-import org.gradle.api.provider.SetProperty
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Input
@@ -45,6 +44,9 @@ import org.json.JSONObject
  * @property dependencies a list of all dependent jars (the classpath)
  * @property sources a list of source roots
  * @property suppressedFiles a list of files to exclude from documentation
+ * @property packageListFiles a list of files that define external package-lists for links
+ * @property generateJavadocs should we generate the Javadoc variant, or just Kotlin?
+ * @property clientName the name of the module
  * @property outputDirectory where to store the generated files
  */
 @CacheableTask
@@ -66,6 +68,8 @@ abstract class GenerateDocumentationTaskExtension : DefaultTask() {
   @get:InputFiles
   @get:PathSensitive(PathSensitivity.RELATIVE)
   abstract val packageListFiles: ListProperty<File>
+
+  @get:Input abstract val generateJavadocs: Property<Boolean>
 
   @get:Input abstract val clientName: Property<String>
 
@@ -98,24 +102,39 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
   @TaskAction
   fun build() {
     val configFile = saveToJsonFile(constructArguments())
-    launchDackka(clientName, configFile, workerExecutor)
+    launchDackka(configFile, workerExecutor)
   }
 
   private fun constructArguments(): JSONObject {
+    val annotationsNotToDisplay =
+      listOf(
+        "androidx.compose.runtime.Stable",
+        "androidx.compose.runtime.Immutable",
+        "androidx.compose.runtime.ReadOnlyComposable",
+        "androidx.annotation.CheckResult",
+        "androidx.annotation.OptIn",
+        "androidx.annotation.StringDef",
+        "kotlin.OptIn",
+        "kotlin.ParameterName",
+        "kotlin.js.JsName",
+        "java.lang.Override"
+      )
+    val annotationsNotToDisplayKotlin = listOf("kotlin.ExtensionFunctionType")
+
     val jsonMap =
       mapOf(
         "moduleName" to "",
-        "outputDir" to outputDirectory.get().path,
+        "outputDir" to outputDirectory.get().absolutePath,
         "globalLinks" to "",
         "sourceSets" to
           listOf(
             mutableMapOf(
               "sourceSetID" to mapOf("scopeId" to "androidx", "sourceSetName" to "main"),
-              "sourceRoots" to sources.get().map { it.path },
-              "classpath" to dependencies.get().map { it.path },
+              "sourceRoots" to sources.get().map { it.absolutePath },
+              "classpath" to dependencies.get().map { it.absolutePath },
               "documentedVisibilities" to listOf("PUBLIC", "PROTECTED"),
               "skipEmptyPackages" to "true",
-              "suppressedFiles" to suppressedFiles.get().map { it.path },
+              "suppressedFiles" to suppressedFiles.get().map { it.absolutePath },
               "externalDocumentationLinks" to
                 createExternalLinks(packageListFiles).map {
                   mapOf("url" to it.externalLink, "packageListUrl" to it.packageList.toURI())
@@ -123,7 +142,30 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
             )
           ),
         "offlineMode" to "true",
-        "noJdkLink" to "true"
+        "noJdkLink" to "true",
+        "pluginsConfiguration" to
+          listOf(
+            mapOf(
+              "fqPluginName" to "com.google.devsite.DevsitePlugin",
+              "serializationFormat" to "JSON",
+              "values" to
+                JSONObject(
+                    mapOf(
+                      "docRootPath" to "/docs/reference/",
+                      "javaDocsPath" to "android".takeIf { generateJavadocs.get() },
+                      "kotlinDocsPath" to "kotlin",
+                      "projectPath" to "client/${clientName.get()}",
+                      "includedHeadTagsPathJava" to
+                        "docs/reference/android/_reference-head-tags.html",
+                      "includedHeadTagsPathKotlin" to
+                        "docs/reference/kotlin/_reference-head-tags.html",
+                      "annotationsNotToDisplay" to annotationsNotToDisplay,
+                      "annotationsNotToDisplayKotlin" to annotationsNotToDisplayKotlin
+                    )
+                  )
+                  .toString()
+            )
+          )
       )
 
     return JSONObject(jsonMap)
@@ -135,40 +177,33 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
     val linksMap =
       mapOf(
         "android" to "https://developer.android.com/reference/kotlin/",
+        "androidx" to "https://developer.android.com/reference/kotlin/",
         "google" to "https://developers.google.com/android/reference/",
         "firebase" to "https://firebase.google.com/docs/reference/kotlin/",
         "coroutines" to "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/",
         "kotlin" to "https://kotlinlang.org/api/latest/jvm/stdlib/"
       )
 
-    return packageLists.get().map {
-      val externalLink =
+    return packageLists
+      .get()
+      .associateWith {
         linksMap[it.parentFile.nameWithoutExtension]
           ?: throw RuntimeException("Unexpected package-list found: ${it.name}")
-      ExternalDocumentationLink(it, externalLink)
+      }
+      .map { ExternalDocumentationLink(it.key, it.value) }
+  }
+
+  private fun saveToJsonFile(jsonObject: JSONObject) =
+    File.createTempFile("dackkaArgs", ".json").apply {
+      deleteOnExit()
+      writeText(jsonObject.toString(2))
     }
-  }
 
-  private fun saveToJsonFile(jsonObject: JSONObject): File {
-    val outputFile = File.createTempFile("dackkaArgs", ".json")
-
-    outputFile.deleteOnExit()
-    outputFile.writeText(jsonObject.toString(2))
-
-    return outputFile
-  }
-
-  private fun launchDackka(
-    clientName: Property<String>,
-    argsFile: File,
-    workerExecutor: WorkerExecutor
-  ) {
+  private fun launchDackka(argsFile: File, workerExecutor: WorkerExecutor) {
     val workQueue = workerExecutor.noIsolation()
-
-    workQueue.submit(DackkaWorkAction::class.java) {
+    workQueue.submit<DackkaWorkAction, DackkaParams>() {
       args.set(listOf(argsFile.path, "-loggingLevel", "WARN"))
-      classpath.set(setOf(dackkaJarFile.get()))
-      projectName.set(clientName)
+      dackkaFile.set(dackkaJarFile.get())
     }
   }
 }
@@ -177,13 +212,11 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
  * Parameters needs to launch the Dackka fat jar on the command line.
  *
  * @property args a list of arguments to pass to Dackka- should include the json arguments file
- * @property classpath the classpath to use during execution of the jar file
- * @property projectName name of the calling project, used for the devsite tenant (output directory)
+ * @property dackkaFile a [File] of the Dackka fat jar
  */
 interface DackkaParams : WorkParameters {
   val args: ListProperty<String>
-  val classpath: SetProperty<File>
-  val projectName: Property<String>
+  val dackkaFile: Property<File>
 }
 
 /**
@@ -197,9 +230,7 @@ abstract class DackkaWorkAction @Inject constructor(private val execOperations: 
     execOperations.javaexec {
       mainClass.set("org.jetbrains.dokka.MainKt")
       args = parameters.args.get()
-      classpath(parameters.classpath.get())
-
-      environment("DEVSITE_TENANT", "client/${parameters.projectName.get()}")
+      classpath(parameters.dackkaFile.get())
     }
   }
 }

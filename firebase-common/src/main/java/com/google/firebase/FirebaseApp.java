@@ -66,9 +66,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * The entry point of Firebase SDKs. It holds common configuration and state for Firebase APIs. Most
  * applications don't need to directly interact with FirebaseApp.
  *
- * <p>For a vast majority of apps, {@link com.google.firebase.provider.FirebaseInitProvider} will
- * handle the initialization of Firebase for the default project that it's configured to work with,
- * via the data contained in the app's <code>google-services.json</code> file. This <code>
+ * <p>For a vast majority of apps, {@link FirebaseInitProvider} will handle the initialization of
+ * Firebase for the default project that it's configured to work with, via the data contained in the
+ * app's <code>google-services.json</code> file. This <code>
  * ContentProvider</code> is merged into the app's manifest by default when building with Gradle,
  * and it runs automatically at app launch. <strong>No additional lines of code are needed in this
  * case.</strong>
@@ -80,8 +80,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * returned by {@link FirebaseApp#getInstance(String)}, passing it the same name used with <code>
  * initializeApp</code>. This object must be passed to the static accessor of the feature that
  * provides the resource. For example, {@link
- * com.google.firebase.storage.FirebaseStorage#getInstance(FirebaseApp)} is used to access the
- * storage bucket provided by the additional project, whereas {@link
+ * com.google.firebase.storage.FirebaseStorage#getInstance(FirebaseApp)getInstance(FirebaseApp)} is
+ * used to access the storage bucket provided by the additional project, whereas {@link
  * com.google.firebase.storage.FirebaseStorage#getInstance()} is used to access the default project.
  *
  * <p>Any <code>FirebaseApp</code> initialization must occur only in the main process of the app.
@@ -219,9 +219,8 @@ public class FirebaseApp {
    * Initializes the default FirebaseApp instance using string resource values - populated from
    * google-services.json. It also initializes Firebase Analytics for the current process.
    *
-   * <p>This method is called at app startup time by {@link
-   * com.google.firebase.provider.FirebaseInitProvider}. Call this method before any Firebase APIs
-   * in components outside the main process.
+   * <p>This method is called at app startup time by {@link FirebaseInitProvider}. Call this method
+   * before any Firebase APIs in components outside the main process.
    *
    * <p>The {@link FirebaseOptions} values used by the default app instance are read from string
    * resources.
@@ -255,8 +254,8 @@ public class FirebaseApp {
    * FirebaseOptions, String)}, but it uses {@link #DEFAULT_APP_NAME} as name.
    *
    * <p>It's only required to call this to initialize Firebase if it's <strong>not possible</strong>
-   * to do so automatically in {@link com.google.firebase.provider.FirebaseInitProvider}. Automatic
-   * initialization that way is the expected situation.
+   * to do so automatically in {@link FirebaseInitProvider}. Automatic initialization that way is
+   * the expected situation.
    */
   @NonNull
   public static FirebaseApp initializeApp(
