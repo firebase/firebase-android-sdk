@@ -19,6 +19,7 @@ import java.net.URL
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -38,8 +39,10 @@ abstract class PomValidator : DefaultTask() {
     val gMavenHelper = GmavenHelper(groupId.get(), artifactId.get())
     val latestReleasedVersion = gMavenHelper.getLatestReleasedVersion()
     val releasedVersionPomUrl = gMavenHelper.getPomFileForVersion(latestReleasedVersion)
-    val output = diffWithPomFileUrl(releasedVersionPomUrl)
-    println(output)
+    val output = diffWithPomFileUrl(releasedVersionPomUrl).trim()
+    if (output.isNotEmpty()) {
+      throw GradleException(output)
+    }
   }
 
   fun diffWithPomFileUrl(pomUrl: String): String {
