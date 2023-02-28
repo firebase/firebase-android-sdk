@@ -20,6 +20,8 @@ import javax.inject.Qualifier;
 
 /**
  * An executor/coroutine dispatcher for lightweight tasks that never block (on IO or other tasks).
+ *
+ * @hide
  */
 @Qualifier
 @Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD})

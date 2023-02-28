@@ -23,7 +23,11 @@ import dagger.Provides;
 import java.util.concurrent.Executor;
 import javax.inject.Singleton;
 
-/** Provides executors for running tasks. */
+/**
+ * Provides executors for running tasks.
+ *
+ * @hide
+ */
 @Module
 public class ExecutorsModule {
   private final Executor backgroundExecutor;

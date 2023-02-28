@@ -60,8 +60,8 @@ public class FirebaseAppDistributionException extends FirebaseException {
 
     /**
      * An update was not available for the current tester and app. Make sure that {@link
-     * FirebaseAppDistribution#checkForNewRelease} returns with a non-null {@link
-     * AppDistributionRelease} before calling {@link FirebaseAppDistribution#updateApp},
+     * FirebaseAppDistribution#checkForNewRelease} returns with a non-null <br>
+     * {@link AppDistributionRelease} before calling {@link FirebaseAppDistribution#updateApp}
      */
     UPDATE_NOT_AVAILABLE,
 

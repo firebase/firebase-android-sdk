@@ -33,7 +33,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /** Initializes Firebase APIs at app startup time. */
 public class FirebaseInitProvider extends ContentProvider {
   private static final String TAG = "FirebaseInitProvider";
+
+  /** @hide */
   @Nullable private static StartupTime startupTime = StartupTime.now();
+
   @NonNull private static AtomicBoolean currentlyInitializing = new AtomicBoolean(false);
 
   /** @hide */

@@ -18,21 +18,19 @@ import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProvider;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
+import com.google.firebase.appcheck.FirebaseAppCheck;
 import com.google.firebase.appcheck.playintegrity.internal.PlayIntegrityAppCheckProvider;
 
 /**
- * Implementation of an {@link AppCheckProviderFactory} that builds {@link
- * PlayIntegrityAppCheckProvider}s. This is the default implementation.
+ * Implementation of an {@link AppCheckProviderFactory} that builds <br>
+ * {@link PlayIntegrityAppCheckProvider}s. This is the default implementation.
  */
 public class PlayIntegrityAppCheckProviderFactory implements AppCheckProviderFactory {
 
   private static final PlayIntegrityAppCheckProviderFactory instance =
       new PlayIntegrityAppCheckProviderFactory();
 
-  /**
-   * Gets an instance of this class for installation into a {@link
-   * com.google.firebase.appcheck.FirebaseAppCheck} instance.
-   */
+  /** Gets an instance of this class for installation into a {@link FirebaseAppCheck} instance. */
   @NonNull
   public static PlayIntegrityAppCheckProviderFactory getInstance() {
     return instance;

@@ -360,8 +360,8 @@ public class StorageReference implements Comparable<StorageReference> {
    * share the file with others, but can be revoked by a developer in the Firebase Console if
    * desired.
    *
-   * @return The {@link Uri} representing the download URL. You can feed this URL into a {@link
-   *     java.net.URL} and download the object via {@link URL#openStream()}.
+   * @return The {@link Uri} representing the download URL. You can feed this URL into a {@link URL}
+   *     and download the object via {@link URL#openStream()}.
    */
   @SuppressWarnings("deprecation,unused")
   @NonNull

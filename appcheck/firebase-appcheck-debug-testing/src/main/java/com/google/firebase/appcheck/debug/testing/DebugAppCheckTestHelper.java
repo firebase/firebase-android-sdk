@@ -15,6 +15,7 @@
 package com.google.firebase.appcheck.debug.testing;
 
 import androidx.annotation.NonNull;
+import androidx.test.platform.app.InstrumentationRegistry;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.AppCheckProviderFactory;
 import com.google.firebase.appcheck.FirebaseAppCheck;
@@ -64,8 +65,8 @@ import com.google.firebase.appcheck.internal.DefaultFirebaseAppCheck;
  */
 public final class DebugAppCheckTestHelper {
   /**
-   * Creates a {@link DebugAppCheckTestHelper} instance with a debug secret obtained from {@link
-   * androidx.test.platform.app.InstrumentationRegistry} arguments.
+   * Creates a {@link DebugAppCheckTestHelper} instance with a debug secret obtained from <br>
+   * {@link InstrumentationRegistry} arguments.
    */
   @NonNull
   public static DebugAppCheckTestHelper fromInstrumentationArgs() {

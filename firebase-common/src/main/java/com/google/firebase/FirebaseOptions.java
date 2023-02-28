@@ -147,7 +147,7 @@ public final class FirebaseOptions {
   }
 
   /**
-   * Creates a new {@link FirebaseOptions} instance that is populated from string resouces.
+   * Creates a new {@link FirebaseOptions} instance that is populated from string resources.
    *
    * @return The populated options or null if applicationId is missing from resources.
    */

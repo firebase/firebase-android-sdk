@@ -50,8 +50,8 @@ import java.util.concurrent.Executor;
 /**
  * A {@code DocumentReference} refers to a document location in a Cloud Firestore database and can
  * be used to write, read, or listen to the location. There may or may not exist a document at the
- * referenced location. A {@code DocumentReference} can also be used to create a {@link
- * CollectionReference} to a subcollection.
+ * referenced location. A {@code DocumentReference} can also be used to create a <br>
+ * {@link CollectionReference} to a subcollection.
  *
  * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
  * in test mocks. Subclassing is not supported in production code and new SDK releases may break

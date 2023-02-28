@@ -30,12 +30,13 @@ import com.google.firebase.FirebaseApp;
  *
  * <p>When a dynamic link is clicked, the app is launched, or if the app is not yet installed, the
  * user is directed to the Play Store to install and launch the app. In both cases the dynamic link
- * made available to the app using {@link #getDynamicLink(Intent)}. An {@link
- * android.content.IntentFilter} for the deeplink can also be used to launch the app directly into a
- * targeted {@link android.app.Activity} or otherwise will start in the main launch Activity.
+ * made available to the app using {@link #getDynamicLink(Intent)}. <br>
+ * An {@link android.content.IntentFilter} for the deeplink can also be used to launch the app
+ * directly into a targeted {@link android.app.Activity} or otherwise will start in the main launch
+ * Activity.
  *
- * <p>Dynamic link data returned from {@link #getDynamicLink(Intent)} can be accessed using {@link
- * PendingDynamicLinkData} class.
+ * <p>Dynamic link data returned from {@link #getDynamicLink(Intent)} can be accessed using the
+ * {@link PendingDynamicLinkData} class.
  *
  * <p><a href="https://developer.android.com/training/app-links/index.html">Android App Links</a>
  * can also be used to launch the app with dynamic links by registering to handle your Dynamic Links

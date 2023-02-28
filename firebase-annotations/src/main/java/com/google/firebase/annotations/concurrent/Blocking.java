@@ -21,6 +21,8 @@ import javax.inject.Qualifier;
 /**
  * An executor/coroutine dispatcher for tasks that can block for long periods of time, e.g network
  * IO.
+ *
+ * @hide
  */
 @Qualifier
 @Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD})

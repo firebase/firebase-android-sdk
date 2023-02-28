@@ -27,8 +27,8 @@ import java.lang.annotation.Target;
  * <p>Any of the following will throw a runtime exception:
  *
  * <ul>
- *   <li>This annotation is applied to a property of a type other than String or {@link
- *       DocumentReference}.
+ *   <li>This annotation is applied to a property of a type other than String or <br>
+ *       {@link DocumentReference}.
  *   <li>This annotation is applied to a property that is not writable (for example, a Java Bean
  *       getter without a backing field).
  *   <li>This annotation is applied to a property with a name that conflicts with a read document

@@ -22,7 +22,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/** Contains the prefixes and items returned by a {@link StorageReference#list} call. */
+/** Contains the prefixes and items returned by a {@link StorageReference#list(int)} call. */
 public final class ListResult {
   private static final String ITEMS_KEY = "items";
   private static final String NAME_KEY = "name";
