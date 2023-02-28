@@ -67,12 +67,13 @@ public class MemoryComponentProvider extends ComponentProvider {
 
   @Override
   protected Persistence createPersistence(Configuration configuration) {
-    if(configuration.getSettings().isMemoryLruGcEnabled()) {
+    if (configuration.getSettings().isMemoryLruGcEnabled()) {
       LocalSerializer serializer =
-        new LocalSerializer(new RemoteSerializer(configuration.getDatabaseInfo().getDatabaseId()));
+          new LocalSerializer(
+              new RemoteSerializer(configuration.getDatabaseInfo().getDatabaseId()));
       LruGarbageCollector.Params params =
-        LruGarbageCollector.Params.WithCacheSizeBytes(
-          configuration.getSettings().getCacheSizeBytes());
+          LruGarbageCollector.Params.WithCacheSizeBytes(
+              configuration.getSettings().getCacheSizeBytes());
       return MemoryPersistence.createLruGcMemoryPersistence(params, serializer);
     }
 

@@ -1241,4 +1241,39 @@ public class FirestoreTest {
 
     assertTrue(awaitsPendingWrites.isComplete() && awaitsPendingWrites.isSuccessful());
   }
+
+  @Test
+  public void testGetDocumentWithMemoryLruGCEnabled() {
+    FirebaseFirestore db = testFirestore();
+    db.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())
+            .setPersistenceEnabled(false)
+            .setMemoryLruGcEnabled(true)
+            .build());
+
+    DocumentReference doc = db.collection("abc").document("123");
+    waitFor(doc.set(map("key", "value")));
+
+    DocumentSnapshot snapshot = waitFor(doc.get(Source.CACHE));
+    assertTrue(snapshot.exists());
+    assertTrue(snapshot.getMetadata().isFromCache());
+    assertEquals(snapshot.getData(), map("key", "value"));
+  }
+
+  @Test
+  public void testGetDocumentWithMemoryEagerGcEnabled() {
+    FirebaseFirestore db = testFirestore();
+    db.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())
+            .setPersistenceEnabled(false)
+            .setMemoryLruGcEnabled(false)
+            .build());
+
+    DocumentReference doc = db.collection("abc").document("123");
+    waitFor(doc.set(map("key", "value")));
+
+    Exception e = waitForException(doc.get(Source.CACHE));
+    assertTrue(e instanceof FirebaseFirestoreException);
+    assertEquals(((FirebaseFirestoreException) e).getCode(), Code.UNAVAILABLE);
+  }
 }
