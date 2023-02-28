@@ -27,6 +27,8 @@ class FirebaseSessions internal constructor(firebaseApp: FirebaseApp) {
     val context = firebaseApp.applicationContext.applicationContext
     if (context is Application) {
       context.registerActivityLifecycleCallbacks(sessionInitiator.activityLifecycleCallbacks)
+    } else {
+      Log.w(TAG, "Failed to register lifecycle callbacks, unexpected context ${context.javaClass}.")
     }
   }
 
