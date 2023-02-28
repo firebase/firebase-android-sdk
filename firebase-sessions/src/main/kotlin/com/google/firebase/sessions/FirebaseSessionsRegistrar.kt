@@ -15,8 +15,10 @@
 package com.google.firebase.sessions
 
 import androidx.annotation.Keep
+import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
+import com.google.firebase.components.Dependency
 import com.google.firebase.platforminfo.LibraryVersionComponent
 
 /**
@@ -30,12 +32,13 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
     listOf(
       Component.builder(FirebaseSessions::class.java)
         .name(LIBRARY_NAME)
-        .factory { FirebaseSessions() }
+        .add(Dependency.required(FirebaseApp::class.java))
+        .factory { container -> FirebaseSessions(container.get(FirebaseApp::class.java)) }
+        .eagerInDefaultApp()
         .build(),
-      LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME)
-    )
+      LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 
   companion object {
-    private const val LIBRARY_NAME = "fire-ses"
+    private const val LIBRARY_NAME = "fire-sessions"
   }
 }
