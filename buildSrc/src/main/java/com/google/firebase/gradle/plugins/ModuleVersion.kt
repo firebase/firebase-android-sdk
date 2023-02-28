@@ -15,6 +15,17 @@
 package com.google.firebase.gradle.plugins
 
 /**
+ * Possible version types in a SemVer versioning scheme.
+ *
+ * @see ModuleVersion
+ */
+enum class VersionType {
+  MAJOR,
+  MINOR,
+  PATCH
+}
+
+/**
  * Type-Safe representation of your standard [SemVer](https://semver.org/) versioning scheme.
  *
  * Additional labels for pre-release builds are not supported at this time. All versions should fall
