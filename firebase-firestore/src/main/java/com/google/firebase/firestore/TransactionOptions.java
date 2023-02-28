@@ -49,8 +49,8 @@ public final class TransactionOptions {
     /**
      * Set maximum number of attempts to commit, after which transaction fails.
      *
-     * <p>The default value is 5. Setting the value to less than 1 will result in an {@link
-     * IllegalArgumentException}.
+     * <p>The default value is 5. Setting the value to less than 1 will result in an <br>
+     * {@link IllegalArgumentException}.
      *
      * @return This builder
      */

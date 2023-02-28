@@ -31,6 +31,7 @@ public abstract class AppStateUpdateHandler implements AppStateCallback {
   // It must be a weak reference because unregisterForAppState() is called typically from
   // Trace.stop() and user may forget to call Trace.stop(), if it was a strong reference,
   // the registration in AppStateMonitor will prevent Trace to be deallocated.
+  /** @hide */
   private final WeakReference<AppStateCallback> appStateCallback;
 
   private boolean isRegisteredForAppState = false;
