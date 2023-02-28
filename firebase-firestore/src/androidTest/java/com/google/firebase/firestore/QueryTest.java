@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToValues;
@@ -29,6 +30,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -37,6 +39,7 @@ import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -1027,6 +1030,46 @@ public class QueryTest {
 
     QuerySnapshot snapshot2 = waitFor(collection.get(Source.CACHE));
     assertEquals(asList(map("foo", "zzyzx", "bar", "2")), querySnapshotToValues(snapshot2));
+  }
+
+  @Test
+  public void resumingQueryShouldRemoveDeletedDocumentsIndicatedByExistenceFilter()
+      throws InterruptedException {
+    assumeFalse(
+        "Skip this test when running against the Firestore emulator as there is a bug related to "
+            + "sending existence filter in response: b/270731363.",
+        isRunningAgainstEmulator());
+
+    Map<String, Map<String, Object>> testData = new HashMap<>();
+    for (int i = 1; i <= 100; i++) {
+      testData.put("doc" + i, map("key", i));
+    }
+    CollectionReference collection = testCollectionWithDocs(testData);
+
+    // Populate the cache and save the resume token.
+    QuerySnapshot snapshot1 = waitFor(collection.get());
+    assertEquals(snapshot1.size(), 100);
+    List<DocumentSnapshot> documents = snapshot1.getDocuments();
+
+    // Delete 50 docs in transaction so that it doesn't affect local cache.
+    waitFor(
+        collection
+            .getFirestore()
+            .runTransaction(
+                transaction -> {
+                  for (int i = 1; i <= 50; i++) {
+                    DocumentReference docRef = documents.get(i).getReference();
+                    transaction.delete(docRef);
+                  }
+                  return null;
+                }));
+
+    // Wait 10 seconds, during which Watch will stop tracking the query
+    // and will send an existence filter rather than "delete" events.
+    Thread.sleep(10000);
+
+    QuerySnapshot snapshot2 = waitFor(collection.get());
+    assertEquals(snapshot2.size(), 50);
   }
 
   // TODO(orquery): Enable this test when prod supports OR queries.
