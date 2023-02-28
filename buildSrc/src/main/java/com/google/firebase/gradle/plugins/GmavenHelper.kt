@@ -24,14 +24,8 @@ class GmavenHelper(val groupId: String, val artifactId: String) {
 
   fun getPomFileForVersion(version: String): String {
     val pomFileName = artifactId + "-" + version + ".pom"
-    return GMAVEN_ROOT +
-      groupId.replace(".", "/") +
-      "/" +
-      artifactId +
-      "/" +
-      version +
-      "/" +
-      pomFileName
+      val groupIdAsPath = groupId.replace(".", "/")
+      return "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/${version}/${pomFileName}
   }
 
   fun getLatestReleasedVersion(): String {
