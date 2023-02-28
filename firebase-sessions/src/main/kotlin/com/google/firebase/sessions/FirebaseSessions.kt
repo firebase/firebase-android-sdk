@@ -14,16 +14,35 @@
 
 package com.google.firebase.sessions
 
+import android.app.Application
+import android.util.Log
 import androidx.annotation.Discouraged
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 
-class FirebaseSessions internal constructor() {
+class FirebaseSessions internal constructor(firebaseApp: FirebaseApp) {
+  init {
+    val sessionInitiator = SessionInitiator(System::currentTimeMillis, this::initiateSessionStart)
+    val context = firebaseApp.applicationContext.applicationContext
+    if (context is Application) {
+      context.registerActivityLifecycleCallbacks(sessionInitiator.activityLifecycleCallbacks)
+    } else {
+      Log.w(TAG, "Failed to register lifecycle callbacks, unexpected context ${context.javaClass}.")
+    }
+  }
+
   @Discouraged(message = "This will be replaced with a real API.")
   fun greeting(): String = "Matt says hi!"
 
+  private fun initiateSessionStart() {
+    // TODO(mrober): Generate a session
+    Log.i(TAG, "Initiate session start")
+  }
+
   companion object {
+    private const val TAG = "FirebaseSessions"
+
     @JvmStatic
     val instance: FirebaseSessions
       get() = getInstance(Firebase.app)
