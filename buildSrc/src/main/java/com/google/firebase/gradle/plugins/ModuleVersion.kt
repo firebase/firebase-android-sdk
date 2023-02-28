@@ -35,8 +35,8 @@ data class ModuleVersion(val major: Int, val minor: Int, val patch: Int) {
   companion object {
 
     /**
-     * Uses Regex to extrapolate the version variables from a provided [String], and turns them into
-     * a [ModuleVersion].
+     * Extrapolate the version variables from a provided [String], and turns them into a
+     * [ModuleVersion].
      *
      * The String should be in the format of `MAJOR.MINOR.PATCH`.
      *
