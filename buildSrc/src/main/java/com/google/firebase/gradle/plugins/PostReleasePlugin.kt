@@ -32,12 +32,8 @@ class PostReleasePlugin : Plugin<Project> {
    * Registers the `versionBump` task for the provided [Project].
    *
    * Each SDK has a `gradle.properties` file at its root. This file has a `version` variable, that
-   * is set to the current version of said module. At the end of a release, we bump the versions at
-   * master of SDKs that went out that release to be one patch higher than the currently released
-   * version. We do this to differentiate between the current project, and the latest released
-   * version. If we didn’t bump the version, gradle could end up using a cached version of the
-   * released artifact instead of your local copy during development. As such, the version in every
-   * SDK at master is marked as one patch higher than the actual latest released version.
+   * is set to the current version of said module. After a release, this `version` should be bumped
+   * up to differentiate between code at HEAD, and the latest released version.
    *
    * @see [VersionBumpTask]
    *
