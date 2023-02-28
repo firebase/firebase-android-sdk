@@ -17,7 +17,9 @@ package com.google.firebase.firestore.core;
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.local.IndexBackfiller;
+import com.google.firebase.firestore.local.LocalSerializer;
 import com.google.firebase.firestore.local.LocalStore;
+import com.google.firebase.firestore.local.LruGarbageCollector;
 import com.google.firebase.firestore.local.MemoryPersistence;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.QueryEngine;
@@ -26,6 +28,7 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.mutation.MutationBatchResult;
 import com.google.firebase.firestore.remote.AndroidConnectivityMonitor;
 import com.google.firebase.firestore.remote.RemoteEvent;
+import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import io.grpc.Status;
 
@@ -64,6 +67,15 @@ public class MemoryComponentProvider extends ComponentProvider {
 
   @Override
   protected Persistence createPersistence(Configuration configuration) {
+    if(configuration.getSettings().isMemoryLruGcEnabled()) {
+      LocalSerializer serializer =
+        new LocalSerializer(new RemoteSerializer(configuration.getDatabaseInfo().getDatabaseId()));
+      LruGarbageCollector.Params params =
+        LruGarbageCollector.Params.WithCacheSizeBytes(
+          configuration.getSettings().getCacheSizeBytes());
+      return MemoryPersistence.createLruGcMemoryPersistence(params, serializer);
+    }
+
     return MemoryPersistence.createEagerGcMemoryPersistence();
   }
 

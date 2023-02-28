@@ -38,6 +38,8 @@ public final class FirebaseFirestoreSettings {
     private String host;
     private boolean sslEnabled;
     private boolean persistenceEnabled;
+
+    private boolean memoryLruGcEnabled;
     private long cacheSizeBytes;
 
     /** Constructs a new {@code FirebaseFirestoreSettings} Builder object. */
@@ -45,6 +47,7 @@ public final class FirebaseFirestoreSettings {
       host = DEFAULT_HOST;
       sslEnabled = true;
       persistenceEnabled = true;
+      memoryLruGcEnabled = false;
       cacheSizeBytes = DEFAULT_CACHE_SIZE_BYTES;
     }
 
@@ -58,6 +61,7 @@ public final class FirebaseFirestoreSettings {
       sslEnabled = settings.sslEnabled;
       persistenceEnabled = settings.persistenceEnabled;
       cacheSizeBytes = settings.cacheSizeBytes;
+      memoryLruGcEnabled = settings.memoryLruGcEnabled;
     }
 
     /**
@@ -92,6 +96,12 @@ public final class FirebaseFirestoreSettings {
     @NonNull
     public Builder setPersistenceEnabled(boolean value) {
       this.persistenceEnabled = value;
+      return this;
+    }
+
+    @NonNull
+    public Builder setMemoryLruGcEnabled(boolean value) {
+      this.memoryLruGcEnabled = value;
       return this;
     }
 
@@ -150,6 +160,7 @@ public final class FirebaseFirestoreSettings {
   private final String host;
   private final boolean sslEnabled;
   private final boolean persistenceEnabled;
+  private final boolean memoryLruGcEnabled;
   private final long cacheSizeBytes;
 
   /** Constructs a {@code FirebaseFirestoreSettings} object based on the values in the Builder. */
@@ -158,6 +169,7 @@ public final class FirebaseFirestoreSettings {
     sslEnabled = builder.sslEnabled;
     persistenceEnabled = builder.persistenceEnabled;
     cacheSizeBytes = builder.cacheSizeBytes;
+    memoryLruGcEnabled = builder.memoryLruGcEnabled;
   }
 
   @Override
@@ -214,6 +226,10 @@ public final class FirebaseFirestoreSettings {
   /** Returns whether or not to use local persistent storage. */
   public boolean isPersistenceEnabled() {
     return persistenceEnabled;
+  }
+
+  public boolean isMemoryLruGcEnabled() {
+    return memoryLruGcEnabled;
   }
 
   /**
