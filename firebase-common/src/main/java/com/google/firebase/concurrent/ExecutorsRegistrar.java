@@ -64,7 +64,7 @@ public class ExecutorsRegistrar implements ComponentRegistrar {
                           Process.THREAD_PRIORITY_BACKGROUND
                               + Process.THREAD_PRIORITY_LESS_FAVORABLE))));
 
-  private static final Lazy<ScheduledExecutorService> SCHEDULER =
+  static final Lazy<ScheduledExecutorService> SCHEDULER =
       new Lazy<>(
           () ->
               Executors.newSingleThreadScheduledExecutor(
