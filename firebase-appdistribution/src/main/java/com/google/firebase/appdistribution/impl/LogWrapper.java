@@ -19,72 +19,37 @@ import androidx.annotation.NonNull;
 
 /** Wrapper that handles Android logcat logging. */
 class LogWrapper {
-
   private static final String LOG_TAG = "FirebaseAppDistribution";
-  private static LogWrapper instance;
 
-  @NonNull
-  static synchronized LogWrapper getInstance() {
-    if (instance == null) {
-      instance = new LogWrapper();
-    }
-
-    return instance;
-  }
-
-  void d(@NonNull String msg) {
-    Log.d(LOG_TAG, msg);
-  }
-
-  void d(@NonNull String additionalTag, @NonNull String msg) {
+  static void d(@NonNull String additionalTag, @NonNull String msg) {
     Log.d(LOG_TAG, prependTag(additionalTag, msg));
   }
 
-  void v(@NonNull String msg) {
-    Log.v(LOG_TAG, msg);
-  }
-
-  void v(@NonNull String additionalTag, @NonNull String msg) {
+  static void v(@NonNull String additionalTag, @NonNull String msg) {
     Log.v(LOG_TAG, prependTag(additionalTag, msg));
   }
 
-  void i(@NonNull String msg) {
-    Log.i(LOG_TAG, msg);
-  }
-
-  void i(@NonNull String additionalTag, @NonNull String msg) {
+  static void i(@NonNull String additionalTag, @NonNull String msg) {
     Log.i(LOG_TAG, prependTag(additionalTag, msg));
   }
 
-  void w(@NonNull String msg) {
-    Log.w(LOG_TAG, msg);
-  }
-
-  void w(@NonNull String additionalTag, @NonNull String msg) {
+  static void w(@NonNull String additionalTag, @NonNull String msg) {
     Log.w(LOG_TAG, prependTag(additionalTag, msg));
   }
 
-  void w(@NonNull String msg, @NonNull Throwable tr) {
-    Log.w(LOG_TAG, msg, tr);
-  }
-
-  void w(@NonNull String additionalTag, @NonNull String msg, @NonNull Throwable tr) {
+  static void w(@NonNull String additionalTag, @NonNull String msg, @NonNull Throwable tr) {
     Log.w(LOG_TAG, prependTag(additionalTag, msg), tr);
   }
 
-  void e(@NonNull String msg) {
-    Log.e(LOG_TAG, msg);
+  static void e(@NonNull String additionalTag, @NonNull String msg) {
+    Log.e(LOG_TAG, prependTag(additionalTag, msg));
   }
 
-  void e(@NonNull String msg, @NonNull Throwable tr) {
-    Log.e(LOG_TAG, msg, tr);
-  }
-
-  void e(@NonNull String additionalTag, @NonNull String msg, @NonNull Throwable tr) {
+  static void e(@NonNull String additionalTag, @NonNull String msg, @NonNull Throwable tr) {
     Log.e(LOG_TAG, prependTag(additionalTag, msg), tr);
   }
 
-  private String prependTag(String tag, String msg) {
+  private static String prependTag(String tag, String msg) {
     return String.format("%s: %s", tag, msg);
   }
 

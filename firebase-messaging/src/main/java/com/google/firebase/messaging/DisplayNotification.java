@@ -144,7 +144,7 @@ class DisplayNotification {
        * notification does as well.
        */
       n.setLargeIcon(bitmap);
-      n.setStyle(new BigPictureStyle().bigPicture(bitmap).bigLargeIcon(null));
+      n.setStyle(new BigPictureStyle().bigPicture(bitmap).bigLargeIcon((Bitmap) null));
 
     } catch (ExecutionException e) {
       // For all exceptions, fall through to show the notification without the image

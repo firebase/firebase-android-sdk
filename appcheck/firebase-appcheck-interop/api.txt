@@ -15,11 +15,5 @@ package com.google.firebase.appcheck.interop {
     method public void onAppCheckTokenChanged(@NonNull com.google.firebase.appcheck.AppCheckTokenResult);
   }
 
-  public interface InternalAppCheckTokenProvider {
-    method public void addAppCheckTokenListener(@NonNull com.google.firebase.appcheck.interop.AppCheckTokenListener);
-    method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.appcheck.AppCheckTokenResult> getToken(boolean);
-    method public void removeAppCheckTokenListener(@NonNull com.google.firebase.appcheck.interop.AppCheckTokenListener);
-  }
-
 }
 
