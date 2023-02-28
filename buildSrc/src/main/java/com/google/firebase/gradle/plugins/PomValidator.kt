@@ -39,10 +39,25 @@ abstract class PomValidator : DefaultTask() {
     val gMavenHelper = GmavenHelper(groupId.get(), artifactId.get())
     val latestReleasedVersion = gMavenHelper.getLatestReleasedVersion()
     val releasedVersionPomUrl = gMavenHelper.getPomFileForVersion(latestReleasedVersion)
-    val output = diffWithPomFileUrl(releasedVersionPomUrl).trim()
+    var output: String = diffWithPomFileUrl(releasedVersionPomUrl).trim()
     if (output.isNotEmpty()) {
+      output += "\nPlease fix the above errors"
       throw GradleException(output)
     }
+  }
+
+  fun getMapFromXml(pomNodeList: NodeList): Map<String, String> {
+    val pomMap = mutableMapOf<String, String>()
+    for (i in 0..pomNodeList.length - 1) {
+      val node: Node = pomNodeList.item(i)
+      if (node.getNodeType() == Node.ELEMENT_NODE) {
+        val element = node as Element
+        val artifact = element.getElementsByTagName("artifactId").item(0).getTextContent()
+        val version = element.getElementsByTagName("version").item(0).getTextContent()
+        pomMap[artifact] = version
+      }
+    }
+    return pomMap
   }
 
   fun diffWithPomFileUrl(pomUrl: String): String {
@@ -51,52 +66,14 @@ abstract class PomValidator : DefaultTask() {
     val oldPomDoc: Document = oldPomBuilder.parse(URL(pomUrl).openStream())
     val currentPomBuilder: DocumentBuilder = factory.newDocumentBuilder()
     val currentPomDoc: Document = currentPomBuilder.parse(pomFilePath.get())
-    val oldPomMap = mutableMapOf<String, String>()
-    val currentPomMap = mutableMapOf<String, String>()
-    val oldPomNodeList: NodeList = oldPomDoc.getElementsByTagName("dependency")
-    val currentPomNodeList: NodeList = currentPomDoc.getElementsByTagName("dependency")
-    for (i in oldPomNodeList.length - 1 downTo 0) {
-      val node: Node = oldPomNodeList.item(i)
-      if (node.getNodeType() == Node.ELEMENT_NODE) {
-        val element = node as Element
-        val artifact = element.getElementsByTagName("artifactId").item(0).getTextContent()
-        val version = element.getElementsByTagName("version").item(0).getTextContent()
-        oldPomMap[artifact] = version
-      }
-    }
+    val oldPomMap = getMapFromXml(oldPomDoc.getElementsByTagName("dependency"))
+    val currentPomMap = getMapFromXml(currentPomDoc.getElementsByTagName("dependency"))
 
-    for (i in currentPomNodeList.length - 1 downTo 0) {
-      val node: Node = currentPomNodeList.item(i)
-      if (node.getNodeType() == Node.ELEMENT_NODE) {
-        val element = node as Element
-        val artifact = element.getElementsByTagName("artifactId").item(0).getTextContent()
-        val version = element.getElementsByTagName("version").item(0).getTextContent()
-        currentPomMap[artifact] = version
+    return currentPomMap
+      .filter {
+        (oldPomMap.get(it.key) != null) && (oldPomMap.get(it.key)!!.trim()) > it.value.trim()
       }
-    }
-    val outputList = ArrayList<String>()
-    for (entry in currentPomMap.entries.iterator()) {
-      val curDepVersion = entry.value.replace("-SNAPSHOT", "").trim()
-      val oldDepVersion = oldPomMap.get(entry.key)
-      if (oldDepVersion == null) {
-        continue
-      }
-      if (oldDepVersion.trim() > curDepVersion) {
-        val outputString =
-          "Artifact " +
-            entry.key +
-            " has been degraded to " +
-            curDepVersion +
-            " from " +
-            oldDepVersion
-        outputList.add(outputString)
-      }
-    }
-    if (outputList.isEmpty()) {
-      return ""
-    } else {
-      outputList.add("Please have a look at the above errors and fix them.")
-      return outputList.joinToString("\n")
-    }
+      .map { "Artifacts ${it.key} has been degraded to ${it.value} from ${oldPomMap.get(it.key)}" }
+      .joinToString("\n")
   }
 }

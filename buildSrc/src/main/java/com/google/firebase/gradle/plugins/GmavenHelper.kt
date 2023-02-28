@@ -23,14 +23,14 @@ class GmavenHelper(val groupId: String, val artifactId: String) {
   val GMAVEN_ROOT = "https://dl.google.com/dl/android/maven2"
 
   fun getPomFileForVersion(version: String): String {
-    val pomFileName = "${artifactId}-{version}.pom"
-      val groupIdAsPath = groupId.replace(".", "/")
-      return "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/${version}/${pomFileName}
+    val pomFileName = "${artifactId}-${version}.pom"
+    val groupIdAsPath = groupId.replace(".", "/")
+    return "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/${version}/${pomFileName}"
   }
 
   fun getLatestReleasedVersion(): String {
-    val mavenMetadataUrl =
-      GMAVEN_ROOT + groupId.replace(".", "/") + "/" + artifactId + "/maven-metadata.xml"
+    val groupIdAsPath = groupId.replace(".", "/")
+    val mavenMetadataUrl = "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/maven-metadata.xml"
     val factory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
     val builder: DocumentBuilder = factory.newDocumentBuilder()
     val doc: Document = builder.parse(URL(mavenMetadataUrl).openStream())
