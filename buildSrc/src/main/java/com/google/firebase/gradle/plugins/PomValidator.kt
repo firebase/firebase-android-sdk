@@ -41,8 +41,7 @@ abstract class PomValidator : DefaultTask() {
     val releasedVersionPomUrl = gMavenHelper.getPomFileForVersion(latestReleasedVersion)
     var output: String = diffWithPomFileUrl(releasedVersionPomUrl).trim()
     if (output.isNotEmpty()) {
-      output += "\nPlease fix the above errors"
-      throw GradleException(output)
+      throw GradleException("${output}\nPlease fix the above errors")
     }
   }
 
