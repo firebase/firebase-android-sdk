@@ -1243,7 +1243,7 @@ public class FirestoreTest {
   }
 
   @Test
-  public void testGetDocumentWithMemoryLruGCEnabled() {
+  public void testCanGetDocumentWithMemoryLruGCEnabled() {
     FirebaseFirestore db = testFirestore();
     db.setFirestoreSettings(
         new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())
@@ -1261,7 +1261,7 @@ public class FirestoreTest {
   }
 
   @Test
-  public void testGetDocumentWithMemoryEagerGcEnabled() {
+  public void testCannotGetDocumentWithMemoryEagerGcEnabled() {
     FirebaseFirestore db = testFirestore();
     db.setFirestoreSettings(
         new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())

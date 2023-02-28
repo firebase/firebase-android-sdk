@@ -67,7 +67,8 @@ public abstract class Persistence {
 
   public abstract boolean isStarted();
 
-  abstract ReferenceDelegate getReferenceDelegate();
+  // Visible for testing purposes.
+  public abstract ReferenceDelegate getReferenceDelegate();
 
   /**
    * Returns a MutationQueue representing the persisted mutations for the given user.
