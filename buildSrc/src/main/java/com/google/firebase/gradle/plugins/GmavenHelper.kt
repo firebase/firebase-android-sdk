@@ -23,7 +23,7 @@ class GmavenHelper(val groupId: String, val artifactId: String) {
   val GMAVEN_ROOT = "https://dl.google.com/dl/android/maven2"
 
   fun getPomFileForVersion(version: String): String {
-    val pomFileName = artifactId + "-" + version + ".pom"
+    val pomFileName = "${artifactId}-{version}.pom"
       val groupIdAsPath = groupId.replace(".", "/")
       return "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/${version}/${pomFileName}
   }
