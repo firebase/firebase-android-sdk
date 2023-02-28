@@ -26,14 +26,10 @@ data class ModuleVersion(val major: Int, val minor: Int, val patch: Int) {
      *
      * The String should be in the format of `MAJOR.MINOR.PATCH`.
      *
-     * ~~~
      * ```
+     * ModuleVersion.fromString("1.2.3") // ModuleVersion(1,2,3)
+     * ModuleVersion.fromString("a.b.c") // IllegalArgumentException
      * ```
-     * ModuleVersion.fromString("1.2.3") // ModuleVersion(1,2,3) ModuleVersion.fromString("a.b.c")
-     * // IllegalArgumentException
-     * ```
-     * ```
-     * ~~~
      *
      * @param str a [String] that matches the `MAJOR.MINOR.PATCH` format.
      *
@@ -52,14 +48,10 @@ data class ModuleVersion(val major: Int, val minor: Int, val patch: Int) {
     /**
      * Runs [ModuleVersion.fromString], but catches any exceptions and converts them into null.
      *
-     * ~~~
      * ```
+     * ModuleVersion.fromString("1.2.3") // ModuleVersion(1,2,3)
+     * ModuleVersion.fromString("a.b.c") // null
      * ```
-     * ModuleVersion.fromStringOrNull("1.2.3") // ModuleVersion(1,2,3)
-     * ModuleVersion.fromStringOrNull("a.b.c") // null
-     * ```
-     * ```
-     * ~~~
      *
      * @param str a [String] that matches the `MAJOR.MINOR.PATCH` format.
      */
