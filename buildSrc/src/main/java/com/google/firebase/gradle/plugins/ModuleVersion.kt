@@ -83,6 +83,15 @@ data class ModuleVersion(val major: Int, val minor: Int, val patch: Int) {
     fun fromStringOrNull(str: String): ModuleVersion? = runCatching { fromString(str) }.getOrNull()
   }
 
-  /** Returns a copy of this [ModuleVersion], with the [patch] increased by one. */
-  fun bump() = copy(patch = patch + 1)
+  /**
+   * Returns a copy of this [ModuleVersion], with the given [VersionType] increased by one.
+   *
+   * @param version the [VersionType] to increase; defaults to [VersionType.PATCH]
+   */
+  fun bump(version: VersionType = VersionType.PATCH) =
+    when (version) {
+      VersionType.MAJOR -> copy(major = major + 1)
+      VersionType.MINOR -> copy(minor = minor + 1)
+      VersionType.PATCH -> copy(patch = patch + 1)
+    }
 }
