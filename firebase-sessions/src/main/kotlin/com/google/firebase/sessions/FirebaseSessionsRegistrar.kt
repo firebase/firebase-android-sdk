@@ -36,7 +36,8 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .factory { container -> FirebaseSessions(container.get(FirebaseApp::class.java)) }
         .eagerInDefaultApp()
         .build(),
-      LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+      LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME)
+    )
 
   companion object {
     private const val LIBRARY_NAME = "fire-sessions"
