@@ -30,6 +30,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
   override fun apply(project: Project) {
     project.apply<JavaLibraryPlugin>()
     project.apply<GoogleJavaFormatPlugin>()
+    project.apply<DackkaPlugin>()
     project.extensions.getByType<GoogleJavaFormatExtension>().toolVersion = "1.10.0"
 
     setupFirebaseLibraryExtension(project)

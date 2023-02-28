@@ -1,4 +1,4 @@
-// Copyright 2022 Google LLC
+// Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.annotations.concurrent;
+package com.google.firebase.concurrent;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Target;
-import javax.inject.Qualifier;
+import java.util.concurrent.ExecutorService;
 
 /**
- * An executor/coroutine dispatcher for lightweight tasks that never block (on IO or other tasks).
+ * An {@link ExecutorService} that can be paused/resumed.
  *
- * @hide
+ * <p>When the executor is {@link PausableExecutor#pause() paused}, tasks get queued and execute
+ * when {@link PausableExecutor#resume()} is called.
  */
-@Qualifier
-@Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD})
-public @interface Lightweight {}
+public interface PausableExecutorService extends ExecutorService, PausableExecutor {}

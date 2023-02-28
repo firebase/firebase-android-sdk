@@ -26,8 +26,8 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * A {@code QuerySnapshot} contains the results of a query. It can contain zero or more {@link
- * DocumentSnapshot} objects.
+ * A {@code QuerySnapshot} contains the results of a query. <br>
+ * It can contain zero or more {@link DocumentSnapshot} objects.
  *
  * <p><b>Subclassing Note</b>: Cloud Firestore classes are not meant to be subclassed except for use
  * in test mocks. Subclassing is not supported in production code and new SDK releases may break
