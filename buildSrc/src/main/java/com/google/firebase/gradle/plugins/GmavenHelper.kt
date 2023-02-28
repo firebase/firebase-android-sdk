@@ -20,7 +20,7 @@ import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Document
 
 class GmavenHelper(val groupId: String, val artifactId: String) {
-  val GMAVEN_ROOT = "https://dl.google.com/dl/android/maven2/"
+  val GMAVEN_ROOT = "https://dl.google.com/dl/android/maven2"
 
   fun getPomFileForVersion(version: String): String {
     val pomFileName = artifactId + "-" + version + ".pom"
