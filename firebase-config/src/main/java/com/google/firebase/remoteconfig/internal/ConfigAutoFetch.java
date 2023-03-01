@@ -105,11 +105,7 @@ public class ConfigAutoFetch {
         handleNotifications(inputStream);
         inputStream.close();
       } catch (IOException ex) {
-        propagateErrors(
-            new FirebaseRemoteConfigClientException(
-                "Unable to parse config update message.",
-                ex.getCause(),
-                FirebaseRemoteConfigException.Code.CONFIG_UPDATE_MESSAGE_INVALID));
+        Log.d(TAG, "Stream was cancelled due to an exception: " + ex.toString());
       } finally {
         httpURLConnection.disconnect();
       }
