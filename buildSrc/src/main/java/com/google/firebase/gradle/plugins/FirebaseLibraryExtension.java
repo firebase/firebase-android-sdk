@@ -33,6 +33,7 @@ import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.provider.Property;
 import org.gradle.api.publish.maven.MavenPom;
 
+// TODO(b/270576405): rewrite in kotlin, and utilize conventions
 public class FirebaseLibraryExtension {
 
   public final Project project;

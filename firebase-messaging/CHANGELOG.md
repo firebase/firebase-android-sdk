@@ -1,5 +1,6 @@
 # Unreleased
-
+* [fixed] Fix a breakage related to Jetpack core library related to [upstream update](https://android-review.googlesource.com/c/platform/frameworks/support/+/2399893)
+* [changed] Updated javalite, protoc, protobufjavautil to 3.21.11.
 
 # 23.1.1
 * [fixed] Fixed deadlock when handling simultaneous messages.
@@ -403,4 +404,3 @@ released on [March 03, 2020](/support/release-notes/android#2020-03-03).
   now return a
   [`Task`](/docs/reference/android/com/google/android/gms/tasks/Task) that can
   be used to see when the request has completed.
-

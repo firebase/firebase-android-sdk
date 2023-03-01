@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2022 Google LLC -->
+<!-- -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License"); -->
+<!-- you may not use this file except in compliance with the License. -->
+<!-- You may obtain a copy of the License at -->
+<!-- -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0 -->
+<!-- -->
+<!-- Unless required by applicable law or agreed to in writing, software -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS, -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. -->
+<!-- See the License for the specific language governing permissions and -->
+<!-- limitations under the License. -->
+
+<resources>
+  <string name="signin_dialog_title" translation_description="Title of the dialog encouraging the user to enable Firebase App Distribution features">जांच करने की सुविधाएं चालू करना</string>
+  <string name="singin_dialog_message" translation_description="Content of the dialog encouraging the user to enable Firebase App Distribution features">बिल्ड की नई चेतावनियां और ऐप्लिकेशन के बारे में सुझाव, राय या शिकायत जैसी जांच करने की सुविधाएं चालू करना.</string>
+  <string name="singin_yes_button" translation_description="Text on button to enable Firebase App Distribution features">चालू करें</string>
+  <string name="singin_no_button" translation_description="Text on button to decline Firebase App Distribution features">अभी नहीं</string>
+  <string name="update_dialog_title" translation_description="Title of the dialog explaining to the user that a new version of the application is available">नया वर्शन उपलब्ध है</string>
+  <string name="update_version_available" translation_description="Version string (and code) of the available update">%1$s (%2$d) वर्शन उपलब्ध है.</string>
+  <string name="update_release_notes" translation_description="Text prefixing release notes">प्रॉडक्ट की जानकारी:</string>
+  <string name="update_yes_button" translation_description="Text on button to start update">अपडेट करें</string>
+  <string name="update_no_button" translation_description="Text on button to cancel update">रद्द करें</string>
+  <string name="downloading_app_update" translation_description="Title of the notification showing during download of update">ऐप्लिकेशन का अपडेट डाउनलोड हो रहा है…</string>
+  <string name="download_completed" translation_description="Title of notification when download of update has completed">डाउनलोड हो गया</string>
+  <string name="download_failed" translation_description="Title of notification when download of update has failed">डाउनलोड नहीं हो सका</string>
+  <string name="install_failed" translation_description="Title of notification when installation of update has failed">इंस्टॉल नहीं हो सका</string>
+  <string name="notifications_group_name" translation_description="Title of the notification channel group for the SDK">Firebase App Distribution</string>
+  <string name="app_update_notification_channel_name" translation_description="Name of the notification channel for in-app updates">ऐप्लिकेशन के अपडेट</string>
+  <string name="app_update_notification_channel_description" translation_description="Description of the notification channel for in-app updates">ऐप्लिकेशन के अपडेट की प्रोग्रेस दिखाता है</string>
+  <string name="feedback_launch_failed" translation_description="Toast explaining that launching the feedback functionality failed">राय, सुझाव या शिकायत लॉन्च नहीं हो सकी</string>
+  <string name="feedback_unidentified_release" translation_description="Toast explaining feedback can't be provided, because release can't be found">रिलीज़ नहीं मिली. इस ऐप्लिकेशन को शायद App Distribution की मदद से इंस्टॉल नहीं किया गया है या फिर आपके पास इसका ऐक्सेस नहीं है.</string>
+  <string name="feedback_no_release" translation_description="Toast explaining that feedback would have been sent, but was not, since development mode was active">राय, सुझाव या शिकायत भेजी गई होती, लेकिन डेवलपमेंट मोड की वजह से ऐसा नहीं हो पाया.</string>
+  <string name="feedback_notification_channel_name" translation_description="Name of the notification channel for in-app feedback">राय, सुझाव या शिकायत</string>
+  <string name="feedback_notification_channel_description" translation_description="Description of the notification channel for in-app feedback">ऐप्लिकेशन के बारे में राय, सुझाव या शिकायत भेजने पर सूचना दिखाता है</string>
+  <string name="feedback_notification_title" translation_description="Title of notification encouraging testers to enter feedback">हमें आपकी राय, सुझाव या शिकायत का इंतज़ार है!</string>
+  <string name="feedback_notification_text" translation_description="Text of notification encouraging testers to enter feedback for the app">%1$s के बारे में राय, सुझाव या शिकायत भेजने के लिए टैप करें</string>
+  <string name="unknown_sources_dialog_title" translation_description="Title of dialog describing that installation from unknown sources needs to be enabled">अज्ञात सोर्स से इंस्टॉल किया गया</string>
+  <string name="unknown_sources_dialog_description" translation_description="Text of dialog describing why installation from unknown sources needs to be enabled">अपडेट इंस्टॉल करने के लिए, अज्ञात सोर्स से इंस्टॉल करने की सुविधा चालू करें</string>
+  <string name="unknown_sources_yes_button" translation_description="Label on button launching settings to enable installation from unknown sources">सेटिंग</string>
+  <string name="back_button_description" translation_description="Description for image button (back) which aborts feedback">वापस जाएं</string>
+  <string name="send_feedback" translation_description="Text next to send button which sends feedback">सुझाव, राय या शिकायत भेजें</string>
+  <string name="send_button_description" translation_description="Description of image button (send) which sends feedback">भेजें</string>
+  <string name="feedback_text_hint" translation_description="Default text hint displayed in the text box where user should type their feedback">क्या आपको कोई राय, सुझाव या शिकायत भेजनी है? हमें बताएं कि इस ऐप्लिकेशन को हम और किस तरह बेहतर बना सकते हैं.</string>
+  <string name="screenshot" translation_description="Text displayed next to the checkbox which can be toggled to include/exclude a screenshot with the feedback">स्क्रीनशॉट</string>
+  <string name="no_screenshot" translation_description="Text displayed when there is no screenshot available to be included with the feedback">स्क्रीनशॉट (उपलब्ध नहीं है)</string>
+  <string name="screenshot_image_description" translation_description="Description for the screenshot image">स्क्रीनशॉट की इमेज</string>
+</resources>

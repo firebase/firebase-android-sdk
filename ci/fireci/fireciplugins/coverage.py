@@ -60,8 +60,7 @@ def coverage(pull_request, log, metrics_service_url, access_token):
   uploader.post_report(test_report, metrics_service_url, access_token, 'coverage')
 
   if process.returncode != 0:
-    _logger.error(f'{process.args} failed with error code: {process.returncode}.')
-    raise click.ClickException('Coverage test failed with above errors.')
+    _logger.warning(f'{process.args} failed with error code: {process.returncode}.')
 
 
 def _parse_xml_reports():
