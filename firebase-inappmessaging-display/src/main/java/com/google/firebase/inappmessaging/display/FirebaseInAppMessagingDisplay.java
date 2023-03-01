@@ -82,6 +82,8 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
       20 * 1000; // auto dismiss after 20 seconds for banner
   static final long INTERVAL_MILLIS = 1000;
 
+  public boolean useCustomTabs = true;
+
   private final FirebaseInAppMessaging headlessInAppMessaging;
 
   private final Map<String, Provider<InAppMessageLayoutConfig>> layoutConfigs;
@@ -542,7 +544,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   }
 
   private void launchUriIntent(Activity activity, Uri uri) {
-    if (ishttpOrHttpsUri(uri) && supportsCustomTabs(activity)) {
+    if (useCustomTabs && ishttpOrHttpsUri(uri) && supportsCustomTabs(activity)) {
       // If we can launch a chrome view, try that.
       CustomTabsIntent customTabsIntent = new CustomTabsIntent.Builder().build();
       Intent intent = customTabsIntent.intent;
