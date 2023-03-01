@@ -455,7 +455,7 @@ public class FirebaseInAppMessagingDisplayTest {
             any(RenewableTimer.Callback.class),
             ArgumentMatchers.eq(
                 com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay
-                    .IMPRESSION_THRESHOLD_MILLIS),
+                    .impressionThresholdMillis),
             ArgumentMatchers.eq(
                 com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay
                     .INTERVAL_MILLIS));
@@ -473,7 +473,7 @@ public class FirebaseInAppMessagingDisplayTest {
             any(RenewableTimer.Callback.class),
             ArgumentMatchers.eq(
                 com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay
-                    .DISMISS_THRESHOLD_MILLIS),
+                    .dismissThresholdMillis),
             ArgumentMatchers.eq(
                 com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay
                     .INTERVAL_MILLIS));
