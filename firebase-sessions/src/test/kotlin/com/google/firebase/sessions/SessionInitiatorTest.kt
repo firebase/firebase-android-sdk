@@ -19,7 +19,6 @@ package com.google.firebase.sessions
 import com.google.common.truth.Truth.assertThat
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 import org.junit.Test
 
 class SessionInitiatorTest {
@@ -137,7 +136,7 @@ class SessionInitiatorTest {
   }
 
   companion object {
-    private val SMALL_INTERVAL = 3.seconds // not enough time to initiate a new session
-    private val LARGE_INTERVAL = 90.minutes // enough to initiate another session
+    private val SMALL_INTERVAL = 29.minutes // not enough time to initiate a new session
+    private val LARGE_INTERVAL = 31.minutes // enough to initiate another session
   }
 }
