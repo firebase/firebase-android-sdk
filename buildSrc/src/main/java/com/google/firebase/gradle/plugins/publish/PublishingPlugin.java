@@ -134,6 +134,15 @@ public class PublishingPlugin implements Plugin<Project> {
                   .set("projectsToPublish", projectsToPublish);
 
               Publisher publisher = new Publisher(publishMode, projectsToPublish);
+              project
+                  .getTasks()
+                  .create(
+                      "validatePomForRelease",
+                      t -> {
+                        for (FirebaseLibraryExtension toPublish : projectsToPublish) {
+                          t.dependsOn(toPublish.getPath() + ":isPomDependencyValid");
+                        }
+                      });
               project.subprojects(
                   sub -> {
                     FirebaseLibraryExtension firebaseLibrary =

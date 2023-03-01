@@ -47,6 +47,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
     setupStaticAnalysis(project, firebaseLibrary)
     setupApiInformationAnalysis(project)
+    getIsPomValidTask(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary)
   }
 
@@ -55,6 +56,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
       project.convention.getPlugin<JavaPluginConvention>().sourceSets.getByName("main").java.srcDirs
 
     val apiInfo = getApiInfo(project, srcDirs)
+
     val generateApiTxt = getGenerateApiTxt(project, srcDirs)
     val docStubs = getDocStubs(project, srcDirs)
 
