@@ -187,8 +187,7 @@ data class ModuleVersion(
     fun fromStringOrNull(str: String): ModuleVersion? =
       runCatching {
           VERSION_REGEX.matchEntire(str)?.let {
-            val (major, minor, patch, pre, build) = it.groupValues
-
+            val (major, minor, patch, pre, build) = it.destructured
             ModuleVersion(
               major.toInt(),
               minor.toInt(),
