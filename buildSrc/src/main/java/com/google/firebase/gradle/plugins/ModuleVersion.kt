@@ -134,7 +134,7 @@ data class ModuleVersion(
   val major: Int,
   val minor: Int,
   val patch: Int,
-  val pre: PreReleaseVersion?
+  val pre: PreReleaseVersion? = null
 ) {
 
   /** Formatted as `MAJOR.MINOR.PATCH-PRE` */
