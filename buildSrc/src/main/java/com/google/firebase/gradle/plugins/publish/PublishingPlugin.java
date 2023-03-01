@@ -172,6 +172,21 @@ public class PublishingPlugin implements Plugin<Project> {
                           t.dependsOn(getPublishTask(toPublish, "MavenLocal"));
                         }
                       });
+              project
+                  .getTasks()
+                  .create(
+                      "checkHeadDependencies",
+                      t -> {
+                        for (FirebaseLibraryExtension toPublish : projectsToPublish) {
+                          t.dependsOn(
+                              toPublish.getPath() + ":generatePomFileForMavenAarPublication");
+                        }
+                        t.doLast(
+                            task -> {
+                              com.google.firebase.gradle.plugins.CheckHeadDependency.check(
+                                  projectsToPublish);
+                            });
+                      });
               Task publishProjectsToBuildDir =
                   project
                       .getTasks()
