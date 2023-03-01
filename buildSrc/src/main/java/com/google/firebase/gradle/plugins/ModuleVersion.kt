@@ -44,34 +44,11 @@ data class ModuleVersion(val major: Int, val minor: Int, val patch: Int) {
   override fun toString() = "$major.$minor.$patch"
 
   companion object {
-
     /**
-     * Extrapolate the version variables from a provided [String], and turns them into a
+     * Extrapolates the version variables from a provided [String], and turns them into a
      * [ModuleVersion].
      *
      * The String should be in the format of `MAJOR.MINOR.PATCH`.
-     *
-     * ```
-     * ModuleVersion.fromString("1.2.3") // ModuleVersion(1,2,3)
-     * ModuleVersion.fromString("a.b.c") // IllegalArgumentException
-     * ```
-     *
-     * @param str a [String] that matches the `MAJOR.MINOR.PATCH` format.
-     *
-     * @throws IllegalArgumentException on invalid format.
-     *
-     * @see fromStringOrNull
-     */
-    fun fromString(str: String): ModuleVersion =
-      runCatching {
-          val (major, minor, patch) = str.split(".").map { it.toInt() }
-
-          return ModuleVersion(major, minor, patch)
-        }
-        .getOrElse { throw IllegalArgumentException("Invalid format for provided version.", it) }
-
-    /**
-     * Runs [ModuleVersion.fromString], but catches any exceptions and converts them into null.
      *
      * ```
      * ModuleVersion.fromString("1.2.3") // ModuleVersion(1,2,3)
@@ -80,7 +57,13 @@ data class ModuleVersion(val major: Int, val minor: Int, val patch: Int) {
      *
      * @param str a [String] that matches the `MAJOR.MINOR.PATCH` format.
      */
-    fun fromStringOrNull(str: String): ModuleVersion? = runCatching { fromString(str) }.getOrNull()
+    fun fromStringOrNull(str: String): ModuleVersion? =
+      runCatching {
+          val (major, minor, patch) = str.split(".").map { it.toInt() }
+
+          return ModuleVersion(major, minor, patch)
+        }
+        .getOrNull()
   }
 
   /**
