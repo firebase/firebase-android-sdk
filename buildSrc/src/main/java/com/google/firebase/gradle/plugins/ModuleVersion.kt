@@ -189,11 +189,12 @@ data class ModuleVersion(
           VERSION_REGEX.matchEntire(str)?.let {
             val (major, minor, patch, pre, build) = it.destructured
             ModuleVersion(
-              major.toInt(),
-              minor.toInt(),
-              patch.toInt(),
-              PreReleaseVersion.fromStringsOrNull(pre, build)
-            )
+                major.toInt(),
+                minor.toInt(),
+                patch.toInt(),
+                PreReleaseVersion.fromStringsOrNull(pre, build)
+              )
+              .takeUnless { it.pre == null && (pre.isNotEmpty() || build.isNotEmpty()) }
           }
         }
         .getOrNull()
