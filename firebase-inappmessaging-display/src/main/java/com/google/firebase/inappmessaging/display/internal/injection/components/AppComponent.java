@@ -14,7 +14,7 @@
 
 package com.google.firebase.inappmessaging.display.internal.injection.components;
 
-import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay;
+import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDefaultDisplay;
 import com.google.firebase.inappmessaging.display.internal.FiamImageLoader;
 import com.google.firebase.inappmessaging.display.internal.GlideErrorListener;
 import com.google.firebase.inappmessaging.display.internal.injection.modules.GlideModule;
@@ -29,7 +29,7 @@ import dagger.Component;
     modules = {HeadlessInAppMessagingModule.class, GlideModule.class})
 public interface AppComponent {
   @FirebaseAppScope
-  FirebaseInAppMessagingDisplay providesFirebaseInAppMessagingUI();
+  FirebaseInAppMessagingDefaultDisplay providesFirebaseInAppMessagingUI();
 
   GlideErrorListener glideErrorListener();
 

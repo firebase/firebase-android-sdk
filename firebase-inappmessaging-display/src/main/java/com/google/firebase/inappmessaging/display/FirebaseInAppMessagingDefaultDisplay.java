@@ -76,7 +76,7 @@ import javax.inject.Provider;
  * </ul>
  */
 @FirebaseAppScope
-public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplayImpl {
+public class FirebaseInAppMessagingDefaultDisplay extends FirebaseInAppMessagingDisplayImpl {
   static final long IMPRESSION_THRESHOLD_MILLIS = 5 * 1000; // 5 seconds is a valid impression
   static final long DISMISS_THRESHOLD_MILLIS =
       20 * 1000; // auto dismiss after 20 seconds for banner
@@ -100,7 +100,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   @VisibleForTesting @Nullable String currentlyBoundActivityName;
 
   @Inject
-  FirebaseInAppMessagingDisplay(
+  FirebaseInAppMessagingDefaultDisplay(
       FirebaseInAppMessaging headlessInAppMessaging,
       Map<String, Provider<InAppMessageLayoutConfig>> layoutConfigs,
       FiamImageLoader imageLoader,
@@ -127,8 +127,8 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
    * FirebaseApp#getInstance()}
    */
   @NonNull
-  public static FirebaseInAppMessagingDisplay getInstance() {
-    return FirebaseApp.getInstance().get(FirebaseInAppMessagingDisplay.class);
+  public static FirebaseInAppMessagingDefaultDisplay getInstance() {
+    return FirebaseApp.getInstance().get(FirebaseInAppMessagingDefaultDisplay.class);
   }
 
   private static int getScreenOrientation(Application app) {

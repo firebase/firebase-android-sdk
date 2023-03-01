@@ -94,9 +94,9 @@ import org.robolectric.shadows.ShadowPackageManager;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 21, qualifiers = "port")
 @LooperMode(LooperMode.Mode.LEGACY)
-public class FirebaseInAppMessagingDisplayTest {
+public class FirebaseInAppMessagingDefaultDisplayTest {
 
-  private com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay fiamUI;
+  private FirebaseInAppMessagingDefaultDisplay fiamUI;
   private Map<String, Provider<InAppMessageLayoutConfig>> layoutConfigs;
   private DisplayMetrics testDisplayMetrics = new DisplayMetrics();
   private InflaterConfigModule inflaterConfigModule = new InflaterConfigModule();
@@ -211,7 +211,7 @@ public class FirebaseInAppMessagingDisplayTest {
     fiamImageRequestCreator = spy(imageLoader.new FiamImageRequestCreator(requestBuilder));
     doReturn(fiamImageRequestCreator).when(imageLoader).load(any());
     fiamUI =
-        new com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay(
+        new FirebaseInAppMessagingDefaultDisplay(
             headless,
             layoutConfigs,
             imageLoader,
@@ -454,10 +454,10 @@ public class FirebaseInAppMessagingDisplayTest {
         .start(
             any(RenewableTimer.Callback.class),
             ArgumentMatchers.eq(
-                com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay
+                FirebaseInAppMessagingDefaultDisplay
                     .IMPRESSION_THRESHOLD_MILLIS),
             ArgumentMatchers.eq(
-                com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay
+                FirebaseInAppMessagingDefaultDisplay
                     .INTERVAL_MILLIS));
   }
 
@@ -472,10 +472,10 @@ public class FirebaseInAppMessagingDisplayTest {
         .start(
             any(RenewableTimer.Callback.class),
             ArgumentMatchers.eq(
-                com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay
+                FirebaseInAppMessagingDefaultDisplay
                     .DISMISS_THRESHOLD_MILLIS),
             ArgumentMatchers.eq(
-                com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay
+                FirebaseInAppMessagingDefaultDisplay
                     .INTERVAL_MILLIS));
   }
 

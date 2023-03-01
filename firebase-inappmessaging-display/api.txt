@@ -1,9 +1,9 @@
 // Signature format: 2.0
 package com.google.firebase.inappmessaging.display {
 
-  public class FirebaseInAppMessagingDisplay implements android.app.Application.ActivityLifecycleCallbacks com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay {
+  public class FirebaseInAppMessagingDefaultDisplay implements android.app.Application.ActivityLifecycleCallbacks com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay {
     method public void displayMessage(com.google.firebase.inappmessaging.model.InAppMessage, com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks);
-    method @NonNull public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay getInstance();
+    method @NonNull public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDefaultDisplay getInstance();
     method public void onActivityCreated(android.app.Activity, android.os.Bundle);
     method public void onActivityDestroyed(android.app.Activity);
     method public void onActivityPaused(android.app.Activity);

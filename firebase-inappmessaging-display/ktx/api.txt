@@ -2,7 +2,7 @@
 package com.google.firebase.inappmessaging.display.ktx {
 
   public final class InAppMessagingDisplayKt {
-    method @NonNull public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay getInAppMessagingDisplay(@NonNull com.google.firebase.ktx.Firebase);
+    method @NonNull public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDefaultDisplay getInAppMessagingDisplay(@NonNull com.google.firebase.ktx.Firebase);
   }
 
 }

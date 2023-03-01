@@ -18,7 +18,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay
+import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDefaultDisplay
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
@@ -70,7 +70,7 @@ class InAppMessagingDisplayTests : BaseTestCase() {
   @Test
   fun `inAppMessagingDisplay should delegate to FirebaseInAppMessagingDisplay#getInstance()`() {
     assertThat(Firebase.inAppMessagingDisplay)
-      .isSameInstanceAs(FirebaseInAppMessagingDisplay.getInstance())
+      .isSameInstanceAs(FirebaseInAppMessagingDefaultDisplay.getInstance())
   }
 }
 
