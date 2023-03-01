@@ -82,8 +82,6 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
       20 * 1000; // auto dismiss after 20 seconds for banner
   static final long INTERVAL_MILLIS = 1000;
 
-  public boolean useCustomTabs = true;
-
   private final FirebaseInAppMessaging headlessInAppMessaging;
 
   private final Map<String, Provider<InAppMessageLayoutConfig>> layoutConfigs;
@@ -98,6 +96,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   private FiamListener fiamListener;
   private InAppMessage inAppMessage;
   private FirebaseInAppMessagingDisplayCallbacks callbacks;
+  private boolean useCustomTabs = true;
 
   @VisibleForTesting @Nullable String currentlyBoundActivityName;
 
@@ -167,6 +166,22 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
    */
   public void clearFiamListener() {
     this.fiamListener = null;
+  }
+
+  /**
+   * Gets whether the action link should be handled by opening a Custom Tab.
+   */
+  public boolean getUseCustomTabs() {
+    return useCustomTabs;
+  }
+
+  /**
+   * Sets whether the action link should be handled by opening a Custom Tab.
+   *
+   * @hide
+   */
+  public void setUseCustomTabs(boolean useCustomTabs) {
+    this.useCustomTabs = useCustomTabs;
   }
 
   /**
