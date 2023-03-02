@@ -16,19 +16,12 @@
 
 package com.google.firebase.sessions
 
-import android.os.Build
 import android.os.SystemClock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.nanoseconds
 
 /** Util object for "wall clock" time functions. */
 internal object WallClock {
   /** Gets the [Duration] elapsed in "wall clock" time since device boot. */
-  fun elapsedRealtime(): Duration =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      SystemClock.elapsedRealtimeNanos().nanoseconds
-    } else {
-      SystemClock.elapsedRealtime().milliseconds
-    }
+  fun elapsedRealtime(): Duration = SystemClock.elapsedRealtime().milliseconds
 }
