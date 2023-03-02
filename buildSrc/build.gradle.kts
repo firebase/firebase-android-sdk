@@ -70,7 +70,7 @@ dependencies {
     testImplementation(libs.bundles.kotest)
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.google.truth:truth:1.1.2")
-    testImplementation("commons-io:commons-io:2.6")
+    testImplementation("commons-io:commons-io:2.11.0")
 }
 
 gradlePlugin {
