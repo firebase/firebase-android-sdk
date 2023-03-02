@@ -33,6 +33,7 @@ val perfPluginVersion = System.getenv("FIREBASE_PERF_PLUGIN_VERSION") ?: "1.4.1"
 
 googleJavaFormat {
     toolVersion = "1.15.0"
+    exclude(".gradle/**")
 }
 
 ktfmt {
