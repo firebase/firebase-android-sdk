@@ -471,6 +471,8 @@ public class ConfigRealtimeHttpClient {
         configAutoFetch.listenForNotifications();
       }
     } catch (IOException e) {
+      // Stream could not be open due to a transient issue and the system will retry the connection
+      // without user intervention.
       Log.d(TAG, "Exception connecting to realtime stream. Retrying the connection...");
     } finally {
       closeRealtimeHttpStream(httpURLConnection);

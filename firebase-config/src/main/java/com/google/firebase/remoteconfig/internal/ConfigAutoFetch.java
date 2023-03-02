@@ -105,6 +105,7 @@ public class ConfigAutoFetch {
         handleNotifications(inputStream);
         inputStream.close();
       } catch (IOException ex) {
+        // Stream was interrupted due to a transient issue and the system will retry the connection.
         Log.d(TAG, "Stream was cancelled due to an exception: " + ex.toString());
       } finally {
         httpURLConnection.disconnect();
@@ -151,6 +152,8 @@ public class ConfigAutoFetch {
               }
             }
           } catch (JSONException ex) {
+            // Message was mangled up and so it was unable to be parsed. User is notified of this
+            // because it there could be a new configuration that needs to be fetched.
             propagateErrors(
                 new FirebaseRemoteConfigClientException(
                     "Unable to parse config update message.",
