@@ -106,7 +106,11 @@ public class ConfigAutoFetch {
         inputStream.close();
       } catch (IOException ex) {
         // Stream was interrupted due to a transient issue and the system will retry the connection.
-        Log.d(TAG, "Stream was cancelled due to an exception: " + ex.toString());
+        Log.d(
+            TAG,
+            String.format(
+                "Stream was cancelled due to an exception: %s. Retrying the connection...",
+                ex.toString()));
       } finally {
         httpURLConnection.disconnect();
       }
