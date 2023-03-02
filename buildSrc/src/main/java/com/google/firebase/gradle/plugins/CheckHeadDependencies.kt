@@ -16,11 +16,10 @@
 
 package com.google.firebase.gradle.plugins
 
-import java.io.File
-import javax.xml.parsers.DocumentBuilder
-import javax.xml.parsers.DocumentBuilderFactory
+import java.util.stream.Collectors
 import org.gradle.api.GradleException
-import org.w3c.dom.Document
+import org.gradle.api.artifacts.Dependency
+import org.gradle.api.artifacts.ProjectDependency
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 import org.w3c.dom.NodeList
@@ -32,9 +31,11 @@ fun getHeadDependencies(pomNodeList: NodeList): MutableSet<String> {
     if (node.getNodeType() == Node.ELEMENT_NODE) {
       val element = node as Element
       val artifact = element.getElementsByTagName("artifactId").item(0).getTextContent()
+      val groupId = element.getElementsByTagName("groupId").item(0).getTextContent()
       val version = element.getElementsByTagName("version").item(0).getTextContent()
-      print("${artifact} - ${version}")
-      if (version.contains("-SNAPSHOT")) {
+      val gMavenHelper = GmavenHelper(groupId, artifact)
+      if (version > gMavenHelper.getLatestReleasedVersion()) {
+        println(artifact)
         headDependencies.add(artifact)
       }
     }
@@ -42,22 +43,28 @@ fun getHeadDependencies(pomNodeList: NodeList): MutableSet<String> {
   return headDependencies
 }
 
-fun check(projectsToPublish: Set<FirebaseLibraryExtension>) {
-  val allProjectsToRelease: MutableSet<String> = HashSet()
+fun check(projectsToPublish: Set<FirebaseLibraryExtension>, allFirebaseProjects: Set<String>) {
+  val projectsReleasing: MutableSet<String> =
+    projectsToPublish.map { it.artifactId.get() }.toSet() as MutableSet<String>
+  var allProjectsToRelease: MutableSet<String> = mutableSetOf()
   projectsToPublish.forEach {
-    val pomPath = "${it.project.buildDir}/publications/mavenAar/pom-default.xml"
-    val factory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
-    val builder: DocumentBuilder = factory.newDocumentBuilder()
-    val doc: Document = builder.parse(File(pomPath))
-    allProjectsToRelease.addAll(getHeadDependencies(doc.getElementsByTagName("dependency")))
+    val projectDependencies: Set<String> =
+      it.project
+        .getConfigurations()
+        .getByName(it.getRuntimeClasspath())
+        .dependencies
+        .stream()
+        .filter({ dep: Dependency? -> dep is ProjectDependency })
+        .map { it.name }
+        .collect(Collectors.toSet())
+    allProjectsToRelease.addAll(projectDependencies)
   }
-  val projectsReleasing = projectsToPublish.map { it.artifactId.get() }
-  println(projectsReleasing)
-  println(allProjectsToRelease)
-  val projectsToRelease = allProjectsToRelease subtract projectsReleasing
+
+  allProjectsToRelease = (allProjectsToRelease intersect allFirebaseProjects) as MutableSet<String>
+  val projectsToRelease: Set<String> = (allProjectsToRelease subtract projectsReleasing)
   if (projectsToRelease.isNotEmpty()) {
     throw GradleException(
-      "${projectsToRelease.toString()} have to release as well. Please update the release config\n"
+      "Following Sdks have to release as well. Please update the release config.\n${projectsToRelease.joinToString("\n")}"
     )
   }
 }

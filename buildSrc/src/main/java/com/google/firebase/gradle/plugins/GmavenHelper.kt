@@ -14,6 +14,7 @@
 
 package com.google.firebase.gradle.plugins
 
+import java.io.FileNotFoundException
 import java.net.URL
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
@@ -29,12 +30,16 @@ class GmavenHelper(val groupId: String, val artifactId: String) {
   }
 
   fun getLatestReleasedVersion(): String {
-    val groupIdAsPath = groupId.replace(".", "/")
-    val mavenMetadataUrl = "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/maven-metadata.xml"
-    val factory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
-    val builder: DocumentBuilder = factory.newDocumentBuilder()
-    val doc: Document = builder.parse(URL(mavenMetadataUrl).openStream())
-    doc.documentElement.normalize()
-    return doc.getElementsByTagName("latest").item(0).getTextContent()
+    try {
+      val groupIdAsPath = groupId.replace(".", "/")
+      val mavenMetadataUrl = "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/maven-metadata.xml"
+      val factory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
+      val builder: DocumentBuilder = factory.newDocumentBuilder()
+      val doc: Document = builder.parse(URL(mavenMetadataUrl).openStream())
+      doc.documentElement.normalize()
+      return doc.getElementsByTagName("latest").item(0).getTextContent()
+    } catch (e: FileNotFoundException) {
+      return ""
+    }
   }
 }

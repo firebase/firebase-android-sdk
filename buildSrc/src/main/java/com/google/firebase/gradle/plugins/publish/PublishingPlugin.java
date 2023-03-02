@@ -117,6 +117,20 @@ public class PublishingPlugin implements Plugin<Project> {
                     List.of(projectNamesToPublish.split(projectsToPublishSeparator, -1));
               }
 
+              Set<String> allFirebaseProjects =
+                  project.getSubprojects().stream()
+                      .filter(
+                          sub ->
+                              sub.getExtensions().findByType(FirebaseLibraryExtension.class)
+                                  != null)
+                      .map(
+                          sub ->
+                              sub.getExtensions()
+                                  .findByType(FirebaseLibraryExtension.class)
+                                  .artifactId
+                                  .get())
+                      .collect(Collectors.toSet());
+
               Set<FirebaseLibraryExtension> projectsToPublish =
                   projectsNames.stream()
                       .filter(name -> !name.isEmpty())
@@ -193,7 +207,7 @@ public class PublishingPlugin implements Plugin<Project> {
                         t.doLast(
                             task -> {
                               com.google.firebase.gradle.plugins.CheckHeadDependency.check(
-                                  projectsToPublish);
+                                  projectsToPublish, allFirebaseProjects);
                             });
                       });
               Task publishProjectsToBuildDir =
