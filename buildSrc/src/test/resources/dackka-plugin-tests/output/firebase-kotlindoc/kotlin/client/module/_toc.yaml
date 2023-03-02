@@ -1,0 +1,22 @@
+toc:
+- title: "com.example"
+  path: "/reference/kotlin/com/example/package-summary.html"
+
+  section:
+  - title: "Interfaces"
+
+    section:
+    - title: "Phrase"
+      path: "/reference/kotlin/com/example/Phrase.html"
+
+  - title: "Classes"
+
+    section:
+    - title: "CheckTheReleaseSpreadsheet"
+      path: "/reference/kotlin/com/example/CheckTheReleaseSpreadsheet.html"
+    - title: "Goodbye"
+      path: "/reference/kotlin/com/example/Goodbye.html"
+    - title: "Hello"
+      path: "/reference/kotlin/com/example/Hello.html"
+
+

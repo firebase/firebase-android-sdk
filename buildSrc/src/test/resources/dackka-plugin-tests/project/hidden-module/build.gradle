@@ -1,0 +1,13 @@
+plugins {
+    id 'firebase-library'
+}
+
+firebaseLibrary {
+    publishSources = true
+    publishJavadoc = false
+}
+
+android.compileSdkVersion = 26
+android.sourceSets {
+    main.java.srcDirs += 'src/main/kotlin'
+}
