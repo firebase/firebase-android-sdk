@@ -49,6 +49,7 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
     project.apply<DackkaPlugin>()
     project.apply<GitSubmodulePlugin>()
+    project.apply<PostReleasePlugin>()
     project.tasks.getByName("preBuild").dependsOn("updateGitSubmodules")
   }
 
