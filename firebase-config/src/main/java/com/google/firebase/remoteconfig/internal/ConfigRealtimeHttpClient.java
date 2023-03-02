@@ -473,7 +473,7 @@ public class ConfigRealtimeHttpClient {
     } catch (IOException e) {
       // Stream could not be open due to a transient issue and the system will retry the connection
       // without user intervention.
-      Log.d(TAG, "Exception connecting to realtime stream. Retrying the connection...");
+      Log.d(TAG, "Exception connecting to realtime stream. Retrying the connection...", e);
     } finally {
       closeRealtimeHttpStream(httpURLConnection);
       setIsHttpConnectionRunning(false);
