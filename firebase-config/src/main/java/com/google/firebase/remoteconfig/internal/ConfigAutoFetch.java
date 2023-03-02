@@ -151,6 +151,11 @@ public class ConfigAutoFetch {
               }
             }
           } catch (JSONException ex) {
+            propagateErrors(
+                new FirebaseRemoteConfigClientException(
+                    "Unable to parse config update message.",
+                    ex.getCause(),
+                    FirebaseRemoteConfigException.Code.CONFIG_UPDATE_MESSAGE_INVALID));
             Log.e(TAG, "Unable to parse latest config update message." + ex.toString());
           }
 
