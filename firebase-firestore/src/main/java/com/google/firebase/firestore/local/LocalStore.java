@@ -607,15 +607,15 @@ public final class LocalStore implements BundleCallback {
                   targetData.withLastLimboFreeSnapshotVersion(lastLimboFreeSnapshotVersion);
               queryDataByTarget.put(targetId, updatedTargetData);
 
-              long newSeconds = 
-                updatedTargetData.getLastLimboFreeSnapshotVersion().getTimestamp().getSeconds();
+              long newSeconds =
+                  updatedTargetData.getLastLimboFreeSnapshotVersion().getTimestamp().getSeconds();
 
-              long oldSeconds = 
-                targetData.getLastLimboFreeSnapshotVersion().getTimestamp().getSeconds();
+              long oldSeconds =
+                  targetData.getLastLimboFreeSnapshotVersion().getTimestamp().getSeconds();
 
               long timeDelta = newSeconds - oldSeconds;
 
-              // Update the target cache if sufficient time has passed since the last 
+              // Update the target cache if sufficient time has passed since the last
               // LastLimboFreeSnapshotVersion
               if (timeDelta >= RESUME_TOKEN_MAX_AGE_SECONDS) {
                 targetCache.updateTargetData(updatedTargetData);
