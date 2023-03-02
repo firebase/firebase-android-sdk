@@ -19,6 +19,8 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Preconditions;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * A query that calculates aggregations over an underlying query.
@@ -29,16 +31,25 @@ import com.google.firebase.firestore.util.Preconditions;
  */
 public class AggregateQuery {
 
-  private final Query query;
+  @NonNull private final Query query;
 
-  AggregateQuery(@NonNull Query query) {
+  @NonNull private final List<AggregateField> aggregateFieldList;
+
+  AggregateQuery(@NonNull Query query, @NonNull List<AggregateField> aggregateFieldList) {
     this.query = query;
+    this.aggregateFieldList = aggregateFieldList;
   }
 
   /** Returns the query whose aggregations will be calculated by this object. */
   @NonNull
   public Query getQuery() {
     return query;
+  }
+
+  /** Returns the AggregateFields included inside this object. */
+  @NonNull
+  public List<AggregateField> getAggregateFields() {
+    return aggregateFieldList;
   }
 
   /**
@@ -54,7 +65,7 @@ public class AggregateQuery {
     query
         .firestore
         .getClient()
-        .runCountQuery(query.query)
+        .runAggregateQuery(query.query, aggregateFieldList)
         .continueWith(
             Executors.DIRECT_EXECUTOR,
             (task) -> {
@@ -90,7 +101,7 @@ public class AggregateQuery {
     if (this == object) return true;
     if (!(object instanceof AggregateQuery)) return false;
     AggregateQuery other = (AggregateQuery) object;
-    return query.equals(other.query);
+    return query.equals(other.query) && aggregateFieldList.equals(other.aggregateFieldList);
   }
 
   /**
@@ -100,6 +111,6 @@ public class AggregateQuery {
    */
   @Override
   public int hashCode() {
-    return query.hashCode();
+    return Objects.hash(query.hashCode(), aggregateFieldList.hashCode());
   }
 }
