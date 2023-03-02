@@ -20,28 +20,6 @@ import java.util.stream.Collectors
 import org.gradle.api.GradleException
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ProjectDependency
-import org.w3c.dom.Element
-import org.w3c.dom.Node
-import org.w3c.dom.NodeList
-
-fun getHeadDependencies(pomNodeList: NodeList): MutableSet<String> {
-  val headDependencies: MutableSet<String> = HashSet()
-  for (i in 0..pomNodeList.length - 1) {
-    val node: Node = pomNodeList.item(i)
-    if (node.getNodeType() == Node.ELEMENT_NODE) {
-      val element = node as Element
-      val artifact = element.getElementsByTagName("artifactId").item(0).getTextContent()
-      val groupId = element.getElementsByTagName("groupId").item(0).getTextContent()
-      val version = element.getElementsByTagName("version").item(0).getTextContent()
-      val gMavenHelper = GmavenHelper(groupId, artifact)
-      if (version > gMavenHelper.getLatestReleasedVersion()) {
-        println(artifact)
-        headDependencies.add(artifact)
-      }
-    }
-  }
-  return headDependencies
-}
 
 fun check(projectsToPublish: Set<FirebaseLibraryExtension>, allFirebaseProjects: Set<String>) {
   val projectsReleasing: MutableSet<String> =
@@ -52,7 +30,7 @@ fun check(projectsToPublish: Set<FirebaseLibraryExtension>, allFirebaseProjects:
       it.project
         .getConfigurations()
         .getByName(it.getRuntimeClasspath())
-        .dependencies
+        .allDependencies
         .stream()
         .filter({ dep: Dependency? -> dep is ProjectDependency })
         .map { it.name }
