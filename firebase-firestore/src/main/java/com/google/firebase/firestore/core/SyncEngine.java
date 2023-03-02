@@ -23,6 +23,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.LoadBundleTask;
 import com.google.firebase.firestore.LoadBundleTaskProgress;
@@ -54,6 +55,7 @@ import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
+import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import java.io.IOException;
@@ -318,8 +320,9 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     return new TransactionRunner<TResult>(asyncQueue, remoteStore, options, updateFunction).run();
   }
 
-  public Task<Long> runCountQuery(Query query) {
-    return remoteStore.runCountQuery(query);
+  public Task<Map<String, Value>> runAggregateQuery(
+      Query query, List<AggregateField> aggregateFields) {
+    return remoteStore.runAggregateQuery(query, aggregateFields);
   }
 
   /** Called by FirestoreClient to notify us of a new remote event. */
