@@ -471,12 +471,9 @@ public class ConfigRealtimeHttpClient {
         configAutoFetch.listenForNotifications();
       }
     } catch (IOException e) {
-      Log.d(TAG, "Exception connecting to realtime stream. Retrying the connection...");
-      propagateErrors(
-          new FirebaseRemoteConfigServerException(
-              "Unable to connect to the server. Try again in a few minutes.",
-              e.getCause(),
-              FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
+      // Stream could not be open due to a transient issue and the system will retry the connection
+      // without user intervention.
+      Log.d(TAG, "Exception connecting to realtime stream. Retrying the connection...", e);
     } finally {
       closeRealtimeHttpStream(httpURLConnection);
       setIsHttpConnectionRunning(false);

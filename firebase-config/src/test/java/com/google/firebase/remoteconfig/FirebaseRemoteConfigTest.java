@@ -1223,14 +1223,6 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void realtime_stream_listen_fail() throws Exception {
-    when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
-    configAutoFetch.listenForNotifications();
-
-    verify(mockInvalidMessageEventListener).onError(any(FirebaseRemoteConfigClientException.class));
-  }
-
-  @Test
   public void realtime_redirectStatusCode_noRetries() throws Exception {
     ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
     doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
@@ -1406,6 +1398,23 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void realtimeStreamListen_andUnableToParseMessage() throws Exception {
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+    when(mockHttpURLConnection.getInputStream())
+        .thenReturn(
+            new ByteArrayInputStream(
+                "{ \"featureDisabled\": false,  \"latestTemplateVersionNumber: 2 } }"
+                    .getBytes(StandardCharsets.UTF_8)));
+    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
+    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, 1))
+        .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+    configAutoFetch.listenForNotifications();
+
+    verify(mockInvalidMessageEventListener).onError(any(FirebaseRemoteConfigClientException.class));
+  }
+
+  @Test
   public void realtime_stream_listen_get_inputstream_fail() throws Exception {
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
@@ -1415,7 +1424,7 @@ public final class FirebaseRemoteConfigTest {
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(mockInvalidMessageEventListener).onError(any(FirebaseRemoteConfigClientException.class));
+    verify(mockHttpURLConnection).disconnect();
   }
 
   @Test

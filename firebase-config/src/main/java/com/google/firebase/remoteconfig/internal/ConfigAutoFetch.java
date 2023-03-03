@@ -105,11 +105,8 @@ public class ConfigAutoFetch {
         handleNotifications(inputStream);
         inputStream.close();
       } catch (IOException ex) {
-        propagateErrors(
-            new FirebaseRemoteConfigClientException(
-                "Unable to parse config update message.",
-                ex.getCause(),
-                FirebaseRemoteConfigException.Code.CONFIG_UPDATE_MESSAGE_INVALID));
+        // Stream was interrupted due to a transient issue and the system will retry the connection.
+        Log.d(TAG, "Stream was cancelled due to an exception. Retrying the connection...", ex);
       } finally {
         httpURLConnection.disconnect();
       }
@@ -155,7 +152,14 @@ public class ConfigAutoFetch {
               }
             }
           } catch (JSONException ex) {
-            Log.e(TAG, "Unable to parse latest config update message." + ex.toString());
+            // Message was mangled up and so it was unable to be parsed. User is notified of this
+            // because it there could be a new configuration that needs to be fetched.
+            propagateErrors(
+                new FirebaseRemoteConfigClientException(
+                    "Unable to parse config update message.",
+                    ex.getCause(),
+                    FirebaseRemoteConfigException.Code.CONFIG_UPDATE_MESSAGE_INVALID));
+            Log.e(TAG, "Unable to parse latest config update message.", ex);
           }
 
           currentConfigUpdateMessage = "";
