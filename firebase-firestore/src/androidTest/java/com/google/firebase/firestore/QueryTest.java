@@ -1211,6 +1211,10 @@ public class QueryTest {
 
   @Test
   public void testMultipleInOps() {
+    // TODO(orquery): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because it's not yet supported.",
+        isRunningAgainstEmulator());
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", 0),
@@ -1237,6 +1241,10 @@ public class QueryTest {
 
   @Test
   public void testUsingInWithArrayContainsAny() {
+    // TODO(orquery): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because it's not yet supported.",
+        isRunningAgainstEmulator());
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", asList(0)),
@@ -1300,6 +1308,7 @@ public class QueryTest {
 
   @Test
   public void testOrderByEquality() {
+    // TODO(orquery): Enable this test against production when possible.
     assumeTrue(
         "Skip this test if running against production because order-by-equality is "
             + "not supported yet.",

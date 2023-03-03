@@ -1,6 +1,7 @@
 # Unreleased
 * [fixed] Fix a potential high-memory usage issue.
 * [fixed] Fix an issue that stops some performance optimization being applied.
+* [feature] Add support for disjunctions in queries (`OR` queries).
 
 # 24.4.1
 * [fixed] Fix `FAILED_PRECONDITION` when writing to a deleted document in a
