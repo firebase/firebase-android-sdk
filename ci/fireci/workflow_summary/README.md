@@ -28,9 +28,9 @@
 
 -  `-a, --actor`: Filter the actor who triggers the workflow runs.
 
--  `-e, --event`: Filter workflows trigger event, default is all events, could be one of the following values `['push', 'pull_request', 'issue']`.
+-  `-e, --event`: Filter workflows trigger event, could be one of the following values `['push', 'pull_request', 'issue']`.
 
--  `-j, --jobs`: Filter workflows jobs, default is the last job and does not include all jobs (does not include rerun jobs), could be one of the following values `['latest', 'all']`.
+-  `-j, --jobs`: Filter workflows jobs, default is `all` (including rerun jobs), could be one of the following values `['latest', 'all']`.
 
 -  `-f, --folder`: Workflow and job information will be store here, default value is the current datatime.
 
