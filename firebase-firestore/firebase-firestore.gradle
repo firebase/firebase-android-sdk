@@ -49,9 +49,6 @@ protobuf {
         }
     }
 }
-// Acceptable values are: 'emulator', 'qa', 'nightly', and 'prod'.
-ext.targetBackend = 'emulator'
-
 android {
     adbOptions {
         timeOutInMs 60 * 1000
@@ -65,19 +62,6 @@ android {
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'proguard.txt'
-
-        if (findProperty("useProdBackendForTests")) {
-            buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "false")
-        } else {
-            buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "true")
-        }
-
-        if (findProperty('targetBackend')) {
-            buildConfigField("String", "TARGET_BACKEND", "\"${property("targetBackend")}\"")
-        } else {
-            // By default set the target backend to 'emulator'
-            buildConfigField("String", "TARGET_BACKEND", "\"emulator\"")
-        }
     }
 
     sourceSets {
@@ -105,10 +89,29 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     testOptions.unitTests.includeAndroidResources = true
+
+    // Acceptable values are: 'emulator', 'qa', 'nightly', and 'prod'.
+    ext.targetBackend = 'emulator'
 }
 
 tasks.withType(Test) {
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+}
+
+android.libraryVariants.all { variant ->
+    if (findProperty('targetBackend')) {
+        variant.buildConfigField("String", "TARGET_BACKEND", "\"${property("targetBackend")}\"")
+    } else {
+        // By default set the target backend to 'emulator'
+        variant.buildConfigField("String", "TARGET_BACKEND", "\"emulator\"")
+    }
+
+    def localProps = new Properties()
+
+    try {
+    file("local.properties").withInputStream { localProps.load(it) }
+    } catch (FileNotFoundException e) {
+    }
 }
 
 googleJavaFormat {
@@ -146,6 +149,7 @@ dependencies {
     androidTestAnnotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
 
+    testImplementation project(':firebase-firestore')
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation "org.hamcrest:hamcrest-junit:2.0.0.0"
@@ -155,6 +159,7 @@ dependencies {
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
 
+    androidTestImplementation project(':firebase-firestore')
     androidTestImplementation 'junit:junit:4.13.2'
     androidTestImplementation("com.google.truth:truth:$googleTruthVersion"){
         exclude group: "org.codehaus.mojo", module: "animal-sniffer-annotations"

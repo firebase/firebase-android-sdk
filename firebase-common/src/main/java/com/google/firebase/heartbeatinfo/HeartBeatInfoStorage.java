@@ -111,6 +111,15 @@ class HeartBeatInfoStorage {
     return null;
   }
 
+  private synchronized void updateStoredUserAgent(String userAgent, String dateString) {
+    removeStoredDate(dateString);
+    Set<String> userAgentDateSet =
+        new HashSet<String>(
+            firebaseSharedPreferences.getStringSet(userAgent, new HashSet<String>()));
+    userAgentDateSet.add(dateString);
+    firebaseSharedPreferences.edit().putStringSet(userAgent, userAgentDateSet).commit();
+  }
+
   private synchronized void removeStoredDate(String dateString) {
     // Find stored heartbeat and clear it.
     String userAgentString = getStoredUserAgentString(dateString);
@@ -148,7 +157,18 @@ class HeartBeatInfoStorage {
     String dateString = getFormattedDate(millis);
     String lastDateString = firebaseSharedPreferences.getString(LAST_STORED_DATE, "");
     if (lastDateString.equals(dateString)) {
-      return;
+      String storedUserAgentString = getStoredUserAgentString(dateString);
+      if (storedUserAgentString == null) {
+        // Heartbeat already sent for today.
+        return;
+      }
+      if (storedUserAgentString.equals(userAgentString)) {
+        // UserAgent not updated.
+        return;
+      } else {
+        updateStoredUserAgent(userAgentString, dateString);
+        return;
+      }
     }
     long heartBeatCount = firebaseSharedPreferences.getLong(HEART_BEAT_COUNT_TAG, 0);
     if (heartBeatCount + 1 == HEART_BEAT_COUNT_LIMIT) {

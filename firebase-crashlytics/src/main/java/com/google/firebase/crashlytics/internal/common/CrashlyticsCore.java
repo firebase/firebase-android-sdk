@@ -59,7 +59,7 @@ public class CrashlyticsCore {
   static final String CRASHLYTICS_REQUIRE_BUILD_ID = "com.crashlytics.RequireBuildId";
   static final boolean CRASHLYTICS_REQUIRE_BUILD_ID_DEFAULT = true;
 
-  static final int DEFAULT_MAIN_HANDLER_TIMEOUT_SEC = 4;
+  static final int DEFAULT_MAIN_HANDLER_TIMEOUT_SEC = 3;
 
   private static final String ON_DEMAND_RECORDED_KEY =
       "com.crashlytics.on-demand.recorded-exceptions";

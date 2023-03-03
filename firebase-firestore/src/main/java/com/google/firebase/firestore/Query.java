@@ -540,12 +540,6 @@ public class Query {
       throw new IllegalArgumentException(
           "Invalid Query. A non-empty array is required for '" + op.toString() + "' filters.");
     }
-    if (((List) value).size() > 10) {
-      throw new IllegalArgumentException(
-          "Invalid Query. '"
-              + op.toString()
-              + "' filters support a maximum of 10 elements in the value array.");
-    }
   }
 
   private void validateOrderByFieldMatchesInequality(
@@ -566,36 +560,26 @@ public class Query {
   /**
    * Given an operator, returns the set of operators that cannot be used with it.
    *
+   * <p>This is not a comprehensive check, and this function should be removed in the long term.
+   * Validations should occur in the Firestore backend.
+   *
    * <p>Operators in a query must adhere to the following set of rules:
    *
    * <ol>
-   *   <li>Only one array operator is allowed.
-   *   <li>Only one disjunctive operator is allowed.
-   *   <li>NOT_EQUAL cannot be used with another NOT_EQUAL operator.
+   *   <li>Only one inequality per query.
    *   <li>NOT_IN cannot be used with array, disjunctive, or NOT_EQUAL operators.
    * </ol>
-   *
-   * <p>Array operators: ARRAY_CONTAINS, ARRAY_CONTAINS_ANY Disjunctive operators: IN,
-   * ARRAY_CONTAINS_ANY, NOT_IN
    */
   private List<Operator> conflictingOps(Operator op) {
     switch (op) {
       case NOT_EQUAL:
         return Arrays.asList(Operator.NOT_EQUAL, Operator.NOT_IN);
-      case ARRAY_CONTAINS:
-        return Arrays.asList(Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY, Operator.NOT_IN);
-      case IN:
-        return Arrays.asList(Operator.ARRAY_CONTAINS_ANY, Operator.IN, Operator.NOT_IN);
       case ARRAY_CONTAINS_ANY:
-        return Arrays.asList(
-            Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY, Operator.IN, Operator.NOT_IN);
+      case IN:
+        return Arrays.asList(Operator.NOT_IN);
       case NOT_IN:
         return Arrays.asList(
-            Operator.ARRAY_CONTAINS,
-            Operator.ARRAY_CONTAINS_ANY,
-            Operator.IN,
-            Operator.NOT_IN,
-            Operator.NOT_EQUAL);
+            Operator.ARRAY_CONTAINS_ANY, Operator.IN, Operator.NOT_IN, Operator.NOT_EQUAL);
       default:
         return new ArrayList<>();
     }
