@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2022 Google LLC -->
+<!-- -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License"); -->
+<!-- you may not use this file except in compliance with the License. -->
+<!-- You may obtain a copy of the License at -->
+<!-- -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0 -->
+<!-- -->
+<!-- Unless required by applicable law or agreed to in writing, software -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS, -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. -->
+<!-- See the License for the specific language governing permissions and -->
+<!-- limitations under the License. -->
+
+<resources>
+  <string name="signin_dialog_title" translation_description="Title of the dialog encouraging the user to enable Firebase App Distribution features">Bật các tính năng thử nghiệm</string>
+  <string name="singin_dialog_message" translation_description="Content of the dialog encouraging the user to enable Firebase App Distribution features">Bật các tính năng thử nghiệm như thông báo về bản dựng mới và phản hồi trong ứng dụng.</string>
+  <string name="singin_yes_button" translation_description="Text on button to enable Firebase App Distribution features">Bật</string>
+  <string name="singin_no_button" translation_description="Text on button to decline Firebase App Distribution features">Để sau</string>
+  <string name="update_dialog_title" translation_description="Title of the dialog explaining to the user that a new version of the application is available">Đã có phiên bản mới</string>
+  <string name="update_version_available" translation_description="Version string (and code) of the available update">Phiên bản %1$s (%2$d) hiện đã ra mắt.</string>
+  <string name="update_release_notes" translation_description="Text prefixing release notes">Ghi chú phát hành:</string>
+  <string name="update_yes_button" translation_description="Text on button to start update">Cập nhật</string>
+  <string name="update_no_button" translation_description="Text on button to cancel update">Huỷ</string>
+  <string name="downloading_app_update" translation_description="Title of the notification showing during download of update">Đang tải bản cập nhật trong ứng dụng xuống…</string>
+  <string name="download_completed" translation_description="Title of notification when download of update has completed">Đã tải xuống xong</string>
+  <string name="download_failed" translation_description="Title of notification when download of update has failed">Không tải xuống được</string>
+  <string name="install_failed" translation_description="Title of notification when installation of update has failed">Không cài đặt được</string>
+  <string name="notifications_group_name" translation_description="Title of the notification channel group for the SDK">Phân phối ứng dụng Firebase</string>
+  <string name="app_update_notification_channel_name" translation_description="Name of the notification channel for in-app updates">Cập nhật ứng dụng</string>
+  <string name="app_update_notification_channel_description" translation_description="Description of the notification channel for in-app updates">Hiện tiến trình của các bản cập nhật trong ứng dụng</string>
+  <string name="feedback_launch_failed" translation_description="Toast explaining that launching the feedback functionality failed">Không chạy được tính năng phản hồi</string>
+  <string name="feedback_unidentified_release" translation_description="Toast explaining feedback can't be provided, because release can't be found">Không tìm thấy bản phát hành. Ứng dụng này có thể không phải do tính năng Phân phối ứng dụng cài đặt hoặc bạn hiện đã mất quyền truy cập.</string>
+  <string name="feedback_no_release" translation_description="Toast explaining that feedback would have been sent, but was not, since development mode was active">Đúng ra là đã gửi phản hồi, nhưng không gửi được do chế độ nhà phát triển.</string>
+  <string name="feedback_notification_channel_name" translation_description="Name of the notification channel for in-app feedback">Phản hồi</string>
+  <string name="feedback_notification_channel_description" translation_description="Description of the notification channel for in-app feedback">Hiện thông báo mời nhập ý kiến phản hồi về ứng dụng</string>
+  <string name="feedback_notification_title" translation_description="Title of notification encouraging testers to enter feedback">Chúng tôi rất mong nhận được ý kiến phản hồi của bạn!</string>
+  <string name="feedback_notification_text" translation_description="Text of notification encouraging testers to enter feedback for the app">Nhấn để nhập ý kiến phản hồi về ứng dụng %1$s</string>
+  <string name="unknown_sources_dialog_title" translation_description="Title of dialog describing that installation from unknown sources needs to be enabled">Cài đặt từ nguồn không rõ ràng</string>
+  <string name="unknown_sources_dialog_description" translation_description="Text of dialog describing why installation from unknown sources needs to be enabled">Để cài đặt bản cập nhật, hãy cho phép cài đặt từ nguồn không rõ ràng</string>
+  <string name="unknown_sources_yes_button" translation_description="Label on button launching settings to enable installation from unknown sources">Cài đặt</string>
+  <string name="back_button_description" translation_description="Description for image button (back) which aborts feedback">Quay lại</string>
+  <string name="send_feedback" translation_description="Text next to send button which sends feedback">Gửi ý kiến phản hồi</string>
+  <string name="send_button_description" translation_description="Description of image button (send) which sends feedback">Gửi</string>
+  <string name="feedback_text_hint" translation_description="Default text hint displayed in the text box where user should type their feedback">Bạn có ý kiến phản hồi? Hãy cho chúng tôi biết cách cải thiện ứng dụng này.</string>
+  <string name="screenshot" translation_description="Text displayed next to the checkbox which can be toggled to include/exclude a screenshot with the feedback">Ảnh chụp màn hình</string>
+  <string name="no_screenshot" translation_description="Text displayed when there is no screenshot available to be included with the feedback">Ảnh chụp màn hình (không có)</string>
+  <string name="screenshot_image_description" translation_description="Description for the screenshot image">Ảnh chụp màn hình</string>
+</resources>

@@ -1,10 +1,22 @@
 # Unreleased
+* [changed] Updated `firebase-crashlytics` dependency to v18.3.6.
 
 # 18.3.5
-* [fixed] Updated `firebase-common` to its latest version (v20.3.0) to fix an issue that was 
-  causing a nondeterministic crash on startup.
+* [fixed] Updated `firebase-common` to its latest version (v20.3.0) to fix an
+  issue that was causing a nondeterministic crash on startup.
 
+* [changed] Updated `firebase-crashlytics` dependency to v18.3.5.
 # 18.3.4
+<aside class="caution">This version of <code>firebase-crashlytics-ndk</code> can
+  cause a nondeterministic crash on startup. For more information, see
+  <a href="https://github.com/firebase/firebase-android-sdk/issues/4683"
+     class="external">GitHub Issue #4683</a>. We recommend updating to the
+  latest version (v18.3.5+) which contains a fix.
+</aside>
+
+* [changed] Updated `firebase-crashlytics` dependency to v18.3.4.
+
+# 18.3.3
 * [changed] Updated internal Crashpad version to commit `c902f6`.
 
 # 18.3.2
@@ -192,4 +204,3 @@ change. The following release notes describe changes in the new SDK.
  uploading symbol files to [crashlytics] servers. See the
  [[crashlytics] Gradle plugin documentation](/docs/crashlytics/ndk-reports-new-sdk)
  for more information.
-

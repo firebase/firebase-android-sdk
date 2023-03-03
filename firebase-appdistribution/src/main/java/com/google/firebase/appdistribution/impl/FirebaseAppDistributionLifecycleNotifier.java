@@ -14,9 +14,13 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
+
 import android.app.Activity;
 import android.app.Application;
+import android.app.Application.ActivityLifecycleCallbacks;
 import android.os.Bundle;
+import android.os.Looper;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,15 +29,17 @@ import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
+import com.google.firebase.concurrent.FirebaseExecutors;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.Executor;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
-class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLifecycleCallbacks {
-
-  /** An {@link Executor} that runs tasks on the current thread. */
-  private static final Executor DIRECT_EXECUTOR = Runnable::run;
+@Singleton // Only one lifecycle notifier is required across the entire app
+class FirebaseAppDistributionLifecycleNotifier {
 
   /** A functional interface for a function that takes an activity and does something with it. */
   interface ActivityConsumer {
@@ -42,14 +48,28 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
 
   /** A functional interface for a function that takes an activity and produces a new value. */
   interface ActivityFunction<T> {
-    T apply(Activity activity) throws FirebaseAppDistributionException;
+    T apply(@NonNull Activity activity) throws FirebaseAppDistributionException;
   }
 
-  private static FirebaseAppDistributionLifecycleNotifier instance;
+  /**
+   * A functional interface for a function that takes a nullable activity and produces a new value.
+   */
+  interface NullableActivityFunction<T> {
+    T apply(@Nullable Activity activity) throws FirebaseAppDistributionException;
+  }
+
+  @UiThread private final Executor uiThreadExecutor;
+  @VisibleForTesting final LifecycleCallbacks lifecycleCallbacks = new LifecycleCallbacks();
   private final Object lock = new Object();
 
   @GuardedBy("lock")
+  private boolean lifecycleCallbacksRegistered = false;
+
+  @GuardedBy("lock")
   private Activity currentActivity;
+
+  @GuardedBy("lock")
+  private Activity previousActivity;
 
   /** A queue of listeners that trigger when the activity is foregrounded. */
   @GuardedBy("lock")
@@ -71,14 +91,9 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   @GuardedBy("lock")
   private final Queue<OnActivityDestroyedListener> onDestroyedListeners = new ArrayDeque<>();
 
-  @VisibleForTesting
-  FirebaseAppDistributionLifecycleNotifier() {}
-
-  static synchronized FirebaseAppDistributionLifecycleNotifier getInstance() {
-    if (instance == null) {
-      instance = new FirebaseAppDistributionLifecycleNotifier();
-    }
-    return instance;
+  @Inject
+  FirebaseAppDistributionLifecycleNotifier(@UiThread Executor uiThreadExecutor) {
+    this.uiThreadExecutor = uiThreadExecutor;
   }
 
   interface OnActivityCreatedListener {
@@ -102,21 +117,84 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
   }
 
   /**
+   * Register for activity lifecycle callbacks for the application.
+   *
+   * <p>This must be called for this class to provide information about activity state.
+   */
+  void registerActivityLifecycleCallbacks(Application application) {
+    synchronized (lock) {
+      // Make sure we register for callbacks only once, so callbacks are not called twice
+      if (!lifecycleCallbacksRegistered) {
+        application.registerActivityLifecycleCallbacks(lifecycleCallbacks);
+        lifecycleCallbacksRegistered = true;
+      }
+    }
+  }
+
+  /**
    * Apply a function to a foreground activity, when one is available, returning a {@link Task} that
    * will complete immediately after the function is applied.
    *
-   * <p>The function will be called immediately once the activity is available. This may be main
-   * thread or the calling thread, depending on whether or not there is already a foreground
-   * activity available when this method is called.
+   * <p>The function will always be called on the UI thread.
    */
   <T> Task<T> applyToForegroundActivity(ActivityFunction<T> function) {
     return getForegroundActivity()
         .onSuccessTask(
             // Use direct executor to ensure the consumer is called while Activity is in foreground
-            DIRECT_EXECUTOR,
+            FirebaseExecutors.directExecutor(),
             activity -> {
               try {
                 return Tasks.forResult(function.apply(activity));
+              } catch (Throwable t) {
+                return Tasks.forException(FirebaseAppDistributionExceptions.wrap(t));
+              }
+            });
+  }
+
+  /**
+   * Apply a function to a foreground activity, when one is available, returning a {@link Task} that
+   * will complete immediately after the function is applied.
+   *
+   * <p>If the foreground activity is of type {@code classToIgnore}, the previously active activity
+   * will be passed to the function, which may be null if there was no previously active activity or
+   * the activity has been destroyed.
+   *
+   * <p>The function will always be called on the UI thread.
+   */
+  <T, A extends Activity> Task<T> applyToNullableForegroundActivity(
+      Class<A> classToIgnore, NullableActivityFunction<T> function) {
+    return getForegroundActivity(classToIgnore)
+        .onSuccessTask(
+            // Use direct executor to ensure the consumer is called while Activity is in foreground
+            FirebaseExecutors.directExecutor(),
+            activity -> {
+              try {
+                return Tasks.forResult(function.apply(activity));
+              } catch (Throwable t) {
+                return Tasks.forException(FirebaseAppDistributionExceptions.wrap(t));
+              }
+            });
+  }
+
+  /**
+   * Apply a function to a foreground activity, when one is available, returning a {@link Task} that
+   * will complete with the result of the Task returned by that function.
+   *
+   * <p>If the foreground activity is of type {@code classToIgnore}, the previously active activity
+   * will be passed to the function, which may be null if there was no previously active activity or
+   * the activity has been destroyed.
+   *
+   * <p>The function will always be called on the UI thread.
+   */
+  <T, A extends Activity> Task<T> applyToNullableForegroundActivityTask(
+      Class<A> classToIgnore, SuccessContinuation<Activity, T> continuation) {
+    return getForegroundActivity(classToIgnore)
+        .onSuccessTask(
+            // Use direct executor to ensure the consumer is called while Activity is in foreground
+            FirebaseExecutors.directExecutor(),
+            activity -> {
+              try {
+                return continuation.then(activity);
               } catch (Throwable t) {
                 return Tasks.forException(FirebaseAppDistributionExceptions.wrap(t));
               }
@@ -128,7 +206,7 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
     return getForegroundActivity()
         .onSuccessTask(
             // Use direct executor to ensure the consumer is called while Activity is in foreground
-            DIRECT_EXECUTOR,
+            FirebaseExecutors.directExecutor(),
             activity -> {
               try {
                 consumer.consume(activity);
@@ -143,15 +221,13 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
    * Apply a function to a foreground activity, when one is available, returning a {@link Task} that
    * will complete with the result of the Task returned by that function.
    *
-   * <p>The continuation function will be called immediately once the activity is available. This
-   * may be on the main thread or the calling thread, depending on whether or not there is already a
-   * foreground activity available when this method is called.
+   * <p>The function will always be called on the UI thread.
    */
   <T> Task<T> applyToForegroundActivityTask(SuccessContinuation<Activity, T> continuation) {
     return getForegroundActivity()
         .onSuccessTask(
             // Use direct executor to ensure the consumer is called while Activity is in foreground
-            DIRECT_EXECUTOR,
+            FirebaseExecutors.directExecutor(),
             activity -> {
               try {
                 return continuation.then(activity);
@@ -161,23 +237,60 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
             });
   }
 
-  private Task<Activity> getForegroundActivity() {
+  Task<Activity> getForegroundActivity() {
+    return getForegroundActivity(/* classToIgnore= */ null);
+  }
+
+  <A extends Activity> Task<Activity> getForegroundActivity(@Nullable Class<A> classToIgnore) {
     synchronized (lock) {
       if (currentActivity != null) {
-        return Tasks.forResult(currentActivity);
+        Activity foregroundActivity = getCurrentActivityWithIgnoredClass(classToIgnore);
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+          // We're already on the UI thread, so just complete the task with the activity
+          return Tasks.forResult(foregroundActivity);
+        } else {
+          // Run in UI thread so that returned Task will be completed on the UI thread
+          return runAsyncInTask(
+              uiThreadExecutor, () -> getCurrentActivityWithIgnoredClass(classToIgnore));
+        }
       }
-      TaskCompletionSource<Activity> task = new TaskCompletionSource<>();
+    }
 
-      addOnActivityResumedListener(
-          new OnActivityResumedListener() {
-            @Override
-            public void onResumed(Activity activity) {
-              task.setResult(activity);
-              removeOnActivityResumedListener(this);
-            }
-          });
+    TaskCompletionSource<Activity> task = new TaskCompletionSource<>();
+    addOnActivityResumedListener(
+        new OnActivityResumedListener() {
+          @Override
+          public void onResumed(Activity activity) {
+            // Since this method is run on the UI thread, the Task is completed on the UI thread
+            task.setResult(getCurrentActivityWithIgnoredClass(classToIgnore));
+            removeOnActivityResumedListener(this);
+          }
+        });
+    return task.getTask();
+  }
 
-      return task.getTask();
+  @Nullable
+  private <A extends Activity> Activity getCurrentActivityWithIgnoredClass(
+      @Nullable Class<A> classToIgnore) {
+    synchronized (lock) {
+      if (classToIgnore != null && classToIgnore.isInstance(currentActivity)) {
+        return previousActivity;
+      } else {
+        return currentActivity;
+      }
+    }
+  }
+
+  private void updateCurrentActivity(@Nullable Activity activity) {
+    synchronized (lock) {
+      if (currentActivity != activity) {
+        if (currentActivity != null) {
+          // Store a reference to the previous activity in case the current activity is ignored
+          // later in call to applyToNullableForegroundActivity()
+          previousActivity = currentActivity;
+        }
+        currentActivity = activity;
+      }
     }
   }
 
@@ -217,63 +330,71 @@ class FirebaseAppDistributionLifecycleNotifier implements Application.ActivityLi
     }
   }
 
-  @Override
-  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
-    synchronized (lock) {
-      currentActivity = activity;
-      for (OnActivityCreatedListener listener : onActivityCreatedListeners) {
-        listener.onCreated(activity);
+  @VisibleForTesting
+  class LifecycleCallbacks implements ActivityLifecycleCallbacks {
+
+    @Override
+    public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {
+      synchronized (lock) {
+        updateCurrentActivity(activity);
+        for (OnActivityCreatedListener listener : onActivityCreatedListeners) {
+          listener.onCreated(activity);
+        }
       }
     }
-  }
 
-  @Override
-  public void onActivityStarted(@NonNull Activity activity) {
-    synchronized (lock) {
-      currentActivity = activity;
-      for (OnActivityStartedListener listener : onActivityStartedListeners) {
-        listener.onStarted(activity);
+    @Override
+    public void onActivityStarted(@NonNull Activity activity) {
+      synchronized (lock) {
+        updateCurrentActivity(activity);
+        for (OnActivityStartedListener listener : onActivityStartedListeners) {
+          listener.onStarted(activity);
+        }
       }
     }
-  }
 
-  @Override
-  public void onActivityResumed(@NonNull Activity activity) {
-    synchronized (lock) {
-      currentActivity = activity;
-      for (OnActivityResumedListener listener : onActivityResumedListeners) {
-        listener.onResumed(activity);
+    @Override
+    public void onActivityResumed(@NonNull Activity activity) {
+      synchronized (lock) {
+        updateCurrentActivity(activity);
+        for (OnActivityResumedListener listener : onActivityResumedListeners) {
+          listener.onResumed(activity);
+        }
       }
     }
-  }
 
-  @Override
-  public void onActivityPaused(@NonNull Activity activity) {
-    synchronized (lock) {
-      if (this.currentActivity == activity) {
-        this.currentActivity = null;
-      }
-      for (OnActivityPausedListener listener : onActivityPausedListeners) {
-        listener.onPaused(activity);
+    @Override
+    public void onActivityPaused(@NonNull Activity activity) {
+      synchronized (lock) {
+        if (currentActivity == activity) {
+          updateCurrentActivity(null);
+        }
+        for (OnActivityPausedListener listener : onActivityPausedListeners) {
+          listener.onPaused(activity);
+        }
       }
     }
-  }
 
-  @Override
-  public void onActivityStopped(@NonNull Activity activity) {}
+    @Override
+    public void onActivityStopped(@NonNull Activity activity) {}
 
-  @Override
-  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {}
+    @Override
+    public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {}
 
-  @Override
-  public void onActivityDestroyed(@NonNull Activity activity) {
-    synchronized (lock) {
-      if (this.currentActivity == activity) {
-        this.currentActivity = null;
-      }
+    @Override
+    public void onActivityDestroyed(@NonNull Activity activity) {
+      synchronized (lock) {
+        // If an activity is destroyed, delete all references to it, including the previous activity
+        if (currentActivity == activity) {
+          updateCurrentActivity(null);
+        }
+        if (previousActivity == activity) {
+          previousActivity = null;
+        }
 
-      for (OnActivityDestroyedListener listener : onDestroyedListeners) {
-        listener.onDestroyed(activity);
+        for (OnActivityDestroyedListener listener : onDestroyedListeners) {
+          listener.onDestroyed(activity);
+        }
       }
     }
   }

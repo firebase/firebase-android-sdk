@@ -1,4 +1,6 @@
 # Unreleased
+
+# 16.1.2
 * [deprecated] Added deprecation tagging to the `SafetyNetAppCheckProviderFactory` class. (#4686)
 
 # 16.1.1
