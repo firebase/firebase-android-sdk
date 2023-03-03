@@ -19,3 +19,15 @@ fun String.remove(regex: Regex) = replace(regex, "")
 
 /** Replaces all matching substrings with an empty string (nothing) */
 fun String.remove(str: String) = replace(str, "")
+
+/**
+ * Returns a sequence containing all elements.
+ *
+ * The operation is _terminal_.
+ *
+ * Syntax sugar for:
+ * ```
+ * take(count())
+ * ```
+ */
+public fun <T> Sequence<T>.takeAll(): Sequence<T> = take(count())

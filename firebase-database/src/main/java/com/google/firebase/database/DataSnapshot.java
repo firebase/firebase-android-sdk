@@ -34,9 +34,8 @@ import java.util.Iterator;
  * DatabaseReference#addListenerForSingleValueEvent(ValueEventListener)}. <br>
  * <br>
  * They are efficiently-generated immutable copies of the data at a Firebase Database location. They
- * can't be modified and will never change. To modify data at a location, use a {@link
- * DatabaseReference DatabaseReference} reference (e.g. with {@link
- * DatabaseReference#setValue(Object)}).
+ * can't be modified and will never change. To modify data at a location, use a <br>
+ * {@link DatabaseReference} reference (e.g. with {@link DatabaseReference#setValue(Object)}).
  */
 public class DataSnapshot {
 
@@ -213,8 +212,8 @@ public class DataSnapshot {
    *     List&lt;Message&gt; messages = snapshot.getValue(t);
    * </pre>
    *
-   * It is important to use a subclass of {@link GenericTypeIndicator}. See {@link
-   * GenericTypeIndicator} for more details
+   * It is important to use a subclass of {@link GenericTypeIndicator}. <br>
+   * See {@link GenericTypeIndicator} for more details
    *
    * @param t A subclass of {@link GenericTypeIndicator} indicating the type of generic collection
    *     to be returned.
