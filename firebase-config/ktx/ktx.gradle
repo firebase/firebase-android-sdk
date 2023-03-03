@@ -44,9 +44,9 @@ android {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 
-    implementation 'com.google.firebase:firebase-common:20.3.0'
+    implementation 'com.google.firebase:firebase-common:20.3.1'
     implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation 'com.google.firebase:firebase-common-ktx:20.3.0'
+    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
     implementation project(':firebase-config')
     implementation 'com.google.firebase:firebase-abt:21.1.1'
     implementation 'com.google.firebase:firebase-installations-interop:17.1.0'

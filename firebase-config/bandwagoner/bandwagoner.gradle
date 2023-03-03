@@ -63,7 +63,7 @@ dependencies {
     // This is required since a project dependency on frc does not expose the Apis of its "implementation" dependencies.
     // The alternative would be to make common an "api" dep of remote-config.
     // It should not matter for released artifacts.
-    implementation "com.google.firebase:firebase-common:20.3.0"
+    implementation "com.google.firebase:firebase-common:20.3.1"
     implementation "com.google.firebase:firebase-components:17.1.0"
 
     implementation project(":firebase-installations-interop")

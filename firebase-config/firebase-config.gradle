@@ -50,7 +50,7 @@ android {
 
 dependencies {
     implementation 'com.google.firebase:firebase-annotations:16.2.0'
-    implementation 'com.google.firebase:firebase-common:20.3.0'
+    implementation 'com.google.firebase:firebase-common:20.3.1'
     implementation 'com.google.firebase:firebase-abt:21.1.1'
     implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
