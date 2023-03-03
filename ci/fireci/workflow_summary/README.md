@@ -137,7 +137,7 @@
 # `collect_ci_test_logs.py` Script
 
 ## Usage
--   Collect `ci_workflow.yml` job failure logs from `workflow_information.py` script's intermediate file:
+-   Collect `ci_test.yml` job failure logs from `workflow_information.py` script's intermediate file:
     ```
     python collect_ci_test_logs.py --token ${github_toke} --folder ${folder}
     ```
