@@ -11,7 +11,7 @@
     python workflow_information.py --token ${your_github_toke} --event pull_request --d 30
     ```
 
--   Please refer `Inputs` section for more use cases, and `Outputs` section for the workflow summary report format.
+-   Please refer to `Inputs` section for more use cases, and `Outputs` section for the workflow summary report format.
 
 ## Inputs
 -  `-o, --repo_owner`: **[Required]** GitHub repo owner, default value is `firebase`.
@@ -41,7 +41,7 @@
 
     ```
     2023-03-03 01:37:07.114500
-    Namespace(actor=None, branch=None, days=30, event='pull_request', folder='presubmit_30', jobs='all', repo_name='firebase-android-sdk', repo_owner='firebase', token='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', workflow_name='ci_tests.yml')
+    Namespace(actor=None, branch=None, days=30, event='pull_request', folder='presubmit_30', jobs='all', repo_name='firebase-android-sdk', repo_owner='firebase', token=${your_github_token}, workflow_name='ci_tests.yml')
 
     Workflow 'ci_tests.yml' Report: 
      Workflow Failure Rate:64.77% 
