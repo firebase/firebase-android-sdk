@@ -1,4 +1,4 @@
-// Copyright 2022 Google LLC
+// Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.gradle.plugins
-
-/** Replaces all matching substrings with an empty string (nothing) */
-fun String.remove(regex: Regex) = replace(regex, "")
-
-/** Replaces all matching substrings with an empty string (nothing) */
-fun String.remove(str: String) = replace(str, "")
-
-/**
- * Returns a sequence containing all elements.
- *
- * The operation is _terminal_.
- *
- * Syntax sugar for:
- * ```
- * take(count())
- * ```
- */
-public fun <T> Sequence<T>.takeAll(): Sequence<T> = take(count())
+dependencyResolutionManagement {
+  versionCatalogs {
+    create("libs") {
+      from(files("../gradle/libs.versions.toml"))
+    }
+  }
+}
