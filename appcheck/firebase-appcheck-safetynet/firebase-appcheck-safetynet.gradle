@@ -17,6 +17,7 @@ plugins {
 }
 
 firebaseLibrary {
+    libraryGroup "appcheck"
     publishSources = true
 }
 

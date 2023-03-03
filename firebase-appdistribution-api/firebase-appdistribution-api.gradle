@@ -16,6 +16,10 @@ plugins {
     id 'firebase-library'
 }
 
+firebaseLibrary {
+    libraryGroup "appdistribution"
+}
+
 android {
     compileSdkVersion project.targetSdkVersion
 

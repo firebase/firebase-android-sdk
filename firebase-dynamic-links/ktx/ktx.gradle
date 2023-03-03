@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    releaseWith project(':firebase-dynamic-links')
+    libraryGroup "dynamic-links"
     publishJavadoc = true
     publishSources = true
 }
