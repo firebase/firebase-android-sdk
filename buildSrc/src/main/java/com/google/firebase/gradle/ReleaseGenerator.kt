@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.gradle
 
+import com.google.common.collect.Sets
 import java.io.File
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand
@@ -29,16 +30,14 @@ data class CommitDiff(
   val commitId: String,
   val author: String,
   val message: String,
-  val changes: List<String>
 ) {
-  override fun toString(): String {
-    return """
-      |${message.split("\n")[0]}
-      |    https://github.com/firebase/firebase-android-sdk/commit/${commitId}  [${author}]
+  override fun toString(): String =
+    """
+      |* ${message.split("\n").first()}   
+      |  https://github.com/firebase/firebase-android-sdk/commit/${commitId}  [${author}]
 
     """
       .trimMargin()
-  }
 }
 
 open class ReleaseGenerator : DefaultTask() {
@@ -56,24 +55,38 @@ open class ReleaseGenerator : DefaultTask() {
     val headRef = repo.repository.resolve(Constants.HEAD)
     val branchRef = getObjectRefForBranchName(repo, pastRelease)
 
-    val changedLibraries = getChangedLibraries(repo, branchRef, headRef, firebaseLibraries)
-    val changes = getChangesForLibraries(repo, branchRef, headRef, changedLibraries)
-    writeReleaseConfig(rootDir, changedLibraries, currentRelease)
+    val libsToRelease = getChangedChangelogs(repo, branchRef, headRef, firebaseLibraries)
+    val changedLibsWithNoChangelog =
+      Sets.difference(
+        getChangedLibraries(repo, branchRef, headRef, firebaseLibraries).toSet(),
+        libsToRelease.toSet(),
+      )
+    val changes = getChangesForLibraries(repo, branchRef, headRef, libsToRelease)
+    writeReleaseConfig(rootDir, libsToRelease, currentRelease)
+    val releaseReport = generateReleaseReport(changes, changedLibsWithNoChangelog)
     if (printReleaseConfig) {
-      println(generatePrintOutput(changes))
+      println(releaseReport)
     }
+    writeReleaseReport(rootDir, releaseReport)
   }
 
-  private fun generatePrintOutput(changes: Map<String, List<CommitDiff>>): String {
-    return changes.entries.joinToString("\n") {
-      """
-      |### ${it.key}
-      
-      |  ${it.value.joinToString("\n  ") { it.toString() }}
+  private fun generateReleaseReport(
+    changes: Map<String, List<CommitDiff>>,
+    changedLibrariesWithNoChangelog: Set<String>
+  ) =
     """
-        .trimMargin()
-    }
-  }
+      |# Release Report
+      |${changes.entries.joinToString("\n") {
+      """
+      |## ${it.key}
+      
+      |${it.value.joinToString("\n") { it.toString() }}
+      """.trimMargin()}}
+      |
+      |## SDKs with changes, but no changelogs
+      |${changedLibrariesWithNoChangelog.joinToString("  \n")}
+    """
+      .trimMargin()
 
   private fun getChangesForLibraries(
     repo: Git,
@@ -117,7 +130,7 @@ open class ReleaseGenerator : DefaultTask() {
       .branchList()
       .setListMode(ListBranchCommand.ListMode.REMOTE)
       .call()
-      .firstOrNull { it.name == "refs/remotes/origin/$branchName" }
+      .firstOrNull { it.name == "refs/remotes/origin/releases/$branchName" }
       ?.objectId
       ?: throw RuntimeException("Could not find branch named $branchName")
 
@@ -129,7 +142,23 @@ open class ReleaseGenerator : DefaultTask() {
   ) =
     libraries
       .filter { library ->
-        library.directories.any { checkDirChanges(repo, previousReleaseRef, currentReleaseRef, it) }
+        library.directories.any {
+          checkDirChanges(repo, previousReleaseRef, currentReleaseRef, "$it/")
+        }
+      }
+      .flatMap { it.moduleNames }
+
+  private fun getChangedChangelogs(
+    repo: Git,
+    previousReleaseRef: ObjectId,
+    currentReleaseRef: ObjectId,
+    libraries: List<FirebaseLibrary>
+  ) =
+    libraries
+      .filter { library ->
+        library.directories.any {
+          checkDirChanges(repo, previousReleaseRef, currentReleaseRef, "$it/CHANGELOG.md")
+        }
       }
       .flatMap { it.moduleNames }
 
@@ -141,7 +170,7 @@ open class ReleaseGenerator : DefaultTask() {
   ) =
     repo
       .log()
-      .addPath("$directory/CHANGELOG.md")
+      .addPath(directory)
       .addRange(previousReleaseRef, currentReleaseRef)
       .setMaxCount(1)
       .call()
@@ -156,7 +185,7 @@ open class ReleaseGenerator : DefaultTask() {
   ) =
     repo
       .log()
-      .addPath("$directory/CHANGELOG.md")
+      .addPath(directory)
       .addRange(previousReleaseRef, currentReleaseRef)
       .call()
       .map { toCommitDiff(repo, it) }
@@ -167,15 +196,17 @@ open class ReleaseGenerator : DefaultTask() {
       revCommit.id.name,
       revCommit.authorIdent.name,
       revCommit.fullMessage.toString(),
-      emptyList()
     )
   }
 
+  private fun writeReleaseReport(configPath: File, report: String) {
+    File(configPath, "release_report.md").writeText(report)
+  }
+
   private fun writeReleaseConfig(configPath: File, libraries: List<String>, releaseName: String) {
-    String to
-      File(configPath, "release.cfg")
-        .writeText(
-          """
+    File(configPath, "release.cfg")
+      .writeText(
+        """
                     |[release]
                     |name = $releaseName
                     |mode = RELEASE
@@ -183,7 +214,7 @@ open class ReleaseGenerator : DefaultTask() {
                     |[modules]
                     |${libraries.joinToString("\n")}
                 """
-            .trimMargin()
-        )
+          .trimMargin()
+      )
   }
 }

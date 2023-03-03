@@ -14,9 +14,12 @@
 
 package com.google.firebase.gradle.plugins;
 
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
+
 import com.android.build.gradle.LibraryExtension;
 import com.google.common.collect.ImmutableSet;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension;
+import com.google.firebase.gradle.plugins.LibraryGroupRegistrar;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashSet;
@@ -37,8 +40,6 @@ public class FirebaseLibraryExtension {
 
   public final Project project;
   public final LibraryType type;
-  private final Set<FirebaseLibraryExtension> librariesToCoRelease = new HashSet<>();
-
   /** Indicates whether the library has public javadoc. */
   public boolean publishJavadoc = true;
 
@@ -53,6 +54,9 @@ public class FirebaseLibraryExtension {
 
   public Property<String> groupId;
   public Property<String> artifactId;
+
+  private String libraryGroupName;
+  private LibraryGroupRegistrar libraryGroupRegistrar;
 
   private Action<MavenPom> customizePomAction =
       pom -> {
@@ -87,6 +91,8 @@ public class FirebaseLibraryExtension {
       groupId.set(new DefaultProvider<>(() -> project.getGroup().toString()));
     }
     this.staticAnalysis = initializeStaticAnalysis(project);
+    this.libraryGroupRegistrar = LibraryGroupRegistrar.Companion.getInstance();
+    libraryGroupName = "";
   }
 
   private FirebaseStaticAnalysis initializeStaticAnalysis(Project project) {
@@ -112,46 +118,17 @@ public class FirebaseLibraryExtension {
    * <p>This will force the released version of the current project to match the one it's released
    * with.
    */
-  public void releaseWith(Project releaseWithProject) {
-    try {
-      FirebaseLibraryExtension releaseWithLibrary =
-          releaseWithProject.getExtensions().getByType(FirebaseLibraryExtension.class);
-      releaseWithLibrary.librariesToCoRelease.add(this);
-      this.project.setVersion(releaseWithProject.getVersion());
-
-      LibraryExtension android = project.getExtensions().findByType(LibraryExtension.class);
-      if (android != null) {
-        android.defaultConfig(
-            cfg -> {
-              cfg.buildConfigField("String", "VERSION_NAME", "\"" + project.getVersion() + "\"");
-            });
-      }
-
-      String latestRelease = "latestReleasedVersion";
-      if (releaseWithProject.hasProperty(latestRelease)) {
-        this.project
-            .getExtensions()
-            .getExtraProperties()
-            .set(latestRelease, releaseWithProject.property(latestRelease));
-      }
-
-    } catch (UnknownDomainObjectException ex) {
-      throw new GradleException(
-          "Library cannot be released with a project that is not a Firebase Library itself");
-    }
+  public void libraryGroup(String libraryGroupName) {
+    libraryGroupRegistrar.addLibrary(libraryGroupName, this);
   }
 
   public Set<Project> getProjectsToRelease() {
-    return ImmutableSet.<Project>builder()
-        .add(project)
-        .addAll(librariesToCoRelease.stream().map(l -> l.project).collect(Collectors.toSet()))
-        .build();
+    return getLibrariesToRelease().stream().map(l -> l.project).collect(toImmutableSet());
   }
 
   public Set<FirebaseLibraryExtension> getLibrariesToRelease() {
     return ImmutableSet.<FirebaseLibraryExtension>builder()
-        .add(this)
-        .addAll(librariesToCoRelease)
+        .addAll(libraryGroupRegistrar.getLibrariesForGroup(libraryGroupName))
         .build();
   }
 
