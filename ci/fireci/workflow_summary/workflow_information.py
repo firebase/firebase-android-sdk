@@ -46,17 +46,20 @@ def main():
     os.makedirs(file_folder)
 
   workflow_summary = get_workflow_summary(args)
-  json.dump(workflow_summary, open(os.path.join(file_folder, 'workflow_summary.json'),'w'))
-  logging.info('Workflow summary has been write to %s\n' % os.path.join(file_folder, 'workflow_summary.json'))
+  workflow_summary_file_path = os.path.join(file_folder, 'workflow_summary.json')
+  json.dump(workflow_summary, open(workflow_summary_file_path,'w'))
+  logging.info(f'Workflow summary has been write to {workflow_summary_file_path}\n')
 
   job_summary = get_job_summary(workflow_summary)
-  json.dump(job_summary, open(os.path.join(file_folder, 'job_summary.json'),'w'))
-  logging.info('Job summary has been write to %s\n' % os.path.join(file_folder, 'job_summary.json'))
+  job_summary_file_path = os.path.join(file_folder, 'job_summary.json')
+  json.dump(job_summary, open(job_summary_file_path,'w'))
+  logging.info(f'Job summary has been write to {job_summary_file_path}\n')
 
   workflow_summary_report = f"{datetime.datetime.utcnow()}\n{args}\n\n"
   workflow_summary_report += generate_summary_report(workflow_summary, job_summary)
-  open(os.path.join(file_folder, 'workflow_summary_report.txt'), 'w').write(workflow_summary_report)
-  logging.info('Workflow summary report has been write to %s\n' % os.path.join(file_folder, 'workflow_summary_report.txt'))
+  report_file_path = os.path.join(file_folder, 'workflow_summary_report.txt')
+  open(report_file_path, 'w').write(workflow_summary_report)
+  logging.info(f'Workflow summary report has been write to {report_file_path}\n')
 
 
 def get_workflow_summary(args):  

@@ -39,7 +39,7 @@ def main():
 
   file_folder = args.folder
   if not os.path.exists(file_folder):
-    logging.error('%s doesn\'t exist' % file_folder)
+    logging.error(f'{file_folder} doesn\'t exist')
     exit(1)
 
   job_summary = json.load(open(os.path.join(file_folder, 'job_summary.json')))
@@ -56,11 +56,11 @@ def main():
       success_count = job['success_count'] 
       failure_count = job['failure_count']      
 
-      log_file_path = os.path.join(file_folder, '%s.log'%job_name)
+      log_file_path = os.path.join(file_folder, f'{job_name}.log')
       file_log = open(log_file_path, 'w')
-      file_log.write('\n{}:\nFailure rate:{:.2%} \nTotal count: {} (success: {}, failure: {})\nFailed jobs:'.format(job_name, failure_rate, total_count, success_count, failure_count))
-      logging.info('\n\n{}:\nFailure rate:{:.2%} \nTotal count: {} (success: {}, failure: {})\nFailed jobs:'.format(job_name, failure_rate, total_count, success_count, failure_count))
-      
+      file_log.write(f'\n{job_name}:\nFailure rate:{failure_rate:.2%} \nTotal count: {total_count} (success: {success_count}, failure: {failure_count})\nFailed jobs:')
+      logging.info(f'\n\n{job_name}:\nFailure rate:{failure_rate:.2%} \nTotal count: {total_count} (success: {success_count}, failure: {failure_count})\nFailed jobs:')
+
       for failure_job in job['failure_jobs']:
         file_log.write('\n\n'+failure_job['html_url'])
         logging.info(failure_job['html_url'])
@@ -77,7 +77,7 @@ def main():
 
     file_log.close()
 
-  logging.info('\n\nFinsihed collecting failure logs, log files locates under path: %s' % file_folder)
+  logging.info(f'\n\nFinsihed collecting failure logs, log files locates under path: {file_folder}')
       
 
 def parse_cmdline_args():
