@@ -24,15 +24,12 @@ import org.junit.Test
 class SessionGeneratorTest {
   fun isValidSessionId(sessionId: String): Boolean {
     if (sessionId.length != 32) {
-      // assertionFailure("Session ID isn't 32 characters long")
       return false
     }
     if (sessionId.contains("-")) {
-      // assertionFailure("Session ID contains a dash")
       return false
     }
     if (sessionId.lowercase() != sessionId) {
-      // assertionFailure("Session ID is not lowercase")
       return false
     }
     return true
@@ -99,10 +96,5 @@ class SessionGeneratorTest {
     assertThat(thirdSessionInfo.firstSessionId).isEqualTo(firstSessionInfo.sessionId)
     // Session Index should increase
     assertThat(thirdSessionInfo.sessionIndex).isEqualTo(2)
-  }
-
-  companion object {
-    // private val SMALL_INTERVAL = 29.minutes // not enough time to initiate a new session
-    // private val LARGE_INTERVAL = 31.minutes // enough to initiate another session
   }
 }
