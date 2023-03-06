@@ -21,13 +21,13 @@ Usage:
 
 '''
 
-import argparse
 import github
+import argparse
 import json
 import re
 import logging
 import os
-import datetime
+
 
 def main():
   logging.getLogger().setLevel(logging.INFO)

@@ -1,5 +1,11 @@
 # `workflow_information.py` Script
 
+## Prerequisites
+-   [Python](https://www.python.org/) and required packages.
+    ```
+    pip install requests argparse
+    ```
+
 ## Usage
 -   Collect last `90` days' `Postsubmit` `ci_workflow.yml` workflow runs:
     ```

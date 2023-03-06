@@ -15,9 +15,6 @@
 """A utility for GitHub REST API."""
 
 import requests
-import json
-import shutil
-import re
 import logging
 
 RETRIES = 3

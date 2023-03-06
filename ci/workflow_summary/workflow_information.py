@@ -18,7 +18,6 @@ import datetime
 import argparse
 import logging
 import os 
-import threading
 
 
 '''A utility collecting ci_test.yml workflow failure logs.
@@ -248,3 +247,4 @@ def parse_cmdline_args():
 
 if __name__ == '__main__':
   main()
+  
