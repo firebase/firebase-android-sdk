@@ -14,6 +14,7 @@
 
 package com.google.firebase.gradle.plugins.publish;
 
+import com.google.firebase.gradle.plugins.CheckHeadDependencies;
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension;
 import java.io.File;
 import java.io.IOException;
@@ -117,6 +118,20 @@ public class PublishingPlugin implements Plugin<Project> {
                     List.of(projectNamesToPublish.split(projectsToPublishSeparator, -1));
               }
 
+              Set<String> allFirebaseProjects =
+                  project.getSubprojects().stream()
+                      .filter(
+                          sub ->
+                              sub.getExtensions().findByType(FirebaseLibraryExtension.class)
+                                  != null)
+                      .map(
+                          sub ->
+                              sub.getExtensions()
+                                  .findByType(FirebaseLibraryExtension.class)
+                                  .artifactId
+                                  .get())
+                      .collect(Collectors.toSet());
+
               Set<FirebaseLibraryExtension> projectsToPublish =
                   projectsNames.stream()
                       .filter(name -> !name.isEmpty())
@@ -181,6 +196,16 @@ public class PublishingPlugin implements Plugin<Project> {
                           t.dependsOn(getPublishTask(toPublish, "MavenLocal"));
                         }
                       });
+              project
+                  .getTasks()
+                  .create(
+                      "checkHeadDependencies",
+                      CheckHeadDependencies.class,
+                      t -> {
+                        t.getProjectsToPublish().set(projectsToPublish);
+                        t.getAllFirebaseProjects().set(allFirebaseProjects);
+                      });
+
               Task publishProjectsToBuildDir =
                   project
                       .getTasks()
