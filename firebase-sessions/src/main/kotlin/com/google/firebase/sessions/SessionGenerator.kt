@@ -37,17 +37,17 @@ internal data class SessionInfo(
  * @hide
  */
 internal class SessionGenerator(collectEvents: Boolean) {
+  private var firstSessionId = ""
+  private var sessionIndex: Int = -1
+  private var collectEvents = collectEvents
+
   private var thisSession: SessionInfo =
     SessionInfo(
       sessionId = "",
       firstSessionId = "",
       collectEvents = collectEvents,
-      sessionIndex = -1
+      sessionIndex = sessionIndex
     )
-
-  private var firstSessionId = ""
-  private var sessionIndex: Int = -1
-  private var collectEvents = collectEvents
 
   // Generates a new Session ID. If there was already a generated Session ID
   // from the last session during the app's lifecycle, it will also set the last Session ID
