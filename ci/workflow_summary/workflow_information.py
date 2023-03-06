@@ -247,4 +247,3 @@ def parse_cmdline_args():
 
 if __name__ == '__main__':
   main()
-  
