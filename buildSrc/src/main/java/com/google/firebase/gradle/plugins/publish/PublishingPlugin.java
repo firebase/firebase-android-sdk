@@ -14,6 +14,7 @@
 
 package com.google.firebase.gradle.plugins.publish;
 
+import com.google.firebase.gradle.plugins.CheckHeadDependencies;
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension;
 import java.io.File;
 import java.io.IOException;
@@ -199,17 +200,12 @@ public class PublishingPlugin implements Plugin<Project> {
                   .getTasks()
                   .create(
                       "checkHeadDependencies",
+                      CheckHeadDependencies.class,
                       t -> {
-                        for (FirebaseLibraryExtension toPublish : projectsToPublish) {
-                          t.dependsOn(
-                              toPublish.getPath() + ":generatePomFileForMavenAarPublication");
-                        }
-                        t.doLast(
-                            task -> {
-                              com.google.firebase.gradle.plugins.CheckHeadDependency.check(
-                                  projectsToPublish, allFirebaseProjects);
-                            });
+                        t.getProjectsToPublish().set(projectsToPublish);
+                        t.getAllFirebaseProjects().set(allFirebaseProjects);
                       });
+
               Task publishProjectsToBuildDir =
                   project
                       .getTasks()

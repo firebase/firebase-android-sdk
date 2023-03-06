@@ -16,27 +16,39 @@
 
 package com.google.firebase.gradle.plugins
 
+import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.TaskAction
 
-fun check(projectsToPublish: Set<FirebaseLibraryExtension>, allFirebaseProjects: Set<String>) {
-  val projectsReleasing: Set<String> = projectsToPublish.map { it.artifactId.get() }.toSet()
-  val projectsToRelease =
-    projectsToPublish
-      .flatMap {
-        it.project.configurations
-          .getByName(it.runtimeClasspath)
-          .allDependencies
-          .filter { it is ProjectDependency }
-          .map { it.name }
-          .toSet()
-      }
-      .intersect(allFirebaseProjects)
-      .subtract(projectsReleasing)
+abstract class CheckHeadDependencies : DefaultTask() {
+  @get:Input abstract val projectsToPublish: ListProperty<FirebaseLibraryExtension>
 
-  if (projectsToRelease.isNotEmpty()) {
-    throw GradleException(
-      "Following Sdks have to release as well. Please update the release config.\n${projectsToRelease.joinToString("\n")}"
-    )
+  @get:Input abstract val allFirebaseProjects: ListProperty<String>
+
+  @TaskAction
+  fun run() {
+    val projectsReleasing: Set<String> = projectsToPublish.get().map { it.artifactId.get() }.toSet()
+    val projectsToRelease =
+      projectsToPublish
+        .get()
+        .flatMap {
+          it.project.configurations
+            .getByName(it.runtimeClasspath)
+            .allDependencies
+            .filter { it is ProjectDependency }
+            .map { it.name }
+            .toSet()
+        }
+        .intersect(allFirebaseProjects.get())
+        .subtract(projectsReleasing)
+
+    if (projectsToRelease.isNotEmpty()) {
+      throw GradleException(
+        "Following Sdks have to release as well. Please update the release config.\n${projectsToRelease.joinToString("\n")}"
+      )
+    }
   }
 }
