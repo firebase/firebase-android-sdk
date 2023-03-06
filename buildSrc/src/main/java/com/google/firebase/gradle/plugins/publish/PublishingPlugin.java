@@ -16,9 +16,13 @@ package com.google.firebase.gradle.plugins.publish;
 
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension;
 import java.io.File;
-import java.util.Arrays;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -41,12 +45,33 @@ import org.gradle.api.tasks.bundling.Zip;
  * <p><strong>Prepare a release</strong>
  *
  * <pre>
+ * ./gradlew -PpublishConfigFilePath=release.cfg
+ *           -PpublishMode=(RELEASE|SNAPSHOT) \
+ *           firebasePublish
+ * </pre>
+ *
+ * <pre>
  * ./gradlew -PprojectsToPublish="firebase-inappmessaging,firebase-inappmessaging-display"\
  *           -PpublishMode=(RELEASE|SNAPSHOT) \
  *           firebasePublish
  * </pre>
  *
  * <ul>
+ *   <li>{@code publishConfigFilePath} is the path to the configuration file from which to read the
+ *       list of projects to release. The file format should be consistent with Python's
+ *       configparser, and the list of projects should be in a section called "modules". If both
+ *       this, and {@code projectsToPublish} are specified, this property takes precedence. <br>
+ *       <br>
+ *       Example config file content:
+ *       <pre>
+ *         [release]
+ *         name = M126
+ *         ...
+ *         [modules]
+ *         firebase-database
+ *         firebase-common
+ *         firebase-firestore
+ *       </pre>
  *   <li>{@code projectsToPublish} is a list of projects to release separated by {@code
  *       projectsToPublishSeparator}(default: ","), these projects will have their versions depend
  *       on the {@code publishMode} parameter.
@@ -73,6 +98,7 @@ public class PublishingPlugin implements Plugin<Project> {
   public void apply(Project project) {
     String projectNamesToPublish = getPropertyOr(project, "projectsToPublish", "");
     String projectsToPublishSeparator = getPropertyOr(project, "projectsToPublishSeparator", ",");
+    String publishConfigFilePath = getPropertyOr(project, "publishConfigFilePath", "");
     Mode publishMode = Enum.valueOf(Mode.class, getPropertyOr(project, "publishMode", "SNAPSHOT"));
 
     Task publishAllToLocal = project.task("publishAllToLocal");
@@ -83,8 +109,16 @@ public class PublishingPlugin implements Plugin<Project> {
         .getGradle()
         .projectsEvaluated(
             gradle -> {
+              List<String> projectsNames;
+              if (!publishConfigFilePath.isEmpty()) {
+                projectsNames = readReleaseConfigFile(publishConfigFilePath);
+              } else {
+                projectsNames =
+                    List.of(projectNamesToPublish.split(projectsToPublishSeparator, -1));
+              }
+
               Set<FirebaseLibraryExtension> projectsToPublish =
-                  Arrays.stream(projectNamesToPublish.split(projectsToPublishSeparator, -1))
+                  projectsNames.stream()
                       .filter(name -> !name.isEmpty())
                       .map(
                           name ->
@@ -100,6 +134,15 @@ public class PublishingPlugin implements Plugin<Project> {
                   .set("projectsToPublish", projectsToPublish);
 
               Publisher publisher = new Publisher(publishMode, projectsToPublish);
+              project
+                  .getTasks()
+                  .create(
+                      "validatePomForRelease",
+                      t -> {
+                        for (FirebaseLibraryExtension toPublish : projectsToPublish) {
+                          t.dependsOn(toPublish.getPath() + ":isPomDependencyValid");
+                        }
+                      });
               project.subprojects(
                   sub -> {
                     FirebaseLibraryExtension firebaseLibrary =
@@ -192,6 +235,19 @@ public class PublishingPlugin implements Plugin<Project> {
               buildKotlindocZip.mustRunAfter(info);
               firebasePublish.dependsOn(info, buildMavenZip, buildKotlindocZip);
             });
+  }
+
+  private List<String> readReleaseConfigFile(String publishConfigurationFilePath) {
+    try (Stream<String> stream = Files.lines(Path.of(publishConfigurationFilePath))) {
+      return stream
+          .dropWhile((line) -> !line.equals("[modules]"))
+          // We need to skip the "[modules]" line since it's not dropped
+          .skip(1)
+          .collect(Collectors.toList());
+    } catch (IOException e) {
+      throw new IllegalArgumentException(
+          "Error reading configuration file " + publishConfigurationFilePath, e);
+    }
   }
 
   private static String getPropertyOr(Project p, String property, String defaultValue) {

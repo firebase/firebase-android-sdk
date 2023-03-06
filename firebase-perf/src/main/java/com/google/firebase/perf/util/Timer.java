@@ -43,11 +43,6 @@ public class Timer implements Parcelable {
    * compute duration between 2 timestamps in the same timebase. It is NOT wall-clock time.
    */
   private long elapsedRealtimeMicros;
-  /**
-   * Monotonic time measured in the {@link SystemClock#uptimeMillis()} timebase. Only used to
-   * compute duration between 2 timestamps in the same timebase. It is NOT wall-clock time.
-   */
-  private long uptimeMicros;
 
   /**
    * Returns a new Timer object as if it was stamped at the given elapsedRealtime. Uses current
@@ -55,11 +50,10 @@ public class Timer implements Parcelable {
    *
    * @param elapsedRealtimeMillis timestamp in the {@link SystemClock#elapsedRealtime()} timebase
    */
-  public static Timer ofElapsedRealtime(final long elapsedRealtimeMillis, final long uptimeMillis) {
-    long uptimeMicros = MILLISECONDS.toMicros(uptimeMillis);
+  public static Timer ofElapsedRealtime(final long elapsedRealtimeMillis) {
     long elapsedRealtimeMicros = MILLISECONDS.toMicros(elapsedRealtimeMillis);
     long wallClockMicros = wallClockMicros() + (elapsedRealtimeMicros - elapsedRealtimeMicros());
-    return new Timer(wallClockMicros, elapsedRealtimeMicros, uptimeMicros);
+    return new Timer(wallClockMicros, elapsedRealtimeMicros);
   }
 
   /**
@@ -83,14 +77,10 @@ public class Timer implements Parcelable {
     return MILLISECONDS.toMicros(SystemClock.elapsedRealtime());
   }
 
-  private static long uptimeMicros() {
-    return MILLISECONDS.toMicros(SystemClock.uptimeMillis());
-  }
-
   // TODO: make all constructors private, use public static factory methods, per Effective Java
   /** Construct Timer object using System clock. */
   public Timer() {
-    this(wallClockMicros(), elapsedRealtimeMicros(), uptimeMicros());
+    this(wallClockMicros(), elapsedRealtimeMicros());
   }
 
   /**
@@ -101,10 +91,9 @@ public class Timer implements Parcelable {
    *     SystemClock#elapsedRealtime()} timebase
    */
   @VisibleForTesting
-  Timer(long epochMicros, long elapsedRealtimeMicros, long uptimeMicros) {
+  Timer(long epochMicros, long elapsedRealtimeMicros) {
     this.wallClockMicros = epochMicros;
     this.elapsedRealtimeMicros = elapsedRealtimeMicros;
-    this.uptimeMicros = uptimeMicros;
   }
 
   /**
@@ -115,11 +104,11 @@ public class Timer implements Parcelable {
    */
   @VisibleForTesting
   public Timer(long testTime) {
-    this(testTime, testTime, testTime);
+    this(testTime, testTime);
   }
 
   private Timer(Parcel in) {
-    this(in.readLong(), in.readLong(), in.readLong());
+    this(in.readLong(), in.readLong());
   }
 
   /** resets the start time */
@@ -127,7 +116,6 @@ public class Timer implements Parcelable {
     // TODO: consider removing this method and make Timer immutable thus fully thread-safe
     wallClockMicros = wallClockMicros();
     elapsedRealtimeMicros = elapsedRealtimeMicros();
-    uptimeMicros = uptimeMicros();
   }
 
   /** Return wall-clock time in microseconds. */
@@ -157,16 +145,6 @@ public class Timer implements Parcelable {
   }
 
   /**
-   * Calculate duration in microseconds using uptime. The start time is this Timer object.
-   *
-   * @param end end Timer object
-   * @return duration in microseconds.
-   */
-  public long getDurationUptimeMicros(@NonNull final Timer end) {
-    return end.uptimeMicros - this.uptimeMicros;
-  }
-
-  /**
    * Calculates the current wall clock off the existing wall clock time. The reason this is better
    * instead of just doing System.getCurrentTimeMillis is that the device time could've changed
    * which would result in an out of order time which can cause problems downstream.
@@ -188,7 +166,6 @@ public class Timer implements Parcelable {
   public void writeToParcel(Parcel out, int flags) {
     out.writeLong(wallClockMicros);
     out.writeLong(elapsedRealtimeMicros);
-    out.writeLong(uptimeMicros);
   }
 
   /**

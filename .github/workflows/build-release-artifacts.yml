@@ -16,10 +16,16 @@ jobs:
 
       - name: Perform gradle build
         run: |
-          ./gradlew  firebasePublish -PprojectsToPublish=firebase-firestore -PpublishMode=RELEASE -PincludeFireEscapeArtifacts=true
+          ./gradlew firebasePublish -PpublishConfigFilePath=release.cfg -PpublishMode=RELEASE -PincludeFireEscapeArtifacts=true
+
+      - name: Generate release notes
+        run: |
+          python3 docs/make_release_notes.py
+          cd build/changelog && zip -r ../release_notes.zip android
+
       - name: Upload generated artifacts
         uses: actions/upload-artifact@v2
         with:
           name: release_artifacts
           path: build/*.zip
-          retention-days: 5
+          retention-days: 15

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2022 Google LLC -->
+<!-- -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License"); -->
+<!-- you may not use this file except in compliance with the License. -->
+<!-- You may obtain a copy of the License at -->
+<!-- -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0 -->
+<!-- -->
+<!-- Unless required by applicable law or agreed to in writing, software -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS, -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. -->
+<!-- See the License for the specific language governing permissions and -->
+<!-- limitations under the License. -->
+
+<resources>
+  <string name="signin_dialog_title" translation_description="Title of the dialog encouraging the user to enable Firebase App Distribution features">הפעלת תכונות בדיקה</string>
+  <string name="singin_dialog_message" translation_description="Content of the dialog encouraging the user to enable Firebase App Distribution features">הפעלת תכונות בדיקה כמו התראות על גרסאות build חדשות ומשוב בתוך האפליקציה.</string>
+  <string name="singin_yes_button" translation_description="Text on button to enable Firebase App Distribution features">הפעלה</string>
+  <string name="singin_no_button" translation_description="Text on button to decline Firebase App Distribution features">לא עכשיו</string>
+  <string name="update_dialog_title" translation_description="Title of the dialog explaining to the user that a new version of the application is available">גרסה חדשה זמינה</string>
+  <string name="update_version_available" translation_description="Version string (and code) of the available update">גרסה %1$s‏ (%2$d) זמינה.</string>
+  <string name="update_release_notes" translation_description="Text prefixing release notes">נתוני גרסה:</string>
+  <string name="update_yes_button" translation_description="Text on button to start update">עדכון</string>
+  <string name="update_no_button" translation_description="Text on button to cancel update">ביטול</string>
+  <string name="downloading_app_update" translation_description="Title of the notification showing during download of update">מתבצעת הורדה של עדכון בתוך האפליקציה…</string>
+  <string name="download_completed" translation_description="Title of notification when download of update has completed">ההורדה הושלמה</string>
+  <string name="download_failed" translation_description="Title of notification when download of update has failed">ההורדה נכשלה</string>
+  <string name="install_failed" translation_description="Title of notification when installation of update has failed">ההתקנה נכשלה</string>
+  <string name="notifications_group_name" translation_description="Title of the notification channel group for the SDK">הפצת אפליקציות ב-Firebase</string>
+  <string name="app_update_notification_channel_name" translation_description="Name of the notification channel for in-app updates">עדכונים לאפליקציה</string>
+  <string name="app_update_notification_channel_description" translation_description="Description of the notification channel for in-app updates">מוצגת ההתקדמות בהתקנה של העדכונים בתוך האפליקציה</string>
+  <string name="feedback_launch_failed" translation_description="Toast explaining that launching the feedback functionality failed">הפעלת המשוב נכשלה</string>
+  <string name="feedback_unidentified_release" translation_description="Toast explaining feedback can't be provided, because release can't be found">הגרסה לא נמצאה. ייתכן שהאפליקציה הזו לא הותקנה על ידי התכונה \'הפצת אפליקציות\', או שאין לך גישה יותר.</string>
+  <string name="feedback_no_release" translation_description="Toast explaining that feedback would have been sent, but was not, since development mode was active">המשוב היה נשלח, אבל הוא לא נשלח עקב מצב פיתוח.</string>
+  <string name="feedback_notification_channel_name" translation_description="Name of the notification channel for in-app feedback">משוב</string>
+  <string name="feedback_notification_channel_description" translation_description="Description of the notification channel for in-app feedback">מוצגת התראה להזין משוב על האפליקציה</string>
+  <string name="feedback_notification_title" translation_description="Title of notification encouraging testers to enter feedback">נשמח לקבל ממך משוב!</string>
+  <string name="feedback_notification_text" translation_description="Text of notification encouraging testers to enter feedback for the app">יש להקיש כדי להזין משוב על %1$s</string>
+  <string name="unknown_sources_dialog_title" translation_description="Title of dialog describing that installation from unknown sources needs to be enabled">התקנה ממקורות לא מוכרים</string>
+  <string name="unknown_sources_dialog_description" translation_description="Text of dialog describing why installation from unknown sources needs to be enabled">כדי להתקין את העדכון, צריך לאפשר התקנה ממקורות לא מוכרים</string>
+  <string name="unknown_sources_yes_button" translation_description="Label on button launching settings to enable installation from unknown sources">הגדרות</string>
+  <string name="back_button_description" translation_description="Description for image button (back) which aborts feedback">חזרה</string>
+  <string name="send_feedback" translation_description="Text next to send button which sends feedback">שליחת משוב</string>
+  <string name="send_button_description" translation_description="Description of image button (send) which sends feedback">שליחה</string>
+  <string name="feedback_text_hint" translation_description="Default text hint displayed in the text box where user should type their feedback">רוצה לשלוח לנו משוב? נשמח לשמוע איך נוכל לשפר את האפליקציה.</string>
+  <string name="screenshot" translation_description="Text displayed next to the checkbox which can be toggled to include/exclude a screenshot with the feedback">צילום מסך</string>
+  <string name="no_screenshot" translation_description="Text displayed when there is no screenshot available to be included with the feedback">צילום מסך (לא זמין)</string>
+  <string name="screenshot_image_description" translation_description="Description for the screenshot image">צילום מסך</string>
+</resources>

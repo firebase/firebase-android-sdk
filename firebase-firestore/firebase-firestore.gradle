@@ -89,7 +89,9 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     testOptions.unitTests.includeAndroidResources = true
-    ext.useProdBackendForTests = false
+
+    // Acceptable values are: 'emulator', 'qa', 'nightly', and 'prod'.
+    ext.targetBackend = 'emulator'
 }
 
 tasks.withType(Test) {
@@ -97,10 +99,11 @@ tasks.withType(Test) {
 }
 
 android.libraryVariants.all { variant ->
-    if (findProperty("useProdBackendForTests")) {
-        variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "false")
+    if (findProperty('targetBackend')) {
+        variant.buildConfigField("String", "TARGET_BACKEND", "\"${property("targetBackend")}\"")
     } else {
-        variant.buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "true")
+        // By default set the target backend to 'emulator'
+        variant.buildConfigField("String", "TARGET_BACKEND", "\"emulator\"")
     }
 
     def localProps = new Properties()
@@ -146,6 +149,7 @@ dependencies {
     androidTestAnnotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
 
+    testImplementation project(':firebase-firestore')
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation "org.hamcrest:hamcrest-junit:2.0.0.0"
@@ -155,6 +159,7 @@ dependencies {
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
 
+    androidTestImplementation project(':firebase-firestore')
     androidTestImplementation 'junit:junit:4.13.2'
     androidTestImplementation("com.google.truth:truth:$googleTruthVersion"){
         exclude group: "org.codehaus.mojo", module: "animal-sniffer-annotations"
