@@ -1,4 +1,5 @@
 # Unreleased
+* [feature] Add support for disjunctions in queries (`OR` queries).
 
 # 24.4.4
 * [changed] Relaxed certain query validations performed by the SDK (#4231).
