@@ -16,30 +16,24 @@
 
 package com.google.firebase.gradle.plugins
 
-import java.util.stream.Collectors
 import org.gradle.api.GradleException
-import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ProjectDependency
 
 fun check(projectsToPublish: Set<FirebaseLibraryExtension>, allFirebaseProjects: Set<String>) {
-  val projectsReleasing: MutableSet<String> =
-    projectsToPublish.map { it.artifactId.get() }.toSet() as MutableSet<String>
-  var allProjectsToRelease: MutableSet<String> = mutableSetOf()
-  projectsToPublish.forEach {
-    val projectDependencies: Set<String> =
-      it.project
-        .getConfigurations()
-        .getByName(it.getRuntimeClasspath())
-        .allDependencies
-        .stream()
-        .filter({ dep: Dependency? -> dep is ProjectDependency })
-        .map { it.name }
-        .collect(Collectors.toSet())
-    allProjectsToRelease.addAll(projectDependencies)
-  }
+  val projectsReleasing: Set<String> = projectsToPublish.map { it.artifactId.get() }.toSet()
+  val projectsToRelease =
+    projectsToPublish
+      .flatMap {
+        it.project.configurations
+          .getByName(it.runtimeClasspath)
+          .allDependencies
+          .filter { it is ProjectDependency }
+          .map { it.name }
+          .toSet()
+      }
+      .intersect(allFirebaseProjects)
+      .subtract(projectsReleasing)
 
-  allProjectsToRelease = (allProjectsToRelease intersect allFirebaseProjects) as MutableSet<String>
-  val projectsToRelease: Set<String> = (allProjectsToRelease subtract projectsReleasing)
   if (projectsToRelease.isNotEmpty()) {
     throw GradleException(
       "Following Sdks have to release as well. Please update the release config.\n${projectsToRelease.joinToString("\n")}"
