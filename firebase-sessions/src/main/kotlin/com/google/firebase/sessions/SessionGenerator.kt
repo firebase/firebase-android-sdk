@@ -26,7 +26,7 @@ import java.util.UUID
 internal data class SessionInfo(
   val sessionId: String,
   val firstSessionId: String,
-  val shouldDispatchEvents: Boolean,
+  val collectEvents: Boolean,
   val sessionIndex: Int,
 )
 
@@ -54,7 +54,13 @@ internal class SessionGenerator(collectEvents: Boolean) {
 
     sessionIndex += 1
 
-    thisSession = SessionInfo(newSessionId, firstSessionId, collectEvents, sessionIndex)
+    thisSession =
+      SessionInfo(
+        sessionId = newSessionId,
+        firstSessionId = firstSessionId,
+        collectEvents = collectEvents,
+        sessionIndex = sessionIndex
+      )
   }
 
   val currentSession: SessionInfo

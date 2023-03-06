@@ -38,17 +38,17 @@ class SessionGeneratorTest {
   // ensures it has consistent behavior.
   @Test
   fun currentSession_beforeGenerateReturnsDefault() {
-    val sessionGenerator = SessionGenerator(false)
+    val sessionGenerator = SessionGenerator(collectEvents = false)
 
     assertThat(sessionGenerator.currentSession.sessionId).isEqualTo("")
     assertThat(sessionGenerator.currentSession.firstSessionId).isEqualTo("")
-    assertThat(sessionGenerator.currentSession.shouldDispatchEvents).isEqualTo(false)
+    assertThat(sessionGenerator.currentSession.collectEvents).isEqualTo(false)
     assertThat(sessionGenerator.currentSession.sessionIndex).isEqualTo(-1)
   }
 
   @Test
   fun generateNewSessionID_generatesValidSessionInfo() {
-    val sessionGenerator = SessionGenerator(true)
+    val sessionGenerator = SessionGenerator(collectEvents = true)
 
     sessionGenerator.generateNewSession()
 
@@ -56,7 +56,7 @@ class SessionGeneratorTest {
     assertThat(isValidSessionId(sessionGenerator.currentSession.firstSessionId)).isEqualTo(true)
     assertThat(sessionGenerator.currentSession.firstSessionId)
       .isEqualTo(sessionGenerator.currentSession.sessionId)
-    assertThat(sessionGenerator.currentSession.shouldDispatchEvents).isEqualTo(true)
+    assertThat(sessionGenerator.currentSession.collectEvents).isEqualTo(true)
     assertThat(sessionGenerator.currentSession.sessionIndex).isEqualTo(0)
   }
 
@@ -64,7 +64,7 @@ class SessionGeneratorTest {
   // Session ID being set in the firstSessionId field
   @Test
   fun generateNewSessionID_incrementsSessionIndex_keepsFirstSessionId() {
-    val sessionGenerator = SessionGenerator(true)
+    val sessionGenerator = SessionGenerator(collectEvents = true)
 
     sessionGenerator.generateNewSession()
 

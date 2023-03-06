@@ -25,7 +25,7 @@ import com.google.firebase.ktx.app
 
 class FirebaseSessions internal constructor(firebaseApp: FirebaseApp) {
 
-  private val sessionGenerator = SessionGenerator(true)
+  private val sessionGenerator = SessionGenerator(collectEvents = true)
 
   init {
     val sessionInitiator = SessionInitiator(WallClock::elapsedRealtime, this::initiateSessionStart)
