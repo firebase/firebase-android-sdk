@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-@file:JvmName("CheckHeadDependency")
-
 package com.google.firebase.gradle.plugins
 
 import org.gradle.api.DefaultTask
