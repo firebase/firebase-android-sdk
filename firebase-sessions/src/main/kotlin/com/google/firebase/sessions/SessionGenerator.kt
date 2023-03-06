@@ -19,8 +19,7 @@ package com.google.firebase.sessions
 import java.util.UUID
 
 /**
- * [SessionInfo] is a data class responsible for storing information about the
- * current Session.
+ * [SessionInfo] is a data class responsible for storing information about the current Session.
  *
  * @hide
  */
@@ -55,11 +54,9 @@ internal class SessionGenerator(collectEvents: Boolean) {
 
     sessionIndex += 1
 
-    thisSession = SessionInfo(newSessionId,
-                                 firstSessionId,
-                                 collectEvents,
-                                 sessionIndex)
+    thisSession = SessionInfo(newSessionId, firstSessionId, collectEvents, sessionIndex)
   }
 
-  val currentSession: SessionInfo get() = thisSession
+  val currentSession: SessionInfo
+    get() = thisSession
 }

@@ -17,8 +17,6 @@
 package com.google.firebase.sessions
 
 import com.google.common.truth.Truth.assertThat
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.minutes
 import org.junit.Test
 
 class SessionGeneratorTest {
@@ -56,7 +54,8 @@ class SessionGeneratorTest {
 
     assertThat(isValidSessionId(sessionGenerator.currentSession.sessionId)).isEqualTo(true)
     assertThat(isValidSessionId(sessionGenerator.currentSession.firstSessionId)).isEqualTo(true)
-    assertThat(sessionGenerator.currentSession.firstSessionId).isEqualTo(sessionGenerator.currentSession.sessionId)
+    assertThat(sessionGenerator.currentSession.firstSessionId)
+      .isEqualTo(sessionGenerator.currentSession.sessionId)
     assertThat(sessionGenerator.currentSession.shouldDispatchEvents).isEqualTo(true)
     assertThat(sessionGenerator.currentSession.sessionIndex).isEqualTo(0)
   }
