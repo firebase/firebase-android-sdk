@@ -37,7 +37,13 @@ internal data class SessionInfo(
  * @hide
  */
 internal class SessionGenerator(collectEvents: Boolean) {
-  private var thisSession: SessionInfo = SessionInfo("", "", collectEvents, -1)
+  private var thisSession: SessionInfo =
+    SessionInfo(
+      sessionId = "",
+      firstSessionId = "",
+      collectEvents = collectEvents,
+      sessionIndex = -1
+    )
 
   private var firstSessionId = ""
   private var sessionIndex: Int = -1
