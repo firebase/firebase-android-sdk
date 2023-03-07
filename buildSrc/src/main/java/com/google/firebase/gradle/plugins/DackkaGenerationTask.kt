@@ -121,8 +121,6 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
       )
     val annotationsNotToDisplayKotlin = listOf("kotlin.ExtensionFunctionType")
 
-    println("SOURCES: ${sources.get().joinToString(" | ")}")
-
     val jsonMap =
       mapOf(
         "moduleName" to "",
@@ -132,8 +130,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
           listOf(
             mutableMapOf(
               "sourceSetID" to mapOf("scopeId" to "androidx", "sourceSetName" to "main"),
-              "sourceRoots" to
-                sources.get().filterNot { it.path.contains("release") }.map { it.absolutePath },
+              "sourceRoots" to sources.get().filter { it.exists() }.map { it.absolutePath },
               "classpath" to dependencies.get().map { it.absolutePath },
               "documentedVisibilities" to listOf("PUBLIC", "PROTECTED"),
               "skipEmptyPackages" to "true",

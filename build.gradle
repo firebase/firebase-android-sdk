@@ -87,6 +87,15 @@ configure(subprojects) {
                 artifact()
             }
         }
+        ivy {
+            url = "https://androidx.dev/dackka/builds/9427990/artifacts"
+            patternLayout {
+                artifact 'dackka-1.0.5-all.jar'
+            }
+            metadataSources {
+                artifact()
+            }
+        }
     }
 
     apply plugin: "com.ncorti.ktfmt.gradle"
