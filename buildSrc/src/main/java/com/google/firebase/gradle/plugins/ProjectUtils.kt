@@ -59,7 +59,7 @@ val Project.dackkaConfig: Configuration
     configurations.findByName("dackkaArtifacts")
       ?: configurations.create("dackkaArtifacts") {
         dependencies.add(
-          this@dackkaConfig.dependencies.create("com.google.devsite:dackka-fat:1.2.0")
+          this@dackkaConfig.dependencies.create("com.google.devsite:dackka-fat:1.3.0")
         )
       }
 
