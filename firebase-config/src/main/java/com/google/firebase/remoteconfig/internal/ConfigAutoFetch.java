@@ -180,7 +180,7 @@ public class ConfigAutoFetch {
       return;
     }
 
-    // Needs fetch to occur between 0 - 4 seconds. Randomize to not cause ddos alerts in backend
+    // Randomize fetch to occur between 0 - 4 seconds.
     int timeTillFetch = random.nextInt(4);
     scheduledExecutorService.schedule(
         new Runnable() {
