@@ -17,7 +17,7 @@
 apply plugin: 'com.android.application'
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
-android {
+android { namespace = "com.firebase.google"
     compileSdkVersion project.targetSdkVersion
     lintOptions {
         abortOnError false

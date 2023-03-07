@@ -15,7 +15,7 @@
 plugins {
     id "org.jetbrains.kotlin.jvm"
     id "java-library"
-    id "com.github.johnrengelman.shadow" version "5.2.0"
+    id "com.github.johnrengelman.shadow" version "8.1.0"
     id "com.google.protobuf"
     id "kotlin-kapt"
 }
@@ -37,7 +37,7 @@ jar {
 
 dependencies {
 
-    implementation "com.google.protobuf:protobuf-java:3.21.9"
+    implementation "com.google.protobuf:protobuf-java:3.21.11"
     implementation 'com.squareup:javapoet:1.13.0'
     implementation 'com.google.guava:guava:30.0-jre'
     implementation 'com.google.dagger:dagger:2.43.2'
@@ -45,4 +45,9 @@ dependencies {
 
     testImplementation 'junit:junit:4.13.1'
     testImplementation "com.google.truth:truth:1.0.1"
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }

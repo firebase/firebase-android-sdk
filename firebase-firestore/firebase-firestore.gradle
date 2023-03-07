@@ -52,7 +52,7 @@ protobuf {
 // Acceptable values are: 'emulator', 'qa', 'nightly', and 'prod'.
 ext.targetBackend = 'emulator'
 
-android {
+android { namespace = "com.firebase.google"
     adbOptions {
         timeOutInMs 60 * 1000
     }

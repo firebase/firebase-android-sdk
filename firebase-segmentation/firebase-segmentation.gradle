@@ -16,7 +16,7 @@ plugins {
     id 'firebase-library'
 }
 
-android {
+android { namespace = "com.firebase.google"
     compileSdkVersion project.targetSdkVersion
 
     defaultConfig {

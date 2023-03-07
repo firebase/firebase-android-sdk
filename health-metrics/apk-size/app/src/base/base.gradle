@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-android {
+android { namespace = "com.firebase.google"
     productFlavors {
         base {
             dimension "firebase"

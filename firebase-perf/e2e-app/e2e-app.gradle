@@ -26,7 +26,7 @@ firebaseTestLab {
     device 'model=Pixel2,version=28,locale=en,orientation=portrait'
 }
 
-android {
+android { namespace = "com.firebase.google"
     compileSdkVersion 31
 
     // Specifies the build type that the Android plugin should use to run the instrumentation tests.

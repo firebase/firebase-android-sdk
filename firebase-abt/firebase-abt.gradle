@@ -22,7 +22,7 @@ firebaseLibrary {
     publishJavadoc = false
 }
 
-android {
+android { namespace = "com.firebase.google"
 
     lintOptions {
         abortOnError false

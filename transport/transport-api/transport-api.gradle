@@ -20,7 +20,7 @@ firebaseLibrary{
     publishJavadoc = false
 }
 
-android {
+android { namespace = "com.firebase.google"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 14

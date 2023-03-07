@@ -50,7 +50,7 @@ protobuf {
   }
 }
 
-android {
+android { namespace = "com.firebase.google"
  sourceSets {
         main {
             proto {

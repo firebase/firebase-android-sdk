@@ -14,7 +14,7 @@
 
 apply plugin: "com.android.application"
 apply from: "default.gradle"
-android {
+android { namespace = "com.firebase.google"
     flavorDimensions "firebase", "abi"
 
     // https://developer.android.com/ndk/guides/abis

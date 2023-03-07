@@ -53,7 +53,7 @@ import com.google.firebase.appcheck.internal.DefaultFirebaseAppCheck;
  *
  * <pre>
  * // In build.gradle.kts
- * android {
+ * android { namespace = "com.firebase.google"
  *   defaultConfig {
  *     System.getenv("FIREBASE_APP_CHECK_DEBUG_SECRET")?.let { token ->
  *       testInstrumentationRunnerArguments(

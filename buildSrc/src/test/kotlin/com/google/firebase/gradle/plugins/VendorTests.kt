@@ -261,7 +261,7 @@ class VendorPluginTests {
                 jcenter()
             }
 
-            android {
+            android { namespace = "com.firebase.google"
               compileSdk = 26
               defaultConfig {
                 minSdk = 14
@@ -296,7 +296,7 @@ class VendorPluginTests {
                 jcenter()
             }
 
-            android {
+            android { namespace = "com.firebase.google"
               compileSdk = 26
               defaultConfig {
                 minSdk = 14

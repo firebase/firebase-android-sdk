@@ -63,8 +63,8 @@ dependencies {
     implementation("org.eclipse.jgit:org.eclipse.jgit:6.3.0.202209071007-r")
 
     implementation("com.google.code.gson:gson:2.8.9")
-    implementation("com.android.tools.build:gradle:7.4.0")
-    implementation("com.android.tools.build:builder-test-api:7.4.0")
+    implementation("com.android.tools.build:gradle:8.1.0-alpha08")
+    implementation("com.android.tools.build:builder-test-api:8.1.0-alpha07")
     implementation("gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9")
 
     testImplementation(libs.bundles.kotest)
@@ -113,6 +113,6 @@ tasks.withType<Test> {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
 }

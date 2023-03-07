@@ -16,7 +16,7 @@ plugins {
     id("com.android.application")
 }
 
-android {
+android { namespace = "com.firebase.google"
   val targetSdkVersion : Int by rootProject
   val minSdkVersion : Int by rootProject
   compileSdk = targetSdkVersion
