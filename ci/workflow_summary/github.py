@@ -47,7 +47,7 @@ def list_workflows(token, workflow_id, params):
   headers = {'Accept': 'application/vnd.github+json', 'Authorization': f'token {token}'}
   with requests.get(url, headers=headers, params=params,
                     stream=True, timeout=TIMEOUT_LONG) as response:
-    logging.info("list_workflows: %s, params: %s, response: %s", url, params, response)
+    logging.info('list_workflows: %s, params: %s, response: %s', url, params, response)
     return response.json()
 
 def list_jobs(token, run_id, params):
@@ -56,7 +56,7 @@ def list_jobs(token, run_id, params):
   headers = {'Accept': 'application/vnd.github+json', 'Authorization': f'token {token}'}
   with requests.get(url, headers=headers, params=params,
                     stream=True, timeout=TIMEOUT_LONG) as response:
-    logging.info("list_jobs: %s, params: %s, response: %s", url, params, response)
+    logging.info('list_jobs: %s, params: %s, response: %s', url, params, response)
     return response.json()
 
 def job_logs(token, job_id):
@@ -65,7 +65,7 @@ def job_logs(token, job_id):
   headers = {'Accept': 'application/vnd.github+json', 'Authorization': f'token {token}'}
   with requests.get(url, headers=headers, allow_redirects=False,
                     stream=True, timeout=TIMEOUT_LONG) as response:
-    logging.info("job_logs: %s response: %s", url, response)
+    logging.info('job_logs: %s response: %s', url, response)
     if response.status_code == 302:
       with requests.get(response.headers['Location'], headers=headers, allow_redirects=False,
                         stream=True, timeout=TIMEOUT_LONG) as get_log_response:

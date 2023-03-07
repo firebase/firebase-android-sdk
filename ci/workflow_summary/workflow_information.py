@@ -46,18 +46,21 @@ def main():
 
   workflow_summary = get_workflow_summary(args)
   workflow_summary_file_path = os.path.join(file_folder, 'workflow_summary.json')
-  json.dump(workflow_summary, open(workflow_summary_file_path,'w'))
+  with open(workflow_summary_file_path, 'w') as f:
+    json.dump(workflow_summary, f)
   logging.info(f'Workflow summary has been write to {workflow_summary_file_path}\n')
 
   job_summary = get_job_summary(workflow_summary)
   job_summary_file_path = os.path.join(file_folder, 'job_summary.json')
-  json.dump(job_summary, open(job_summary_file_path,'w'))
+  with open(job_summary_file_path, 'w') as f:
+    json.dump(job_summary, f)
   logging.info(f'Job summary has been write to {job_summary_file_path}\n')
 
   workflow_summary_report = f"{datetime.datetime.utcnow()}\n{args}\n\n"
   workflow_summary_report += generate_summary_report(workflow_summary, job_summary)
   report_file_path = os.path.join(file_folder, 'workflow_summary_report.txt')
-  open(report_file_path, 'w').write(workflow_summary_report)
+  with open(report_file_path, 'w') as f:
+    f.write(workflow_summary_report)
   logging.info(f'Workflow summary report has been write to {report_file_path}\n')
 
 
@@ -88,8 +91,7 @@ def get_workflow_summary(args):
   if args.branch:
     list_workflows_params['branch'] = args.branch
 
-  request_workflow_list = True
-  while request_workflow_list:
+  while True:
     workflow_page += 1
     list_workflows_params['page'] = workflow_page
     workflows = github.list_workflows(token, workflow_name, list_workflows_params)
@@ -109,7 +111,7 @@ def get_workflow_summary(args):
           else: 
             workflow_summary['failure_count'] += 1
     else:
-      request_workflow_list = False
+      break
 
   logging.info('END collecting workflow run data\n')
 
@@ -123,8 +125,7 @@ def get_workflow_summary(args):
 def get_workflow_jobs(args, workflow_run):
   workflow_jobs = workflow_run['jobs']
   job_page = 0
-  request_job_list = True
-  while request_job_list:
+  while True:
     job_page += 1
     list_jobs_params = {'filter': args.jobs, 'per_page': 100, 'page': job_page} # per_page: max 100
     jobs = github.list_jobs(args.token, workflow_run['workflow_id'], list_jobs_params)
@@ -141,7 +142,7 @@ def get_workflow_jobs(args, workflow_run):
           workflow_jobs['failure_count'] += 1
 
     if 'jobs' not in jobs or jobs['total_count'] < job_page * 100:
-      request_job_list = False
+      break
 
 
 def get_job_summary(workflow_summary):
