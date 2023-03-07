@@ -549,11 +549,21 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Starts listening for any config updates for this project.
+   * Start listening for config updates from Realtime Remote Config and automatically fetch updates
+   * from the RC backend when they are available.
    *
-   * @param configUpdateListener A event listener that has one function that executes a callback
-   * @return A registration object that allows the user to remove the event listener, and if it is
-   *     the last listener, stop Realtime.
+   * <p>If a connection to Realtime RC is not already open, calling this method will open it.
+   * Multiple listeners can be added by calling this method again, but subsequent calls re-use the
+   * same connection to the backend.
+   *
+   * <p>Note: Realtime Remote Config requires the Firebase Remote Config Realtime API. See the <a
+   * href="https://firebase.google.com/docs/remote-config/get-started">Remote Config Get Started
+   * </a> guide to enable the API.
+   *
+   * @param configUpdateListener A {@link ConfigUpdateListener} that can be used to respond to
+   *     config updates when they're fetched.
+   * @return A {@link ConfigUpdateListenerRegistration} that allows the user to remove the added
+   *     {@code configUpdateListener} and close the connection when there are no more listeners.
    */
   @NonNull
   public ConfigUpdateListenerRegistration addOnConfigUpdateListener(
