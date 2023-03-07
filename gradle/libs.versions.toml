@@ -12,6 +12,7 @@ protoc = "3.21.11"
 robolectric = "4.9"
 truth = "1.1.2"
 protobufjavautil = "3.21.11"
+kotest = "5.5.5"
 
 [libraries]
 android-lint = { module = "com.android.tools.lint:lint", version.ref = "android-lint"}
@@ -49,3 +50,9 @@ mockito-dexmaker = { module = "com.linkedin.dexmaker:dexmaker-mockito", version 
 robolectric = {module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth"}
 protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobufjavautil" }
+kotest-runner = { module = "io.kotest:kotest-runner-junit4-jvm", version.ref = "kotest" }
+kotest-assertions = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
+kotest-property = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
+
+[bundles]
+kotest = ["kotest-runner", "kotest-assertions", "kotest-property"]

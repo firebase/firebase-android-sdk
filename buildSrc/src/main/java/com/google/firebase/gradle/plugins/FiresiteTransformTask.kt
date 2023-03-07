@@ -35,11 +35,9 @@ import org.gradle.api.tasks.TaskAction
  * More specifically, it:
  * - Deletes unnecessary files
  * - Removes Class and Index headers from _toc.yaml files
- * - Changes links to be appropriate for Firesite versus normal Devsite behavior
  * - Fixes broken hyperlinks in `@see` blocks
  * - Removes the prefix path from book_path
  * - Removes the google groupId for Javadocs
- * - Changes the path for _reference-head-tags at the top of html files
  *
  * **Please note:** This task is idempotent- meaning it can safely be ran multiple times on the same
  * set of files.
@@ -49,10 +47,6 @@ abstract class FiresiteTransformTask : DefaultTask() {
   @get:InputDirectory
   @get:PathSensitive(PathSensitivity.RELATIVE)
   abstract val dackkaFiles: Property<File>
-
-  @get:Input abstract val referenceHeadTagsPath: Property<String>
-
-  @get:Input abstract val referencePath: Property<String>
 
   @get:Input @get:Optional abstract val removeGoogleGroupId: Property<Boolean>
 
@@ -80,14 +74,13 @@ abstract class FiresiteTransformTask : DefaultTask() {
   }
 
   private fun File.fixHTMLFile() {
-    val fixedContent =
-      readText().fixBookPath().fixReferenceHeadTagsPath().fixLinks().fixHyperlinksInSeeBlocks()
+    val fixedContent = readText().fixBookPath().fixHyperlinksInSeeBlocks()
     writeText(fixedContent)
   }
 
   private fun File.fixYamlFile() {
     val fixedContent =
-      readText().removeClassHeader().removeIndexHeader().fixLinks().let {
+      readText().removeClassHeader().removeIndexHeader().let {
         if (removeGoogleGroupId.getOrElse(false)) it.removeGoogleGroupId() else it
       }
     writeText(fixedContent)
@@ -105,12 +98,13 @@ abstract class FiresiteTransformTask : DefaultTask() {
    * ```
    * "com.google.firebase.appcheck"
    * ```
+   *
    * Example output:
    * ```
    * "firebase.appcheck"
    * ```
    */
-  // TODO(b/257293594): Remove when dackka exposes configuration for this
+  // TODO(b/270593375): Remove when dackka exposes configuration for this
   private fun String.removeGoogleGroupId() = remove(Regex("(?<=\")com.google.(?=firebase.)"))
 
   /**
@@ -125,6 +119,7 @@ abstract class FiresiteTransformTask : DefaultTask() {
    * <code>&lt;a href=&quot;git.page.link/timestamp-proto&quot;&gt;Timestamp&lt;/a&gt;The ref timestamp definition</code></td>
    * <td></td>
    * ```
+   *
    * Example output:
    * ```
    * <code><a href="git.page.link/timestamp-proto">Timestamp</a></code></td>
@@ -146,20 +141,6 @@ abstract class FiresiteTransformTask : DefaultTask() {
             """
         .trimIndent()
     }
-
-  // Our documentation does not live under the standard path expected by Dackka, especially
-  // between Kotlin + Javadocs
-  // TODO(b/243674305): Remove when dackka exposes configuration for this
-  private fun String.fixLinks() =
-    replace(Regex("(?<=\")/reference[^\"]*?(?=/com/google/firebase)"), referencePath.get())
-
-  // We utilize difference reference head tags between Kotlin and Java docs
-  // TODO(b/248316730): Remove when dackka exposes configuration for this
-  private fun String.fixReferenceHeadTagsPath() =
-    replace(
-      Regex("(?<=include \").*(?=/_reference-head-tags.html\" %})"),
-      referenceHeadTagsPath.get()
-    )
 
   // We don't actually upload class or index files,
   // so these headers will throw not found errors if not removed.
