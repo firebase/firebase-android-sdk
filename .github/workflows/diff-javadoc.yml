@@ -9,9 +9,6 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - name: Make diff directory
-        run: mkdir ~/diff
-
       - name: Checkout PR branch
         uses: actions/checkout@v3
         with:
@@ -26,39 +23,4 @@ jobs:
           cache: gradle
 
       - name: Generate docs for PR branch
-        run: ./gradlew kotlindoc
-
-      - name: Move branch docs to diff directory
-        run: mv build ~/diff/modified
-
-      - name: Checkout master
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.base_ref }}
-
-      - name: Generate docs for Master
-        run: ./gradlew kotlindoc
-
-      - name: Move master docs to diff directory
-        run: mv build ~/diff/original
-
-      - name: Get diff between Master and Branch docs
-        run: >
-          `# Recursively diff directories, including new files, git style, with 3 lines of context`
-          diff -wEburN ~/diff/original ~/diff/modified
-          `# Remove the first line and new file signifier of the output`
-          | tail -n +2
-          `# Replace the diff new file signifier with the end and start of a new codeblock`
-          | sed "s/^diff.*$/\`\`\`\\n\`\`\`diff/g"
-          `# Add a collapsable block, summary, and start the first code block on the first line`
-          | sed "1s/^/<details>\\n<summary>Javadoc Changes:<\/summary>\\n\\n\`\`\`diff\\n/"
-          `# Close the final code block and close the collapsable on the final line`
-          | sed "$ s/$/\\n\`\`\`\\n<\/details>/"
-          `# Write to diff.md for later`
-          > diff.md
-
-      - name: Add comment
-        continue-on-error: true
-        uses: mshick/add-pr-comment@a65df5f64fc741e91c59b8359a4bc56e57aaf5b1
-        with:
-          message-path: diff.md
+        run: ./gradlew :firebase-common:kotlindoc
