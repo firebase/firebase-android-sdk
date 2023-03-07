@@ -202,9 +202,8 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
   private fun launchDackka(argsFile: File, workerExecutor: WorkerExecutor) {
     val workQueue = workerExecutor.noIsolation()
     workQueue.submit<DackkaWorkAction, DackkaParams>() {
-      args.set(listOf(argsFile.path, "-loggingLevel", "WARN"))
+      args.set(listOf(argsFile.path, "-loggingLevel", "DEBUG"))
       dackkaFile.set(dackkaJarFile.get())
-      projectName.set(clientName)
     }
   }
 }
@@ -218,7 +217,6 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
 interface DackkaParams : WorkParameters {
   val args: ListProperty<String>
   val dackkaFile: Property<File>
-  val projectName: Property<String>
 }
 
 /**
@@ -233,8 +231,6 @@ abstract class DackkaWorkAction @Inject constructor(private val execOperations: 
       mainClass.set("org.jetbrains.dokka.MainKt")
       args = parameters.args.get()
       classpath(parameters.dackkaFile.get())
-
-      environment("DEVSITE_TENANT", "client/${parameters.projectName.get()}")
     }
   }
 }
