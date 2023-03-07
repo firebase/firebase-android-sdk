@@ -62,9 +62,6 @@ dependencies {
     // needed for Kotlin detection to compile, but not necessarily present at runtime.
     compileOnly(libs.kotlin.stdlib)
 
-    // FirebaseApp references storage, so storage needs to be on classpath when dokka runs.
-    javadocClasspath(project(":firebase-storage"))
-
     testImplementation(libs.androidx.test.junit)
     testImplementation(libs.androidx.test.junit)
     testImplementation(libs.androidx.test.runner)
