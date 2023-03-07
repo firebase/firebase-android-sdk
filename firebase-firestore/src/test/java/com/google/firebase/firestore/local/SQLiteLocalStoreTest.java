@@ -46,7 +46,6 @@ import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.Precondition;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
 import com.google.firestore.v1.Value;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -56,7 +55,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -314,23 +312,49 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
   public void testDeeplyNestedServerTimestamps() {
     Timestamp timestamp = Timestamp.now();
     Value initialServerTimestamp = ServerTimestamps.valueOf(timestamp, null);
-    Map<String, Value> fields = new HashMap<String, Value>() {{
-      put("timestamp", ServerTimestamps.valueOf(timestamp, initialServerTimestamp));
-    }};
+    Map<String, Value> fields =
+        new HashMap<String, Value>() {
+          {
+            put("timestamp", ServerTimestamps.valueOf(timestamp, initialServerTimestamp));
+          }
+        };
     FieldPath path = FieldPath.fromSingleSegment("timestamp");
-    FieldMask mask = FieldMask.fromSet(new HashSet<FieldPath>() {{ add(path); }});
-    FieldTransform fieldTransform = new FieldTransform(path, ServerTimestampOperation.getInstance());
-    List<FieldTransform> fieldTransforms = new ArrayList<FieldTransform>() {{ add(fieldTransform); }};
+    FieldMask mask =
+        FieldMask.fromSet(
+            new HashSet<FieldPath>() {
+              {
+                add(path);
+              }
+            });
+    FieldTransform fieldTransform =
+        new FieldTransform(path, ServerTimestampOperation.getInstance());
+    List<FieldTransform> fieldTransforms =
+        new ArrayList<FieldTransform>() {
+          {
+            add(fieldTransform);
+          }
+        };
     AtomicReference<Throwable> error = new AtomicReference<>();
-    Thread thread = new Thread(Thread.currentThread().getThreadGroup(), () -> {
-      try {
-        for (int i = 0; i < 1000; ++i) {
-          writeMutation(new PatchMutation(DocumentKey.fromPathString("some/object/for/test"), ObjectValue.fromMap(fields), mask, Precondition.NONE, fieldTransforms));
-        }
-      } catch (Throwable e) {
-        error.set(e);
-      }
-    }, "test", 1024 * 1024);
+    Thread thread =
+        new Thread(
+            Thread.currentThread().getThreadGroup(),
+            () -> {
+              try {
+                for (int i = 0; i < 1000; ++i) {
+                  writeMutation(
+                      new PatchMutation(
+                          DocumentKey.fromPathString("some/object/for/test"),
+                          ObjectValue.fromMap(fields),
+                          mask,
+                          Precondition.NONE,
+                          fieldTransforms));
+                }
+              } catch (Throwable e) {
+                error.set(e);
+              }
+            },
+            "test",
+            1024 * 1024);
     try {
       thread.start();
       thread.join();
