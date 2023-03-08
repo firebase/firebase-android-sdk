@@ -29,11 +29,15 @@ import logging
 import os
 
 
+REPO_OWNER = 'firebase'
+REPO_NAME = 'firebase-android-sdk'
+EXCLUDE_JOB_LIST = ['Determine changed modules','Unit Tests (matrix)','Publish Tests Results','Unit Test Results','Instrumentation Tests','Unit Tests']
+
 def main():
   logging.getLogger().setLevel(logging.INFO)
 
   args = parse_cmdline_args()
-  gh = github.GitHub('firebase', 'firebase-android-sdk')
+  gh = github.GitHub(REPO_OWNER, REPO_NAME)
 
   token = args.token
 
@@ -45,7 +49,7 @@ def main():
   job_summary = json.load(open(os.path.join(file_folder, 'job_summary.json')))
 
   for job_name in job_summary:
-    if job_name in ['Determine changed modules','Unit Tests (matrix)','Publish Tests Results','Unit Test Results','Instrumentation Tests','Unit Tests']:
+    if job_name in EXCLUDE_JOB_LIST:
       continue
 
     job = job_summary[job_name]
@@ -67,6 +71,7 @@ def main():
         job_id = failure_job['job_id']
         logs = gh.job_logs(token, job_id)
         if logs:
+          # using regex to extract failure information
           failed_tasks = re.findall(r"Execution failed for task ':(.*?)'.", logs)
           for failed_task in failed_tasks:
             file_log.write('\n'+failed_task)

@@ -96,22 +96,22 @@ def get_workflow_summary(gh, args):
     list_workflows_params['page'] = workflow_page
     workflows = gh.list_workflows(token, workflow_name, list_workflows_params)
 
-    if 'workflow_runs' in workflows and workflows['workflow_runs']:
-      for workflow in workflows['workflow_runs']:
-        if workflow['conclusion'] in ['success', 'failure']:
-          workflow_summary['workflow_runs'].append({'workflow_id': workflow['id'], 'conclusion': workflow['conclusion'],
-                                                    'head_branch': workflow['head_branch'], 'actor': workflow['actor']['login'], 
-                                                    'created_at': workflow['created_at'], 'updated_at': workflow['updated_at'], 
-                                                    'run_started_at': workflow['run_started_at'], 'run_attempt': workflow['run_attempt'], 
-                                                    'html_url': workflow['html_url'], 'jobs_url': workflow['jobs_url'], 
-                                                    'jobs': {'total_count': 0, 'success_count': 0, 'failure_count': 0,  'job_runs': []}})
-          workflow_summary['total_count']  += 1
-          if workflow['conclusion'] == 'success':
-            workflow_summary['success_count'] += 1 
-          else: 
-            workflow_summary['failure_count'] += 1
-    else:
+    if 'workflow_runs' not in workflows or not workflows['workflow_runs']:
       break
+
+    for workflow in workflows['workflow_runs']:
+      if workflow['conclusion'] in ['success', 'failure']:
+        workflow_summary['workflow_runs'].append({'workflow_id': workflow['id'], 'conclusion': workflow['conclusion'],
+                                                  'head_branch': workflow['head_branch'], 'actor': workflow['actor']['login'], 
+                                                  'created_at': workflow['created_at'], 'updated_at': workflow['updated_at'], 
+                                                  'run_started_at': workflow['run_started_at'], 'run_attempt': workflow['run_attempt'], 
+                                                  'html_url': workflow['html_url'], 'jobs_url': workflow['jobs_url'], 
+                                                  'jobs': {'total_count': 0, 'success_count': 0, 'failure_count': 0,  'job_runs': []}})
+        workflow_summary['total_count']  += 1
+        if workflow['conclusion'] == 'success':
+          workflow_summary['success_count'] += 1 
+        else: 
+          workflow_summary['failure_count'] += 1
 
   logging.info('END collecting workflow run data\n')
 
@@ -129,20 +129,20 @@ def get_workflow_jobs(gh, args, workflow_run):
     job_page += 1
     list_jobs_params = {'filter': args.jobs, 'per_page': 100, 'page': job_page} # per_page: max 100
     jobs = gh.list_jobs(args.token, workflow_run['workflow_id'], list_jobs_params)
-    if 'jobs' in jobs and jobs['jobs']:
-      for job in jobs['jobs']:
-        workflow_jobs['job_runs'].append({'job_id': job['id'], 'job_name': job['name'], 'conclusion': job['conclusion'], 
-                                          'created_at': job['created_at'], 'started_at': job['started_at'], 'completed_at': job['completed_at'],
-                                          'run_attempt': job['run_attempt'], 'html_url': job['html_url']})
-        if job['conclusion'] in ['success', 'failure']:
-          workflow_jobs['total_count'] += 1
-        if job['conclusion'] == 'success':
-          workflow_jobs['success_count'] += 1 
-        else: 
-          workflow_jobs['failure_count'] += 1
 
     if 'jobs' not in jobs or jobs['total_count'] < job_page * 100:
       break
+
+    for job in jobs['jobs']:
+      workflow_jobs['job_runs'].append({'job_id': job['id'], 'job_name': job['name'], 'conclusion': job['conclusion'], 
+                                        'created_at': job['created_at'], 'started_at': job['started_at'], 'completed_at': job['completed_at'],
+                                        'run_attempt': job['run_attempt'], 'html_url': job['html_url']})
+      if job['conclusion'] in ['success', 'failure']:
+        workflow_jobs['total_count'] += 1
+      if job['conclusion'] == 'success':
+        workflow_jobs['success_count'] += 1 
+      else: 
+        workflow_jobs['failure_count'] += 1
 
 
 def get_job_summary(workflow_summary):

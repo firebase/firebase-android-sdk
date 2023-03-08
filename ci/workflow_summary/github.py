@@ -58,5 +58,5 @@ class GitHub:
                           stream=True, timeout=TIMEOUT_LONG) as get_log_response:
           return get_log_response.content.decode('utf-8')
       else:
-        print('no log avaliable')
+        logging.info('no log avaliable')
         return ''
