@@ -33,7 +33,7 @@ def main():
   logging.getLogger().setLevel(logging.INFO)
 
   args = parse_cmdline_args()
-  github.set_api_url('firebase', 'firebase-android-sdk')
+  gh = github.GitHub('firebase', 'firebase-android-sdk')
 
   token = args.token
 
@@ -65,7 +65,7 @@ def main():
         file_log.write('\n\n'+failure_job['html_url'])
         logging.info(failure_job['html_url'])
         job_id = failure_job['job_id']
-        logs = github.job_logs(token, job_id)
+        logs = gh.job_logs(token, job_id)
         if logs:
           failed_tasks = re.findall(r"Execution failed for task ':(.*?)'.", logs)
           for failed_task in failed_tasks:

@@ -34,7 +34,7 @@ def main():
   args = parse_cmdline_args()
   logging.info(args)
 
-  github.set_api_url(args.repo_owner, args.repo_name)
+  gh = github.GitHub(args.repo_owner, args.repo_name)
 
   # location for all artifacts
   if args.folder:
@@ -44,7 +44,7 @@ def main():
   if not os.path.exists(file_folder):
     os.makedirs(file_folder)
 
-  workflow_summary = get_workflow_summary(args)
+  workflow_summary = get_workflow_summary(gh, args)
   workflow_summary_file_path = os.path.join(file_folder, 'workflow_summary.json')
   with open(workflow_summary_file_path, 'w') as f:
     json.dump(workflow_summary, f)
@@ -64,7 +64,7 @@ def main():
   logging.info(f'Workflow summary report has been write to {report_file_path}\n')
 
 
-def get_workflow_summary(args):  
+def get_workflow_summary(gh, args):  
   token = args.token
   workflow_name = args.workflow_name
   # https://docs.github.com/en/search-github/getting-started-with-searching-on-github/understanding-the-search-syntax#query-for-dates
@@ -94,7 +94,7 @@ def get_workflow_summary(args):
   while True:
     workflow_page += 1
     list_workflows_params['page'] = workflow_page
-    workflows = github.list_workflows(token, workflow_name, list_workflows_params)
+    workflows = gh.list_workflows(token, workflow_name, list_workflows_params)
 
     if 'workflow_runs' in workflows and workflows['workflow_runs']:
       for workflow in workflows['workflow_runs']:
@@ -117,18 +117,18 @@ def get_workflow_summary(args):
 
   logging.info('START collecting job data by workflow run\n')
   for workflow_run in workflow_summary['workflow_runs']:
-    get_workflow_jobs(args, workflow_run)
+    get_workflow_jobs(gh, args, workflow_run)
   logging.info('END collecting job data by workflow run\n')
 
   return workflow_summary
 
-def get_workflow_jobs(args, workflow_run):
+def get_workflow_jobs(gh, args, workflow_run):
   workflow_jobs = workflow_run['jobs']
   job_page = 0
   while True:
     job_page += 1
     list_jobs_params = {'filter': args.jobs, 'per_page': 100, 'page': job_page} # per_page: max 100
-    jobs = github.list_jobs(args.token, workflow_run['workflow_id'], list_jobs_params)
+    jobs = gh.list_jobs(args.token, workflow_run['workflow_id'], list_jobs_params)
     if 'jobs' in jobs and jobs['jobs']:
       for job in jobs['jobs']:
         workflow_jobs['job_runs'].append({'job_id': job['id'], 'job_name': job['name'], 'conclusion': job['conclusion'], 
