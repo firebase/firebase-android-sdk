@@ -555,7 +555,7 @@ public final class LocalStore implements BundleCallback {
    * have to be too frequent.
    */
   private static boolean shouldPersistTargetData(
-      TargetData oldTargetData, TargetData newTargetData, TargetChange change) {
+      TargetData oldTargetData, TargetData newTargetData, @Nullable TargetChange change) {
     // Always persist query data if we don't already have a resume token.
     if (oldTargetData.getResumeToken().isEmpty()) return true;
 
@@ -568,10 +568,20 @@ public final class LocalStore implements BundleCallback {
     long timeDelta = newSeconds - oldSeconds;
     if (timeDelta >= RESUME_TOKEN_MAX_AGE_SECONDS) return true;
 
+    // Update the target cache if sufficient time has passed since the last
+    // LastLimboFreeSnapshotVersion
+    long newLimboFreeSeconds =
+        newTargetData.getLastLimboFreeSnapshotVersion().getTimestamp().getSeconds();
+    long oldLimboFreeSeconds =
+        oldTargetData.getLastLimboFreeSnapshotVersion().getTimestamp().getSeconds();
+    long limboFreeTimeDelta = newLimboFreeSeconds - oldLimboFreeSeconds;
+    if (limboFreeTimeDelta >= RESUME_TOKEN_MAX_AGE_SECONDS) return true;
+
     // Otherwise if the only thing that has changed about a target is its resume token it's not
     // worth persisting. Note that the RemoteStore keeps an in-memory view of the currently active
     // targets which includes the current resume token, so stream failure or user changes will still
     // use an up-to-date resume token regardless of what we do here.
+    if (change == null) return false;
     int changes =
         change.getAddedDocuments().size()
             + change.getModifiedDocuments().size()
@@ -607,17 +617,7 @@ public final class LocalStore implements BundleCallback {
                   targetData.withLastLimboFreeSnapshotVersion(lastLimboFreeSnapshotVersion);
               queryDataByTarget.put(targetId, updatedTargetData);
 
-              long newSeconds =
-                  updatedTargetData.getLastLimboFreeSnapshotVersion().getTimestamp().getSeconds();
-
-              long oldSeconds =
-                  targetData.getLastLimboFreeSnapshotVersion().getTimestamp().getSeconds();
-
-              long timeDelta = newSeconds - oldSeconds;
-
-              // Update the target cache if sufficient time has passed since the last
-              // LastLimboFreeSnapshotVersion
-              if (timeDelta >= RESUME_TOKEN_MAX_AGE_SECONDS) {
+              if (shouldPersistTargetData(updatedTargetData, targetData, /*change*/ null)) {
                 targetCache.updateTargetData(updatedTargetData);
               }
             }
