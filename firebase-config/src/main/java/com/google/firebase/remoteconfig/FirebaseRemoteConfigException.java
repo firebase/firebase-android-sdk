@@ -49,20 +49,20 @@ public class FirebaseRemoteConfigException extends FirebaseException {
   }
 
   public enum Code {
+    /** Unknown code value. */
+    UNKNOWN(0),
+
     /** Unable to make a connection to the Realtime RC backend. */
-    CONFIG_UPDATE_STREAM_ERROR(0),
+    CONFIG_UPDATE_STREAM_ERROR(1),
 
     /** A config update stream message from the Realtime RC backend is unparsable. */
-    CONFIG_UPDATE_MESSAGE_INVALID(1),
+    CONFIG_UPDATE_MESSAGE_INVALID(2),
 
     /** Unable to fetch the latest config. */
-    CONFIG_UPDATE_NOT_FETCHED(2),
+    CONFIG_UPDATE_NOT_FETCHED(3),
 
     /** The Realtime RC backend is unavailable. */
-    CONFIG_UPDATE_UNAVAILABLE(3),
-
-    /** Unknown code value. */
-    UNKNOWN(4);
+    CONFIG_UPDATE_UNAVAILABLE(4);
 
     private final int value;
 
