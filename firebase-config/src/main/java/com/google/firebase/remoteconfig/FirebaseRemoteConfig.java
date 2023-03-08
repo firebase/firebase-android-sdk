@@ -658,7 +658,8 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Changes background state of the Realtime handler depending on if the app is in the foreground or not.
+   * Changes background state of the Realtime handler depending on if the app is in the foreground
+   * or not.
    *
    * @hide
    */
