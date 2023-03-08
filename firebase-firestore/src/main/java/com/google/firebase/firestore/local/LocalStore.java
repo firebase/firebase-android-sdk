@@ -617,7 +617,7 @@ public final class LocalStore implements BundleCallback {
                   targetData.withLastLimboFreeSnapshotVersion(lastLimboFreeSnapshotVersion);
               queryDataByTarget.put(targetId, updatedTargetData);
 
-              if (shouldPersistTargetData(updatedTargetData, targetData, /*change*/ null)) {
+              if (shouldPersistTargetData(targetData, updatedTargetData, /*change*/ null)) {
                 targetCache.updateTargetData(updatedTargetData);
               }
             }
