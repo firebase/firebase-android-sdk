@@ -231,6 +231,7 @@ abstract class DackkaWorkAction @Inject constructor(private val execOperations: 
       mainClass.set("org.jetbrains.dokka.MainKt")
       args = parameters.args.get()
       classpath(parameters.dackkaFile.get())
+      environment("DEVSITE_TENANT", "client")
     }
   }
 }
