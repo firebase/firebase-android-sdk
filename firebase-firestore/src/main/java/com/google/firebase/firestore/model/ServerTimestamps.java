@@ -62,9 +62,8 @@ public final class ServerTimestamps {
             .putFields(TYPE_KEY, encodedType)
             .putFields(LOCAL_WRITE_TIME_KEY, encodeWriteTime);
 
-    Value actualPreviousValue = previousValue == null ? null : getPreviousValue(previousValue);
-    if (actualPreviousValue != null) {
-      mapRepresentation.putFields(PREVIOUS_VALUE_KEY, actualPreviousValue);
+    if (previousValue != null) {
+      mapRepresentation.putFields(PREVIOUS_VALUE_KEY, previousValue);
     }
 
     return Value.newBuilder().setMapValue(mapRepresentation).build();
