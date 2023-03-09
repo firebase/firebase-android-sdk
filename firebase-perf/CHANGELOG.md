@@ -1,5 +1,6 @@
 # Unreleased
 * [changed] Updated javalite, protoc, protobufjavautil to 3.21.11.
+* [fixed] Fixed app start trace creation where some measured time could be NULL (#4730).
 
 # 20.3.1
 * [changed] Migrated [perfmon] to use standard Firebase executors.
