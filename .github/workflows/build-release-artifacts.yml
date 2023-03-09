@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-artifacts:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
