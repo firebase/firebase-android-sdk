@@ -20,7 +20,7 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class SessionGeneratorTest {
-  fun isValidSessionId(sessionId: String): Boolean {
+  private fun isValidSessionId(sessionId: String): Boolean {
     if (sessionId.length != 32) {
       return false
     }
@@ -42,7 +42,7 @@ class SessionGeneratorTest {
 
     assertThat(sessionGenerator.currentSession.sessionId).isEqualTo("")
     assertThat(sessionGenerator.currentSession.firstSessionId).isEqualTo("")
-    assertThat(sessionGenerator.currentSession.collectEvents).isEqualTo(false)
+    assertThat(sessionGenerator.currentSession.dataCollectionStatus).isEqualTo(false)
     assertThat(sessionGenerator.currentSession.sessionIndex).isEqualTo(-1)
   }
 
@@ -56,7 +56,7 @@ class SessionGeneratorTest {
     assertThat(isValidSessionId(sessionGenerator.currentSession.firstSessionId)).isEqualTo(true)
     assertThat(sessionGenerator.currentSession.firstSessionId)
       .isEqualTo(sessionGenerator.currentSession.sessionId)
-    assertThat(sessionGenerator.currentSession.collectEvents).isEqualTo(true)
+    assertThat(sessionGenerator.currentSession.dataCollectionStatus).isEqualTo(true)
     assertThat(sessionGenerator.currentSession.sessionIndex).isEqualTo(0)
   }
 
