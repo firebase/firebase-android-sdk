@@ -62,9 +62,9 @@ import java.util.concurrent.TimeUnit;
  * Messaging</a> singleton that provides methods for subscribing to topics and sending upstream
  * messages.
  *
- * <p>In order to receive Firebase messages, declare an implementation of {@link
- * FirebaseMessagingService} in the app manifest. To process messages, override base class methods
- * to handle any events required by the application.
+ * <p>In order to receive Firebase messages, declare an implementation of <br>
+ * {@link FirebaseMessagingService} in the app manifest. To process messages, override base class
+ * methods to handle any events required by the application.
  *
  * <p>Client apps can send <a
  * href="https://firebase.google.com/docs/cloud-messaging/android/upstream">upstream messages</a>

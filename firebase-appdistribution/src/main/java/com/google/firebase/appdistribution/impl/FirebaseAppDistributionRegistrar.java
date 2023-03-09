@@ -19,19 +19,25 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.Lightweight;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.components.Component;
-import com.google.firebase.components.ComponentContainer;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
-import com.google.firebase.inject.Provider;
+import com.google.firebase.components.Qualified;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
- * Registers FirebaseAppDistribution.
+ * Registers FirebaseAppDistribution and related components.
  *
  * @hide
  */
@@ -39,59 +45,70 @@ import java.util.List;
 public class FirebaseAppDistributionRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-appdistribution";
 
-  private static String TAG = "Registrar:";
+  private static String TAG = "Registrar";
 
   @Override
   public @NonNull List<Component<?>> getComponents() {
+    Qualified<ScheduledExecutorService> backgroundExecutor =
+        Qualified.qualified(Background.class, ScheduledExecutorService.class);
+    Qualified<ScheduledExecutorService> blockingExecutor =
+        Qualified.qualified(Blocking.class, ScheduledExecutorService.class);
+    Qualified<ScheduledExecutorService> lightweightExecutor =
+        Qualified.qualified(Lightweight.class, ScheduledExecutorService.class);
+    Qualified<Executor> uiThreadExecutor = Qualified.qualified(UiThread.class, Executor.class);
     return Arrays.asList(
         Component.builder(FirebaseAppDistribution.class)
             .name(LIBRARY_NAME)
-            .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
-            .factory(this::buildFirebaseAppDistribution)
+            .add(Dependency.required(Context.class))
+            .add(Dependency.required(AppDistroComponent.class))
+            .factory(
+                c ->
+                    buildFirebaseAppDistribution(
+                        c.get(AppDistroComponent.class), c.get(Context.class)))
             // construct FirebaseAppDistribution instance on startup so we can register for
             // activity lifecycle callbacks before the API is called
             .alwaysEager()
             .build(),
+        Component.builder(AppDistroComponent.class)
+            .add(Dependency.required(Context.class))
+            .add(Dependency.required(FirebaseOptions.class))
+            .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
+            .add(Dependency.required(backgroundExecutor))
+            .add(Dependency.required(blockingExecutor))
+            .add(Dependency.required(lightweightExecutor))
+            .add(Dependency.required(uiThreadExecutor))
+            .factory(
+                container ->
+                    DaggerAppDistroComponent.builder()
+                        .setApplicationContext(container.get(Context.class))
+                        .setOptions(container.get(FirebaseOptions.class))
+                        .setApp(container.get(FirebaseApp.class))
+                        .setFis(container.getProvider(FirebaseInstallationsApi.class))
+                        .setBackgroundExecutor(container.get(backgroundExecutor))
+                        .setBlockingExecutor(container.get(blockingExecutor))
+                        .setLightweightExecutor(container.get(lightweightExecutor))
+                        .setUiThreadExecutor(container.get(uiThreadExecutor))
+                        .build())
+            .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 
-  private FirebaseAppDistribution buildFirebaseAppDistribution(ComponentContainer container) {
-    FirebaseApp firebaseApp = container.get(FirebaseApp.class);
-    Context context = firebaseApp.getApplicationContext();
-    Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider =
-        container.getProvider(FirebaseInstallationsApi.class);
-    FirebaseAppDistributionTesterApiClient testerApiClient =
-        new FirebaseAppDistributionTesterApiClient(
-            firebaseApp, firebaseInstallationsApiProvider, new TesterApiHttpClient(firebaseApp));
-    SignInStorage signInStorage = new SignInStorage(context);
-    FirebaseAppDistributionLifecycleNotifier lifecycleNotifier =
-        FirebaseAppDistributionLifecycleNotifier.getInstance();
-    ReleaseIdentifier releaseIdentifier = new ReleaseIdentifier(firebaseApp, testerApiClient);
-    FirebaseAppDistribution appDistribution =
-        new FirebaseAppDistributionImpl(
-            firebaseApp,
-            new TesterSignInManager(firebaseApp, firebaseInstallationsApiProvider, signInStorage),
-            new NewReleaseFetcher(
-                firebaseApp.getApplicationContext(), testerApiClient, releaseIdentifier),
-            new ApkUpdater(firebaseApp, new ApkInstaller()),
-            new AabUpdater(),
-            signInStorage,
-            lifecycleNotifier);
+  private FirebaseAppDistribution buildFirebaseAppDistribution(
+      AppDistroComponent appDistroComponent, Context applicationContext) {
 
-    if (context instanceof Application) {
-      Application firebaseApplication = (Application) context;
-      firebaseApplication.registerActivityLifecycleCallbacks(lifecycleNotifier);
+    if (applicationContext instanceof Application) {
+      Application application = (Application) applicationContext;
+      appDistroComponent.getLifecycleNotifier().registerActivityLifecycleCallbacks(application);
     } else {
-      LogWrapper.getInstance()
-          .e(
-              TAG
-                  + "Context "
-                  + context
-                  + " was not an Application, can't register for lifecycle callbacks. SDK might not"
-                  + " function correctly.");
+      LogWrapper.e(
+          TAG,
+          String.format(
+              "Context %s was not an Application, can't register for lifecycle callbacks. SDK"
+                  + " might not function correctly.",
+              applicationContext));
     }
 
-    return appDistribution;
+    return appDistroComponent.getAppDistribution();
   }
 }

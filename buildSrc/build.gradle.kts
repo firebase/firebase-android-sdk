@@ -33,6 +33,7 @@ val perfPluginVersion = System.getenv("FIREBASE_PERF_PLUGIN_VERSION") ?: "1.4.1"
 
 googleJavaFormat {
     toolVersion = "1.15.0"
+    exclude(".gradle/**")
 }
 
 ktfmt {
@@ -66,6 +67,7 @@ dependencies {
     implementation("com.android.tools.build:builder-test-api:7.2.2")
     implementation("gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9")
 
+    testImplementation(libs.bundles.kotest)
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.google.truth:truth:1.1.2")
     testImplementation("commons-io:commons-io:2.6")
