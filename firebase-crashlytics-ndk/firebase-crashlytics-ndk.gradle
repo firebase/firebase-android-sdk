@@ -28,10 +28,10 @@ android {
     }
 
     ndkVersion "25.1.8937393"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion 33
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion project.targetSdkVersion
+        targetSdkVersion 33
         versionName version
 
         externalNativeBuild {

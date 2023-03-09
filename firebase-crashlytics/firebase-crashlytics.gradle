@@ -29,11 +29,11 @@ android {
         timeOutInMs 60 * 1000
     }
 
-    compileSdkVersion 30
+    compileSdkVersion 33
     testOptions.unitTests.includeAndroidResources = true
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 30
+        targetSdkVersion 33
         versionName version
 
         multiDexEnabled true
