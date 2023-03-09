@@ -216,6 +216,10 @@ public class WatchChangeAggregator {
             resetTarget(targetId);
             pendingTargetResets.add(targetId);
           }
+
+          WatchChangeAggregatorTestingHooks.notifyOnExistenceFilterMismatch(
+              WatchChangeAggregatorTestingHooks.ExistenceFilterMismatchInfo.from(
+                  bloomFilterApplied, currentSize, watchChange.getExistenceFilter()));
         }
       }
     }
