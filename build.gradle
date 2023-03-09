@@ -92,9 +92,9 @@ configure(subprojects) {
          * Earliest failure =
          */
         ivy {
-            url = "https://androidx.dev/dackka/builds/9428282/artifacts"
+            url = "https://androidx.dev/dackka/builds/9534597/artifacts"
             patternLayout {
-                artifact 'dackka-1.0.5-all.jar'
+                artifact 'dackka-1.1.1-all.jar'
             }
             metadataSources {
                 artifact()
