@@ -28,7 +28,6 @@ import com.google.firebase.encoders.annotations.Encodable
  */
 // TODO(mrober): Add and populate all fields from sessions.proto
 // TODO(mrober): Can the firebase-encoders-processor work on Kotlin data classes?
-@Encodable
 internal data class SessionEvent(
   /** The type of event being reported. */
   val eventType: EventType,

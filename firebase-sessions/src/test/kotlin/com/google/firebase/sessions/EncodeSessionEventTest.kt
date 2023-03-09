@@ -26,6 +26,25 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class EncodeSessionEventTest {
+  @Test
+  fun eventType_encodesEnumAsNumber() {
+    val dataEncoder =
+      JsonDataEncoderBuilder()
+        .configureWith { it.registerEncoder(EventType::class.java, NumberedEnum.ENCODER) }
+        .build()
+
+    val json =
+      dataEncoder.encode(
+        arrayOf(
+          EventType.SESSION_START,
+          EventType.EVENT_TYPE_UNKNOWN,
+          EventType.SESSION_START,
+          EventType.SESSION_START
+        )
+      )
+
+    assertThat(json).isEqualTo("[1,0,1,1]")
+  }
 
   @Test
   fun sessionEvent_encodesToJson() {
