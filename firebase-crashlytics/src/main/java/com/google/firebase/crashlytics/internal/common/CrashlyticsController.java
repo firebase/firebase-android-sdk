@@ -24,7 +24,6 @@ import android.os.Environment;
 import android.os.StatFs;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -618,7 +617,7 @@ class CrashlyticsController {
         nativeComponent.getSessionFileProvider(previousSessionId);
     File minidumpFile = nativeSessionFileProvider.getMinidumpFile();
     CrashlyticsReport.ApplicationExitInfo applicationExitInfo =
-            nativeSessionFileProvider.getApplicationExitInto();
+        nativeSessionFileProvider.getApplicationExitInto();
 
     if (nativeCoreAbsent(previousSessionId, minidumpFile, applicationExitInfo)) {
       Logger.getLogger().w("No native core present");
@@ -649,14 +648,14 @@ class CrashlyticsController {
     Logger.getLogger().d("CrashlyticsController#finalizePreviousNativeSession");
 
     reportingCoordinator.finalizeSessionWithNativeEvent(
-            previousSessionId, nativeSessionFiles, applicationExitInfo);
+        previousSessionId, nativeSessionFiles, applicationExitInfo);
     previousSessionLogManager.clearLog();
   }
 
   private static boolean nativeCoreAbsent(
-          String previousSessionId,
-          File minidumpFile,
-          CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+      String previousSessionId,
+      File minidumpFile,
+      CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
     if (minidumpFile == null || !minidumpFile.exists()) {
       Logger.getLogger().w("No minidump data found for session " + previousSessionId);
     }
@@ -833,8 +832,8 @@ class CrashlyticsController {
     File minidump = fileProvider.getMinidumpFile();
 
     return minidump == null || !minidump.exists()
-            ? new BytesBackedNativeSessionFile("minidump_file", "minidump", new byte[] { 0 })
-            : new FileBackedNativeSessionFile("minidump_file", "minidump", minidump);
+        ? new BytesBackedNativeSessionFile("minidump_file", "minidump", new byte[] {0})
+        : new FileBackedNativeSessionFile("minidump_file", "minidump", minidump);
   }
 
   // endregion

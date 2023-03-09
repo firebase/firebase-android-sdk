@@ -322,9 +322,10 @@ public class CrashlyticsReportPersistence {
       CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
     try {
       final CrashlyticsReport report =
-          TRANSFORM.reportFromJson(readTextFile(reportFile))
-                  .withNdkPayload(ndkPayload)
-                  .withApplicationExitInfo(applicationExitInfo);
+          TRANSFORM
+              .reportFromJson(readTextFile(reportFile))
+              .withNdkPayload(ndkPayload)
+              .withApplicationExitInfo(applicationExitInfo);
 
       writeTextFile(fileStore.getNativeReport(previousSessionId), TRANSFORM.reportToJson(report));
     } catch (IOException e) {

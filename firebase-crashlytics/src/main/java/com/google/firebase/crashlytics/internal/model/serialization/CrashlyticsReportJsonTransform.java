@@ -17,7 +17,6 @@ package com.google.firebase.crashlytics.internal.model.serialization;
 import android.util.Base64;
 import android.util.JsonReader;
 import androidx.annotation.NonNull;
-
 import com.google.firebase.crashlytics.internal.model.AutoCrashlyticsReportEncoder;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch;
@@ -241,7 +240,7 @@ public class CrashlyticsReportJsonTransform {
           break;
         case "buildIdMappingForArch":
           builder.setBuildIdMappingForArch(
-                  parseArray(jsonReader, CrashlyticsReportJsonTransform::parseBuildIdMappingForArch));
+              parseArray(jsonReader, CrashlyticsReportJsonTransform::parseBuildIdMappingForArch));
           break;
         default:
           jsonReader.skipValue();

@@ -15,7 +15,6 @@
 package com.google.firebase.crashlytics.internal;
 
 import androidx.annotation.NonNull;
-
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.inject.Deferred;

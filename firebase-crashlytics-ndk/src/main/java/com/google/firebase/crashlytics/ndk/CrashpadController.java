@@ -18,12 +18,10 @@ import android.app.ActivityManager;
 import android.app.ApplicationExitInfo;
 import android.content.Context;
 import android.os.Build;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
-
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -86,7 +84,7 @@ public class CrashpadController {
   }
 
   public boolean hasCrashDataForSession(String sessionId) {
-    SessionFiles files =  getFilesForSession(sessionId);
+    SessionFiles files = getFilesForSession(sessionId);
     return files.nativeCore != null && files.nativeCore.hasCore();
   }
 
@@ -120,10 +118,10 @@ public class CrashpadController {
     return builder.build();
   }
 
-  private SessionFiles.NativeCore getNativeCore(String sessionId, File sessionFileDirectoryForMinidump) {
+  private SessionFiles.NativeCore getNativeCore(
+      String sessionId, File sessionFileDirectoryForMinidump) {
     File minidump = getSingleFileWithExtension(sessionFileDirectoryForMinidump, ".dmp");
-    CrashlyticsReport.ApplicationExitInfo applicationExitInfo =
-        getApplicationExitInfo(sessionId);
+    CrashlyticsReport.ApplicationExitInfo applicationExitInfo = getApplicationExitInfo(sessionId);
     return new SessionFiles.NativeCore(minidump, applicationExitInfo);
   }
 
@@ -134,23 +132,23 @@ public class CrashpadController {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.S)
-  private CrashlyticsReport.ApplicationExitInfo getNativeCrashApplicationExitInfo(String sessionId) {
+  private CrashlyticsReport.ApplicationExitInfo getNativeCrashApplicationExitInfo(
+      String sessionId) {
     ActivityManager activityManager =
-            (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
     List<ApplicationExitInfo> applicationExitInfoList =
-            activityManager.getHistoricalProcessExitReasons(null, 0, 0);
+        activityManager.getHistoricalProcessExitReasons(null, 0, 0);
 
     File sessionStartFile = fileStore.getSessionFile(sessionId, SESSION_START_TIMESTAMP_FILE_NAME);
-    long sessionTime = sessionStartFile == null
-        ? System.currentTimeMillis()
-        : sessionStartFile.lastModified();
+    long sessionTime =
+        sessionStartFile == null ? System.currentTimeMillis() : sessionStartFile.lastModified();
 
     return getRelevantApplicationExitInfo(sessionTime, applicationExitInfoList);
   }
 
   @RequiresApi(api = Build.VERSION_CODES.S)
   private CrashlyticsReport.ApplicationExitInfo getRelevantApplicationExitInfo(
-          long sessionTime, List<ApplicationExitInfo> applicationExitInfoList) {
+      long sessionTime, List<ApplicationExitInfo> applicationExitInfoList) {
     List<ApplicationExitInfo> filtered = new ArrayList<>();
     for (ApplicationExitInfo applicationExitInfo : applicationExitInfoList) {
       if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_CRASH_NATIVE
@@ -260,7 +258,8 @@ public class CrashpadController {
   }
 
   @RequiresApi(api = Build.VERSION_CODES.S)
-  private static String getTraceFileFromApplicationExitInfo(ApplicationExitInfo applicationExitInfo) {
+  private static String getTraceFileFromApplicationExitInfo(
+      ApplicationExitInfo applicationExitInfo) {
     try {
       return convertInputStreamToString(applicationExitInfo.getTraceInputStream());
     } catch (IOException e) {
@@ -290,7 +289,7 @@ public class CrashpadController {
   @RequiresApi(api = Build.VERSION_CODES.S)
   private static String zipAndEncode(byte[] bytes) throws IOException {
     try (ByteArrayOutputStream out = new ByteArrayOutputStream();
-         GZIPOutputStream gzip = new GZIPOutputStream(out)) {
+        GZIPOutputStream gzip = new GZIPOutputStream(out)) {
       gzip.write(bytes);
       gzip.finish();
 

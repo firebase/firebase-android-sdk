@@ -16,7 +16,6 @@ package com.google.firebase.crashlytics.ndk;
 
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
-
 import java.io.File;
 
 class SessionFilesProvider implements NativeSessionFileProvider {
@@ -34,9 +33,7 @@ class SessionFilesProvider implements NativeSessionFileProvider {
 
   @Override
   public CrashlyticsReport.ApplicationExitInfo getApplicationExitInto() {
-    return sessionFiles.nativeCore != null
-            ? sessionFiles.nativeCore.applicationExitInfo
-            : null;
+    return sessionFiles.nativeCore != null ? sessionFiles.nativeCore.applicationExitInfo : null;
   }
 
   @Override

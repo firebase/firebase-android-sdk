@@ -158,9 +158,7 @@ public abstract class CrashlyticsReport {
 
   @NonNull
   public CrashlyticsReport withApplicationExitInfo(ApplicationExitInfo appExitInfo) {
-    return appExitInfo == null
-            ? this
-            : toBuilder().setAppExitInfo(appExitInfo).build();
+    return appExitInfo == null ? this : toBuilder().setAppExitInfo(appExitInfo).build();
   }
 
   /**

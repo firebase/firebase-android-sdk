@@ -15,9 +15,7 @@
 package com.google.firebase.crashlytics.ndk;
 
 import androidx.annotation.Nullable;
-
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
-
 import java.io.File;
 
 final class SessionFiles {
@@ -26,15 +24,13 @@ final class SessionFiles {
    * In most cases, both, the tombstone and the minidump will be available.
    */
   static final class NativeCore {
-    @Nullable
-    public final File minidump;
+    @Nullable public final File minidump;
 
-    @Nullable
-    public final CrashlyticsReport.ApplicationExitInfo applicationExitInfo;
+    @Nullable public final CrashlyticsReport.ApplicationExitInfo applicationExitInfo;
 
     NativeCore(
-            @Nullable File minidump,
-            @Nullable CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+        @Nullable File minidump,
+        @Nullable CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
       this.minidump = minidump;
       this.applicationExitInfo = applicationExitInfo;
     }

@@ -401,7 +401,8 @@ public class SessionReportingCoordinatorTest {
 
     ArgumentCaptor<CrashlyticsReport.FilesPayload> filesPayload =
         ArgumentCaptor.forClass(CrashlyticsReport.FilesPayload.class);
-    verify(reportPersistence).finalizeSessionWithNativeEvent(eq("id"), filesPayload.capture(), any());
+    verify(reportPersistence)
+        .finalizeSessionWithNativeEvent(eq("id"), filesPayload.capture(), any());
     CrashlyticsReport.FilesPayload ndkPayloadFinalized = filesPayload.getValue();
     assertEquals(1, ndkPayloadFinalized.getFiles().size());
 
