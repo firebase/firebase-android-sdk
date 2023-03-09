@@ -88,9 +88,9 @@ configure(subprojects) {
             }
         }
         ivy {
-            url = "https://androidx.dev/dackka/builds/9455828/artifacts"
+            url = "https://androidx.dev/dackka/builds/9166864/artifacts"
             patternLayout {
-                artifact 'dackka-1.1.0-all.jar'
+                artifact 'dackka-1.0.3-all.jar'
             }
             metadataSources {
                 artifact()
