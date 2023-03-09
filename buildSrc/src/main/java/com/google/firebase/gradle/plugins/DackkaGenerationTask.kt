@@ -151,6 +151,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
               "values" to
                 JSONObject(
                     mapOf(
+                      "tenant" to "androidx",
                       "docRootPath" to "/docs/reference/",
                       "javaDocsPath" to "android".takeIf { generateJavadocs.get() },
                       "kotlinDocsPath" to "kotlin",
