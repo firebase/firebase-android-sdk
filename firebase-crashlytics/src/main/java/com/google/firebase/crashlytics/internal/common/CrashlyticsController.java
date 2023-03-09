@@ -34,6 +34,7 @@ import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
@@ -615,10 +616,14 @@ class CrashlyticsController {
     NativeSessionFileProvider nativeSessionFileProvider =
         nativeComponent.getSessionFileProvider(previousSessionId);
     File minidumpFile = nativeSessionFileProvider.getMinidumpFile();
-    if (minidumpFile == null || !minidumpFile.exists()) {
-      Logger.getLogger().w("No minidump data found for session " + previousSessionId);
+    CrashlyticsReport.ApplicationExitInfo applicationExitInfo =
+        nativeSessionFileProvider.getApplicationExitInto();
+
+    if (nativeCoreAbsent(previousSessionId, minidumpFile, applicationExitInfo)) {
+      Logger.getLogger().w("No native core present");
       return;
     }
+
     // Because we don't want to read the minidump to get its timestamp, just use file creation time.
     final long eventTime = minidumpFile.lastModified();
 
@@ -642,8 +647,24 @@ class CrashlyticsController {
 
     Logger.getLogger().d("CrashlyticsController#finalizePreviousNativeSession");
 
-    reportingCoordinator.finalizeSessionWithNativeEvent(previousSessionId, nativeSessionFiles);
+    reportingCoordinator.finalizeSessionWithNativeEvent(
+        previousSessionId, nativeSessionFiles, applicationExitInfo);
     previousSessionLogManager.clearLog();
+  }
+
+  private static boolean nativeCoreAbsent(
+      String previousSessionId,
+      File minidumpFile,
+      CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+    if (minidumpFile == null || !minidumpFile.exists()) {
+      Logger.getLogger().w("No minidump data found for session " + previousSessionId);
+    }
+
+    if (applicationExitInfo == null) {
+      Logger.getLogger().i("No Tombstones data found for session " + previousSessionId);
+    }
+
+    return (minidumpFile == null || !minidumpFile.exists()) && applicationExitInfo == null;
   }
 
   private static long getCurrentTimestampSeconds() {
@@ -801,12 +822,18 @@ class CrashlyticsController {
             "device_meta_file", "device", fileProvider.getDeviceFile()));
     nativeSessionFiles.add(
         new FileBackedNativeSessionFile("os_meta_file", "os", fileProvider.getOsFile()));
-    nativeSessionFiles.add(
-        new FileBackedNativeSessionFile(
-            "minidump_file", "minidump", fileProvider.getMinidumpFile()));
+    nativeSessionFiles.add(nativeCoreFile(fileProvider));
     nativeSessionFiles.add(new FileBackedNativeSessionFile("user_meta_file", "user", userFile));
     nativeSessionFiles.add(new FileBackedNativeSessionFile("keys_file", "keys", keysFile));
     return nativeSessionFiles;
+  }
+
+  private static NativeSessionFile nativeCoreFile(NativeSessionFileProvider fileProvider) {
+    File minidump = fileProvider.getMinidumpFile();
+
+    return minidump == null || !minidump.exists()
+        ? new BytesBackedNativeSessionFile("minidump_file", "minidump", new byte[] {0})
+        : new FileBackedNativeSessionFile("minidump_file", "minidump", minidump);
   }
 
   // endregion
