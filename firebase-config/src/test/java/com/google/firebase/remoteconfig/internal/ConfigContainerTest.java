@@ -255,6 +255,21 @@ public class ConfigContainerTest {
     assertThat(other.getConfigs().toString()).isEqualTo(configsString);
   }
 
+  @Test
+  public void copyOf_missingTemplateVersionNumber_defaultsToZero() throws Exception {
+    ConfigContainer config =
+            ConfigContainer.newBuilder()
+                    .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+                    .withTemplateVersionNumber(2L)
+                    .build();
+    JSONObject containerJson = new JSONObject(config.toString());
+    containerJson.remove(ConfigContainer.TEMPLATE_VERSION_NUMBER_KEY);
+
+    ConfigContainer configWithoutTemplateVersion = ConfigContainer.copyOf(containerJson);
+
+    assertThat(configWithoutTemplateVersion.getTemplateVersionNumber()).isEqualTo(0L);
+  }
+
   private static JSONArray generateAbtExperiments(int numExperiments) throws JSONException {
     JSONArray experiments = new JSONArray();
     for (int experimentNum = 1; experimentNum <= numExperiments; experimentNum++) {
