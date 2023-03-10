@@ -35,6 +35,7 @@ import static org.junit.Assume.assumeFalse;
 
 import android.os.SystemClock;
 
+import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.common.collect.Lists;
@@ -1090,7 +1091,13 @@ public class QueryTest {
       existenceFilterMismatchAccumulator.register();
       try {
         snapshot2 = waitFor(collection.get());
-        existenceFilterMismatchInfo = existenceFilterMismatchAccumulator.waitForExistenceFilterMismatch(/*timeoutMillis=*/5000);
+        // TODO(b/270731363): Remove the "if" condition below once the Firestore Emulator is fixed
+        //  to send an existence filter.
+        if (isRunningAgainstEmulator()) {
+          existenceFilterMismatchInfo = null;
+        } else {
+          existenceFilterMismatchInfo = existenceFilterMismatchAccumulator.waitForExistenceFilterMismatch(/*timeoutMillis=*/5000);
+        }
       } finally {
         existenceFilterMismatchAccumulator.unregister();
       }
@@ -1125,6 +1132,7 @@ public class QueryTest {
 
       // Verify that Watch sent an existence filter with the correct counts when the query was
       // resumed.
+      assertWithMessage("Watch should have sent an existence filter").that(existenceFilterMismatchInfo).isNotNull();
       assertWithMessage("localCacheCount").that(existenceFilterMismatchInfo.localCacheCount()).isEqualTo(100);
       assertWithMessage("existenceFilterCount").that(existenceFilterMismatchInfo.existenceFilterCount()).isEqualTo(50);
     }
@@ -1150,6 +1158,7 @@ public class QueryTest {
       listenerRegistration = null;
     }
 
+    @Nullable
     WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo waitForExistenceFilterMismatch(long timeoutMillis) throws InterruptedException {
       if (listenerRegistration == null) {
         throw new IllegalStateException("must be registered before waiting for an existence filter mismatch");
@@ -1163,17 +1172,18 @@ public class QueryTest {
 
       @Override
       public void onExistenceFilterMismatch(WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo info) {
-        synchronized (existenceFilterMismatchesLock) {
+        synchronized (existenceFilterMismatches) {
           existenceFilterMismatches.add(info);
-          existenceFilterMismatchesLock.notifyAll();
+          existenceFilterMismatches.notifyAll();
         }
       }
 
+      @Nullable
       WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo waitForExistenceFilterMismatch(long timeoutMillis) throws InterruptedException {
         if (timeoutMillis <= 0) {
           throw new IllegalArgumentException("invalid timeout: " + timeoutMillis);
         }
-        synchronized (existenceFilterMismatchesLock) {
+        synchronized (existenceFilterMismatches) {
           long endTimeMillis = SystemClock.uptimeMillis() + timeoutMillis;
           while (true) {
             if (existenceFilterMismatches.size() > 0) {
@@ -1181,16 +1191,10 @@ public class QueryTest {
             }
             long currentWaitMillis = endTimeMillis - SystemClock.uptimeMillis();
             if (currentWaitMillis <= 0) {
-              throw new WaitForExistenceFilterMismatchTimeoutException("timeout (" + timeoutMillis + "ms) waiting for an existence filter mismatch");
+              return null;
             }
-            existenceFilterMismatchesLock.wait(currentWaitMillis);
+            existenceFilterMismatches.wait(currentWaitMillis);
           }
-        }
-      }
-
-      final class WaitForExistenceFilterMismatchTimeoutException extends RuntimeException {
-        WaitForExistenceFilterMismatchTimeoutException(String message) {
-          super(message);
         }
       }
     }
