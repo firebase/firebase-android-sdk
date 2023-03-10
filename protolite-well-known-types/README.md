@@ -73,7 +73,7 @@ android {
 }
 
 dependencies {
-    implementation project(':protolite-well-known-types')
+    implementation 'com.google.firebase:protolite-well-known-types:18.0.0'
     implementation "io.grpc:grpc-stub:$grpcVersion"
 
     // optionally override grpc's protobuf-lite runtime
