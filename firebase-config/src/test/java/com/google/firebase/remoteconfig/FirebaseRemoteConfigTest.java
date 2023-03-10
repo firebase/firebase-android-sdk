@@ -1277,10 +1277,10 @@ public final class FirebaseRemoteConfigTest {
         .when(configRealtimeHttpClientSpy)
         .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
-    int failedStreams = configRealtimeHttpClientSpy.getNumberOfFailedStream();
+    int failedStreams = configRealtimeHttpClientSpy.getNumberOfFailedStreams();
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
-    assertThat(configRealtimeHttpClientSpy.getNumberOfFailedStream()).isEqualTo(failedStreams + 1);
+    assertThat(configRealtimeHttpClientSpy.getNumberOfFailedStreams()).isEqualTo(failedStreams + 1);
   }
 
   @Test
@@ -1292,10 +1292,10 @@ public final class FirebaseRemoteConfigTest {
         .when(configRealtimeHttpClientSpy)
         .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(502);
-    Date backoffDate = configRealtimeHttpClientSpy.getBackoffDate();
+    Date backoffDate = configRealtimeHttpClientSpy.getBackoffEndTime();
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
-    assertTrue(configRealtimeHttpClientSpy.getBackoffDate().after(backoffDate));
+    assertTrue(configRealtimeHttpClientSpy.getBackoffEndTime().after(backoffDate));
   }
 
   @Test
@@ -1309,10 +1309,10 @@ public final class FirebaseRemoteConfigTest {
         .when(configRealtimeHttpClientSpy)
         .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
-    int failedStreams = configRealtimeHttpClientSpy.getNumberOfFailedStream();
+    int failedStreams = configRealtimeHttpClientSpy.getNumberOfFailedStreams();
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
-    assertThat(configRealtimeHttpClientSpy.getNumberOfFailedStream()).isEqualTo(failedStreams);
+    assertThat(configRealtimeHttpClientSpy.getNumberOfFailedStreams()).isEqualTo(failedStreams);
   }
 
   @Test
@@ -1326,10 +1326,10 @@ public final class FirebaseRemoteConfigTest {
         .when(configRealtimeHttpClientSpy)
         .closeRealtimeHttpStream(any(HttpURLConnection.class));
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
-    Date backoffDate = configRealtimeHttpClientSpy.getBackoffDate();
+    Date backoffDate = configRealtimeHttpClientSpy.getBackoffEndTime();
 
     configRealtimeHttpClientSpy.beginRealtimeHttpStream();
-    assertFalse(configRealtimeHttpClientSpy.getBackoffDate().after(backoffDate));
+    assertFalse(configRealtimeHttpClientSpy.getBackoffEndTime().after(backoffDate));
   }
 
   @Test
