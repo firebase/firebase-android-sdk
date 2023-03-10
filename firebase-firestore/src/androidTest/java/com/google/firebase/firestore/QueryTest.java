@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
@@ -32,14 +33,18 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
 
+import android.os.SystemClock;
+
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.common.collect.Lists;
 import com.google.firebase.firestore.Query.Direction;
+import com.google.firebase.firestore.remote.WatchChangeAggregatorTestingHooksAccessor;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -1033,43 +1038,163 @@ public class QueryTest {
   }
 
   @Test
-  public void resumingQueryShouldRemoveDeletedDocumentsIndicatedByExistenceFilter()
-      throws InterruptedException {
-    assumeFalse(
-        "Skip this test when running against the Firestore emulator as there is a bug related to "
-            + "sending existence filter in response: b/270731363.",
-        isRunningAgainstEmulator());
-
+  public void resumingAQueryShouldUseBloomFilterToAvoidFullRequery() throws Exception {
+    // Prepare the names and contents of the 100 documents to create.
     Map<String, Map<String, Object>> testData = new HashMap<>();
-    for (int i = 1; i <= 100; i++) {
-      testData.put("doc" + i, map("key", i));
+    for (int i = 0; i < 100; i++) {
+      testData.put("doc" + (1000 + i), map("key", 42));
     }
-    CollectionReference collection = testCollectionWithDocs(testData);
 
-    // Populate the cache and save the resume token.
-    QuerySnapshot snapshot1 = waitFor(collection.get());
-    assertEquals(snapshot1.size(), 100);
-    List<DocumentSnapshot> documents = snapshot1.getDocuments();
+    // Each iteration of the "while" loop below runs a single iteration of the test. The test will
+    // be run multiple times only if a bloom filter false positive occurs.
+    while (true) {
+      // Create 100 documents in a new collection.
+      CollectionReference collection = testCollectionWithDocs(testData);
 
-    // Delete 50 docs in transaction so that it doesn't affect local cache.
-    waitFor(
-        collection
-            .getFirestore()
-            .runTransaction(
-                transaction -> {
-                  for (int i = 1; i <= 50; i++) {
-                    DocumentReference docRef = documents.get(i).getReference();
-                    transaction.delete(docRef);
-                  }
-                  return null;
-                }));
+      // Run a query to populate the local cache with the 100 documents and a resume token.
+      List<DocumentReference> createdDocuments = new ArrayList<>();
+      {
+        QuerySnapshot querySnapshot = waitFor(collection.get());
+        assertWithMessage("querySnapshot1").that(querySnapshot.size()).isEqualTo(100);
+        for (DocumentSnapshot documentSnapshot : querySnapshot.getDocuments()) {
+          createdDocuments.add(documentSnapshot.getReference());
+        }
+      }
 
-    // Wait 10 seconds, during which Watch will stop tracking the query
-    // and will send an existence filter rather than "delete" events.
-    Thread.sleep(10000);
+      // Delete 50 of the 100 documents. Do this in a transaction, rather than
+      // DocumentReference.delete(), to avoid affecting the local cache.
+      HashSet<String> deletedDocumentIds = new HashSet<>();
+      waitFor(
+          collection
+              .getFirestore()
+              .runTransaction(
+                  transaction -> {
+                    for (int i = 0; i < createdDocuments.size(); i+=2) {
+                      DocumentReference documentToDelete = createdDocuments.get(i);
+                      transaction.delete(documentToDelete);
+                      deletedDocumentIds.add(documentToDelete.getId());
+                    }
+                    return null;
+                  }));
 
-    QuerySnapshot snapshot2 = waitFor(collection.get());
-    assertEquals(snapshot2.size(), 50);
+      // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
+      // existence filter rather than "delete" events when the query is resumed.
+      Thread.sleep(10000);
+
+      // Resume the query and save the resulting snapshot for verification. Use some internal
+      // testing hooks to "capture" the existence filter mismatches to verify that Watch sent a
+      // bloom filter, and it was used to avert a full requery.
+      QuerySnapshot snapshot2;
+      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo existenceFilterMismatchInfo;
+      ExistenceFilterMismatchAccumulator existenceFilterMismatchAccumulator = new ExistenceFilterMismatchAccumulator();
+      existenceFilterMismatchAccumulator.register();
+      try {
+        snapshot2 = waitFor(collection.get());
+        existenceFilterMismatchInfo = existenceFilterMismatchAccumulator.waitForExistenceFilterMismatch(/*timeoutMillis=*/5000);
+      } finally {
+        existenceFilterMismatchAccumulator.unregister();
+      }
+
+      // Verify that the snapshot from the resumed query contains the expected documents; that is,
+      // that it contains the 50 documents that were _not_ deleted.
+      // TODO(b/270731363): Remove the "if" condition below once the Firestore Emulator is fixed to
+      // send an existence filter. At the time of writing, the Firestore emulator fails to send an
+      // existence filter, resulting in the client including the deleted documents in the snapshot
+      // of the resumed query.
+      if (!(isRunningAgainstEmulator() && snapshot2.size() == 100)) {
+        HashSet<String> actualDocumentIds = new HashSet<>();
+        for (DocumentSnapshot documentSnapshot : snapshot2.getDocuments()) {
+          actualDocumentIds.add(documentSnapshot.getId());
+        }
+        HashSet<String> expectedDocumentIds = new HashSet<>();
+        for (DocumentReference documentRef : createdDocuments) {
+          if (!deletedDocumentIds.contains(documentRef.getId())) {
+            expectedDocumentIds.add(documentRef.getId());
+          }
+        }
+        assertWithMessage("snapshot2.docs").that(actualDocumentIds).containsExactlyElementsIn(expectedDocumentIds);
+      }
+
+      // Skip the verification of the existence filter mismatch when testing against the Firestore
+      // emulator because the Firestore emulator does not include the `unchanged_names` bloom filter
+      // when it sends ExistenceFilter messages. Some day the emulator _may_ implement this logic,
+      // at which time this short-circuit can be removed.
+      if (isRunningAgainstEmulator()) {
+        return;
+      }
+
+      // Verify that Watch sent an existence filter with the correct counts when the query was
+      // resumed.
+      assertWithMessage("localCacheCount").that(existenceFilterMismatchInfo.localCacheCount()).isEqualTo(100);
+      assertWithMessage("existenceFilterCount").that(existenceFilterMismatchInfo.existenceFilterCount()).isEqualTo(50);
+    }
+  }
+
+  private static final class ExistenceFilterMismatchAccumulator {
+
+    private final ExistenceFilterMismatchListenerImpl listener = new ExistenceFilterMismatchListenerImpl();
+    private ListenerRegistration listenerRegistration = null;
+
+    void register() {
+      if (listenerRegistration != null) {
+        throw new IllegalStateException("already registered");
+      }
+      listenerRegistration = WatchChangeAggregatorTestingHooksAccessor.addExistenceFilterMismatchListener(listener);
+    }
+
+    void unregister() {
+      if (listenerRegistration == null) {
+        return;
+      }
+      listenerRegistration.remove();
+      listenerRegistration = null;
+    }
+
+    WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo waitForExistenceFilterMismatch(long timeoutMillis) throws InterruptedException {
+      if (listenerRegistration == null) {
+        throw new IllegalStateException("must be registered before waiting for an existence filter mismatch");
+      }
+      return listener.waitForExistenceFilterMismatch(timeoutMillis);
+    }
+
+    private final class ExistenceFilterMismatchListenerImpl implements WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchListener {
+
+      private final ArrayList<WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo> existenceFilterMismatches = new ArrayList<>();
+
+      @Override
+      public void onExistenceFilterMismatch(WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo info) {
+        synchronized (existenceFilterMismatchesLock) {
+          existenceFilterMismatches.add(info);
+          existenceFilterMismatchesLock.notifyAll();
+        }
+      }
+
+      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo waitForExistenceFilterMismatch(long timeoutMillis) throws InterruptedException {
+        if (timeoutMillis <= 0) {
+          throw new IllegalArgumentException("invalid timeout: " + timeoutMillis);
+        }
+        synchronized (existenceFilterMismatchesLock) {
+          long endTimeMillis = SystemClock.uptimeMillis() + timeoutMillis;
+          while (true) {
+            if (existenceFilterMismatches.size() > 0) {
+              return existenceFilterMismatches.remove(0);
+            }
+            long currentWaitMillis = endTimeMillis - SystemClock.uptimeMillis();
+            if (currentWaitMillis <= 0) {
+              throw new WaitForExistenceFilterMismatchTimeoutException("timeout (" + timeoutMillis + "ms) waiting for an existence filter mismatch");
+            }
+            existenceFilterMismatchesLock.wait(currentWaitMillis);
+          }
+        }
+      }
+
+      final class WaitForExistenceFilterMismatchTimeoutException extends RuntimeException {
+        WaitForExistenceFilterMismatchTimeoutException(String message) {
+          super(message);
+        }
+      }
+    }
+
   }
 
   // TODO(orquery): Enable this test when prod supports OR queries.
