@@ -29,7 +29,20 @@ internal data class SessionEvent(
 
   /** Information about the session triggering the event. */
   val sessionData: SessionInfo,
-)
+) {
+  companion object {
+    fun sessionStart(sessionState: SessionState) =
+      SessionEvent(
+        eventType = EventType.SESSION_START,
+        sessionData =
+          SessionInfo(
+            sessionState.sessionId,
+            sessionState.firstSessionId,
+            sessionState.sessionIndex,
+          ),
+      )
+  }
+}
 
 /** Enum denoting all possible session event types. */
 internal enum class EventType(val number: Int) {

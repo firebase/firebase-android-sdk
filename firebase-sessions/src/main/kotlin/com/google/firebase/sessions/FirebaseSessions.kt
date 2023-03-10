@@ -22,7 +22,6 @@ import androidx.annotation.Discouraged
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
-import com.google.firebase.sessions.EventType.SESSION_START
 
 class FirebaseSessions internal constructor(firebaseApp: FirebaseApp) {
   private val sessionGenerator = SessionGenerator(collectEvents = true)
@@ -42,16 +41,7 @@ class FirebaseSessions internal constructor(firebaseApp: FirebaseApp) {
 
   private fun initiateSessionStart() {
     val sessionState = sessionGenerator.generateNewSession()
-    val sessionEvent =
-      SessionEvent(
-        eventType = SESSION_START,
-        sessionData =
-          SessionInfo(
-            sessionState.sessionId,
-            sessionState.firstSessionId,
-            sessionState.sessionIndex
-          ),
-      )
+    val sessionEvent = SessionEvent.sessionStart(sessionState)
 
     Log.i(TAG, "Initiate session start: $sessionEvent")
   }
