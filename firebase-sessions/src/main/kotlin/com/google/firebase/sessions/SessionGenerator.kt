@@ -19,44 +19,52 @@ package com.google.firebase.sessions
 import java.util.UUID
 
 /**
- * The [SessionGenerator] is responsible for generating the Session ID, and keeping the
- * [SessionInfo] up to date with the latest values.
+ * [SessionState] is a data class responsible for storing information about the current Session.
  *
  * @hide
  */
-internal class SessionGenerator(collectEvents: Boolean) {
+internal data class SessionState(
+  val sessionId: String,
+  val firstSessionId: String,
+  val collectEvents: Boolean,
+  val sessionIndex: Int,
+)
+
+/**
+ * The [SessionGenerator] is responsible for generating the Session ID, and keeping the
+ * [SessionState] up to date with the latest values.
+ *
+ * @hide
+ */
+internal class SessionGenerator(private var collectEvents: Boolean) {
   private var firstSessionId = ""
   private var sessionIndex: Int = -1
-  private var dataCollectionStatus = collectEvents
 
-  private var thisSession: SessionInfo =
-    SessionInfo(
+  private var thisSession: SessionState =
+    SessionState(
       sessionId = "",
       firstSessionId = "",
-      dataCollectionStatus = collectEvents,
-      sessionIndex = sessionIndex
+      collectEvents,
+      sessionIndex,
     )
 
   // Generates a new Session ID. If there was already a generated Session ID
   // from the last session during the app's lifecycle, it will also set the last Session ID
-  fun generateNewSession() {
+  fun generateNewSession(): SessionState {
     val newSessionId = UUID.randomUUID().toString().replace("-", "").lowercase()
 
     // If firstSessionId is set, use it. Otherwise set it to the
     // first generated Session ID
-    firstSessionId = if (firstSessionId.isEmpty()) newSessionId else firstSessionId
+    firstSessionId = firstSessionId.ifEmpty { newSessionId }
 
     sessionIndex += 1
 
     thisSession =
-      SessionInfo(
-        sessionId = newSessionId,
-        firstSessionId = firstSessionId,
-        dataCollectionStatus = dataCollectionStatus,
-        sessionIndex = sessionIndex
-      )
+      SessionState(sessionId = newSessionId, firstSessionId, collectEvents, sessionIndex)
+
+    return thisSession
   }
 
-  val currentSession: SessionInfo
+  val currentSession: SessionState
     get() = thisSession
 }

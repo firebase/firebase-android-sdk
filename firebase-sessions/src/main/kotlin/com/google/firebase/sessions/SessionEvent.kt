@@ -16,10 +16,6 @@
 
 package com.google.firebase.sessions
 
-import com.google.firebase.encoders.ValueEncoder
-import com.google.firebase.encoders.ValueEncoderContext
-import com.google.firebase.encoders.annotations.Encodable
-
 /**
  * Contains the relevant information around an App Quality Session.
  *
@@ -27,7 +23,6 @@ import com.google.firebase.encoders.annotations.Encodable
  * https://github.com/firebase/firebase-ios-sdk/blob/master/FirebaseSessions/ProtoSupport/Protos/sessions.proto
  */
 // TODO(mrober): Add and populate all fields from sessions.proto
-// TODO(mrober): Can the firebase-encoders-processor work on Kotlin data classes?
 internal data class SessionEvent(
   /** The type of event being reported. */
   val eventType: EventType,
@@ -36,8 +31,10 @@ internal data class SessionEvent(
   val sessionData: SessionInfo,
 )
 
-internal enum class EventType(override val number: Int) : NumberedEnum {
+/** Enum denoting all possible session event types. */
+internal enum class EventType(val number: Int) {
   EVENT_TYPE_UNKNOWN(0),
+
   /** This event type is fired as soon as a new session begins. */
   SESSION_START(1),
 }
@@ -56,21 +53,4 @@ internal data class SessionInfo(
 
   /** What order this Session came in this run of the app. For the first Session this will be 0. */
   val sessionIndex: Int,
-
-  /** The data collection status. */
-  // TODO(mrober): Refactor to DataCollectionStatus to split out each SDK state, and sampling rate.
-  val dataCollectionStatus: Boolean,
 )
-
-/** Represents an explicitly numbered proto enum for serialization. */
-// TODO(mrober): Could NumberedEnum be part of firebase-encoders?
-internal interface NumberedEnum {
-  val number: Int
-
-  companion object {
-    /** Encode the enum as the number. */
-    val ENCODER = ValueEncoder { numberedEnum: NumberedEnum, ctx: ValueEncoderContext ->
-      ctx.add(numberedEnum.number)
-    }
-  }
-}
