@@ -84,13 +84,11 @@ public class ConfigAutoFetch {
   }
 
   private String parseAndValidateConfigUpdateMessage(String message) {
-    int left = 0;
-    while (left < message.length() && message.charAt(left) != '{') {
-      left++;
-    }
-    int right = message.length() - 1;
-    while (right >= 0 && message.charAt(right) != '}') {
-      right--;
+    int left = message.indexOf('{');
+    int right = message.lastIndexOf('}');
+
+    if (left < 0 || right < 0) {
+      return "";
     }
 
     return left >= right ? "" : message.substring(left, right + 1);
@@ -99,17 +97,19 @@ public class ConfigAutoFetch {
   // Check connection and establish InputStream
   @VisibleForTesting
   public void listenForNotifications() {
-    if (httpURLConnection != null) {
-      try {
-        InputStream inputStream = httpURLConnection.getInputStream();
-        handleNotifications(inputStream);
-        inputStream.close();
-      } catch (IOException ex) {
-        // Stream was interrupted due to a transient issue and the system will retry the connection.
-        Log.d(TAG, "Stream was cancelled due to an exception. Retrying the connection...", ex);
-      } finally {
-        httpURLConnection.disconnect();
-      }
+    if (httpURLConnection == null) {
+      return;
+    }
+
+    try {
+      InputStream inputStream = httpURLConnection.getInputStream();
+      handleNotifications(inputStream);
+      inputStream.close();
+    } catch (IOException ex) {
+      // Stream was interrupted due to a transient issue and the system will retry the connection.
+      Log.d(TAG, "Stream was cancelled due to an exception. Retrying the connection...", ex);
+    } finally {
+      httpURLConnection.disconnect();
     }
   }
 
@@ -132,38 +132,40 @@ public class ConfigAutoFetch {
         // parseMessage will return an empty message.
         currentConfigUpdateMessage =
             parseAndValidateConfigUpdateMessage(currentConfigUpdateMessage);
-        if (!currentConfigUpdateMessage.isEmpty()) {
-          try {
-            JSONObject jsonObject = new JSONObject(currentConfigUpdateMessage);
-
-            if (jsonObject.has(REALTIME_DISABLED_KEY)
-                && jsonObject.getBoolean(REALTIME_DISABLED_KEY)) {
-              retryCallback.onError(
-                  new FirebaseRemoteConfigServerException(
-                      "The server is temporarily unavailable. Try again in a few minutes.",
-                      FirebaseRemoteConfigException.Code.CONFIG_UPDATE_UNAVAILABLE));
-              break;
-            }
-            if (jsonObject.has(TEMPLATE_VERSION_KEY)) {
-              long oldTemplateVersion = configFetchHandler.getTemplateVersionNumber();
-              long targetTemplateVersion = jsonObject.getLong(TEMPLATE_VERSION_KEY);
-              if (targetTemplateVersion > oldTemplateVersion) {
-                autoFetch(MAXIMUM_FETCH_ATTEMPTS, targetTemplateVersion);
-              }
-            }
-          } catch (JSONException ex) {
-            // Message was mangled up and so it was unable to be parsed. User is notified of this
-            // because it there could be a new configuration that needs to be fetched.
-            propagateErrors(
-                new FirebaseRemoteConfigClientException(
-                    "Unable to parse config update message.",
-                    ex.getCause(),
-                    FirebaseRemoteConfigException.Code.CONFIG_UPDATE_MESSAGE_INVALID));
-            Log.e(TAG, "Unable to parse latest config update message.", ex);
-          }
-
-          currentConfigUpdateMessage = "";
+        if (currentConfigUpdateMessage.isEmpty()) {
+          continue;
         }
+
+        try {
+          JSONObject jsonObject = new JSONObject(currentConfigUpdateMessage);
+
+          if (jsonObject.has(REALTIME_DISABLED_KEY)
+              && jsonObject.getBoolean(REALTIME_DISABLED_KEY)) {
+            retryCallback.onError(
+                new FirebaseRemoteConfigServerException(
+                    "The server is temporarily unavailable. Try again in a few minutes.",
+                    FirebaseRemoteConfigException.Code.CONFIG_UPDATE_UNAVAILABLE));
+            break;
+          }
+          if (jsonObject.has(TEMPLATE_VERSION_KEY)) {
+            long oldTemplateVersion = configFetchHandler.getTemplateVersionNumber();
+            long targetTemplateVersion = jsonObject.getLong(TEMPLATE_VERSION_KEY);
+            if (targetTemplateVersion > oldTemplateVersion) {
+              autoFetch(MAXIMUM_FETCH_ATTEMPTS, targetTemplateVersion);
+            }
+          }
+        } catch (JSONException ex) {
+          // Message was mangled up and so it was unable to be parsed. User is notified of this
+          // because it there could be a new configuration that needs to be fetched.
+          propagateErrors(
+              new FirebaseRemoteConfigClientException(
+                  "Unable to parse config update message.",
+                  ex.getCause(),
+                  FirebaseRemoteConfigException.Code.CONFIG_UPDATE_MESSAGE_INVALID));
+          Log.e(TAG, "Unable to parse latest config update message.", ex);
+        }
+
+        currentConfigUpdateMessage = "";
       }
     }
 
@@ -228,7 +230,7 @@ public class ConfigAutoFetch {
                     TAG,
                     "Fetched template version is the same as SDK's current version."
                         + " Retrying fetch.");
-                // Continue fetching until template version number is greater then current.
+                // Continue fetching until template version number is greater than current.
                 autoFetch(remainingAttemptsAfterFetch, targetVersion);
                 return Tasks.forResult(null);
               }

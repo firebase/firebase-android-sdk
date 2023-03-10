@@ -438,11 +438,10 @@ public class ConfigFetchHttpClient {
       }
 
       String templateVersionNumber = null;
-      try {
+      if (fetchResponse.has(TEMPLATE_VERSION_NUMBER)) {
         templateVersionNumber = fetchResponse.getString(TEMPLATE_VERSION_NUMBER);
-      } catch (JSONException ex) {
-        // Do nothing if templateVersionNumber does not exist.
       }
+
       if (templateVersionNumber != null) {
         containerBuilder.withTemplateVersionNumber(Long.parseLong(templateVersionNumber));
       }
