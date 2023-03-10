@@ -990,9 +990,6 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           expectedActiveTargets.put(targetId, new ArrayList<>());
           for (int i = 0; i < queryArrayJson.length(); i++) {
             Query query = parseQuery(queryArrayJson.getJSONObject(i));
-            // TODO: populate the purpose of the target once it's possible to encode that in the
-            // spec tests. For now, hard-code that it's a listen despite the fact that it's not
-            // always the right value.
 
             QueryPurpose purpose = QueryPurpose.LISTEN;
             if (queryDataJson.has("targetPurpose")) {
@@ -1000,8 +997,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             }
 
             TargetData targetData =
-                new TargetData(
-                    query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, purpose);
+                new TargetData(query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, purpose);
             if (queryDataJson.has("resumeToken")) {
               targetData =
                   targetData.withResumeToken(
@@ -1140,8 +1136,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       TargetData expectedTarget = expectedQueries.get(0);
       TargetData actualTarget = actualTargets.get(expected.getKey());
 
-      // TODO: validate the purpose of the target once it's possible to encode that in the
-      // spec tests. For now, only validate properties that can be validated.
+      // TODO: check why the sequenceNumber are different, when resolved, simplify the TargetData
+      // validation.
       // assertEquals(expectedTarget, actualTarget);
 
       assertEquals(expectedTarget.getPurpose(), actualTarget.getPurpose());
