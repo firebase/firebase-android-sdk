@@ -5464,14 +5464,12 @@
         }
       },
       {
-        "watchFilter": {
-          "keys": [
-            "collection/b"
-          ],
-          "targetIds": [
+        "watchFilter": [
+          [
             2
-          ]
-        }
+          ],
+          "collection/b"
+        ]
       },
       {
         "watchSnapshot": {

@@ -131,7 +131,8 @@
         "watchFilter": [
           [
             2
-          ]
+          ],
+          "collection/1"
         ]
       },
       {
@@ -360,7 +361,9 @@
         "watchFilter": [
           [
             2
-          ]
+          ],
+          "collection/1",
+          "collection/2"
         ]
       },
       {
@@ -709,7 +712,7 @@
         }
       },
       {
-        "watchFilter":[
+        "watchFilter": [
           [
             2
           ]
@@ -889,7 +892,8 @@
         "watchFilter": [
           [
             2
-          ]
+          ],
+          "collection/1"
         ]
       },
       {
@@ -1177,7 +1181,8 @@
         "watchFilter": [
           [
             2
-          ]
+          ],
+          "collection/1"
         ]
       },
       {
@@ -1285,7 +1290,8 @@
         "watchFilter": [
           [
             2
-          ]
+          ],
+          "collection/1"
         ]
       },
       {
@@ -1455,7 +1461,8 @@
         "watchFilter": [
           [
             2
-          ]
+          ],
+          "collection/1"
         ]
       },
       {
@@ -1805,7 +1812,8 @@
         "watchFilter": [
           [
             2
-          ]
+          ],
+          "collection/1"
         ]
       },
       {
@@ -2218,7 +2226,8 @@
         "watchFilter": [
           [
             2
-          ]
+          ],
+          "collection/1"
         ]
       },
       {
