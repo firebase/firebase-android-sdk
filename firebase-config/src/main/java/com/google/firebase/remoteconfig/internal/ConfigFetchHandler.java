@@ -218,7 +218,9 @@ public class ConfigFetchHandler {
             executor,
             (cachedFetchConfigsTask) ->
                 fetchIfCacheExpiredAndNotThrottled(
-                    cachedFetchConfigsTask, 0, copyOfCustomHttpHeaders));
+                    cachedFetchConfigsTask,
+                    /*minimumFetchIntervalInSeconds= */ 0,
+                    copyOfCustomHttpHeaders));
   }
 
   /**
