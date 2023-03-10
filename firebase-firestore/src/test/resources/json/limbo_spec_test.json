@@ -81,6 +81,7 @@
           {
             "added": [
               {
+
                 "key": "collection1/doc",
                 "options": {
                   "hasCommittedMutations": false,
@@ -141,6 +142,7 @@
           {
             "added": [
               {
+
                 "key": "collection1/doc",
                 "options": {
                   "hasCommittedMutations": false,
@@ -234,7 +236,8 @@
                   "path": "collection1/doc"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -279,7 +282,8 @@
                   "path": "collection1/doc"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -356,6 +360,7 @@
           {
             "added": [
               {
+
                 "key": "collection2/doc",
                 "options": {
                   "hasCommittedMutations": false,
@@ -403,7 +408,8 @@
                   "path": "collection1/doc"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -445,6 +451,7 @@
           {
             "added": [
               {
+
                 "key": "collection2/doc",
                 "options": {
                   "hasCommittedMutations": false,
@@ -485,7 +492,8 @@
                   "path": "collection1/doc"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -567,7 +575,8 @@
                   "path": "collection1/doc"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -629,6 +638,7 @@
           {
             "added": [
               {
+
                 "key": "collection2/doc",
                 "options": {
                   "hasCommittedMutations": false,
@@ -669,7 +679,8 @@
                   "path": "collection1/doc"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "10": {
               "queries": [
@@ -768,7 +779,8 @@
                   "path": "collection1/doc"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "10": {
               "queries": [
@@ -858,7 +870,8 @@
                   "path": "collection1/doc"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -931,7 +944,8 @@
                   "path": "collection1/doc"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -1039,6 +1053,7 @@
           {
             "added": [
               {
+
                 "key": "collection1/doc1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1099,6 +1114,7 @@
           {
             "added": [
               {
+
                 "key": "collection1/doc1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1192,7 +1208,8 @@
                   "path": "collection1/doc1"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -1237,7 +1254,8 @@
                   "path": "collection1/doc1"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -1314,6 +1332,7 @@
           {
             "added": [
               {
+
                 "key": "collection2/doc2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1361,7 +1380,8 @@
                   "path": "collection1/doc1"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -1403,6 +1423,7 @@
           {
             "added": [
               {
+
                 "key": "collection2/doc2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1443,7 +1464,8 @@
                   "path": "collection1/doc1"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -1525,7 +1547,8 @@
                   "path": "collection1/doc1"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -1587,6 +1610,7 @@
           {
             "added": [
               {
+
                 "key": "collection2/doc2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1627,7 +1651,8 @@
                   "path": "collection1/doc1"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "10": {
               "queries": [
@@ -1726,7 +1751,8 @@
                   "path": "collection1/doc1"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "10": {
               "queries": [
@@ -1868,6 +1894,7 @@
           {
             "added": [
               {
+
                 "key": "collection/doc",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1928,6 +1955,7 @@
           {
             "added": [
               {
+
                 "key": "collection/doc",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2021,7 +2049,8 @@
                   "path": "collection/doc"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -2065,6 +2094,7 @@
           {
             "added": [
               {
+
                 "key": "collection/doc",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2105,7 +2135,8 @@
                   "path": "collection/doc"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -2187,7 +2218,8 @@
                   "path": "collection/doc"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -2322,6 +2354,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2333,6 +2366,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2400,7 +2434,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -2450,6 +2485,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2575,6 +2611,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2618,6 +2655,7 @@
             "hasPendingWrites": true,
             "modified": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2681,6 +2719,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2778,6 +2817,7 @@
             "hasPendingWrites": false,
             "modified": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2813,7 +2853,8 @@
                   "path": "collection/a"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -2860,6 +2901,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3027,6 +3069,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3038,6 +3081,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3097,7 +3141,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -3194,6 +3239,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3291,6 +3337,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3363,7 +3410,8 @@
                   "path": "collection/a"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -3386,11 +3434,13 @@
         ]
       },
       {
-        "watchFilter": [
-          [
+        "watchFilter": {
+          "keys": [
+          ],
+          "targetIds": [
             1
           ]
-        ]
+        }
       },
       {
         "watchCurrent": [
@@ -3420,6 +3470,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3535,6 +3586,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3607,7 +3659,8 @@
                   "path": "collection/a"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -3657,6 +3710,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3824,6 +3878,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3835,6 +3890,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3894,7 +3950,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -4009,7 +4066,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -4062,6 +4120,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4187,6 +4246,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4269,7 +4329,8 @@
                   "path": "collection/a"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -4349,6 +4410,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4479,6 +4541,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4616,7 +4679,8 @@
                   "path": "collection/a"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -4719,6 +4783,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4734,6 +4799,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4889,6 +4955,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": true,
@@ -4900,6 +4967,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": true,
@@ -4994,7 +5062,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -5031,6 +5100,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5042,6 +5112,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": true,
@@ -5082,7 +5153,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -5166,6 +5238,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5177,6 +5250,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": true,
@@ -5352,6 +5426,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5363,6 +5438,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5374,6 +5450,7 @@
                 "version": 1001
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5453,7 +5530,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -5477,7 +5555,8 @@
                   "path": "collection/c"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           }
         }
@@ -5588,7 +5667,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -5612,7 +5692,8 @@
                   "path": "collection/c"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           }
         }
@@ -5666,7 +5747,8 @@
                   "path": "collection/c"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           }
         }
@@ -5688,6 +5770,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5784,7 +5867,8 @@
                   "path": "collection/c"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           }
         }
@@ -5825,6 +5909,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5953,6 +6038,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5965,6 +6051,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6028,6 +6115,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6156,6 +6244,7 @@
           {
             "added": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6187,6 +6276,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6216,7 +6306,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -6479,6 +6570,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6491,6 +6583,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6554,6 +6647,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6682,6 +6776,7 @@
           {
             "added": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6713,6 +6808,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6742,7 +6838,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -6813,6 +6910,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6976,6 +7074,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6987,6 +7086,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7068,7 +7168,8 @@
                   "path": "collection/a"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -7111,6 +7212,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7151,7 +7253,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           },
           "enqueuedLimboDocs": [
@@ -7181,6 +7284,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7343,6 +7447,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7354,6 +7459,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7365,6 +7471,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7376,6 +7483,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/d",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7387,6 +7495,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/e",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7469,7 +7578,8 @@
                   "path": "collection/a"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -7493,7 +7603,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           },
           "enqueuedLimboDocs": [
@@ -7549,6 +7660,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7560,6 +7672,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7601,7 +7714,8 @@
                   "path": "collection/c"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "7": {
               "queries": [
@@ -7613,7 +7727,8 @@
                   "path": "collection/d"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           },
           "enqueuedLimboDocs": [
@@ -7667,6 +7782,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7678,6 +7794,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/d",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7718,7 +7835,8 @@
                   "path": "collection/e"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           },
           "enqueuedLimboDocs": [
@@ -7758,6 +7876,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/e",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7898,6 +8017,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7909,6 +8029,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/a2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7920,6 +8041,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/a3",
                 "options": {
                   "hasCommittedMutations": false,
@@ -8036,14 +8158,16 @@
         }
       },
       {
-        "watchFilter": [
-          [
-            2
+        "watchFilter": {
+          "keys": [
+            "collection/b1",
+            "collection/b2",
+            "collection/b3"
           ],
-          "collection/b1",
-          "collection/b2",
-          "collection/b3"
-        ]
+          "targetIds": [
+            2
+          ]
+        }
       },
       {
         "watchSnapshot": {
@@ -8055,6 +8179,7 @@
           {
             "added": [
               {
+
                 "key": "collection/b1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -8066,6 +8191,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -8077,6 +8203,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b3",
                 "options": {
                   "hasCommittedMutations": false,
@@ -8112,7 +8239,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -8201,7 +8329,8 @@
                   "path": "collection/a1"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -8213,7 +8342,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             },
             "3": {
               "queries": [
@@ -8225,7 +8355,8 @@
                   "path": "collection/a2"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           },
           "enqueuedLimboDocs": [
@@ -8279,6 +8410,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -8290,6 +8422,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/a2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -8318,7 +8451,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             },
             "5": {
               "queries": [
@@ -8330,7 +8464,8 @@
                   "path": "collection/a3"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           },
           "enqueuedLimboDocs": [
@@ -8370,6 +8505,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a3",
                 "options": {
                   "hasCommittedMutations": false,
@@ -8397,7 +8533,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           },
           "enqueuedLimboDocs": [
@@ -8532,6 +8669,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -8543,6 +8681,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -8554,6 +8693,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -8565,6 +8705,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/d",
                 "options": {
                   "hasCommittedMutations": false,
@@ -8576,6 +8717,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/e",
                 "options": {
                   "hasCommittedMutations": false,
@@ -8658,7 +8800,8 @@
                   "path": "collection/a"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -8682,7 +8825,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           },
           "enqueuedLimboDocs": [
@@ -8730,6 +8874,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -8771,7 +8916,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "5": {
               "queries": [
@@ -8783,7 +8929,8 @@
                   "path": "collection/c"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           },
           "enqueuedLimboDocs": [
@@ -8825,6 +8972,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -8866,7 +9014,8 @@
                   "path": "collection/c"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "7": {
               "queries": [
@@ -8878,7 +9027,8 @@
                   "path": "collection/d"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           },
           "enqueuedLimboDocs": [
@@ -8919,6 +9069,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -8960,7 +9111,8 @@
                   "path": "collection/d"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "9": {
               "queries": [
@@ -8972,7 +9124,8 @@
                   "path": "collection/e"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           },
           "enqueuedLimboDocs": [
@@ -9012,6 +9165,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/d",
                 "options": {
                   "hasCommittedMutations": false,
@@ -9052,7 +9206,8 @@
                   "path": "collection/e"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           },
           "enqueuedLimboDocs": [
@@ -9087,6 +9242,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/e",
                 "options": {
                   "hasCommittedMutations": false,
@@ -9288,6 +9444,7 @@
           {
             "added": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -9299,6 +9456,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -9310,6 +9468,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -9423,7 +9582,8 @@
                   "path": "collection/c"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -9637,6 +9797,7 @@
           {
             "added": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -9648,6 +9809,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -9659,6 +9821,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -9765,6 +9928,7 @@
           {
             "added": [
               {
+
                 "key": "collection/d",
                 "options": {
                   "hasCommittedMutations": false,
@@ -9781,6 +9945,7 @@
             "hasPendingWrites": false,
             "modified": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -9792,6 +9957,7 @@
                 "version": 2000
               },
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -9818,6 +9984,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,

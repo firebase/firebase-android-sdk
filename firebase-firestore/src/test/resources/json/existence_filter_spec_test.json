@@ -92,6 +92,7 @@
           {
             "added": [
               {
+
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -103,6 +104,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -128,12 +130,14 @@
         ]
       },
       {
-        "watchFilter": [
-          [
-            2
+        "watchFilter": {
+          "keys": [
+            "collection/1"
           ],
-          "collection/1"
-        ]
+          "targetIds": [
+            2
+          ]
+        }
       },
       {
         "watchSnapshot": {
@@ -154,7 +158,24 @@
               "path": "collection"
             }
           }
-        ]
+        ],
+        "expectedState": {
+          "activeTargets": {
+            "2": {
+              "queries": [
+                {
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
+                  "path": "collection"
+                }
+              ],
+              "resumeToken": "",
+              "targetPurpose": 1
+            }
+          }
+        }
       },
       {
         "restart": true,
@@ -182,6 +203,7 @@
           {
             "added": [
               {
+
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -193,6 +215,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -316,6 +339,7 @@
           {
             "added": [
               {
+
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -341,13 +365,15 @@
         ]
       },
       {
-        "watchFilter": [
-          [
-            2
+        "watchFilter": {
+          "keys": [
+            "collection/1",
+            "collection/2"
           ],
-          "collection/1",
-          "collection/2"
-        ]
+          "targetIds": [
+            2
+          ]
+        }
       },
       {
         "watchEntity": {
@@ -379,6 +405,7 @@
           {
             "added": [
               {
+
                 "key": "collection/3",
                 "options": {
                   "hasCommittedMutations": false,
@@ -414,7 +441,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -491,6 +519,7 @@
           {
             "added": [
               {
+
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -598,6 +627,7 @@
           {
             "added": [
               {
+
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -653,6 +683,7 @@
           {
             "added": [
               {
+
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -694,11 +725,13 @@
         }
       },
       {
-        "watchFilter": [
-          [
+        "watchFilter": {
+          "keys": [
+          ],
+          "targetIds": [
             2
           ]
-        ]
+        }
       },
       {
         "watchRemove": {
@@ -835,6 +868,7 @@
           {
             "added": [
               {
+
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -846,6 +880,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -871,12 +906,14 @@
         ]
       },
       {
-        "watchFilter": [
-          [
-            2
+        "watchFilter": {
+          "keys": [
+            "collection/1"
           ],
-          "collection/1"
-        ]
+          "targetIds": [
+            2
+          ]
+        }
       },
       {
         "watchSnapshot": {
@@ -910,7 +947,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -976,7 +1014,8 @@
                   "path": "collection/2"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -988,7 +1027,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -1016,6 +1056,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1043,7 +1084,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -1131,6 +1173,7 @@
           {
             "added": [
               {
+
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1156,12 +1199,14 @@
         ]
       },
       {
-        "watchFilter": [
-          [
-            2
+        "watchFilter": {
+          "keys": [
+            "collection/1"
           ],
-          "collection/1"
-        ]
+          "targetIds": [
+            2
+          ]
+        }
       },
       {
         "watchSnapshot": {
@@ -1265,12 +1310,14 @@
         }
       },
       {
-        "watchFilter": [
-          [
-            2
+        "watchFilter": {
+          "keys": [
+            "collection/1"
           ],
-          "collection/1"
-        ]
+          "targetIds": [
+            2
+          ]
+        }
       },
       {
         "watchSnapshot": {
@@ -1282,6 +1329,7 @@
           {
             "added": [
               {
+
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1400,6 +1448,7 @@
           {
             "added": [
               {
+
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1411,6 +1460,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1436,12 +1486,14 @@
         ]
       },
       {
-        "watchFilter": [
-          [
-            2
+        "watchFilter": {
+          "keys": [
+            "collection/1"
           ],
-          "collection/1"
-        ]
+          "targetIds": [
+            2
+          ]
+        }
       },
       {
         "watchSnapshot": {
@@ -1475,7 +1527,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -1541,7 +1594,8 @@
                   "path": "collection/2"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -1553,7 +1607,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -1591,6 +1646,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1618,7 +1674,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -1717,6 +1774,7 @@
           {
             "added": [
               {
+
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1728,6 +1786,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1783,12 +1842,14 @@
         ]
       },
       {
-        "watchFilter": [
-          [
-            2
+        "watchFilter": {
+          "keys": [
+            "collection/1"
           ],
-          "collection/1"
-        ]
+          "targetIds": [
+            2
+          ]
+        }
       },
       {
         "watchSnapshot": {
@@ -1822,7 +1883,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -1888,7 +1950,8 @@
                   "path": "collection/2"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -1900,7 +1963,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -1938,6 +2002,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1965,7 +2030,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -2053,6 +2119,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2078,11 +2145,13 @@
         ]
       },
       {
-        "watchFilter": [
-          [
+        "watchFilter": {
+          "keys": [
+          ],
+          "targetIds": [
             2
           ]
-        ]
+        }
       },
       {
         "watchSnapshot": {
@@ -2104,6 +2173,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2193,12 +2263,14 @@
         ]
       },
       {
-        "watchFilter": [
-          [
-            2
+        "watchFilter": {
+          "keys": [
+            "collection/1"
           ],
-          "collection/1"
-        ]
+          "targetIds": [
+            2
+          ]
+        }
       },
       {
         "watchSnapshot": {
@@ -2219,7 +2291,24 @@
               "path": "collection"
             }
           }
-        ]
+        ],
+        "expectedState": {
+          "activeTargets": {
+            "2": {
+              "queries": [
+                {
+                  "filters": [
+                  ],
+                  "orderBys": [
+                  ],
+                  "path": "collection"
+                }
+              ],
+              "resumeToken": "",
+              "targetPurpose": 1
+            }
+          }
+        }
       }
     ]
   }

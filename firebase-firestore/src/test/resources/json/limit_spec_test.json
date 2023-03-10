@@ -95,6 +95,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -106,6 +107,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -213,7 +215,8 @@
                   "path": "collection/a"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -255,6 +258,7 @@
           {
             "added": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -280,6 +284,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -502,6 +507,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -513,6 +519,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -540,6 +547,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -551,6 +559,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -616,6 +625,7 @@
           {
             "added": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -641,6 +651,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -656,6 +667,7 @@
           {
             "added": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -814,6 +826,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -825,6 +838,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -901,6 +915,7 @@
           {
             "added": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -926,6 +941,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1038,6 +1054,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1049,6 +1066,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1113,6 +1131,7 @@
           {
             "added": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1138,6 +1157,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1270,6 +1290,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1281,6 +1302,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1350,6 +1372,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1361,6 +1384,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1510,6 +1534,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1521,6 +1546,7 @@
                 "version": 1001
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1532,6 +1558,7 @@
                 "version": 1002
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1600,6 +1627,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1611,6 +1639,7 @@
                 "version": 1001
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1792,6 +1821,7 @@
           {
             "added": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1803,6 +1833,7 @@
                 "version": 1002
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1970,6 +2001,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1981,6 +2013,7 @@
                 "version": 1001
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -1992,6 +2025,7 @@
                 "version": 1002
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2064,6 +2098,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2075,6 +2110,7 @@
                 "version": 1001
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2261,6 +2297,7 @@
           {
             "added": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2272,6 +2309,7 @@
                 "version": 1002
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2431,6 +2469,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2442,6 +2481,7 @@
                 "version": 1001
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2453,6 +2493,7 @@
                 "version": 1002
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2521,6 +2562,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2532,6 +2574,7 @@
                 "version": 1001
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2699,6 +2742,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2710,6 +2754,7 @@
                 "version": 1001
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2721,6 +2766,7 @@
                 "version": 1002
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2807,6 +2853,7 @@
             "hasPendingWrites": false,
             "modified": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2849,6 +2896,7 @@
           {
             "added": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2860,6 +2908,7 @@
                 "version": 1002
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3068,6 +3117,7 @@
           {
             "added": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3079,6 +3129,7 @@
                 "version": 1001
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3125,6 +3176,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3150,6 +3202,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3234,6 +3287,7 @@
             "hasPendingWrites": false,
             "metadata": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3414,6 +3468,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3425,6 +3480,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3512,6 +3568,7 @@
           {
             "added": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3537,6 +3594,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3666,6 +3724,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3677,6 +3736,7 @@
                 "version": 1001
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3688,6 +3748,7 @@
                 "version": 1002
               },
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3760,6 +3821,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3771,6 +3833,7 @@
                 "version": 1001
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3836,6 +3899,7 @@
           {
             "added": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3866,6 +3930,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3978,6 +4043,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3989,6 +4055,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4030,6 +4097,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4041,6 +4109,7 @@
                 "version": 1000
               },
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4193,6 +4262,7 @@
           {
             "added": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4204,6 +4274,7 @@
                 "version": 1002
               },
               {
+
                 "key": "collection/d",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4215,6 +4286,7 @@
                 "version": 1003
               },
               {
+
                 "key": "collection/e",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4226,6 +4298,7 @@
                 "version": 1004
               },
               {
+
                 "key": "collection/f",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4332,7 +4405,8 @@
                   "path": "collection/a"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -4358,7 +4432,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -4408,6 +4483,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4423,6 +4499,7 @@
           {
             "added": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4448,6 +4525,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4491,7 +4569,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -4515,7 +4594,8 @@
                   "path": "collection/c"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           }
         }
@@ -4560,6 +4640,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4575,6 +4656,7 @@
           {
             "added": [
               {
+
                 "key": "collection/d",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4600,6 +4682,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4655,7 +4738,8 @@
                   "path": "collection/c"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "7": {
               "queries": [
@@ -4667,7 +4751,8 @@
                   "path": "collection/d"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           }
         }
@@ -4712,6 +4797,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4727,6 +4813,7 @@
           {
             "added": [
               {
+
                 "key": "collection/e",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4752,6 +4839,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4806,7 +4894,8 @@
                   "path": "collection/d"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           }
         }
@@ -4851,6 +4940,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/d",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4866,6 +4956,7 @@
           {
             "added": [
               {
+
                 "key": "collection/f",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4891,6 +4982,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/d",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5040,6 +5132,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5118,6 +5211,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5220,6 +5314,7 @@
           {
             "added": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5295,7 +5390,8 @@
                   "path": "collection/a"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "4": {
               "queries": [
@@ -5377,6 +5473,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5455,12 +5552,14 @@
         }
       },
       {
-        "watchFilter": [
-          [
-            2
+        "watchFilter": {
+          "keys": [
+            "collection/b"
           ],
-          "collection/b"
-        ]
+          "targetIds": [
+            2
+          ]
+        }
       },
       {
         "watchSnapshot": {
@@ -5486,7 +5585,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -5552,7 +5652,8 @@
                   "path": "collection/a"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             },
             "2": {
               "queries": [
@@ -5570,7 +5671,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -5598,6 +5700,7 @@
           {
             "added": [
               {
+
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5627,6 +5730,7 @@
             },
             "removed": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5660,7 +5764,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -5760,6 +5865,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5838,6 +5944,7 @@
           {
             "added": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5940,6 +6047,7 @@
           {
             "added": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5956,6 +6064,7 @@
             "hasPendingWrites": false,
             "modified": [
               {
+
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6029,6 +6138,7 @@
           {
             "added": [
               {
+
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
