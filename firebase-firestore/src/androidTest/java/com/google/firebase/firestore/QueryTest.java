@@ -31,10 +31,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeFalse;
 
 import android.os.SystemClock;
-
 import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -1073,7 +1071,7 @@ public class QueryTest {
               .getFirestore()
               .runTransaction(
                   transaction -> {
-                    for (int i = 0; i < createdDocuments.size(); i+=2) {
+                    for (int i = 0; i < createdDocuments.size(); i += 2) {
                       DocumentReference documentToDelete = createdDocuments.get(i);
                       transaction.delete(documentToDelete);
                       deletedDocumentIds.add(documentToDelete.getId());
@@ -1089,8 +1087,10 @@ public class QueryTest {
       // testing hooks to "capture" the existence filter mismatches to verify that Watch sent a
       // bloom filter, and it was used to avert a full requery.
       QuerySnapshot snapshot2;
-      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo existenceFilterMismatchInfo;
-      ExistenceFilterMismatchAccumulator existenceFilterMismatchAccumulator = new ExistenceFilterMismatchAccumulator();
+      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo
+          existenceFilterMismatchInfo;
+      ExistenceFilterMismatchAccumulator existenceFilterMismatchAccumulator =
+          new ExistenceFilterMismatchAccumulator();
       existenceFilterMismatchAccumulator.register();
       try {
         snapshot2 = waitFor(collection.get());
@@ -1099,7 +1099,9 @@ public class QueryTest {
         if (isRunningAgainstEmulator()) {
           existenceFilterMismatchInfo = null;
         } else {
-          existenceFilterMismatchInfo = existenceFilterMismatchAccumulator.waitForExistenceFilterMismatch(/*timeoutMillis=*/5000);
+          existenceFilterMismatchInfo =
+              existenceFilterMismatchAccumulator.waitForExistenceFilterMismatch(
+                  /*timeoutMillis=*/ 5000);
         }
       } finally {
         existenceFilterMismatchAccumulator.unregister();
@@ -1122,7 +1124,9 @@ public class QueryTest {
             expectedDocumentIds.add(documentRef.getId());
           }
         }
-        assertWithMessage("snapshot2.docs").that(actualDocumentIds).containsExactlyElementsIn(expectedDocumentIds);
+        assertWithMessage("snapshot2.docs")
+            .that(actualDocumentIds)
+            .containsExactlyElementsIn(expectedDocumentIds);
       }
 
       // Skip the verification of the existence filter mismatch when testing against the Firestore
@@ -1135,9 +1139,15 @@ public class QueryTest {
 
       // Verify that Watch sent an existence filter with the correct counts when the query was
       // resumed.
-      assertWithMessage("Watch should have sent an existence filter").that(existenceFilterMismatchInfo).isNotNull();
-      assertWithMessage("localCacheCount").that(existenceFilterMismatchInfo.localCacheCount()).isEqualTo(100);
-      assertWithMessage("existenceFilterCount").that(existenceFilterMismatchInfo.existenceFilterCount()).isEqualTo(50);
+      assertWithMessage("Watch should have sent an existence filter")
+          .that(existenceFilterMismatchInfo)
+          .isNotNull();
+      assertWithMessage("localCacheCount")
+          .that(existenceFilterMismatchInfo.localCacheCount())
+          .isEqualTo(100);
+      assertWithMessage("existenceFilterCount")
+          .that(existenceFilterMismatchInfo.existenceFilterCount())
+          .isEqualTo(50);
 
       // Skip the verification of the bloom filter when testing against production because the bloom
       // filter is only implemented in nightly.
@@ -1148,8 +1158,11 @@ public class QueryTest {
       }
 
       // Verify that Watch sent a valid bloom filter.
-      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterBloomFilterInfo bloomFilter = existenceFilterMismatchInfo.bloomFilter();
-      assertWithMessage("The bloom filter specified in the existence filter").that(bloomFilter).isNotNull();
+      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterBloomFilterInfo bloomFilter =
+          existenceFilterMismatchInfo.bloomFilter();
+      assertWithMessage("The bloom filter specified in the existence filter")
+          .that(bloomFilter)
+          .isNotNull();
       assertWithMessage("hashCount").that(bloomFilter.hashCount()).isGreaterThan(0);
       assertWithMessage("bitmapLength").that(bloomFilter.bitmapLength()).isGreaterThan(0);
       assertWithMessage("padding").that(bloomFilter.padding()).isGreaterThan(0);
@@ -1160,24 +1173,28 @@ public class QueryTest {
       // are expected to happen occasionally. When a false positive _does_ happen, just retry the
       // test with a different set of documents. If that retry _also_ experiences a false positive,
       // then fail the test because that is so improbable that something must have gone wrong.
-      if (attemptNumber == 1 && ! bloomFilter.applied()) {
+      if (attemptNumber == 1 && !bloomFilter.applied()) {
         continue;
       }
 
-      assertWithMessage("bloom filter successfully applied with attemptNumber=" + attemptNumber).that(bloomFilter.applied()).isTrue();
+      assertWithMessage("bloom filter successfully applied with attemptNumber=" + attemptNumber)
+          .that(bloomFilter.applied())
+          .isTrue();
     }
   }
 
   private static final class ExistenceFilterMismatchAccumulator {
 
-    private final ExistenceFilterMismatchListenerImpl listener = new ExistenceFilterMismatchListenerImpl();
+    private final ExistenceFilterMismatchListenerImpl listener =
+        new ExistenceFilterMismatchListenerImpl();
     private ListenerRegistration listenerRegistration = null;
 
     void register() {
       if (listenerRegistration != null) {
         throw new IllegalStateException("already registered");
       }
-      listenerRegistration = WatchChangeAggregatorTestingHooksAccessor.addExistenceFilterMismatchListener(listener);
+      listenerRegistration =
+          WatchChangeAggregatorTestingHooksAccessor.addExistenceFilterMismatchListener(listener);
     }
 
     void unregister() {
@@ -1189,19 +1206,24 @@ public class QueryTest {
     }
 
     @Nullable
-    WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo waitForExistenceFilterMismatch(long timeoutMillis) throws InterruptedException {
+    WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo
+        waitForExistenceFilterMismatch(long timeoutMillis) throws InterruptedException {
       if (listenerRegistration == null) {
-        throw new IllegalStateException("must be registered before waiting for an existence filter mismatch");
+        throw new IllegalStateException(
+            "must be registered before waiting for an existence filter mismatch");
       }
       return listener.waitForExistenceFilterMismatch(timeoutMillis);
     }
 
-    private final class ExistenceFilterMismatchListenerImpl implements WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchListener {
+    private final class ExistenceFilterMismatchListenerImpl
+        implements WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchListener {
 
-      private final ArrayList<WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo> existenceFilterMismatches = new ArrayList<>();
+      private final ArrayList<WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo>
+          existenceFilterMismatches = new ArrayList<>();
 
       @Override
-      public void onExistenceFilterMismatch(WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo info) {
+      public void onExistenceFilterMismatch(
+          WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo info) {
         synchronized (existenceFilterMismatches) {
           existenceFilterMismatches.add(info);
           existenceFilterMismatches.notifyAll();
@@ -1209,7 +1231,8 @@ public class QueryTest {
       }
 
       @Nullable
-      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo waitForExistenceFilterMismatch(long timeoutMillis) throws InterruptedException {
+      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo
+          waitForExistenceFilterMismatch(long timeoutMillis) throws InterruptedException {
         if (timeoutMillis <= 0) {
           throw new IllegalArgumentException("invalid timeout: " + timeoutMillis);
         }
@@ -1228,7 +1251,6 @@ public class QueryTest {
         }
       }
     }
-
   }
 
   // TODO(orquery): Enable this test when prod supports OR queries.

@@ -19,13 +19,12 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.google.firebase.firestore.ListenerRegistration;
 
 /**
  * Provides access to the {@link WatchChangeAggregatorTestingHooks} class and its methods.
  *
- * The {@link WatchChangeAggregatorTestingHooks} class has default visibility, and, therefore, is
+ * <p>The {@link WatchChangeAggregatorTestingHooks} class has default visibility, and, therefore, is
  * only visible to other classes declared in the same package. This class effectively "re-exports"
  * the functionality from {@link WatchChangeAggregatorTestingHooks} in a class with {@code public}
  * visibility so that tests written in other packages can access its functionality.
@@ -34,47 +33,48 @@ public final class WatchChangeAggregatorTestingHooksAccessor {
 
   private WatchChangeAggregatorTestingHooksAccessor() {}
 
-  /**
-   * @see WatchChangeAggregatorTestingHooks#addExistenceFilterMismatchListener
-   */
+  /** @see WatchChangeAggregatorTestingHooks#addExistenceFilterMismatchListener */
   public static ListenerRegistration addExistenceFilterMismatchListener(
-          @NonNull ExistenceFilterMismatchListener listener) {
+      @NonNull ExistenceFilterMismatchListener listener) {
     checkNotNull(listener, "a null listener is not allowed");
-    return WatchChangeAggregatorTestingHooks.addExistenceFilterMismatchListener(new ExistenceFilterMismatchListenerWrapper(listener));
+    return WatchChangeAggregatorTestingHooks.addExistenceFilterMismatchListener(
+        new ExistenceFilterMismatchListenerWrapper(listener));
   }
 
-  /**
-   * @see WatchChangeAggregatorTestingHooks.ExistenceFilterMismatchListener
-   */
+  /** @see WatchChangeAggregatorTestingHooks.ExistenceFilterMismatchListener */
   public interface ExistenceFilterMismatchListener {
     @AnyThread
     void onExistenceFilterMismatch(ExistenceFilterMismatchInfo info);
   }
 
-  /**
-   * @see WatchChangeAggregatorTestingHooks.ExistenceFilterMismatchInfo
-   */
+  /** @see WatchChangeAggregatorTestingHooks.ExistenceFilterMismatchInfo */
   public interface ExistenceFilterMismatchInfo {
     int localCacheCount();
+
     int existenceFilterCount();
-    @Nullable ExistenceFilterBloomFilterInfo bloomFilter();
+
+    @Nullable
+    ExistenceFilterBloomFilterInfo bloomFilter();
   }
 
-  /**
-   * @see WatchChangeAggregatorTestingHooks.ExistenceFilterBloomFilterInfo
-   */
+  /** @see WatchChangeAggregatorTestingHooks.ExistenceFilterBloomFilterInfo */
   public interface ExistenceFilterBloomFilterInfo {
     boolean applied();
+
     int hashCount();
+
     int bitmapLength();
+
     int padding();
   }
 
-  private static final class ExistenceFilterMismatchInfoImpl implements ExistenceFilterMismatchInfo {
+  private static final class ExistenceFilterMismatchInfoImpl
+      implements ExistenceFilterMismatchInfo {
 
     private final WatchChangeAggregatorTestingHooks.ExistenceFilterMismatchInfo info;
 
-    ExistenceFilterMismatchInfoImpl(@NonNull WatchChangeAggregatorTestingHooks.ExistenceFilterMismatchInfo info) {
+    ExistenceFilterMismatchInfoImpl(
+        @NonNull WatchChangeAggregatorTestingHooks.ExistenceFilterMismatchInfo info) {
       this.info = info;
     }
 
@@ -91,16 +91,21 @@ public final class WatchChangeAggregatorTestingHooksAccessor {
     @Nullable
     @Override
     public ExistenceFilterBloomFilterInfo bloomFilter() {
-      WatchChangeAggregatorTestingHooks.ExistenceFilterBloomFilterInfo bloomFilterInfo = info.bloomFilter();
-      return bloomFilterInfo == null ? null : new ExistenceFilterBloomFilterInfoImpl(bloomFilterInfo);
+      WatchChangeAggregatorTestingHooks.ExistenceFilterBloomFilterInfo bloomFilterInfo =
+          info.bloomFilter();
+      return bloomFilterInfo == null
+          ? null
+          : new ExistenceFilterBloomFilterInfoImpl(bloomFilterInfo);
     }
   }
 
-  private static final class ExistenceFilterBloomFilterInfoImpl implements ExistenceFilterBloomFilterInfo {
+  private static final class ExistenceFilterBloomFilterInfoImpl
+      implements ExistenceFilterBloomFilterInfo {
 
     private final WatchChangeAggregatorTestingHooks.ExistenceFilterBloomFilterInfo info;
 
-    ExistenceFilterBloomFilterInfoImpl(@NonNull WatchChangeAggregatorTestingHooks.ExistenceFilterBloomFilterInfo info) {
+    ExistenceFilterBloomFilterInfoImpl(
+        @NonNull WatchChangeAggregatorTestingHooks.ExistenceFilterBloomFilterInfo info) {
       this.info = info;
     }
 
@@ -125,18 +130,20 @@ public final class WatchChangeAggregatorTestingHooksAccessor {
     }
   }
 
-  private static final class ExistenceFilterMismatchListenerWrapper implements WatchChangeAggregatorTestingHooks.ExistenceFilterMismatchListener {
+  private static final class ExistenceFilterMismatchListenerWrapper
+      implements WatchChangeAggregatorTestingHooks.ExistenceFilterMismatchListener {
 
     private final ExistenceFilterMismatchListener wrappedListener;
 
-    ExistenceFilterMismatchListenerWrapper(@NonNull ExistenceFilterMismatchListener listenerToWrap) {
+    ExistenceFilterMismatchListenerWrapper(
+        @NonNull ExistenceFilterMismatchListener listenerToWrap) {
       this.wrappedListener = listenerToWrap;
     }
 
     @Override
-    public void onExistenceFilterMismatch(WatchChangeAggregatorTestingHooks.ExistenceFilterMismatchInfo info) {
+    public void onExistenceFilterMismatch(
+        WatchChangeAggregatorTestingHooks.ExistenceFilterMismatchInfo info) {
       this.wrappedListener.onExistenceFilterMismatch(new ExistenceFilterMismatchInfoImpl(info));
     }
   }
-
 }
