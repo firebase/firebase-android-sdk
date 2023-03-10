@@ -32,8 +32,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import android.os.SystemClock;
-import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.common.collect.Lists;
@@ -1089,8 +1087,9 @@ public class QueryTest {
       QuerySnapshot snapshot2;
       WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo
           existenceFilterMismatchInfo;
-      ExistenceFilterMismatchAccumulator existenceFilterMismatchAccumulator =
-          new ExistenceFilterMismatchAccumulator();
+      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchAccumulator
+          existenceFilterMismatchAccumulator =
+              new WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchAccumulator();
       existenceFilterMismatchAccumulator.register();
       try {
         snapshot2 = waitFor(collection.get());
@@ -1180,76 +1179,6 @@ public class QueryTest {
       assertWithMessage("bloom filter successfully applied with attemptNumber=" + attemptNumber)
           .that(bloomFilter.applied())
           .isTrue();
-    }
-  }
-
-  private static final class ExistenceFilterMismatchAccumulator {
-
-    private final ExistenceFilterMismatchListenerImpl listener =
-        new ExistenceFilterMismatchListenerImpl();
-    private ListenerRegistration listenerRegistration = null;
-
-    void register() {
-      if (listenerRegistration != null) {
-        throw new IllegalStateException("already registered");
-      }
-      listenerRegistration =
-          WatchChangeAggregatorTestingHooksAccessor.addExistenceFilterMismatchListener(listener);
-    }
-
-    void unregister() {
-      if (listenerRegistration == null) {
-        return;
-      }
-      listenerRegistration.remove();
-      listenerRegistration = null;
-    }
-
-    @Nullable
-    WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo
-        waitForExistenceFilterMismatch(long timeoutMillis) throws InterruptedException {
-      if (listenerRegistration == null) {
-        throw new IllegalStateException(
-            "must be registered before waiting for an existence filter mismatch");
-      }
-      return listener.waitForExistenceFilterMismatch(timeoutMillis);
-    }
-
-    private final class ExistenceFilterMismatchListenerImpl
-        implements WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchListener {
-
-      private final ArrayList<WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo>
-          existenceFilterMismatches = new ArrayList<>();
-
-      @Override
-      public void onExistenceFilterMismatch(
-          WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo info) {
-        synchronized (existenceFilterMismatches) {
-          existenceFilterMismatches.add(info);
-          existenceFilterMismatches.notifyAll();
-        }
-      }
-
-      @Nullable
-      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo
-          waitForExistenceFilterMismatch(long timeoutMillis) throws InterruptedException {
-        if (timeoutMillis <= 0) {
-          throw new IllegalArgumentException("invalid timeout: " + timeoutMillis);
-        }
-        synchronized (existenceFilterMismatches) {
-          long endTimeMillis = SystemClock.uptimeMillis() + timeoutMillis;
-          while (true) {
-            if (existenceFilterMismatches.size() > 0) {
-              return existenceFilterMismatches.remove(0);
-            }
-            long currentWaitMillis = endTimeMillis - SystemClock.uptimeMillis();
-            if (currentWaitMillis <= 0) {
-              return null;
-            }
-            existenceFilterMismatches.wait(currentWaitMillis);
-          }
-        }
-      }
     }
   }
 
