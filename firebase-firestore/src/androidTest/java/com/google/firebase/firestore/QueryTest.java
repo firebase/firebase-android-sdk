@@ -1048,7 +1048,10 @@ public class QueryTest {
 
     // Each iteration of the "while" loop below runs a single iteration of the test. The test will
     // be run multiple times only if a bloom filter false positive occurs.
+    int attemptNumber = 0;
     while (true) {
+      attemptNumber++;
+
       // Create 100 documents in a new collection.
       CollectionReference collection = testCollectionWithDocs(testData);
 
@@ -1135,6 +1138,33 @@ public class QueryTest {
       assertWithMessage("Watch should have sent an existence filter").that(existenceFilterMismatchInfo).isNotNull();
       assertWithMessage("localCacheCount").that(existenceFilterMismatchInfo.localCacheCount()).isEqualTo(100);
       assertWithMessage("existenceFilterCount").that(existenceFilterMismatchInfo.existenceFilterCount()).isEqualTo(50);
+
+      // Skip the verification of the bloom filter when testing against production because the bloom
+      // filter is only implemented in nightly.
+      // TODO(b/271949433) Remove this "if" block once the bloom filter logic is deployed to
+      // production.
+      if (IntegrationTestUtil.getTargetBackend() != IntegrationTestUtil.TargetBackend.NIGHTLY) {
+        return;
+      }
+
+      // Verify that Watch sent a valid bloom filter.
+      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterBloomFilterInfo bloomFilter = existenceFilterMismatchInfo.bloomFilter();
+      assertWithMessage("The bloom filter specified in the existence filter").that(bloomFilter).isNotNull();
+      assertWithMessage("hashCount").that(bloomFilter.hashCount()).isGreaterThan(0);
+      assertWithMessage("bitmapLength").that(bloomFilter.bitmapLength()).isGreaterThan(0);
+      assertWithMessage("padding").that(bloomFilter.padding()).isGreaterThan(0);
+      assertWithMessage("padding").that(bloomFilter.padding()).isLessThan(8);
+
+      // Verify that the bloom filter was successfully used to avert a full requery. If a false
+      // positive occurred then retry the entire test. Although statistically rare, false positives
+      // are expected to happen occasionally. When a false positive _does_ happen, just retry the
+      // test with a different set of documents. If that retry _also_ experiences a false positive,
+      // then fail the test because that is so improbable that something must have gone wrong.
+      if (attemptNumber == 1 && ! bloomFilter.applied()) {
+        continue;
+      }
+
+      assertWithMessage("bloom filter successfully applied with attemptNumber=" + attemptNumber).that(bloomFilter.applied()).isTrue();
     }
   }
 
