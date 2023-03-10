@@ -17,7 +17,7 @@
 package com.google.firebase.sessions
 
 /**
- * Contains the relevant information around a session event.
+ * Contains the relevant information around a Firebase Session Event.
  *
  * See go/app-quality-unified-session-definition for more details. Keep in sync with
  * https://github.com/firebase/firebase-ios-sdk/blob/master/FirebaseSessions/ProtoSupport/Protos/sessions.proto
