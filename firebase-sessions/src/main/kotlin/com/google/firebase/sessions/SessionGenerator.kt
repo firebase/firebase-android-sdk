@@ -19,11 +19,11 @@ package com.google.firebase.sessions
 import java.util.UUID
 
 /**
- * [SessionState] is a data class responsible for storing information about the current Session.
+ * [SessionDetails] is a data class responsible for storing information about the current Session.
  *
  * @hide
  */
-internal data class SessionState(
+internal data class SessionDetails(
   val sessionId: String,
   val firstSessionId: String,
   val collectEvents: Boolean,
@@ -32,7 +32,7 @@ internal data class SessionState(
 
 /**
  * The [SessionGenerator] is responsible for generating the Session ID, and keeping the
- * [SessionState] up to date with the latest values.
+ * [SessionDetails] up to date with the latest values.
  *
  * @hide
  */
@@ -40,8 +40,8 @@ internal class SessionGenerator(private var collectEvents: Boolean) {
   private var firstSessionId = ""
   private var sessionIndex: Int = -1
 
-  private var thisSession: SessionState =
-    SessionState(
+  private var thisSession: SessionDetails =
+    SessionDetails(
       sessionId = "",
       firstSessionId = "",
       collectEvents,
@@ -50,7 +50,7 @@ internal class SessionGenerator(private var collectEvents: Boolean) {
 
   // Generates a new Session ID. If there was already a generated Session ID
   // from the last session during the app's lifecycle, it will also set the last Session ID
-  fun generateNewSession(): SessionState {
+  fun generateNewSession(): SessionDetails {
     val newSessionId = UUID.randomUUID().toString().replace("-", "").lowercase()
 
     // If firstSessionId is set, use it. Otherwise set it to the
@@ -60,11 +60,11 @@ internal class SessionGenerator(private var collectEvents: Boolean) {
     sessionIndex += 1
 
     thisSession =
-      SessionState(sessionId = newSessionId, firstSessionId, collectEvents, sessionIndex)
+      SessionDetails(sessionId = newSessionId, firstSessionId, collectEvents, sessionIndex)
 
     return thisSession
   }
 
-  val currentSession: SessionState
+  val currentSession: SessionDetails
     get() = thisSession
 }

@@ -47,7 +47,7 @@ class SessionGeneratorTest {
   }
 
   @Test
-  fun generateNewSessionID_generatesValidSessionState() {
+  fun generateNewSessionID_generatesValidSessionDetails() {
     val sessionGenerator = SessionGenerator(collectEvents = true)
 
     sessionGenerator.generateNewSession()
@@ -68,32 +68,32 @@ class SessionGeneratorTest {
 
     sessionGenerator.generateNewSession()
 
-    val firstSessionState = sessionGenerator.currentSession
+    val firstSessionDetails = sessionGenerator.currentSession
 
-    assertThat(isValidSessionId(firstSessionState.sessionId)).isTrue()
-    assertThat(isValidSessionId(firstSessionState.firstSessionId)).isTrue()
-    assertThat(firstSessionState.firstSessionId).isEqualTo(firstSessionState.sessionId)
-    assertThat(firstSessionState.sessionIndex).isEqualTo(0)
+    assertThat(isValidSessionId(firstSessionDetails.sessionId)).isTrue()
+    assertThat(isValidSessionId(firstSessionDetails.firstSessionId)).isTrue()
+    assertThat(firstSessionDetails.firstSessionId).isEqualTo(firstSessionDetails.sessionId)
+    assertThat(firstSessionDetails.sessionIndex).isEqualTo(0)
 
     sessionGenerator.generateNewSession()
-    val secondSessionState = sessionGenerator.currentSession
+    val secondSessionDetails = sessionGenerator.currentSession
 
-    assertThat(isValidSessionId(secondSessionState.sessionId)).isTrue()
-    assertThat(isValidSessionId(secondSessionState.firstSessionId)).isTrue()
+    assertThat(isValidSessionId(secondSessionDetails.sessionId)).isTrue()
+    assertThat(isValidSessionId(secondSessionDetails.firstSessionId)).isTrue()
     // Ensure the new firstSessionId is equal to the first Session ID from earlier
-    assertThat(secondSessionState.firstSessionId).isEqualTo(firstSessionState.sessionId)
+    assertThat(secondSessionDetails.firstSessionId).isEqualTo(firstSessionDetails.sessionId)
     // Session Index should increase
-    assertThat(secondSessionState.sessionIndex).isEqualTo(1)
+    assertThat(secondSessionDetails.sessionIndex).isEqualTo(1)
 
     // Do a third round just in case
     sessionGenerator.generateNewSession()
-    val thirdSessionState = sessionGenerator.currentSession
+    val thirdSessionDetails = sessionGenerator.currentSession
 
-    assertThat(isValidSessionId(thirdSessionState.sessionId)).isTrue()
-    assertThat(isValidSessionId(thirdSessionState.firstSessionId)).isTrue()
+    assertThat(isValidSessionId(thirdSessionDetails.sessionId)).isTrue()
+    assertThat(isValidSessionId(thirdSessionDetails.firstSessionId)).isTrue()
     // Ensure the new firstSessionId is equal to the first Session ID from earlier
-    assertThat(thirdSessionState.firstSessionId).isEqualTo(firstSessionState.sessionId)
+    assertThat(thirdSessionDetails.firstSessionId).isEqualTo(firstSessionDetails.sessionId)
     // Session Index should increase
-    assertThat(thirdSessionState.sessionIndex).isEqualTo(2)
+    assertThat(thirdSessionDetails.sessionIndex).isEqualTo(2)
   }
 }

@@ -21,16 +21,16 @@ import org.junit.Test
 
 class SessionEventTest {
   @Test
-  fun sessionStart_populatesSessionStateCorrectly() {
-    val sessionState =
-      SessionState(
+  fun sessionStart_populatesSessionDetailsCorrectly() {
+    val sessionDetails =
+      SessionDetails(
         sessionId = "a1b2c3",
         firstSessionId = "a1a1a1",
         collectEvents = true,
         sessionIndex = 3,
       )
 
-    val sessionEvent = SessionEvent.sessionStart(sessionState)
+    val sessionEvent = SessionEvent.sessionStart(sessionDetails)
 
     assertThat(sessionEvent)
       .isEqualTo(

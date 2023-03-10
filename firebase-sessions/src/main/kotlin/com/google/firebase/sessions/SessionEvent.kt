@@ -17,7 +17,7 @@
 package com.google.firebase.sessions
 
 /**
- * Contains the relevant information around an App Quality Session.
+ * Contains the relevant information around a session event.
  *
  * See go/app-quality-unified-session-definition for more details. Keep in sync with
  * https://github.com/firebase/firebase-ios-sdk/blob/master/FirebaseSessions/ProtoSupport/Protos/sessions.proto
@@ -31,14 +31,14 @@ internal data class SessionEvent(
   val sessionData: SessionInfo,
 ) {
   companion object {
-    fun sessionStart(sessionState: SessionState) =
+    fun sessionStart(sessionDetails: SessionDetails) =
       SessionEvent(
         eventType = EventType.SESSION_START,
         sessionData =
           SessionInfo(
-            sessionState.sessionId,
-            sessionState.firstSessionId,
-            sessionState.sessionIndex,
+            sessionDetails.sessionId,
+            sessionDetails.firstSessionId,
+            sessionDetails.sessionIndex,
           ),
       )
   }
