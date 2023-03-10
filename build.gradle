@@ -91,15 +91,15 @@ configure(subprojects) {
          * Earliest pass = 9381323
          * Earliest failure = 9385831
          */
-        ivy {
-            url = "https://androidx.dev/dackka/builds/9385831/artifacts"
-            patternLayout {
-                artifact 'dackka-1.0.5-all.jar'
-            }
-            metadataSources {
-                artifact()
-            }
-        }
+//        ivy {
+//            url = "https://androidx.dev/dackka/builds/9385831/artifacts"
+//            patternLayout {
+//                artifact 'dackka-1.0.5-all.jar'
+//            }
+//            metadataSources {
+//                artifact()
+//            }
+//        }
     }
 
     apply plugin: "com.ncorti.ktfmt.gradle"
