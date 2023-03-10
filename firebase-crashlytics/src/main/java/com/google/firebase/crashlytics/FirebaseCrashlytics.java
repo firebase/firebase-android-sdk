@@ -29,6 +29,7 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferr
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.AppData;
+import com.google.firebase.crashlytics.internal.common.BuildIdInfo;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
@@ -39,6 +40,7 @@ import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 
@@ -99,8 +101,17 @@ public class FirebaseCrashlytics {
 
     final String googleAppId = app.getOptions().getApplicationId();
     final String mappingFileId = CommonUtils.getMappingFileId(context);
+    final List<BuildIdInfo> buildIdInfoList = CommonUtils.getBuildIdInfo(context);
 
     Logger.getLogger().d("Mapping file ID is: " + mappingFileId);
+
+    for (BuildIdInfo buildIdInfo : buildIdInfoList) {
+      Logger.getLogger()
+          .d(
+              String.format(
+                  "Build id for %s on %s: %s",
+                  buildIdInfo.getLibraryName(), buildIdInfo.getArch(), buildIdInfo.getBuildId()));
+    }
 
     final DevelopmentPlatformProvider developmentPlatformProvider =
         new DevelopmentPlatformProvider(context);
@@ -109,7 +120,12 @@ public class FirebaseCrashlytics {
     try {
       appData =
           AppData.create(
-              context, idManager, googleAppId, mappingFileId, developmentPlatformProvider);
+              context,
+              idManager,
+              googleAppId,
+              mappingFileId,
+              buildIdInfoList,
+              developmentPlatformProvider);
     } catch (PackageManager.NameNotFoundException e) {
       Logger.getLogger().e("Error retrieving app package info.", e);
       return null;

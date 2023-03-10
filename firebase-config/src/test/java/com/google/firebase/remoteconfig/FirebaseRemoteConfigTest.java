@@ -131,6 +131,9 @@ public final class FirebaseRemoteConfigTest {
 
   private static final String ETAG = "ETag";
 
+  private static final String FORBIDDEN_ERROR_MESSAGE =
+      "[{  \"error\": {    \"code\": 403,    \"message\": \"Firebase Remote Config Realtime API has not been used in project 14368190084 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/firebaseremoteconfigrealtime.googleapis.com/overview?project=14368190084 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.\",    \"status\": \"PERMISSION_DENIED\",    \"details\": [      {        \"@type\": \"type.googleapis.com/google.rpc.Help\",        \"links\": [          {            \"description\": \"Google developers console API activation\",            \"url\": \"https://console.developers.google.com/apis/api/firebaseremoteconfigrealtime.googleapis.com/overview?project=14368190084\"          }        ]      },      {        \"@type\": \"type.googleapis.com/google.rpc.ErrorInfo\",        \"reason\": \"SERVICE_DISABLED\",        \"domain\": \"googleapis.com\",        \"metadata\": {          \"service\": \"firebaseremoteconfigrealtime.googleapis.com\",          \"consumer\": \"projects/14368190084\"        }      }    ]  }}";
+
   private static final String INSTALLATION_ID = "'fL71_VyL3uo9jNMWu1L60S";
   private static final String INSTALLATION_TOKEN =
       "eyJhbGciOiJF.eyJmaWQiOiJmaXMt.AB2LPV8wRQIhAPs4NvEgA3uhubH";
@@ -164,6 +167,7 @@ public final class FirebaseRemoteConfigTest {
   @Mock private ConfigUpdateListener mockInvalidMessageEventListener;
   @Mock private ConfigUpdateListener mockNotFetchedEventListener;
   @Mock private ConfigUpdateListener mockUnavailableEventListener;
+  @Mock private ConfigUpdateListener mockForbiddenErrorEventListener;
 
   @Mock private ConfigCacheClient mockFireperfFetchedCache;
   @Mock private ConfigCacheClient mockFireperfActivatedCache;
@@ -315,7 +319,11 @@ public final class FirebaseRemoteConfigTest {
           @Override
           public void onError(@NonNull FirebaseRemoteConfigException error) {
             if (error.getCode() == FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR) {
-              mockStreamErrorEventListener.onError(error);
+              if (error.getMessage().equals(FORBIDDEN_ERROR_MESSAGE)) {
+                mockForbiddenErrorEventListener.onError(error);
+              } else {
+                mockStreamErrorEventListener.onError(error);
+              }
             } else if (error.getCode()
                 == FirebaseRemoteConfigException.Code.CONFIG_UPDATE_MESSAGE_INVALID) {
               mockInvalidMessageEventListener.onError(error);
@@ -1215,14 +1223,6 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void realtime_stream_listen_fail() throws Exception {
-    when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
-    configAutoFetch.listenForNotifications();
-
-    verify(mockInvalidMessageEventListener).onError(any(FirebaseRemoteConfigClientException.class));
-  }
-
-  @Test
   public void realtime_redirectStatusCode_noRetries() throws Exception {
     ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
     doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
@@ -1333,6 +1333,24 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void realtime_forbiddenStatusCode_returnsStreamError() throws Exception {
+    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
+    doReturn(mockHttpURLConnection).when(configRealtimeHttpClientSpy).createRealtimeConnection();
+    doNothing()
+        .when(configRealtimeHttpClientSpy)
+        .closeRealtimeHttpStream(any(HttpURLConnection.class));
+    when(mockHttpURLConnection.getErrorStream())
+        .thenReturn(
+            new ByteArrayInputStream(FORBIDDEN_ERROR_MESSAGE.getBytes(StandardCharsets.UTF_8)));
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(403);
+    configRealtimeHttpClientSpy.beginRealtimeHttpStream();
+
+    verify(configRealtimeHttpClientSpy, never()).startAutoFetch(any());
+    verify(configRealtimeHttpClientSpy, never()).retryHttpConnectionWhenBackoffEnds();
+    verify(mockForbiddenErrorEventListener).onError(any(FirebaseRemoteConfigServerException.class));
+  }
+
+  @Test
   public void realtime_exceptionThrown_noAutofetchButRetries() throws Exception {
     ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
     doThrow(IOException.class).when(configRealtimeHttpClientSpy).createRealtimeConnection();
@@ -1380,6 +1398,23 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void realtimeStreamListen_andUnableToParseMessage() throws Exception {
+    when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
+    when(mockHttpURLConnection.getInputStream())
+        .thenReturn(
+            new ByteArrayInputStream(
+                "{ \"featureDisabled\": false,  \"latestTemplateVersionNumber: 2 } }"
+                    .getBytes(StandardCharsets.UTF_8)));
+    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
+    when(mockFetchHandler.fetchNowWithTypeAndAttemptNumber(
+            ConfigFetchHandler.FetchType.REALTIME, 1))
+        .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
+    configAutoFetch.listenForNotifications();
+
+    verify(mockInvalidMessageEventListener).onError(any(FirebaseRemoteConfigClientException.class));
+  }
+
+  @Test
   public void realtime_stream_listen_get_inputstream_fail() throws Exception {
     when(mockHttpURLConnection.getResponseCode()).thenReturn(200);
     when(mockHttpURLConnection.getInputStream()).thenThrow(IOException.class);
@@ -1389,7 +1424,7 @@ public final class FirebaseRemoteConfigTest {
         .thenReturn(Tasks.forResult(realtimeFetchedContainerResponse));
     configAutoFetch.listenForNotifications();
 
-    verify(mockInvalidMessageEventListener).onError(any(FirebaseRemoteConfigClientException.class));
+    verify(mockHttpURLConnection).disconnect();
   }
 
   @Test

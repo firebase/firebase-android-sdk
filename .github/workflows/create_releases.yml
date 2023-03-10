@@ -22,10 +22,6 @@ jobs:
         uses: peterjgrainger/action-create-branch@c2800a3a9edbba2218da6861fa46496cf8f3195a
         with:
           branch: 'releases/${{ inputs.name }}'
-      - name: Create release branch
-        uses: peterjgrainger/action-create-branch@c2800a3a9edbba2218da6861fa46496cf8f3195a
-        with:
-          branch: 'releases/${{ inputs.name }}.release'
 
   create-pull-request:
     runs-on: ubuntu-latest
@@ -36,15 +32,14 @@ jobs:
 
       - name: Create release configuration template
         run: |
-          git config user.name 'Create Release GA'
-          git config user.email 'noreply@google.com'
           ./gradlew generateReleaseConfig -PcurrentRelease=${{ inputs.name }} -PpastRelease=${{ inputs.past-name }} -PprintOutput=true
-          git add release.cfg
-          git commit -a -m 'Create release config'
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
           base: 'releases/${{ inputs.name }}'
           branch: 'releases/${{ inputs.name }}.release'
+          add-paths: release.cfg
           title: '${{ inputs.name}} release'
+          body: 'Auto-generated PR for release ${{ inputs.name}}'
+          commit-message: 'Create release config for ${{ inputs.name }}'

@@ -445,12 +445,15 @@ public class SQLiteSchemaTest {
     // Verify that queries with SnapshotVersion.NONE return all results, regardless of whether the
     // read time has been set.
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll(path("coll"), IndexOffset.NONE);
+        remoteDocumentCache.getDocumentsMatchingQuery(
+            query("coll"), IndexOffset.NONE, new HashSet<DocumentKey>());
     assertResultsContain(results, "coll/existing", "coll/old", "coll/current", "coll/new");
 
     // Queries that filter by read time only return documents that were written after the index-free
     // migration.
-    results = remoteDocumentCache.getAll(path("coll"), IndexOffset.createSuccessor(version(2), -1));
+    results =
+        remoteDocumentCache.getDocumentsMatchingQuery(
+            query("coll"), IndexOffset.createSuccessor(version(2), -1), new HashSet<DocumentKey>());
     assertResultsContain(results, "coll/new");
   }
 

@@ -5,14 +5,15 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     permissions:
       pull-requests: write
     steps:
-      - name: Make Dir
+      - name: Make diff directory
         run: mkdir ~/diff
 
-      - uses: actions/checkout@v3
+      - name: Checkout PR branch
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
           submodules: true
@@ -24,29 +25,24 @@ jobs:
           distribution: temurin
           cache: gradle
 
-      - name: Changed Modules
-        id: changed-modules
-        run: |
-          git diff --name-only HEAD~1 | xargs printf -- '--changed-git-paths %s\n' | xargs ./gradlew writeChangedProjects --output-file-path=modules.json --only-firebase-sdks
-          echo "run=$(cat modules.json | sed "s/[]\"[]//g" | sed "s/,/\n/g" | xargs printf -- "%s:kotlinDoc ")" >> $GITHUB_OUTPUT
+      - name: Generate docs for PR branch
+        run: ./gradlew kotlindoc
 
-      - name: Build
-        run: ./gradlew ${{ steps.changed-modules.outputs.run }}
-
-      - name: Move original docs
+      - name: Move branch docs to diff directory
         run: mv build ~/diff/modified
 
-      - uses: actions/checkout@v3
+      - name: Checkout master
+        uses: actions/checkout@v3
         with:
           ref: ${{ github.base_ref }}
 
-      - name: Build
-        run: ./gradlew ${{ steps.changed-modules.outputs.run }}
+      - name: Generate docs for Master
+        run: ./gradlew kotlindoc
 
-      - name: Move modified docs
+      - name: Move master docs to diff directory
         run: mv build ~/diff/original
 
-      - name: Diff docs
+      - name: Get diff between Master and Branch docs
         run: >
           `# Recursively diff directories, including new files, git style, with 3 lines of context`
           diff -wEburN ~/diff/original ~/diff/modified
@@ -62,6 +58,7 @@ jobs:
           > diff.md
 
       - name: Add comment
+        continue-on-error: true
         uses: mshick/add-pr-comment@a65df5f64fc741e91c59b8359a4bc56e57aaf5b1
         with:
           message-path: diff.md

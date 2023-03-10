@@ -269,8 +269,8 @@ public final class Constants {
     public static final String FCM_LOG_SOURCE = "FCM_CLIENT_EVENT_LOGGING";
 
     /**
-     * These are the canonical priority constants used in proto logs. They differ from the {@link
-     * RemoteMessage} priority values.
+     * These are the canonical priority constants used in proto logs. <br>
+     * They differ from the {@link RemoteMessage} priority values.
      */
     @IntDef({MessagePriority.UNKNOWN, MessagePriority.NORMAL, MessagePriority.HIGH})
     @Retention(RetentionPolicy.SOURCE)

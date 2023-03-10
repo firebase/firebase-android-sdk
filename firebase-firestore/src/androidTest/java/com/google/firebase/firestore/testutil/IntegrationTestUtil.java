@@ -82,10 +82,18 @@ class MockCredentialsProvider extends EmptyCredentialsProvider {
 /** A set of helper methods for tests */
 public class IntegrationTestUtil {
 
-  // Whether the integration tests should run against a local Firestore emulator instead of the
-  // Production environment. Note that the Android Emulator treats "10.0.2.2" as its host machine.
-  // TODO(mrschmidt): Support multiple environments (Emulator, QA, Nightly, Production)
-  private static final boolean CONNECT_TO_EMULATOR = BuildConfig.USE_EMULATOR_FOR_TESTS;
+  public enum TargetBackend {
+    EMULATOR,
+    QA,
+    NIGHTLY,
+    PROD
+  }
+
+  // Set this to the desired enum value to change the target backend when running tests locally.
+  // Note: DO NOT change this variable except for local testing.
+  private static final TargetBackend backendForLocalTesting = null;
+
+  private static final TargetBackend backend = getTargetBackend();
   private static final String EMULATOR_HOST = "10.0.2.2";
   private static final int EMULATOR_PORT = 8080;
 
@@ -120,34 +128,57 @@ public class IntegrationTestUtil {
     return provider;
   }
 
-  public static DatabaseInfo testEnvDatabaseInfo() {
-    if (CONNECT_TO_EMULATOR) {
-      return new DatabaseInfo(
-          DatabaseId.forProject(provider.projectId()),
-          "test-persistenceKey",
-          String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT),
-          /*sslEnabled=*/ false);
-    } else {
-      return new DatabaseInfo(
-          DatabaseId.forProject(provider.projectId()),
-          "test-persistenceKey",
-          provider.firestoreHost(),
-          /*sslEnabled=*/ true);
+  private static String getFirestoreHost() {
+    switch (backend) {
+      case EMULATOR:
+        return String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT);
+      case QA:
+        return "staging-firestore.sandbox.googleapis.com";
+      case NIGHTLY:
+        return "test-firestore.sandbox.googleapis.com";
+      case PROD:
+      default:
+        return "firestore.googleapis.com";
     }
   }
 
-  public static FirebaseFirestoreSettings newTestSettings() {
-    FirebaseFirestoreSettings.Builder settings = new FirebaseFirestoreSettings.Builder();
+  private static boolean getSslEnabled() {
+    // ssl is enabled in all environments except for the emulator.
+    return !isRunningAgainstEmulator();
+  }
 
-    if (CONNECT_TO_EMULATOR) {
-      settings.setHost(String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT));
-      settings.setSslEnabled(false);
-    } else {
-      settings.setHost(provider.firestoreHost());
+  public static TargetBackend getTargetBackend() {
+    if (backendForLocalTesting != null) {
+      return backendForLocalTesting;
     }
+    switch (BuildConfig.TARGET_BACKEND) {
+      case "emulator":
+        return TargetBackend.EMULATOR;
+      case "qa":
+        return TargetBackend.QA;
+      case "nightly":
+        return TargetBackend.NIGHTLY;
+      case "prod":
+        return TargetBackend.PROD;
+      default:
+        throw new RuntimeException("Unknown backend configuration used for integration tests.");
+    }
+  }
 
+  public static DatabaseInfo testEnvDatabaseInfo() {
+    return new DatabaseInfo(
+        DatabaseId.forProject(provider.projectId()),
+        "test-persistenceKey",
+        getFirestoreHost(),
+        getSslEnabled());
+  }
+
+  public static FirebaseFirestoreSettings newTestSettings() {
+    Logger.debug("IntegrationTestUtil", "target backend is: %s", backend.name());
+    FirebaseFirestoreSettings.Builder settings = new FirebaseFirestoreSettings.Builder();
+    settings.setHost(getFirestoreHost());
+    settings.setSslEnabled(getSslEnabled());
     settings.setPersistenceEnabled(true);
-
     return settings.build();
   }
 
@@ -435,7 +466,7 @@ public class IntegrationTestUtil {
   }
 
   public static boolean isRunningAgainstEmulator() {
-    return CONNECT_TO_EMULATOR;
+    return backend.equals(TargetBackend.EMULATOR);
   }
 
   public static void testChangeUserTo(User user) {

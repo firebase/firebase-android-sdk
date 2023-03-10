@@ -18,9 +18,8 @@ import androidx.annotation.NonNull;
 import javax.annotation.Nonnull;
 
 /**
- * Event Listener for Realtime config update callbacks.
- *
- * @author Quan Pham
+ * Event listener interface for Realtime RC updates. Implement {@code ConfigUpdateListner} to call
+ * {@link com.google.firebase.remoteconfig.FirebaseRemoteConfig#addOnConfigUpdateListener}.
  */
 public interface ConfigUpdateListener {
   /**
@@ -33,9 +32,9 @@ public interface ConfigUpdateListener {
   void onUpdate(@NonNull ConfigUpdate configUpdate);
 
   /**
-   * Callback for when an error occurs while listening for or fetching a config update.
+   * Callback for when an error occurs while listening or fetching a config update.
    *
-   * @param error
+   * @param error A {@link FirebaseRemoteConfigException} with information about the error.
    */
   void onError(@Nonnull FirebaseRemoteConfigException error);
 }

@@ -15,17 +15,20 @@
 package com.google.firebase.remoteconfig;
 
 /**
- * Represents a listener that can be removed by calling remove. This is returned when calling
- * addOnConfigUpdateListener and should be used when you no longer want to listen for new config
- * updates. If this is the last listener it will close the Realtime stream.
+ * Listener registration returned by {@link
+ * com.google.firebase.remoteconfig.FirebaseRemoteConfig#addOnConfigUpdateListener}.
  *
- * @author Quan Pham
+ * <p>Calling {@link ConfigUpdateListenerRegistration#remove()} stops the listener from receiving
+ * config updates and unregisters itself. If remove is called and no other listener registrations
+ * remain, the connection to the Realtime RC backend is closed. Subsequently calling {@link
+ * com.google.firebase.remoteconfig.FirebaseRemoteConfig#addOnConfigUpdateListener} will re-open the
+ * connection.
  */
 public interface ConfigUpdateListenerRegistration {
 
   /**
-   * Removes the listener being tracked by this 'ConfigUpdateListenerRegistration`. After the
-   * initial call, subsequent calls have no effect.
+   * Removes the listener being tracked by this {@code ConfigUpdateListenerRegistration}. After the
+   * initial call, subsequent calls to {@code remove()} have no effect.
    */
   public void remove();
 }

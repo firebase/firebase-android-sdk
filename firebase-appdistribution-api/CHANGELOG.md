@@ -1,5 +1,11 @@
 # Unreleased
 
+# 16.0.0-beta06
+* [feature] Adds support for in-app tester feedback. To learn more, see
+  [Collect feedback from testers](/docs/app-distribution/collect-feedback-from-testers?platform=android).
+* [fixed] Fixed a bug where only the last listener added to an `UpdateTask` using
+  `addOnProgressListener()` would receive updates.
+
 # 16.0.0-beta05
 * [unchanged] Updated to accommodate the release of the updated
   [appdistro] Kotlin extensions library.

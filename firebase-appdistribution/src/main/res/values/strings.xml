@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><!-- Copyright 2021 Google LLC -->
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2022 Google LLC -->
 <!-- -->
 <!-- Licensed under the Apache License, Version 2.0 (the "License"); -->
 <!-- you may not use this file except in compliance with the License. -->
@@ -13,25 +14,37 @@
 <!-- limitations under the License. -->
 
 <resources>
-
-  <string name="signin_dialog_title">Enable new build alerts</string>
-  <string name="singin_dialog_message">Get in-app alerts when new builds are ready to test.</string>
-  <string name="singin_yes_button">Turn on</string>
-  <string name="singin_no_button">Not now</string>
-  <string name="no_update_available">No new release available, try calling checkForUpdate.</string>
-  <string name="update_dialog_title">New Version Available</string>
-  <string name="update_yes_button">Update</string>
-  <string name="update_no_button">Cancel</string>
-  <string name="downloading_app_update">Downloading in-app update...</string>
-  <string name="download_completed">Download completed</string>
-  <string name="download_failed">Download failed</string>
-  <string name="download_pending">Download pending</string>
-  <string name="install_failed">Install failed</string>
-  <string name="install_canceled">Install canceled</string>
-  <string name="update_canceled">Update canceled </string>
-  <string name="notifications_channel_name">App Distribution App Update Downloads</string>
-  <string name="notifications_channel_description">Shows download progress of in-app updates from App Distribution SDK</string>
-  <string name="unknown_sources_dialog_title">Enable Unknown Sources</string>
-  <string name="unknown_sources_dialog_description">To install the update enable unknown sources</string>
-  <string name="unknown_sources_yes_button">Settings</string>
+  <string name="signin_dialog_title" translation_description="Title of the dialog encouraging the user to enable Firebase App Distribution features">Enable testing features</string>
+  <string name="singin_dialog_message" translation_description="Content of the dialog encouraging the user to enable Firebase App Distribution features">Enable testing features like new build alerts and in-app feedback.</string>
+  <string name="singin_yes_button" translation_description="Text on button to enable Firebase App Distribution features">Enable</string>
+  <string name="singin_no_button" translation_description="Text on button to decline Firebase App Distribution features">Not now</string>
+  <string name="update_dialog_title" translation_description="Title of the dialog explaining to the user that a new version of the application is available">New version available</string>
+  <string name="update_version_available" translation_description="Version string (and code) of the available update">Version %1$s (%2$d) is available.</string>
+  <string name="update_release_notes" translation_description="Text prefixing release notes">Release notes:</string>
+  <string name="update_yes_button" translation_description="Text on button to start update">Update</string>
+  <string name="update_no_button" translation_description="Text on button to cancel update">Cancel</string>
+  <string name="downloading_app_update" translation_description="Title of the notification showing during download of update">Downloading in-app update…</string>
+  <string name="download_completed" translation_description="Title of notification when download of update has completed">Download complete</string>
+  <string name="download_failed" translation_description="Title of notification when download of update has failed">Download failed</string>
+  <string name="install_failed" translation_description="Title of notification when installation of update has failed">Install failed</string>
+  <string name="notifications_group_name" translation_description="Title of the notification channel group for the SDK">Firebase App Distribution</string>
+  <string name="app_update_notification_channel_name" translation_description="Name of the notification channel for in-app updates">App updates</string>
+  <string name="app_update_notification_channel_description" translation_description="Description of the notification channel for in-app updates">Shows progress of in-app updates</string>
+  <string name="feedback_launch_failed" translation_description="Toast explaining that launching the feedback functionality failed">Failed to launch feedback</string>
+  <string name="feedback_unidentified_release" translation_description="Toast explaining feedback can't be provided, because release can't be found">Release not found. This app may not have been installed by App Distribution, or you may no longer have access.</string>
+  <string name="feedback_no_release" translation_description="Toast explaining that feedback would have been sent, but was not, since development mode was active">Would have sent feedback, but did not due to development mode.</string>
+  <string name="feedback_notification_channel_name" translation_description="Name of the notification channel for in-app feedback">Feedback</string>
+  <string name="feedback_notification_channel_description" translation_description="Description of the notification channel for in-app feedback">Shows notification to enter feedback about app</string>
+  <string name="feedback_notification_title" translation_description="Title of notification encouraging testers to enter feedback">We want your feedback!</string>
+  <string name="feedback_notification_text" translation_description="Text of notification encouraging testers to enter feedback for the app">Tap to enter feedback for %1$s</string>
+  <string name="unknown_sources_dialog_title" translation_description="Title of dialog describing that installation from unknown sources needs to be enabled">Installation from unknown Sources</string>
+  <string name="unknown_sources_dialog_description" translation_description="Text of dialog describing why installation from unknown sources needs to be enabled">To install the update, enable installation from unknown sources</string>
+  <string name="unknown_sources_yes_button" translation_description="Label on button launching settings to enable installation from unknown sources">Settings</string>
+  <string name="back_button_description" translation_description="Description for image button (back) which aborts feedback">Back</string>
+  <string name="send_feedback" translation_description="Text next to send button which sends feedback">Send feedback</string>
+  <string name="send_button_description" translation_description="Description of image button (send) which sends feedback">Send</string>
+  <string name="feedback_text_hint" translation_description="Default text hint displayed in the text box where user should type their feedback">Have feedback? Let us know how we can make this app better.</string>
+  <string name="screenshot" translation_description="Text displayed next to the checkbox which can be toggled to include/exclude a screenshot with the feedback">Screenshot</string>
+  <string name="no_screenshot" translation_description="Text displayed when there is no screenshot available to be included with the feedback">Screenshot (not available)</string>
+  <string name="screenshot_image_description" translation_description="Description for the screenshot image">Screenshot image</string>
 </resources>

@@ -31,14 +31,17 @@ import com.google.android.gms.tasks.TaskExecutors;
 import com.google.firebase.appdistribution.OnProgressListener;
 import com.google.firebase.appdistribution.UpdateProgress;
 import com.google.firebase.appdistribution.UpdateTask;
+import com.google.firebase.concurrent.FirebaseExecutors;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
 
 /** Implementation of UpdateTask, the return type of updateApp. */
-// TODO(b/261013814): Use an explicit executor in continuations.
 class UpdateTaskImpl extends UpdateTask {
+
   @Nullable
   @GuardedBy("lock")
-  private ManagedListener listener = null;
+  private List<ManagedListener> listeners = new ArrayList<>();
 
   private final Object lock = new Object();
   private final Object taskCompletionLock = new Object();
@@ -51,22 +54,36 @@ class UpdateTaskImpl extends UpdateTask {
 
   UpdateTaskImpl() {
     synchronized (taskCompletionLock) {
-      this.taskCompletionSource = new TaskCompletionSource<>();
+      taskCompletionSource = new TaskCompletionSource<>();
     }
   }
 
   void updateProgress(@NonNull UpdateProgress updateProgress) {
     synchronized (lock) {
       snapshot = updateProgress;
-      if (this.listener != null) {
-        this.listener.invoke(updateProgress);
+      for (ManagedListener listener : listeners) {
+        listener.invoke(updateProgress);
       }
     }
   }
 
+  /**
+   * Listen to all completion and progress events on the given {@link UpdateTask}, updating the
+   * progress or completing this task with the same changes.
+   */
+  void shadow(UpdateTask updateTask) {
+    // Using direct executor here ensures that any handlers that were themselves added using a
+    // direct executor will behave as expected: they'll be executed on the thread that sets the
+    // result or updates progress.
+    updateTask
+        .addOnProgressListener(FirebaseExecutors.directExecutor(), this::updateProgress)
+        .addOnSuccessListener(FirebaseExecutors.directExecutor(), unused -> setResult())
+        .addOnFailureListener(FirebaseExecutors.directExecutor(), this::setException);
+  }
+
   private Task<Void> getTask() {
-    synchronized (this.taskCompletionLock) {
-      return this.taskCompletionSource.getTask();
+    synchronized (taskCompletionLock) {
+      return taskCompletionSource.getTask();
     }
   }
 
@@ -82,9 +99,9 @@ class UpdateTaskImpl extends UpdateTask {
       @Nullable Executor executor, @NonNull OnProgressListener listener) {
     ManagedListener managedListener = new ManagedListener(executor, listener);
     synchronized (lock) {
-      this.listener = managedListener;
+      listeners.add(managedListener);
       if (snapshot != null) {
-        this.listener.invoke(snapshot);
+        managedListener.invoke(snapshot);
       }
     }
     return this;
@@ -252,12 +269,12 @@ class UpdateTaskImpl extends UpdateTask {
   public void setResult() {
 
     synchronized (lock) {
-      this.listener = null;
+      listeners.clear();
     }
 
     synchronized (taskCompletionLock) {
-      if (!this.taskCompletionSource.getTask().isComplete()) {
-        this.taskCompletionSource.setResult(null);
+      if (!taskCompletionSource.getTask().isComplete()) {
+        taskCompletionSource.setResult(null);
       }
     }
   }
@@ -266,12 +283,12 @@ class UpdateTaskImpl extends UpdateTask {
   public void setException(@NonNull Exception exception) {
 
     synchronized (lock) {
-      this.listener = null;
+      listeners.clear();
     }
 
     synchronized (taskCompletionLock) {
-      if (!this.taskCompletionSource.getTask().isComplete()) {
-        this.taskCompletionSource.setException(exception);
+      if (!taskCompletionSource.getTask().isComplete()) {
+        taskCompletionSource.setException(exception);
       }
     }
   }

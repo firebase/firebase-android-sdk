@@ -1,5 +1,9 @@
 # Unreleased
 
+
+# 21.1.1
+* [changed] Internal changes to improve experiment reporting.
+
 # 21.1.0
 * [changed] Internal changes to ensure functionality alignment with other
   SDK releases.

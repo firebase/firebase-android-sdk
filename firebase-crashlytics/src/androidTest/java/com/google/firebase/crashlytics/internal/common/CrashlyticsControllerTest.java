@@ -44,6 +44,7 @@ import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.settings.TestSettings;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -135,10 +136,13 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
       CrashlyticsFileMarker crashMarker =
           new CrashlyticsFileMarker(CrashlyticsCore.CRASH_MARKER_FILE_NAME, testFileStore);
 
+      List<BuildIdInfo> buildIdInfoList = new ArrayList<>();
+      buildIdInfoList.add(new BuildIdInfo("lib.so", "x86", "aabb"));
       AppData appData =
           new AppData(
               GOOGLE_APP_ID,
               "buildId",
+              buildIdInfoList,
               "installerPackageName",
               "packageName",
               "versionCode",

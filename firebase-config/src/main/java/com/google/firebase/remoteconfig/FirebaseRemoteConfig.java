@@ -64,8 +64,8 @@ public class FirebaseRemoteConfig {
   /**
    * Returns a singleton instance of Firebase Remote Config.
    *
-   * <p>{@link FirebaseRemoteConfig} uses the default {@link FirebaseApp}, so if no {@link
-   * FirebaseApp} has been initialized yet, this method throws an {@link IllegalStateException}.
+   * <p>{@link FirebaseRemoteConfig} uses the default {@link FirebaseApp}, throwing an <br>
+   * {@link IllegalStateException} if one has not been initialized yet.
    *
    * <p>Note: Also initializes the Firebase installations SDK that creates installation IDs to
    * identify Firebase installations and periodically sends data to Firebase servers. Remote Config
@@ -74,8 +74,8 @@ public class FirebaseRemoteConfig {
    * after deletion will create a new installation ID for this Firebase installation and resume the
    * periodic sync.
    *
-   * @return A singleton instance of {@link FirebaseRemoteConfig} for the default {@link
-   *     FirebaseApp}.
+   * @return A singleton instance of {@link FirebaseRemoteConfig} for the default {@link FirebaseApp
+   *     }.
    */
   @NonNull
   public static FirebaseRemoteConfig getInstance() {
@@ -233,8 +233,8 @@ public class FirebaseRemoteConfig {
    * take effect.
    *
    * @return {@link Task} with a {@code true} result if the current call activated the fetched
-   *     configs; if the fetched configs were already activated by a previous call, returns a {@link
-   *     Task} with a {@code false} result.
+   *     configs; if the fetched configs were already activated by a previous call, it instead
+   *     returns a {@link Task} with a {@code false} result.
    */
   @NonNull
   public Task<Boolean> activate() {
@@ -458,8 +458,8 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Returns the state of this {@link FirebaseRemoteConfig} instance as a {@link
-   * FirebaseRemoteConfigInfo}.
+   * Returns the state of this {@link FirebaseRemoteConfig} instance as a <br>
+   * {@link FirebaseRemoteConfigInfo}.
    */
   @NonNull
   public FirebaseRemoteConfigInfo getInfo() {
@@ -549,11 +549,21 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Starts listening for any config updates for this project.
+   * Start listening for config updates from Realtime Remote Config and automatically fetch updates
+   * from the RC backend when they are available.
    *
-   * @param configUpdateListener A event listener that has one function that executes a callback
-   * @return A registration object that allows the user to remove the event listener, and if it is
-   *     the last listener, stop Realtime.
+   * <p>If a connection to Realtime RC is not already open, calling this method will open it.
+   * Multiple listeners can be added by calling this method again, but subsequent calls re-use the
+   * same connection to the backend.
+   *
+   * <p>Note: Realtime Remote Config requires the Firebase Remote Config Realtime API. See the <a
+   * href="https://firebase.google.com/docs/remote-config/get-started">Remote Config Get Started
+   * </a> guide to enable the API.
+   *
+   * @param configUpdateListener A {@link ConfigUpdateListener} that can be used to respond to
+   *     config updates when they're fetched.
+   * @return A {@link ConfigUpdateListenerRegistration} that allows the user to remove the added
+   *     {@code configUpdateListener} and close the connection when there are no more listeners.
    */
   @NonNull
   public ConfigUpdateListenerRegistration addOnConfigUpdateListener(
@@ -648,7 +658,8 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Notifies Realtime handler if the app is in the background or not.
+   * Changes background state of the Realtime handler depending on if the app is in the foreground
+   * or not.
    *
    * @hide
    */
