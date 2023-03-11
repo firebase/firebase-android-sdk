@@ -1181,8 +1181,6 @@ public class QueryTest {
     }
   }
 
-  // TODO(orquery): Enable this test when prod supports OR queries.
-  @Ignore
   @Test
   public void testOrQueries() {
     Map<String, Map<String, Object>> testDocs =
