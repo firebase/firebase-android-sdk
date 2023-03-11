@@ -1136,11 +1136,12 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       TargetData expectedTarget = expectedQueries.get(0);
       TargetData actualTarget = actualTargets.get(expected.getKey());
 
-      // TODO: Simplify the TargetData validation when the sequenceNumber can be consistent as well.
+      // TODO: Replace the assertEquals() checks on the individual properties of TargetData below
+      // with the single assertEquals on the TargetData objects themselves if the sequenceNumber is
+      // ever made to be consistent.
       // assertEquals(expectedTarget, actualTarget);
 
       assertEquals(expectedTarget.getPurpose(), actualTarget.getPurpose());
-
       assertEquals(expectedTarget.getTarget(), actualTarget.getTarget());
       assertEquals(expectedTarget.getTargetId(), actualTarget.getTargetId());
       assertEquals(expectedTarget.getSnapshotVersion(), actualTarget.getSnapshotVersion());
