@@ -15,18 +15,22 @@
 package com.google.firebase.appdistribution.impl;
 
 import static com.google.firebase.appdistribution.impl.PackageInfoUtils.getPackageInfoWithMetadata;
+import static com.google.firebase.appdistribution.impl.TaskUtils.runAsyncInTask;
 
+import android.content.Context;
 import android.content.pm.PackageInfo;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -35,49 +39,65 @@ import java.util.Enumeration;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import javax.inject.Inject;
 
 /** Identifies the installed release using binary identifiers. */
 class ReleaseIdentifier {
 
-  private static final String TAG = "ApkHashExtractor";
+  private static final String TAG = "ReleaseIdentifier";
+
   private static final int BYTES_IN_LONG = 8;
   static final String IAS_ARTIFACT_ID_METADATA_KEY = "com.android.vending.internal.apk.id";
 
   private final ConcurrentMap<String, String> cachedApkHashes = new ConcurrentHashMap<>();
-  private FirebaseApp firebaseApp;
-  FirebaseAppDistributionTesterApiClient testerApiClient;
+  private final Context applicationContext;
+  private final FirebaseAppDistributionTesterApiClient testerApiClient;
 
+  @Background private final Executor backgroundExecutor;
+  @Lightweight private final Executor lightweightExecutor;
+
+  @Inject
   ReleaseIdentifier(
-      FirebaseApp firebaseApp, FirebaseAppDistributionTesterApiClient testerApiClient) {
-    this.firebaseApp = firebaseApp;
+      Context applicationContext,
+      FirebaseAppDistributionTesterApiClient testerApiClient,
+      @Background Executor backgroundExecutor,
+      @Lightweight Executor lightweightExecutor) {
+    this.applicationContext = applicationContext;
     this.testerApiClient = testerApiClient;
+    this.backgroundExecutor = backgroundExecutor;
+    this.lightweightExecutor = lightweightExecutor;
   }
 
-  /** Identify the currently installed release, returning the release name. */
+  /**
+   * Identify the currently installed release, returning the release name.
+   *
+   * <p>Will return {@code Task} with a {@code null} result in "developer mode" which allows the UI
+   * to be used, but no actual feedback to be submitted.
+   */
   Task<String> identifyRelease() {
+    if (developmentModeEnabled()) {
+      return Tasks.forResult(null);
+    }
+
     // Attempt to find release using IAS artifact ID, which identifies app bundle releases
     String iasArtifactId = null;
     try {
       iasArtifactId = extractInternalAppSharingArtifactId();
     } catch (FirebaseAppDistributionException e) {
-      LogWrapper.getInstance()
-          .w(
-              "Error extracting IAS artifact ID to identify app bundle. Assuming release is an APK.");
+      LogWrapper.w(
+          TAG,
+          "Error extracting IAS artifact ID to identify app bundle. Assuming release is an APK.");
     }
     if (iasArtifactId != null) {
       return testerApiClient.findReleaseUsingIasArtifactId(iasArtifactId);
     }
 
     // If we can't find an IAS artifact ID, we assume the installed release is an APK
-    String apkHash;
-    try {
-      apkHash = extractApkHash();
-    } catch (FirebaseAppDistributionException e) {
-      return Tasks.forException(e);
-    }
-    return testerApiClient.findReleaseUsingApkHash(apkHash);
+    return extractApkHash()
+        .onSuccessTask(lightweightExecutor, testerApiClient::findReleaseUsingApkHash);
   }
 
   /**
@@ -88,7 +108,7 @@ class ReleaseIdentifier {
    */
   @Nullable
   String extractInternalAppSharingArtifactId() throws FirebaseAppDistributionException {
-    PackageInfo packageInfo = getPackageInfoWithMetadata(firebaseApp.getApplicationContext());
+    PackageInfo packageInfo = getPackageInfoWithMetadata(applicationContext);
     if (packageInfo.applicationInfo.metaData == null) {
       throw new FirebaseAppDistributionException("Missing package info metadata", Status.UNKNOWN);
     }
@@ -100,15 +120,18 @@ class ReleaseIdentifier {
    *
    * <p>The result is stored in an in-memory cache to avoid computing it repeatedly.
    */
-  String extractApkHash() throws FirebaseAppDistributionException {
-    PackageInfo metadataPackageInfo =
-        getPackageInfoWithMetadata(firebaseApp.getApplicationContext());
-    String installedReleaseApkHash = extractApkHash(metadataPackageInfo);
-    if (installedReleaseApkHash == null || installedReleaseApkHash.isEmpty()) {
-      throw new FirebaseAppDistributionException(
-          "Could not calculate hash of installed APK", Status.UNKNOWN);
-    }
-    return installedReleaseApkHash;
+  Task<String> extractApkHash() {
+    return runAsyncInTask(
+        backgroundExecutor,
+        () -> {
+          PackageInfo metadataPackageInfo = getPackageInfoWithMetadata(applicationContext);
+          String installedReleaseApkHash = extractApkHash(metadataPackageInfo);
+          if (installedReleaseApkHash == null || installedReleaseApkHash.isEmpty()) {
+            throw new FirebaseAppDistributionException(
+                "Could not calculate hash of installed APK", Status.UNKNOWN);
+          }
+          return installedReleaseApkHash;
+        });
   }
 
   private String extractApkHash(PackageInfo packageInfo) {
@@ -126,11 +149,9 @@ class ReleaseIdentifier {
   @VisibleForTesting
   @Nullable
   String calculateApkHash(@NonNull File file) {
-    LogWrapper.getInstance()
-        .v(
-            TAG,
-            String.format(
-                "Calculating release id for %s (%d bytes)", file.getPath(), file.length()));
+    LogWrapper.v(
+        TAG,
+        String.format("Calculating release id for %s (%d bytes)", file.getPath(), file.length()));
 
     long start = System.currentTimeMillis();
     long entries = 0;
@@ -165,16 +186,15 @@ class ReleaseIdentifier {
       zipFingerprint = sb.toString();
 
     } catch (IOException | NoSuchAlgorithmException e) {
-      LogWrapper.getInstance().v(TAG, "id calculation failed for " + file.getPath());
+      LogWrapper.v(TAG, "id calculation failed for " + file.getPath());
       return null;
     } finally {
       long elapsed = System.currentTimeMillis() - start;
-      LogWrapper.getInstance()
-          .v(
-              TAG,
-              String.format(
-                  "Computed hash of %s (%d entries, %d ms elapsed): %s",
-                  file.getPath(), entries, elapsed, zipFingerprint));
+      LogWrapper.v(
+          TAG,
+          String.format(
+              "Computed hash of %s (%d entries, %d ms elapsed): %s",
+              file.getPath(), entries, elapsed, zipFingerprint));
     }
 
     return zipFingerprint;
@@ -192,5 +212,26 @@ class ReleaseIdentifier {
       result[i] = list.get(i);
     }
     return result;
+  }
+
+  private static boolean developmentModeEnabled() {
+    return Boolean.valueOf(getSystemProperty("debug.firebase.appdistro.devmode"));
+  }
+
+  @Nullable
+  @SuppressWarnings({"unchecked", "PrivateApi"})
+  private static String getSystemProperty(String propertyName) {
+    String className = "android.os.SystemProperties";
+    try {
+      Class<?> sysProps = Class.forName(className);
+      Method method = sysProps.getDeclaredMethod("get", String.class);
+      Object result = method.invoke(null, propertyName);
+      if (result != null && String.class.isAssignableFrom(result.getClass())) {
+        return (String) result;
+      }
+    } catch (Exception e) {
+      // do nothing
+    }
+    return null;
   }
 }

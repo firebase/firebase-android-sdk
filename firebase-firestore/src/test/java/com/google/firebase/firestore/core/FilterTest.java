@@ -89,8 +89,8 @@ public class FilterTest {
 
   @Test
   public void testCanonicalIdOfFlatConjunctions() {
-    Target target1 = query("col").filter(A).filter(B).filter(C).toTarget();
-    Target target2 = query("col").filter(andFilters(A, B, C)).toTarget();
-    assertEquals(target1.getCanonicalId(), target2.getCanonicalId());
+    Query q1 = query("col").filter(A).filter(B).filter(C);
+    Query q2 = query("col").filter(andFilters(A, B, C));
+    assertEquals(q1.getCanonicalId(), q2.getCanonicalId());
   }
 }

@@ -45,11 +45,11 @@ android {
 }
 
 dependencies {
-    implementation project(':firebase-common')
-    implementation project(':firebase-components')
-    implementation project(':transport:transport-api')
-    implementation project(':transport:transport-runtime')
-    implementation project(':transport:transport-backend-cct')
+    implementation 'com.google.firebase:firebase-common:20.3.1'
+    implementation 'com.google.firebase:firebase-components:17.1.0'
+    implementation 'com.google.android.datatransport:transport-api:3.0.0'
+    implementation 'com.google.android.datatransport:transport-runtime:3.1.8'
+    implementation 'com.google.android.datatransport:transport-backend-cct:3.1.8'
     implementation 'androidx.annotation:annotation:1.1.0'
 
     testImplementation 'androidx.test:runner:1.2.0'
