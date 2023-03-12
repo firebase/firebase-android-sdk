@@ -70,6 +70,13 @@ public class ConfigRealtimeHttpClient {
   @VisibleForTesting
   static final int[] BACKOFF_TIME_DURATIONS_IN_MINUTES = {2, 4, 8, 16, 32, 64, 128, 256};
 
+  /**
+   * A regular expression for the GMP App Id format. The first group (index 1) is the project
+   * number.
+   */
+  private static final Pattern GMP_APP_ID_PATTERN =
+      Pattern.compile("^[^:]+:([0-9]+):(android|ios|web):([0-9a-f]+)");
+
   private static final String API_KEY_HEADER = "X-Goog-Api-Key";
   private static final String X_ANDROID_PACKAGE_HEADER = "X-Android-Package";
   private static final String X_ANDROID_CERT_HEADER = "X-Android-Cert";
@@ -122,6 +129,7 @@ public class ConfigRealtimeHttpClient {
 
     // Retry parameters
     this.random = new Random();
+    // Retrieve number of remaining retries from last session. The minimum retry count being one.
     httpRetriesRemaining =
         Math.max(
             ORIGINAL_RETRIES - metadataClient.getRealtimeBackoffMetadata().getNumFailedStreams(),
@@ -138,13 +146,6 @@ public class ConfigRealtimeHttpClient {
     this.isRealtimeDisabled = false;
     this.isInBackground = false;
   }
-
-  /**
-   * A regular expression for the GMP App Id format. The first group (index 1) is the project
-   * number.
-   */
-  private static final Pattern GMP_APP_ID_PATTERN =
-      Pattern.compile("^[^:]+:([0-9]+):(android|ios|web):([0-9a-f]+)");
 
   private static String extractProjectNumberFromAppId(String gmpAppId) {
     Matcher matcher = GMP_APP_ID_PATTERN.matcher(gmpAppId);
@@ -232,13 +233,15 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
+  // Used for Tests only.
   @SuppressLint("VisibleForTests")
-  public int getNumberOfFailedStream() {
+  public int getNumberOfFailedStreams() {
     return metadataClient.getRealtimeBackoffMetadata().getNumFailedStreams();
   }
 
+  // Used for Tests only.
   @SuppressLint("VisibleForTests")
-  public Date getBackoffDate() {
+  public Date getBackoffEndTime() {
     return metadataClient.getRealtimeBackoffMetadata().getBackoffEndTime();
   }
 

@@ -107,7 +107,8 @@ public class ConfigContainer {
         new Date(containerJson.getLong(FETCH_TIME_KEY)),
         containerJson.getJSONArray(ABT_EXPERIMENTS_KEY),
         personalizationMetadataJSON,
-        containerJson.getLong(TEMPLATE_VERSION_NUMBER_KEY));
+        // Default to 0 if template_version_number_key has not been cached yet.
+        containerJson.optLong(TEMPLATE_VERSION_NUMBER_KEY));
   }
 
   /**
