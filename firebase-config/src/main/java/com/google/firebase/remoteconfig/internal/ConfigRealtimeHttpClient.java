@@ -435,7 +435,7 @@ public class ConfigRealtimeHttpClient {
   }
 
   /**
-   * Open the realtime connection, begin listening for updates, and auto-fetch when an update is
+   * Open the real-time connection, begin listening for updates, and auto-fetch when an update is
    * received.
    *
    * <p>If the connection is successful, this method will block on its thread while it reads the
@@ -476,7 +476,7 @@ public class ConfigRealtimeHttpClient {
     } catch (IOException e) {
       // Stream could not be open due to a transient issue and the system will retry the connection
       // without user intervention.
-      Log.d(TAG, "Exception connecting to realtime stream. Retrying the connection...", e);
+      Log.d(TAG, "Exception connecting to real-time RC backend. Retrying the connection...", e);
     } finally {
       closeRealtimeHttpStream(httpURLConnection);
       setIsHttpConnectionRunning(false);
@@ -496,7 +496,8 @@ public class ConfigRealtimeHttpClient {
             String.format(
                 "Unable to connect to the server. Try again in a few minutes. HTTP status code: %d",
                 responseCode);
-        // Return server message for when the Realtime API is disabled and the server returns a 403
+        // Return server message for when the Firebase Remote Config Realtime API is disabled and
+        // the server returns a 403
         if (responseCode == 403) {
           errorMessage = parseForbiddenErrorResponseMessage(httpURLConnection.getErrorStream());
         }
