@@ -149,10 +149,8 @@ public final class RemoteSerializer {
   private ResourcePath decodeQueryPath(String name) {
     ResourcePath resource = decodeResourceName(name);
     if (resource.length() == 4) {
-      // In v1beta1 queries for collections at the root did not have a trailing
-      // "/documents". In v1
-      // all resource paths contain "/documents". Preserve the ability to read the v1
-      // form for
+      // In v1beta1 queries for collections at the root did not have a trailing "/documents". In v1
+      // all resource paths contain "/documents". Preserve the ability to read the v1 form for
       // compatibility with queries persisted in the local query cache.
       return ResourcePath.EMPTY;
     } else {
@@ -435,12 +433,9 @@ public final class RemoteSerializer {
 
   public MutationResult decodeMutationResult(
       com.google.firestore.v1.WriteResult proto, SnapshotVersion commitVersion) {
-    // NOTE: Deletes don't have an updateTime but the commit timestamp from the
-    // containing
-    // CommitResponse or WriteResponse indicates essentially that the delete
-    // happened no later than
-    // that. For our purposes we don't care exactly when the delete happened so long
-    // as we can tell
+    // NOTE: Deletes don't have an updateTime but the commit timestamp from the containing
+    // CommitResponse or WriteResponse indicates essentially that the delete happened no later than
+    // that. For our purposes we don't care exactly when the delete happened so long as we can tell
     // when an update on the watch stream is at or later than that change.
     SnapshotVersion version = decodeVersion(proto.getUpdateTime());
     if (SnapshotVersion.NONE.equals(version)) {
@@ -499,8 +494,7 @@ public final class RemoteSerializer {
 
     if (targetData.getResumeToken().isEmpty()
         && targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0) {
-      // TODO(wuandy): Consider removing above check because it is most likely true.
-      // Right now, many
+      // TODO(wuandy): Consider removing above check because it is most likely true. Right now, many
       // tests depend on this behaviour though (leaving min() out of serialization).
       builder.setReadTime(encodeTimestamp(targetData.getSnapshotVersion().getTimestamp()));
     } else {
@@ -657,8 +651,7 @@ public final class RemoteSerializer {
   private List<Filter> decodeFilters(StructuredQuery.Filter proto) {
     Filter result = decodeFilter(proto);
 
-    // Instead of a singletonList containing AND(F1, F2, ...), we can return a list
-    // containing F1,
+    // Instead of a singletonList containing AND(F1, F2, ...), we can return a list containing F1,
     // F2, ... to stay consistent with the older SDK versions.
     if (result instanceof com.google.firebase.firestore.core.CompositeFilter) {
       com.google.firebase.firestore.core.CompositeFilter compositeFilter =
@@ -968,10 +961,8 @@ public final class RemoteSerializer {
   }
 
   public SnapshotVersion decodeVersionFromListenResponse(ListenResponse watchChange) {
-    // We have only reached a consistent snapshot for the entire stream if there is
-    // a read_time set
-    // and it applies to all targets (i.e. the list of targets is empty). The
-    // backend is guaranteed
+    // We have only reached a consistent snapshot for the entire stream if there is a read_time set
+    // and it applies to all targets (i.e. the list of targets is empty). The backend is guaranteed
     // to send such responses.
     if (watchChange.getResponseTypeCase() != ResponseTypeCase.TARGET_CHANGE) {
       return SnapshotVersion.NONE;
