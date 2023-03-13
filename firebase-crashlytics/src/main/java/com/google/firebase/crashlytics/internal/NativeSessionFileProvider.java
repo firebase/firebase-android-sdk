@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal;
 
 import androidx.annotation.Nullable;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import java.io.File;
 
 /** Provides references to the files that make up a native crash report. */
@@ -24,6 +25,9 @@ public interface NativeSessionFileProvider {
 
   @Nullable
   File getMinidumpFile();
+
+  @Nullable
+  CrashlyticsReport.ApplicationExitInfo getApplicationExitInto();
 
   @Nullable
   File getBinaryImagesFile();

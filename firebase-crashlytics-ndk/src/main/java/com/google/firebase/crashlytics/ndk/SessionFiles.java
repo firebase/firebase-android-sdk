@@ -14,12 +14,38 @@
 
 package com.google.firebase.crashlytics.ndk;
 
+import androidx.annotation.Nullable;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import java.io.File;
 
 final class SessionFiles {
+  /**
+   * Starting with Android S, it is possible to collect the tombstone upon an application restart.
+   * In most cases, both, the tombstone and the minidump will be available.
+   */
+  static final class NativeCore {
+    @Nullable public final File minidump;
+
+    @Nullable public final CrashlyticsReport.ApplicationExitInfo applicationExitInfo;
+
+    NativeCore(
+        @Nullable File minidump,
+        @Nullable CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+      this.minidump = minidump;
+      this.applicationExitInfo = applicationExitInfo;
+    }
+
+    boolean hasCore() {
+      // The classic case is that a crash occurred and a minidump was successfully captured. There
+      // are two new cases to handle, however. First, a crash occurred and a minidump was not
+      // captured - this is ok; check for a tombstone and use that instead. Second, a crash did not
+      // occur because of a non-crashy GWP-ASan tombstone - this ok; capture just the tombstone.
+      return (minidump != null && minidump.exists()) || applicationExitInfo != null;
+    }
+  }
 
   static final class Builder {
-    private File minidump;
+    private NativeCore nativeCore;
     private File binaryImages;
     private File metadata;
     private File session;
@@ -27,8 +53,8 @@ final class SessionFiles {
     private File device;
     private File os;
 
-    Builder minidumpFile(File minidump) {
-      this.minidump = minidump;
+    Builder nativeCore(NativeCore nativeCore) {
+      this.nativeCore = nativeCore;
       return this;
     }
 
@@ -67,7 +93,7 @@ final class SessionFiles {
     }
   }
 
-  public final File minidump;
+  public final NativeCore nativeCore;
   public final File binaryImages;
   public final File metadata;
   public final File session;
@@ -76,7 +102,7 @@ final class SessionFiles {
   public final File os;
 
   private SessionFiles(Builder builder) {
-    minidump = builder.minidump;
+    nativeCore = builder.nativeCore;
     binaryImages = builder.binaryImages;
     metadata = builder.metadata;
     session = builder.session;

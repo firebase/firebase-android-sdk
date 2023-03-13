@@ -47,10 +47,9 @@ android {
 
 dependencies {
     implementation project(':firebase-appdistribution-api')
-    implementation project(':firebase-annotations')
-    implementation project(':firebase-components')
-    implementation project(':firebase-installations-interop')
-    implementation project(':firebase-common')
+    implementation 'com.google.firebase:firebase-components:17.1.0'
+    implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
+    implementation 'com.google.firebase:firebase-common:20.3.1'
     testImplementation project(path: ':firebase-appdistribution')
     testImplementation project(':integ-testing')
     runtimeOnly project(':firebase-installations')
