@@ -130,7 +130,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
           listOf(
             mutableMapOf(
               "sourceSetID" to mapOf("scopeId" to "androidx", "sourceSetName" to "main"),
-              "sourceRoots" to sources.get().map { it.absolutePath },
+              "sourceRoots" to sources.get().filter { it.exists() }.map { it.absolutePath },
               "classpath" to dependencies.get().map { it.absolutePath },
               "documentedVisibilities" to listOf("PUBLIC", "PROTECTED"),
               "skipEmptyPackages" to "true",
@@ -151,6 +151,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
               "values" to
                 JSONObject(
                     mapOf(
+                      "tenant" to "androidx",
                       "docRootPath" to "/docs/reference/",
                       "javaDocsPath" to "android".takeIf { generateJavadocs.get() },
                       "kotlinDocsPath" to "kotlin",
@@ -202,7 +203,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
   private fun launchDackka(argsFile: File, workerExecutor: WorkerExecutor) {
     val workQueue = workerExecutor.noIsolation()
     workQueue.submit<DackkaWorkAction, DackkaParams>() {
-      args.set(listOf(argsFile.path, "-loggingLevel", "WARN"))
+      args.set(listOf(argsFile.path, "-loggingLevel", "DEBUG"))
       dackkaFile.set(dackkaJarFile.get())
     }
   }
@@ -231,6 +232,7 @@ abstract class DackkaWorkAction @Inject constructor(private val execOperations: 
       mainClass.set("org.jetbrains.dokka.MainKt")
       args = parameters.args.get()
       classpath(parameters.dackkaFile.get())
+      environment("DEVSITE_TENANT", "client")
     }
   }
 }
