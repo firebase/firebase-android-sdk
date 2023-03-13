@@ -20,7 +20,7 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class SessionGeneratorTest {
-  fun isValidSessionId(sessionId: String): Boolean {
+  private fun isValidSessionId(sessionId: String): Boolean {
     if (sessionId.length != 32) {
       return false
     }
@@ -42,21 +42,21 @@ class SessionGeneratorTest {
 
     assertThat(sessionGenerator.currentSession.sessionId).isEqualTo("")
     assertThat(sessionGenerator.currentSession.firstSessionId).isEqualTo("")
-    assertThat(sessionGenerator.currentSession.collectEvents).isEqualTo(false)
+    assertThat(sessionGenerator.currentSession.collectEvents).isFalse()
     assertThat(sessionGenerator.currentSession.sessionIndex).isEqualTo(-1)
   }
 
   @Test
-  fun generateNewSessionID_generatesValidSessionInfo() {
+  fun generateNewSessionID_generatesValidSessionDetails() {
     val sessionGenerator = SessionGenerator(collectEvents = true)
 
     sessionGenerator.generateNewSession()
 
-    assertThat(isValidSessionId(sessionGenerator.currentSession.sessionId)).isEqualTo(true)
-    assertThat(isValidSessionId(sessionGenerator.currentSession.firstSessionId)).isEqualTo(true)
+    assertThat(isValidSessionId(sessionGenerator.currentSession.sessionId)).isTrue()
+    assertThat(isValidSessionId(sessionGenerator.currentSession.firstSessionId)).isTrue()
     assertThat(sessionGenerator.currentSession.firstSessionId)
       .isEqualTo(sessionGenerator.currentSession.sessionId)
-    assertThat(sessionGenerator.currentSession.collectEvents).isEqualTo(true)
+    assertThat(sessionGenerator.currentSession.collectEvents).isTrue()
     assertThat(sessionGenerator.currentSession.sessionIndex).isEqualTo(0)
   }
 
@@ -68,32 +68,32 @@ class SessionGeneratorTest {
 
     sessionGenerator.generateNewSession()
 
-    val firstSessionInfo = sessionGenerator.currentSession
+    val firstSessionDetails = sessionGenerator.currentSession
 
-    assertThat(isValidSessionId(firstSessionInfo.sessionId)).isEqualTo(true)
-    assertThat(isValidSessionId(firstSessionInfo.firstSessionId)).isEqualTo(true)
-    assertThat(firstSessionInfo.firstSessionId).isEqualTo(firstSessionInfo.sessionId)
-    assertThat(firstSessionInfo.sessionIndex).isEqualTo(0)
+    assertThat(isValidSessionId(firstSessionDetails.sessionId)).isTrue()
+    assertThat(isValidSessionId(firstSessionDetails.firstSessionId)).isTrue()
+    assertThat(firstSessionDetails.firstSessionId).isEqualTo(firstSessionDetails.sessionId)
+    assertThat(firstSessionDetails.sessionIndex).isEqualTo(0)
 
     sessionGenerator.generateNewSession()
-    val secondSessionInfo = sessionGenerator.currentSession
+    val secondSessionDetails = sessionGenerator.currentSession
 
-    assertThat(isValidSessionId(secondSessionInfo.sessionId)).isEqualTo(true)
-    assertThat(isValidSessionId(secondSessionInfo.firstSessionId)).isEqualTo(true)
+    assertThat(isValidSessionId(secondSessionDetails.sessionId)).isTrue()
+    assertThat(isValidSessionId(secondSessionDetails.firstSessionId)).isTrue()
     // Ensure the new firstSessionId is equal to the first Session ID from earlier
-    assertThat(secondSessionInfo.firstSessionId).isEqualTo(firstSessionInfo.sessionId)
+    assertThat(secondSessionDetails.firstSessionId).isEqualTo(firstSessionDetails.sessionId)
     // Session Index should increase
-    assertThat(secondSessionInfo.sessionIndex).isEqualTo(1)
+    assertThat(secondSessionDetails.sessionIndex).isEqualTo(1)
 
     // Do a third round just in case
     sessionGenerator.generateNewSession()
-    val thirdSessionInfo = sessionGenerator.currentSession
+    val thirdSessionDetails = sessionGenerator.currentSession
 
-    assertThat(isValidSessionId(thirdSessionInfo.sessionId)).isEqualTo(true)
-    assertThat(isValidSessionId(thirdSessionInfo.firstSessionId)).isEqualTo(true)
+    assertThat(isValidSessionId(thirdSessionDetails.sessionId)).isTrue()
+    assertThat(isValidSessionId(thirdSessionDetails.firstSessionId)).isTrue()
     // Ensure the new firstSessionId is equal to the first Session ID from earlier
-    assertThat(thirdSessionInfo.firstSessionId).isEqualTo(firstSessionInfo.sessionId)
+    assertThat(thirdSessionDetails.firstSessionId).isEqualTo(firstSessionDetails.sessionId)
     // Session Index should increase
-    assertThat(thirdSessionInfo.sessionIndex).isEqualTo(2)
+    assertThat(thirdSessionDetails.sessionIndex).isEqualTo(2)
   }
 }

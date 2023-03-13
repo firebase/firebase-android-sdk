@@ -24,7 +24,6 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 
 class FirebaseSessions internal constructor(firebaseApp: FirebaseApp) {
-
   private val sessionGenerator = SessionGenerator(collectEvents = true)
 
   init {
@@ -41,10 +40,10 @@ class FirebaseSessions internal constructor(firebaseApp: FirebaseApp) {
   fun greeting(): String = "Matt says hi!"
 
   private fun initiateSessionStart() {
-    // TODO(mrober): Generate a session
-    Log.i(TAG, "Initiate session start")
+    val sessionState = sessionGenerator.generateNewSession()
+    val sessionEvent = SessionEvent.sessionStart(sessionState)
 
-    sessionGenerator.generateNewSession()
+    Log.i(TAG, "Initiate session start: $sessionEvent")
   }
 
   companion object {
