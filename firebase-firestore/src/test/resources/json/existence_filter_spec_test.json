@@ -91,7 +91,8 @@
           {
             "added": [
               {
-                  "key": "collection/ÀÒ∑",
+
+                "key": "collection/ÀÒ∑",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -102,7 +103,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/À∑Ò",
+
+                "key": "collection/À∑Ò",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -178,7 +180,8 @@
                   "path": "collection/À∑Ò"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "2": {
               "queries": [
@@ -289,7 +292,8 @@
           {
             "added": [
               {
-                  "key": "collection/a",
+
+                "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -300,7 +304,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/b",
+
+                "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -371,7 +376,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -470,7 +476,8 @@
           {
             "added": [
               {
-                  "key": "collection/a",
+
+                "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -481,7 +488,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/b",
+
+                "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -552,7 +560,8 @@
           {
             "added": [
               {
-                  "key": "collection/c",
+
+                "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -590,7 +599,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "2": {
               "queries": [
@@ -701,7 +711,8 @@
           {
             "added": [
               {
-                  "key": "collection/a",
+
+                "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -712,7 +723,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/b",
+
+                "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -788,7 +800,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "2": {
               "queries": [
@@ -828,7 +841,8 @@
             },
             "removed": [
               {
-                  "key": "collection/b",
+
+                "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2032,7 +2046,8 @@
           {
             "added": [
               {
-                  "key": "collection/doc0",
+
+                "key": "collection/doc0",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2043,7 +2058,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc1",
+
+                "key": "collection/doc1",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2054,7 +2070,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc2",
+
+                "key": "collection/doc2",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2065,7 +2082,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc3",
+
+                "key": "collection/doc3",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2076,7 +2094,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc4",
+
+                "key": "collection/doc4",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2087,7 +2106,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc5",
+
+                "key": "collection/doc5",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2098,7 +2118,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc6",
+
+                "key": "collection/doc6",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2109,7 +2130,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc7",
+
+                "key": "collection/doc7",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2120,7 +2142,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc8",
+
+                "key": "collection/doc8",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2131,7 +2154,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc9",
+
+                "key": "collection/doc9",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2142,7 +2166,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc10",
+
+                "key": "collection/doc10",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2153,7 +2178,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc11",
+
+                "key": "collection/doc11",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2164,7 +2190,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc12",
+
+                "key": "collection/doc12",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2175,7 +2202,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc13",
+
+                "key": "collection/doc13",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2186,7 +2214,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc14",
+
+                "key": "collection/doc14",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2197,7 +2226,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc15",
+
+                "key": "collection/doc15",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2208,7 +2238,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc16",
+
+                "key": "collection/doc16",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2219,7 +2250,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc17",
+
+                "key": "collection/doc17",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2230,7 +2262,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc18",
+
+                "key": "collection/doc18",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2241,7 +2274,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc19",
+
+                "key": "collection/doc19",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2252,7 +2286,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc20",
+
+                "key": "collection/doc20",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2263,7 +2298,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc21",
+
+                "key": "collection/doc21",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2274,7 +2310,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc22",
+
+                "key": "collection/doc22",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2285,7 +2322,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc23",
+
+                "key": "collection/doc23",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2296,7 +2334,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc24",
+
+                "key": "collection/doc24",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2307,7 +2346,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc25",
+
+                "key": "collection/doc25",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2318,7 +2358,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc26",
+
+                "key": "collection/doc26",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2329,7 +2370,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc27",
+
+                "key": "collection/doc27",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2340,7 +2382,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc28",
+
+                "key": "collection/doc28",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2351,7 +2394,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc29",
+
+                "key": "collection/doc29",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2362,7 +2406,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc30",
+
+                "key": "collection/doc30",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2373,7 +2418,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc31",
+
+                "key": "collection/doc31",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2384,7 +2430,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc32",
+
+                "key": "collection/doc32",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2395,7 +2442,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc33",
+
+                "key": "collection/doc33",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2406,7 +2454,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc34",
+
+                "key": "collection/doc34",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2417,7 +2466,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc35",
+
+                "key": "collection/doc35",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2428,7 +2478,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc36",
+
+                "key": "collection/doc36",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2439,7 +2490,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc37",
+
+                "key": "collection/doc37",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2450,7 +2502,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc38",
+
+                "key": "collection/doc38",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2461,7 +2514,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc39",
+
+                "key": "collection/doc39",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2472,7 +2526,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc40",
+
+                "key": "collection/doc40",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2483,7 +2538,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc41",
+
+                "key": "collection/doc41",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2494,7 +2550,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc42",
+
+                "key": "collection/doc42",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2505,7 +2562,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc43",
+
+                "key": "collection/doc43",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2516,7 +2574,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc44",
+
+                "key": "collection/doc44",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2527,7 +2586,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc45",
+
+                "key": "collection/doc45",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2538,7 +2598,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc46",
+
+                "key": "collection/doc46",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2549,7 +2610,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc47",
+
+                "key": "collection/doc47",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2560,7 +2622,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc48",
+
+                "key": "collection/doc48",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2571,7 +2634,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc49",
+
+                "key": "collection/doc49",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2582,7 +2646,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc50",
+
+                "key": "collection/doc50",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2593,7 +2658,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc51",
+
+                "key": "collection/doc51",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2604,7 +2670,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc52",
+
+                "key": "collection/doc52",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2615,7 +2682,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc53",
+
+                "key": "collection/doc53",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2626,7 +2694,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc54",
+
+                "key": "collection/doc54",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2637,7 +2706,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc55",
+
+                "key": "collection/doc55",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2648,7 +2718,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc56",
+
+                "key": "collection/doc56",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2659,7 +2730,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc57",
+
+                "key": "collection/doc57",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2670,7 +2742,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc58",
+
+                "key": "collection/doc58",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2681,7 +2754,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc59",
+
+                "key": "collection/doc59",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2692,7 +2766,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc60",
+
+                "key": "collection/doc60",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2703,7 +2778,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc61",
+
+                "key": "collection/doc61",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2714,7 +2790,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc62",
+
+                "key": "collection/doc62",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2725,7 +2802,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc63",
+
+                "key": "collection/doc63",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2736,7 +2814,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc64",
+
+                "key": "collection/doc64",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2747,7 +2826,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc65",
+
+                "key": "collection/doc65",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2758,7 +2838,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc66",
+
+                "key": "collection/doc66",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2769,7 +2850,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc67",
+
+                "key": "collection/doc67",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2780,7 +2862,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc68",
+
+                "key": "collection/doc68",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2791,7 +2874,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc69",
+
+                "key": "collection/doc69",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2802,7 +2886,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc70",
+
+                "key": "collection/doc70",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2813,7 +2898,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc71",
+
+                "key": "collection/doc71",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2824,7 +2910,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc72",
+
+                "key": "collection/doc72",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2835,7 +2922,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc73",
+
+                "key": "collection/doc73",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2846,7 +2934,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc74",
+
+                "key": "collection/doc74",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2857,7 +2946,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc75",
+
+                "key": "collection/doc75",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2868,7 +2958,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc76",
+
+                "key": "collection/doc76",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2879,7 +2970,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc77",
+
+                "key": "collection/doc77",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2890,7 +2982,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc78",
+
+                "key": "collection/doc78",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2901,7 +2994,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc79",
+
+                "key": "collection/doc79",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2912,7 +3006,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc80",
+
+                "key": "collection/doc80",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2923,7 +3018,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc81",
+
+                "key": "collection/doc81",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2934,7 +3030,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc82",
+
+                "key": "collection/doc82",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2945,7 +3042,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc83",
+
+                "key": "collection/doc83",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2956,7 +3054,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc84",
+
+                "key": "collection/doc84",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2967,7 +3066,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc85",
+
+                "key": "collection/doc85",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2978,7 +3078,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc86",
+
+                "key": "collection/doc86",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -2989,7 +3090,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc87",
+
+                "key": "collection/doc87",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -3000,7 +3102,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc88",
+
+                "key": "collection/doc88",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -3011,7 +3114,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc89",
+
+                "key": "collection/doc89",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -3022,7 +3126,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc90",
+
+                "key": "collection/doc90",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -3033,7 +3138,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc91",
+
+                "key": "collection/doc91",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -3044,7 +3150,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc92",
+
+                "key": "collection/doc92",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -3055,7 +3162,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc93",
+
+                "key": "collection/doc93",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -3066,7 +3174,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc94",
+
+                "key": "collection/doc94",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -3077,7 +3186,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc95",
+
+                "key": "collection/doc95",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -3088,7 +3198,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc96",
+
+                "key": "collection/doc96",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -3099,7 +3210,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc97",
+
+                "key": "collection/doc97",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -3110,7 +3222,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc98",
+
+                "key": "collection/doc98",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -3121,7 +3234,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/doc99",
+
+                "key": "collection/doc99",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -3295,7 +3409,8 @@
                   "path": "collection/doc50"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "11": {
               "queries": [
@@ -3307,7 +3422,8 @@
                   "path": "collection/doc55"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "13": {
               "queries": [
@@ -3319,7 +3435,8 @@
                   "path": "collection/doc56"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "15": {
               "queries": [
@@ -3331,7 +3448,8 @@
                   "path": "collection/doc57"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "17": {
               "queries": [
@@ -3343,7 +3461,8 @@
                   "path": "collection/doc58"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "19": {
               "queries": [
@@ -3355,7 +3474,8 @@
                   "path": "collection/doc59"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "2": {
               "queries": [
@@ -3379,7 +3499,8 @@
                   "path": "collection/doc60"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "23": {
               "queries": [
@@ -3391,7 +3512,8 @@
                   "path": "collection/doc61"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "25": {
               "queries": [
@@ -3403,7 +3525,8 @@
                   "path": "collection/doc62"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "27": {
               "queries": [
@@ -3415,7 +3538,8 @@
                   "path": "collection/doc63"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "29": {
               "queries": [
@@ -3427,7 +3551,8 @@
                   "path": "collection/doc64"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "3": {
               "queries": [
@@ -3439,7 +3564,8 @@
                   "path": "collection/doc51"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "31": {
               "queries": [
@@ -3451,7 +3577,8 @@
                   "path": "collection/doc65"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "33": {
               "queries": [
@@ -3463,7 +3590,8 @@
                   "path": "collection/doc66"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "35": {
               "queries": [
@@ -3475,7 +3603,8 @@
                   "path": "collection/doc67"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "37": {
               "queries": [
@@ -3487,7 +3616,8 @@
                   "path": "collection/doc68"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "39": {
               "queries": [
@@ -3499,7 +3629,8 @@
                   "path": "collection/doc69"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "41": {
               "queries": [
@@ -3511,7 +3642,8 @@
                   "path": "collection/doc70"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "43": {
               "queries": [
@@ -3523,7 +3655,8 @@
                   "path": "collection/doc71"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "45": {
               "queries": [
@@ -3535,7 +3668,8 @@
                   "path": "collection/doc72"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "47": {
               "queries": [
@@ -3547,7 +3681,8 @@
                   "path": "collection/doc73"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "49": {
               "queries": [
@@ -3559,7 +3694,8 @@
                   "path": "collection/doc74"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "5": {
               "queries": [
@@ -3571,7 +3707,8 @@
                   "path": "collection/doc52"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "51": {
               "queries": [
@@ -3583,7 +3720,8 @@
                   "path": "collection/doc75"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "53": {
               "queries": [
@@ -3595,7 +3733,8 @@
                   "path": "collection/doc76"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "55": {
               "queries": [
@@ -3607,7 +3746,8 @@
                   "path": "collection/doc77"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "57": {
               "queries": [
@@ -3619,7 +3759,8 @@
                   "path": "collection/doc78"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "59": {
               "queries": [
@@ -3631,7 +3772,8 @@
                   "path": "collection/doc79"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "61": {
               "queries": [
@@ -3643,7 +3785,8 @@
                   "path": "collection/doc80"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "63": {
               "queries": [
@@ -3655,7 +3798,8 @@
                   "path": "collection/doc81"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "65": {
               "queries": [
@@ -3667,7 +3811,8 @@
                   "path": "collection/doc82"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "67": {
               "queries": [
@@ -3679,7 +3824,8 @@
                   "path": "collection/doc83"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "69": {
               "queries": [
@@ -3691,7 +3837,8 @@
                   "path": "collection/doc84"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "7": {
               "queries": [
@@ -3703,7 +3850,8 @@
                   "path": "collection/doc53"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "71": {
               "queries": [
@@ -3715,7 +3863,8 @@
                   "path": "collection/doc85"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "73": {
               "queries": [
@@ -3727,7 +3876,8 @@
                   "path": "collection/doc86"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "75": {
               "queries": [
@@ -3739,7 +3889,8 @@
                   "path": "collection/doc87"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "77": {
               "queries": [
@@ -3751,7 +3902,8 @@
                   "path": "collection/doc88"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "79": {
               "queries": [
@@ -3763,7 +3915,8 @@
                   "path": "collection/doc89"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "81": {
               "queries": [
@@ -3775,7 +3928,8 @@
                   "path": "collection/doc90"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "83": {
               "queries": [
@@ -3787,7 +3941,8 @@
                   "path": "collection/doc91"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "85": {
               "queries": [
@@ -3799,7 +3954,8 @@
                   "path": "collection/doc92"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "87": {
               "queries": [
@@ -3811,7 +3967,8 @@
                   "path": "collection/doc93"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "89": {
               "queries": [
@@ -3823,7 +3980,8 @@
                   "path": "collection/doc94"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "9": {
               "queries": [
@@ -3835,7 +3993,8 @@
                   "path": "collection/doc54"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "91": {
               "queries": [
@@ -3847,7 +4006,8 @@
                   "path": "collection/doc95"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "93": {
               "queries": [
@@ -3859,7 +4019,8 @@
                   "path": "collection/doc96"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "95": {
               "queries": [
@@ -3871,7 +4032,8 @@
                   "path": "collection/doc97"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "97": {
               "queries": [
@@ -3883,7 +4045,8 @@
                   "path": "collection/doc98"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "99": {
               "queries": [
@@ -3895,7 +4058,8 @@
                   "path": "collection/doc99"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             }
           }
         }
@@ -3995,7 +4159,8 @@
           {
             "added": [
               {
-                  "key": "collection/1",
+
+                "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -4006,7 +4171,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/2",
+
+                "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -4104,7 +4270,8 @@
           {
             "added": [
               {
-                  "key": "collection/1",
+
+                "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -4115,7 +4282,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/2",
+
+                "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -4238,7 +4406,8 @@
           {
             "added": [
               {
-                  "key": "collection/1",
+
+                "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -4303,7 +4472,8 @@
           {
             "added": [
               {
-                  "key": "collection/3",
+
+                "key": "collection/3",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -4416,7 +4586,8 @@
           {
             "added": [
               {
-                  "key": "collection/2",
+
+                "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -4523,7 +4694,8 @@
           {
             "added": [
               {
-                  "key": "collection/1",
+
+                "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -4578,7 +4750,8 @@
           {
             "added": [
               {
-                  "key": "collection/1",
+
+                "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -4762,7 +4935,8 @@
           {
             "added": [
               {
-                  "key": "collection/1",
+
+                "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -4773,7 +4947,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/2",
+
+                "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -4907,7 +5082,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 2
+              "targetPurpose": 3
             },
             "2": {
               "queries": [
@@ -4948,7 +5123,8 @@
             },
             "removed": [
               {
-                  "key": "collection/2",
+
+                "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -5064,7 +5240,8 @@
           {
             "added": [
               {
-                  "key": "collection/1",
+
+                "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -5219,7 +5396,8 @@
           {
             "added": [
               {
-                  "key": "collection/1",
+
+                "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -5337,7 +5515,8 @@
           {
             "added": [
               {
-                  "key": "collection/1",
+
+                "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -5348,7 +5527,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/2",
+
+                "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -5482,7 +5662,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 2
+              "targetPurpose": 3
             },
             "2": {
               "queries": [
@@ -5533,7 +5713,8 @@
             },
             "removed": [
               {
-                  "key": "collection/2",
+
+                "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -5660,7 +5841,8 @@
           {
             "added": [
               {
-                  "key": "collection/1",
+
+                "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -5671,7 +5853,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/2",
+
+                "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -5835,7 +6018,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 2
+              "targetPurpose": 3
             },
             "2": {
               "queries": [
@@ -5886,7 +6069,8 @@
             },
             "removed": [
               {
-                  "key": "collection/2",
+
+                "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -6002,7 +6186,8 @@
           {
             "added": [
               {
-                  "key": "collection/a",
+
+                "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -6055,7 +6240,8 @@
             },
             "removed": [
               {
-                  "key": "collection/a",
+
+                "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -6285,7 +6471,8 @@
           {
             "added": [
               {
-                  "key": "collection/a",
+
+                "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -6296,7 +6483,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/b",
+
+                "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -6372,7 +6560,8 @@
                   "path": "collection/b"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "2": {
               "queries": [
@@ -6422,7 +6611,8 @@
             },
             "removed": [
               {
-                  "key": "collection/b",
+
+                "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -6550,7 +6740,8 @@
           {
             "added": [
               {
-                  "key": "collection/a",
+
+                "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -6561,7 +6752,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/b",
+
+                "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -6634,7 +6826,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -6744,7 +6937,8 @@
           {
             "added": [
               {
-                  "key": "collection/a",
+
+                "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -6755,7 +6949,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/b",
+
+                "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -6766,7 +6961,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/c",
+
+                "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -6826,14 +7022,7 @@
               "path": "collection"
             }
           }
-        ]
-      },
-      {
-        "watchRemove": {
-          "targetIds": [
-            2
-          ]
-        },
+        ],
         "expectedState": {
           "activeTargets": {
             "2": {
@@ -6846,7 +7035,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 2
             }
           }
         }
@@ -6945,7 +7135,8 @@
           {
             "added": [
               {
-                  "key": "collection/a",
+
+                "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -6956,7 +7147,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/b",
+
+                "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -7029,7 +7221,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -7128,7 +7321,8 @@
           {
             "added": [
               {
-                  "key": "collection/a",
+
+                "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -7139,7 +7333,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/b",
+
+                "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -7212,7 +7407,8 @@
                   "path": "collection"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 1
             }
           }
         }
@@ -7321,7 +7517,8 @@
           {
             "added": [
               {
-                  "key": "collection/a",
+
+                "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -7332,7 +7529,8 @@
                 "version": 1000
               },
               {
-                  "key": "collection/b",
+
+                "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -7381,7 +7579,8 @@
           {
             "added": [
               {
-                  "key": "collection/b",
+
+                "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -7502,7 +7701,8 @@
           {
             "added": [
               {
-                  "key": "collection/c",
+
+                "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
                   "hasLocalMutations": false
@@ -7588,7 +7788,8 @@
                   "path": "collection/a"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "2": {
               "queries": [
@@ -7685,7 +7886,8 @@
                   "path": "collection/a"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "2": {
               "queries": [
@@ -7714,7 +7916,8 @@
                   "path": "collection/c"
                 }
               ],
-              "resumeToken": ""
+              "resumeToken": "",
+              "targetPurpose": 3
             },
             "4": {
               "queries": [

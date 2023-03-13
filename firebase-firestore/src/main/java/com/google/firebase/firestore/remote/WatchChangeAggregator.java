@@ -83,6 +83,13 @@ public class WatchChangeAggregator {
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "WatchChangeAggregator";
 
+  /** The bloom filter application status while handling existence filter mismatch. */
+  private enum BloomFilterApplicationStatus {
+    SUCCESS,
+    SKIPPED,
+    FALSE_POSITIVE
+  }
+
   public WatchChangeAggregator(TargetMetadataProvider targetMetadataProvider) {
     this.targetMetadataProvider = targetMetadataProvider;
   }
@@ -208,27 +215,34 @@ public class WatchChangeAggregator {
         if (currentSize != expectedCount) {
 
           // Apply bloom filter to identify and mark removed documents.
-          boolean bloomFilterApplied = this.applyBloomFilter(watchChange, currentSize);
+          BloomFilterApplicationStatus status = this.applyBloomFilter(watchChange, currentSize);
 
-          if (!bloomFilterApplied) {
+          if (status != BloomFilterApplicationStatus.SUCCESS) {
             // If bloom filter application fails, we reset the mapping and
             // trigger re-run of the query.
             resetTarget(targetId);
-            pendingTargetResets.put(targetId, QueryPurpose.EXISTENCE_FILTER_MISMATCH);
+
+            QueryPurpose purpose =
+                status == BloomFilterApplicationStatus.FALSE_POSITIVE
+                    ? QueryPurpose.EXISTENCE_FILTER_MISMATCH_BLOOM
+                    : QueryPurpose.EXISTENCE_FILTER_MISMATCH;
+
+            pendingTargetResets.put(targetId, purpose);
           }
         }
       }
     }
   }
 
-  /** Returns whether a bloom filter removed the deleted documents successfully. */
-  private boolean applyBloomFilter(ExistenceFilterWatchChange watchChange, int currentCount) {
+  /** Apply bloom filter to remove the deleted documents, and return the application status. */
+  private BloomFilterApplicationStatus applyBloomFilter(
+      ExistenceFilterWatchChange watchChange, int currentCount) {
     int expectedCount = watchChange.getExistenceFilter().getCount();
     com.google.firestore.v1.BloomFilter unchangedNames =
         watchChange.getExistenceFilter().getUnchangedNames();
 
     if (unchangedNames == null || !unchangedNames.hasBits()) {
-      return false;
+      return BloomFilterApplicationStatus.SKIPPED;
     }
 
     byte[] bitmap = unchangedNames.getBits().getBitmap().toByteArray();
@@ -244,12 +258,20 @@ public class WatchChangeAggregator {
           "Decoding the base64 bloom filter in existence filter failed ("
               + e.getMessage()
               + "); ignoring the bloom filter and falling back to full re-query.");
-      return false;
+      return BloomFilterApplicationStatus.SKIPPED;
+    }
+
+    if (bloomFilter.getBitCount() == 0) {
+      return BloomFilterApplicationStatus.SKIPPED;
     }
 
     int removedDocumentCount = this.filterRemovedDocuments(bloomFilter, watchChange.getTargetId());
 
-    return expectedCount == (currentCount - removedDocumentCount);
+    if (expectedCount != (currentCount - removedDocumentCount)) {
+      return BloomFilterApplicationStatus.FALSE_POSITIVE;
+    }
+
+    return BloomFilterApplicationStatus.SUCCESS;
   }
 
   /**
