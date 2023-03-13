@@ -83,8 +83,8 @@ public class ConfigAutoFetch {
     }
   }
 
-  private synchronized Set<ConfigUpdateListener> getEventListeners() {
-    return this.eventListeners;
+  private synchronized boolean isEventListenersEmpty() {
+    return this.eventListeners.isEmpty();
   }
 
   private String parseAndValidateConfigUpdateMessage(String message) {
@@ -159,7 +159,7 @@ public class ConfigAutoFetch {
           // In effect, stop listening when the last listener is removed. This works around
           // URLConnection.disconnect() being called by ConfigAutoFetch rather than
           // ConfigRealtimeHttpClient.
-          if (this.getEventListeners().isEmpty()) {
+          if (this.isEventListenersEmpty()) {
             break;
           }
 
