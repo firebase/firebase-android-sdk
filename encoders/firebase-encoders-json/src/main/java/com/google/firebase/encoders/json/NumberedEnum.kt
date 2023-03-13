@@ -17,6 +17,6 @@
 package com.google.firebase.encoders.json
 
 /** Represents an explicitly numbered enum for json serialization. */
-internal interface NumberedEnum {
+interface NumberedEnum {
   val number: Int
 }
