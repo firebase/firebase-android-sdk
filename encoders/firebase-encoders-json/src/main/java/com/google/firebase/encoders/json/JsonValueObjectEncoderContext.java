@@ -317,7 +317,11 @@ final class JsonValueObjectEncoderContext implements ObjectEncoderContext, Value
 
     // Process enum last if it does not have a custom encoder registered.
     if (o instanceof Enum) {
-      add(((Enum) o).name());
+      if (o instanceof NumberedEnum) {
+        add(((NumberedEnum) o).getNumber());
+      } else {
+        add(((Enum<?>) o).name());
+      }
       return this;
     }
 
