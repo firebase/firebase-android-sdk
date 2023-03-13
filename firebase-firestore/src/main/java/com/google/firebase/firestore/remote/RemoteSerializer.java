@@ -124,7 +124,8 @@ public final class RemoteSerializer {
   // Names and Keys
 
   /**
-   * Encodes the given document key as a fully qualified name. This includes the databaseId from the
+   * Encodes the given document key as a fully qualified name. This includes the
+   * databaseId from the
    * constructor and the key path.
    */
   public String encodeKey(DocumentKey key) {
@@ -149,8 +150,10 @@ public final class RemoteSerializer {
   private ResourcePath decodeQueryPath(String name) {
     ResourcePath resource = decodeResourceName(name);
     if (resource.length() == 4) {
-      // In v1beta1 queries for collections at the root did not have a trailing "/documents". In v1
-      // all resource paths contain "/documents". Preserve the ability to read the v1 form for
+      // In v1beta1 queries for collections at the root did not have a trailing
+      // "/documents". In v1
+      // all resource paths contain "/documents". Preserve the ability to read the v1
+      // form for
       // compatibility with queries persisted in the local query cache.
       return ResourcePath.EMPTY;
     } else {
@@ -167,8 +170,10 @@ public final class RemoteSerializer {
   }
 
   /**
-   * Decodes a fully qualified resource name into a resource path and validates that there is a
-   * project and database encoded in the path. There are no guarantees that a local path is also
+   * Decodes a fully qualified resource name into a resource path and validates
+   * that there is a
+   * project and database encoded in the path. There are no guarantees that a
+   * local path is also
    * encoded in this resource name.
    */
   private ResourcePath decodeResourceName(String encoded) {
@@ -178,7 +183,10 @@ public final class RemoteSerializer {
     return resource;
   }
 
-  /** Creates the prefix for a fully qualified resource path, without a local path on the end. */
+  /**
+   * Creates the prefix for a fully qualified resource path, without a local path
+   * on the end.
+   */
   private static ResourcePath encodedDatabaseId(DatabaseId databaseId) {
     return ResourcePath.fromSegments(
         Arrays.asList(
@@ -186,7 +194,8 @@ public final class RemoteSerializer {
   }
 
   /**
-   * Decodes a fully qualified resource name into a resource path and validates that there is a
+   * Decodes a fully qualified resource name into a resource path and validates
+   * that there is a
    * project and database encoded in the path along with a local path.
    */
   private static ResourcePath extractLocalPathFromResourceName(ResourcePath resourceName) {
@@ -197,7 +206,10 @@ public final class RemoteSerializer {
     return resourceName.popFirst(5);
   }
 
-  /** Validates that a path has a prefix that looks like a valid encoded databaseId. */
+  /**
+   * Validates that a path has a prefix that looks like a valid encoded
+   * databaseId.
+   */
   private static boolean isValidResourceName(ResourcePath path) {
     // Resource names have at least 4 components (project ID, database ID)
     // and commonly the (root) resource type, e.g. documents
@@ -219,8 +231,7 @@ public final class RemoteSerializer {
   // Documents
 
   public com.google.firestore.v1.Document encodeDocument(DocumentKey key, ObjectValue value) {
-    com.google.firestore.v1.Document.Builder builder =
-        com.google.firestore.v1.Document.newBuilder();
+    com.google.firestore.v1.Document.Builder builder = com.google.firestore.v1.Document.newBuilder();
     builder.setName(encodeKey(key));
     builder.putAllFields(value.getFieldsMap());
     return builder.build();
@@ -289,10 +300,9 @@ public final class RemoteSerializer {
   }
 
   public Mutation decodeMutation(com.google.firestore.v1.Write mutation) {
-    Precondition precondition =
-        mutation.hasCurrentDocument()
-            ? decodePrecondition(mutation.getCurrentDocument())
-            : Precondition.NONE;
+    Precondition precondition = mutation.hasCurrentDocument()
+        ? decodePrecondition(mutation.getCurrentDocument())
+        : Precondition.NONE;
 
     List<FieldTransform> fieldTransforms = new ArrayList<>();
     for (DocumentTransform.FieldTransform fieldTransform : mutation.getUpdateTransformsList()) {
@@ -329,8 +339,7 @@ public final class RemoteSerializer {
 
   private com.google.firestore.v1.Precondition encodePrecondition(Precondition precondition) {
     hardAssert(!precondition.isNone(), "Can't serialize an empty precondition");
-    com.google.firestore.v1.Precondition.Builder builder =
-        com.google.firestore.v1.Precondition.newBuilder();
+    com.google.firestore.v1.Precondition.Builder builder = com.google.firestore.v1.Precondition.newBuilder();
     if (precondition.getUpdateTime() != null) {
       return builder.setUpdateTime(encodeVersion(precondition.getUpdateTime())).build();
     } else if (precondition.getExists() != null) {
@@ -390,8 +399,7 @@ public final class RemoteSerializer {
           .setRemoveAllFromArray(ArrayValue.newBuilder().addAllValues(remove.getElements()))
           .build();
     } else if (transform instanceof NumericIncrementTransformOperation) {
-      NumericIncrementTransformOperation incrementOperation =
-          (NumericIncrementTransformOperation) transform;
+      NumericIncrementTransformOperation incrementOperation = (NumericIncrementTransformOperation) transform;
       return DocumentTransform.FieldTransform.newBuilder()
           .setFieldPath(fieldTransform.getFieldPath().canonicalString())
           .setIncrement(incrementOperation.getOperand())
@@ -405,8 +413,7 @@ public final class RemoteSerializer {
     switch (fieldTransform.getTransformTypeCase()) {
       case SET_TO_SERVER_VALUE:
         hardAssert(
-            fieldTransform.getSetToServerValue()
-                == DocumentTransform.FieldTransform.ServerValue.REQUEST_TIME,
+            fieldTransform.getSetToServerValue() == DocumentTransform.FieldTransform.ServerValue.REQUEST_TIME,
             "Unknown transform setToServerValue: %s",
             fieldTransform.getSetToServerValue());
         return new FieldTransform(
@@ -433,9 +440,12 @@ public final class RemoteSerializer {
 
   public MutationResult decodeMutationResult(
       com.google.firestore.v1.WriteResult proto, SnapshotVersion commitVersion) {
-    // NOTE: Deletes don't have an updateTime but the commit timestamp from the containing
-    // CommitResponse or WriteResponse indicates essentially that the delete happened no later than
-    // that. For our purposes we don't care exactly when the delete happened so long as we can tell
+    // NOTE: Deletes don't have an updateTime but the commit timestamp from the
+    // containing
+    // CommitResponse or WriteResponse indicates essentially that the delete
+    // happened no later than
+    // that. For our purposes we don't care exactly when the delete happened so long
+    // as we can tell
     // when an update on the watch stream is at or later than that change.
     SnapshotVersion version = decodeVersion(proto.getUpdateTime());
     if (SnapshotVersion.NONE.equals(version)) {
@@ -454,7 +464,8 @@ public final class RemoteSerializer {
 
   @Nullable
   public Map<String, String> encodeListenRequestLabels(TargetData targetData) {
-    @Nullable String value = encodeLabel(targetData.getPurpose());
+    @Nullable
+    String value = encodeLabel(targetData.getPurpose());
     if (value == null) {
       return null;
     }
@@ -471,6 +482,8 @@ public final class RemoteSerializer {
         return null;
       case EXISTENCE_FILTER_MISMATCH:
         return "existence-filter-mismatch";
+      case EXISTENCE_FILTER_MISMATCH_BLOOM:
+        return "existence-filter-mismatch-bloom";
       case LIMBO_RESOLUTION:
         return "limbo-document";
       default:
@@ -492,7 +505,8 @@ public final class RemoteSerializer {
 
     if (targetData.getResumeToken().isEmpty()
         && targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0) {
-      // TODO(wuandy): Consider removing above check because it is most likely true. Right now, many
+      // TODO(wuandy): Consider removing above check because it is most likely true.
+      // Right now, many
       // tests depend on this behaviour though (leaving min() out of serialization).
       builder.setReadTime(encodeTimestamp(targetData.getSnapshotVersion().getTimestamp()));
     } else {
@@ -649,11 +663,11 @@ public final class RemoteSerializer {
   private List<Filter> decodeFilters(StructuredQuery.Filter proto) {
     Filter result = decodeFilter(proto);
 
-    // Instead of a singletonList containing AND(F1, F2, ...), we can return a list containing F1,
+    // Instead of a singletonList containing AND(F1, F2, ...), we can return a list
+    // containing F1,
     // F2, ... to stay consistent with the older SDK versions.
     if (result instanceof com.google.firebase.firestore.core.CompositeFilter) {
-      com.google.firebase.firestore.core.CompositeFilter compositeFilter =
-          (com.google.firebase.firestore.core.CompositeFilter) result;
+      com.google.firebase.firestore.core.CompositeFilter compositeFilter = (com.google.firebase.firestore.core.CompositeFilter) result;
       if (compositeFilter.isFlatConjunction()) {
         return compositeFilter.getFilters();
       }
@@ -911,9 +925,8 @@ public final class RemoteSerializer {
           default:
             throw new IllegalArgumentException("Unknown target change type");
         }
-        watchChange =
-            new WatchTargetChange(
-                changeType, targetChange.getTargetIdsList(), targetChange.getResumeToken(), cause);
+        watchChange = new WatchTargetChange(
+            changeType, targetChange.getTargetIdsList(), targetChange.getResumeToken(), cause);
         break;
       case DOCUMENT_CHANGE:
         DocumentChange docChange = protoChange.getDocumentChange();
@@ -934,8 +947,7 @@ public final class RemoteSerializer {
         // Note that version might be unset in which case we use SnapshotVersion.NONE
         version = decodeVersion(docDelete.getReadTime());
         MutableDocument doc = MutableDocument.newNoDocument(key, version);
-        watchChange =
-            new WatchChange.DocumentChange(Collections.emptyList(), removed, doc.getKey(), doc);
+        watchChange = new WatchChange.DocumentChange(Collections.emptyList(), removed, doc.getKey(), doc);
         break;
       case DOCUMENT_REMOVE:
         DocumentRemove docRemove = protoChange.getDocumentRemove();
@@ -945,8 +957,7 @@ public final class RemoteSerializer {
         break;
       case FILTER:
         com.google.firestore.v1.ExistenceFilter protoFilter = protoChange.getFilter();
-        ExistenceFilter filter =
-            new ExistenceFilter(protoFilter.getCount(), protoFilter.getUnchangedNames());
+        ExistenceFilter filter = new ExistenceFilter(protoFilter.getCount(), protoFilter.getUnchangedNames());
         int targetId = protoFilter.getTargetId();
         watchChange = new ExistenceFilterWatchChange(targetId, filter);
         break;
@@ -959,8 +970,10 @@ public final class RemoteSerializer {
   }
 
   public SnapshotVersion decodeVersionFromListenResponse(ListenResponse watchChange) {
-    // We have only reached a consistent snapshot for the entire stream if there is a read_time set
-    // and it applies to all targets (i.e. the list of targets is empty). The backend is guaranteed
+    // We have only reached a consistent snapshot for the entire stream if there is
+    // a read_time set
+    // and it applies to all targets (i.e. the list of targets is empty). The
+    // backend is guaranteed
     // to send such responses.
     if (watchChange.getResponseTypeCase() != ResponseTypeCase.TARGET_CHANGE) {
       return SnapshotVersion.NONE;

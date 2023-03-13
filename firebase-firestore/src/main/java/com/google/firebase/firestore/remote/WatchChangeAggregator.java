@@ -75,10 +75,10 @@ public class WatchChangeAggregator {
   private Map<DocumentKey, Set<Integer>> pendingDocumentTargetMapping = new HashMap<>();
 
   /**
-   * A list of targets with existence filter mismatches. These targets are known to be inconsistent
+   * A map of targets with existence filter mismatches. These targets are known to be inconsistent
    * and their listens needs to be re-established by RemoteStore.
    */
-  private Set<Integer> pendingTargetResets = new HashSet<>();
+  private Map<Integer, QueryPurpose> pendingTargetResets = new HashMap<>();
 
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "WatchChangeAggregator";
@@ -214,7 +214,7 @@ public class WatchChangeAggregator {
             // If bloom filter application fails, we reset the mapping and
             // trigger re-run of the query.
             resetTarget(targetId);
-            pendingTargetResets.add(targetId);
+            pendingTargetResets.put(targetId, QueryPurpose.EXISTENCE_FILTER_MISMATCH);
           }
         }
       }
@@ -341,14 +341,14 @@ public class WatchChangeAggregator {
         new RemoteEvent(
             snapshotVersion,
             Collections.unmodifiableMap(targetChanges),
-            Collections.unmodifiableSet(pendingTargetResets),
+            Collections.unmodifiableMap(pendingTargetResets),
             Collections.unmodifiableMap(pendingDocumentUpdates),
             Collections.unmodifiableSet(resolvedLimboDocuments));
 
     // Re-initialize the current state to ensure that we do not modify the generated RemoteEvent.
     pendingDocumentUpdates = new HashMap<>();
     pendingDocumentTargetMapping = new HashMap<>();
-    pendingTargetResets = new HashSet<>();
+    pendingTargetResets = new HashMap<>();
 
     return remoteEvent;
   }
