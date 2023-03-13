@@ -20,7 +20,7 @@ package com.google.firebase.remoteconfig;
  *
  * <p>Calling {@link ConfigUpdateListenerRegistration#remove()} stops the listener from receiving
  * config updates and unregisters itself. If remove is called and no other listener registrations
- * remain, the connection to the Realtime RC backend is closed. Subsequently calling {@link
+ * remain, the connection to the Remote Config backend is closed. Subsequently calling {@link
  * com.google.firebase.remoteconfig.FirebaseRemoteConfig#addOnConfigUpdateListener} will re-open the
  * connection.
  */
