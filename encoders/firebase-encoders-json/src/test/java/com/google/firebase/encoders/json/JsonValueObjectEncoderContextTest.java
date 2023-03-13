@@ -220,6 +220,18 @@ public class JsonValueObjectEncoderContextTest {
   }
 
   @Test
+  public void testEncodingNumberedEnum() {
+    String result =
+        new JsonDataEncoderBuilder()
+            .build()
+            .encode(
+                new DummyEnum[] {
+                  DummyEnum.VALUE_1, DummyEnum.VALUE_2, DummyEnum.VALUE_1, DummyEnum.VALUE_1
+                });
+    assertThat(result).isEqualTo("[1,2,1,1]");
+  }
+
+  @Test
   public void testEncodingCollection() throws IOException {
     ObjectEncoder<InnerDummyClass> anotherObjectEncoder =
         (o, ctx) -> {

@@ -14,6 +14,7 @@
 
 plugins {
     id 'firebase-library'
+    id 'kotlin-android'
 }
 
 firebaseLibrary {
@@ -24,15 +25,18 @@ firebaseLibrary {
 android {
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
-      minSdkVersion project.minSdkVersion
-      targetSdkVersion project.targetSdkVersion
-      versionName version
-      testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        minSdkVersion project.minSdkVersion
+        targetSdkVersion project.targetSdkVersion
+        versionName version
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
     }
     testOptions {
         unitTests {
