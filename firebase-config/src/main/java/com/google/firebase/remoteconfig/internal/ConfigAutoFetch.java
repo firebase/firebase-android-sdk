@@ -83,6 +83,10 @@ public class ConfigAutoFetch {
     }
   }
 
+  private synchronized boolean isEventListenersEmpty() {
+    return this.eventListeners.isEmpty();
+  }
+
   private String parseAndValidateConfigUpdateMessage(String message) {
     int left = message.indexOf('{');
     int right = message.lastIndexOf('}');
@@ -147,6 +151,18 @@ public class ConfigAutoFetch {
                     FirebaseRemoteConfigException.Code.CONFIG_UPDATE_UNAVAILABLE));
             break;
           }
+
+          // If there's an invalidation message and no listeners, ignore the message and close the
+          // realtime stream connection. The next time the realtime connection is opened, the client
+          // will receive the same invalidation message and call any registered listeners.
+          //
+          // In effect, stop listening when the last listener is removed. This works around
+          // URLConnection.disconnect() being called by ConfigAutoFetch rather than
+          // ConfigRealtimeHttpClient.
+          if (this.isEventListenersEmpty()) {
+            break;
+          }
+
           if (jsonObject.has(TEMPLATE_VERSION_KEY)) {
             long oldTemplateVersion = configFetchHandler.getTemplateVersionNumber();
             long targetTemplateVersion = jsonObject.getLong(TEMPLATE_VERSION_KEY);
