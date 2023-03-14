@@ -76,7 +76,7 @@ dependencies {
 
     // In this test project we also need to explicitly declare these dependencies
     implementation project(':firebase-appdistribution-api')
-    implementation project(':firebase-common:ktx')
+    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
     implementation "com.google.android.gms:play-services-tasks:18.0.2"
 
     // Beta flavor uses the full implementation
