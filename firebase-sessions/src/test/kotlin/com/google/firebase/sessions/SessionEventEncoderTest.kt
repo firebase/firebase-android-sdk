@@ -57,6 +57,38 @@ class SessionEventEncoderTest {
   }
 
   @Test
+  fun sessionEvent_emptyValues_encodesToJson() {
+    val sessionEvent =
+      SessionEvent(
+        eventType = EventType.EVENT_TYPE_UNKNOWN,
+        sessionData =
+          SessionInfo(
+            sessionId = "",
+            firstSessionId = "",
+            sessionIndex = 0,
+          ),
+      )
+
+    val json = SESSION_EVENT_ENCODER.encode(sessionEvent)
+
+    assertThat(json)
+      .isEqualTo(
+        """
+        {
+          "event_type":0,
+          "session_data":{
+            "session_id":"",
+            "first_session_id":"",
+            "session_index":0
+          }
+        }
+        """
+          .lines()
+          .joinToString("") { it.trim() }
+      )
+  }
+
+  @Test
   fun eventType_numberedEnum_encodesToJson() {
     val json =
       SESSION_EVENT_ENCODER.encode(

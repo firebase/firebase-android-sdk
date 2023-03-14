@@ -30,7 +30,7 @@ class SessionEventTest {
         sessionIndex = 3,
       )
 
-    val sessionEvent = SessionEvents.sessionStart(sessionDetails)
+    val sessionEvent = SessionEvents.startSession(sessionDetails)
 
     assertThat(sessionEvent)
       .isEqualTo(

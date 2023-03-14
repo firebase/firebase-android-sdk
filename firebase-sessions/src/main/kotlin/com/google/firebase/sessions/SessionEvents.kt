@@ -54,7 +54,7 @@ internal object SessionEvents {
       .build()
 
   /** Construct a Session Start event */
-  fun sessionStart(sessionDetails: SessionDetails) =
+  fun startSession(sessionDetails: SessionDetails) =
     SessionEvent(
       eventType = EventType.SESSION_START,
       sessionData =
