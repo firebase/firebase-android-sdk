@@ -15,7 +15,6 @@
 package com.google.firebase.appdistribution.impl;
 
 import android.content.ContentResolver;
-import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.OpenableColumns;
@@ -39,16 +38,16 @@ class FeedbackSender {
   private static final String FILE_EXTENSION_PNG = ".png";
   private static final String DEFAULT_FILENAME = "screenshot.png";
 
-  private final Context applicationContext;
+  private final ContentResolver contentResolver;
   private final FirebaseAppDistributionTesterApiClient testerApiClient;
   @Lightweight private final Executor lightweightExecutor;
 
   @Inject
   FeedbackSender(
-      Context applicationContext,
+      ContentResolver contentResolver,
       FirebaseAppDistributionTesterApiClient testerApiClient,
       @Lightweight Executor lightweightExecutor) {
-    this.applicationContext = applicationContext;
+    this.contentResolver = contentResolver;
     this.testerApiClient = testerApiClient;
     this.lightweightExecutor = lightweightExecutor;
   }
@@ -92,7 +91,7 @@ class FeedbackSender {
     if (screenshotUri.getScheme().equals("file")) {
       contentType = getContentTypeForFilename(screenshotUri.getLastPathSegment());
     } else if (screenshotUri.getScheme().equals("content")) {
-      contentType = applicationContext.getContentResolver().getType(screenshotUri);
+      contentType = contentResolver.getType(screenshotUri);
     }
     if (contentType == null) {
       LogWrapper.w(
@@ -112,7 +111,6 @@ class FeedbackSender {
   }
 
   private String getContentFilename(Uri contentUri) {
-    ContentResolver contentResolver = applicationContext.getContentResolver();
     try (Cursor returnCursor =
         contentResolver.query(
             contentUri,
@@ -144,7 +142,7 @@ class FeedbackSender {
   }
 
   @Nullable
-  private String getContentTypeForFilename(String filename) {
+  private static String getContentTypeForFilename(String filename) {
     if (filename.endsWith(FILE_EXTENSION_JPG) || filename.endsWith(FILE_EXTENSION_JPEG)) {
       return CONTENT_TYPE_JPEG;
     } else if (filename.endsWith(FILE_EXTENSION_PNG)) {
