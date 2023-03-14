@@ -16,6 +16,8 @@
 
 package com.google.firebase.sessions
 
+import com.google.firebase.encoders.json.NumberedEnum
+
 /**
  * Contains the relevant information around a Firebase Session Event.
  *
@@ -29,23 +31,10 @@ internal data class SessionEvent(
 
   /** Information about the session triggering the event. */
   val sessionData: SessionInfo,
-) {
-  companion object {
-    fun sessionStart(sessionDetails: SessionDetails) =
-      SessionEvent(
-        eventType = EventType.SESSION_START,
-        sessionData =
-          SessionInfo(
-            sessionDetails.sessionId,
-            sessionDetails.firstSessionId,
-            sessionDetails.sessionIndex,
-          ),
-      )
-  }
-}
+)
 
 /** Enum denoting all possible session event types. */
-internal enum class EventType(val number: Int) {
+internal enum class EventType(override val number: Int) : NumberedEnum {
   EVENT_TYPE_UNKNOWN(0),
 
   /** This event type is fired as soon as a new session begins. */

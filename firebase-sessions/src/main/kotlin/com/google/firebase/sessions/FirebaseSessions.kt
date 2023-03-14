@@ -40,8 +40,8 @@ class FirebaseSessions internal constructor(firebaseApp: FirebaseApp) {
   fun greeting(): String = "Matt says hi!"
 
   private fun initiateSessionStart() {
-    val sessionState = sessionGenerator.generateNewSession()
-    val sessionEvent = SessionEvent.sessionStart(sessionState)
+    val sessionDetails = sessionGenerator.generateNewSession()
+    val sessionEvent = SessionEvents.startSession(sessionDetails)
 
     Log.i(TAG, "Initiate session start: $sessionEvent")
   }
