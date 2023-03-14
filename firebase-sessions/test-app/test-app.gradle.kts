@@ -31,12 +31,6 @@ android {
     versionName = "1.0"
     multiDexEnabled = true
   }
-  buildTypes {
-    release {
-      isMinifyEnabled = false
-      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-    }
-  }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
@@ -45,12 +39,11 @@ android {
 }
 
 dependencies {
+  // TODO(mrober): Remove when we have configurable deps on Crashlytics and Fireperf.
   implementation(project(":firebase-sessions"))
 
   implementation("androidx.appcompat:appcompat:1.6.1")
   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
   implementation("androidx.core:core-ktx:1.9.0")
   implementation("com.google.android.material:material:1.8.0")
-
-  testImplementation(libs.junit)
 }

@@ -16,4 +16,5 @@
 
 <resources>
   <string name="app_name">Firebase Sessions Test App</string>
+  <string name="firebase_greetings">Greetings from Firebase!</string>
 </resources>
