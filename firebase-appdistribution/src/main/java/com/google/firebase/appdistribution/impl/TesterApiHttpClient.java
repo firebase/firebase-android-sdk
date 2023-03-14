@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -102,12 +103,12 @@ class TesterApiHttpClient {
    *
    * @return the response body
    */
-  JSONObject makePostRequest(String tag, String path, String token, String requestBody)
+  JSONObject makeJsonPostRequest(String tag, String path, String token, String requestBody)
       throws FirebaseAppDistributionException {
-    return makePostRequest(tag, path, token, requestBody, new HashMap<>());
+    return makeJsonPostRequest(tag, path, token, requestBody, new HashMap<>());
   }
 
-  JSONObject makePostRequest(
+  JSONObject makeJsonPostRequest(
       String tag, String path, String token, String requestBody, Map<String, String> extraHeaders)
       throws FirebaseAppDistributionException {
     byte[] bytes;
@@ -118,7 +119,12 @@ class TesterApiHttpClient {
           "Unsupported encoding: " + UTF_8, Status.UNKNOWN, e);
     }
     return makePostRequest(
-        tag, path, token, extraHeaders, outputStream -> outputStream.write(bytes));
+        tag,
+        path,
+        token,
+        JSON_CONTENT_TYPE,
+        extraHeaders,
+        outputStream -> outputStream.write(bytes));
   }
 
   /**
@@ -128,25 +134,27 @@ class TesterApiHttpClient {
    *
    * @return the response body
    */
-  JSONObject makeUploadRequest(String tag, String path, String token, Uri contentUri)
+  JSONObject makeUploadRequest(
+      String tag, String path, String token, String filename, String contentType, Uri contentUri)
       throws FirebaseAppDistributionException {
     Map<String, String> extraHeaders = new HashMap<>();
+    ContentResolver contentResolver = applicationContext.getContentResolver();
     extraHeaders.put(X_GOOG_UPLOAD_PROTOCOL_HEADER, X_GOOG_UPLOAD_PROTOCOL_RAW);
-    extraHeaders.put(X_GOOG_UPLOAD_FILE_NAME_HEADER, X_GOOG_UPLOAD_FILE_NAME);
+    extraHeaders.put(X_GOOG_UPLOAD_FILE_NAME_HEADER, filename);
     RequestBodyWriter requestBodyWriter =
         outputStream -> {
-          try (InputStream inputStream =
-              applicationContext.getContentResolver().openInputStream(contentUri)) {
+          try (InputStream inputStream = contentResolver.openInputStream(contentUri)) {
             writeInputStreamToOutputStream(inputStream, outputStream);
           }
         };
-    return makePostRequest(tag, path, token, extraHeaders, requestBodyWriter);
+    return makePostRequest(tag, path, token, contentType, extraHeaders, requestBodyWriter);
   }
 
   private JSONObject makePostRequest(
       String tag,
       String path,
       String token,
+      String contentType,
       Map<String, String> extraHeaders,
       RequestBodyWriter requestBodyWriter)
       throws FirebaseAppDistributionException {
@@ -155,7 +163,7 @@ class TesterApiHttpClient {
       connection = openHttpsUrlConnection(getTesterApiUrl(path), token);
       connection.setDoOutput(true);
       connection.setRequestMethod(REQUEST_METHOD_POST);
-      connection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
+      connection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, contentType);
       for (Map.Entry<String, String> e : extraHeaders.entrySet()) {
         connection.addRequestProperty(e.getKey(), e.getValue());
       }

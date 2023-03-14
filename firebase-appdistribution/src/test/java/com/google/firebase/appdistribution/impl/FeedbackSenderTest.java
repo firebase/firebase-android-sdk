@@ -14,11 +14,15 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import static com.google.firebase.appdistribution.impl.FeedbackSender.CONTENT_TYPE_JPEG;
+import static com.google.firebase.appdistribution.impl.FeedbackSender.CONTENT_TYPE_PNG;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.robolectric.Shadows.shadowOf;
 
+import android.content.ContentProvider;
 import android.net.Uri;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
@@ -35,14 +39,15 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.shadows.ShadowContentResolver;
 
 @RunWith(RobolectricTestRunner.class)
 public class FeedbackSenderTest {
   private static final String TEST_RELEASE_NAME = "release-name";
   private static final String TEST_FEEDBACK_NAME = "feedback-name";
   private static final String TEST_FEEDBACK_TEXT = "Feedback text";
-  private static final Uri TEST_SCREENSHOT_URI =
-      Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
+  private static final String TEST_FILENAME_PNG = "test.png";
+  private static final Uri TEST_SCREENSHOT_URI_PNG = uriForFilename(TEST_FILENAME_PNG);
 
   @Blocking private final Executor blockingExecutor = TestOnlyExecutors.blocking();
   @Lightweight private final Executor lightweightExecutor = TestOnlyExecutors.lite();
@@ -54,25 +59,80 @@ public class FeedbackSenderTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks(this);
-    feedbackSender = new FeedbackSender(mockTesterApiClient, lightweightExecutor);
+    feedbackSender =
+        new FeedbackSender(
+            ApplicationProvider.getApplicationContext(), mockTesterApiClient, lightweightExecutor);
   }
 
   @Test
   public void sendFeedback_success() throws Exception {
     when(mockTesterApiClient.createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT))
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
-    when(mockTesterApiClient.attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI))
+    when(mockTesterApiClient.attachScreenshot(
+            TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI_PNG, TEST_FILENAME_PNG, CONTENT_TYPE_PNG))
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
     when(mockTesterApiClient.commitFeedback(TEST_FEEDBACK_NAME, FeedbackTrigger.CUSTOM))
         .thenReturn(Tasks.forResult(null));
 
     Task<Void> task =
         feedbackSender.sendFeedback(
-            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI, FeedbackTrigger.CUSTOM);
+            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI_PNG, FeedbackTrigger.CUSTOM);
     TestUtils.awaitTask(task);
 
     verify(mockTesterApiClient).createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT);
-    verify(mockTesterApiClient).attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI);
+    verify(mockTesterApiClient)
+        .attachScreenshot(
+            TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI_PNG, TEST_FILENAME_PNG, CONTENT_TYPE_PNG);
+    verify(mockTesterApiClient).commitFeedback(TEST_FEEDBACK_NAME, FeedbackTrigger.CUSTOM);
+  }
+
+  @Test
+  public void sendFeedbackJpg_success() throws Exception {
+    String jpegFilename = "test.jpg"; // jpg, not jpeg
+    Uri jpegUri = uriForFilename(jpegFilename);
+
+    when(mockTesterApiClient.createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT))
+        .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
+    when(mockTesterApiClient.attachScreenshot(
+        TEST_FEEDBACK_NAME, jpegUri, jpegFilename, CONTENT_TYPE_PNG))
+        .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
+    when(mockTesterApiClient.commitFeedback(TEST_FEEDBACK_NAME, FeedbackTrigger.CUSTOM))
+        .thenReturn(Tasks.forResult(null));
+
+    Task<Void> task =
+        feedbackSender.sendFeedback(
+            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, jpegUri, FeedbackTrigger.CUSTOM);
+    TestUtils.awaitTask(task);
+
+    verify(mockTesterApiClient).createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT);
+    verify(mockTesterApiClient)
+        .attachScreenshot(
+            TEST_FEEDBACK_NAME, jpegUri, jpegFilename, CONTENT_TYPE_JPEG);
+    verify(mockTesterApiClient).commitFeedback(TEST_FEEDBACK_NAME, FeedbackTrigger.CUSTOM);
+  }
+
+  @Test
+  public void sendFeedbackJpeg_success() throws Exception {
+    String jpegFilename = "test.jpeg"; // jpeg, not jpg
+    Uri jpegUri = uriForFilename(jpegFilename);
+
+    when(mockTesterApiClient.createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT))
+        .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
+    when(mockTesterApiClient.attachScreenshot(
+        TEST_FEEDBACK_NAME, jpegUri, jpegFilename, CONTENT_TYPE_PNG))
+        .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
+    when(mockTesterApiClient.commitFeedback(TEST_FEEDBACK_NAME, FeedbackTrigger.CUSTOM))
+        .thenReturn(Tasks.forResult(null));
+
+    Task<Void> task =
+        feedbackSender.sendFeedback(
+            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, jpegUri, FeedbackTrigger.CUSTOM);
+    TestUtils.awaitTask(task);
+
+    verify(mockTesterApiClient).createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT);
+    verify(mockTesterApiClient)
+        .attachScreenshot(
+            TEST_FEEDBACK_NAME, jpegUri, jpegFilename, CONTENT_TYPE_JPEG);
     verify(mockTesterApiClient).commitFeedback(TEST_FEEDBACK_NAME, FeedbackTrigger.CUSTOM);
   }
 
@@ -90,7 +150,7 @@ public class FeedbackSenderTest {
 
     verify(mockTesterApiClient).createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT);
     verify(mockTesterApiClient).commitFeedback(TEST_FEEDBACK_NAME, FeedbackTrigger.CUSTOM);
-    verify(mockTesterApiClient, never()).attachScreenshot(any(), any());
+    verify(mockTesterApiClient, never()).attachScreenshot(any(), any(), any(), any());
   }
 
   @Test
@@ -102,7 +162,7 @@ public class FeedbackSenderTest {
 
     Task<Void> task =
         feedbackSender.sendFeedback(
-            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI, FeedbackTrigger.CUSTOM);
+            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI_PNG, FeedbackTrigger.CUSTOM);
 
     TestUtils.awaitTaskFailure(task, Status.AUTHENTICATION_FAILURE, "test ex");
   }
@@ -113,12 +173,13 @@ public class FeedbackSenderTest {
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
     FirebaseAppDistributionException cause =
         new FirebaseAppDistributionException("test ex", Status.AUTHENTICATION_FAILURE);
-    when(mockTesterApiClient.attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI))
+    when(mockTesterApiClient.attachScreenshot(
+            TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI_PNG, TEST_FILENAME_PNG, CONTENT_TYPE_PNG))
         .thenReturn(Tasks.forException(cause));
 
     Task<Void> task =
         feedbackSender.sendFeedback(
-            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI, FeedbackTrigger.CUSTOM);
+            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI_PNG, FeedbackTrigger.CUSTOM);
 
     TestUtils.awaitTaskFailure(task, Status.AUTHENTICATION_FAILURE, "test ex");
   }
@@ -127,7 +188,8 @@ public class FeedbackSenderTest {
   public void sendFeedback_commitFeedbackFails_failsTask() {
     when(mockTesterApiClient.createFeedback(TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT))
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
-    when(mockTesterApiClient.attachScreenshot(TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI))
+    when(mockTesterApiClient.attachScreenshot(
+            TEST_FEEDBACK_NAME, TEST_SCREENSHOT_URI_PNG, TEST_FILENAME_PNG, CONTENT_TYPE_PNG))
         .thenReturn(Tasks.forResult(TEST_FEEDBACK_NAME));
     FirebaseAppDistributionException cause =
         new FirebaseAppDistributionException("test ex", Status.AUTHENTICATION_FAILURE);
@@ -136,8 +198,12 @@ public class FeedbackSenderTest {
 
     Task<Void> task =
         feedbackSender.sendFeedback(
-            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI, FeedbackTrigger.CUSTOM);
+            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI_PNG, FeedbackTrigger.CUSTOM);
 
     TestUtils.awaitTaskFailure(task, Status.AUTHENTICATION_FAILURE, "test ex");
+  }
+
+  private static Uri uriForFilename(String filename) {
+    return Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath(filename));
   }
 }
