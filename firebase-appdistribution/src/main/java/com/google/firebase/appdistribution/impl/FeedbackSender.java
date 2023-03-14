@@ -79,11 +79,12 @@ class FeedbackSender {
                   screenshotUri),
               Status.UNKNOWN));
     }
+    String contentType = getContentType(screenshotUri);
     return testerApiClient.attachScreenshot(
         feedbackName,
         screenshotUri,
-        getScreenshotFilename(screenshotUri),
-        getContentType(screenshotUri));
+        getScreenshotFilename(screenshotUri, contentType),
+        contentType);
   }
 
   private String getContentType(Uri screenshotUri) {
@@ -102,15 +103,15 @@ class FeedbackSender {
     return contentType;
   }
 
-  private String getScreenshotFilename(Uri screenshotUri) {
+  private String getScreenshotFilename(Uri screenshotUri, String contentType) {
     if (screenshotUri.getScheme().equals("file")) {
       return screenshotUri.getLastPathSegment();
     } else {
-      return getContentFilename(screenshotUri);
+      return getContentFilename(screenshotUri, contentType);
     }
   }
 
-  private String getContentFilename(Uri contentUri) {
+  private String getContentFilename(Uri contentUri, String contentType) {
     try (Cursor returnCursor =
         contentResolver.query(
             contentUri,
@@ -121,10 +122,8 @@ class FeedbackSender {
       if (returnCursor == null) {
         LogWrapper.w(
             TAG,
-            String.format(
-                "Unable to get filename from URI '%s', using default '%s'",
-                contentUri, DEFAULT_FILENAME));
-        return DEFAULT_FILENAME;
+            String.format("Unable to get filename from URI '%s', using content type", contentUri));
+        return getDefaultFilename(contentType);
       }
       int nameIndex = returnCursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
       returnCursor.moveToFirst();
@@ -133,11 +132,23 @@ class FeedbackSender {
     } catch (Exception e) {
       LogWrapper.e(
           TAG,
-          String.format(
-              "Error getting filename from URI '%s', using default '%s'",
-              contentUri, DEFAULT_FILENAME),
+          String.format("Error getting filename from URI '%s', using content type", contentUri),
           e);
-      return DEFAULT_FILENAME;
+      return getDefaultFilename(contentType);
+    }
+  }
+
+  private String getDefaultFilename(String contentType) {
+    if (contentType.equals(CONTENT_TYPE_JPEG)) {
+      return "screenshot.jpg";
+    } else if (contentType.equals(CONTENT_TYPE_PNG)) {
+      return "screenshot.png";
+    } else {
+      LogWrapper.w(
+          TAG,
+          String.format(
+              "Unexpected content type '%s', using filename without extension", contentType));
+      return "screenshot";
     }
   }
 

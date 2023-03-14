@@ -142,7 +142,7 @@ public class FeedbackSenderTest {
   }
 
   @Test
-  public void sendFeedbackContentNoFilename_usesDefaultFilename() throws Exception {
+  public void sendFeedbackContentPngNoFilename() throws Exception {
     Uri contentUri = Uri.parse("content://some/path");
     when(mockContentResolver.query(eq(contentUri), any(), any(), any(), any())).thenReturn(null);
     when(mockContentResolver.getType(contentUri)).thenReturn(CONTENT_TYPE_PNG);
@@ -153,6 +153,20 @@ public class FeedbackSenderTest {
     TestUtils.awaitTask(task);
 
     verifyTesterApiCalls(contentUri, "screenshot.png", CONTENT_TYPE_PNG);
+  }
+
+  @Test
+  public void sendFeedbackContentJpgNoFilename() throws Exception {
+    Uri contentUri = Uri.parse("content://some/path");
+    when(mockContentResolver.query(eq(contentUri), any(), any(), any(), any())).thenReturn(null);
+    when(mockContentResolver.getType(contentUri)).thenReturn(CONTENT_TYPE_JPEG);
+
+    Task<Void> task =
+        feedbackSender.sendFeedback(
+            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, contentUri, FeedbackTrigger.CUSTOM);
+    TestUtils.awaitTask(task);
+
+    verifyTesterApiCalls(contentUri, "screenshot.jpg", CONTENT_TYPE_JPEG);
   }
 
   @Test
