@@ -31,6 +31,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -1071,8 +1072,6 @@ public class QueryTest {
     assertEquals(snapshot2.size(), 50);
   }
 
-  // TODO(orquery): Enable this test when prod supports OR queries.
-  @Ignore
   @Test
   public void testOrQueries() {
     Map<String, Map<String, Object>> testDocs =

@@ -56,8 +56,8 @@ public final class RemoteEvent {
   }
 
   /**
-   * A map of targets that is known to be inconsistent, and the purpose for re-listening. Listens
-   * for these targets should be re-established without resume tokens.
+   * Returns a map of targets that is known to be inconsistent, and the purpose for re-listening.
+   * Listens for these targets should be re-established without resume tokens.
    */
   public Map<Integer, QueryPurpose> getTargetMismatches() {
     return targetMismatches;
