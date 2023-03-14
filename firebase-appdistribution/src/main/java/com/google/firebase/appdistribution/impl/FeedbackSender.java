@@ -94,13 +94,14 @@ class FeedbackSender {
     } else if (screenshotUri.getScheme().equals("content")) {
       contentType = contentResolver.getType(screenshotUri);
     }
-    if (contentType == null) {
-      LogWrapper.w(
-          TAG,
-          String.format("Could not get content type for URI %s. Assuming PNG.", screenshotUri));
-      return CONTENT_TYPE_PNG;
+
+    if (contentType != null) {
+      return contentType;
     }
-    return contentType;
+
+    LogWrapper.w(
+        TAG, String.format("Could not get content type for URI %s. Assuming PNG.", screenshotUri));
+    return CONTENT_TYPE_PNG;
   }
 
   private String getScreenshotFilename(Uri screenshotUri, String contentType) {
