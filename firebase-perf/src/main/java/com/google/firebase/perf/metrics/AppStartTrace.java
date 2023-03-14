@@ -418,10 +418,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
           .setClientStartTimeUs(onCreateTime.getMicros())
           .setDurationUs(onCreateTime.getDurationMicros(onStartTime));
       subtraces.add(traceMetricBuilder.build());
-    }
 
-    // onResumeTime is not captured in all situations, so checking for valid value before using it.
-    if (onResumeTime != null) {
       traceMetricBuilder = TraceMetric.newBuilder();
       traceMetricBuilder
           .setName(Constants.TraceNames.ON_RESUME_TRACE_NAME.toString())
