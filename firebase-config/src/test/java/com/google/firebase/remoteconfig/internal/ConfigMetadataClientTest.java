@@ -143,6 +143,58 @@ public class ConfigMetadataClientTest {
   }
 
   @Test
+  public void getLastTemplateVersion_isNotSet_returnsDefault() {
+    assertThat(metadataClient.getLastTemplateVersion()).isEqualTo(0);
+  }
+
+  @Test
+  public void getLastTemplateVersion_isSet_returnsTemplateVersion() {
+    metadataClient.setLastTemplateVersion(1);
+    assertThat(metadataClient.getLastTemplateVersion()).isEqualTo(1);
+  }
+
+  @Test
+  public void getRealtimeBackoffMetadata_isNotSet_returnsNoFailedStreamsAndNotThrottled() {
+    ConfigMetadataClient.RealtimeBackoffMetadata defaultRealtimeBackoffMetadata =
+        metadataClient.getRealtimeBackoffMetadata();
+
+    assertThat(defaultRealtimeBackoffMetadata.getNumFailedStreams()).isEqualTo(NO_FAILED_FETCHES);
+    assertThat(defaultRealtimeBackoffMetadata.getBackoffEndTime()).isEqualTo(NO_BACKOFF_TIME);
+  }
+
+  @Test
+  public void getRealtimeBackoffMetadata_hasValues_returnsValues() {
+    int numFailedStreams = 5;
+    Date backoffEndTime = new Date(1000L);
+    metadataClient.setRealtimeBackoffMetadata(numFailedStreams, backoffEndTime);
+
+    ConfigMetadataClient.RealtimeBackoffMetadata backoffMetadata =
+        metadataClient.getRealtimeBackoffMetadata();
+
+    assertThat(backoffMetadata.getNumFailedStreams()).isEqualTo(numFailedStreams);
+    assertThat(backoffMetadata.getBackoffEndTime()).isEqualTo(backoffEndTime);
+  }
+
+  @Test
+  public void resetRealtimeBackoff_hasValues_clearsAllValues() {
+    metadataClient.setRealtimeBackoffMetadata(
+        /*numFailedStreams=*/ 5, /*backoffEndTime=*/ new Date(1000L));
+
+    ConfigMetadataClient.RealtimeBackoffMetadata realtimeBackoffMetadata =
+        metadataClient.getRealtimeBackoffMetadata();
+    Preconditions.checkArgument(realtimeBackoffMetadata.getNumFailedStreams() != NO_FAILED_FETCHES);
+    Preconditions.checkArgument(
+        !realtimeBackoffMetadata.getBackoffEndTime().equals(NO_BACKOFF_TIME));
+
+    metadataClient.resetRealtimeBackoff();
+
+    ConfigMetadataClient.RealtimeBackoffMetadata resetMetadata =
+        metadataClient.getRealtimeBackoffMetadata();
+    assertThat(resetMetadata.getNumFailedStreams()).isEqualTo(NO_FAILED_FETCHES);
+    assertThat(resetMetadata.getBackoffEndTime()).isEqualTo(NO_BACKOFF_TIME);
+  }
+
+  @Test
   public void getBackoffMetadata_isNotSet_returnsNoFailedFetchesAndNotThrottled() {
     BackoffMetadata defaultBackoffMetadata = metadataClient.getBackoffMetadata();
 
