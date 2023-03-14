@@ -34,4 +34,21 @@ public class FirebaseRemoteConfigClientException extends FirebaseRemoteConfigExc
       @NonNull String detailMessage, @Nullable Throwable cause) {
     super(detailMessage, cause);
   }
+
+  /**
+   * Creates a Firebase Remote Config client exception with the given message and
+   * FirebaseRemoteConfigException code.
+   */
+  public FirebaseRemoteConfigClientException(@NonNull String detailMessage, @NonNull Code code) {
+    super(detailMessage, code);
+  }
+
+  /**
+   * Creates a Firebase Remote Config client exception with the given message, exception cause, and
+   * FirebaseRemoteConfigException code.
+   */
+  public FirebaseRemoteConfigClientException(
+      @NonNull String detailMessage, @Nullable Throwable cause, @NonNull Code code) {
+    super(detailMessage, cause, code);
+  }
 }
