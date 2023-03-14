@@ -15,7 +15,10 @@
 package com.google.firebase.remoteconfig.internal;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -31,6 +34,7 @@ public class ConfigContainer {
   static final String FETCH_TIME_KEY = "fetch_time_key";
   static final String ABT_EXPERIMENTS_KEY = "abt_experiments_key";
   static final String PERSONALIZATION_METADATA_KEY = "personalization_metadata_key";
+  static final String TEMPLATE_VERSION_NUMBER_KEY = "template_version_number_key";
 
   private static final Date DEFAULTS_FETCH_TIME = new Date(0L);
 
@@ -55,6 +59,8 @@ public class ConfigContainer {
 
   private JSONObject personalizationMetadata;
 
+  private long templateVersionNumber;
+
   /**
    * Creates a new container with the specified configs and fetch time.
    *
@@ -64,18 +70,21 @@ public class ConfigContainer {
       JSONObject configsJson,
       Date fetchTime,
       JSONArray abtExperiments,
-      JSONObject personalizationMetadata)
+      JSONObject personalizationMetadata,
+      long templateVersionNumber)
       throws JSONException {
     JSONObject containerJson = new JSONObject();
     containerJson.put(CONFIGS_KEY, configsJson);
     containerJson.put(FETCH_TIME_KEY, fetchTime.getTime());
     containerJson.put(ABT_EXPERIMENTS_KEY, abtExperiments);
     containerJson.put(PERSONALIZATION_METADATA_KEY, personalizationMetadata);
+    containerJson.put(TEMPLATE_VERSION_NUMBER_KEY, templateVersionNumber);
 
     this.configsJson = configsJson;
     this.fetchTime = fetchTime;
     this.abtExperiments = abtExperiments;
     this.personalizationMetadata = personalizationMetadata;
+    this.templateVersionNumber = templateVersionNumber;
 
     this.containerJson = containerJson;
   }
@@ -83,7 +92,7 @@ public class ConfigContainer {
   /**
    * Returns a {@link ConfigContainer} that wraps the {@code containerJson}.
    *
-   * <p>The {@code containerJson} must not be modified.
+   * <p>This is a shallow copy so {@code containerJson} must not be modified.
    */
   static ConfigContainer copyOf(JSONObject containerJson) throws JSONException {
     // Personalization metadata may not have been written yet.
@@ -97,7 +106,19 @@ public class ConfigContainer {
         containerJson.getJSONObject(CONFIGS_KEY),
         new Date(containerJson.getLong(FETCH_TIME_KEY)),
         containerJson.getJSONArray(ABT_EXPERIMENTS_KEY),
-        personalizationMetadataJSON);
+        personalizationMetadataJSON,
+        // Default to 0 if template_version_number_key has not been cached yet.
+        containerJson.optLong(TEMPLATE_VERSION_NUMBER_KEY));
+  }
+
+  /**
+   * Returns a new {@link ConfigContainer} containing a deep copy of {@code containerJson}.
+   *
+   * <p>This is a deep copy so it may be modified without affecting the original.
+   */
+  private static ConfigContainer deepCopyOf(JSONObject containerJson) throws JSONException {
+    JSONObject deepCopyJson = new JSONObject(containerJson.toString());
+    return ConfigContainer.copyOf(deepCopyJson);
   }
 
   /**
@@ -125,6 +146,10 @@ public class ConfigContainer {
     return personalizationMetadata;
   }
 
+  public long getTemplateVersionNumber() {
+    return templateVersionNumber;
+  }
+
   @Override
   public String toString() {
     return containerJson.toString();
@@ -143,6 +168,64 @@ public class ConfigContainer {
     return containerJson.toString().equals(that.toString());
   }
 
+  /**
+   * @param other The other {@link ConfigContainer} against which to compute the diff
+   * @return The set of config keys that have changed between the this config and {@code other}
+   * @throws JSONException
+   */
+  public Set<String> getChangedParams(ConfigContainer other) throws JSONException {
+    // Make a deep copy of the other config before modifying it
+    JSONObject otherConfig = ConfigContainer.deepCopyOf(other.containerJson).getConfigs();
+
+    Set<String> changed = new HashSet<>();
+    Iterator<String> keys = this.getConfigs().keys();
+    while (keys.hasNext()) {
+      String key = keys.next();
+
+      // If the other config doesn't have the key
+      if (!other.getConfigs().has(key)) {
+        changed.add(key);
+        continue;
+      }
+
+      // If the other config has a different value for the key
+      if (!this.getConfigs().get(key).equals(other.getConfigs().get(key))) {
+        changed.add(key);
+        continue;
+      }
+
+      // If only one of the configs has PersonalizationMetadata for the key
+      if (this.getPersonalizationMetadata().has(key) && !other.getPersonalizationMetadata().has(key)
+          || !this.getPersonalizationMetadata().has(key)
+              && other.getPersonalizationMetadata().has(key)) {
+        changed.add(key);
+        continue;
+      }
+
+      // If the both configs have PersonalizationMetadata for the key, but the metadata has changed
+      if (this.getPersonalizationMetadata().has(key)
+          && other.getPersonalizationMetadata().has(key)
+          && !this.getPersonalizationMetadata()
+              .getJSONObject(key)
+              .toString()
+              .equals(other.getPersonalizationMetadata().getJSONObject(key).toString())) {
+        changed.add(key);
+        continue;
+      }
+
+      // Since the key is the same in both configs, remove it from otherConfig
+      otherConfig.remove(key);
+    }
+
+    // Add all the keys from other that are different
+    Iterator<String> remainingOtherKeys = otherConfig.keys();
+    while (remainingOtherKeys.hasNext()) {
+      changed.add(remainingOtherKeys.next());
+    }
+
+    return changed;
+  }
+
   @Override
   public int hashCode() {
     return containerJson.hashCode();
@@ -154,12 +237,14 @@ public class ConfigContainer {
     private Date builderFetchTime;
     private JSONArray builderAbtExperiments;
     private JSONObject builderPersonalizationMetadata;
+    private long builderTemplateVersionNumber;
 
     private Builder() {
       builderConfigsJson = new JSONObject();
       builderFetchTime = DEFAULTS_FETCH_TIME;
       builderAbtExperiments = new JSONArray();
       builderPersonalizationMetadata = new JSONObject();
+      builderTemplateVersionNumber = 0L;
     }
 
     public Builder(ConfigContainer otherContainer) {
@@ -167,6 +252,7 @@ public class ConfigContainer {
       this.builderFetchTime = otherContainer.getFetchTime();
       this.builderAbtExperiments = otherContainer.getAbtExperiments();
       this.builderPersonalizationMetadata = otherContainer.getPersonalizationMetadata();
+      this.builderTemplateVersionNumber = otherContainer.getTemplateVersionNumber();
     }
 
     public Builder replaceConfigsWith(Map<String, String> configsMap) {
@@ -215,13 +301,19 @@ public class ConfigContainer {
       return this;
     }
 
+    public Builder withTemplateVersionNumber(long templateVersionNumber) {
+      this.builderTemplateVersionNumber = templateVersionNumber;
+      return this;
+    }
+
     /** If a fetch time is not provided, the defaults container fetch time is used. */
     public ConfigContainer build() throws JSONException {
       return new ConfigContainer(
           builderConfigsJson,
           builderFetchTime,
           builderAbtExperiments,
-          builderPersonalizationMetadata);
+          builderPersonalizationMetadata,
+          builderTemplateVersionNumber);
     }
   }
 
