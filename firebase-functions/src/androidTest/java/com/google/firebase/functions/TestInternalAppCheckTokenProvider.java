@@ -37,7 +37,7 @@ public class TestInternalAppCheckTokenProvider implements InternalAppCheckTokenP
 
           @Nullable
           @Override
-          public FirebaseException getError() {
+          public Exception getError() {
             return null;
           }
         };
@@ -54,7 +54,7 @@ public class TestInternalAppCheckTokenProvider implements InternalAppCheckTokenP
 
           @Nullable
           @Override
-          public FirebaseException getError() {
+          public Exception getError() {
             return new FirebaseException(error);
           }
         };
