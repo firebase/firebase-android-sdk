@@ -22,6 +22,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -1242,6 +1243,9 @@ public class Query {
    *
    * @return a query that performs aggregations on the documents in the result set of this query.
    */
+  // TODO(sumavg): Remove the `hide` and scope annotations.
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @NonNull
   public AggregateQuery aggregate(
       @NonNull AggregateField aggregateField, @NonNull AggregateField... aggregateFields) {
