@@ -231,7 +231,8 @@ public class Datastore {
         StructuredAggregationQuery.newBuilder();
     structuredAggregationQuery.setStructuredQuery(encodedQueryTarget.getStructuredQuery());
 
-    List<StructuredAggregationQuery.Aggregation> aggregations = new ArrayList<>();
+    // We use a Set here to automatically remove duplicates.
+    Set<StructuredAggregationQuery.Aggregation> aggregations = new HashSet<>();
     for (AggregateField aggregateField : aggregateFields) {
       StructuredAggregationQuery.Aggregation.Builder aggregation =
           StructuredAggregationQuery.Aggregation.newBuilder();
@@ -244,10 +245,10 @@ public class Datastore {
         aggregation.setCount(StructuredAggregationQuery.Aggregation.Count.getDefaultInstance());
       } else if (aggregateField instanceof AggregateField.SumAggregateField) {
         aggregation.setSum(
-            StructuredAggregationQuery.Aggregation.Sum.newBuilder().setField(fieldPath));
+            StructuredAggregationQuery.Aggregation.Sum.newBuilder().setField(fieldPath).build());
       } else if (aggregateField instanceof AggregateField.AverageAggregateField) {
         aggregation.setAvg(
-            StructuredAggregationQuery.Aggregation.Avg.newBuilder().setField(fieldPath));
+            StructuredAggregationQuery.Aggregation.Avg.newBuilder().setField(fieldPath).build());
       } else {
         throw new RuntimeException("Unsupported aggregation");
       }
