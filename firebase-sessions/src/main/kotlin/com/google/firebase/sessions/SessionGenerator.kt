@@ -36,35 +36,29 @@ internal data class SessionDetails(
  *
  * @hide
  */
-internal class SessionGenerator(private var collectEvents: Boolean) {
-  private var firstSessionId = ""
-  private var sessionIndex: Int = -1
+internal class SessionGenerator(
+  private val collectEvents: Boolean,
+  private val uuidGenerator: () -> UUID = UUID::randomUUID
+) {
+  private val firstSessionId = generateSessionId()
+  private var sessionIndex = -1
 
-  private var thisSession: SessionDetails =
-    SessionDetails(
-      sessionId = "",
-      firstSessionId = "",
-      collectEvents,
-      sessionIndex,
-    )
+  /** The current generated session, must not be accessed before calling [generateNewSession]. */
+  lateinit var currentSession: SessionDetails
+    private set
 
-  // Generates a new Session ID. If there was already a generated Session ID
-  // from the last session during the app's lifecycle, it will also set the last Session ID
+  /** Generates a new session. The first session's sessionId will match firstSessionId. */
   fun generateNewSession(): SessionDetails {
-    val newSessionId = UUID.randomUUID().toString().replace("-", "").lowercase()
-
-    // If firstSessionId is set, use it. Otherwise set it to the
-    // first generated Session ID
-    firstSessionId = firstSessionId.ifEmpty { newSessionId }
-
-    sessionIndex += 1
-
-    thisSession =
-      SessionDetails(sessionId = newSessionId, firstSessionId, collectEvents, sessionIndex)
-
-    return thisSession
+    sessionIndex++
+    currentSession =
+      SessionDetails(
+        sessionId = if (sessionIndex == 0) firstSessionId else generateSessionId(),
+        firstSessionId,
+        collectEvents,
+        sessionIndex,
+      )
+    return currentSession
   }
 
-  val currentSession: SessionDetails
-    get() = thisSession
+  private fun generateSessionId() = uuidGenerator().toString().replace("-", "").lowercase()
 }
