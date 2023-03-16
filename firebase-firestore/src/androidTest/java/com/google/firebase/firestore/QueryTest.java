@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
@@ -30,17 +31,18 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.common.collect.Lists;
 import com.google.firebase.firestore.Query.Direction;
+import com.google.firebase.firestore.remote.WatchChangeAggregatorTestingHooksAccessor;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -1033,43 +1035,151 @@ public class QueryTest {
   }
 
   @Test
-  public void resumingQueryShouldRemoveDeletedDocumentsIndicatedByExistenceFilter()
-      throws InterruptedException {
-    assumeFalse(
-        "Skip this test when running against the Firestore emulator as there is a bug related to "
-            + "sending existence filter in response: b/270731363.",
-        isRunningAgainstEmulator());
-
+  public void resumingAQueryShouldUseBloomFilterToAvoidFullRequery() throws Exception {
+    // Prepare the names and contents of the 100 documents to create.
     Map<String, Map<String, Object>> testData = new HashMap<>();
-    for (int i = 1; i <= 100; i++) {
-      testData.put("doc" + i, map("key", i));
+    for (int i = 0; i < 100; i++) {
+      testData.put("doc" + (1000 + i), map("key", 42));
     }
-    CollectionReference collection = testCollectionWithDocs(testData);
 
-    // Populate the cache and save the resume token.
-    QuerySnapshot snapshot1 = waitFor(collection.get());
-    assertEquals(snapshot1.size(), 100);
-    List<DocumentSnapshot> documents = snapshot1.getDocuments();
+    // Each iteration of the "while" loop below runs a single iteration of the test. The test will
+    // be run multiple times only if a bloom filter false positive occurs.
+    int attemptNumber = 0;
+    while (true) {
+      attemptNumber++;
 
-    // Delete 50 docs in transaction so that it doesn't affect local cache.
-    waitFor(
-        collection
-            .getFirestore()
-            .runTransaction(
-                transaction -> {
-                  for (int i = 1; i <= 50; i++) {
-                    DocumentReference docRef = documents.get(i).getReference();
-                    transaction.delete(docRef);
-                  }
-                  return null;
-                }));
+      // Create 100 documents in a new collection.
+      CollectionReference collection = testCollectionWithDocs(testData);
 
-    // Wait 10 seconds, during which Watch will stop tracking the query
-    // and will send an existence filter rather than "delete" events.
-    Thread.sleep(10000);
+      // Run a query to populate the local cache with the 100 documents and a resume token.
+      List<DocumentReference> createdDocuments = new ArrayList<>();
+      {
+        QuerySnapshot querySnapshot = waitFor(collection.get());
+        assertWithMessage("querySnapshot1").that(querySnapshot.size()).isEqualTo(100);
+        for (DocumentSnapshot documentSnapshot : querySnapshot.getDocuments()) {
+          createdDocuments.add(documentSnapshot.getReference());
+        }
+      }
 
-    QuerySnapshot snapshot2 = waitFor(collection.get());
-    assertEquals(snapshot2.size(), 50);
+      // Delete 50 of the 100 documents. Do this in a transaction, rather than
+      // DocumentReference.delete(), to avoid affecting the local cache.
+      HashSet<String> deletedDocumentIds = new HashSet<>();
+      waitFor(
+          collection
+              .getFirestore()
+              .runTransaction(
+                  transaction -> {
+                    for (int i = 0; i < createdDocuments.size(); i += 2) {
+                      DocumentReference documentToDelete = createdDocuments.get(i);
+                      transaction.delete(documentToDelete);
+                      deletedDocumentIds.add(documentToDelete.getId());
+                    }
+                    return null;
+                  }));
+
+      // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
+      // existence filter rather than "delete" events when the query is resumed.
+      Thread.sleep(10000);
+
+      // Resume the query and save the resulting snapshot for verification. Use some internal
+      // testing hooks to "capture" the existence filter mismatches to verify that Watch sent a
+      // bloom filter, and it was used to avert a full requery.
+      QuerySnapshot snapshot2;
+      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo
+          existenceFilterMismatchInfo;
+      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchAccumulator
+          existenceFilterMismatchAccumulator =
+              new WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchAccumulator();
+      existenceFilterMismatchAccumulator.register();
+      try {
+        snapshot2 = waitFor(collection.get());
+        // TODO(b/270731363): Remove the "if" condition below once the Firestore Emulator is fixed
+        //  to send an existence filter.
+        if (isRunningAgainstEmulator()) {
+          existenceFilterMismatchInfo = null;
+        } else {
+          existenceFilterMismatchInfo =
+              existenceFilterMismatchAccumulator.waitForExistenceFilterMismatch(
+                  /*timeoutMillis=*/ 5000);
+        }
+      } finally {
+        existenceFilterMismatchAccumulator.unregister();
+      }
+
+      // Verify that the snapshot from the resumed query contains the expected documents; that is,
+      // that it contains the 50 documents that were _not_ deleted.
+      // TODO(b/270731363): Remove the "if" condition below once the Firestore Emulator is fixed to
+      // send an existence filter. At the time of writing, the Firestore emulator fails to send an
+      // existence filter, resulting in the client including the deleted documents in the snapshot
+      // of the resumed query.
+      if (!(isRunningAgainstEmulator() && snapshot2.size() == 100)) {
+        HashSet<String> actualDocumentIds = new HashSet<>();
+        for (DocumentSnapshot documentSnapshot : snapshot2.getDocuments()) {
+          actualDocumentIds.add(documentSnapshot.getId());
+        }
+        HashSet<String> expectedDocumentIds = new HashSet<>();
+        for (DocumentReference documentRef : createdDocuments) {
+          if (!deletedDocumentIds.contains(documentRef.getId())) {
+            expectedDocumentIds.add(documentRef.getId());
+          }
+        }
+        assertWithMessage("snapshot2.docs")
+            .that(actualDocumentIds)
+            .containsExactlyElementsIn(expectedDocumentIds);
+      }
+
+      // Skip the verification of the existence filter mismatch when testing against the Firestore
+      // emulator because the Firestore emulator does not include the `unchanged_names` bloom filter
+      // when it sends ExistenceFilter messages. Some day the emulator _may_ implement this logic,
+      // at which time this short-circuit can be removed.
+      if (isRunningAgainstEmulator()) {
+        return;
+      }
+
+      // Verify that Watch sent an existence filter with the correct counts when the query was
+      // resumed.
+      assertWithMessage("Watch should have sent an existence filter")
+          .that(existenceFilterMismatchInfo)
+          .isNotNull();
+      assertWithMessage("localCacheCount")
+          .that(existenceFilterMismatchInfo.localCacheCount())
+          .isEqualTo(100);
+      assertWithMessage("existenceFilterCount")
+          .that(existenceFilterMismatchInfo.existenceFilterCount())
+          .isEqualTo(50);
+
+      // Skip the verification of the bloom filter when testing against production because the bloom
+      // filter is only implemented in nightly.
+      // TODO(b/271949433) Remove this "if" block once the bloom filter logic is deployed to
+      // production.
+      if (IntegrationTestUtil.getTargetBackend() != IntegrationTestUtil.TargetBackend.NIGHTLY) {
+        return;
+      }
+
+      // Verify that Watch sent a valid bloom filter.
+      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterBloomFilterInfo bloomFilter =
+          existenceFilterMismatchInfo.bloomFilter();
+      assertWithMessage("The bloom filter specified in the existence filter")
+          .that(bloomFilter)
+          .isNotNull();
+      assertWithMessage("hashCount").that(bloomFilter.hashCount()).isGreaterThan(0);
+      assertWithMessage("bitmapLength").that(bloomFilter.bitmapLength()).isGreaterThan(0);
+      assertWithMessage("padding").that(bloomFilter.padding()).isGreaterThan(0);
+      assertWithMessage("padding").that(bloomFilter.padding()).isLessThan(8);
+
+      // Verify that the bloom filter was successfully used to avert a full requery. If a false
+      // positive occurred then retry the entire test. Although statistically rare, false positives
+      // are expected to happen occasionally. When a false positive _does_ happen, just retry the
+      // test with a different set of documents. If that retry _also_ experiences a false positive,
+      // then fail the test because that is so improbable that something must have gone wrong.
+      if (attemptNumber == 1 && !bloomFilter.applied()) {
+        continue;
+      }
+
+      assertWithMessage("bloom filter successfully applied with attemptNumber=" + attemptNumber)
+          .that(bloomFilter.applied())
+          .isTrue();
+    }
   }
 
   @Test

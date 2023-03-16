@@ -229,6 +229,12 @@ public class WatchChangeAggregator {
 
             pendingTargetResets.put(targetId, purpose);
           }
+
+          WatchChangeAggregatorTestingHooks.notifyOnExistenceFilterMismatch(
+              WatchChangeAggregatorTestingHooks.ExistenceFilterMismatchInfo.from(
+                  status == BloomFilterApplicationStatus.SUCCESS,
+                  currentSize,
+                  watchChange.getExistenceFilter()));
         }
       }
     }
