@@ -549,7 +549,6 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     // mismatches.
     for (Map.Entry<Integer, QueryPurpose> entry : remoteEvent.getTargetMismatches().entrySet()) {
       int targetId = entry.getKey();
-
       TargetData targetData = this.listenTargets.get(targetId);
       // A watched target might have been removed already.
       if (targetData != null) {
