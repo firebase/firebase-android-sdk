@@ -24,7 +24,8 @@ import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 
-class FirebaseSessions internal constructor(firebaseApp: FirebaseApp, firebaseInstallations: FirebaseInstallationsApi) {
+class FirebaseSessions
+internal constructor(firebaseApp: FirebaseApp, firebaseInstallations: FirebaseInstallationsApi) {
   private val sessionGenerator = SessionGenerator(collectEvents = true)
 
   init {

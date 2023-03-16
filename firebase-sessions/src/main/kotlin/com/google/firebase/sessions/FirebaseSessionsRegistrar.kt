@@ -35,7 +35,12 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .name(LIBRARY_NAME)
         .add(Dependency.required(FirebaseApp::class.java))
         .add(Dependency.required(FirebaseInstallationsApi::class.java))
-        .factory { container -> FirebaseSessions(container.get(FirebaseApp::class.java), container.get(FirebaseInstallationsApi::class.java)) }
+        .factory { container ->
+          FirebaseSessions(
+            container.get(FirebaseApp::class.java),
+            container.get(FirebaseInstallationsApi::class.java)
+          )
+        }
         .eagerInDefaultApp()
         .build(),
       LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME)
