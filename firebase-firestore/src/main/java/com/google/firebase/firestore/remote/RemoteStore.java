@@ -547,7 +547,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
     // Re-establish listens for the targets that have been invalidated by existence filter
     // mismatches.
-    for (int targetId : remoteEvent.getTargetMismatches()) {
+    for (Map.Entry<Integer, QueryPurpose> entry : remoteEvent.getTargetMismatches().entrySet()) {
+      int targetId = entry.getKey();
       TargetData targetData = this.listenTargets.get(targetId);
       // A watched target might have been removed already.
       if (targetData != null) {
@@ -569,7 +570,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
                 targetData.getTarget(),
                 targetId,
                 targetData.getSequenceNumber(),
-                QueryPurpose.EXISTENCE_FILTER_MISMATCH);
+                /*purpose=*/ entry.getValue());
         this.sendWatchRequest(requestTargetData);
       }
     }

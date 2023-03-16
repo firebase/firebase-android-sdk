@@ -428,7 +428,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
           new RemoteEvent(
               SnapshotVersion.NONE,
               /* targetChanges= */ Collections.emptyMap(),
-              /* targetMismatches= */ Collections.emptySet(),
+              /* targetMismatches= */ Collections.emptyMap(),
               documentUpdates,
               limboDocuments);
       handleRemoteEvent(event);
