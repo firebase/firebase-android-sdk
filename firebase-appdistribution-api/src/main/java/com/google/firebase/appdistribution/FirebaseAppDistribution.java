@@ -43,7 +43,7 @@ public interface FirebaseAppDistribution {
    * following actions:
    *
    * <ol>
-   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI.
+   *   <li>If the tester is not signed in, presents the tester with a Google Sign-in UI.
    *   <li>Checks if a newer release is available. If so, presents the tester with a confirmation
    *       dialog to begin the download.
    *   <li>If the newest release is an APK, downloads the binary and starts an installation. If the
@@ -119,9 +119,9 @@ public interface FirebaseAppDistribution {
    * <p>Performs the following actions:
    *
    * <ol>
-   *   <li>Takes a screenshot of the current activity
-   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
-   *   <li>Starts a full screen activity for the tester to compose and submit the feedback
+   *   <li>Takes a screenshot of the current activity.
+   *   <li>If the tester is not signed in, presents the tester with a Google Sign-in UI.
+   *   <li>Starts a full screen activity for the tester to compose and submit the feedback.
    * </ol>
    *
    * @param additionalFormText string resource ID of text that will be shown to the tester before
@@ -137,9 +137,9 @@ public interface FirebaseAppDistribution {
    * <p>Performs the following actions:
    *
    * <ol>
-   *   <li>Takes a screenshot of the current activity
-   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
-   *   <li>Starts a full screen activity for the tester to compose and submit the feedback
+   *   <li>Takes a screenshot of the current activity.
+   *   <li>If the tester is not signed in, presents the tester with a Google Sign-in UI.
+   *   <li>Starts a full screen activity for the tester to compose and submit the feedback.
    * </ol>
    *
    * @param additionalFormText text that will be shown to the tester before they submit feedback. If
@@ -155,8 +155,8 @@ public interface FirebaseAppDistribution {
    * <p>Performs the following actions:
    *
    * <ol>
-   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
-   *   <li>Starts a full screen activity for the tester to compose and submit the feedback
+   *   <li>If the tester is not signed in, presents the tester with a Google Sign-in UI.
+   *   <li>Starts a full screen activity for the tester to compose and submit the feedback.
    * </ol>
    *
    * @param additionalFormText string resource ID of text that will be shown to the tester before
@@ -175,8 +175,8 @@ public interface FirebaseAppDistribution {
    * <p>Performs the following actions:
    *
    * <ol>
-   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
-   *   <li>Starts a full screen activity for the tester to compose and submit the feedback
+   *   <li>If the tester is not signed in, presents the tester with a Google Sign-in UI.
+   *   <li>Starts a full screen activity for the tester to compose and submit the feedback.
    * </ol>
    *
    * @param additionalFormText text that will be shown to the tester before they submit feedback. If
@@ -191,19 +191,19 @@ public interface FirebaseAppDistribution {
    * Displays a notification that, when tapped, will take a screenshot of the current activity, then
    * start a new activity to collect and submit feedback from the tester along with the screenshot.
    *
-   * <p>On Android 13 and above, this method requires the <a
-   * href="https://developer.android.com/develop/ui/views/notifications/notification-permission">runtime
-   * permission for sending notifications</a>: {@code POST_NOTIFICATIONS}. If your app targets
-   * Android 13 (API level 33) or above, you should <a
+   * <p>On Android 13 and above, this method requires the runtime permission for sending
+   * notifications: <a
+   * href="https://developer.android.com/develop/ui/views/notifications/notification-permission">{@code
+   * POST_NOTIFICATIONS}</a>. If your app targets Android 13 (API level 33) or above, you should <a
    * href="https://developer.android.com/training/permissions/requesting">request the
    * permission</a>.
    *
    * <p>When the notification is tapped:
    *
    * <ol>
-   *   <li>If the app is open, take a screenshot of the current activity
-   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
-   *   <li>Starts a full screen activity for the tester to compose and submit the feedback
+   *   <li>If the app is open, takes a screenshot of the current activity.
+   *   <li>If the tester is not signed in, presents the tester with a Google Sign-in UI.
+   *   <li>Starts a full screen activity for the tester to compose and submit the feedback.
    * </ol>
    *
    * @param additionalFormText string resource ID of text that will be shown to the tester before
@@ -211,8 +211,9 @@ public interface FirebaseAppDistribution {
    *     about collection and processing of their feedback data, you can use this text to provide
    *     such notice.
    * @param interruptionLevel the level of interruption for the feedback notification. On platforms
-   *     below Android 8, this corresponds to a notification channel importance and once set cannot
-   *     be changed except by the user.
+   *     below Android 8, this corresponds to a <a
+   *     href="https://developer.android.com/develop/ui/views/notifications/channels#importance">notification
+   *     channel importance</a> and once set cannot be changed except by the user.
    */
   void showFeedbackNotification(
       @StringRes int additionalFormText, @NonNull InterruptionLevel interruptionLevel);
@@ -221,32 +222,36 @@ public interface FirebaseAppDistribution {
    * Displays a notification that, when tapped, will take a screenshot of the current activity, then
    * start a new activity to collect and submit feedback from the tester along with the screenshot.
    *
-   * <p>On Android 13 and above, this method requires the <a
-   * href="https://developer.android.com/develop/ui/views/notifications/notification-permission">runtime
-   * permission for sending notifications</a>: {@code POST_NOTIFICATIONS}. If your app targets
-   * Android 13 (API level 33) or above, you should <a
+   * <p>On Android 13 and above, this method requires the runtime permission for sending
+   * notifications: <a
+   * href="https://developer.android.com/develop/ui/views/notifications/notification-permission">{@code
+   * POST_NOTIFICATIONS}</a>. If your app targets Android 13 (API level 33) or above, you should <a
    * href="https://developer.android.com/training/permissions/requesting">request the
    * permission</a>.
    *
    * <p>When the notification is tapped:
    *
    * <ol>
-   *   <li>If the app is open, take a screenshot of the current activity
-   *   <li>If tester is not signed in, presents the tester with a Google Sign-in UI
-   *   <li>Starts a full screen activity for the tester to compose and submit the feedback
+   *   <li>If the app is open, takes a screenshot of the current activity.
+   *   <li>If the tester is not signed in, presents the tester with a Google Sign-in UI.
+   *   <li>Starts a full screen activity for the tester to compose and submit the feedback.
    * </ol>
    *
    * @param additionalFormText text that will be shown to the tester before they submit feedback. If
    *     you’re a customer who would like to provide notice to your testers about collection and
    *     processing of their feedback data, you can use this text to provide such notice.
    * @param interruptionLevel the level of interruption for the feedback notification. On platforms
-   *     below Android 8, this corresponds to a notification channel importance and once set cannot
-   *     be changed except by the user.
+   *     below Android 8, this corresponds to a <a
+   *     href="https://developer.android.com/develop/ui/views/notifications/channels#importance">notification
+   *     channel importance</a> and once set cannot be changed except by the user.
    */
   void showFeedbackNotification(
       @NonNull CharSequence additionalFormText, @NonNull InterruptionLevel interruptionLevel);
 
-  /** Hides the notification shown with {@link #showFeedbackNotification}. */
+  /**
+   * Hides the notification shown with {@link #showFeedbackNotification(int, InterruptionLevel)} or
+   * {@link #showFeedbackNotification(CharSequence, InterruptionLevel)}.
+   */
   void cancelFeedbackNotification();
 
   /** Gets the singleton {@link FirebaseAppDistribution} instance. */
