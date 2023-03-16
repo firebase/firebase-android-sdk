@@ -245,7 +245,7 @@ public class WatchChangeAggregator {
     } catch (BloomFilterException e) {
       Logger.warn(
           LOG_TAG,
-          "Decoding the base64 bloom filter in existence filter failed ("
+          "Applying bloom filter failed: ("
               + e.getMessage()
               + "); ignoring the bloom filter and falling back to full re-query.");
       return false;

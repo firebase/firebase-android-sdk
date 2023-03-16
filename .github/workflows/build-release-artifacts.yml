@@ -8,7 +8,8 @@ on:
 
 jobs:
   build-artifacts:
-    runs-on: ubuntu-latest
+    # TODO(b/271315039) - Revert back to ubuntu when fixed
+    runs-on: macos-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
