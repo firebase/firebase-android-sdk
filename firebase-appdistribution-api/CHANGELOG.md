@@ -1,4 +1,5 @@
 # Unreleased
+* [feature] Adds support for attaching JPEG screenshots to tester feedback.
 
 # 16.0.0-beta06
 * [feature] Adds support for in-app tester feedback. To learn more, see
