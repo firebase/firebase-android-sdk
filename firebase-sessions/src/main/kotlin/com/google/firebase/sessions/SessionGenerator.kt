@@ -36,25 +36,29 @@ internal data class SessionDetails(
  *
  * @hide
  */
-internal class SessionGenerator(private val collectEvents: Boolean) {
+internal class SessionGenerator(
+  private val collectEvents: Boolean,
+  private val uuidGenerator: () -> UUID = UUID::randomUUID
+) {
   private val firstSessionId = generateSessionId()
-  private var sessionIndex = 0
+  private var sessionIndex = -1
 
-  var currentSession =
-    SessionDetails(sessionId = "", firstSessionId = "", collectEvents, sessionIndex = -1)
+  /** The current generated session, must not be accessed before calling [generateNewSession]. */
+  lateinit var currentSession: SessionDetails
     private set
 
   /** Generates a new session. The first session's sessionId will match firstSessionId. */
   fun generateNewSession(): SessionDetails {
+    sessionIndex++
     currentSession =
       SessionDetails(
         sessionId = if (sessionIndex == 0) firstSessionId else generateSessionId(),
         firstSessionId,
         collectEvents,
-        sessionIndex++,
+        sessionIndex,
       )
     return currentSession
   }
 
-  private fun generateSessionId() = UUID.randomUUID().toString().replace("-", "").lowercase()
+  private fun generateSessionId() = uuidGenerator().toString().replace("-", "").lowercase()
 }

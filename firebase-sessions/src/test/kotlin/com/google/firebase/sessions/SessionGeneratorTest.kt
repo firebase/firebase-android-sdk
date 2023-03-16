@@ -17,6 +17,7 @@
 package com.google.firebase.sessions
 
 import com.google.common.truth.Truth.assertThat
+import java.util.UUID
 import org.junit.Test
 
 class SessionGeneratorTest {
@@ -34,66 +35,119 @@ class SessionGeneratorTest {
   }
 
   // This test case isn't important behavior. Nothing should access
-  // currentSession before generateNewSession has been called. This test just
-  // ensures it has consistent behavior.
-  @Test
-  fun currentSession_beforeGenerateReturnsDefault() {
+  // currentSession before generateNewSession has been called.
+  @Test(expected = UninitializedPropertyAccessException::class)
+  fun currentSession_beforeGenerate_throwsUninitialized() {
     val sessionGenerator = SessionGenerator(collectEvents = false)
 
-    assertThat(sessionGenerator.currentSession.sessionId).isEqualTo("")
-    assertThat(sessionGenerator.currentSession.firstSessionId).isEqualTo("")
-    assertThat(sessionGenerator.currentSession.collectEvents).isFalse()
-    assertThat(sessionGenerator.currentSession.sessionIndex).isEqualTo(-1)
+    sessionGenerator.currentSession
   }
 
   @Test
-  fun generateNewSessionID_generatesValidSessionDetails() {
-    val sessionGenerator = SessionGenerator(collectEvents = true)
+  fun generateNewSession_generatesValidSessionIds() {
+    val sessionGenerator = SessionGenerator(collectEvents = true) // defaults to UUID::randomUUID
 
     sessionGenerator.generateNewSession()
 
     assertThat(isValidSessionId(sessionGenerator.currentSession.sessionId)).isTrue()
     assertThat(isValidSessionId(sessionGenerator.currentSession.firstSessionId)).isTrue()
-    assertThat(sessionGenerator.currentSession.firstSessionId)
-      .isEqualTo(sessionGenerator.currentSession.sessionId)
-    assertThat(sessionGenerator.currentSession.collectEvents).isTrue()
-    assertThat(sessionGenerator.currentSession.sessionIndex).isEqualTo(0)
+
+    // Validate several random session ids.
+    repeat(16) {
+      assertThat(isValidSessionId(sessionGenerator.generateNewSession().sessionId)).isTrue()
+    }
+  }
+
+  @Test
+  fun generateNewSession_generatesValidSessionDetails() {
+    val sessionGenerator = SessionGenerator(collectEvents = true, uuidGenerator = UUIDs()::next)
+
+    sessionGenerator.generateNewSession()
+
+    assertThat(isValidSessionId(sessionGenerator.currentSession.sessionId)).isTrue()
+    assertThat(isValidSessionId(sessionGenerator.currentSession.firstSessionId)).isTrue()
+
+    assertThat(sessionGenerator.currentSession)
+      .isEqualTo(
+        SessionDetails(
+          sessionId = SESSION_ID_1,
+          firstSessionId = SESSION_ID_1,
+          collectEvents = true,
+          sessionIndex = 0,
+        )
+      )
   }
 
   // Ensures that generating a Session ID multiple times results in the fist
   // Session ID being set in the firstSessionId field
   @Test
-  fun generateNewSessionID_incrementsSessionIndex_keepsFirstSessionId() {
-    val sessionGenerator = SessionGenerator(collectEvents = true)
+  fun generateNewSession_incrementsSessionIndex_keepsFirstSessionId() {
+    val sessionGenerator = SessionGenerator(collectEvents = true, uuidGenerator = UUIDs()::next)
 
-    sessionGenerator.generateNewSession()
-
-    val firstSessionDetails = sessionGenerator.currentSession
+    val firstSessionDetails = sessionGenerator.generateNewSession()
 
     assertThat(isValidSessionId(firstSessionDetails.sessionId)).isTrue()
     assertThat(isValidSessionId(firstSessionDetails.firstSessionId)).isTrue()
-    assertThat(firstSessionDetails.firstSessionId).isEqualTo(firstSessionDetails.sessionId)
-    assertThat(firstSessionDetails.sessionIndex).isEqualTo(0)
 
-    sessionGenerator.generateNewSession()
-    val secondSessionDetails = sessionGenerator.currentSession
+    assertThat(firstSessionDetails)
+      .isEqualTo(
+        SessionDetails(
+          sessionId = SESSION_ID_1,
+          firstSessionId = SESSION_ID_1,
+          collectEvents = true,
+          sessionIndex = 0,
+        )
+      )
+
+    val secondSessionDetails = sessionGenerator.generateNewSession()
 
     assertThat(isValidSessionId(secondSessionDetails.sessionId)).isTrue()
     assertThat(isValidSessionId(secondSessionDetails.firstSessionId)).isTrue()
-    // Ensure the new firstSessionId is equal to the first Session ID from earlier
-    assertThat(secondSessionDetails.firstSessionId).isEqualTo(firstSessionDetails.sessionId)
-    // Session Index should increase
-    assertThat(secondSessionDetails.sessionIndex).isEqualTo(1)
+
+    // Ensure the new firstSessionId is equal to the first sessionId, and sessionIndex increased
+    assertThat(secondSessionDetails)
+      .isEqualTo(
+        SessionDetails(
+          sessionId = SESSION_ID_2,
+          firstSessionId = SESSION_ID_1,
+          collectEvents = true,
+          sessionIndex = 1,
+        )
+      )
 
     // Do a third round just in case
-    sessionGenerator.generateNewSession()
-    val thirdSessionDetails = sessionGenerator.currentSession
+    val thirdSessionDetails = sessionGenerator.generateNewSession()
 
     assertThat(isValidSessionId(thirdSessionDetails.sessionId)).isTrue()
     assertThat(isValidSessionId(thirdSessionDetails.firstSessionId)).isTrue()
-    // Ensure the new firstSessionId is equal to the first Session ID from earlier
-    assertThat(thirdSessionDetails.firstSessionId).isEqualTo(firstSessionDetails.sessionId)
-    // Session Index should increase
-    assertThat(thirdSessionDetails.sessionIndex).isEqualTo(2)
+
+    assertThat(thirdSessionDetails)
+      .isEqualTo(
+        SessionDetails(
+          sessionId = SESSION_ID_3,
+          firstSessionId = SESSION_ID_1,
+          collectEvents = true,
+          sessionIndex = 2,
+        )
+      )
+  }
+
+  private class UUIDs(val names: List<String> = listOf(UUID_1, UUID_2, UUID_3)) {
+    var index = -1
+
+    fun next(): UUID {
+      index = (index + 1).coerceAtMost(names.size - 1)
+      return UUID.fromString(names[index])
+    }
+  }
+
+  @Suppress("SpellCheckingInspection") // UUIDs are not words.
+  companion object {
+    const val UUID_1 = "11111111-1111-1111-1111-111111111111"
+    const val SESSION_ID_1 = "11111111111111111111111111111111"
+    const val UUID_2 = "22222222-2222-2222-2222-222222222222"
+    const val SESSION_ID_2 = "22222222222222222222222222222222"
+    const val UUID_3 = "CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC"
+    const val SESSION_ID_3 = "cccccccccccccccccccccccccccccccc"
   }
 }
