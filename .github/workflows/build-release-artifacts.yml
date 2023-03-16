@@ -13,14 +13,11 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - task: JavaToolInstaller@0
-        displayName: 'Use Java 11'
-        inputs:
-          versionSpec: 11
-          jdkArchitectureOption: x64
-          jdkSourceOption: PreInstalled
-
       - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '11'
 
       - name: Perform gradle build
         run: |
