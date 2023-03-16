@@ -75,13 +75,20 @@ public class WatchChangeAggregator {
   private Map<DocumentKey, Set<Integer>> pendingDocumentTargetMapping = new HashMap<>();
 
   /**
-   * A list of targets with existence filter mismatches. These targets are known to be inconsistent
+   * A map of targets with existence filter mismatches. These targets are known to be inconsistent
    * and their listens needs to be re-established by RemoteStore.
    */
-  private Set<Integer> pendingTargetResets = new HashSet<>();
+  private Map<Integer, QueryPurpose> pendingTargetResets = new HashMap<>();
 
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "WatchChangeAggregator";
+
+  /** The bloom filter application status while handling existence filter mismatch. */
+  private enum BloomFilterApplicationStatus {
+    SUCCESS,
+    SKIPPED,
+    FALSE_POSITIVE
+  }
 
   public WatchChangeAggregator(TargetMetadataProvider targetMetadataProvider) {
     this.targetMetadataProvider = targetMetadataProvider;
@@ -208,31 +215,40 @@ public class WatchChangeAggregator {
         if (currentSize != expectedCount) {
 
           // Apply bloom filter to identify and mark removed documents.
-          boolean bloomFilterApplied = this.applyBloomFilter(watchChange, currentSize);
+          BloomFilterApplicationStatus status = this.applyBloomFilter(watchChange, currentSize);
 
-          if (!bloomFilterApplied) {
+          if (status != BloomFilterApplicationStatus.SUCCESS) {
             // If bloom filter application fails, we reset the mapping and
             // trigger re-run of the query.
             resetTarget(targetId);
-            pendingTargetResets.add(targetId);
+
+            QueryPurpose purpose =
+                status == BloomFilterApplicationStatus.FALSE_POSITIVE
+                    ? QueryPurpose.EXISTENCE_FILTER_MISMATCH_BLOOM
+                    : QueryPurpose.EXISTENCE_FILTER_MISMATCH;
+
+            pendingTargetResets.put(targetId, purpose);
           }
 
           WatchChangeAggregatorTestingHooks.notifyOnExistenceFilterMismatch(
               WatchChangeAggregatorTestingHooks.ExistenceFilterMismatchInfo.from(
-                  bloomFilterApplied, currentSize, watchChange.getExistenceFilter()));
+                  status == BloomFilterApplicationStatus.SUCCESS,
+                  currentSize,
+                  watchChange.getExistenceFilter()));
         }
       }
     }
   }
 
-  /** Returns whether a bloom filter removed the deleted documents successfully. */
-  private boolean applyBloomFilter(ExistenceFilterWatchChange watchChange, int currentCount) {
+  /** Apply bloom filter to remove the deleted documents, and return the application status. */
+  private BloomFilterApplicationStatus applyBloomFilter(
+      ExistenceFilterWatchChange watchChange, int currentCount) {
     int expectedCount = watchChange.getExistenceFilter().getCount();
     com.google.firestore.v1.BloomFilter unchangedNames =
         watchChange.getExistenceFilter().getUnchangedNames();
 
     if (unchangedNames == null || !unchangedNames.hasBits()) {
-      return false;
+      return BloomFilterApplicationStatus.SKIPPED;
     }
 
     byte[] bitmap = unchangedNames.getBits().getBitmap().toByteArray();
@@ -248,12 +264,20 @@ public class WatchChangeAggregator {
           "Applying bloom filter failed: ("
               + e.getMessage()
               + "); ignoring the bloom filter and falling back to full re-query.");
-      return false;
+      return BloomFilterApplicationStatus.SKIPPED;
+    }
+
+    if (bloomFilter.getBitCount() == 0) {
+      return BloomFilterApplicationStatus.SKIPPED;
     }
 
     int removedDocumentCount = this.filterRemovedDocuments(bloomFilter, watchChange.getTargetId());
 
-    return expectedCount == (currentCount - removedDocumentCount);
+    if (expectedCount != (currentCount - removedDocumentCount)) {
+      return BloomFilterApplicationStatus.FALSE_POSITIVE;
+    }
+
+    return BloomFilterApplicationStatus.SUCCESS;
   }
 
   /**
@@ -345,14 +369,14 @@ public class WatchChangeAggregator {
         new RemoteEvent(
             snapshotVersion,
             Collections.unmodifiableMap(targetChanges),
-            Collections.unmodifiableSet(pendingTargetResets),
+            Collections.unmodifiableMap(pendingTargetResets),
             Collections.unmodifiableMap(pendingDocumentUpdates),
             Collections.unmodifiableSet(resolvedLimboDocuments));
 
     // Re-initialize the current state to ensure that we do not modify the generated RemoteEvent.
     pendingDocumentUpdates = new HashMap<>();
     pendingDocumentTargetMapping = new HashMap<>();
-    pendingTargetResets = new HashSet<>();
+    pendingTargetResets = new HashMap<>();
 
     return remoteEvent;
   }

@@ -22,6 +22,11 @@ public enum QueryPurpose {
   /** The query was used to refill a query after an existence filter mismatch. */
   EXISTENCE_FILTER_MISMATCH,
 
+  /**
+   * The query target was used if the query is the result of a false positive in the bloom filter.
+   */
+  EXISTENCE_FILTER_MISMATCH_BLOOM,
+
   /** The query was used to resolve a limbo document. */
   LIMBO_RESOLUTION,
 }
