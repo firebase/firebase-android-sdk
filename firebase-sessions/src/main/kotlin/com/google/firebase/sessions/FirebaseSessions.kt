@@ -20,10 +20,11 @@ import android.app.Application
 import android.util.Log
 import androidx.annotation.Discouraged
 import com.google.firebase.FirebaseApp
+import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 
-class FirebaseSessions internal constructor(firebaseApp: FirebaseApp) {
+class FirebaseSessions internal constructor(firebaseApp: FirebaseApp, firebaseInstallations: FirebaseInstallationsApi) {
   private val sessionGenerator = SessionGenerator(collectEvents = true)
 
   init {
@@ -34,6 +35,7 @@ class FirebaseSessions internal constructor(firebaseApp: FirebaseApp) {
     } else {
       Log.w(TAG, "Failed to register lifecycle callbacks, unexpected context ${context.javaClass}.")
     }
+    Log.i(TAG, "Firebase Installations ID: ${firebaseInstallations.id}")
   }
 
   @Discouraged(message = "This will be replaced with a real API.")
