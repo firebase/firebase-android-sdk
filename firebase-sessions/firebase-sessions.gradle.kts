@@ -44,9 +44,12 @@ android {
 dependencies {
   implementation("com.google.firebase:firebase-encoders:17.0.0")
   implementation(project(":encoders:firebase-encoders-json"))
+  implementation("com.google.firebase:firebase-installations-interop:17.1.0")
   implementation("com.google.firebase:firebase-common-ktx:20.3.1")
   implementation("com.google.firebase:firebase-components:17.1.0")
   implementation(libs.androidx.annotation)
+
+  runtimeOnly("com.google.firebase:firebase-installations:17.1.3")
 
   testImplementation(libs.androidx.test.junit)
   testImplementation(libs.androidx.test.runner)

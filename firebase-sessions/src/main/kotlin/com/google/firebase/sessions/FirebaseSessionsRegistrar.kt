@@ -19,6 +19,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.components.Dependency
+import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.platforminfo.LibraryVersionComponent
 
 /**
@@ -33,7 +34,13 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
       Component.builder(FirebaseSessions::class.java)
         .name(LIBRARY_NAME)
         .add(Dependency.required(FirebaseApp::class.java))
-        .factory { container -> FirebaseSessions(container.get(FirebaseApp::class.java)) }
+        .add(Dependency.required(FirebaseInstallationsApi::class.java))
+        .factory { container ->
+          FirebaseSessions(
+            container.get(FirebaseApp::class.java),
+            container.get(FirebaseInstallationsApi::class.java)
+          )
+        }
         .eagerInDefaultApp()
         .build(),
       LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME)
