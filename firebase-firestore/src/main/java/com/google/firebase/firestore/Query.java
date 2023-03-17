@@ -1225,7 +1225,7 @@ public class Query {
    * not the documents' data, is downloaded. The returned query can even count the documents if the
    * result set would be prohibitively large to download entirely (e.g. thousands of documents).
    *
-   * @return a query that counts the documents in the result set of this query.
+   * @return The {@code AggregateQuery} that counts the documents in the result set of this query.
    */
   @NonNull
   public AggregateQuery count() {
@@ -1241,7 +1241,8 @@ public class Query {
    * the documents if the result set would be prohibitively large to download entirely (e.g.
    * thousands of documents).
    *
-   * @return a query that performs aggregations on the documents in the result set of this query.
+   * @return The {@code AggregateQuery} that performs aggregations on the documents in the result
+   *     set of this query.
    */
   // TODO(sumavg): Remove the `hide` and scope annotations.
   /** @hide */

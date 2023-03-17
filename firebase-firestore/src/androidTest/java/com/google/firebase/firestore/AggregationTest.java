@@ -15,7 +15,9 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.AggregateField.average;
+import static com.google.firebase.firestore.AggregateField.count;
 import static com.google.firebase.firestore.AggregateField.sum;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
@@ -30,10 +32,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.google.android.gms.tasks.Task;
+import com.google.common.truth.Truth;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
+import java.util.Collections;
 import java.util.Map;
 import org.junit.After;
 import org.junit.Ignore;
@@ -212,6 +219,44 @@ public class AggregationTest {
   }
 
   @Test
+  public void testAggregateQueryNotEquals() {
+    CollectionReference coll = testCollection("foo");
+
+    AggregateQuery query1 = coll.aggregate(AggregateField.count());
+    AggregateQuery query2 = coll.aggregate(sum("baz"));
+    AggregateQuery query3 = coll.aggregate(average("baz"));
+
+    assertFalse(query1.equals(query2));
+    assertFalse(query2.equals(query3));
+    assertFalse(query3.equals(query1));
+    assertNotEquals(query1.hashCode(), query2.hashCode());
+    assertNotEquals(query2.hashCode(), query3.hashCode());
+    assertNotEquals(query3.hashCode(), query1.hashCode());
+
+    AggregateQuery query4 =
+        coll.document("bar").collection("baz").whereEqualTo("a", 1).limit(100).aggregate(count());
+    AggregateQuery query5 =
+        coll.document("bar")
+            .collection("baz")
+            .whereEqualTo("a", 1)
+            .limit(100)
+            .aggregate(sum("baz"));
+    AggregateQuery query6 =
+        coll.document("bar")
+            .collection("baz")
+            .whereEqualTo("a", 1)
+            .limit(100)
+            .aggregate(average("baz"));
+
+    assertFalse(query4.equals(query5));
+    assertFalse(query5.equals(query6));
+    assertFalse(query6.equals(query4));
+    assertNotEquals(query4.hashCode(), query5.hashCode());
+    assertNotEquals(query5.hashCode(), query6.hashCode());
+    assertNotEquals(query6.hashCode(), query4.hashCode());
+  }
+
+  @Test
   public void testCanRunCountUsingAggregationMethod() {
     CollectionReference collection = testCollectionWithDocs(testDocs1);
 
@@ -286,15 +331,16 @@ public class AggregationTest {
     assertEquals((Double) 75.0, snapshot.getDouble(average("pages")));
   }
 
-    @Test
-    public void testTerminateDoesNotCrashWithFlyingAggregateQuery() {
-        CollectionReference collection = testCollectionWithDocs(testDocs1);
+  @Test
+  public void testTerminateDoesNotCrashWithFlyingAggregateQuery() {
+    CollectionReference collection = testCollectionWithDocs(testDocs1);
 
-        collection.aggregate(AggregateField.count(), sum("pages"), average("pages"))
-                                .get(AggregateSource.SERVER);
+    collection
+        .aggregate(AggregateField.count(), sum("pages"), average("pages"))
+        .get(AggregateSource.SERVER);
 
-        waitFor(collection.firestore.terminate());
-    }
+    waitFor(collection.firestore.terminate());
+  }
 
   @Test
   public void testCanGetCorrectTypeForSum() {
@@ -962,4 +1008,23 @@ public class AggregationTest {
     assertEquals(snapshot.get(AggregateField.count()), 4L);
   }
 
+  @Test
+  public void testAggregateFailWithGoodMessageIfMissingIndex() {
+    assumeFalse(
+        "Skip this test when running against the Firestore emulator because the Firestore emulator "
+            + "does not use indexes and never fails with a 'missing index' error",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection = testCollectionWithDocs(Collections.emptyMap());
+    Query compositeIndexQuery = collection.whereEqualTo("field1", 42).whereLessThan("field2", 99);
+    AggregateQuery compositeIndexCountQuery =
+        compositeIndexQuery.aggregate(AggregateField.count(), sum("pages"), average("pages"));
+    Task<AggregateQuerySnapshot> task = compositeIndexCountQuery.get(AggregateSource.SERVER);
+
+    Throwable throwable = assertThrows(Throwable.class, () -> waitFor(task));
+
+    Throwable cause = throwable.getCause();
+    Truth.assertThat(cause).hasMessageThat().ignoringCase().contains("index");
+    Truth.assertThat(cause).hasMessageThat().contains("https://console.firebase.google.com");
+  }
 }
