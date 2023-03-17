@@ -1,4 +1,5 @@
 # Unreleased
+* [fixed] Fixed error inflating imageview #4766
 
 # 20.3.1
 * [fixed] Fixed nullpointer crash #4214
