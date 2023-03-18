@@ -381,6 +381,14 @@ class FirebaseAppDistributionImpl implements FirebaseAppDistribution {
       @NonNull CharSequence additionalFormText,
       @Nullable Uri screenshotUri,
       FeedbackTrigger trigger) {
+    if (!screenshotUri.getScheme().equals("content") && !screenshotUri.getScheme().equals("file")) {
+      LogWrapper.e(
+          TAG,
+          String.format(
+              "Screenshot URI %s was not a content or file URI. Not starting feedback.",
+              screenshotUri));
+      return;
+    }
     if (!feedbackInProgress.compareAndSet(/* expect= */ false, /* update= */ true)) {
       LogWrapper.i(TAG, "Ignoring startFeedback() call because feedback is already in progress");
       return;
