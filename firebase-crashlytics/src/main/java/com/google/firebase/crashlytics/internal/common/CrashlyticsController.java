@@ -22,6 +22,8 @@ import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
+import android.util.Base64;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.SuccessContinuation;
@@ -39,9 +41,12 @@ import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -69,6 +74,13 @@ class CrashlyticsController {
   static final int FIREBASE_CRASH_TYPE_FATAL = 1;
 
   private static final String GENERATOR_FORMAT = "Crashlytics Android SDK/%s";
+
+  private static final String VERSION_CONTROL_INFO_KEY =
+          "com.crashlytics.version-control-info";
+  private static final String VERSION_CONTROL_INFO_FILE =
+          "version-control-info.textproto";
+  private static final String META_INF_FOLDER =
+          "META-INF/";
 
   private final Context context;
   private final DataCollectionArbiter dataCollectionArbiter;
@@ -609,6 +621,56 @@ class CrashlyticsController {
 
   List<File> listAppExceptionMarkerFiles() {
     return fileStore.getCommonFiles(APP_EXCEPTION_MARKER_FILTER);
+  }
+
+  void saveVersionControlInfo() {
+    try {
+      String versionControlInfo = getVersionControlInfo();
+      if (versionControlInfo != null) {
+        setInternalKey(VERSION_CONTROL_INFO_KEY, versionControlInfo);
+        Logger.getLogger().i("Saved version control info");
+      }
+    } catch (IOException e) {
+      Logger.getLogger().w("Unable to save version control info", e);
+    }
+  }
+
+  String getVersionControlInfo() throws IOException {
+    InputStream is = getResourceAsStream(META_INF_FOLDER + VERSION_CONTROL_INFO_FILE);
+    if (is == null) {
+      return null;
+    }
+
+    Logger.getLogger().d("Read version control info");
+    return Base64.encodeToString(readResource(is), 0);
+  }
+
+  private InputStream getResourceAsStream(String resource) {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    if (classLoader == null) {
+      Logger.getLogger().w("Couldn't get Class Loader");
+      return null;
+    }
+
+    InputStream is = classLoader.getResourceAsStream(resource);
+    if (is == null) {
+      Logger.getLogger().i("No version control information found");
+      return null;
+    }
+
+    return is;
+  }
+
+  private static byte[] readResource(InputStream is) throws IOException {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    byte[] buffer = new byte[1024];
+    int length;
+
+    while ((length = is.read(buffer)) != -1) {
+      out.write(buffer, 0, length);
+    }
+
+    return out.toByteArray();
   }
 
   private void finalizePreviousNativeSession(String previousSessionId) {
