@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
@@ -39,6 +40,8 @@ import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -1028,6 +1031,73 @@ public class QueryTest {
 
     QuerySnapshot snapshot2 = waitFor(collection.get(Source.CACHE));
     assertEquals(asList(map("foo", "zzyzx", "bar", "2")), querySnapshotToValues(snapshot2));
+  }
+
+  @Test
+  public void resumingAQueryShouldUseExistenceFilterToDetectDeletes() throws Exception {
+    // Prepare the names and contents of the 100 documents to create.
+    Map<String, Map<String, Object>> testData = new HashMap<>();
+    for (int i = 0; i < 100; i++) {
+      testData.put("doc" + (1000 + i), map("key", 42));
+    }
+
+    // Create 100 documents in a new collection.
+    CollectionReference collection = testCollectionWithDocs(testData);
+
+    // Run a query to populate the local cache with the 100 documents and a resume token.
+    List<DocumentReference> createdDocuments = new ArrayList<>();
+    {
+      QuerySnapshot querySnapshot = waitFor(collection.get());
+      assertWithMessage("querySnapshot1").that(querySnapshot.size()).isEqualTo(100);
+      for (DocumentSnapshot documentSnapshot : querySnapshot.getDocuments()) {
+        createdDocuments.add(documentSnapshot.getReference());
+      }
+    }
+
+    // Delete 50 of the 100 documents. Do this in a transaction, rather than
+    // DocumentReference.delete(), to avoid affecting the local cache.
+    HashSet<String> deletedDocumentIds = new HashSet<>();
+    waitFor(
+        collection
+            .getFirestore()
+            .runTransaction(
+                transaction -> {
+                  for (int i = 0; i < createdDocuments.size(); i += 2) {
+                    DocumentReference documentToDelete = createdDocuments.get(i);
+                    transaction.delete(documentToDelete);
+                    deletedDocumentIds.add(documentToDelete.getId());
+                  }
+                  return null;
+                }));
+
+    // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
+    // existence filter rather than "delete" events when the query is resumed.
+    Thread.sleep(10000);
+
+    // Resume the query and save the resulting snapshot for verification.
+    QuerySnapshot snapshot2 = waitFor(collection.get());
+
+    // Verify that the snapshot from the resumed query contains the expected documents; that is,
+    // that it contains the 50 documents that were _not_ deleted.
+    // TODO(b/270731363): Remove the "if" condition below once the Firestore Emulator is fixed to
+    // send an existence filter. At the time of writing, the Firestore emulator fails to send an
+    // existence filter, resulting in the client including the deleted documents in the snapshot
+    // of the resumed query.
+    if (!(isRunningAgainstEmulator() && snapshot2.size() == 100)) {
+      HashSet<String> actualDocumentIds = new HashSet<>();
+      for (DocumentSnapshot documentSnapshot : snapshot2.getDocuments()) {
+        actualDocumentIds.add(documentSnapshot.getId());
+      }
+      HashSet<String> expectedDocumentIds = new HashSet<>();
+      for (DocumentReference documentRef : createdDocuments) {
+        if (!deletedDocumentIds.contains(documentRef.getId())) {
+          expectedDocumentIds.add(documentRef.getId());
+        }
+      }
+      assertWithMessage("snapshot2.docs")
+          .that(actualDocumentIds)
+          .containsExactlyElementsIn(expectedDocumentIds);
+    }
   }
 
   @Test
