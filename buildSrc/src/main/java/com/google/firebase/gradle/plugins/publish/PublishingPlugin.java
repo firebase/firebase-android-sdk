@@ -120,16 +120,9 @@ public class PublishingPlugin implements Plugin<Project> {
 
               Set<String> allFirebaseProjects =
                   project.getSubprojects().stream()
-                      .filter(
-                          sub ->
-                              sub.getExtensions().findByType(FirebaseLibraryExtension.class)
-                                  != null)
-                      .map(
-                          sub ->
-                              sub.getExtensions()
-                                  .findByType(FirebaseLibraryExtension.class)
-                                  .artifactId
-                                  .get())
+                      .map(sub -> sub.getExtensions().findByType(FirebaseLibraryExtension.class))
+                      .filter(ext -> ext != null)
+                      .map(ext -> ext.artifactId.get())
                       .collect(Collectors.toSet());
 
               Set<FirebaseLibraryExtension> projectsToPublish =
@@ -140,7 +133,8 @@ public class PublishingPlugin implements Plugin<Project> {
                               project
                                   .project(name)
                                   .getExtensions()
-                                  .getByType(FirebaseLibraryExtension.class))
+                                  .findByType(FirebaseLibraryExtension.class))
+                      .filter(ext -> ext != null)
                       .flatMap(lib -> lib.getLibrariesToRelease().stream())
                       .collect(Collectors.toSet());
               project
