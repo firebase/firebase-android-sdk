@@ -23,10 +23,16 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
+import kotlinx.coroutines.CoroutineDispatcher
 
 class FirebaseSessions
-internal constructor(firebaseApp: FirebaseApp, firebaseInstallations: FirebaseInstallationsApi) {
+internal constructor(
+  firebaseApp: FirebaseApp,
+  firebaseInstallations: FirebaseInstallationsApi,
+  backgroundDispatcher: CoroutineDispatcher
+) {
   private val sessionGenerator = SessionGenerator(collectEvents = true)
+  private val sessionCoordinator = SessionCoordinator(firebaseInstallations, backgroundDispatcher)
 
   init {
     val sessionInitiator = SessionInitiator(WallClock::elapsedRealtime, this::initiateSessionStart)
@@ -36,7 +42,6 @@ internal constructor(firebaseApp: FirebaseApp, firebaseInstallations: FirebaseIn
     } else {
       Log.w(TAG, "Failed to register lifecycle callbacks, unexpected context ${context.javaClass}.")
     }
-    Log.i(TAG, "Firebase Installations ID: ${firebaseInstallations.id}")
   }
 
   @Discouraged(message = "This will be replaced with a real API.")
@@ -46,7 +51,9 @@ internal constructor(firebaseApp: FirebaseApp, firebaseInstallations: FirebaseIn
     val sessionDetails = sessionGenerator.generateNewSession()
     val sessionEvent = SessionEvents.startSession(sessionDetails)
 
-    Log.i(TAG, "Initiate session start: $sessionEvent")
+    if (sessionDetails.collectEvents) {
+      sessionCoordinator.attemptLoggingSessionEvent(sessionEvent)
+    }
   }
 
   companion object {

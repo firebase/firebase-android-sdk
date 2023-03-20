@@ -34,6 +34,7 @@ class SessionEventEncoderTest {
             sessionId = "id",
             firstSessionId = "first",
             sessionIndex = 9,
+            firebaseInstallationId = "fid"
           ),
       )
 
@@ -47,7 +48,8 @@ class SessionEventEncoderTest {
           "session_data":{
             "session_id":"id",
             "first_session_id":"first",
-            "session_index":9
+            "session_index":9,
+            "firebase_installation_id":"fid"
           }
         }
         """
@@ -79,7 +81,8 @@ class SessionEventEncoderTest {
           "session_data":{
             "session_id":"",
             "first_session_id":"",
-            "session_index":0
+            "session_index":0,
+            "firebase_installation_id":""
           }
         }
         """

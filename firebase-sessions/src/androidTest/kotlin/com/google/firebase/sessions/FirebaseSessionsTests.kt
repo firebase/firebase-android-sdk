@@ -39,7 +39,11 @@ class FirebaseSessionsTests {
   fun setUp() {
     Firebase.initialize(
       ApplicationProvider.getApplicationContext(),
-      FirebaseOptions.Builder().setApplicationId("APP_ID").build()
+      FirebaseOptions.Builder()
+        .setApplicationId(APP_ID)
+        .setApiKey(API_KEY)
+        .setProjectId(PROJECT_ID)
+        .build()
     )
   }
 
@@ -52,5 +56,11 @@ class FirebaseSessionsTests {
   fun mattDoesDayHi() {
     // This will be replaced with real tests.
     assertThat(FirebaseSessions.instance.greeting()).isEqualTo("Matt says hi!")
+  }
+
+  companion object {
+    private const val APP_ID = "1:1:android:1a"
+    private const val API_KEY = "API-KEY-API-KEY-API-KEY-API-KEY-API-KEY"
+    private const val PROJECT_ID = "PROJECT-ID"
   }
 }

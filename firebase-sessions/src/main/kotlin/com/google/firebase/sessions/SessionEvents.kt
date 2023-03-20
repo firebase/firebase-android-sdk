@@ -48,12 +48,20 @@ internal object SessionEvents {
             ctx.add(FieldDescriptor.of("session_id"), sessionInfo.sessionId)
             ctx.add(FieldDescriptor.of("first_session_id"), sessionInfo.firstSessionId)
             ctx.add(FieldDescriptor.of("session_index"), sessionInfo.sessionIndex)
+            ctx.add(
+              FieldDescriptor.of("firebase_installation_id"),
+              sessionInfo.firebaseInstallationId
+            )
           }
         }
       }
       .build()
 
-  /** Construct a Session Start event */
+  /**
+   * Construct a Session Start event.
+   *
+   * Some mutable fields, e.g. firebaseInstallationId, get populated later.
+   */
   fun startSession(sessionDetails: SessionDetails) =
     SessionEvent(
       eventType = EventType.SESSION_START,
