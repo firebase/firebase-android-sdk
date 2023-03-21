@@ -24,16 +24,17 @@ import javax.annotation.Nonnull;
  */
 public interface ConfigUpdateListener {
   /**
-   * Callback for when a new config has been automatically fetched from the backend and has changed
-   * from the activated config.
+   * Callback for when a new config version has been automatically fetched from the backend and has
+   * changed from the activated config.
    *
-   * @param configUpdate A {@link ConfigUpdate} with information about the updated config, including
-   *     the set of updated parameters.
+   * @param configUpdate A {@link ConfigUpdate} with information about the updated config version,
+   *     including the set of updated parameters.
    */
   void onUpdate(@NonNull ConfigUpdate configUpdate);
 
   /**
-   * Callback for when an error occurs while listening for or fetching a config update.
+   * Callback for when an error occurs while listening for updates or fetching the latest version of
+   * the config.
    *
    * @param error A {@link FirebaseRemoteConfigException} with information about the error.
    */
