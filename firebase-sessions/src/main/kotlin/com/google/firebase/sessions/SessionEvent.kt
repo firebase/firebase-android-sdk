@@ -55,4 +55,7 @@ internal data class SessionInfo(
 
   /** What order this Session came in this run of the app. For the first Session this will be 0. */
   val sessionIndex: Int,
+
+  /** Identifies a unique device+app installation: go/firebase-installations */
+  var firebaseInstallationId: String = "",
 )

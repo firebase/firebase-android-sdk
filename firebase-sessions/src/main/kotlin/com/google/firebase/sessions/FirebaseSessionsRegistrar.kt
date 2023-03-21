@@ -16,11 +16,15 @@ package com.google.firebase.sessions
 
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
+import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.components.Dependency
+import com.google.firebase.components.Qualified.qualified
+import com.google.firebase.components.Qualified.unqualified
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import kotlinx.coroutines.CoroutineDispatcher
 
 /**
  * [ComponentRegistrar] for setting up [FirebaseSessions].
@@ -33,12 +37,14 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
     listOf(
       Component.builder(FirebaseSessions::class.java)
         .name(LIBRARY_NAME)
-        .add(Dependency.required(FirebaseApp::class.java))
-        .add(Dependency.required(FirebaseInstallationsApi::class.java))
+        .add(Dependency.required(firebaseApp))
+        .add(Dependency.required(firebaseInstallationsApi))
+        .add(Dependency.required(backgroundDispatcher))
         .factory { container ->
           FirebaseSessions(
-            container.get(FirebaseApp::class.java),
-            container.get(FirebaseInstallationsApi::class.java)
+            container.get(firebaseApp),
+            container.get(firebaseInstallationsApi),
+            container.get(backgroundDispatcher),
           )
         }
         .eagerInDefaultApp()
@@ -48,5 +54,10 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
 
   companion object {
     private const val LIBRARY_NAME = "fire-sessions"
+
+    private val firebaseApp = unqualified(FirebaseApp::class.java)
+    private val firebaseInstallationsApi = unqualified(FirebaseInstallationsApi::class.java)
+    private val backgroundDispatcher =
+      qualified(Background::class.java, CoroutineDispatcher::class.java)
   }
 }
