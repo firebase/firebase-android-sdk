@@ -562,8 +562,8 @@ public class FirebaseRemoteConfig {
    *
    * @param configUpdateListener A {@link ConfigUpdateListener} that can be used to respond to
    *     config updates when they're fetched.
-   * @return A {@link ConfigUpdateListenerRegistration} that allows the user to remove the added
-   *     {@code configUpdateListener} and close the connection when there are no more listeners.
+   * @return A {@link ConfigUpdateListenerRegistration} that allows you to remove the added {@code
+   *     configUpdateListener} and close the connection when there are no more listeners.
    */
   @NonNull
   public ConfigUpdateListenerRegistration addOnConfigUpdateListener(
