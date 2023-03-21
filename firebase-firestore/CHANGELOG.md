@@ -2,6 +2,13 @@
 * [fixed] Fix a potential high-memory usage issue.
 * [fixed] Fix an issue that stops some performance optimization being applied.
 
+## Kotlin
+* [feature] Added
+  [`Query.dataObjects<T>()`](/docs/reference/kotlin/com/google/firebase/firestore/ktx/package-summary#dataObjects)
+  and
+  [`DocumentReference.dataObjects<T>()`](/docs/reference/kotlin/com/google/firebase/firestore/ktx/package-summary#dataObjects_1)
+  Kotlin Flows to listen for realtime updates and convert its values to a specific type.
+
 # 24.4.1
 * [fixed] Fix `FAILED_PRECONDITION` when writing to a deleted document in a
   transaction.
