@@ -15,6 +15,7 @@
 package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RestrictTo;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.firestore.util.Executors;
@@ -47,6 +48,9 @@ public class AggregateQuery {
   }
 
   /** Returns the AggregateFields included inside this object. */
+  // TODO(sumavg): Remove the `hide` and scope annotations.
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @NonNull
   public List<AggregateField> getAggregateFields() {
     return aggregateFieldList;

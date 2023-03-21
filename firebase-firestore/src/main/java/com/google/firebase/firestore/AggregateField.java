@@ -16,9 +16,12 @@ package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import java.util.Objects;
 
-/** Represents an aggregation that can be performed by Firestore. */
+// TODO(sumavg): Remove the `hide` and scope annotations.
+/** @hide */
+@RestrictTo(RestrictTo.Scope.LIBRARY)
 public abstract class AggregateField {
   @Nullable private final FieldPath fieldPath;
 
@@ -44,6 +47,7 @@ public abstract class AggregateField {
   }
 
   /** Returns the alias used internally for this aggregate field. */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @NonNull
   public String getAlias() {
     return alias;
@@ -67,10 +71,11 @@ public abstract class AggregateField {
     if (!(other instanceof AggregateField)) {
       return false;
     }
-    if (fieldPath == null || ((AggregateField) other).fieldPath == null) {
-      return fieldPath == null && ((AggregateField) other).fieldPath == null;
-    }
+
     AggregateField otherAggregateField = (AggregateField) other;
+    if (fieldPath == null || otherAggregateField.fieldPath == null) {
+      return fieldPath == null && otherAggregateField.fieldPath == null;
+    }
     return operator.equals(otherAggregateField.getOperator())
         && getFieldPath().equals(otherAggregateField.getFieldPath());
   }
