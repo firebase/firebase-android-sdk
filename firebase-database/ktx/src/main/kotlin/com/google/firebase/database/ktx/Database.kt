@@ -135,8 +135,8 @@ val Query.childEvents
  * - When the returned flow starts being collected, a [ValueEventListener] will be attached.
  * - When the flow completes, the listener will be removed.
  */
-inline fun <reified T : Any> Query.values() : Flow<T?> {
-    return snapshots.map { it.getValue(T::class.java) }
+inline fun <reified T : Any> Query.values(): Flow<T?> {
+  return snapshots.map { it.getValue(T::class.java) }
 }
 
 internal const val LIBRARY_NAME: String = "fire-db-ktx"

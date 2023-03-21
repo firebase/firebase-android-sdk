@@ -253,7 +253,7 @@ fun Query.snapshots(
  * @param T The type of the object to convert to.
  */
 inline fun <reified T : Any> Query.dataObjects(
-        metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
+  metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
 ): Flow<List<T>> = snapshots(metadataChanges).map { it.toObjects(T::class.java) }
 
 /**
@@ -267,5 +267,5 @@ inline fun <reified T : Any> Query.dataObjects(
  * @param T The type of the object to convert to.
  */
 inline fun <reified T : Any> DocumentReference.dataObjects(
-        metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
+  metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
 ): Flow<T?> = snapshots(metadataChanges).map { it.toObject(T::class.java) }
