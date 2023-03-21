@@ -28,7 +28,6 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -49,6 +48,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class AggregationTest {
+
   @After
   public void tearDown() {
     IntegrationTestUtil.tearDown();
@@ -100,18 +100,18 @@ public class AggregationTest {
             .orderBy("c")
             .aggregate(AggregateField.count());
 
-    assertTrue(query1.equals(query1_same));
-    assertTrue(query2.equals(query2_same));
-    assertTrue(query3.equals(query3_same));
+    assertEquals(query1, query1_same);
+    assertEquals(query2, query2_same);
+    assertEquals(query3, query3_same);
 
     assertEquals(query1.hashCode(), query1_same.hashCode());
     assertEquals(query2.hashCode(), query2_same.hashCode());
     assertEquals(query3.hashCode(), query3_same.hashCode());
 
-    assertFalse(query1.equals(null));
-    assertFalse(query1.equals("string"));
-    assertFalse(query1.equals(query2));
-    assertFalse(query2.equals(query3));
+    assertNotNull(query1);
+    assertNotEquals("string", query1);
+    assertNotEquals(query1, query2);
+    assertNotEquals(query2, query3);
     assertNotEquals(query1.hashCode(), query2.hashCode());
     assertNotEquals(query2.hashCode(), query3.hashCode());
   }
@@ -151,18 +151,18 @@ public class AggregationTest {
             .orderBy("c")
             .aggregate(sum("baz"));
 
-    assertTrue(query1.equals(query1_same));
-    assertTrue(query2.equals(query2_same));
-    assertTrue(query3.equals(query3_same));
+    assertEquals(query1, query1_same);
+    assertEquals(query2, query2_same);
+    assertEquals(query3, query3_same);
 
     assertEquals(query1.hashCode(), query1_same.hashCode());
     assertEquals(query2.hashCode(), query2_same.hashCode());
     assertEquals(query3.hashCode(), query3_same.hashCode());
 
-    assertFalse(query1.equals(null));
-    assertFalse(query1.equals("string"));
-    assertFalse(query1.equals(query2));
-    assertFalse(query2.equals(query3));
+    assertNotNull(query1);
+    assertNotEquals("string", query1);
+    assertNotEquals(query1, query2);
+    assertNotEquals(query2, query3);
     assertNotEquals(query1.hashCode(), query2.hashCode());
     assertNotEquals(query2.hashCode(), query3.hashCode());
   }
@@ -202,18 +202,18 @@ public class AggregationTest {
             .orderBy("c")
             .aggregate(average("baz"));
 
-    assertTrue(query1.equals(query1_same));
-    assertTrue(query2.equals(query2_same));
-    assertTrue(query3.equals(query3_same));
+    assertEquals(query1, query1_same);
+    assertEquals(query2, query2_same);
+    assertEquals(query3, query3_same);
 
     assertEquals(query1.hashCode(), query1_same.hashCode());
     assertEquals(query2.hashCode(), query2_same.hashCode());
     assertEquals(query3.hashCode(), query3_same.hashCode());
 
-    assertFalse(query1.equals(null));
-    assertFalse(query1.equals("string"));
-    assertFalse(query1.equals(query2));
-    assertFalse(query2.equals(query3));
+    assertNotNull(query1);
+    assertNotEquals("string", query1);
+    assertNotEquals(query1, query2);
+    assertNotEquals(query2, query3);
     assertNotEquals(query1.hashCode(), query2.hashCode());
     assertNotEquals(query2.hashCode(), query3.hashCode());
   }
@@ -226,9 +226,9 @@ public class AggregationTest {
     AggregateQuery query2 = coll.aggregate(sum("baz"));
     AggregateQuery query3 = coll.aggregate(average("baz"));
 
-    assertFalse(query1.equals(query2));
-    assertFalse(query2.equals(query3));
-    assertFalse(query3.equals(query1));
+    assertNotEquals(query1, query2);
+    assertNotEquals(query2, query3);
+    assertNotEquals(query3, query1);
     assertNotEquals(query1.hashCode(), query2.hashCode());
     assertNotEquals(query2.hashCode(), query3.hashCode());
     assertNotEquals(query3.hashCode(), query1.hashCode());
@@ -248,9 +248,9 @@ public class AggregationTest {
             .limit(100)
             .aggregate(average("baz"));
 
-    assertFalse(query4.equals(query5));
-    assertFalse(query5.equals(query6));
-    assertFalse(query6.equals(query4));
+    assertNotEquals(query4, query5);
+    assertNotEquals(query5, query6);
+    assertNotEquals(query6, query4);
     assertNotEquals(query4.hashCode(), query5.hashCode());
     assertNotEquals(query5.hashCode(), query6.hashCode());
     assertNotEquals(query6.hashCode(), query4.hashCode());

@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import com.google.firestore.v1.Value;
 import java.util.Map;
 import java.util.Objects;
@@ -50,19 +51,7 @@ public class AggregateQuerySnapshot {
 
   /** Returns the number of documents in the result set of the underlying query. */
   public long getCount() {
-    AggregateField countField = AggregateField.count();
-    Object value = get(countField);
-    if (value == null) {
-      throw new IllegalArgumentException(
-          "RunAggregationQueryResponse alias " + countField.getAlias() + " is null");
-    } else if (!(value instanceof Long)) {
-      throw new IllegalArgumentException(
-          "RunAggregationQueryResponse alias "
-              + countField.getAlias()
-              + " has incorrect type: "
-              + value.getClass().getName());
-    }
-    return (long) value;
+    return get(AggregateField.count());
   }
 
   /**
@@ -73,6 +62,9 @@ public class AggregateQuerySnapshot {
    * @param aggregateField The aggregation for which the value is requested.
    * @return The result of the given aggregation.
    */
+  // TODO(sumavg): Remove the `hide` and scope annotations.
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Object get(@Nonnull AggregateField aggregateField) {
     if (!data.containsKey(aggregateField.getAlias())) {
@@ -97,6 +89,30 @@ public class AggregateQuerySnapshot {
   }
 
   /**
+   * Returns the number of documents in the result set of the underlying query.
+   *
+   * @param countAggregateField The count aggregation for which the value is requested.
+   * @return The result of the given count aggregation.
+   */
+  // TODO(sumavg): Remove the `hide` and scope annotations.
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  public long get(@Nonnull AggregateField.CountAggregateField countAggregateField) {
+    Object value = get((AggregateField) countAggregateField);
+    if (value == null) {
+      throw new IllegalArgumentException(
+          "RunAggregationQueryResponse alias " + countAggregateField.getAlias() + " is null");
+    } else if (!(value instanceof Long)) {
+      throw new IllegalArgumentException(
+          "RunAggregationQueryResponse alias "
+              + countAggregateField.getAlias()
+              + " has incorrect type: "
+              + value.getClass().getName());
+    }
+    return (long) value;
+  }
+
+  /**
    * Returns the result of the given average aggregation. Since the result of an average aggregation
    * performed by the server is always a double, this convenience overload can be used in lieu of
    * the above `get` method. Throws java.lang.RuntimeException if the `aggregateField` was not
@@ -105,6 +121,9 @@ public class AggregateQuerySnapshot {
    * @param averageAggregateField The average aggregation for which the value is requested.
    * @return The result of the given average aggregation.
    */
+  // TODO(sumavg): Remove the `hide` and scope annotations.
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Double get(@Nonnull AggregateField.AverageAggregateField averageAggregateField) {
     return (Double) get((AggregateField) averageAggregateField);
@@ -119,6 +138,9 @@ public class AggregateQuerySnapshot {
    * @param aggregateField The aggregation for which the value is requested.
    * @return The result of the given average aggregation as a double.
    */
+  // TODO(sumavg): Remove the `hide` and scope annotations.
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Double getDouble(@Nonnull AggregateField aggregateField) {
     Number result = (Number) get(aggregateField);
@@ -133,6 +155,9 @@ public class AggregateQuerySnapshot {
    * @param aggregateField The aggregation for which the value is requested.
    * @return The result of the given average aggregation as a long.
    */
+  // TODO(sumavg): Remove the `hide` and scope annotations.
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Long getLong(@Nonnull AggregateField aggregateField) {
     Number result = (Number) get(aggregateField);
