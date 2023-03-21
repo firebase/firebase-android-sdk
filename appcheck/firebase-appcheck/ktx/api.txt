@@ -6,6 +6,7 @@ package com.google.firebase.appcheck.ktx {
     method @NonNull public static operator String component1(@NonNull com.google.firebase.appcheck.AppCheckToken);
     method public static operator long component2(@NonNull com.google.firebase.appcheck.AppCheckToken);
     method @NonNull public static com.google.firebase.appcheck.FirebaseAppCheck getAppCheck(@NonNull com.google.firebase.ktx.Firebase);
+    method @NonNull public static kotlinx.coroutines.flow.Flow<com.google.firebase.appcheck.AppCheckToken> getTokenChanges(@NonNull com.google.firebase.appcheck.FirebaseAppCheck);
   }
 
 }
