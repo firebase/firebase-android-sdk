@@ -266,6 +266,6 @@ inline fun <reified T : Any> Query.dataObjects(
  * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
  * @param T The type of the object to convert to.
  */
-inline fun <reified T : Any> DocumentReference.dataObject(
+inline fun <reified T : Any> DocumentReference.dataObjects(
         metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
 ): Flow<T?> = snapshots(metadataChanges).map { it.toObject(T::class.java) }
