@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Added support for reporting GWP-ASan crashes on supported API levels.
 * [changed] Improved crash reporting reliability for crashes that occur early in the app's
   lifecycle.
 * [changed] Add improved support capturing build ids for Native ANRs on older
