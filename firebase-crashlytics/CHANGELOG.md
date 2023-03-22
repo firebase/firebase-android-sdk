@@ -1,10 +1,7 @@
 # Unreleased
-* [changed] Added support for reporting GWP-ASan crashes on supported API levels.
+* [changed] Added support for reporting GWP-ASan crashes on supported API levels.(#4721)
 * [changed] Improved crash reporting reliability for crashes that occur early in the app's
-  lifecycle.
-* [changed] Add improved support capturing build ids for Native ANRs on older
-  Android versions.
-
+  lifecycle.(#4608, #4786)
 
 # 18.3.5
 * [fixed] Updated `firebase-common` to its latest version (v20.3.0) to fix an
