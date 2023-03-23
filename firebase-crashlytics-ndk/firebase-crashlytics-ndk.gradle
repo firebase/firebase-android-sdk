@@ -18,7 +18,10 @@ plugins {
 }
 
 firebaseLibrary {
-    testLab.enabled = true
+    testLab {
+        enabled = true
+        device 'model=panther,version=33' // Pixel7
+    }
     publishJavadoc = false
 }
 

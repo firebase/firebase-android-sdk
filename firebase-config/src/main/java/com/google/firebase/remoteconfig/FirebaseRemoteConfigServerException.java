@@ -45,8 +45,8 @@ public class FirebaseRemoteConfigServerException extends FirebaseRemoteConfigExc
   }
 
   /**
-   * Creates a Firebase Remote Config server exception with the given message and
-   * FirebaseRemoteConfigException code.
+   * Creates a Firebase Remote Config server exception with the given message and {@code
+   * FirebaseRemoteConfigException} code.
    */
   public FirebaseRemoteConfigServerException(@NonNull String detailMessage, @Nonnull Code code) {
     super(detailMessage, code);
@@ -55,7 +55,7 @@ public class FirebaseRemoteConfigServerException extends FirebaseRemoteConfigExc
 
   /**
    * Creates a Firebase Remote Config server exception with the HTTP status code, given message, and
-   * FirebaseRemoteConfigException code.
+   * {@code FirebaseRemoteConfigException} code.
    */
   public FirebaseRemoteConfigServerException(
       int httpStatusCode, @NonNull String detailMessage, @Nonnull Code code) {
@@ -65,7 +65,7 @@ public class FirebaseRemoteConfigServerException extends FirebaseRemoteConfigExc
 
   /**
    * Creates a Firebase Remote Config server exception with the given message, exception cause, and
-   * FirebaseRemoteConfigException code.
+   * {@code FirebaseRemoteConfigException} code.
    */
   public FirebaseRemoteConfigServerException(
       @NonNull String detailMessage, @Nullable Throwable cause, @NonNull Code code) {
@@ -75,7 +75,7 @@ public class FirebaseRemoteConfigServerException extends FirebaseRemoteConfigExc
 
   /**
    * Creates a Firebase Remote Config server exception with the HTTP status code, given message,
-   * exception cause, and FirebaseRemoteConfigException code.
+   * exception cause, and {@code FirebaseRemoteConfigException} code.
    */
   public FirebaseRemoteConfigServerException(
       int httpStatusCode,

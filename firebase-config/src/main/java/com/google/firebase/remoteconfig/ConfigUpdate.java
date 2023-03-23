@@ -18,10 +18,7 @@ import androidx.annotation.NonNull;
 import com.google.auto.value.AutoValue;
 import java.util.Set;
 
-/**
- * Information about the updated config passed to the {@code onUpdate} callback of {@link
- * ConfigUpdateListener}.
- */
+/** Information about the updated config passed to {@link ConfigUpdateListener#onUpdate}. */
 @AutoValue
 public abstract class ConfigUpdate {
   @NonNull
