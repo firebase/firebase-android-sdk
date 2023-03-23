@@ -37,6 +37,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.common.collect.Lists;
 import com.google.firebase.firestore.Query.Direction;
+import com.google.firebase.firestore.remote.WatchChangeAggregatorTestingHooksAccessor;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.ArrayList;
@@ -1053,6 +1054,7 @@ public class QueryTest {
         createdDocuments.add(documentSnapshot.getReference());
       }
     }
+    assertWithMessage("createdDocuments").that(createdDocuments).hasSize(100);
 
     // Delete 50 of the 100 documents. Do this in a transaction, rather than
     // DocumentReference.delete(), to avoid affecting the local cache.
@@ -1069,13 +1071,35 @@ public class QueryTest {
                   }
                   return null;
                 }));
+    assertWithMessage("deletedDocumentIds").that(deletedDocumentIds).hasSize(50);
 
     // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
     // existence filter rather than "delete" events when the query is resumed.
     Thread.sleep(10000);
 
-    // Resume the query and save the resulting snapshot for verification.
-    QuerySnapshot snapshot2 = waitFor(collection.get());
+    // Resume the query and save the resulting snapshot for verification. Use some internal testing
+    // hooks to "capture" the existence filter mismatches to verify them.
+    QuerySnapshot snapshot2;
+    WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo
+        existenceFilterMismatchInfo;
+    WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchAccumulator
+        existenceFilterMismatchAccumulator =
+            new WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchAccumulator();
+    existenceFilterMismatchAccumulator.register();
+    try {
+      snapshot2 = waitFor(collection.get());
+      // TODO(b/270731363): Remove the "if" condition below once the Firestore Emulator is fixed
+      //  to send an existence filter.
+      if (isRunningAgainstEmulator()) {
+        existenceFilterMismatchInfo = null;
+      } else {
+        existenceFilterMismatchInfo =
+            existenceFilterMismatchAccumulator.waitForExistenceFilterMismatch(
+                /*timeoutMillis=*/ 5000);
+      }
+    } finally {
+      existenceFilterMismatchAccumulator.unregister();
+    }
 
     // Verify that the snapshot from the resumed query contains the expected documents; that is,
     // that it contains the 50 documents that were _not_ deleted.
@@ -1098,6 +1122,26 @@ public class QueryTest {
           .that(actualDocumentIds)
           .containsExactlyElementsIn(expectedDocumentIds);
     }
+
+    // Skip the verification of the existence filter mismatch when testing against the Firestore
+    // emulator because the Firestore emulator fails to to send an existence filter at all.
+    // TODO(b/270731363): Enable the verification of the existence filter mismatch once the
+    // Firestore emulator is fixed to send an existence filter.
+    if (isRunningAgainstEmulator()) {
+      return;
+    }
+
+    // Verify that Watch sent an existence filter with the correct counts when the query was
+    // resumed.
+    assertWithMessage("Watch should have sent an existence filter")
+        .that(existenceFilterMismatchInfo)
+        .isNotNull();
+    assertWithMessage("localCacheCount")
+        .that(existenceFilterMismatchInfo.localCacheCount())
+        .isEqualTo(100);
+    assertWithMessage("existenceFilterCount")
+        .that(existenceFilterMismatchInfo.existenceFilterCount())
+        .isEqualTo(50);
   }
 
   @Test
