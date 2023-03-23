@@ -101,3 +101,10 @@ dependencies {
   testImplementation("androidx.test:core:1.2.0")
   testImplementation("androidx.test:rules:1.2.0")
 }
+
+// ==========================================================================
+// Copy from here down if you want to use the google-services plugin in your
+// androidTest integration tests.
+// ==========================================================================
+ext["packageName"] = "com.google.firebase.database"
+apply("../gradle/googleServices.gradle")
