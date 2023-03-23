@@ -27,7 +27,7 @@ android {
   val targetSdkVersion: Int by rootProject
   val minSdkVersion: Int by rootProject
 
-  installation { timeOutInMs = 60 * 1000 }
+  installation.timeOutInMs = 60 * 1000
 
   compileSdk = targetSdkVersion
   defaultConfig {
@@ -39,21 +39,23 @@ android {
 
   buildTypes {
     release { isMinifyEnabled = false }
-    debug {}
   }
 
   sourceSets {
-    getByName("androidTest") { java.srcDirs("src/testUtil/java") }
-    getByName("test") {
+    named("androidTest") {
       java.srcDirs("src/testUtil/java")
-      resources.srcDirs("src/test/resources")
+    }
+    named("test") {
+      java.srcDirs("src/testUtil")
     }
     compileOptions {
       sourceCompatibility = JavaVersion.VERSION_1_8
       targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    packagingOptions { resources.excludes.add("META-INF/DEPENDENCIES") }
+    packagingOptions {
+      resources.excludes.add("META-INF/DEPENDENCIES")
+    }
 
     testOptions.unitTests.isIncludeAndroidResources = true
   }
