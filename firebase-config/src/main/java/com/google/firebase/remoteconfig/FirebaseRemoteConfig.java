@@ -23,12 +23,10 @@ import androidx.annotation.XmlRes;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseError;
-import com.google.firebase.FirebaseException;
 import com.google.firebase.abt.AbtException;
 import com.google.firebase.abt.FirebaseABTesting;
-import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.concurrent.FirebaseExecutors;
+import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.installations.InstallationTokenResult;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
@@ -582,13 +580,13 @@ public class FirebaseRemoteConfig {
    *
    * @param host the emulator host (for example, 10.0.2.2)
    * @param port the emulator port (for example, 9299)
-   *
    * @exception FirebaseRemoteConfigClientException Thrown when useEmulator is called after a fetch.
    */
-  public void useEmulator(@NonNull String host, int port) throws FirebaseRemoteConfigClientException {
+  public void useEmulator(@NonNull String host, int port)
+      throws FirebaseRemoteConfigClientException {
     if (this.frcMetadata.getInfo().getLastFetchStatus() != LAST_FETCH_STATUS_NO_FETCH_YET) {
       throw new FirebaseRemoteConfigClientException(
-              "Cannot connect to emulator after a fetch has been made.");
+          "Cannot connect to emulator after a fetch has been made.");
     }
     fetchHandler.setEmulatedServiceSettings(new EmulatedServiceSettings(host, port));
   }
