@@ -78,6 +78,8 @@ dependencies {
   testImplementation("androidx.test:core:1.2.0")
   testImplementation("androidx.test:rules:1.2.0")
 
+  androidTestImplementation("com.fasterxml.jackson.core:jackson-core:2.9.8")
+  androidTestImplementation("com.fasterxml.jackson.core:jackson-databind:2.9.8")
   androidTestImplementation("androidx.test:runner:1.2.0")
   androidTestImplementation("androidx.test.ext:junit:1.1.1")
   androidTestImplementation("org.hamcrest:hamcrest:2.2")
