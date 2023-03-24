@@ -203,9 +203,10 @@ public class WatchChangeAggregator {
           resetTarget(targetId);
           pendingTargetResets.add(targetId);
 
-          WatchChangeAggregatorTestingHooks.notifyOnExistenceFilterMismatch(
-              WatchChangeAggregatorTestingHooks.ExistenceFilterMismatchInfo.from(
-                  (int) currentSize, watchChange.getExistenceFilter()));
+          TestingHooks.getInstance()
+              .notifyOnExistenceFilterMismatch(
+                  TestingHooks.ExistenceFilterMismatchInfo.from(
+                      (int) currentSize, watchChange.getExistenceFilter()));
         }
       }
     }

@@ -37,7 +37,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.common.collect.Lists;
 import com.google.firebase.firestore.Query.Direction;
-import com.google.firebase.firestore.remote.WatchChangeAggregatorTestingHooksAccessor;
+import com.google.firebase.firestore.remote.ExistenceFilterMismatchListener;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.ArrayList;
@@ -1079,14 +1079,12 @@ public class QueryTest {
 
     // Resume the query and save the resulting snapshot for verification. Use some internal testing
     // hooks to "capture" the existence filter mismatches to verify them.
+    ExistenceFilterMismatchListener existenceFilterMismatchListener =
+        new ExistenceFilterMismatchListener();
     QuerySnapshot snapshot2;
-    WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo
-        existenceFilterMismatchInfo;
-    WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchAccumulator
-        existenceFilterMismatchAccumulator =
-            new WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchAccumulator();
-    existenceFilterMismatchAccumulator.register();
+    ExistenceFilterMismatchListener.ExistenceFilterMismatchInfo existenceFilterMismatchInfo;
     try {
+      existenceFilterMismatchListener.startListening();
       snapshot2 = waitFor(collection.get());
       // TODO(b/270731363): Remove the "if" condition below once the Firestore Emulator is fixed
       //  to send an existence filter.
@@ -1094,11 +1092,10 @@ public class QueryTest {
         existenceFilterMismatchInfo = null;
       } else {
         existenceFilterMismatchInfo =
-            existenceFilterMismatchAccumulator.waitForExistenceFilterMismatch(
-                /*timeoutMillis=*/ 5000);
+            existenceFilterMismatchListener.waitForExistenceFilterMismatch(/*timeoutMillis=*/ 5000);
       }
     } finally {
-      existenceFilterMismatchAccumulator.unregister();
+      existenceFilterMismatchListener.stopListening();
     }
 
     // Verify that the snapshot from the resumed query contains the expected documents; that is,
