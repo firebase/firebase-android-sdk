@@ -35,19 +35,11 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
-  buildTypes {
-    release {
-      isMinifyEnabled = false
-    }
-  }
+  buildTypes { release { isMinifyEnabled = false } }
 
   sourceSets {
-    named("androidTest") {
-      java.srcDir("src/testUtil/java")
-    }
-    named("test") {
-      java.srcDir("src/testUtil")
-    }
+    named("androidTest") { java.srcDir("src/testUtil/java") }
+    named("test") { java.srcDir("src/testUtil") }
 
     compileOptions {
       sourceCompatibility = JavaVersion.VERSION_1_8
@@ -93,4 +85,5 @@ dependencies {
 }
 
 ext["packageName"] = "com.google.firebase.database"
+
 apply("../gradle/googleServices.gradle")
