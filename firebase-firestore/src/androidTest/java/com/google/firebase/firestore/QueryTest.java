@@ -1092,7 +1092,8 @@ public class QueryTest {
         existenceFilterMismatchInfo = null;
       } else {
         existenceFilterMismatchInfo =
-            existenceFilterMismatchListener.waitForExistenceFilterMismatch(/*timeoutMillis=*/ 5000);
+            existenceFilterMismatchListener.getOrWaitForExistenceFilterMismatch(
+                /*timeoutMillis=*/ 5000);
       }
     } finally {
       existenceFilterMismatchListener.stopListening();

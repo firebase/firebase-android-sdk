@@ -59,17 +59,24 @@ public final class ExistenceFilterMismatchListener {
   }
 
   /**
-   * Waits for an existence filter mismatch.
+   * Returns the oldest existence filter mismatch observed, waiting if none has yet been observed.
    *
-   * @param timeoutMillis the amount of time, in milliseconds, to wait for an existence filter
-   *     mismatch.
+   * <p>The oldest existence filter mismatch observed since the most recent successful invocation of
+   * {@link #startListening} will be returned. A subsequent invocation of this method will return
+   * the second-oldest existence filter mismatch observed, and so on. An invocation of {@link
+   * #stopListening} followed by another invocation of {@link #startListening} will discard any
+   * existence filter mismatches that occurred while previously started and will start observing
+   * afresh.
+   *
+   * @param timeoutMillis the maximum amount of time, in milliseconds, to wait for an existence
+   *     filter mismatch to occur.
    * @return information about the existence filter mismatch that occurred.
    * @throws InterruptedException if waiting is interrupted.
    * @throws IllegalStateException if this object has not been started by {@link #startListening}.
    * @throws IllegalArgumentException if the given timeout is less than or equal to zero.
    */
   @Nullable
-  public ExistenceFilterMismatchInfo waitForExistenceFilterMismatch(long timeoutMillis)
+  public ExistenceFilterMismatchInfo getOrWaitForExistenceFilterMismatch(long timeoutMillis)
       throws InterruptedException {
     if (timeoutMillis <= 0) {
       throw new IllegalArgumentException("invalid timeout: " + timeoutMillis);
@@ -85,7 +92,7 @@ public final class ExistenceFilterMismatchListener {
           "must be registered before waiting for an existence filter mismatch");
     }
 
-    return registeredListener.waitForExistenceFilterMismatch(timeoutMillis);
+    return registeredListener.getOrWaitForExistenceFilterMismatch(timeoutMillis);
   }
 
   private static final class TestingHooksExistenceFilterMismatchListenerImpl
@@ -102,7 +109,7 @@ public final class ExistenceFilterMismatchListener {
     }
 
     @Nullable
-    synchronized ExistenceFilterMismatchInfo waitForExistenceFilterMismatch(long timeoutMillis)
+    synchronized ExistenceFilterMismatchInfo getOrWaitForExistenceFilterMismatch(long timeoutMillis)
         throws InterruptedException {
       if (timeoutMillis <= 0) {
         throw new IllegalArgumentException("invalid timeout: " + timeoutMillis);
