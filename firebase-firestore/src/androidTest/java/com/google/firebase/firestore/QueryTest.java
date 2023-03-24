@@ -37,7 +37,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.common.collect.Lists;
 import com.google.firebase.firestore.Query.Direction;
-import com.google.firebase.firestore.remote.WatchChangeAggregatorTestingHooksAccessor;
+import com.google.firebase.firestore.remote.ExistenceFilterMismatchListener;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.ArrayList;
@@ -1060,6 +1060,7 @@ public class QueryTest {
           createdDocuments.add(documentSnapshot.getReference());
         }
       }
+      assertWithMessage("createdDocuments").that(createdDocuments).hasSize(100);
 
       // Delete 50 of the 100 documents. Do this in a transaction, rather than
       // DocumentReference.delete(), to avoid affecting the local cache.
@@ -1076,6 +1077,7 @@ public class QueryTest {
                     }
                     return null;
                   }));
+      assertWithMessage("deletedDocumentIds").that(deletedDocumentIds).hasSize(50);
 
       // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
       // existence filter rather than "delete" events when the query is resumed.
@@ -1084,14 +1086,12 @@ public class QueryTest {
       // Resume the query and save the resulting snapshot for verification. Use some internal
       // testing hooks to "capture" the existence filter mismatches to verify that Watch sent a
       // bloom filter, and it was used to avert a full requery.
+      ExistenceFilterMismatchListener existenceFilterMismatchListener =
+          new ExistenceFilterMismatchListener();
       QuerySnapshot snapshot2;
-      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchInfo
-          existenceFilterMismatchInfo;
-      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchAccumulator
-          existenceFilterMismatchAccumulator =
-              new WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterMismatchAccumulator();
-      existenceFilterMismatchAccumulator.register();
+      ExistenceFilterMismatchListener.ExistenceFilterMismatchInfo existenceFilterMismatchInfo;
       try {
+        existenceFilterMismatchListener.startListening();
         snapshot2 = waitFor(collection.get());
         // TODO(b/270731363): Remove the "if" condition below once the Firestore Emulator is fixed
         //  to send an existence filter.
@@ -1099,11 +1099,11 @@ public class QueryTest {
           existenceFilterMismatchInfo = null;
         } else {
           existenceFilterMismatchInfo =
-              existenceFilterMismatchAccumulator.waitForExistenceFilterMismatch(
+              existenceFilterMismatchListener.getOrWaitForExistenceFilterMismatch(
                   /*timeoutMillis=*/ 5000);
         }
       } finally {
-        existenceFilterMismatchAccumulator.unregister();
+        existenceFilterMismatchListener.stopListening();
       }
 
       // Verify that the snapshot from the resumed query contains the expected documents; that is,
@@ -1157,7 +1157,7 @@ public class QueryTest {
       }
 
       // Verify that Watch sent a valid bloom filter.
-      WatchChangeAggregatorTestingHooksAccessor.ExistenceFilterBloomFilterInfo bloomFilter =
+      ExistenceFilterMismatchListener.ExistenceFilterBloomFilterInfo bloomFilter =
           existenceFilterMismatchInfo.bloomFilter();
       assertWithMessage("The bloom filter specified in the existence filter")
           .that(bloomFilter)
@@ -1179,6 +1179,9 @@ public class QueryTest {
       assertWithMessage("bloom filter successfully applied with attemptNumber=" + attemptNumber)
           .that(bloomFilter.applied())
           .isTrue();
+
+      // Break out of the test loop now that the test passes.
+      break;
     }
   }
 

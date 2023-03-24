@@ -24,27 +24,49 @@ import com.google.auto.value.AutoValue;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firestore.v1.BloomFilter;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
-final class WatchChangeAggregatorTestingHooks {
+/**
+ * Manages "testing hooks", hooks into the internals of the SDK to verify internal state and events
+ * during integration tests.
+ *
+ * <p>Do not use this class except for testing purposes.
+ */
+@VisibleForTesting
+final class TestingHooks {
 
-  private WatchChangeAggregatorTestingHooks() {}
+  private static final TestingHooks instance = new TestingHooks();
 
-  private static final Map<Object, ExistenceFilterMismatchListener>
-      existenceFilterMismatchListeners = new HashMap<>();
+  // Use CopyOnWriteArrayList to store the listeners so that we don't need to worry about
+  // synchronizing adds, removes, and traversals.
+  private final CopyOnWriteArrayList<AtomicReference<ExistenceFilterMismatchListener>>
+      existenceFilterMismatchListeners = new CopyOnWriteArrayList<>();
+
+  private TestingHooks() {}
+
+  /** Returns the singleton instance of this class. */
+  @NonNull
+  static TestingHooks getInstance() {
+    return instance;
+  }
 
   /**
-   * Notifies all registered {@link ExistenceFilterMismatchListener}` listeners registered via
-   * {@link #addExistenceFilterMismatchListener}.
+   * Asynchronously notifies all registered {@link ExistenceFilterMismatchListener}` listeners
+   * registered via {@link #addExistenceFilterMismatchListener}.
    *
    * @param info Information about the existence filter mismatch to deliver to the listeners.
    */
-  static void notifyOnExistenceFilterMismatch(ExistenceFilterMismatchInfo info) {
-    synchronized (existenceFilterMismatchListeners) {
-      for (ExistenceFilterMismatchListener listener : existenceFilterMismatchListeners.values()) {
-        Executors.BACKGROUND_EXECUTOR.execute(() -> listener.onExistenceFilterMismatch(info));
-      }
+  void notifyOnExistenceFilterMismatch(@NonNull ExistenceFilterMismatchInfo info) {
+    for (AtomicReference<ExistenceFilterMismatchListener> listenerRef :
+        existenceFilterMismatchListeners) {
+      Executors.BACKGROUND_EXECUTOR.execute(
+          () -> {
+            ExistenceFilterMismatchListener listener = listenerRef.get();
+            if (listener != null) {
+              listener.onExistenceFilterMismatch(info);
+            }
+          });
     }
   }
 
@@ -66,36 +88,50 @@ final class WatchChangeAggregatorTestingHooks {
    *     ListenerRegistration#remove} method; only the first unregistration request does anything;
    *     all subsequent requests do nothing.
    */
-  @VisibleForTesting
-  static ListenerRegistration addExistenceFilterMismatchListener(
+  ListenerRegistration addExistenceFilterMismatchListener(
       @NonNull ExistenceFilterMismatchListener listener) {
     checkNotNull(listener, "a null listener is not allowed");
 
-    Object listenerId = new Object();
-    synchronized (existenceFilterMismatchListeners) {
-      existenceFilterMismatchListeners.put(listenerId, listener);
-    }
+    AtomicReference<ExistenceFilterMismatchListener> listenerRef = new AtomicReference<>(listener);
+    existenceFilterMismatchListeners.add(listenerRef);
 
     return () -> {
-      synchronized (existenceFilterMismatchListeners) {
-        existenceFilterMismatchListeners.remove(listenerId);
-      }
+      listenerRef.set(null);
+      existenceFilterMismatchListeners.remove(listenerRef);
     };
   }
 
+  /**
+   * Implementations of this interface can be registered with {@link
+   * #addExistenceFilterMismatchListener}.
+   */
   interface ExistenceFilterMismatchListener {
+
+    /**
+     * Invoked when an existence filter mismatch occurs.
+     *
+     * @param info information about the existence filter mismatch.
+     */
     @AnyThread
-    void onExistenceFilterMismatch(ExistenceFilterMismatchInfo info);
+    void onExistenceFilterMismatch(@NonNull ExistenceFilterMismatchInfo info);
   }
 
+  /**
+   * Information about an existence filter mismatch, as specified to listeners registered with
+   * {@link #addExistenceFilterMismatchListener}.
+   */
   @AutoValue
   abstract static class ExistenceFilterMismatchInfo {
 
+    /**
+     * Creates and returns a new instance of {@link ExistenceFilterMismatchInfo} with the given
+     * values.
+     */
     static ExistenceFilterMismatchInfo create(
         int localCacheCount,
         int existenceFilterCount,
         @Nullable ExistenceFilterBloomFilterInfo bloomFilter) {
-      return new AutoValue_WatchChangeAggregatorTestingHooks_ExistenceFilterMismatchInfo(
+      return new AutoValue_TestingHooks_ExistenceFilterMismatchInfo(
           localCacheCount, existenceFilterCount, bloomFilter);
     }
 
@@ -116,6 +152,10 @@ final class WatchChangeAggregatorTestingHooks {
     @Nullable
     abstract ExistenceFilterBloomFilterInfo bloomFilter();
 
+    /**
+     * Convenience method to create and return a new instance of {@link ExistenceFilterMismatchInfo}
+     * with the values taken from the given arguments.
+     */
     static ExistenceFilterMismatchInfo from(
         boolean bloomFilterApplied, int localCacheCount, ExistenceFilter existenceFilter) {
       return create(
@@ -130,7 +170,7 @@ final class WatchChangeAggregatorTestingHooks {
 
     static ExistenceFilterBloomFilterInfo create(
         boolean applied, int hashCount, int bitmapLength, int padding) {
-      return new AutoValue_WatchChangeAggregatorTestingHooks_ExistenceFilterBloomFilterInfo(
+      return new AutoValue_TestingHooks_ExistenceFilterBloomFilterInfo(
           applied, hashCount, bitmapLength, padding);
     }
 
