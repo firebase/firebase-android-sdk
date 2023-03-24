@@ -27,7 +27,6 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.firestore.AccessHelper;
-import com.google.firebase.firestore.BuildConfig;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -83,21 +82,6 @@ class MockCredentialsProvider extends EmptyCredentialsProvider {
 /** A set of helper methods for tests */
 public class IntegrationTestUtil {
 
-  public enum TargetBackend {
-    EMULATOR,
-    QA,
-    NIGHTLY,
-    PROD
-  }
-
-  // Set this to the desired enum value to change the target backend when running tests locally.
-  // Note: DO NOT change this variable except for local testing.
-  private static final TargetBackend backendForLocalTesting = null;
-
-  private static final TargetBackend backend = getTargetBackend();
-  private static final String EMULATOR_HOST = "10.0.2.2";
-  private static final int EMULATOR_PORT = 8080;
-
   // Alternate project ID for creating "bad" references. Doesn't actually need to work.
   public static final String BAD_PROJECT_ID = "test-project-2";
 
@@ -129,58 +113,27 @@ public class IntegrationTestUtil {
     return provider;
   }
 
-  private static String getFirestoreHost() {
-    switch (backend) {
-      case EMULATOR:
-        return String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT);
-      case QA:
-        return "staging-firestore.sandbox.googleapis.com";
-      case NIGHTLY:
-        return "test-firestore.sandbox.googleapis.com";
-      case PROD:
-      default:
-        return "firestore.googleapis.com";
-    }
-  }
-
-  private static boolean getSslEnabled() {
-    // ssl is enabled in all environments except for the emulator.
-    return !isRunningAgainstEmulator();
-  }
-
-  public static TargetBackend getTargetBackend() {
-    if (backendForLocalTesting != null) {
-      return backendForLocalTesting;
-    }
-    switch (BuildConfig.TARGET_BACKEND) {
-      case "emulator":
-        return TargetBackend.EMULATOR;
-      case "qa":
-        return TargetBackend.QA;
-      case "nightly":
-        return TargetBackend.NIGHTLY;
-      case "prod":
-        return TargetBackend.PROD;
-      default:
-        throw new RuntimeException("Unknown backend configuration used for integration tests.");
-    }
-  }
-
   public static DatabaseInfo testEnvDatabaseInfo() {
+    TargetBackend targetBackend = TargetBackend.getConfiguredValue();
     return new DatabaseInfo(
         DatabaseId.forProject(provider.projectId()),
         "test-persistenceKey",
-        getFirestoreHost(),
-        getSslEnabled());
+        targetBackend.host,
+        targetBackend.ssl);
   }
 
   public static FirebaseFirestoreSettings newTestSettings() {
-    Logger.debug("IntegrationTestUtil", "target backend is: %s", backend.name());
-    FirebaseFirestoreSettings.Builder settings = new FirebaseFirestoreSettings.Builder();
-    settings.setHost(getFirestoreHost());
-    settings.setSslEnabled(getSslEnabled());
-    settings.setPersistenceEnabled(true);
-    return settings.build();
+    TargetBackend targetBackend = TargetBackend.getConfiguredValue();
+    FirebaseFirestoreSettings.Builder settingsBuilder = new FirebaseFirestoreSettings.Builder();
+    settingsBuilder.setHost(targetBackend.host);
+    settingsBuilder.setSslEnabled(targetBackend.ssl);
+    settingsBuilder.setPersistenceEnabled(true);
+    FirebaseFirestoreSettings settings = settingsBuilder.build();
+
+    Logger.debug(
+        "IntegrationTestUtil",
+        "newTestSettings() returns settings for target backend " + targetBackend + ": " + settings);
+    return settings;
   }
 
   public static FirebaseApp testFirebaseApp() {
@@ -486,7 +439,7 @@ public class IntegrationTestUtil {
   }
 
   public static boolean isRunningAgainstEmulator() {
-    return backend.equals(TargetBackend.EMULATOR);
+    return TargetBackend.getConfiguredValue() == TargetBackend.EMULATOR;
   }
 
   public static void testChangeUserTo(User user) {

@@ -89,29 +89,10 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     testOptions.unitTests.includeAndroidResources = true
-
-    // Acceptable values are: 'emulator', 'qa', 'nightly', and 'prod'.
-    ext.targetBackend = 'emulator'
 }
 
 tasks.withType(Test) {
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
-}
-
-android.libraryVariants.all { variant ->
-    if (findProperty('targetBackend')) {
-        variant.buildConfigField("String", "TARGET_BACKEND", "\"${property("targetBackend")}\"")
-    } else {
-        // By default set the target backend to 'emulator'
-        variant.buildConfigField("String", "TARGET_BACKEND", "\"emulator\"")
-    }
-
-    def localProps = new Properties()
-
-    try {
-    file("local.properties").withInputStream { localProps.load(it) }
-    } catch (FileNotFoundException e) {
-    }
 }
 
 googleJavaFormat {
