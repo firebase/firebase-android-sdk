@@ -582,10 +582,9 @@ public class FirebaseRemoteConfig {
    * @param port the emulator port (for example, 9299)
    * @exception FirebaseRemoteConfigClientException Thrown when useEmulator is called after a fetch.
    */
-  public void useEmulator(@NonNull String host, int port)
-      throws FirebaseRemoteConfigClientException {
+  public void useEmulator(@NonNull String host, int port) {
     if (this.frcMetadata.getInfo().getLastFetchStatus() != LAST_FETCH_STATUS_NO_FETCH_YET) {
-      throw new FirebaseRemoteConfigClientException(
+      throw new IllegalStateException(
           "Cannot connect to emulator after a fetch has been made.");
     }
     fetchHandler.setEmulatedServiceSettings(new EmulatedServiceSettings(host, port));
