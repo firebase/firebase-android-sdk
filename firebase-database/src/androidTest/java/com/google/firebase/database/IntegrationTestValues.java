@@ -26,9 +26,7 @@ public class IntegrationTestValues {
   private IntegrationTestValues() {}
 
   public static String getDatabaseUrl() {
-    Context c = InstrumentationRegistry.getInstrumentation().getContext();
-    StringResourceValueReader reader = new StringResourceValueReader(c);
-    return reader.getString("firebase_database_url");
+    return getResource("firebase_database_url");
   }
 
   public static String getNamespace() {
@@ -47,9 +45,7 @@ public class IntegrationTestValues {
   }
 
   public static String getProjectId() {
-    Context c = InstrumentationRegistry.getInstrumentation().getContext();
-    StringResourceValueReader reader = new StringResourceValueReader(c);
-    return reader.getString("project_id");
+    return getResource("project_id");
   }
 
   public static long getTimeout() {
@@ -58,5 +54,10 @@ public class IntegrationTestValues {
 
   public static String getServer() {
     return TEST_SERVER;
+  }
+
+  private static String getResource(String name) {
+    Context currentContext = InstrumentationRegistry.getInstrumentation().getContext();
+    return new StringResourceValueReader(currentContext).getString(name);
   }
 }
