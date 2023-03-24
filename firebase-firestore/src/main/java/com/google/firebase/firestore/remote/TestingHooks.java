@@ -22,8 +22,8 @@ import androidx.annotation.VisibleForTesting;
 import com.google.auto.value.AutoValue;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.util.Executors;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Manages "testing hooks", hooks into the internals of the SDK to verify internal state and events
@@ -36,8 +36,10 @@ final class TestingHooks {
 
   private static final TestingHooks instance = new TestingHooks();
 
-  private final Map<Object, ExistenceFilterMismatchListener> existenceFilterMismatchListeners =
-      new HashMap<>();
+  // Use CopyOnWriteArrayList to store the listeners so that we don't need to worry about
+  // synchronizing adds, removes, and traversals.
+  private final CopyOnWriteArrayList<AtomicReference<ExistenceFilterMismatchListener>>
+      existenceFilterMismatchListeners = new CopyOnWriteArrayList<>();
 
   private TestingHooks() {}
 
@@ -48,16 +50,21 @@ final class TestingHooks {
   }
 
   /**
-   * Notifies all registered {@link ExistenceFilterMismatchListener}` listeners registered via
-   * {@link #addExistenceFilterMismatchListener}.
+   * Asynchronously notifies all registered {@link ExistenceFilterMismatchListener}` listeners
+   * registered via {@link #addExistenceFilterMismatchListener}.
    *
    * @param info Information about the existence filter mismatch to deliver to the listeners.
    */
   void notifyOnExistenceFilterMismatch(@NonNull ExistenceFilterMismatchInfo info) {
-    synchronized (existenceFilterMismatchListeners) {
-      for (ExistenceFilterMismatchListener listener : existenceFilterMismatchListeners.values()) {
-        Executors.BACKGROUND_EXECUTOR.execute(() -> listener.onExistenceFilterMismatch(info));
-      }
+    for (AtomicReference<ExistenceFilterMismatchListener> listenerRef :
+        existenceFilterMismatchListeners) {
+      Executors.BACKGROUND_EXECUTOR.execute(
+          () -> {
+            ExistenceFilterMismatchListener listener = listenerRef.get();
+            if (listener != null) {
+              listener.onExistenceFilterMismatch(info);
+            }
+          });
     }
   }
 
@@ -83,15 +90,12 @@ final class TestingHooks {
       @NonNull ExistenceFilterMismatchListener listener) {
     checkNotNull(listener, "a null listener is not allowed");
 
-    Object listenerId = new Object();
-    synchronized (existenceFilterMismatchListeners) {
-      existenceFilterMismatchListeners.put(listenerId, listener);
-    }
+    AtomicReference<ExistenceFilterMismatchListener> listenerRef = new AtomicReference<>(listener);
+    existenceFilterMismatchListeners.add(listenerRef);
 
     return () -> {
-      synchronized (existenceFilterMismatchListeners) {
-        existenceFilterMismatchListeners.remove(listenerId);
-      }
+      listenerRef.set(null);
+      existenceFilterMismatchListeners.remove(listenerRef);
     };
   }
 
