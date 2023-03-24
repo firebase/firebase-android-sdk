@@ -37,10 +37,6 @@ android {
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
-  sourceSets {
-    named("main") { java.srcDir("src/main/kotlin") }
-    named("test") { java.srcDir("src/test/kotlin") }
-  }
 
   testOptions.unitTests.isIncludeAndroidResources = true
 }
