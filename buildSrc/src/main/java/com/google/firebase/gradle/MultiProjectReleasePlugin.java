@@ -28,6 +28,7 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.bundling.Zip;
 
 /**
@@ -50,7 +51,8 @@ import org.gradle.api.tasks.bundling.Zip;
  *       </ul>
  * </ul>
  */
-public class MultiProjectReleasePlugin implements Plugin<Project> {
+public class
+MultiProjectReleasePlugin implements Plugin<Project> {
 
   @Override
   public void apply(Project project) {
@@ -80,7 +82,20 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
               task.getDestinationDirectory().set(project.getRootDir());
             });
 
-    project.getTasks().create("generateReleaseConfig", ReleaseGenerator.class);
+    ReleaseGenerator generatorTask = project.getTasks()
+        .create("generateReleaseConfigRaw", ReleaseGenerator.class, task -> {
+          task.getCurrentRelease().set(project.property("currentRelease").toString());
+          task.getPastRelease().set(project.property("pastRelease").toString());
+          task.getPrintReleaseConfig()
+              .set(Boolean.parseBoolean(project.property("printOutput").toString()));
+        });
+
+    project.getTasks().create("generateReleaseConfig", Copy.class, task -> {
+      task.dependsOn(generatorTask);
+      task.from(generatorTask.getReleaseConfigFile().get(),
+          generatorTask.getReleaseReportFile().get());
+      task.into(project.getRootDir());
+    });
 
     project
         .getGradle()

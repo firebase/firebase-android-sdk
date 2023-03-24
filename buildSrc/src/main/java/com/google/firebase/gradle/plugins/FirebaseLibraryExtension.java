@@ -40,16 +40,24 @@ public class FirebaseLibraryExtension {
 
   public final Project project;
   public final LibraryType type;
-  /** Indicates whether the library has public javadoc. */
+  /**
+   * Indicates whether the library has public javadoc.
+   */
   public boolean publishJavadoc = true;
 
-  /** Indicates whether sources are published alongside the library. */
+  /**
+   * Indicates whether sources are published alongside the library.
+   */
   public boolean publishSources;
 
-  /** Static analysis configuration. */
+  /**
+   * Static analysis configuration.
+   */
   public final FirebaseStaticAnalysis staticAnalysis;
 
-  /** Firebase Test Lab configuration/ */
+  /**
+   * Firebase Test Lab configuration/
+   */
   public final FirebaseTestLabExtension testLab;
 
   public Property<String> groupId;
@@ -107,7 +115,9 @@ public class FirebaseLibraryExtension {
     return ImmutableSet.copyOf(project.property(propertyName).toString().split(",", -1));
   }
 
-  /** Configure Firebase Test Lab. */
+  /**
+   * Configure Firebase Test Lab.
+   */
   public void testLab(Action<FirebaseTestLabExtension> action) {
     action.execute(testLab);
   }
@@ -132,7 +142,9 @@ public class FirebaseLibraryExtension {
         .build();
   }
 
-  /** Provides a hook to customize pom generation. */
+  /**
+   * Provides a hook to customize pom generation.
+   */
   public void customizePom(Action<MavenPom> action) {
     customizePomAction = action;
   }

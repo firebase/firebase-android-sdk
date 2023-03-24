@@ -14,6 +14,7 @@
 package com.google.firebase.gradle
 
 import com.google.common.collect.Sets
+import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import java.io.File
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand
@@ -22,6 +23,10 @@ import org.eclipse.jgit.lib.Constants
 import org.eclipse.jgit.lib.ObjectId
 import org.eclipse.jgit.revwalk.RevCommit
 import org.gradle.api.DefaultTask
+import org.gradle.api.Project
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
 data class FirebaseLibrary(val moduleNames: List<String>, val directories: List<String>)
@@ -40,31 +45,38 @@ data class CommitDiff(
       .trimMargin()
 }
 
-open class ReleaseGenerator : DefaultTask() {
+abstract class ReleaseGenerator : DefaultTask() {
+
+  @get:Input public abstract val currentRelease: Property<String>
+
+  @get:Input public abstract val pastRelease: Property<String>
+
+  @get:Input public abstract val printReleaseConfig: Property<String>
+
+  @get:OutputFile public abstract val releaseConfigFile: Property<File>
+
+  @get:OutputFile public abstract val releaseReportFile: Property<File>
+
   @TaskAction
   @Throws(Exception::class)
   fun generateReleaseConfig() {
-    val currentRelease = project.property("currentRelease").toString()
-    val pastRelease = project.property("pastRelease").toString()
-    val printReleaseConfig = project.property("printOutput").toString().toBoolean()
     val rootDir = project.rootDir
     val availableModules = parseSubProjects(rootDir)
-    val firebaseLibraries = extractLibraries(availableModules, rootDir)
 
     val repo = Git.open(rootDir)
     val headRef = repo.repository.resolve(Constants.HEAD)
-    val branchRef = getObjectRefForBranchName(repo, pastRelease)
+    val branchRef = getObjectRefForBranchName(repo, pastRelease.get())
 
-    val libsToRelease = getChangedChangelogs(repo, branchRef, headRef, firebaseLibraries)
+    val libsToRelease = getChangedChangelogs(project, repo, branchRef, headRef, firebaseLibraries)
     val changedLibsWithNoChangelog =
       Sets.difference(
         getChangedLibraries(repo, branchRef, headRef, firebaseLibraries).toSet(),
         libsToRelease.toSet(),
       )
     val changes = getChangesForLibraries(repo, branchRef, headRef, libsToRelease)
-    writeReleaseConfig(rootDir, libsToRelease, currentRelease)
+    writeReleaseConfig(rootDir, libsToRelease, currentRelease.get())
     val releaseReport = generateReleaseReport(changes, changedLibsWithNoChangelog)
-    if (printReleaseConfig) {
+    if (printReleaseConfig.get().toBoolean()) {
       println(releaseReport)
     }
     writeReleaseReport(rootDir, releaseReport)
@@ -76,12 +88,15 @@ open class ReleaseGenerator : DefaultTask() {
   ) =
     """
       |# Release Report
-      |${changes.entries.joinToString("\n") {
-      """
+      |${
+            changes.entries.joinToString("\n") {
+                """
       |## ${it.key}
       
       |${it.value.joinToString("\n") { it.toString() }}
-      """.trimMargin()}}
+      """.trimMargin()
+            }
+        }
       |
       |## SDKs with changes, but no changelogs
       |${changedLibrariesWithNoChangelog.joinToString("  \n")}
@@ -93,11 +108,7 @@ open class ReleaseGenerator : DefaultTask() {
     branchRef: ObjectId,
     headRef: ObjectId,
     changedLibraries: List<String>
-  ) =
-    changedLibraries
-      .map { it to getDirChanges(repo, branchRef, headRef, it) }
-      .filterNot { it.second.isEmpty() }
-      .toMap()
+  ) = changedLibraries.map { it to getDirChanges(repo, branchRef, headRef, it) }.toMap()
 
   private fun extractLibraries(
     availableModules: Set<String>,
@@ -149,18 +160,24 @@ open class ReleaseGenerator : DefaultTask() {
       .flatMap { it.moduleNames }
 
   private fun getChangedChangelogs(
+    project: Project,
     repo: Git,
     previousReleaseRef: ObjectId,
     currentReleaseRef: ObjectId,
-    libraries: List<FirebaseLibrary>
+    libraries: List<String>
   ) =
     libraries
       .filter { library ->
-        library.directories.any {
-          checkDirChanges(repo, previousReleaseRef, currentReleaseRef, "$it/CHANGELOG.md")
-        }
+        checkDirChanges(repo, previousReleaseRef, currentReleaseRef, "$library/CHANGELOG.md")
       }
-      .flatMap { it.moduleNames }
+      .flatMap {
+        project.childProjects
+          .get(it)!!
+          .extensions
+          .getByType(FirebaseLibraryExtension::class.java)
+          .projectsToRelease
+          .map { it.name }
+      }
 
   private fun checkDirChanges(
     repo: Git,
@@ -217,4 +234,12 @@ open class ReleaseGenerator : DefaultTask() {
           .trimMargin()
       )
   }
+}
+
+data class ReleaseConfig(val releaseName: String, val libs: List<String>) {
+  companion object {
+    fun fromFile(file: File): ReleaseConfig {}
+  }
+
+  fun toFile(): string {}
 }
