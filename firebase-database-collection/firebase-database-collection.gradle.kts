@@ -1,4 +1,4 @@
-// Copyright 2018 Google LLC
+// Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 // limitations under the License.
 
 plugins {
-    id 'firebase-library'
+    id("firebase-library")
 }
 
 firebaseLibrary {
@@ -22,23 +22,28 @@ firebaseLibrary {
 }
 
 android {
-    compileSdkVersion project.targetSdkVersion
+    val targetSdkVersion: Int by rootProject
+    val minSdkVersion: Int by rootProject
+
+    compileSdk = targetSdkVersion
+
     defaultConfig {
-        targetSdkVersion project.targetSdkVersion
-        minSdkVersion project.minSdkVersion
+        minSdk = minSdkVersion
+        targetSdk = targetSdkVersion
     }
+
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
 }
 
 dependencies {
-    implementation 'com.google.android.gms:play-services-base:18.0.1'
+    implementation("com.google.android.gms:play-services-base:18.0.1")
 
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'net.java:quickcheck:0.6'
+    testImplementation("junit:junit:4.12")
+    testImplementation("net.java:quickcheck:0.6")
 
-    testAnnotationProcessor 'net.java:quickcheck-src-generator:0.6'
-    testAnnotationProcessor 'net.java.quickcheck:quickcheck-src-generator:0.6'
+    testAnnotationProcessor("net.java:quickcheck-src-generator:0.6")
+    testAnnotationProcessor("net.java.quickcheck:quickcheck-src-generator:0.6")
 }
