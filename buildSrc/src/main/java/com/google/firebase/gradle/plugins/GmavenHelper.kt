@@ -29,6 +29,12 @@ class GmavenHelper(val groupId: String, val artifactId: String) {
     return "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/${version}/${pomFileName}"
   }
 
+  fun getAarFileForVersion(version: String): String {
+    val pomFileName = "${artifactId}-${version}.aar"
+    val groupIdAsPath = groupId.replace(".", "/")
+    return "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/${version}/${pomFileName}"
+  }
+
   fun getLatestReleasedVersion(): String {
     try {
       val groupIdAsPath = groupId.replace(".", "/")

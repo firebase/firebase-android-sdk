@@ -48,6 +48,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     setupStaticAnalysis(project, firebaseLibrary)
     setupApiInformationAnalysis(project)
     getIsPomValidTask(project, firebaseLibrary)
+    getSemverTask(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary)
   }
 

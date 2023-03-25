@@ -14,6 +14,7 @@
 package com.google.firebase.gradle.plugins
 
 import com.google.firebase.gradle.plugins.ci.Coverage
+import com.google.firebase.gradle.plugins.semver.ApiDiffer
 import java.io.File
 import java.nio.file.Paths
 import org.gradle.api.Plugin
@@ -78,6 +79,17 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
       groupId.value(firebaseLibrary.groupId.get())
       artifactId.value(firebaseLibrary.artifactId.get())
       dependsOn("generatePomFileForMavenAarPublication")
+    }
+  }
+
+  protected fun getSemverTask(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+    project.tasks.register<ApiDiffer>("semverCheck") {
+      aarPath.value(
+        project.file("build/outputs/aar/${firebaseLibrary.artifactId.get()}-release.aar")
+      )
+      groupId.value(firebaseLibrary.groupId.get())
+      artifactId.value(firebaseLibrary.artifactId.get())
+      dependsOn("bundleReleaseAar")
     }
   }
 
