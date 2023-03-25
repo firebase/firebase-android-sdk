@@ -18,7 +18,7 @@ plugins {
     id 'com.google.firebase.appdistribution'
 }
 
-android {
+android { namespace = "com.firebase.google"
     compileSdk 33
 
     defaultConfig {

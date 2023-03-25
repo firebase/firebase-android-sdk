@@ -16,7 +16,7 @@ plugins {
     id 'com.android.application'
 }
 
-android {
+android { namespace = "com.firebase.google"
     adbOptions {
         timeOutInMs 60 * 1000
     }

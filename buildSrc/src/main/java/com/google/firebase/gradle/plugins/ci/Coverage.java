@@ -36,7 +36,7 @@ public final class Coverage {
     JacocoPluginExtension jacoco = project.getExtensions().getByType(JacocoPluginExtension.class);
 
     jacoco.setToolVersion("0.8.8");
-    jacoco.setReportsDir(reportsDir);
+    jacoco.getReportsDirectory().set(reportsDir);
     project
         .getTasks()
         .withType(
@@ -98,7 +98,7 @@ public final class Coverage {
                         .getHtml()
                         .setDestination(
                             new File(reportsDir, firebaseLibrary.artifactId.get() + "/html"));
-                    reports.getXml().setEnabled(true);
+                    reports.getXml().getRequired().set(true);
                     reports
                         .getXml()
                         .setDestination(

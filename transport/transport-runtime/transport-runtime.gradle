@@ -66,13 +66,7 @@ firebaseLibrary {
     }
 }
 
-vendor {
-    // Integration tests use dagger classes that are not used in the main SDK,
-    // so we disable dead code elimination to ensure those classes are preserved.
-    optimize = false
-}
-
-android {
+android { namespace = "com.firebase.google"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion

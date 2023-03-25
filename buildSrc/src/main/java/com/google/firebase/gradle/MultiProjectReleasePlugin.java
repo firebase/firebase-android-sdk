@@ -19,6 +19,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.firebase.gradle.bomgenerator.BomGeneratorTask;
 import com.google.firebase.gradle.plugins.FireEscapeArtifactPlugin;
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension;
+import com.google.firebase.gradle.plugins.FiresiteTransformTask;
 import com.google.firebase.gradle.plugins.JavadocPlugin;
 import com.google.firebase.gradle.plugins.publish.PublishingPlugin;
 import java.io.File;

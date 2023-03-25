@@ -40,7 +40,7 @@ protobuf {
     }
 }
 
-android {
+android { namespace = "com.firebase.google"
     compileSdkVersion project.targetSdkVersion
 
     lintOptions {

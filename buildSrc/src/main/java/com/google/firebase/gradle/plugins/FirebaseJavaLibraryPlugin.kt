@@ -21,7 +21,7 @@ import com.google.firebase.gradle.plugins.LibraryType.JAVA
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.plugins.JavaLibraryPlugin
-import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.api.plugins.JavaPluginExtension
 import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
@@ -53,7 +53,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
   private fun setupApiInformationAnalysis(project: Project) {
     val srcDirs =
-      project.convention.getPlugin<JavaPluginConvention>().sourceSets.getByName("main").java.srcDirs
+      project.extensions.getByType<JavaPluginExtension>().sourceSets.getByName("main").java.srcDirs
 
     val apiInfo = getApiInfo(project, srcDirs)
 

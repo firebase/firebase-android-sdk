@@ -17,7 +17,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
-android {
+android { namespace = "com.firebase.google"
     compileSdkVersion 32
 
     compileOptions {
