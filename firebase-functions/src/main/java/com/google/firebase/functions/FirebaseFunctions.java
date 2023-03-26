@@ -73,6 +73,8 @@ public class FirebaseFunctions {
 
   private final Executor executor;
 
+  private final String hello = "String";
+
   // The projectId to use for all functions references.
   private final String projectId;
 
@@ -192,7 +194,7 @@ public class FirebaseFunctions {
    *     "us-central1"} or {@code "https://mydomain.com"}.
    */
   @NonNull
-  public static FirebaseFunctions getInstance(@NonNull String regionOrCustomDomain) {
+  public static FirebaseFunctions getInstance(@NonNull String regionOrCustomDomain) throws IOException {
     return getInstance(FirebaseApp.getInstance(), regionOrCustomDomain);
   }
 
