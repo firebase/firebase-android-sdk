@@ -194,7 +194,7 @@ public class FirebaseFunctions {
    *     "us-central1"} or {@code "https://mydomain.com"}.
    */
   @NonNull
-  public static FirebaseFunctions getInstance(@NonNull String regionOrCustomDomain) throws IOException {
+  public static FirebaseFunctions getInstance(@NonNull String regionOrCustomDomain) {
     return getInstance(FirebaseApp.getInstance(), regionOrCustomDomain);
   }
 

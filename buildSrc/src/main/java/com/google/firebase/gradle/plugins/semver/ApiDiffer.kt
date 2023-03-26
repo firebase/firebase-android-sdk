@@ -80,7 +80,6 @@ abstract class ApiDiffer : DefaultTask() {
         }
       }
     }
-    print(apiDeltas)
   }
 
   fun readApi(aarPath: File, destFile: String): Map<String, ClassInfo> {
@@ -161,7 +160,8 @@ abstract class ApiDiffer : DefaultTask() {
             className,
             "",
             String.format("Class %s removed.", className),
-            DeltaType.REMOVED_CLASS
+            DeltaType.REMOVED_CLASS,
+            VersionDelta.MAJOR
           )
         )
         continue
@@ -185,7 +185,8 @@ abstract class ApiDiffer : DefaultTask() {
                 getMethodSignature(beforeMethod),
                 className
               ),
-              DeltaType.REMOVED_METHOD
+              DeltaType.REMOVED_METHOD,
+              VersionDelta.MAJOR
             )
           )
         }
@@ -200,7 +201,8 @@ abstract class ApiDiffer : DefaultTask() {
               className,
               fieldName,
               String.format("Field %s on class %s was removed.", fieldName, className),
-              DeltaType.REMOVED_FIELD
+              DeltaType.REMOVED_FIELD,
+              VersionDelta.MAJOR,
             )
           )
         }
@@ -220,7 +222,8 @@ abstract class ApiDiffer : DefaultTask() {
           className,
           afterField.name,
           String.format("Field %s on class %s has been added.", afterField.name, className),
-          DeltaType.ADDED_FIELD
+          DeltaType.ADDED_FIELD,
+          VersionDelta.MINOR
         )
       } else null
     }
@@ -230,7 +233,8 @@ abstract class ApiDiffer : DefaultTask() {
         className,
         afterField.name,
         String.format("Field %s on class %s became private.", afterField.name, className),
-        DeltaType.REDUCED_VISIBILITY
+        DeltaType.REDUCED_VISIBILITY,
+        VersionDelta.MAJOR
       )
     }
     if (afterFieldAccess.isProtected() && beforeFieldAccess.isPublic()) {
@@ -242,7 +246,8 @@ abstract class ApiDiffer : DefaultTask() {
           afterField.name,
           className
         ),
-        DeltaType.REDUCED_VISIBILITY
+        DeltaType.REDUCED_VISIBILITY,
+        VersionDelta.MAJOR
       )
     }
     if (afterFieldAccess.isProtected() && beforeFieldAccess.isPrivate()) {
@@ -254,7 +259,8 @@ abstract class ApiDiffer : DefaultTask() {
           afterField.name,
           className
         ),
-        DeltaType.INCREASED_VISIBILITY
+        DeltaType.INCREASED_VISIBILITY,
+        VersionDelta.MINOR
       )
     }
     return if (afterFieldAccess.isPublic() && !beforeFieldAccess.isPublic()) {
@@ -262,7 +268,8 @@ abstract class ApiDiffer : DefaultTask() {
         className,
         afterField.name,
         String.format("Field %s on class %s became public.", afterField.name, className),
-        DeltaType.INCREASED_VISIBILITY
+        DeltaType.INCREASED_VISIBILITY,
+        VersionDelta.MINOR
       )
     } else null
   }
@@ -290,7 +297,8 @@ abstract class ApiDiffer : DefaultTask() {
               getMethodSignature(afterMethod),
               className
             ),
-            DeltaType.ADDED_METHOD
+            DeltaType.ADDED_METHOD,
+            VersionDelta.MINOR
           )
         )
       }
@@ -309,7 +317,8 @@ abstract class ApiDiffer : DefaultTask() {
             getMethodSignature(afterMethod),
             className
           ),
-          DeltaType.CHANGED_TO_STATIC
+          DeltaType.CHANGED_TO_STATIC,
+          VersionDelta.MAJOR
         )
       )
     } else if (!afterMethodAccess.isStatic() && beforeMethodAccess.isStatic()) {
@@ -322,7 +331,8 @@ abstract class ApiDiffer : DefaultTask() {
             getMethodSignature(afterMethod),
             className
           ),
-          DeltaType.CHANGED_FROM_STATIC
+          DeltaType.CHANGED_FROM_STATIC,
+          VersionDelta.MINOR
         )
       )
     }
@@ -336,7 +346,8 @@ abstract class ApiDiffer : DefaultTask() {
             getMethodSignature(afterMethod),
             className
           ),
-          DeltaType.REDUCED_VISIBILITY
+          DeltaType.REDUCED_VISIBILITY,
+          VersionDelta.MAJOR
         )
       )
     } else if (afterMethodAccess.isProtected() && beforeMethodAccess.isPublic()) {
@@ -349,7 +360,8 @@ abstract class ApiDiffer : DefaultTask() {
             getMethodSignature(afterMethod),
             className
           ),
-          DeltaType.REDUCED_VISIBILITY
+          DeltaType.REDUCED_VISIBILITY,
+          VersionDelta.MAJOR
         )
       )
     } else if (afterMethodAccess.isProtected() && beforeMethodAccess.isPrivate()) {
@@ -362,7 +374,8 @@ abstract class ApiDiffer : DefaultTask() {
             getMethodSignature(afterMethod),
             className
           ),
-          DeltaType.INCREASED_VISIBILITY
+          DeltaType.INCREASED_VISIBILITY,
+          VersionDelta.MINOR
         )
       )
     } else if (afterMethodAccess.isPublic() && !beforeMethodAccess.isPublic()) {
@@ -375,7 +388,8 @@ abstract class ApiDiffer : DefaultTask() {
             getMethodSignature(afterMethod),
             className
           ),
-          DeltaType.INCREASED_VISIBILITY
+          DeltaType.INCREASED_VISIBILITY,
+          VersionDelta.MINOR
         )
       )
     } else if (afterMethodAccess.isAbstract() && !beforeMethodAccess.isAbstract()) {
@@ -388,7 +402,8 @@ abstract class ApiDiffer : DefaultTask() {
             getMethodSignature(afterMethod),
             className
           ),
-          DeltaType.METHOD_MADE_ABSTRACT
+          DeltaType.METHOD_MADE_ABSTRACT,
+          VersionDelta.MAJOR
         )
       )
     } else if (afterMethodAccess.isFinal() && !beforeMethodAccess.isFinal()) {
@@ -401,7 +416,8 @@ abstract class ApiDiffer : DefaultTask() {
             getMethodSignature(afterMethod),
             className
           ),
-          DeltaType.METHOD_MADE_FINAL
+          DeltaType.METHOD_MADE_FINAL,
+          VersionDelta.MAJOR
         )
       )
     }
@@ -417,7 +433,8 @@ abstract class ApiDiffer : DefaultTask() {
             getMethodSignature(afterMethod),
             className
           ),
-          DeltaType.NEW_EXCEPTIONS
+          DeltaType.NEW_EXCEPTIONS,
+          VersionDelta.MAJOR
         )
       )
     }
@@ -431,7 +448,8 @@ abstract class ApiDiffer : DefaultTask() {
             getMethodSignature(afterMethod),
             className
           ),
-          DeltaType.DELETE_EXCEPTIONS
+          DeltaType.DELETE_EXCEPTIONS,
+          VersionDelta.MAJOR
         )
       )
     }
@@ -449,7 +467,8 @@ abstract class ApiDiffer : DefaultTask() {
           className,
           "",
           String.format("Class %s was added.", className),
-          DeltaType.ADDED_CLASS
+          DeltaType.ADDED_CLASS,
+          VersionDelta.MINOR
         )
       }
       return null
@@ -462,7 +481,8 @@ abstract class ApiDiffer : DefaultTask() {
         className,
         "",
         String.format("Class %s became private.", className),
-        DeltaType.REDUCED_VISIBILITY
+        DeltaType.REDUCED_VISIBILITY,
+        VersionDelta.MAJOR
       )
     }
     if (afterClassAccess.isProtected() && beforeClassAccess.isPublic()) {
@@ -470,7 +490,8 @@ abstract class ApiDiffer : DefaultTask() {
         className,
         "",
         String.format("Class %s became protected from public.", className),
-        DeltaType.REDUCED_VISIBILITY
+        DeltaType.REDUCED_VISIBILITY,
+        VersionDelta.MAJOR
       )
     }
     if (afterClassAccess.isPublic() && !beforeClassAccess.isPublic()) {
@@ -478,7 +499,8 @@ abstract class ApiDiffer : DefaultTask() {
         className,
         "",
         String.format("Class %s became public.", className),
-        DeltaType.INCREASED_VISIBILITY
+        DeltaType.INCREASED_VISIBILITY,
+        VersionDelta.MINOR
       )
     }
     if (afterClassAccess.isProtected() && beforeClassAccess.isPrivate()) {
@@ -486,7 +508,8 @@ abstract class ApiDiffer : DefaultTask() {
         className,
         "",
         String.format("Class %s became protected from private.", className),
-        DeltaType.INCREASED_VISIBILITY
+        DeltaType.INCREASED_VISIBILITY,
+        VersionDelta.MINOR
       )
     }
     if (afterClassAccess.isAbstract() && !beforeClassAccess.isAbstract()) {
@@ -494,7 +517,8 @@ abstract class ApiDiffer : DefaultTask() {
         className,
         "",
         String.format("Class %s became abstract.", className),
-        DeltaType.CLASS_MADE_ABSTRACT
+        DeltaType.CLASS_MADE_ABSTRACT,
+        VersionDelta.MAJOR
       )
     }
     if (afterClassAccess.isFinal() && !beforeClassAccess.isFinal()) {
@@ -502,7 +526,8 @@ abstract class ApiDiffer : DefaultTask() {
         className,
         "",
         String.format("Class %s became final.", className),
-        DeltaType.CLASS_MADE_FINAL
+        DeltaType.CLASS_MADE_FINAL,
+        VersionDelta.MAJOR
       )
     }
     return null

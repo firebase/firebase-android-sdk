@@ -5,5 +5,6 @@ class Delta(
   val className: String,
   val memberName: String,
   val description: String,
-  val deltaType: DeltaType
+  val deltaType: DeltaType,
+  val versionDelta: VersionDelta,
 )
