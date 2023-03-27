@@ -153,7 +153,18 @@ public class BundleSerializer {
     Query.LimitType limitType = decodeLimitType(bundledQuery);
 
     return new BundledQuery(
-        new Query(parent, collectionGroup, filters, orderBys, limit, limitType, startAt, endAt)
+        new Query(
+                parent,
+                collectionGroup,
+                filters,
+                orderBys,
+                limit,
+                // Not using `limitType` because bundled queries are what the backend sees,
+                // and there is no limit_to_last for the backend.
+                // Limit type is applied when the query is read back instead.
+                Query.LimitType.LIMIT_TO_FIRST,
+                startAt,
+                endAt)
             .toTarget(),
         limitType);
   }

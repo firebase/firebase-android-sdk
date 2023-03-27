@@ -696,7 +696,8 @@ public class BundleSerializerTest {
             + "\"readTime\":{\"seconds\":\"1679674432\",\"nanos\":579934000}}";
     NamedQuery query = serializer.decodeNamedQuery(new JSONObject(json));
     assertEquals(
-        TestUtil.query("foo").limitToLast(10).toTarget(), query.getBundledQuery().getTarget());
+        // Note that `limitToFirst(10)` is expected.
+        TestUtil.query("foo").limitToFirst(10).toTarget(), query.getBundledQuery().getTarget());
     assertEquals(Query.LimitType.LIMIT_TO_LAST, query.getBundledQuery().getLimitType());
   }
 
