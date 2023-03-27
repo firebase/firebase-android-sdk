@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-plugins {
-  id("firebase-library")
-}
+plugins { id("firebase-library") }
 
 firebaseLibrary {
   testLab.enabled = true
@@ -53,39 +51,37 @@ android {
 
 dependencies {
   implementation("com.google.firebase:firebase-common:20.3.1")
-  implementation("com.google.firebase:firebase-database-collection:18.0.1")
   implementation("com.google.firebase:firebase-components:17.1.0")
   implementation("com.google.firebase:firebase-appcheck-interop:16.1.1")
+  implementation("com.google.firebase:firebase-database-collection:18.0.1")
 
   implementation("androidx.annotation:annotation:1.1.0")
-  implementation("com.google.android.gms:play-services-basement:18.1.0")
   implementation("com.google.android.gms:play-services-base:18.0.1")
   implementation("com.google.android.gms:play-services-tasks:18.0.1")
+  implementation("com.google.android.gms:play-services-basement:18.1.0")
   implementation("com.google.firebase:firebase-auth-interop:19.0.2") {
     exclude("com.google.firebase", "firebase-common")
   }
 
-  javadocClasspath("com.google.auto.value:auto-value-annotations:1.6.6")
-
   testImplementation(libs.truth)
+  testImplementation(libs.junit)
+  testImplementation(libs.quickcheck)
   testImplementation(libs.robolectric)
-  testImplementation("junit:junit:4.12")
-  testImplementation("org.mockito:mockito-core:2.25.0")
+  testImplementation(libs.mockito.core)
+  testImplementation(libs.androidx.test.core)
+  testImplementation(libs.androidx.test.rules)
   testImplementation("com.firebase:firebase-token-generator:2.0.0")
   testImplementation("com.fasterxml.jackson.core:jackson-core:2.9.8")
   testImplementation("com.fasterxml.jackson.core:jackson-databind:2.9.8")
-  testImplementation("net.java.quickcheck:quickcheck:0.6")
-  testImplementation("androidx.test:core:1.2.0")
-  testImplementation("androidx.test:rules:1.2.0")
 
   androidTestImplementation(libs.truth)
   androidTestImplementation(libs.quickcheck)
-  androidTestImplementation("com.fasterxml.jackson.core:jackson-core:2.9.8")
-  androidTestImplementation("com.fasterxml.jackson.core:jackson-databind:2.9.8")
-  androidTestImplementation("androidx.test:runner:1.2.0")
-  androidTestImplementation("androidx.test.ext:junit:1.1.1")
+  androidTestImplementation(libs.androidx.test.junit)
+  androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation("org.hamcrest:hamcrest:2.2")
   androidTestImplementation("org.hamcrest:hamcrest-library:2.2")
+  androidTestImplementation("com.fasterxml.jackson.core:jackson-core:2.9.8")
+  androidTestImplementation("com.fasterxml.jackson.core:jackson-databind:2.9.8")
 }
 
 ext["packageName"] = "com.google.firebase.database"

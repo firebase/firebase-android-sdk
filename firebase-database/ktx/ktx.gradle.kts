@@ -49,18 +49,18 @@ dependencies {
   implementation(libs.kotlin.stdlib)
   implementation(libs.kotlinx.coroutines.core)
 
+  implementation(project(":firebase-database"))
+  implementation("androidx.annotation:annotation:1.1.0")
   implementation("com.google.firebase:firebase-common:20.3.1")
   implementation("com.google.firebase:firebase-components:17.1.0")
   implementation("com.google.firebase:firebase-common-ktx:20.3.1")
-  implementation(project(":firebase-database"))
-  implementation("androidx.annotation:annotation:1.1.0")
   implementation("com.google.android.gms:play-services-tasks:18.0.1")
 
   testImplementation(libs.truth)
+  testImplementation(libs.junit)
   testImplementation(libs.robolectric)
-  testImplementation("junit:junit:4.12")
-  testImplementation("androidx.test:core:1.2.0")
+  testImplementation(libs.androidx.test.core)
 
-  androidTestImplementation("junit:junit:4.12")
-  androidTestImplementation("androidx.test:runner:1.2.0")
+  androidTestImplementation(libs.junit)
+  androidTestImplementation(libs.androidx.test.runner)
 }

@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-plugins {
-  id("firebase-library")
-}
+plugins { id("firebase-library") }
 
 firebaseLibrary {
   publishSources = true
@@ -41,7 +39,7 @@ android {
 dependencies {
   implementation("com.google.android.gms:play-services-base:18.0.1")
 
-  testImplementation("junit:junit:4.12")
+  testImplementation(libs.junit)
   testImplementation(libs.quickcheck)
 
   testAnnotationProcessor("net.java:quickcheck-src-generator:0.6")
