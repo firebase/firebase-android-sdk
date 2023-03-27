@@ -202,6 +202,11 @@ public class WatchChangeAggregator {
           // `isFromCache:true`.
           resetTarget(targetId);
           pendingTargetResets.add(targetId);
+
+          TestingHooks.getInstance()
+              .notifyOnExistenceFilterMismatch(
+                  TestingHooks.ExistenceFilterMismatchInfo.from(
+                      (int) currentSize, watchChange.getExistenceFilter()));
         }
       }
     }
