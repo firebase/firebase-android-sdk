@@ -22,7 +22,6 @@ import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.Query;
-import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -154,7 +153,9 @@ public class BundleSerializer {
     Query.LimitType limitType = decodeLimitType(bundledQuery);
 
     return new BundledQuery(
-        new Target(parent, collectionGroup, filters, orderBys, limit, startAt, endAt), limitType);
+        new Query(parent, collectionGroup, filters, orderBys, limit, limitType, startAt, endAt)
+            .toTarget(),
+        limitType);
   }
 
   private int decodeLimit(JSONObject structuredQuery) {
