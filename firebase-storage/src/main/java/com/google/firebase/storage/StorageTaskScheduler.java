@@ -17,6 +17,9 @@ package com.google.firebase.storage;
 import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
+
+import com.google.firebase.concurrent.FirebaseExecutors;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -36,48 +39,25 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class StorageTaskScheduler {
   public static StorageTaskScheduler sInstance = new StorageTaskScheduler();
 
-  private static BlockingQueue<Runnable> mCommandQueue = new LinkedBlockingQueue<>();
-
-  // TODO(b/258426744): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
-  private static final ThreadPoolExecutor COMMAND_POOL_EXECUTOR =
-      new ThreadPoolExecutor(
-          5, 5, 5, TimeUnit.SECONDS, mCommandQueue, new StorageThreadFactory("Command-"));
-
-  private static BlockingQueue<Runnable> mUploadQueue = new LinkedBlockingQueue<>();
-
-  // TODO(b/258426744): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
-  private static final ThreadPoolExecutor UPLOAD_QUEUE_EXECUTOR =
-      new ThreadPoolExecutor(
-          2, 2, 5, TimeUnit.SECONDS, mUploadQueue, new StorageThreadFactory("Upload-"));
-
-  private static BlockingQueue<Runnable> mDownloadQueue = new LinkedBlockingQueue<>();
-
-  // TODO(b/258426744): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
-  private static final ThreadPoolExecutor DOWNLOAD_QUEUE_EXECUTOR =
-      new ThreadPoolExecutor(
-          3, 3, 5, TimeUnit.SECONDS, mDownloadQueue, new StorageThreadFactory("Download-"));
-
-  private static BlockingQueue<Runnable> mCallbackQueue = new LinkedBlockingQueue<>();
-
-  // TODO(b/258426744): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
-  private static final ThreadPoolExecutor CALLBACK_QUEUE_EXECUTOR =
-      new ThreadPoolExecutor(
-          1, 1, 5, TimeUnit.SECONDS, mCallbackQueue, new StorageThreadFactory("Callbacks-"));
-
-  static {
-    COMMAND_POOL_EXECUTOR.allowCoreThreadTimeOut(true);
-    UPLOAD_QUEUE_EXECUTOR.allowCoreThreadTimeOut(true);
-    DOWNLOAD_QUEUE_EXECUTOR.allowCoreThreadTimeOut(true);
-    CALLBACK_QUEUE_EXECUTOR.allowCoreThreadTimeOut(true);
+  public static void initializeExecutors(Executor firebaseExecutor) {
+    // TODO(mtewani): Check if concurrency can be modified externally
+    COMMAND_POOL_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, 5);
+    DOWNLOAD_QUEUE_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, 5);
+    UPLOAD_QUEUE_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, 5);
+    CALLBACK_QUEUE_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, 5);
   }
 
-  public static void setCallbackQueueKeepAlive(long keepAliveTime, TimeUnit timeUnit) {
-    CALLBACK_QUEUE_EXECUTOR.setKeepAliveTime(keepAliveTime, timeUnit);
-  }
+  // TODO(b/258426744): Migrate to go/firebase-android-executors
+  @SuppressLint("ThreadPoolCreation")
+  private static Executor COMMAND_POOL_EXECUTOR;
+  private static Executor UPLOAD_QUEUE_EXECUTOR;
+  private static Executor DOWNLOAD_QUEUE_EXECUTOR;
+  private static Executor CALLBACK_QUEUE_EXECUTOR;
+
+//
+//  public static void setCallbackQueueKeepAlive(long keepAliveTime, TimeUnit timeUnit) {
+//    CALLBACK_QUEUE_EXECUTOR.setKeepAliveTime(keepAliveTime, timeUnit);
+//  }
 
   public static StorageTaskScheduler getInstance() {
     return sInstance;
