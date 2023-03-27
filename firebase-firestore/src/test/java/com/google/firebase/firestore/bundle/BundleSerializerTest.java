@@ -571,7 +571,7 @@ public class BundleSerializerTest {
   @Test
   public void testDecodesLimitToLastQuery() throws JSONException {
     String json = "{ from: [ { collectionId: 'coll' } ], limit: {value: 5 } }";
-    Query query = TestUtil.query("coll").limitToLast(5);
+    Query query = TestUtil.query("coll").orderBy(orderBy("__name__", "desc")).limitToLast(5);
     assertDecodesNamedQuery(json, query);
   }
 

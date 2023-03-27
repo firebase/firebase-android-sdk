@@ -78,7 +78,9 @@ public class BundleReaderTest {
                       Collections.emptyList(),
                       Collections.singletonList(orderBy("sort")),
                       1,
-                      Query.LimitType.LIMIT_TO_LAST,
+                      // Note this is LIMIT_TO_FIRST because it is the expected
+                      // limit type in bundle files.
+                      Query.LimitType.LIMIT_TO_FIRST,
                       null,
                       null)
                   .toTarget(),
