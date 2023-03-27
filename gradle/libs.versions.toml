@@ -13,6 +13,7 @@ robolectric = "4.9"
 truth = "1.1.2"
 protobufjavautil = "3.21.11"
 kotest = "5.5.5"
+quickcheck = "0.6"
 
 [libraries]
 android-lint = { module = "com.android.tools.lint:lint", version.ref = "android-lint"}
@@ -54,6 +55,7 @@ protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", versio
 kotest-runner = { module = "io.kotest:kotest-runner-junit4-jvm", version.ref = "kotest" }
 kotest-assertions = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
+quickcheck = { module = "net.java:quickcheck", version.ref = "quickcheck" }
 
 [bundles]
 kotest = ["kotest-runner", "kotest-assertions", "kotest-property"]

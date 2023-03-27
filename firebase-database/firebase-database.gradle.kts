@@ -79,13 +79,13 @@ dependencies {
   testImplementation("androidx.test:rules:1.2.0")
 
   androidTestImplementation(libs.truth)
+  androidTestImplementation(libs.quickcheck)
   androidTestImplementation("com.fasterxml.jackson.core:jackson-core:2.9.8")
   androidTestImplementation("com.fasterxml.jackson.core:jackson-databind:2.9.8")
   androidTestImplementation("androidx.test:runner:1.2.0")
   androidTestImplementation("androidx.test.ext:junit:1.1.1")
   androidTestImplementation("org.hamcrest:hamcrest:2.2")
   androidTestImplementation("org.hamcrest:hamcrest-library:2.2")
-  androidTestImplementation("net.java:quickcheck:0.6")
 }
 
 ext["packageName"] = "com.google.firebase.database"
