@@ -23,6 +23,7 @@ import com.google.firebase.concurrent.FirebaseExecutors;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -39,12 +40,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class StorageTaskScheduler {
   public static StorageTaskScheduler sInstance = new StorageTaskScheduler();
 
-  public static void initializeExecutors(Executor firebaseExecutor) {
+  public static void initializeExecutors(@NonNull Executor firebaseExecutor) {
     // TODO(mtewani): Check if concurrency can be modified externally
     COMMAND_POOL_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, 5);
-    DOWNLOAD_QUEUE_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, 5);
-    UPLOAD_QUEUE_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, 5);
-    CALLBACK_QUEUE_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, 5);
+    DOWNLOAD_QUEUE_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, 3);
+    UPLOAD_QUEUE_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, 2);
+    CALLBACK_QUEUE_EXECUTOR = FirebaseExecutors.newSequentialExecutor(firebaseExecutor);
   }
 
   // TODO(b/258426744): Migrate to go/firebase-android-executors
@@ -53,11 +54,6 @@ public class StorageTaskScheduler {
   private static Executor UPLOAD_QUEUE_EXECUTOR;
   private static Executor DOWNLOAD_QUEUE_EXECUTOR;
   private static Executor CALLBACK_QUEUE_EXECUTOR;
-
-//
-//  public static void setCallbackQueueKeepAlive(long keepAliveTime, TimeUnit timeUnit) {
-//    CALLBACK_QUEUE_EXECUTOR.setKeepAliveTime(keepAliveTime, timeUnit);
-//  }
 
   public static StorageTaskScheduler getInstance() {
     return sInstance;
@@ -81,28 +77,5 @@ public class StorageTaskScheduler {
 
   public Executor getCommandPoolExecutor() {
     return COMMAND_POOL_EXECUTOR;
-  }
-
-  /** The thread factory for Storage threads. */
-  static class StorageThreadFactory implements ThreadFactory {
-    private final AtomicInteger threadNumber = new AtomicInteger(1);
-    private final String mNameSuffix;
-
-    StorageThreadFactory(@NonNull String suffix) {
-      mNameSuffix = suffix;
-    }
-
-    @Override
-    @SuppressWarnings("ThreadPriorityCheck")
-    // TODO(b/258426744): Migrate to go/firebase-android-executors
-    @SuppressLint("ThreadPoolCreation")
-    public Thread newThread(@NonNull Runnable r) {
-      Thread t = new Thread(r, "FirebaseStorage-" + mNameSuffix + threadNumber.getAndIncrement());
-      t.setDaemon(false);
-      t.setPriority(
-          android.os.Process.THREAD_PRIORITY_BACKGROUND
-              + android.os.Process.THREAD_PRIORITY_MORE_FAVORABLE);
-      return t;
-    }
   }
 }
