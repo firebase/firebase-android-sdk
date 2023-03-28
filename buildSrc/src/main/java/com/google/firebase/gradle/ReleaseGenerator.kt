@@ -13,6 +13,7 @@
 // limitations under the License.
 package com.google.firebase.gradle
 
+import com.google.common.collect.ImmutableList
 import com.google.common.collect.Sets
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import java.io.File
@@ -53,9 +54,9 @@ abstract class ReleaseGenerator : DefaultTask() {
 
   @get:Input public abstract val printReleaseConfig: Property<String>
 
-  @get:OutputFile public abstract val releaseConfigFile: Property<File>
+  @OutputFile public fun getReleaseConfigFile() = project.buildDir.resolve("release.cfg")
 
-  @get:OutputFile public abstract val releaseReportFile: Property<File>
+  @OutputFile public fun getReleaseReportFile() = project.buildDir.resolve("release_report.md")
 
   @TaskAction
   @Throws(Exception::class)
@@ -67,19 +68,22 @@ abstract class ReleaseGenerator : DefaultTask() {
     val headRef = repo.repository.resolve(Constants.HEAD)
     val branchRef = getObjectRefForBranchName(repo, pastRelease.get())
 
-    val libsToRelease = getChangedChangelogs(project, repo, branchRef, headRef, firebaseLibraries)
+    val libsToRelease = getChangedChangelogs(project, repo, branchRef, headRef, availableModules)
     val changedLibsWithNoChangelog =
       Sets.difference(
-        getChangedLibraries(repo, branchRef, headRef, firebaseLibraries).toSet(),
-        libsToRelease.toSet(),
+        getChangedLibraries(repo, branchRef, headRef, availableModules),
+        libsToRelease.map { it.path }.toSet()
       )
     val changes = getChangesForLibraries(repo, branchRef, headRef, libsToRelease)
-    writeReleaseConfig(rootDir, libsToRelease, currentRelease.get())
+    writeReleaseConfig(
+      getReleaseConfigFile(),
+      ReleaseConfig(currentRelease.get(), libsToRelease.map { it.path }.toSet())
+    )
     val releaseReport = generateReleaseReport(changes, changedLibsWithNoChangelog)
     if (printReleaseConfig.get().toBoolean()) {
       println(releaseReport)
     }
-    writeReleaseReport(rootDir, releaseReport)
+    writeReleaseReport(getReleaseReportFile(), releaseReport)
   }
 
   private fun generateReleaseReport(
@@ -107,8 +111,12 @@ abstract class ReleaseGenerator : DefaultTask() {
     repo: Git,
     branchRef: ObjectId,
     headRef: ObjectId,
-    changedLibraries: List<String>
-  ) = changedLibraries.map { it to getDirChanges(repo, branchRef, headRef, it) }.toMap()
+    changedLibraries: Set<Project>
+  ) =
+    changedLibraries
+      .map { getRelativeDir(it) }
+      .map { it to getDirChanges(repo, branchRef, headRef, it) }
+      .toMap()
 
   private fun extractLibraries(
     availableModules: Set<String>,
@@ -149,35 +157,45 @@ abstract class ReleaseGenerator : DefaultTask() {
     repo: Git,
     previousReleaseRef: ObjectId,
     currentReleaseRef: ObjectId,
-    libraries: List<FirebaseLibrary>
+    libraries: Set<String>
   ) =
     libraries
       .filter { library ->
-        library.directories.any {
-          checkDirChanges(repo, previousReleaseRef, currentReleaseRef, "$it/")
-        }
+        checkDirChanges(repo, previousReleaseRef, currentReleaseRef, "$library/")
       }
-      .flatMap { it.moduleNames }
+      .flatMap<String, String> {
+        val temp =
+          project.childProjects
+            .get(it)!!
+            .extensions
+            .findByType(FirebaseLibraryExtension::class.java)
+        if (temp == null) {
+          return@flatMap ImmutableList.of<String>()
+        }
+        temp.projectsToRelease.map { it.path }
+      }
+      .toSet()
 
   private fun getChangedChangelogs(
     project: Project,
     repo: Git,
     previousReleaseRef: ObjectId,
     currentReleaseRef: ObjectId,
-    libraries: List<String>
+    libraries: Set<String>
   ) =
     libraries
       .filter { library ->
         checkDirChanges(repo, previousReleaseRef, currentReleaseRef, "$library/CHANGELOG.md")
       }
       .flatMap {
-        project.childProjects
-          .get(it)!!
-          .extensions
-          .getByType(FirebaseLibraryExtension::class.java)
-          .projectsToRelease
-          .map { it.name }
+        val childProject = project.childProjects.get(it)!!
+        val extension = childProject.extensions.findByType(FirebaseLibraryExtension::class.java)
+        if (extension == null) {
+          return@flatMap ImmutableList.of(childProject)
+        }
+        extension.projectsToRelease
       }
+      .toSet()
 
   private fun checkDirChanges(
     repo: Git,
@@ -216,30 +234,35 @@ abstract class ReleaseGenerator : DefaultTask() {
     )
   }
 
-  private fun writeReleaseReport(configPath: File, report: String) {
-    File(configPath, "release_report.md").writeText(report)
+  private fun writeReleaseReport(file: File, report: String) {
+    file.writeText(report)
   }
 
-  private fun writeReleaseConfig(configPath: File, libraries: List<String>, releaseName: String) {
-    File(configPath, "release.cfg")
-      .writeText(
-        """
-                    |[release]
-                    |name = $releaseName
-                    |mode = RELEASE
-                    
-                    |[modules]
-                    |${libraries.joinToString("\n")}
-                """
-          .trimMargin()
-      )
+  private fun writeReleaseConfig(file: File, config: ReleaseConfig) {
+    file.writeText(config.toFile())
   }
+
+  private fun getRelativeDir(project: Project) = project.path.substring(1).replace(':', '/')
 }
 
-data class ReleaseConfig(val releaseName: String, val libs: List<String>) {
+data class ReleaseConfig(val releaseName: String, val libs: Set<String>) {
   companion object {
-    fun fromFile(file: File): ReleaseConfig {}
+    fun fromFile(file: File): ReleaseConfig {
+      val contents = file.readText(Charsets.UTF_8).split("\n")
+      val libs = contents.filter { it.startsWith(":") }.toSet()
+      val releaseName = contents.find { it.startsWith("name") }!!.split("=")[1].trim()
+      return ReleaseConfig(releaseName, libs)
+    }
   }
 
-  fun toFile(): string {}
+  fun toFile() =
+    """
+    |[release]
+    |name = $releaseName
+    |mode = RELEASE
+                    
+    |[modules]
+    |${libs.sorted().joinToString("\n")}
+    """
+      .trimMargin()
 }

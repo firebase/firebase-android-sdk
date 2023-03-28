@@ -14,23 +14,17 @@
 
 package com.google.firebase.gradle.plugins;
 
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
-
 import com.android.build.gradle.LibraryExtension;
 import com.google.common.collect.ImmutableSet;
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension;
-import com.google.firebase.gradle.plugins.LibraryGroupRegistrar;
 import java.io.File;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.gradle.api.Action;
-import org.gradle.api.GradleException;
 import org.gradle.api.Project;
-import org.gradle.api.UnknownDomainObjectException;
 import org.gradle.api.internal.provider.DefaultProvider;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.provider.Property;
@@ -40,24 +34,16 @@ public class FirebaseLibraryExtension {
 
   public final Project project;
   public final LibraryType type;
-  /**
-   * Indicates whether the library has public javadoc.
-   */
+  /** Indicates whether the library has public javadoc. */
   public boolean publishJavadoc = true;
 
-  /**
-   * Indicates whether sources are published alongside the library.
-   */
+  /** Indicates whether sources are published alongside the library. */
   public boolean publishSources;
 
-  /**
-   * Static analysis configuration.
-   */
+  /** Static analysis configuration. */
   public final FirebaseStaticAnalysis staticAnalysis;
 
-  /**
-   * Firebase Test Lab configuration/
-   */
+  /** Firebase Test Lab configuration/ */
   public final FirebaseTestLabExtension testLab;
 
   public Property<String> groupId;
@@ -115,9 +101,7 @@ public class FirebaseLibraryExtension {
     return ImmutableSet.copyOf(project.property(propertyName).toString().split(",", -1));
   }
 
-  /**
-   * Configure Firebase Test Lab.
-   */
+  /** Configure Firebase Test Lab. */
   public void testLab(Action<FirebaseTestLabExtension> action) {
     action.execute(testLab);
   }
@@ -129,22 +113,22 @@ public class FirebaseLibraryExtension {
    * with.
    */
   public void libraryGroup(String libraryGroupName) {
+    this.libraryGroupName = libraryGroupName;
     libraryGroupRegistrar.addLibrary(libraryGroupName, this);
   }
 
   public Set<Project> getProjectsToRelease() {
-    return getLibrariesToRelease().stream().map(l -> l.project).collect(toImmutableSet());
+    return getLibrariesToRelease().stream().map(l -> l.project).collect(Collectors.toSet());
   }
 
   public Set<FirebaseLibraryExtension> getLibrariesToRelease() {
     return ImmutableSet.<FirebaseLibraryExtension>builder()
         .addAll(libraryGroupRegistrar.getLibrariesForGroup(libraryGroupName))
+        .add(this)
         .build();
   }
 
-  /**
-   * Provides a hook to customize pom generation.
-   */
+  /** Provides a hook to customize pom generation. */
   public void customizePom(Action<MavenPom> action) {
     customizePomAction = action;
   }
