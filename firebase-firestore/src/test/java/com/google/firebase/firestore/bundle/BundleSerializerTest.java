@@ -570,9 +570,34 @@ public class BundleSerializerTest {
 
   @Test
   public void testDecodesLimitToLastQuery() throws JSONException {
-    String json = "{ from: [ { collectionId: 'coll' } ], limit: {value: 5 } }";
-    Query query = TestUtil.query("coll").orderBy(orderBy("__name__", "desc")).limitToLast(5);
-    assertDecodesNamedQuery(json, query);
+    String queryJson =
+        "{\n"
+            + "  name: 'query-1',\n"
+            + "  bundledQuery: {\n"
+            + "    parent: '"
+            + TEST_PROJECT
+            + "',\n"
+            + "    structuredQuery:\n"
+            + "{ from: [ { collectionId: 'coll' } ], limit: {value: 5 } }"
+            + ",\n"
+            + "    limitType: 'LAST'\n"
+            + "   },\n"
+            + " readTime: '2020-01-01T00:00:01.000000001Z'\n"
+            + "}";
+    NamedQuery actualNamedQuery = serializer.decodeNamedQuery(new JSONObject(queryJson));
+
+    // Note we use limitToFirst instead of limitToLast to avoid order reverse.
+    // Because this is what is saved in bundle files.
+    Query query = TestUtil.query("coll").limitToFirst(5);
+    Target target = query.toTarget();
+    BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_LAST);
+    NamedQuery expectedNamedQuery =
+        new NamedQuery(
+            "query-1",
+            bundledQuery,
+            new SnapshotVersion(new com.google.firebase.Timestamp(1577836801, 1)));
+
+    assertEquals(expectedNamedQuery, actualNamedQuery);
   }
 
   @Test
