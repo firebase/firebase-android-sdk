@@ -16,6 +16,7 @@
 
 package com.google.firebase.sessions
 
+import com.google.firebase.FirebaseApp
 import com.google.firebase.encoders.DataEncoder
 import com.google.firebase.encoders.FieldDescriptor
 import com.google.firebase.encoders.ObjectEncoderContext
@@ -62,7 +63,7 @@ internal object SessionEvents {
    *
    * Some mutable fields, e.g. firebaseInstallationId, get populated later.
    */
-  fun startSession(sessionDetails: SessionDetails) =
+  fun startSession(firebaseApp: FirebaseApp, sessionDetails: SessionDetails) =
     SessionEvent(
       eventType = EventType.SESSION_START,
       sessionData =
@@ -71,5 +72,6 @@ internal object SessionEvents {
           sessionDetails.firstSessionId,
           sessionDetails.sessionIndex,
         ),
+      applicationInfo = getApplicationInfo(firebaseApp)
     )
 }

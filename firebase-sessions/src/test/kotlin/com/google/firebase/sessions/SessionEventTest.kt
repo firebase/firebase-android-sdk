@@ -16,7 +16,11 @@
 
 package com.google.firebase.sessions
 
+import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.FirebaseOptions
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.ktx.initialize
 import org.junit.Test
 
 class SessionEventTest {
@@ -30,7 +34,15 @@ class SessionEventTest {
         sessionIndex = 3,
       )
 
-    val sessionEvent = SessionEvents.startSession(sessionDetails)
+    val firebaseApp = Firebase.initialize(
+      ApplicationProvider.getApplicationContext(),
+      FirebaseOptions.Builder()
+        .setApplicationId("")
+        .setApiKey("")
+        .setProjectId("")
+        .build()
+    )
+    val sessionEvent = SessionEvents.startSession(firebaseApp, sessionDetails)
 
     assertThat(sessionEvent)
       .isEqualTo(
@@ -41,7 +53,14 @@ class SessionEventTest {
               sessionId = "a1b2c3",
               firstSessionId = "a1a1a1",
               sessionIndex = 3,
-            )
+            ),
+          applicationInfo = ApplicationInfo(appId = "",
+                                            deviceModel = "",
+                                            sessionSdkVersion = "",
+                                            logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
+                                            AndroidApplicationInfo(packageName = "",
+                                                                   versionName = ""),
+          )
         )
       )
   }

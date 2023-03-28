@@ -33,14 +33,18 @@ internal constructor(
 ) {
   private val sessionGenerator = SessionGenerator(collectEvents = true)
   private val sessionCoordinator = SessionCoordinator(firebaseInstallations, backgroundDispatcher)
+  private val firebaseApp = firebaseApp
 
   init {
     val sessionInitiator = SessionInitiator(WallClock::elapsedRealtime, this::initiateSessionStart)
-    val context = firebaseApp.applicationContext.applicationContext
-    if (context is Application) {
-      context.registerActivityLifecycleCallbacks(sessionInitiator.activityLifecycleCallbacks)
+    val appContext = firebaseApp.applicationContext.applicationContext
+    if (appContext is Application) {
+      appContext.registerActivityLifecycleCallbacks(sessionInitiator.activityLifecycleCallbacks)
     } else {
-      Log.w(TAG, "Failed to register lifecycle callbacks, unexpected context ${context.javaClass}.")
+      Log.w(
+        TAG,
+        "Failed to register lifecycle callbacks, unexpected context ${appContext.javaClass}."
+      )
     }
   }
 
@@ -49,7 +53,7 @@ internal constructor(
 
   private fun initiateSessionStart() {
     val sessionDetails = sessionGenerator.generateNewSession()
-    val sessionEvent = SessionEvents.startSession(sessionDetails)
+    val sessionEvent = SessionEvents.startSession(firebaseApp, sessionDetails)
 
     if (sessionDetails.collectEvents) {
       sessionCoordinator.attemptLoggingSessionEvent(sessionEvent)

@@ -31,6 +31,7 @@ internal data class SessionEvent(
 
   /** Information about the session triggering the event. */
   val sessionData: SessionInfo,
+  val applicationInfo: ApplicationInfo,
 )
 
 /** Enum denoting all possible session event types. */

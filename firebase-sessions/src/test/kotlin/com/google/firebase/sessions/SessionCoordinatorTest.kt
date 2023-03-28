@@ -47,6 +47,7 @@ class SessionCoordinatorTest {
             firstSessionId = "first",
             sessionIndex = 3,
           ),
+        applicationInfo = ApplicationInfo(appId = "", deviceModel = "", sessionSdkVersion = "", logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD, androidAppInfo = AndroidApplicationInfo(packageName = "", versionName = ""))
       )
 
     sessionCoordinator.attemptLoggingSessionEvent(sessionEvent)
