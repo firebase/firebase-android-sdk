@@ -1,6 +1,7 @@
 # Unreleased
-* [unchanged] Updated to keep [app_check] SDK versions aligned.
 
+# 16.1.2
+* [unchanged] Updated to keep [app_check] SDK versions aligned.
 
 # 16.1.1
 * [changed] Migrated [app_check] SDKs to use standard Firebase executors.

@@ -1,4 +1,5 @@
 # Unreleased
+* [feature] Added support for real-time config updates. To learn more, see [Get started with Firebase Remote Config](https://firebase.google.com/docs/remote-config/get-started?platform=android).
 
 # 21.2.1
 * [changed] Migrated [remote_config] to use standard Firebase executors.

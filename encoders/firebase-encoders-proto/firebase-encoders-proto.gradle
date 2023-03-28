@@ -36,7 +36,7 @@ protobuf {
 
 dependencies {
     implementation 'androidx.annotation:annotation:1.1.0'
-    implementation project(':encoders:firebase-encoders')
+    implementation 'com.google.firebase:firebase-encoders:17.0.0'
 
     annotationProcessor project(':encoders:firebase-encoders-processor')
 

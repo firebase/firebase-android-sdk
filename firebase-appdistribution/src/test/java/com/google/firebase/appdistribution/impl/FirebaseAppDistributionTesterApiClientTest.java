@@ -15,6 +15,7 @@
 package com.google.firebase.appdistribution.impl;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.appdistribution.impl.FeedbackSender.CONTENT_TYPE_PNG;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTask;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTaskFailure;
 import static com.google.firebase.appdistribution.impl.TestUtils.readTestJSON;
@@ -76,6 +77,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
       "v1alpha/projects/123456789/installations/cccccccccccccccccccccc/releases/release-id/feedbackReports/feedback-id:commit";
   private static final String ATTACH_SCREENSHOT_PATH =
       "upload/v1alpha/projects/123456789/installations/cccccccccccccccccccccc/releases/release-id/feedbackReports/feedback-id:uploadArtifact?type=SCREENSHOT";
+  private static final String TEST_FILE_NAME = "test.png";
 
   private FirebaseAppDistributionTesterApiClient firebaseAppDistributionTesterApiClient;
   @Mock private Provider<FirebaseInstallationsApi> mockFirebaseInstallationsProvider;
@@ -305,7 +307,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
   @Test
   public void createFeedback_whenResponseSuccessful_returnsFeedbackName() throws Exception {
     String postBody = String.format("{\"text\":\"%s\"}", FEEDBACK_TEXT);
-    when(mockTesterApiHttpClient.makePostRequest(
+    when(mockTesterApiHttpClient.makeJsonPostRequest(
             any(), eq(CREATE_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(postBody)))
         .thenReturn(buildFeedbackJson());
 
@@ -343,7 +345,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
   public void createFeedback_whenClientThrowsException_failsTask() throws Exception {
     String postBody = String.format("{\"text\":\"%s\"}", FEEDBACK_TEXT);
 
-    when(mockTesterApiHttpClient.makePostRequest(
+    when(mockTesterApiHttpClient.makeJsonPostRequest(
             any(), eq(CREATE_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(postBody)))
         .thenThrow(new FirebaseAppDistributionException("test ex", Status.UNKNOWN));
 
@@ -363,7 +365,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
     Map<String, String> extraHeaders = new HashMap<>();
     extraHeaders.put("X-APP-DISTRO-FEEDBACK-TRIGGER", "custom");
     verify(mockTesterApiHttpClient)
-        .makePostRequest(
+        .makeJsonPostRequest(
             any(), eq(COMMIT_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(""), eq(extraHeaders));
   }
 
@@ -396,7 +398,7 @@ public class FirebaseAppDistributionTesterApiClientTest {
   public void commitFeedback_whenClientThrowsException_failsTask() throws Exception {
     Map<String, String> extraHeaders = new HashMap<>();
     extraHeaders.put("X-APP-DISTRO-FEEDBACK-TRIGGER", "custom");
-    when(mockTesterApiHttpClient.makePostRequest(
+    when(mockTesterApiHttpClient.makeJsonPostRequest(
             any(), eq(COMMIT_FEEDBACK_PATH), eq(TEST_AUTH_TOKEN), eq(""), eq(extraHeaders)))
         .thenThrow(new FirebaseAppDistributionException("test ex", Status.UNKNOWN));
 
@@ -411,14 +413,22 @@ public class FirebaseAppDistributionTesterApiClientTest {
   public void attachScreenshot_whenResponseSuccessful_makesPostRequestAndReturnsFeedbackName()
       throws Exception {
     Uri uri =
-        Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
+        Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath(TEST_FILE_NAME));
 
-    Task<String> task = firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, uri);
+    Task<String> task =
+        firebaseAppDistributionTesterApiClient.attachScreenshot(
+            FEEDBACK_NAME, uri, TEST_FILE_NAME, CONTENT_TYPE_PNG);
     String result = awaitTask(task);
 
     assertThat(result).isEqualTo(FEEDBACK_NAME);
     verify(mockTesterApiHttpClient)
-        .makeUploadRequest(any(), eq(ATTACH_SCREENSHOT_PATH), eq(TEST_AUTH_TOKEN), eq(uri));
+        .makeUploadRequest(
+            any(),
+            eq(ATTACH_SCREENSHOT_PATH),
+            eq(TEST_AUTH_TOKEN),
+            eq(TEST_FILE_NAME),
+            eq(CONTENT_TYPE_PNG),
+            eq(uri));
   }
 
   @Test
@@ -426,9 +436,11 @@ public class FirebaseAppDistributionTesterApiClientTest {
     Exception expectedException = new Exception("test ex");
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forException(expectedException));
     Uri uri =
-        Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
+        Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath(TEST_FILE_NAME));
 
-    Task<String> task = firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, uri);
+    Task<String> task =
+        firebaseAppDistributionTesterApiClient.attachScreenshot(
+            FEEDBACK_NAME, uri, TEST_FILE_NAME, CONTENT_TYPE_PNG);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
@@ -439,9 +451,11 @@ public class FirebaseAppDistributionTesterApiClientTest {
     when(mockFirebaseInstallations.getToken(false))
         .thenReturn(Tasks.forException(expectedException));
     Uri uri =
-        Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
+        Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath(TEST_FILE_NAME));
 
-    Task<String> task = firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, uri);
+    Task<String> task =
+        firebaseAppDistributionTesterApiClient.attachScreenshot(
+            FEEDBACK_NAME, uri, TEST_FILE_NAME, CONTENT_TYPE_PNG);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex", expectedException);
   }
@@ -449,12 +463,19 @@ public class FirebaseAppDistributionTesterApiClientTest {
   @Test
   public void attachScreenshot_whenClientThrowsException_failsTask() throws Exception {
     when(mockTesterApiHttpClient.makeUploadRequest(
-            any(), eq(ATTACH_SCREENSHOT_PATH), eq(TEST_AUTH_TOKEN), any()))
+            any(),
+            eq(ATTACH_SCREENSHOT_PATH),
+            eq(TEST_AUTH_TOKEN),
+            eq(TEST_FILE_NAME),
+            eq(CONTENT_TYPE_PNG),
+            any()))
         .thenThrow(new FirebaseAppDistributionException("test ex", Status.UNKNOWN));
     Uri uri =
-        Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath("test.png"));
+        Uri.fromFile(ApplicationProvider.getApplicationContext().getFileStreamPath(TEST_FILE_NAME));
 
-    Task<String> task = firebaseAppDistributionTesterApiClient.attachScreenshot(FEEDBACK_NAME, uri);
+    Task<String> task =
+        firebaseAppDistributionTesterApiClient.attachScreenshot(
+            FEEDBACK_NAME, uri, TEST_FILE_NAME, CONTENT_TYPE_PNG);
 
     awaitTaskFailure(task, Status.UNKNOWN, "test ex");
   }

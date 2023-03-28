@@ -49,6 +49,7 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
     project.apply<DackkaPlugin>()
     project.apply<GitSubmodulePlugin>()
+    project.apply<PostReleasePlugin>()
     project.tasks.getByName("preBuild").dependsOn("updateGitSubmodules")
   }
 
@@ -79,6 +80,7 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     setupApiInformationAnalysis(project, android)
     android.testServer(FirebaseTestServer(project, firebaseLibrary.testLab, android))
     setupStaticAnalysis(project, firebaseLibrary)
+    getIsPomValidTask(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary, android)
   }
 

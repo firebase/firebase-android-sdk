@@ -1,4 +1,6 @@
 # Unreleased
+
+# 23.1.2
 * [fixed] Fix a breakage related to Jetpack core library related to [upstream update](https://android-review.googlesource.com/c/platform/frameworks/support/+/2399893)
 * [changed] Updated javalite, protoc, protobufjavautil to 3.21.11.
 

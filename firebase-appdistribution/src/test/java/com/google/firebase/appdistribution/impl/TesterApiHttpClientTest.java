@@ -226,7 +226,7 @@ public class TesterApiHttpClientTest {
     ByteArrayOutputStream requestBodyOutputStream = new ByteArrayOutputStream();
     when(mockHttpsURLConnection.getOutputStream()).thenReturn(requestBodyOutputStream);
 
-    testerApiHttpClient.makePostRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN, TEST_POST_BODY);
+    testerApiHttpClient.makeJsonPostRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN, TEST_POST_BODY);
 
     assertThat(new String(requestBodyOutputStream.toByteArray(), UTF_8)).isEqualTo(TEST_POST_BODY);
     verify(mockHttpsURLConnection).setDoOutput(true);
@@ -244,7 +244,7 @@ public class TesterApiHttpClientTest {
         assertThrows(
             FirebaseAppDistributionException.class,
             () ->
-                testerApiHttpClient.makePostRequest(
+                testerApiHttpClient.makeJsonPostRequest(
                     TAG, TEST_PATH, TEST_AUTH_TOKEN, TEST_POST_BODY));
 
     assertThat(e.getErrorCode()).isEqualTo(Status.NETWORK_FAILURE);
@@ -270,16 +270,16 @@ public class TesterApiHttpClientTest {
       Uri uri = Uri.parse("file:///path/to/data");
       shadowContentResolver.registerInputStream(uri, postBodyInputStream);
 
-      testerApiHttpClient.makeUploadRequest(TAG, TEST_PATH, TEST_AUTH_TOKEN, uri);
+      testerApiHttpClient.makeUploadRequest(
+          TAG, TEST_PATH, TEST_AUTH_TOKEN, "test.jpeg", "image/jpeg", uri);
 
       assertThat(new String(requestBodyOutputStream.toByteArray(), UTF_8))
           .isEqualTo("Test post body");
       verify(mockHttpsURLConnection).setDoOutput(true);
       verify(mockHttpsURLConnection).setRequestMethod("POST");
-      verify(mockHttpsURLConnection).addRequestProperty("Content-Type", "application/json");
+      verify(mockHttpsURLConnection).addRequestProperty("Content-Type", "image/jpeg");
       verify(mockHttpsURLConnection).addRequestProperty("X-Goog-Upload-Protocol", "raw");
-      verify(mockHttpsURLConnection)
-          .addRequestProperty("X-Goog-Upload-File-Name", "screenshot.png");
+      verify(mockHttpsURLConnection).addRequestProperty("X-Goog-Upload-File-Name", "test.jpeg");
       verify(mockHttpsURLConnection).disconnect();
     }
   }

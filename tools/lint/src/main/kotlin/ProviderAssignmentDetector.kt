@@ -40,7 +40,7 @@ class ProviderAssignmentDetector : Detector(), SourceCodeScanner {
     if (!isProviderGet(method)) {
       return
     }
-    val binaryOperation = node.getParentOfType<UBinaryExpression>(true) ?: return
+    val binaryOperation = node.getParentOfType(UBinaryExpression::class.java) ?: return
     if (binaryOperation.operatorIdentifier?.name != "=") return
 
     val assignmentTarget = binaryOperation.leftOperand as? UReferenceExpression ?: return
