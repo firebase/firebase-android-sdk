@@ -1244,9 +1244,6 @@ public class Query {
    * @return The {@code AggregateQuery} that performs aggregations on the documents in the result
    *     set of this query.
    */
-  // TODO(sumavg): Remove the `hide` and scope annotations.
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @NonNull
   public AggregateQuery aggregate(
       @NonNull AggregateField aggregateField, @NonNull AggregateField... aggregateFields) {

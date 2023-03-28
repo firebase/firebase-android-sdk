@@ -19,9 +19,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import java.util.Objects;
 
-// TODO(sumavg): Remove the `hide` and scope annotations.
-/** @hide */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 public abstract class AggregateField {
   @Nullable private final FieldPath fieldPath;
 

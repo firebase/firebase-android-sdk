@@ -62,9 +62,6 @@ public class AggregateQuerySnapshot {
    * @param aggregateField The aggregation for which the value is requested.
    * @return The result of the given aggregation.
    */
-  // TODO(sumavg): Remove the `hide` and scope annotations.
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Object get(@Nonnull AggregateField aggregateField) {
     if (!data.containsKey(aggregateField.getAlias())) {
@@ -94,8 +91,6 @@ public class AggregateQuerySnapshot {
    * @param countAggregateField The count aggregation for which the value is requested.
    * @return The result of the given count aggregation.
    */
-  // TODO(sumavg): Remove the `hide` and scope annotations.
-  /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY)
   public long get(@Nonnull AggregateField.CountAggregateField countAggregateField) {
     Object value = get((AggregateField) countAggregateField);
@@ -121,8 +116,6 @@ public class AggregateQuerySnapshot {
    * @param averageAggregateField The average aggregation for which the value is requested.
    * @return The result of the given average aggregation.
    */
-  // TODO(sumavg): Remove the `hide` and scope annotations.
-  /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Double get(@Nonnull AggregateField.AverageAggregateField averageAggregateField) {
@@ -138,8 +131,6 @@ public class AggregateQuerySnapshot {
    * @param aggregateField The aggregation for which the value is requested.
    * @return The result of the given average aggregation as a double.
    */
-  // TODO(sumavg): Remove the `hide` and scope annotations.
-  /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Double getDouble(@Nonnull AggregateField aggregateField) {
@@ -155,9 +146,6 @@ public class AggregateQuerySnapshot {
    * @param aggregateField The aggregation for which the value is requested.
    * @return The result of the given average aggregation as a long.
    */
-  // TODO(sumavg): Remove the `hide` and scope annotations.
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Long getLong(@Nonnull AggregateField aggregateField) {
     Number result = (Number) get(aggregateField);
