@@ -14,7 +14,6 @@
 
 package com.google.firebase.storage;
 
-import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import com.google.firebase.concurrent.FirebaseExecutors;
@@ -36,9 +35,12 @@ public class StorageTaskScheduler {
   private static final int UPLOAD_POOL_SIZE = 2;
 
   public static void initializeExecutors(@NonNull Executor firebaseExecutor) {
-    COMMAND_POOL_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, COMMAND_POOL_SIZE);
-    DOWNLOAD_QUEUE_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, DOWNLOAD_POOL_SIZE);
-    UPLOAD_QUEUE_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, UPLOAD_POOL_SIZE);
+    COMMAND_POOL_EXECUTOR =
+        FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, COMMAND_POOL_SIZE);
+    DOWNLOAD_QUEUE_EXECUTOR =
+        FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, DOWNLOAD_POOL_SIZE);
+    UPLOAD_QUEUE_EXECUTOR =
+        FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, UPLOAD_POOL_SIZE);
     CALLBACK_QUEUE_EXECUTOR = FirebaseExecutors.newSequentialExecutor(firebaseExecutor);
   }
 

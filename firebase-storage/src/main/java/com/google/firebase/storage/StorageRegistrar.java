@@ -28,6 +28,7 @@ import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
+
 /** @hide */
 @Keep
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
