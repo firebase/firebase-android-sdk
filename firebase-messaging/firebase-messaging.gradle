@@ -49,6 +49,7 @@ protobuf {
 
 
 firebaseLibrary {
+    libraryGroup "messaging"
     testLab.enabled = false
 }
 

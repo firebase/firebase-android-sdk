@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    releaseWith(project(":firebase-common"))
+    libraryGroup("common")
 }
 
 android {
