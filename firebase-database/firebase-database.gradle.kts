@@ -59,9 +59,7 @@ dependencies {
   implementation("com.google.android.gms:play-services-base:18.0.1")
   implementation("com.google.android.gms:play-services-tasks:18.0.1")
   implementation("com.google.android.gms:play-services-basement:18.1.0")
-  implementation("com.google.firebase:firebase-auth-interop:19.0.2") {
-    exclude("com.google.firebase", "firebase-common")
-  }
+  implementation("com.google.firebase:firebase-auth-interop:19.0.2")
 
   testImplementation(libs.truth)
   testImplementation(libs.junit)
