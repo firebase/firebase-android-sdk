@@ -115,7 +115,7 @@ abstract class ReleaseGenerator : DefaultTask() {
   ) =
     changedLibraries
       .map { getRelativeDir(it) }
-      .map { it to getDirChanges(repo, branchRef, headRef, it) }
+      .associateWith { getDirChanges(repo, branchRef, headRef, it) }
       .toMap()
 
   private fun extractLibraries(
@@ -218,19 +218,15 @@ abstract class ReleaseGenerator : DefaultTask() {
     currentReleaseRef: ObjectId,
     directory: String
   ) =
-    repo
-      .log()
-      .addPath(directory)
-      .addRange(previousReleaseRef, currentReleaseRef)
-      .call()
-      .map { toCommitDiff(repo, it) }
-      .toList()
+    repo.log().addPath(directory).addRange(previousReleaseRef, currentReleaseRef).call().map {
+      toCommitDiff(repo, it)
+    }
 
   private fun toCommitDiff(repo: Git, revCommit: RevCommit): CommitDiff {
     return CommitDiff(
       revCommit.id.name,
       revCommit.authorIdent.name,
-      revCommit.fullMessage.toString(),
+      revCommit.fullMessage,
     )
   }
 
