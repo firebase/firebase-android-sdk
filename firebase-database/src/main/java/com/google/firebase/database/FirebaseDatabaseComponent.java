@@ -26,6 +26,7 @@ import com.google.firebase.database.core.TokenProvider;
 import com.google.firebase.inject.Deferred;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ScheduledExecutorService;
 
 class FirebaseDatabaseComponent {
   /**
@@ -40,12 +41,15 @@ class FirebaseDatabaseComponent {
   private final FirebaseApp app;
   private final TokenProvider authProvider;
   private final TokenProvider appCheckProvider;
+  private final ScheduledExecutorService scheduledExecutorService;
 
   FirebaseDatabaseComponent(
-      @NonNull FirebaseApp app,
-      Deferred<InternalAuthProvider> authProvider,
-      Deferred<InternalAppCheckTokenProvider> appCheckProvider) {
+          @NonNull FirebaseApp app,
+          Deferred<InternalAuthProvider> authProvider,
+          Deferred<InternalAppCheckTokenProvider> appCheckProvider,
+          ScheduledExecutorService scheduledExecutorService) {
     this.app = app;
+    this.scheduledExecutorService = scheduledExecutorService;
     this.authProvider = new AndroidAuthTokenProvider(authProvider);
     this.appCheckProvider = new AndroidAppCheckTokenProvider(appCheckProvider);
   }
@@ -65,6 +69,7 @@ class FirebaseDatabaseComponent {
       config.setFirebaseApp(app);
       config.setAuthTokenProvider(authProvider);
       config.setAppCheckTokenProvider(appCheckProvider);
+      config.setExecutorService(scheduledExecutorService);
 
       database = new FirebaseDatabase(app, repo, config);
       instances.put(repo, database);

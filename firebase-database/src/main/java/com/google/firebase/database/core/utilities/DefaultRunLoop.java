@@ -14,12 +14,21 @@
 
 package com.google.firebase.database.core.utilities;
 
+import static com.google.firebase.components.Qualified.qualified;
+
+import android.util.Log;
+
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.components.Qualified;
+import com.google.firebase.concurrent.FirebaseExecutors;
 import com.google.firebase.database.DatabaseException;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.core.RunLoop;
 import com.google.firebase.database.core.ThreadInitializer;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,27 +37,10 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+// TODO(mtewani): Replace with blocking thread, and for every instance ,use sequential executor
 public abstract class DefaultRunLoop implements RunLoop {
 
-  private class FirebaseThreadFactory implements ThreadFactory {
 
-    @Override
-    public Thread newThread(Runnable r) {
-      Thread thread = getThreadFactory().newThread(r);
-      ThreadInitializer initializer = getThreadInitializer();
-      initializer.setName(thread, "FirebaseDatabaseWorker");
-      initializer.setDaemon(thread, true);
-      initializer.setUncaughtExceptionHandler(
-          thread,
-          new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-              handleException(e);
-            }
-          });
-      return thread;
-    }
-  }
 
   protected ThreadFactory getThreadFactory() {
     return Executors.defaultThreadFactory();
@@ -62,47 +54,55 @@ public abstract class DefaultRunLoop implements RunLoop {
 
   private ScheduledThreadPoolExecutor executor;
 
-  public DefaultRunLoop() {
-    int threadsInPool = 1;
-    ThreadFactory threadFactory = new FirebaseThreadFactory();
-    executor =
-        new ScheduledThreadPoolExecutor(threadsInPool, threadFactory) {
-          @Override
-          protected void afterExecute(Runnable r, Throwable t) {
-            super.afterExecute(r, t);
-            if (t == null && r instanceof Future<?>) {
-              Future<?> future = (Future<?>) r;
-              try {
-                // Not all Futures will be done, e.g. when used with scheduledAtFixedRate
-                if (future.isDone()) {
-                  future.get();
-                }
-              } catch (CancellationException ce) {
-                // Cancellation exceptions are okay, we expect them to happen sometimes
-              } catch (ExecutionException ee) {
-                t = ee.getCause();
-              } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-              }
-            }
-            if (t != null) {
-              handleException(t);
-            }
-          }
-        };
+  public DefaultRunLoop() { }
+
+  public DefaultRunLoop(ScheduledExecutorService delegate) {
+    executor = (ScheduledThreadPoolExecutor) FirebaseExecutors.newSequentialExecutor(delegate);
 
     // Core threads don't time out, this only takes effect when we drop the number of required
     // core threads
     executor.setKeepAliveTime(3, TimeUnit.SECONDS);
   }
 
+  public void setExecutor(ScheduledThreadPoolExecutor executor) {
+    this.executor = executor;
+  }
+
   public ScheduledExecutorService getExecutorService() {
     return this.executor;
   }
 
+  private Runnable withAfter(Runnable r) {
+      return () -> {
+        try {
+          r.run();
+        } catch(Throwable t) {
+          Throwable throwable = t;
+          if (r instanceof Future<?>) {
+            Future<?> future = (Future<?>) r;
+            try {
+              // Not all Futures will be done, e.g. when used with scheduledAtFixedRate
+              if (future.isDone()) { // If we want to wait until the future is done, we should probably check the opposite.
+                future.get();
+              }
+            } catch (CancellationException ce) {
+              // Cancellation exceptions are okay, we expect them to happen sometimes
+            } catch (ExecutionException ee) {
+              throwable = ee.getCause();
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+            }
+          }
+          if(throwable != null) {
+            handleException(throwable);
+          }
+        }
+      };
+  }
+
   @Override
-  public void scheduleNow(final Runnable runnable) {
-    executor.execute(runnable);
+  public void scheduleNow(final Runnable r) {
+    executor.execute(withAfter(r));
   }
 
   @Override

@@ -256,7 +256,10 @@ public class FirebaseDatabaseTest {
 
   @Test
   public void getReferenceWithCustomDatabaseUrl() {
+    FirebaseDatabase db2 = FirebaseDatabase.getInstance();
     FirebaseDatabase db = FirebaseDatabase.getInstance(IntegrationTestValues.getAltNamespace());
+    db.getReference();
+    db2.getReference();
     db.getReferenceFromUrl(IntegrationTestValues.getAltNamespace());
   }
 

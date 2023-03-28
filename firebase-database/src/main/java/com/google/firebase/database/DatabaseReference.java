@@ -283,6 +283,7 @@ public class DatabaseReference extends Query {
     Validation.validateWritableObject(bouncedValue);
     final Node node = NodeUtilities.NodeFromJSON(bouncedValue, priority);
     final Pair<Task<Void>, CompletionListener> wrapped = Utilities.wrapOnComplete(optListener);
+    // Network and Disk I/O
     repo.scheduleNow(
         new Runnable() {
           @Override

@@ -17,35 +17,45 @@ package com.google.firebase.database;
 import androidx.annotation.Keep;
 import androidx.annotation.RestrictTo;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Background;
+import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
+import com.google.firebase.concurrent.FirebaseExecutors;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 
 /** @hide */
 @Keep
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class DatabaseRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-rtdb";
+  Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
 
   @Override
   public List<Component<?>> getComponents() {
+
+    Qualified<ScheduledExecutorService> qualified = Qualified.qualified(Background.class, ScheduledExecutorService.class);
     return Arrays.asList(
         Component.builder(FirebaseDatabaseComponent.class)
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.deferred(InternalAuthProvider.class))
             .add(Dependency.deferred(InternalAppCheckTokenProvider.class))
+            .add(Dependency.required(blockingExecutor))
             .factory(
                 c ->
                     new FirebaseDatabaseComponent(
                         c.get(FirebaseApp.class),
                         c.getDeferred(InternalAuthProvider.class),
-                        c.getDeferred(InternalAppCheckTokenProvider.class)))
+                        c.getDeferred(InternalAppCheckTokenProvider.class), c.get(qualified)))
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }

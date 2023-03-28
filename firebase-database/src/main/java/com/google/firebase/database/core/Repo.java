@@ -16,6 +16,8 @@ package com.google.firebase.database.core;
 
 import static com.google.firebase.database.core.utilities.Utilities.hardAssert;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -474,6 +476,7 @@ public class Repo implements PersistentConnection.Delegate {
             path, newValueUnresolved, newValue, writeId, /*visible=*/ true, /*persist=*/ true);
     this.postEvents(events);
 
+    Log.d(this.getClass().toString(), "before");
     connection.put(
         path.asList(),
         newValueUnresolved.getValue(true),
@@ -484,8 +487,10 @@ public class Repo implements PersistentConnection.Delegate {
             warnIfWriteFailed("setValue", path, error);
             ackWriteAndRerunTransactions(writeId, path, error);
             callOnComplete(onComplete, error, path);
+            Log.d(this.getClass().toString(), "callback");
           }
         });
+    Log.d(this.getClass().toString(), "after");
 
     Path affectedPath = abortTransactions(path, DatabaseError.OVERRIDDEN_BY_SET);
     this.rerunTransactions(affectedPath);
@@ -616,6 +621,7 @@ public class Repo implements PersistentConnection.Delegate {
 
     // TODO: DatabaseReference.CompleteionListener isn't really appropriate (the DatabaseReference
     // param is meaningless).
+    Log.d(this.getClass().toString(), "started merge");
     connection.merge(
         path.asList(),
         unParsedUpdates,
@@ -626,8 +632,10 @@ public class Repo implements PersistentConnection.Delegate {
             warnIfWriteFailed("updateChildren", path, error);
             ackWriteAndRerunTransactions(writeId, path, error);
             callOnComplete(onComplete, error, path);
+            Log.d(this.getClass().toString(), "done with callback");
           }
         });
+    Log.d(this.getClass().toString(), "ended merge");
 
     for (Entry<Path, Node> update : updates) {
       Path pathFromRoot = path.child(update.getKey());

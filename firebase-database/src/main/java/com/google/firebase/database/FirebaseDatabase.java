@@ -31,6 +31,8 @@ import com.google.firebase.database.core.utilities.Utilities;
 import com.google.firebase.database.core.utilities.Validation;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 
+import java.util.concurrent.Executor;
+
 /**
  * The entry point for accessing a Firebase Database. You can get an instance by calling {@link
  * FirebaseDatabase#getInstance()}. To access a location in the database and read or write data, use
