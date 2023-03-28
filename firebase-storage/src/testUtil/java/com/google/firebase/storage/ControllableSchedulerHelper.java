@@ -66,7 +66,10 @@ public class ControllableSchedulerHelper extends StorageTaskScheduler {
     }
     Preconditions.checkState(
         callbackThread == Thread.currentThread().getId(),
-        "Callback fired on unexpected callback thread. Original: " + callbackThread + ", Current: " + Thread.currentThread().getId());
+        "Callback fired on unexpected callback thread. Original: "
+            + callbackThread
+            + ", Current: "
+            + Thread.currentThread().getId());
   }
 
   @Override

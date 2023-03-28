@@ -27,14 +27,13 @@ import com.google.firebase.components.Qualified;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
-
+import java.util.concurrent.Executor;
 /** @hide */
 @Keep
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StorageRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-gcs";
-  Qualified<ScheduledExecutorService> backgroundExecutorService = Qualified.qualified(Blocking.class, ScheduledExecutorService.class);
+  Qualified<Executor> backgroundExecutor = Qualified.qualified(Blocking.class, Executor.class);
 
   @Override
   public List<Component<?>> getComponents() {
@@ -42,7 +41,7 @@ public class StorageRegistrar implements ComponentRegistrar {
         Component.builder(FirebaseStorageComponent.class)
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
-                .add(Dependency.required(backgroundExecutorService))
+            .add(Dependency.required(backgroundExecutor))
             .add(Dependency.optionalProvider(InternalAuthProvider.class))
             .add(Dependency.optionalProvider(InternalAppCheckTokenProvider.class))
             .factory(
@@ -51,7 +50,7 @@ public class StorageRegistrar implements ComponentRegistrar {
                         c.get(FirebaseApp.class),
                         c.getProvider(InternalAuthProvider.class),
                         c.getProvider(InternalAppCheckTokenProvider.class),
-                            c.get(backgroundExecutorService)))
+                        c.get(backgroundExecutor)))
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }

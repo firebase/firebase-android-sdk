@@ -17,17 +17,8 @@ package com.google.firebase.storage;
 import android.annotation.SuppressLint;
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
-
 import com.google.firebase.concurrent.FirebaseExecutors;
-
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A class used to schedule long running operations (upload/download) and operations that are
@@ -40,16 +31,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class StorageTaskScheduler {
   public static StorageTaskScheduler sInstance = new StorageTaskScheduler();
 
+  private static final int COMMAND_POOL_SIZE = 5;
+  private static final int DOWNLOAD_POOL_SIZE = 3;
+  private static final int UPLOAD_POOL_SIZE = 2;
+
   public static void initializeExecutors(@NonNull Executor firebaseExecutor) {
-    // TODO(mtewani): Check if concurrency can be modified externally
-    COMMAND_POOL_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, 5);
-    DOWNLOAD_QUEUE_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, 3);
-    UPLOAD_QUEUE_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, 2);
+    COMMAND_POOL_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, COMMAND_POOL_SIZE);
+    DOWNLOAD_QUEUE_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, DOWNLOAD_POOL_SIZE);
+    UPLOAD_QUEUE_EXECUTOR = FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, UPLOAD_POOL_SIZE);
     CALLBACK_QUEUE_EXECUTOR = FirebaseExecutors.newSequentialExecutor(firebaseExecutor);
   }
 
-  // TODO(b/258426744): Migrate to go/firebase-android-executors
-  @SuppressLint("ThreadPoolCreation")
   private static Executor COMMAND_POOL_EXECUTOR;
   private static Executor UPLOAD_QUEUE_EXECUTOR;
   private static Executor DOWNLOAD_QUEUE_EXECUTOR;
