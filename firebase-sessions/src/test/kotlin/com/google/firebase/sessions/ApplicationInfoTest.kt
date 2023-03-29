@@ -1,42 +1,48 @@
 package com.google.firebase.sessions
 
+import android.app.Application
+import android.content.Context
+import android.content.pm.PackageInfo
+import android.content.pm.PackageManager
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.core.content.pm.PackageInfoBuilder
 import com.google.common.truth.Truth
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
+import com.google.firebase.sessions.testing.FakeFirebaseApp
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.robolectric.Robolectric
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowApplication
+import org.robolectric.shadows.ShadowPackageManager
 
-@RunWith(AndroidJUnit4::class)
+@RunWith(RobolectricTestRunner::class)
 class ApplicationInfoTest {
-  private val MOCK_PROJECT_ID = "project"
-  private val MOCK_APP_ID = "1:android:project:app"
-  private val MOCK_API_KEY = "RANDOM_APIKEY_FOR_TESTING"
 
   @Test
   fun applicationInfo_populatesInfoCorrectly() {
-    val firebaseApp = Firebase.initialize(
-      ApplicationProvider.getApplicationContext(),
-      FirebaseOptions.Builder()
-        .setApplicationId(MOCK_APP_ID)
-        .setApiKey(MOCK_API_KEY)
-        .setProjectId(MOCK_PROJECT_ID)
-        .build()
-    )
-
-    val applicationInfo = getApplicationInfo(firebaseApp)
+    val applicationInfo = getApplicationInfo(FakeFirebaseApp.fakeFirebaseApp())
     Truth.assertThat(applicationInfo)
       .isEqualTo(
-        ApplicationInfo(appId = MOCK_APP_ID,
+        ApplicationInfo(appId = FakeFirebaseApp.MOCK_APP_ID,
                         deviceModel = "",
-                        sessionSdkVersion = "",
+                        sessionSdkVersion = BuildConfig.VERSION_NAME,
                         logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
-                        AndroidApplicationInfo(packageName = "",
-                                               versionName = "")
+                        AndroidApplicationInfo(packageName = ApplicationProvider.getApplicationContext<Context>().packageName,
+                                               versionName = FakeFirebaseApp.MOCK_APP_VERSION)
         )
       )
+  }
+
+  @After
+  fun cleanUp() {
+    FirebaseApp.clearInstancesForTest()
   }
 }

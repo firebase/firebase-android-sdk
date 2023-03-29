@@ -16,13 +16,20 @@
 
 package com.google.firebase.sessions
 
+import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
+import com.google.firebase.sessions.testing.FakeFirebaseApp
+import org.junit.After
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class SessionEventTest {
   @Test
   fun sessionStart_populatesSessionDetailsCorrectly() {
@@ -33,16 +40,7 @@ class SessionEventTest {
         collectEvents = true,
         sessionIndex = 3,
       )
-
-    val firebaseApp = Firebase.initialize(
-      ApplicationProvider.getApplicationContext(),
-      FirebaseOptions.Builder()
-        .setApplicationId("")
-        .setApiKey("")
-        .setProjectId("")
-        .build()
-    )
-    val sessionEvent = SessionEvents.startSession(firebaseApp, sessionDetails)
+    val sessionEvent = SessionEvents.startSession(FakeFirebaseApp.fakeFirebaseApp(), sessionDetails)
 
     assertThat(sessionEvent)
       .isEqualTo(
@@ -54,14 +52,19 @@ class SessionEventTest {
               firstSessionId = "a1a1a1",
               sessionIndex = 3,
             ),
-          applicationInfo = ApplicationInfo(appId = "",
+          applicationInfo = ApplicationInfo(appId = FakeFirebaseApp.MOCK_APP_ID,
                                             deviceModel = "",
-                                            sessionSdkVersion = "",
+                                            sessionSdkVersion = BuildConfig.VERSION_NAME,
                                             logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
-                                            AndroidApplicationInfo(packageName = "",
-                                                                   versionName = ""),
+                                            AndroidApplicationInfo(packageName = ApplicationProvider.getApplicationContext<Context>().packageName,
+                                                                   versionName = FakeFirebaseApp.MOCK_APP_VERSION),
           )
         )
       )
+  }
+
+  @After
+  fun cleanUp() {
+    FirebaseApp.clearInstancesForTest()
   }
 }
