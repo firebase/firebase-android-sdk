@@ -85,7 +85,7 @@ public class FirebaseLibraryExtension {
       groupId.set(new DefaultProvider<>(() -> project.getGroup().toString()));
     }
     this.staticAnalysis = initializeStaticAnalysis(project);
-    this.libraryGroupRegistrar = LibraryGroupRegistrar.Companion.getInstance();
+    this.libraryGroupRegistrar = LibraryGroupRegistrar.getInstance();
     libraryGroupName = "";
   }
 
@@ -114,7 +114,7 @@ public class FirebaseLibraryExtension {
    */
   public void libraryGroup(String libraryGroupName) {
     this.libraryGroupName = libraryGroupName;
-    libraryGroupRegistrar.addLibrary(libraryGroupName, this);
+    libraryGroupRegistrar.registerLibrary(libraryGroupName, this);
   }
 
   public Set<Project> getProjectsToRelease() {

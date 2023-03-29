@@ -14,7 +14,6 @@
 package com.google.firebase.gradle
 
 import com.google.common.collect.ImmutableList
-import com.google.common.collect.Sets
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import java.io.File
 import org.eclipse.jgit.api.Git
@@ -29,6 +28,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.kotlin.dsl.findByType
 
 data class FirebaseLibrary(val moduleNames: List<String>, val directories: List<String>)
 
@@ -37,6 +37,10 @@ data class CommitDiff(
   val author: String,
   val message: String,
 ) {
+  constructor(
+    revCommit: RevCommit
+  ) : this(revCommit.id.name, revCommit.authorIdent.name, revCommit.fullMessage) {}
+
   override fun toString(): String =
     """
       |* ${message.split("\n").first()}   
@@ -48,42 +52,41 @@ data class CommitDiff(
 
 abstract class ReleaseGenerator : DefaultTask() {
 
-  @get:Input public abstract val currentRelease: Property<String>
+  @get:Input abstract val currentRelease: Property<String>
 
-  @get:Input public abstract val pastRelease: Property<String>
+  @get:Input abstract val pastRelease: Property<String>
 
-  @get:Input public abstract val printReleaseConfig: Property<String>
+  @get:Input abstract val printReleaseConfig: Property<String>
 
-  @OutputFile public fun getReleaseConfigFile() = project.buildDir.resolve("release.cfg")
+  @get:OutputFile abstract val releaseConfigFile: Property<File>
 
-  @OutputFile public fun getReleaseReportFile() = project.buildDir.resolve("release_report.md")
+  @get:OutputFile abstract val releaseReportFile: Property<File>
 
   @TaskAction
   @Throws(Exception::class)
   fun generateReleaseConfig() {
     val rootDir = project.rootDir
-    val availableModules = parseSubProjects(rootDir)
+    val availableModules = project.subprojects.filter { it.plugins.hasPlugin("firebase-library") }
 
     val repo = Git.open(rootDir)
     val headRef = repo.repository.resolve(Constants.HEAD)
     val branchRef = getObjectRefForBranchName(repo, pastRelease.get())
 
-    val libsToRelease = getChangedChangelogs(project, repo, branchRef, headRef, availableModules)
+    val libsToRelease = getChangedChangelogs(repo, branchRef, headRef, availableModules)
     val changedLibsWithNoChangelog =
-      Sets.difference(
-        getChangedLibraries(repo, branchRef, headRef, availableModules),
+      getChangedLibraries(repo, branchRef, headRef, availableModules) subtract
         libsToRelease.map { it.path }.toSet()
-      )
+
     val changes = getChangesForLibraries(repo, branchRef, headRef, libsToRelease)
     writeReleaseConfig(
-      getReleaseConfigFile(),
+      releaseConfigFile.get(),
       ReleaseConfig(currentRelease.get(), libsToRelease.map { it.path }.toSet())
     )
     val releaseReport = generateReleaseReport(changes, changedLibsWithNoChangelog)
     if (printReleaseConfig.get().toBoolean()) {
-      println(releaseReport)
+      project.logger.info(releaseReport)
     }
-    writeReleaseReport(getReleaseReportFile(), releaseReport)
+    writeReleaseReport(releaseReportFile.get(), releaseReport)
   }
 
   private fun generateReleaseReport(
@@ -118,25 +121,6 @@ abstract class ReleaseGenerator : DefaultTask() {
       .associateWith { getDirChanges(repo, branchRef, headRef, it) }
       .toMap()
 
-  private fun extractLibraries(
-    availableModules: Set<String>,
-    rootDir: File
-  ): List<FirebaseLibrary> {
-    val nonKtxModules = availableModules.filter { !it.endsWith("ktx") }.toSet()
-    return nonKtxModules
-      .map { moduleName ->
-        val ktxModuleName = "$moduleName:ktx"
-
-        val moduleNames = listOf(moduleName, ktxModuleName).filter { availableModules.contains(it) }
-        val directories = moduleNames.map { it.replace(":", "/") }
-
-        FirebaseLibrary(moduleNames, directories)
-      }
-      .filter { firebaseLibrary ->
-        firebaseLibrary.directories.first().let { File(rootDir, "$it/gradle.properties").exists() }
-      }
-  }
-
   private fun parseSubProjects(rootDir: File) =
     File(rootDir, "subprojects.cfg")
       .readLines()
@@ -157,43 +141,36 @@ abstract class ReleaseGenerator : DefaultTask() {
     repo: Git,
     previousReleaseRef: ObjectId,
     currentReleaseRef: ObjectId,
-    libraries: Set<String>
+    libraries: List<Project>
   ) =
     libraries
-      .filter { library ->
-        checkDirChanges(repo, previousReleaseRef, currentReleaseRef, "$library/")
+      .filter {
+        checkDirChanges(repo, previousReleaseRef, currentReleaseRef, "${getRelativeDir(it)}/")
       }
-      .flatMap<String, String> {
-        val temp =
-          project.childProjects
-            .get(it)!!
-            .extensions
-            .findByType(FirebaseLibraryExtension::class.java)
-        if (temp == null) {
-          return@flatMap ImmutableList.of<String>()
-        }
-        temp.projectsToRelease.map { it.path }
+      .flatMap {
+        it.extensions.findByType<FirebaseLibraryExtension>()?.projectsToRelease?.map { it.path }
+          ?: emptyList()
       }
       .toSet()
 
   private fun getChangedChangelogs(
-    project: Project,
     repo: Git,
     previousReleaseRef: ObjectId,
     currentReleaseRef: ObjectId,
-    libraries: Set<String>
+    libraries: List<Project>
   ) =
     libraries
       .filter { library ->
-        checkDirChanges(repo, previousReleaseRef, currentReleaseRef, "$library/CHANGELOG.md")
+        checkDirChanges(
+          repo,
+          previousReleaseRef,
+          currentReleaseRef,
+          "${getRelativeDir(library)}/CHANGELOG.md"
+        )
       }
       .flatMap {
-        val childProject = project.childProjects.get(it)!!
-        val extension = childProject.extensions.findByType(FirebaseLibraryExtension::class.java)
-        if (extension == null) {
-          return@flatMap ImmutableList.of(childProject)
-        }
-        extension.projectsToRelease
+        it.extensions.findByType<FirebaseLibraryExtension>()?.projectsToRelease
+          ?: ImmutableList.of(it)
       }
       .toSet()
 
@@ -219,16 +196,8 @@ abstract class ReleaseGenerator : DefaultTask() {
     directory: String
   ) =
     repo.log().addPath(directory).addRange(previousReleaseRef, currentReleaseRef).call().map {
-      toCommitDiff(repo, it)
+      CommitDiff(it)
     }
-
-  private fun toCommitDiff(repo: Git, revCommit: RevCommit): CommitDiff {
-    return CommitDiff(
-      revCommit.id.name,
-      revCommit.authorIdent.name,
-      revCommit.fullMessage,
-    )
-  }
 
   private fun writeReleaseReport(file: File, report: String) {
     file.writeText(report)
@@ -244,9 +213,9 @@ abstract class ReleaseGenerator : DefaultTask() {
 data class ReleaseConfig(val releaseName: String, val libs: Set<String>) {
   companion object {
     fun fromFile(file: File): ReleaseConfig {
-      val contents = file.readText(Charsets.UTF_8).split("\n")
+      val contents = file.readLines()
       val libs = contents.filter { it.startsWith(":") }.toSet()
-      val releaseName = contents.find { it.startsWith("name") }!!.split("=")[1].trim()
+      val releaseName = contents.first { it.startsWith("name") }.substringAfter("=").trim()
       return ReleaseConfig(releaseName, libs)
     }
   }

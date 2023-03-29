@@ -29,6 +29,7 @@ import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy;
+import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Zip;
 
 /**
@@ -81,26 +82,31 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
               task.getDestinationDirectory().set(project.getRootDir());
             });
 
-    ReleaseGenerator generatorTask =
+    TaskProvider<ReleaseGenerator> generatorTask =
         project
             .getTasks()
-            .create(
-                "generateReleaseConfigRaw",
+            .register(
+                "makeReleaseConfigFiles",
                 ReleaseGenerator.class,
                 task -> {
-                  task.getCurrentRelease().set(getOptionalProperty(project, "currentRelease"));
-                  task.getPastRelease().set(getOptionalProperty(project, "pastRelease"));
-                  task.getPrintReleaseConfig().set(getOptionalProperty(project, "printOutput"));
+                  task.getCurrentRelease()
+                      .convention(project.property("currentRelease").toString());
+                  task.getPastRelease().convention(project.property("pastRelease").toString());
+                  task.getPrintReleaseConfig()
+                      .convention(project.property("printOutput").toString());
+                  task.getReleaseConfigFile()
+                      .convention(new File(project.getBuildDir(), "release.cfg"));
+                  task.getReleaseReportFile()
+                      .convention(new File(project.getBuildDir(), "release_report.md"));
                 });
 
     project
         .getTasks()
-        .create(
+        .register(
             "generateReleaseConfig",
             Copy.class,
             task -> {
-              task.dependsOn(generatorTask);
-              task.from(generatorTask.getReleaseConfigFile(), generatorTask.getReleaseReportFile());
+              task.from(generatorTask);
               task.into(project.getRootDir());
             });
 
@@ -155,13 +161,5 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
                 firebasePublish.dependsOn(assembleFirebaseJavadocZip);
               }
             });
-  }
-
-  private static String getOptionalProperty(Project project, String propertyName) {
-    Object property = project.findProperty(propertyName);
-    if (property == null) {
-      return "";
-    }
-    return property.toString();
   }
 }
