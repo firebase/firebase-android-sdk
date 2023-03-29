@@ -54,32 +54,14 @@ abstract class ApiDiffer : DefaultTask() {
     val afterJar = readApi(aarPath.get(), currentAarClassJar)
     val beforeJar = readApi(File(previousAarPath), previousAarClassJar)
     val apiDeltas = mutableListOf<Delta>()
-    apiDeltas.addAll(getRemovedApi(beforeJar, afterJar))
-    for (classEntry in afterJar) {
-      val afterClass = classEntry.value
-      val beforeClass = beforeJar.get(classEntry.key)
-      val className = afterClass.name
-      val classDelta = getClassDelta(beforeClass, afterClass)
-      if (classDelta != null) {
-        apiDeltas.add(classDelta)
-      }
-      if (beforeClass == null) {
-        continue
-      }
-      for (methodEntry in afterClass.methods) {
-        val afterMethod = methodEntry.value
-        val beforeMethod = beforeClass.methods.get(methodEntry.key)
-        apiDeltas.addAll(getMethodDeltas(className, beforeMethod, afterMethod))
-      }
-      for (fieldEntry in afterClass.fields) {
-        val afterField = fieldEntry.value
-        val beforeField = beforeClass.fields.get(fieldEntry.key)
-        val fieldDelta = getFieldDelta(className, beforeField, afterField)
-        if (fieldDelta != null) {
-          apiDeltas.add(fieldDelta)
-        }
-      }
+    val classKeys = afterJar.keys union beforeJar.keys
+    classKeys.forEach {
+      val afterClass = afterJar.get(it)
+      val beforeClass = beforeJar.get(it)
+      val deltaType = DeltaType.ADDED_FIELD
+      apiDeltas.addAll(deltaType.getViolations(beforeClass, afterClass))
     }
+    print(apiDeltas)
   }
 
   fun readApi(aarPath: File, destFile: String): Map<String, ClassInfo> {
