@@ -47,13 +47,13 @@ android {
 
 dependencies {
   implementation(project(":firebase-database"))
-  implementation("androidx.annotation:annotation:1.1.0")
-  implementation("com.google.firebase:firebase-common:20.3.1")
+  implementation("com.google.firebase:firebase-common:20.3.2")
+  implementation("com.google.firebase:firebase-common-ktx:20.3.2")
   implementation("com.google.firebase:firebase-components:17.1.0")
-  implementation("com.google.firebase:firebase-common-ktx:20.3.1")
-  implementation("com.google.android.gms:play-services-tasks:18.0.1")
 
   implementation(libs.kotlin.stdlib)
+  implementation(libs.playservices.tasks)
+  implementation(libs.androidx.annotation)
   implementation(libs.kotlinx.coroutines.core)
 
   testImplementation(libs.truth)

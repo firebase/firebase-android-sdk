@@ -50,16 +50,14 @@ android {
 }
 
 dependencies {
-  implementation("com.google.firebase:firebase-common:20.3.1")
+  implementation("com.google.firebase:firebase-common:20.3.2")
   implementation("com.google.firebase:firebase-components:17.1.0")
   implementation("com.google.firebase:firebase-appcheck-interop:16.1.1")
   implementation("com.google.firebase:firebase-database-collection:18.0.1")
 
-  implementation("androidx.annotation:annotation:1.1.0")
-  implementation("com.google.android.gms:play-services-base:18.0.1")
-  implementation("com.google.android.gms:play-services-tasks:18.0.1")
-  implementation("com.google.android.gms:play-services-basement:18.1.0")
-  implementation("com.google.firebase:firebase-auth-interop:19.0.2")
+  implementation(libs.androidx.annotation)
+  implementation(libs.bundles.playservices)
+  implementation("com.google.firebase:firebase-auth-interop:20.0.0")
 
   testImplementation(libs.truth)
   testImplementation(libs.junit)
@@ -69,8 +67,8 @@ dependencies {
   testImplementation(libs.androidx.test.core)
   testImplementation(libs.androidx.test.rules)
   testImplementation("com.firebase:firebase-token-generator:2.0.0")
-  testImplementation("com.fasterxml.jackson.core:jackson-core:2.9.8")
-  testImplementation("com.fasterxml.jackson.core:jackson-databind:2.9.8")
+  testImplementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
+  testImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
 
   androidTestImplementation(libs.truth)
   androidTestImplementation(libs.quickcheck)
@@ -78,8 +76,8 @@ dependencies {
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation("org.hamcrest:hamcrest:2.2")
   androidTestImplementation("org.hamcrest:hamcrest-library:2.2")
-  androidTestImplementation("com.fasterxml.jackson.core:jackson-core:2.9.8")
-  androidTestImplementation("com.fasterxml.jackson.core:jackson-databind:2.9.8")
+  androidTestImplementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
+  androidTestImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
 }
 
 ext["packageName"] = "com.google.firebase.database"

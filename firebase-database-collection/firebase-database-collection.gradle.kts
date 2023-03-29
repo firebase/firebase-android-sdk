@@ -37,7 +37,7 @@ android {
 }
 
 dependencies {
-  implementation("com.google.android.gms:play-services-base:18.0.1")
+  implementation(libs.playservices.base)
 
   testImplementation(libs.junit)
   testImplementation(libs.quickcheck)
