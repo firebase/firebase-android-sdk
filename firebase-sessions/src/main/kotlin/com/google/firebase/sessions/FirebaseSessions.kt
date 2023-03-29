@@ -27,13 +27,12 @@ import kotlinx.coroutines.CoroutineDispatcher
 
 class FirebaseSessions
 internal constructor(
-  firebaseApp: FirebaseApp,
+  val firebaseApp: FirebaseApp,
   firebaseInstallations: FirebaseInstallationsApi,
   backgroundDispatcher: CoroutineDispatcher
 ) {
   private val sessionGenerator = SessionGenerator(collectEvents = true)
   private val sessionCoordinator = SessionCoordinator(firebaseInstallations, backgroundDispatcher)
-  private val firebaseApp = firebaseApp
 
   init {
     val sessionInitiator = SessionInitiator(WallClock::elapsedRealtime, this::initiateSessionStart)
