@@ -52,12 +52,12 @@ android {
 dependencies {
   implementation("com.google.firebase:firebase-common:20.3.2")
   implementation("com.google.firebase:firebase-components:17.1.0")
+  implementation("com.google.firebase:firebase-auth-interop:20.0.0")
   implementation("com.google.firebase:firebase-appcheck-interop:16.1.1")
   implementation("com.google.firebase:firebase-database-collection:18.0.1")
 
   implementation(libs.androidx.annotation)
   implementation(libs.bundles.playservices)
-  implementation("com.google.firebase:firebase-auth-interop:20.0.0")
 
   testImplementation(libs.truth)
   testImplementation(libs.junit)
