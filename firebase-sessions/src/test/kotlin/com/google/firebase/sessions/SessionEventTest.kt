@@ -20,9 +20,6 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
-import com.google.firebase.FirebaseOptions
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.ktx.initialize
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import org.junit.After
 import org.junit.Test
@@ -52,13 +49,17 @@ class SessionEventTest {
               firstSessionId = "a1a1a1",
               sessionIndex = 3,
             ),
-          applicationInfo = ApplicationInfo(appId = FakeFirebaseApp.MOCK_APP_ID,
-                                            deviceModel = "",
-                                            sessionSdkVersion = BuildConfig.VERSION_NAME,
-                                            logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
-                                            AndroidApplicationInfo(packageName = ApplicationProvider.getApplicationContext<Context>().packageName,
-                                                                   versionName = FakeFirebaseApp.MOCK_APP_VERSION),
-          )
+          applicationInfo =
+            ApplicationInfo(
+              appId = FakeFirebaseApp.MOCK_APP_ID,
+              deviceModel = "",
+              sessionSdkVersion = BuildConfig.VERSION_NAME,
+              logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
+              AndroidApplicationInfo(
+                packageName = ApplicationProvider.getApplicationContext<Context>().packageName,
+                versionName = FakeFirebaseApp.MOCK_APP_VERSION
+              ),
+            )
         )
       )
   }

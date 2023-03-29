@@ -32,21 +32,25 @@ class FakeFirebaseApp {
     internal val MOCK_API_KEY = "RANDOM_APIKEY_FOR_TESTING"
     internal val MOCK_APP_VERSION = "1.0.0"
 
-    fun fakeFirebaseApp():FirebaseApp {
+    fun fakeFirebaseApp(): FirebaseApp {
       val shadowPackageManager =
         Shadows.shadowOf(ApplicationProvider.getApplicationContext<Context>().packageManager)
-      val packageInfo = PackageInfoBuilder.newBuilder().setPackageName(ApplicationProvider.getApplicationContext<Context>().packageName).build()
+      val packageInfo =
+        PackageInfoBuilder.newBuilder()
+          .setPackageName(ApplicationProvider.getApplicationContext<Context>().packageName)
+          .build()
       packageInfo.versionName = MOCK_APP_VERSION
       shadowPackageManager.installPackage(packageInfo)
 
-      val firebaseApp = Firebase.initialize(
-        ApplicationProvider.getApplicationContext(),
-        FirebaseOptions.Builder()
-          .setApplicationId(MOCK_APP_ID)
-          .setApiKey(MOCK_API_KEY)
-          .setProjectId(MOCK_PROJECT_ID)
-          .build()
-      )
+      val firebaseApp =
+        Firebase.initialize(
+          ApplicationProvider.getApplicationContext(),
+          FirebaseOptions.Builder()
+            .setApplicationId(MOCK_APP_ID)
+            .setApiKey(MOCK_API_KEY)
+            .setProjectId(MOCK_PROJECT_ID)
+            .build()
+        )
       return firebaseApp
     }
   }
