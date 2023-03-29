@@ -34,7 +34,7 @@ import java.util.concurrent.Executor;
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class StorageRegistrar implements ComponentRegistrar {
   private static final String LIBRARY_NAME = "fire-gcs";
-  Qualified<Executor> backgroundExecutor = Qualified.qualified(Blocking.class, Executor.class);
+  Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
 
   @Override
   public List<Component<?>> getComponents() {
@@ -42,7 +42,7 @@ public class StorageRegistrar implements ComponentRegistrar {
         Component.builder(FirebaseStorageComponent.class)
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(backgroundExecutor))
+            .add(Dependency.required(blockingExecutor))
             .add(Dependency.optionalProvider(InternalAuthProvider.class))
             .add(Dependency.optionalProvider(InternalAppCheckTokenProvider.class))
             .factory(
@@ -51,7 +51,7 @@ public class StorageRegistrar implements ComponentRegistrar {
                         c.get(FirebaseApp.class),
                         c.getProvider(InternalAuthProvider.class),
                         c.getProvider(InternalAppCheckTokenProvider.class),
-                        c.get(backgroundExecutor)))
+                        c.get(blockingExecutor)))
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
