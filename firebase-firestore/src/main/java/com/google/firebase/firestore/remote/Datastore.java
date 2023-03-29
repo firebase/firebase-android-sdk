@@ -41,7 +41,6 @@ import com.google.firestore.v1.FirestoreGrpc;
 import com.google.firestore.v1.RunAggregationQueryRequest;
 import com.google.firestore.v1.RunAggregationQueryResponse;
 import com.google.firestore.v1.StructuredAggregationQuery;
-import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.Value;
 import io.grpc.Status;
 import java.util.ArrayList;
@@ -226,37 +225,8 @@ public class Datastore {
       Query query, List<AggregateField> aggregateFields) {
     com.google.firestore.v1.Target.QueryTarget encodedQueryTarget =
         serializer.encodeQueryTarget(query.toTarget());
-
-    StructuredAggregationQuery.Builder structuredAggregationQuery =
-        StructuredAggregationQuery.newBuilder();
-    structuredAggregationQuery.setStructuredQuery(encodedQueryTarget.getStructuredQuery());
-
-    // We use a Set here to automatically remove duplicates.
-    Set<StructuredAggregationQuery.Aggregation> aggregations = new HashSet<>();
-    for (AggregateField aggregateField : aggregateFields) {
-      StructuredAggregationQuery.Aggregation.Builder aggregation =
-          StructuredAggregationQuery.Aggregation.newBuilder();
-      StructuredQuery.FieldReference fieldPath =
-          StructuredQuery.FieldReference.newBuilder()
-              .setFieldPath(aggregateField.getFieldPath())
-              .build();
-
-      if (aggregateField instanceof AggregateField.CountAggregateField) {
-        aggregation.setCount(StructuredAggregationQuery.Aggregation.Count.getDefaultInstance());
-      } else if (aggregateField instanceof AggregateField.SumAggregateField) {
-        aggregation.setSum(
-            StructuredAggregationQuery.Aggregation.Sum.newBuilder().setField(fieldPath).build());
-      } else if (aggregateField instanceof AggregateField.AverageAggregateField) {
-        aggregation.setAvg(
-            StructuredAggregationQuery.Aggregation.Avg.newBuilder().setField(fieldPath).build());
-      } else {
-        throw new RuntimeException("Unsupported aggregation");
-      }
-
-      aggregation.setAlias(aggregateField.getAlias());
-      aggregations.add(aggregation.build());
-    }
-    structuredAggregationQuery.addAllAggregations(aggregations);
+    StructuredAggregationQuery structuredAggregationQuery =
+        serializer.encodeStructuredAggregationQuery(encodedQueryTarget, aggregateFields);
 
     RunAggregationQueryRequest.Builder request = RunAggregationQueryRequest.newBuilder();
     request.setParent(encodedQueryTarget.getParent());

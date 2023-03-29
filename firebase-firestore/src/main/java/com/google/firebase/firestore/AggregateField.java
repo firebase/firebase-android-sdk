@@ -32,9 +32,31 @@ public abstract class AggregateField {
   private AggregateField(@Nullable FieldPath fieldPath, @NonNull String operator) {
     this.fieldPath = fieldPath;
     this.operator = operator;
+
     // Use $operator_$field format if it's an aggregation of a specific field. For example: sum_foo.
     // Use $operator format if there's no field. For example: count.
-    this.alias = operator + (fieldPath == null ? "" : "_" + fieldPath);
+    //
+    // Note: If the fieldPath contains characters that need to be escaped, we need to do further
+    // processing. Example:
+    // field:                  contains`invalid
+    // field.getEncodedPath(): `contains\`invalid`
+    // alias:                  `sum_contains\`invalid`
+    if (fieldPath == null) {
+      this.alias = operator;
+    } else {
+      String encodedFieldPath = fieldPath.toString();
+      boolean hasEscapedChars =
+          encodedFieldPath.startsWith("`")
+              && encodedFieldPath.endsWith("`")
+              && encodedFieldPath.length() > 1;
+      String maybeBacktick = hasEscapedChars ? "`" : "";
+      // Strip away the leading and trailing backticks.
+      encodedFieldPath =
+          hasEscapedChars
+              ? encodedFieldPath.substring(1, encodedFieldPath.length() - 1)
+              : encodedFieldPath;
+      this.alias = maybeBacktick + operator + "_" + encodedFieldPath + maybeBacktick;
+    }
   }
 
   /**
@@ -47,7 +69,6 @@ public abstract class AggregateField {
   }
 
   /** Returns the alias used internally for this aggregate field. */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @NonNull
   public String getAlias() {
     return alias;
@@ -111,19 +132,19 @@ public abstract class AggregateField {
     return new AverageAggregateField(fieldPath);
   }
 
-  public static final class CountAggregateField extends AggregateField {
+  public static class CountAggregateField extends AggregateField {
     private CountAggregateField() {
       super(null, "count");
     }
   }
 
-  public static final class SumAggregateField extends AggregateField {
+  public static class SumAggregateField extends AggregateField {
     private SumAggregateField(@NonNull FieldPath fieldPath) {
       super(fieldPath, "sum");
     }
   }
 
-  public static final class AverageAggregateField extends AggregateField {
+  public static class AverageAggregateField extends AggregateField {
     private AverageAggregateField(@NonNull FieldPath fieldPath) {
       super(fieldPath, "average");
     }

@@ -115,6 +115,6 @@ public class AggregateQuery {
    */
   @Override
   public int hashCode() {
-    return Objects.hash(query.hashCode(), aggregateFieldList.hashCode());
+    return Objects.hash(query, aggregateFieldList);
   }
 }
