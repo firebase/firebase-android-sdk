@@ -59,3 +59,4 @@ quickcheck = { module = "net.java:quickcheck", version.ref = "quickcheck" }
 
 [bundles]
 kotest = ["kotest-runner", "kotest-assertions", "kotest-property"]
+playservices = ["playservices-base", "playservices-basement", "playservices-tasks"]
