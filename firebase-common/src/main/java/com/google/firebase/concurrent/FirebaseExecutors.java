@@ -46,7 +46,7 @@ public class FirebaseExecutors {
    */
   public static Executor newLimitedConcurrencyExecutor(Executor delegate, int concurrency) {
     return new LimitedConcurrencyExecutor(delegate, concurrency);
-}
+  }
 
   /**
    * Returns a {@link ExecutorService} that limits the number of running tasks at a given time.
