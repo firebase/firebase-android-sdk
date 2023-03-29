@@ -1221,7 +1221,7 @@ public final class RemoteSerializerTest {
   }
 
   @Test
-  public void ignoresExpectedCountWithoutResumeTokenOrReadTime() {
+  public void shouldIgnoreExpectedCountWithoutResumeTokenOrReadTime() {
     Query q = Query.atPath(ResourcePath.fromString("docs"));
     TargetData targetData =
         new TargetData(q.toTarget(), 1, 2, QueryPurpose.LISTEN).withExpectedCount(42);

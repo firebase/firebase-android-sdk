@@ -459,7 +459,7 @@ public class RemoteEventTest {
   }
 
   @Test
-  public void existenceFilterMismatchWithBloomFilterSuccess() {
+  public void existenceFilterMismatchWithSuccessfulBloomFilterApplication() {
     Map<Integer, TargetData> targetMap = activeQueries(1, 2);
 
     MutableDocument doc1 = doc("docs/1", 1, map("value", 1));
@@ -551,10 +551,10 @@ public class RemoteEventTest {
     TargetChange mapping2 = targetChange(resumeToken, false, null, null, null);
     assertEquals(mapping2, event.getTargetChanges().get(2));
 
-    // This BloomFilter will return true on both MightContain(doc1) and MightContain(doc2).
+    // With this BloomFilter, mightContain() will return true for all documents.
     BitSequence.Builder bitSequence = BitSequence.newBuilder();
     bitSequence.setPadding(7);
-    bitSequence.setBitmap(ByteString.copyFrom(new byte[] {0x42, (byte) 0xFE}));
+    bitSequence.setBitmap(ByteString.copyFrom(new byte[] {(byte) 0xFF, (byte) 0xFF}));
     com.google.firestore.v1.BloomFilter.Builder bloomFilter = BloomFilter.newBuilder();
     bloomFilter.setBits(bitSequence);
     bloomFilter.setHashCount(33);

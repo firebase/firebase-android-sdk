@@ -405,7 +405,7 @@ public final class LocalSerializerTest {
   }
 
   @Test
-  public void localSerializerDropsExpectedCountInTargetData() {
+  public void localSerializerShouldDropExpectedCountInTargetData() {
     Query query = TestUtil.query("room");
     int targetId = 42;
     long sequenceNumber = 10;
