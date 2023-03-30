@@ -73,7 +73,7 @@ public class FirebaseFunctions {
 
   private final Executor executor;
 
-  private final String hello = "String";
+  public final String hello = "String";
 
   // The projectId to use for all functions references.
   private final String projectId;

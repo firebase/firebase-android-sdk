@@ -37,7 +37,7 @@ enum class DeltaType {
           val accessDescriptor = AccessDescriptor(value.access)
           !hasNonPublicMethodSignature(value) && !accessDescriptor.isPrivate()
         }
-      return (setOf(beforeMethods.keys) subtract setOf(afterMethods.keys)).map {
+      return (beforeMethods.keys subtract afterMethods.keys).map {
         val method = beforeMethods.get(it)
         Delta(
           before!!.name,
@@ -65,7 +65,7 @@ enum class DeltaType {
           val accessDescriptor = AccessDescriptor(value.access)
           !hasNonPublicFieldSignature(value) && !accessDescriptor.isPrivate()
         }
-      return (setOf(beforeFields.keys) subtract setOf(afterFields.keys)).map {
+      return (beforeFields.keys subtract afterFields.keys).map {
         val field = beforeFields.get(it)
         Delta(
           before!!.name,
@@ -156,8 +156,8 @@ enum class DeltaType {
         )
       }
 
-      ((setOf(publicBeforeMethods.keys) intersect setOf(nonPublicMethods.keys)) union
-          (setOf(protectedBeforeMethods.keys) intersect setOf(privateMethods.keys)))
+      ((publicBeforeMethods.keys intersect nonPublicMethods.keys) union
+          (protectedBeforeMethods.keys intersect privateMethods.keys))
         .forEach {
           val method = allAfterMethods.get(it)
           apiDeltas.add(
@@ -175,8 +175,8 @@ enum class DeltaType {
           )
         }
 
-      ((setOf(publicBeforeFields.keys) intersect setOf(nonPublicFields.keys)) union
-          (setOf(protectedBeforeFields.keys) intersect setOf(privateFields.keys)))
+      ((publicBeforeFields.keys intersect nonPublicFields.keys) union
+          (protectedBeforeFields.keys intersect privateFields.keys))
         .forEach {
           val field = allAfterFields.get(it)
           apiDeltas.add(
@@ -214,7 +214,7 @@ enum class DeltaType {
             allBeforeMethods.containsKey(key) &&
             access.isStatic()
         }
-      return (setOf(afterStaticMethods.keys) subtract setOf(beforeStaticMethods.keys)).map {
+      return (afterStaticMethods.keys subtract beforeStaticMethods.keys).map {
         val method = allAfterMethods.get(it)
         Delta(
           after!!.name,
@@ -231,7 +231,7 @@ enum class DeltaType {
       val allBeforeMethods = getAllMethods(before)
       val allAfterMethods = getAllMethods(after)
       val apiDeltas = mutableListOf<Delta>()
-      (setOf(allAfterMethods.keys) intersect setOf(allBeforeMethods)).forEach {
+      (allAfterMethods.keys intersect allBeforeMethods.keys).forEach {
         val afterMethod = allAfterMethods.get(it)
         val beforeMethod = allBeforeMethods.get(it)
         if (!beforeMethod!!.exceptions.containsAll(afterMethod!!.exceptions)) {
@@ -258,7 +258,7 @@ enum class DeltaType {
       val allBeforeMethods = getAllMethods(before)
       val allAfterMethods = getAllMethods(after)
       val apiDeltas = mutableListOf<Delta>()
-      (setOf(allAfterMethods.keys) intersect setOf(allBeforeMethods)).forEach {
+      (allAfterMethods.keys intersect allBeforeMethods.keys).forEach {
         val afterMethod = allAfterMethods.get(it)
         val beforeMethod = allBeforeMethods.get(it)
         if (!afterMethod!!.exceptions.containsAll(beforeMethod!!.exceptions)) {
@@ -306,7 +306,7 @@ enum class DeltaType {
       val allBeforeMethods = getAllMethods(before)
       val allAfterMethods = getAllMethods(after)
       val apiDeltas = mutableListOf<Delta>()
-      (setOf(allAfterMethods.keys) intersect setOf(allBeforeMethods)).forEach {
+      (allAfterMethods.keys intersect allBeforeMethods.keys).forEach {
         val afterMethod = allAfterMethods.get(it)
         val beforeMethod = allBeforeMethods.get(it)
 
@@ -337,7 +337,7 @@ enum class DeltaType {
       val allBeforeMethods = getAllMethods(before)
       val allAfterMethods = getAllMethods(after)
       val apiDeltas = mutableListOf<Delta>()
-      (setOf(allAfterMethods.keys) intersect setOf(allBeforeMethods)).forEach {
+      (allAfterMethods.keys intersect allBeforeMethods.keys).forEach {
         val afterMethod = allAfterMethods.get(it)
         val beforeMethod = allBeforeMethods.get(it)
 
@@ -415,7 +415,7 @@ enum class DeltaType {
           val accessDescriptor = AccessDescriptor(value.access)
           !hasNonPublicMethodSignature(value) && !accessDescriptor.isPrivate()
         }
-      return (setOf(afterMethods.keys) subtract setOf(beforeMethods.keys)).map {
+      return (afterMethods.keys subtract beforeMethods.keys).map {
         val method = afterMethods.get(it)
         Delta(
           after!!.name,
@@ -442,7 +442,6 @@ enum class DeltaType {
 
       return (afterFields.keys subtract beforeFields.keys).map {
         val field = afterFields[it]
-        print("here")
         Delta(
           after!!.name,
           field!!.name,
@@ -553,8 +552,8 @@ enum class DeltaType {
           )
         }
 
-      ((setOf(publicAfterFields.keys) subtract setOf(nonPublicFields.keys)) union
-          (setOf(protectedAfterFields.keys) subtract setOf(privateFields.keys)))
+      ((publicAfterFields.keys subtract nonPublicFields.keys) union
+          (protectedAfterFields.keys subtract privateFields.keys))
         .forEach {
           val field = allAfterFields.get(it)
           apiDeltas.add(
@@ -592,7 +591,7 @@ enum class DeltaType {
             allBeforeMethods.containsKey(key) &&
             access.isStatic()
         }
-      return (setOf(beforeStaticMethods.keys) subtract setOf(afterStaticMethods.keys)).map {
+      return (beforeStaticMethods.keys subtract afterStaticMethods.keys).map {
         val method = allAfterMethods.get(it)
         Delta(
           after!!.name,
