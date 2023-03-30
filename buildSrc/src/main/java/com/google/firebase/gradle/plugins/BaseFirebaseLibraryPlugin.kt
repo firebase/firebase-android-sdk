@@ -89,6 +89,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
       )
       groupId.value(firebaseLibrary.groupId.get())
       artifactId.value(firebaseLibrary.artifactId.get())
+      version.value(firebaseLibrary.version)
       dependsOn("bundleReleaseAar")
     }
   }

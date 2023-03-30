@@ -1,3 +1,17 @@
+// Copyright 2022 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.firebase.gradle.plugins.semver
 
 import com.google.firebase.gradle.plugins.GmavenHelper
@@ -13,6 +27,7 @@ import java.nio.file.Paths
 import java.util.jar.JarEntry
 import java.util.jar.JarInputStream
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
@@ -26,12 +41,28 @@ abstract class ApiDiffer : DefaultTask() {
 
   @get:Input abstract val groupId: Property<String>
 
+  @get:Input abstract val version: Property<String>
+
   private val CLASS_EXTENSION = ".class"
 
   @TaskAction
   fun run() {
     val gMavenHelper = GmavenHelper(groupId.get(), artifactId.get())
+    val previousVersion = gMavenHelper.getLatestReleasedVersion().split(".")
+    if (previousVersion.size != 3) {
+      return
+    }
+    val versionlist = version.get().split(".")
+    var curVersionDelta: VersionDelta
+    if (versionlist[0] > previousVersion[0]) {
+      curVersionDelta = VersionDelta.MAJOR
+    } else if (versionlist[1] > previousVersion[1]) {
+      curVersionDelta = VersionDelta.MINOR
+    } else {
+      curVersionDelta = VersionDelta.PATCH
+    }
     val lastAarPath = gMavenHelper.getAarFileForVersion(gMavenHelper.getLatestReleasedVersion())
+
     val previousAarPath: String = aarPath.get().absolutePath.replace(".aar", "/old.aar")
     try {
       BufferedInputStream(URL(lastAarPath).openStream()).use { `in` ->
@@ -46,6 +77,7 @@ abstract class ApiDiffer : DefaultTask() {
     } catch (e: IOException) {
       // handle exception
     }
+
     val currentAarClassJar = aarPath.get().absolutePath.replace(".aar", "")
     val previousAarClassJar = previousAarPath.replace(".aar", "")
     val afterJar = readApi(aarPath.get(), currentAarClassJar)
@@ -55,12 +87,26 @@ abstract class ApiDiffer : DefaultTask() {
     classKeys.forEach {
       val afterClass = afterJar.get(it)
       val beforeClass = beforeJar.get(it)
-      val deltaType = DeltaType.ADDED_FIELD
-      apiDeltas.addAll(deltaType.getViolations(beforeClass, afterClass))
+      val allDeltas = DeltaType.values()
+      allDeltas.forEach { apiDeltas.addAll(it.getViolations(beforeClass, afterClass)) }
     }
-    apiDeltas.forEach {
-      print(it.deltaType)
-      print(it.description)
+    var deltaViolations: List<Delta> = mutableListOf()
+    if (curVersionDelta == VersionDelta.MINOR) {
+      deltaViolations = apiDeltas.filter { it.versionDelta == VersionDelta.MAJOR }
+    } else if (curVersionDelta == VersionDelta.PATCH) {
+      deltaViolations = apiDeltas
+    }
+    if (apiDeltas.size != 0) {
+      println(
+        "Here is a list of all the minor/major version bump changes which are made since the last release"
+      )
+      apiDeltas.forEach { println("[${it.versionDelta}] ${it.description}") }
+    }
+    if (deltaViolations.size != 0) {
+      var outputString =
+        "Here is a list of all the violations which needs to be fixed before we could release.\n"
+      deltaViolations.forEach { outputString += "[${it.versionDelta}] ${it.description}\n" }
+      throw GradleException(outputString)
     }
   }
 
