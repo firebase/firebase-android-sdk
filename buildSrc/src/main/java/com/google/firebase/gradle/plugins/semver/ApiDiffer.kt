@@ -174,7 +174,7 @@ abstract class ApiDiffer : DefaultTask() {
       if (!classes.containsKey(classNode.name)) {
         classes.put(classNode.name, classNode)
       } else {
-        println("Duplicate class seen: " + classNode.name)
+        project.logger.info("Duplicate class seen: ${classNode.name}")
       }
     }
     return classes
