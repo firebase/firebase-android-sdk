@@ -16,6 +16,7 @@ package com.google.firebase.storage;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Blocking;
@@ -35,14 +36,15 @@ class FirebaseStorageComponent {
   @Nullable private final Provider<InternalAppCheckTokenProvider> appCheckProvider;
 
   FirebaseStorageComponent(
-      @NonNull FirebaseApp app,
-      @Nullable Provider<InternalAuthProvider> authProvider,
-      @Nullable Provider<InternalAppCheckTokenProvider> appCheckProvider,
-      @NonNull @Blocking Executor executor) {
+          @NonNull FirebaseApp app,
+          @Nullable Provider<InternalAuthProvider> authProvider,
+          @Nullable Provider<InternalAppCheckTokenProvider> appCheckProvider,
+          @NonNull @Blocking Executor blockingExecutor,
+          @NonNull Executor uiExecutor) {
     this.app = app;
     this.authProvider = authProvider;
     this.appCheckProvider = appCheckProvider;
-    StorageTaskScheduler.initializeExecutors(executor);
+    StorageTaskScheduler.initializeExecutors(blockingExecutor, uiExecutor);
   }
 
   /** Provides instances of Firebase Storage for given bucket names. */

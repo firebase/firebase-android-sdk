@@ -34,20 +34,21 @@ public class StorageTaskScheduler {
   private static final int DOWNLOAD_POOL_SIZE = 3;
   private static final int UPLOAD_POOL_SIZE = 2;
 
-  public static void initializeExecutors(@NonNull Executor firebaseExecutor) {
+  public static void initializeExecutors(@NonNull Executor firebaseExecutor, @NonNull Executor uiExecutor) {
     COMMAND_POOL_EXECUTOR =
         FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, COMMAND_POOL_SIZE);
     DOWNLOAD_QUEUE_EXECUTOR =
         FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, DOWNLOAD_POOL_SIZE);
     UPLOAD_QUEUE_EXECUTOR =
         FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, UPLOAD_POOL_SIZE);
-    CALLBACK_QUEUE_EXECUTOR = FirebaseExecutors.newSequentialExecutor(firebaseExecutor);
+    MAIN_THREAD_EXECUTOR = uiExecutor;
   }
 
   private static Executor COMMAND_POOL_EXECUTOR;
   private static Executor UPLOAD_QUEUE_EXECUTOR;
   private static Executor DOWNLOAD_QUEUE_EXECUTOR;
   private static Executor CALLBACK_QUEUE_EXECUTOR;
+  private static Executor MAIN_THREAD_EXECUTOR;
 
   public static StorageTaskScheduler getInstance() {
     return sInstance;
@@ -59,6 +60,10 @@ public class StorageTaskScheduler {
 
   public void scheduleUpload(Runnable task) {
     UPLOAD_QUEUE_EXECUTOR.execute(task);
+  }
+
+  public Executor getMainThreadExecutor() {
+    return MAIN_THREAD_EXECUTOR;
   }
 
   public void scheduleDownload(Runnable task) {
