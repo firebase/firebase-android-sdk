@@ -14,10 +14,10 @@
 
 package com.google.firebase.firestore.testutil;
 
-import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.platform.app.InstrumentationRegistry;
+import com.google.firebase.firestore.util.Logger;
 
 /**
  * The Firestore backends available for use in integration testing.
@@ -36,7 +36,6 @@ public enum TargetBackend {
   NIGHTLY("test-firestore.sandbox.googleapis.com", true),
   PROD("firestore.googleapis.com", true);
 
-  private static final String LOG_TAG = "TargetBackend";
   private static final String INSTRUMENTATION_ARGUMENTS_KEY = "TARGET_BACKEND";
   private static final TargetBackend CONFIGURED_TARGET_BACKEND = loadConfiguredValue();
 
@@ -57,11 +56,11 @@ public enum TargetBackend {
   private static TargetBackend loadConfiguredValue() {
     TargetBackend targetBackend = loadFromInstrumentationArguments();
     if (targetBackend == null) {
-      Log.i(LOG_TAG, "loadConfiguredValue() returning default: " + EMULATOR);
+      Logger.debug("TargetBackend", "loadConfiguredValue() returning default: " + EMULATOR);
       return EMULATOR;
     }
 
-    Log.i(LOG_TAG, "loadConfiguredValue() returning: " + targetBackend);
+    Logger.debug("TargetBackend", "loadConfiguredValue() returning: " + targetBackend);
     return targetBackend;
   }
 
@@ -90,8 +89,8 @@ public enum TargetBackend {
   private static String loadNameFromInstrumentationArguments() {
     Object valueObj = InstrumentationRegistry.getArguments().get(INSTRUMENTATION_ARGUMENTS_KEY);
     if (valueObj == null) {
-      Log.i(
-          LOG_TAG,
+      Logger.debug(
+          "TargetBackend",
           "loadNameFromInstrumentationArguments() did not find value for key \""
               + INSTRUMENTATION_ARGUMENTS_KEY
               + "\" in InstrumentationRegistry.getArguments(); returning null");
@@ -99,8 +98,8 @@ public enum TargetBackend {
     }
 
     String value = valueObj.toString();
-    Log.i(
-        LOG_TAG,
+    Logger.debug(
+        "TargetBackend",
         "loadNameFromInstrumentationArguments() found value for key \""
             + INSTRUMENTATION_ARGUMENTS_KEY
             + "\" in InstrumentationRegistry.getArguments(): "
