@@ -61,6 +61,8 @@ abstract class ApiDiffer : DefaultTask() {
     } else {
       curVersionDelta = VersionDelta.PATCH
     }
+    val currentAarClassJar = aarPath.get().absolutePath.replace(".aar", "")
+    val afterJar = readApi(aarPath.get(), currentAarClassJar)
     val lastAarPath = gMavenHelper.getAarFileForVersion(gMavenHelper.getLatestReleasedVersion())
 
     val previousAarPath: String = aarPath.get().absolutePath.replace(".aar", "/old.aar")
@@ -78,9 +80,7 @@ abstract class ApiDiffer : DefaultTask() {
       // handle exception
     }
 
-    val currentAarClassJar = aarPath.get().absolutePath.replace(".aar", "")
     val previousAarClassJar = previousAarPath.replace(".aar", "")
-    val afterJar = readApi(aarPath.get(), currentAarClassJar)
     val beforeJar = readApi(File(previousAarPath), previousAarClassJar)
     val apiDeltas = mutableListOf<Delta>()
     val classKeys = afterJar.keys union beforeJar.keys
