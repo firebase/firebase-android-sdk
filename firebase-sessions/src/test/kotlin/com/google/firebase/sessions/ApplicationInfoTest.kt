@@ -27,39 +27,22 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class SessionEventTest {
-  @Test
-  fun sessionStart_populatesSessionDetailsCorrectly() {
-    val sessionDetails =
-      SessionDetails(
-        sessionId = "a1b2c3",
-        firstSessionId = "a1a1a1",
-        collectEvents = true,
-        sessionIndex = 3,
-      )
-    val sessionEvent = SessionEvents.startSession(FakeFirebaseApp.fakeFirebaseApp(), sessionDetails)
+class ApplicationInfoTest {
 
-    assertThat(sessionEvent)
+  @Test
+  fun applicationInfo_populatesInfoCorrectly() {
+    val applicationInfo = getApplicationInfo(FakeFirebaseApp.fakeFirebaseApp())
+    assertThat(applicationInfo)
       .isEqualTo(
-        SessionEvent(
-          eventType = EventType.SESSION_START,
-          sessionData =
-            SessionInfo(
-              sessionId = "a1b2c3",
-              firstSessionId = "a1a1a1",
-              sessionIndex = 3,
-            ),
-          applicationInfo =
-            ApplicationInfo(
-              appId = FakeFirebaseApp.MOCK_APP_ID,
-              deviceModel = "",
-              sessionSdkVersion = BuildConfig.VERSION_NAME,
-              logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
-              AndroidApplicationInfo(
-                packageName = ApplicationProvider.getApplicationContext<Context>().packageName,
-                versionName = FakeFirebaseApp.MOCK_APP_VERSION
-              ),
-            )
+        ApplicationInfo(
+          appId = FakeFirebaseApp.MOCK_APP_ID,
+          deviceModel = "",
+          sessionSdkVersion = BuildConfig.VERSION_NAME,
+          logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
+          AndroidApplicationInfo(
+            packageName = ApplicationProvider.getApplicationContext<Context>().packageName,
+            versionName = FakeFirebaseApp.MOCK_APP_VERSION
+          )
         )
       )
   }

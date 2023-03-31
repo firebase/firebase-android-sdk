@@ -36,6 +36,14 @@ class SessionEventEncoderTest {
             sessionIndex = 9,
             firebaseInstallationId = "fid"
           ),
+        applicationInfo =
+          ApplicationInfo(
+            appId = "",
+            deviceModel = "",
+            sessionSdkVersion = "",
+            logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
+            AndroidApplicationInfo(packageName = "", versionName = ""),
+          )
       )
 
     val json = SESSION_EVENT_ENCODER.encode(sessionEvent)
@@ -69,6 +77,14 @@ class SessionEventEncoderTest {
             firstSessionId = "",
             sessionIndex = 0,
           ),
+        applicationInfo =
+          ApplicationInfo(
+            appId = "",
+            deviceModel = "",
+            sessionSdkVersion = "",
+            logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
+            AndroidApplicationInfo(packageName = "", versionName = ""),
+          )
       )
 
     val json = SESSION_EVENT_ENCODER.encode(sessionEvent)
