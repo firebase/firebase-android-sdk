@@ -19,7 +19,9 @@ package com.google.firebase.sessions
 import android.app.Application
 import android.util.Log
 import androidx.annotation.Discouraged
+import com.google.android.datatransport.TransportFactory
 import com.google.firebase.FirebaseApp
+import com.google.firebase.inject.Provider
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
@@ -29,10 +31,13 @@ class FirebaseSessions
 internal constructor(
   private val firebaseApp: FirebaseApp,
   firebaseInstallations: FirebaseInstallationsApi,
-  backgroundDispatcher: CoroutineDispatcher
+  backgroundDispatcher: CoroutineDispatcher,
+  transportFactoryProvider: Provider<TransportFactory>,
 ) {
   private val sessionGenerator = SessionGenerator(collectEvents = true)
-  private val sessionCoordinator = SessionCoordinator(firebaseInstallations, backgroundDispatcher)
+  private val eventGDTLogger = EventGDTLogger(transportFactoryProvider)
+  private val sessionCoordinator =
+    SessionCoordinator(firebaseInstallations, backgroundDispatcher, eventGDTLogger)
 
   init {
     val sessionInitiator = SessionInitiator(WallClock::elapsedRealtime, this::initiateSessionStart)

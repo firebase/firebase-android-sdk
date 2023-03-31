@@ -16,9 +16,14 @@
 
 package com.google.firebase.sessions
 
+import com.google.android.datatransport.Encoding
+import com.google.android.datatransport.Event
+import com.google.android.datatransport.TransportFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseApp
+import com.google.firebase.sessions.testing.FakeProvider
+import com.google.firebase.sessions.testing.FakeTransportFactory
 import com.google.firebase.sessions.testing.TestSessionEventData
 import org.junit.After
 import org.junit.Test
@@ -26,16 +31,25 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class SessionEventTest {
+class EventGDTLoggerTest {
+
   @Test
-  fun sessionStart_populatesSessionDetailsCorrectly() {
+  fun event_logsToGoogleDataTransport() {
     val sessionEvent =
       SessionEvents.startSession(
         FakeFirebaseApp.fakeFirebaseApp(),
         TestSessionEventData.TEST_SESSION_DETAILS
       )
+    val fakeTransportFactory = FakeTransportFactory()
+    val fakeTransportFactoryProvider = FakeProvider(fakeTransportFactory as TransportFactory)
+    val eventGDTLogger = EventGDTLogger(transportFactoryProvider = fakeTransportFactoryProvider)
 
-    assertThat(sessionEvent).isEqualTo(TestSessionEventData.EXPECTED_DEFAULT_SESSION_EVENT)
+    eventGDTLogger.log(sessionEvent = sessionEvent)
+
+    assertThat(fakeTransportFactory.name).isEqualTo("FIREBASE_APPQUALITY_SESSION")
+    assertThat(fakeTransportFactory.payloadEncoding).isEqualTo(Encoding.of("json"))
+    assertThat(fakeTransportFactory.fakeTransport!!.sentEvent)
+      .isEqualTo(Event.ofData(TestSessionEventData.EXPECTED_DEFAULT_SESSION_EVENT))
   }
 
   @After
