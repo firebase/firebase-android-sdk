@@ -95,9 +95,10 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
                   task.getPrintReleaseConfig()
                       .convention(project.property("printOutput").toString());
                   task.getReleaseConfigFile()
-                      .convention(new File(project.getBuildDir(), "release.cfg"));
+                      .convention(project.getLayout().getBuildDirectory().file("release.cfg"));
                   task.getReleaseReportFile()
-                      .convention(new File(project.getBuildDir(), "release_report.md"));
+                      .convention(
+                          project.getLayout().getBuildDirectory().file("release_report.md"));
                 });
 
     project

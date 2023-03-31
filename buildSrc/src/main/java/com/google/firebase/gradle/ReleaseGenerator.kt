@@ -24,6 +24,7 @@ import org.eclipse.jgit.lib.ObjectId
 import org.eclipse.jgit.revwalk.RevCommit
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
@@ -58,9 +59,9 @@ abstract class ReleaseGenerator : DefaultTask() {
 
   @get:Input abstract val printReleaseConfig: Property<String>
 
-  @get:OutputFile abstract val releaseConfigFile: Property<File>
+  @get:OutputFile abstract val releaseConfigFile: RegularFileProperty
 
-  @get:OutputFile abstract val releaseReportFile: Property<File>
+  @get:OutputFile abstract val releaseReportFile: RegularFileProperty
 
   @TaskAction
   @Throws(Exception::class)
@@ -79,14 +80,14 @@ abstract class ReleaseGenerator : DefaultTask() {
 
     val changes = getChangesForLibraries(repo, branchRef, headRef, libsToRelease)
     writeReleaseConfig(
-      releaseConfigFile.get(),
+      releaseConfigFile.get().asFile,
       ReleaseConfig(currentRelease.get(), libsToRelease.map { it.path }.toSet())
     )
     val releaseReport = generateReleaseReport(changes, changedLibsWithNoChangelog)
     if (printReleaseConfig.get().toBoolean()) {
       project.logger.info(releaseReport)
     }
-    writeReleaseReport(releaseReportFile.get(), releaseReport)
+    writeReleaseReport(releaseReportFile.get().asFile, releaseReport)
   }
 
   private fun generateReleaseReport(
@@ -199,13 +200,10 @@ abstract class ReleaseGenerator : DefaultTask() {
       CommitDiff(it)
     }
 
-  private fun writeReleaseReport(file: File, report: String) {
-    file.writeText(report)
-  }
+  private fun writeReleaseReport(file: File, report: String) = file.writeText(report)
 
-  private fun writeReleaseConfig(file: File, config: ReleaseConfig) {
+  private fun writeReleaseConfig(file: File, config: ReleaseConfig) =
     file.writeText(config.toFile())
-  }
 
   private fun getRelativeDir(project: Project) = project.path.substring(1).replace(':', '/')
 }
