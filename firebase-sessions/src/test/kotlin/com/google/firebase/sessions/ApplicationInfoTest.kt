@@ -18,7 +18,7 @@ package com.google.firebase.sessions
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
-import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import org.junit.After
@@ -32,7 +32,7 @@ class ApplicationInfoTest {
   @Test
   fun applicationInfo_populatesInfoCorrectly() {
     val applicationInfo = getApplicationInfo(FakeFirebaseApp.fakeFirebaseApp())
-    Truth.assertThat(applicationInfo)
+    assertThat(applicationInfo)
       .isEqualTo(
         ApplicationInfo(
           appId = FakeFirebaseApp.MOCK_APP_ID,

@@ -27,7 +27,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 
 class FirebaseSessions
 internal constructor(
-  val firebaseApp: FirebaseApp,
+  private val firebaseApp: FirebaseApp,
   firebaseInstallations: FirebaseInstallationsApi,
   backgroundDispatcher: CoroutineDispatcher
 ) {
