@@ -27,11 +27,13 @@ import com.google.firebase.firestore.util.Logger;
  * <p>To configure the backend, set the instrumentation argument "targetBackend" to one of the
  * values in {@link #loadNameFromInstrumentationArguments}. To set the argument from the Gradle
  * command line use the {@code -P} command-line argument like this:
+ *
  * <pre>
  *     ./gradlew \
  *       -Pandroid.testInstrumentationRunnerArguments.targetBackend=prod \
  *       :firebase-firestore:connectedDebugAndroidTest
  * </pre>
+ *
  * Alternately, set the "targetBackend" instrumentation argument in the Android Studio "Run
  * Configuration" dialog.
  */
