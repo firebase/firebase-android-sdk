@@ -22,13 +22,18 @@ import com.google.firebase.firestore.util.Logger;
 /**
  * The Firestore backends available for use in integration testing.
  *
- * <p>To get the backend configured for use, call {@link #getConfiguredValue()}. To quickly override
- * the local backend for use during local testing simply hardcode the return value of {@link
- * #getConfiguredValue()} to the desired backend.
+ * <p>To get the backend configured for use, call {@link #getConfiguredValue()}.
  *
- * <p>To configure the default backend, set the instrumentation argument "TARGET_BACKEND" either via
- * the Gradle command line or the Android Studio run configuration. See {@link
- * #loadFromInstrumentationArguments}
+ * <p>To configure the backend, set the instrumentation argument "targetBackend" to one of the
+ * values in {@link #loadNameFromInstrumentationArguments}. To set the argument from the Gradle
+ * command line use the {@code -P} command-line argument like this:
+ * <pre>
+ *     ./gradlew \
+ *       -Pandroid.testInstrumentationRunnerArguments.targetBackend=prod \
+ *       :firebase-firestore:connectedDebugAndroidTest
+ * </pre>
+ * Alternately, set the "targetBackend" instrumentation argument in the Android Studio "Run
+ * Configuration" dialog.
  */
 public enum TargetBackend {
   EMULATOR("10.0.2.2:8080", false),
@@ -36,8 +41,8 @@ public enum TargetBackend {
   NIGHTLY("test-firestore.sandbox.googleapis.com", true),
   PROD("firestore.googleapis.com", true);
 
-  private static final String INSTRUMENTATION_ARGUMENTS_KEY = "TARGET_BACKEND";
-  private static final TargetBackend CONFIGURED_TARGET_BACKEND = loadConfiguredValue();
+  private static final String INSTRUMENTATION_ARGUMENTS_KEY = "targetBackend";
+  private static volatile TargetBackend cachedConfiguredValue;
 
   public final String host;
   public final boolean ssl;
@@ -49,7 +54,10 @@ public enum TargetBackend {
 
   @NonNull
   public static TargetBackend getConfiguredValue() {
-    return CONFIGURED_TARGET_BACKEND;
+    if (cachedConfiguredValue == null) {
+      cachedConfiguredValue = loadConfiguredValue();
+    }
+    return cachedConfiguredValue;
   }
 
   @NonNull
