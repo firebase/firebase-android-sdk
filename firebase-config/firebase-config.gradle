@@ -19,6 +19,7 @@ plugins {
 }
 
 firebaseLibrary {
+    libraryGroup "config"
     testLab.enabled = true
     publishSources = true
 }

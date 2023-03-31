@@ -20,7 +20,6 @@ firebaseLibrary {
     testLab.enabled = false
     publishJavadoc = false
     libraryGroup "messaging"
-
 }
 
 android {
