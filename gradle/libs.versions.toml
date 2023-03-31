@@ -24,6 +24,7 @@ android-lint-testutils = { module = "com.android.tools:testutils", version.ref =
 androidx-annotation = { module = "androidx.annotation:annotation", version = "1.5.0" }
 androidx-core = { module = "androidx.core:core", version = "1.2.0" }
 androidx-futures = { module = "androidx.concurrent:concurrent-futures", version = "1.1.0" }
+androidx-multidex = { module = "androidx.multidex:multidex", version = "2.0.1" }
 autovalue = { module = "com.google.auto.value:auto-value", version.ref = "autovalue" }
 autovalue-annotations = { module = "com.google.auto.value:auto-value-annotations", version.ref = "autovalue" }
 dagger-dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
@@ -49,6 +50,7 @@ junit = { module = "junit:junit", version = "4.13.2" }
 kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 mockito-core = { module = "org.mockito:mockito-core", version = "2.28.2" }
 mockito-dexmaker = { module = "com.linkedin.dexmaker:dexmaker-mockito", version = "2.28.3" }
+mockito-inline = { module = "org.mockito:mockito-inline", version = "2.28.2" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
 protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobufjavautil" }
