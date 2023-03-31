@@ -67,25 +67,7 @@ public class AggregateQuerySnapshot {
   @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Object get(@Nonnull AggregateField aggregateField) {
-    if (!data.containsKey(aggregateField.getAlias())) {
-      throw new IllegalArgumentException(
-          "'"
-              + aggregateField.getOperator()
-              + "("
-              + aggregateField.getFieldPath()
-              + ")"
-              + "' was not requested in the aggregation query.");
-    }
-    Value value = data.get(aggregateField.getAlias());
-    if (value.hasNullValue()) {
-      return null;
-    } else if (value.hasDoubleValue()) {
-      return value.getDoubleValue();
-    } else if (value.hasIntegerValue()) {
-      return value.getIntegerValue();
-    } else {
-      throw new IllegalStateException("Found aggregation result that is not an integer nor double");
-    }
+    return getInternal(aggregateField);
   }
 
   /**
@@ -98,18 +80,12 @@ public class AggregateQuerySnapshot {
   /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY)
   public long get(@Nonnull AggregateField.CountAggregateField countAggregateField) {
-    Object value = get((AggregateField) countAggregateField);
+    Long value = getLong(countAggregateField);
     if (value == null) {
       throw new IllegalArgumentException(
           "RunAggregationQueryResponse alias " + countAggregateField.getAlias() + " is null");
-    } else if (!(value instanceof Long)) {
-      throw new IllegalArgumentException(
-          "RunAggregationQueryResponse alias "
-              + countAggregateField.getAlias()
-              + " has incorrect type: "
-              + value.getClass().getName());
     }
-    return (long) value;
+    return value;
   }
 
   /**
@@ -126,7 +102,7 @@ public class AggregateQuerySnapshot {
   @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Double get(@Nonnull AggregateField.AverageAggregateField averageAggregateField) {
-    return (Double) get((AggregateField) averageAggregateField);
+    return getDouble(averageAggregateField);
   }
 
   /**
@@ -143,8 +119,8 @@ public class AggregateQuerySnapshot {
   @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Double getDouble(@Nonnull AggregateField aggregateField) {
-    Number result = (Number) get(aggregateField);
-    return result == null ? null : result.doubleValue();
+    Number val = getTypedValue(aggregateField, Number.class);
+    return val != null ? val.doubleValue() : null;
   }
 
   /**
@@ -160,8 +136,44 @@ public class AggregateQuerySnapshot {
   @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Long getLong(@Nonnull AggregateField aggregateField) {
-    Number result = (Number) get(aggregateField);
-    return result == null ? null : result.longValue();
+    Number val = getTypedValue(aggregateField, Number.class);
+    return val != null ? val.longValue() : null;
+  }
+
+  @Nullable
+  private Object getInternal(@Nonnull AggregateField aggregateField) {
+    if (!data.containsKey(aggregateField.getAlias())) {
+      throw new IllegalArgumentException(
+          "'"
+              + aggregateField.getOperator()
+              + "("
+              + aggregateField.getFieldPath()
+              + ")"
+              + "' was not requested in the aggregation query.");
+    }
+    Value value = data.get(aggregateField.getAlias());
+    UserDataWriter userDataWriter =
+        new UserDataWriter(
+            query.getQuery().firestore, DocumentSnapshot.ServerTimestampBehavior.DEFAULT);
+    return userDataWriter.convertValue(value);
+  }
+
+  @Nullable
+  private <T> T getTypedValue(@Nonnull AggregateField aggregateField, Class<T> clazz) {
+    Object value = getInternal(aggregateField);
+    return castTypedValue(value, aggregateField, clazz);
+  }
+
+  @Nullable
+  private <T> T castTypedValue(
+      Object value, @Nonnull AggregateField aggregateField, Class<T> clazz) {
+    if (value == null) {
+      return null;
+    } else if (!clazz.isInstance(value)) {
+      throw new RuntimeException(
+          "AggregateField '" + aggregateField.getAlias() + "' is not a " + clazz.getName());
+    }
+    return clazz.cast(value);
   }
 
   /**

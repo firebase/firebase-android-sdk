@@ -35,46 +35,28 @@ public abstract class AggregateField {
 
     // Use $operator_$field format if it's an aggregation of a specific field. For example: sum_foo.
     // Use $operator format if there's no field. For example: count.
-    //
-    // Note: If the fieldPath contains characters that need to be escaped, we need to do further
-    // processing. Example:
-    // field:                  contains`invalid
-    // field.getEncodedPath(): `contains\`invalid`
-    // alias:                  `sum_contains\`invalid`
-    if (fieldPath == null) {
-      this.alias = operator;
-    } else {
-      String encodedFieldPath = fieldPath.toString();
-      boolean hasEscapedChars =
-          encodedFieldPath.startsWith("`")
-              && encodedFieldPath.endsWith("`")
-              && encodedFieldPath.length() > 1;
-      String maybeBacktick = hasEscapedChars ? "`" : "";
-      // Strip away the leading and trailing backticks.
-      encodedFieldPath =
-          hasEscapedChars
-              ? encodedFieldPath.substring(1, encodedFieldPath.length() - 1)
-              : encodedFieldPath;
-      this.alias = maybeBacktick + operator + "_" + encodedFieldPath + maybeBacktick;
-    }
+    this.alias = operator + (fieldPath == null ? "" : "_" + fieldPath);
   }
 
   /**
    * Returns the field on which the aggregation takes place. Returns an empty string if there's no
    * field (e.g. for count).
    */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @NonNull
   public String getFieldPath() {
     return fieldPath == null ? "" : fieldPath.toString();
   }
 
   /** Returns the alias used internally for this aggregate field. */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @NonNull
   public String getAlias() {
     return alias;
   }
 
   /** Returns a string representation of this aggregation's operator. For example: "sum" */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @NonNull
   public String getOperator() {
     return operator;
