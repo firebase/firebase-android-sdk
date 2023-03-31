@@ -397,11 +397,12 @@ public class SessionReportingCoordinatorTest {
     String byteBackedSessionName = "byte";
     BytesBackedNativeSessionFile byteSession =
         new BytesBackedNativeSessionFile(byteBackedSessionName, "not_applicable", testBytes);
-    reportingCoordinator.finalizeSessionWithNativeEvent("id", Arrays.asList(byteSession));
+    reportingCoordinator.finalizeSessionWithNativeEvent("id", Arrays.asList(byteSession), null);
 
     ArgumentCaptor<CrashlyticsReport.FilesPayload> filesPayload =
         ArgumentCaptor.forClass(CrashlyticsReport.FilesPayload.class);
-    verify(reportPersistence).finalizeSessionWithNativeEvent(eq("id"), filesPayload.capture());
+    verify(reportPersistence)
+        .finalizeSessionWithNativeEvent(eq("id"), filesPayload.capture(), any());
     CrashlyticsReport.FilesPayload ndkPayloadFinalized = filesPayload.getValue();
     assertEquals(1, ndkPayloadFinalized.getFiles().size());
 

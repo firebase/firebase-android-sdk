@@ -1,4 +1,9 @@
 # Unreleased
+
+# 16.1.2
+* [deprecated] Added deprecation tagging to the `SafetyNetAppCheckProviderFactory` class. (#4686)
+
+# 16.1.1
 * [changed] Migrated [app_check] SDKs to use standard Firebase executors. (#4431, #4449)
 * [changed] Integrated the [app_check] SafetyNet SDK with Firebase Components. (#4436)
 * [changed] Moved Task continuations off the main thread. (#4453)

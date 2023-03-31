@@ -246,8 +246,8 @@ public class MutableData {
    *     List&lt;Message&gt; messages = mutableData.getValue(t);
    * </pre>
    *
-   * It is important to use a subclass of {@link GenericTypeIndicator}. See {@link
-   * GenericTypeIndicator} for more details
+   * It is important to use a subclass of {@link GenericTypeIndicator}. See <br>
+   * {@link GenericTypeIndicator} for more details
    *
    * @param t A subclass of {@link GenericTypeIndicator} indicating the type of generic collection
    *     to be returned.

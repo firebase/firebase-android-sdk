@@ -8,7 +8,7 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
-  danger:
+  changelog-check:
     runs-on: ubuntu-22.04
     env:
       BUNDLE_GEMFILE: ./ci/danger/Gemfile

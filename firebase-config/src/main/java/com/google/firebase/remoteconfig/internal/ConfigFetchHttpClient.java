@@ -33,6 +33,7 @@ import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFie
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.EXPERIMENT_DESCRIPTIONS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.PERSONALIZATION_METADATA;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.STATE;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ResponseFieldKey.TEMPLATE_VERSION_NUMBER;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 import android.content.Context;
@@ -215,12 +216,12 @@ public class ConfigFetchHttpClient {
       } catch (IOException e) {
       }
     }
+    ConfigContainer fetchedConfigs = extractConfigs(fetchResponse, currentTime);
 
     if (!backendHasUpdates(fetchResponse)) {
-      return FetchResponse.forBackendHasNoUpdates(currentTime);
+      return FetchResponse.forBackendHasNoUpdates(currentTime, fetchedConfigs);
     }
 
-    ConfigContainer fetchedConfigs = extractConfigs(fetchResponse, currentTime);
     return FetchResponse.forBackendUpdatesFetched(fetchedConfigs, fetchResponseETag);
   }
 
@@ -434,6 +435,15 @@ public class ConfigFetchHttpClient {
       }
       if (personalizationMetadata != null) {
         containerBuilder = containerBuilder.withPersonalizationMetadata(personalizationMetadata);
+      }
+
+      String templateVersionNumber = null;
+      if (fetchResponse.has(TEMPLATE_VERSION_NUMBER)) {
+        templateVersionNumber = fetchResponse.getString(TEMPLATE_VERSION_NUMBER);
+      }
+
+      if (templateVersionNumber != null) {
+        containerBuilder.withTemplateVersionNumber(Long.parseLong(templateVersionNumber));
       }
 
       return containerBuilder.build();
