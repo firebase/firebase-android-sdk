@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    releaseWith project(':firebase-crashlytics')
+    libraryGroup "crashlytics"
     testLab.enabled = true
     publishJavadoc = true
     publishSources = true
