@@ -3,6 +3,12 @@
 # 16.1.2
 * [unchanged] Updated to keep [app_check] SDK versions aligned.
 
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-appcheck` library. The Kotlin extensions library has no additional
+updates.
+
 # 16.1.1
 * [changed] Migrated [app_check] SDKs to use standard Firebase executors.
   (GitHub [#4431](//github.com/firebase/firebase-android-sdk/issues/4431){: .external}
