@@ -1,5 +1,6 @@
 # Unreleased
 * [feature] Add support for disjunctions in queries (`OR` queries).
+* [fixed] Fixed stack overflow caused by deeply nested server timestamps (#4702).
 
 # 24.4.4
 * [changed] Relaxed certain query validations performed by the SDK (#4231).
