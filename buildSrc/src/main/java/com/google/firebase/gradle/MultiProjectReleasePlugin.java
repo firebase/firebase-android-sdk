@@ -116,34 +116,6 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
                                       "Required projectsToPublish parameter missing.");
                                 }
                               }));
-              Task firebasePublish = project.getTasks().findByName("firebasePublish");
-              firebasePublish.dependsOn(validateProjectsToPublish);
-
-              Task generateAllJavadocs =
-                  project.task(
-                      "generateAllJavadocs",
-                      task -> {
-                        for (Project p : projectsToPublish) {
-                          task.dependsOn(p.getPath() + ":kotlindoc");
-                        }
-                      });
-
-              Zip assembleFirebaseJavadocZip =
-                  project
-                      .getTasks()
-                      .create(
-                          "assembleFirebaseJavadocZip",
-                          Zip.class,
-                          zip -> {
-                            zip.dependsOn(generateAllJavadocs);
-                            zip.getDestinationDirectory().set(project.getBuildDir());
-                            zip.getArchiveFileName().set("firebase-javadoc.zip");
-                            zip.from(firebaseDevsiteJavadoc);
-                            zip.include("**/*");
-                          });
-              if (releaseJavadocs) {
-                firebasePublish.dependsOn(assembleFirebaseJavadocZip);
-              }
               project.getTasks().findByName("firebasePublish").dependsOn(validateProjectsToPublish);
             });
   }
