@@ -19,6 +19,7 @@ plugins {
 }
 
 firebaseLibrary {
+    libraryGroup "config"
     testLab.enabled = true
     publishSources = true
 }
@@ -49,17 +50,20 @@ android {
 }
 
 dependencies {
-    implementation project(':firebase-annotations')
-    implementation project(':firebase-common')
-    implementation project(':firebase-abt')
-    implementation project(':firebase-components')
-    implementation project(':firebase-installations-interop')
-    runtimeOnly project(':firebase-installations')
+    implementation 'com.google.firebase:firebase-annotations:16.2.0'
+    implementation 'com.google.firebase:firebase-common:20.3.1'
+    implementation 'com.google.firebase:firebase-abt:21.1.1'
+    implementation 'com.google.firebase:firebase-components:17.1.0'
+    implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
+    runtimeOnly 'com.google.firebase:firebase-installations:17.1.2'
 
     implementation 'com.google.firebase:firebase-measurement-connector:18.0.0'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
 
+    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.6'
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+
+    annotationProcessor 'com.google.auto.value:auto-value:1.6.6'
 
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
 

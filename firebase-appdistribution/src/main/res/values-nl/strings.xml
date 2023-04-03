@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright 2022 Google LLC -->
+<!-- -->
+<!-- Licensed under the Apache License, Version 2.0 (the "License"); -->
+<!-- you may not use this file except in compliance with the License. -->
+<!-- You may obtain a copy of the License at -->
+<!-- -->
+<!--      http://www.apache.org/licenses/LICENSE-2.0 -->
+<!-- -->
+<!-- Unless required by applicable law or agreed to in writing, software -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS, -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. -->
+<!-- See the License for the specific language governing permissions and -->
+<!-- limitations under the License. -->
+
+<resources>
+  <string name="signin_dialog_title" translation_description="Title of the dialog encouraging the user to enable Firebase App Distribution features">Testfuncties aanzetten</string>
+  <string name="singin_dialog_message" translation_description="Content of the dialog encouraging the user to enable Firebase App Distribution features">Zet testfuncties aan, zoals meldingen over nieuwe builds en feedback vanuit de app.</string>
+  <string name="singin_yes_button" translation_description="Text on button to enable Firebase App Distribution features">Aanzetten</string>
+  <string name="singin_no_button" translation_description="Text on button to decline Firebase App Distribution features">Niet nu</string>
+  <string name="update_dialog_title" translation_description="Title of the dialog explaining to the user that a new version of the application is available">Nieuwe versie beschikbaar</string>
+  <string name="update_version_available" translation_description="Version string (and code) of the available update">Versie %1$s (%2$d) is beschikbaar.</string>
+  <string name="update_release_notes" translation_description="Text prefixing release notes">Release-opmerkingen:</string>
+  <string name="update_yes_button" translation_description="Text on button to start update">Updaten</string>
+  <string name="update_no_button" translation_description="Text on button to cancel update">Annuleren</string>
+  <string name="downloading_app_update" translation_description="Title of the notification showing during download of update">In-app update downloaden…</string>
+  <string name="download_completed" translation_description="Title of notification when download of update has completed">Downloaden is voltooid</string>
+  <string name="download_failed" translation_description="Title of notification when download of update has failed">Downloaden is mislukt</string>
+  <string name="install_failed" translation_description="Title of notification when installation of update has failed">Installatie is mislukt</string>
+  <string name="notifications_group_name" translation_description="Title of the notification channel group for the SDK">Firebase App Distribution</string>
+  <string name="app_update_notification_channel_name" translation_description="Name of the notification channel for in-app updates">App-updates</string>
+  <string name="app_update_notification_channel_description" translation_description="Description of the notification channel for in-app updates">Hier staat de voortgang van in-app updates</string>
+  <string name="feedback_launch_failed" translation_description="Toast explaining that launching the feedback functionality failed">Feedbackfunctie kan niet worden gestart</string>
+  <string name="feedback_unidentified_release" translation_description="Toast explaining feedback can't be provided, because release can't be found">Release is niet gevonden. Deze app is misschien niet geïnstalleerd door App Distribution of u heeft misschien geen toegang meer.</string>
+  <string name="feedback_no_release" translation_description="Toast explaining that feedback would have been sent, but was not, since development mode was active">Er is geen feedback gestuurd omdat u in de ontwikkelaarsmodus werkt.</string>
+  <string name="feedback_notification_channel_name" translation_description="Name of the notification channel for in-app feedback">Feedback</string>
+  <string name="feedback_notification_channel_description" translation_description="Description of the notification channel for in-app feedback">Geeft een melding weer om feedback over de app te geven</string>
+  <string name="feedback_notification_title" translation_description="Title of notification encouraging testers to enter feedback">We zijn benieuwd naar uw feedback.</string>
+  <string name="feedback_notification_text" translation_description="Text of notification encouraging testers to enter feedback for the app">Tik om feedback te geven over %1$s</string>
+  <string name="unknown_sources_dialog_title" translation_description="Title of dialog describing that installation from unknown sources needs to be enabled">Installatie vanaf onbekende bronnen</string>
+  <string name="unknown_sources_dialog_description" translation_description="Text of dialog describing why installation from unknown sources needs to be enabled">Als u de update wilt installeren, moet u installatie vanaf onbekende bronnen aanzetten</string>
+  <string name="unknown_sources_yes_button" translation_description="Label on button launching settings to enable installation from unknown sources">Instellingen</string>
+  <string name="back_button_description" translation_description="Description for image button (back) which aborts feedback">Terug</string>
+  <string name="send_feedback" translation_description="Text next to send button which sends feedback">Feedback sturen</string>
+  <string name="send_button_description" translation_description="Description of image button (send) which sends feedback">Sturen</string>
+  <string name="feedback_text_hint" translation_description="Default text hint displayed in the text box where user should type their feedback">Heeft u feedback? Vertel ons dan hoe we deze app beter kunnen maken.</string>
+  <string name="screenshot" translation_description="Text displayed next to the checkbox which can be toggled to include/exclude a screenshot with the feedback">Screenshot</string>
+  <string name="no_screenshot" translation_description="Text displayed when there is no screenshot available to be included with the feedback">Screenshot (niet beschikbaar)</string>
+  <string name="screenshot_image_description" translation_description="Description for the screenshot image">Screenshotafbeelding</string>
+</resources>

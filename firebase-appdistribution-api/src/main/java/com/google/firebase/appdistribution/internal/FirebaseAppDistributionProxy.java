@@ -14,11 +14,15 @@
 
 package com.google.firebase.appdistribution.internal;
 
+import android.net.Uri;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
+import com.google.firebase.appdistribution.InterruptionLevel;
 import com.google.firebase.appdistribution.UpdateTask;
 import com.google.firebase.inject.Provider;
 
@@ -70,5 +74,42 @@ public class FirebaseAppDistributionProxy implements FirebaseAppDistribution {
   @Override
   public UpdateTask updateApp() {
     return delegate.updateApp();
+  }
+
+  @Override
+  public void startFeedback(@StringRes int additionalFormText) {
+    delegate.startFeedback(additionalFormText);
+  }
+
+  @Override
+  public void startFeedback(@NonNull CharSequence additionalFormText) {
+    delegate.startFeedback(additionalFormText);
+  }
+
+  @Override
+  public void startFeedback(@StringRes int additionalFormText, @Nullable Uri screenshotUri) {
+    delegate.startFeedback(additionalFormText, screenshotUri);
+  }
+
+  @Override
+  public void startFeedback(@NonNull CharSequence additionalFormText, @Nullable Uri screenshotUri) {
+    delegate.startFeedback(additionalFormText, screenshotUri);
+  }
+
+  @Override
+  public void showFeedbackNotification(
+      @StringRes int additionalFormText, @NonNull InterruptionLevel interruptionLevel) {
+    delegate.showFeedbackNotification(additionalFormText, interruptionLevel);
+  }
+
+  @Override
+  public void showFeedbackNotification(
+      @NonNull CharSequence additionalFormText, @NonNull InterruptionLevel interruptionLevel) {
+    delegate.showFeedbackNotification(additionalFormText, interruptionLevel);
+  }
+
+  @Override
+  public void cancelFeedbackNotification() {
+    delegate.cancelFeedbackNotification();
   }
 }

@@ -14,24 +14,38 @@
 
 package com.google.firebase.crashlytics.ndk;
 
+import android.app.ActivityManager;
+import android.app.ApplicationExitInfo;
 import android.content.Context;
+import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+import java.util.zip.GZIPOutputStream;
 
 public class CrashpadController {
 
   @SuppressWarnings("CharsetObjectCanBeUsed") // StandardCharsets requires API level 19.
   private static final Charset UTF_8 = Charset.forName("UTF-8");
+
+  private static final String SESSION_START_TIMESTAMP_FILE_NAME = "start-time";
 
   private static final String SESSION_METADATA_FILE = "session.json";
   private static final String APP_METADATA_FILE = "app.json";
@@ -70,8 +84,8 @@ public class CrashpadController {
   }
 
   public boolean hasCrashDataForSession(String sessionId) {
-    File crashFile = getFilesForSession(sessionId).minidump;
-    return crashFile != null && crashFile.exists();
+    SessionFiles files = getFilesForSession(sessionId);
+    return files.nativeCore != null && files.nativeCore.hasCore();
   }
 
   @NonNull
@@ -94,7 +108,7 @@ public class CrashpadController {
         && sessionFileDirectory.exists()
         && sessionFileDirectoryForMinidump.exists()) {
       builder
-          .minidumpFile(getSingleFileWithExtension(sessionFileDirectoryForMinidump, ".dmp"))
+          .nativeCore(getNativeCore(sessionId, sessionFileDirectoryForMinidump))
           .metadataFile(getSingleFileWithExtension(sessionFileDirectory, ".device_info"))
           .sessionFile(new File(sessionFileDirectory, SESSION_METADATA_FILE))
           .appFile(new File(sessionFileDirectory, APP_METADATA_FILE))
@@ -102,6 +116,52 @@ public class CrashpadController {
           .osFile(new File(sessionFileDirectory, OS_METADATA_FILE));
     }
     return builder.build();
+  }
+
+  private SessionFiles.NativeCore getNativeCore(
+      String sessionId, File sessionFileDirectoryForMinidump) {
+    File minidump = getSingleFileWithExtension(sessionFileDirectoryForMinidump, ".dmp");
+    CrashlyticsReport.ApplicationExitInfo applicationExitInfo = getApplicationExitInfo(sessionId);
+    return new SessionFiles.NativeCore(minidump, applicationExitInfo);
+  }
+
+  private CrashlyticsReport.ApplicationExitInfo getApplicationExitInfo(String sessionId) {
+    return android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+        ? getNativeCrashApplicationExitInfo(sessionId)
+        : null;
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.S)
+  private CrashlyticsReport.ApplicationExitInfo getNativeCrashApplicationExitInfo(
+      String sessionId) {
+    ActivityManager activityManager =
+        (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+    List<ApplicationExitInfo> applicationExitInfoList =
+        activityManager.getHistoricalProcessExitReasons(null, 0, 0);
+
+    File sessionStartFile = fileStore.getSessionFile(sessionId, SESSION_START_TIMESTAMP_FILE_NAME);
+    long sessionTime =
+        sessionStartFile == null ? System.currentTimeMillis() : sessionStartFile.lastModified();
+
+    return getRelevantApplicationExitInfo(sessionTime, applicationExitInfoList);
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.S)
+  private CrashlyticsReport.ApplicationExitInfo getRelevantApplicationExitInfo(
+      long sessionTime, List<ApplicationExitInfo> applicationExitInfoList) {
+    List<ApplicationExitInfo> filtered = new ArrayList<>();
+    for (ApplicationExitInfo applicationExitInfo : applicationExitInfoList) {
+      if (applicationExitInfo.getReason() != ApplicationExitInfo.REASON_CRASH_NATIVE
+          || applicationExitInfo.getTimestamp() < sessionTime) {
+        continue;
+      }
+
+      filtered.add(applicationExitInfo);
+    }
+
+    // For GWP-ASan and MTE, there can only be one tombstone, even in the case of non-crashy
+    // GWP-ASan.
+    return filtered.isEmpty() ? null : convertApplicationExitInfoToModel(filtered.get(0));
   }
 
   public void writeBeginSession(String sessionId, String generator, long startedAtSeconds) {
@@ -180,5 +240,60 @@ public class CrashpadController {
     }
 
     return null;
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.S)
+  private static CrashlyticsReport.ApplicationExitInfo convertApplicationExitInfoToModel(
+      ApplicationExitInfo applicationExitInfo) {
+    return CrashlyticsReport.ApplicationExitInfo.builder()
+        .setImportance(applicationExitInfo.getImportance())
+        .setProcessName(applicationExitInfo.getProcessName())
+        .setReasonCode(applicationExitInfo.getReason())
+        .setTimestamp(applicationExitInfo.getTimestamp())
+        .setPid(applicationExitInfo.getPid())
+        .setPss(applicationExitInfo.getPss())
+        .setRss(applicationExitInfo.getRss())
+        .setTraceFile(getTraceFileFromApplicationExitInfo(applicationExitInfo))
+        .build();
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.S)
+  private static String getTraceFileFromApplicationExitInfo(
+      ApplicationExitInfo applicationExitInfo) {
+    try {
+      return convertInputStreamToString(applicationExitInfo.getTraceInputStream());
+    } catch (IOException e) {
+      Logger.getLogger().w("Failed to get input stream from ApplicationExitInfo");
+    }
+
+    return null;
+  }
+
+  @VisibleForTesting
+  @RequiresApi(api = Build.VERSION_CODES.S)
+  public static String convertInputStreamToString(InputStream inputStream) throws IOException {
+    if (inputStream == null) {
+      return null;
+    }
+
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+    byte[] bytes = new byte[8192];
+    int length;
+    while ((length = inputStream.read(bytes)) != -1) {
+      byteArrayOutputStream.write(bytes, 0, length);
+    }
+
+    return zipAndEncode(byteArrayOutputStream.toByteArray());
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.S)
+  private static String zipAndEncode(byte[] bytes) throws IOException {
+    try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+        GZIPOutputStream gzip = new GZIPOutputStream(out)) {
+      gzip.write(bytes);
+      gzip.finish();
+
+      return Base64.getEncoder().encodeToString(out.toByteArray());
+    }
   }
 }

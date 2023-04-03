@@ -14,30 +14,30 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.pm.PackageManager;
-import androidx.annotation.NonNull;
-import androidx.annotation.VisibleForTesting;
+import android.net.Uri;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
-import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.inject.Inject;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 /** Client that makes FIS-authenticated GET and POST requests to the App Distribution Tester API. */
 class TesterApiHttpClient {
+  private static final String TAG = "TesterApiHttpClient";
 
   /** Functional interface for a function that writes a request body to an output stream */
   interface RequestBodyWriter {
@@ -62,21 +62,19 @@ class TesterApiHttpClient {
   // StandardCharsets.UTF_8 requires API level 19
   private static final String UTF_8 = "UTF-8";
 
-  private static final String TAG = "TesterApiClient:";
   private static final int DEFAULT_BUFFER_SIZE = 8192;
 
-  private final FirebaseApp firebaseApp;
+  private final Context applicationContext;
+  private final FirebaseOptions firebaseOptions;
   private final HttpsUrlConnectionFactory httpsUrlConnectionFactory;
 
-  TesterApiHttpClient(@NonNull FirebaseApp firebaseApp) {
-    this(firebaseApp, new HttpsUrlConnectionFactory());
-  }
-
-  @VisibleForTesting
+  @Inject
   TesterApiHttpClient(
-      @NonNull FirebaseApp firebaseApp,
-      @NonNull HttpsUrlConnectionFactory httpsUrlConnectionFactory) {
-    this.firebaseApp = firebaseApp;
+      Context applicationContext,
+      FirebaseOptions firebaseOptions,
+      HttpsUrlConnectionFactory httpsUrlConnectionFactory) {
+    this.applicationContext = applicationContext;
+    this.firebaseOptions = firebaseOptions;
     this.httpsUrlConnectionFactory = httpsUrlConnectionFactory;
   }
 
@@ -105,7 +103,13 @@ class TesterApiHttpClient {
    *
    * @return the response body
    */
-  JSONObject makePostRequest(String tag, String path, String token, String requestBody)
+  JSONObject makeJsonPostRequest(String tag, String path, String token, String requestBody)
+      throws FirebaseAppDistributionException {
+    return makeJsonPostRequest(tag, path, token, requestBody, new HashMap<>());
+  }
+
+  JSONObject makeJsonPostRequest(
+      String tag, String path, String token, String requestBody, Map<String, String> extraHeaders)
       throws FirebaseAppDistributionException {
     byte[] bytes;
     try {
@@ -115,33 +119,42 @@ class TesterApiHttpClient {
           "Unsupported encoding: " + UTF_8, Status.UNKNOWN, e);
     }
     return makePostRequest(
-        tag, path, token, new HashMap<>(), outputStream -> outputStream.write(bytes));
+        tag,
+        path,
+        token,
+        JSON_CONTENT_TYPE,
+        extraHeaders,
+        outputStream -> outputStream.write(bytes));
   }
 
   /**
-   * Make a raw file upload request to the tester API at the given path using a FIS token for auth.
+   * Make an upload request to the tester API at the given path using a FIS token for auth.
    *
-   * <p>Uploads the file with gzip encoding.
+   * <p>Uploads the content with gzip encoding.
    *
    * @return the response body
    */
-  JSONObject makeUploadRequest(String tag, String path, String token, File file)
+  JSONObject makeUploadRequest(
+      String tag, String path, String token, String filename, String contentType, Uri contentUri)
       throws FirebaseAppDistributionException {
     Map<String, String> extraHeaders = new HashMap<>();
+    ContentResolver contentResolver = applicationContext.getContentResolver();
     extraHeaders.put(X_GOOG_UPLOAD_PROTOCOL_HEADER, X_GOOG_UPLOAD_PROTOCOL_RAW);
-    extraHeaders.put(X_GOOG_UPLOAD_FILE_NAME_HEADER, X_GOOG_UPLOAD_FILE_NAME);
+    extraHeaders.put(X_GOOG_UPLOAD_FILE_NAME_HEADER, filename);
     RequestBodyWriter requestBodyWriter =
         outputStream -> {
-          FileInputStream inputStream = new FileInputStream(file);
-          writeInputStreamToOutputStream(inputStream, outputStream);
+          try (InputStream inputStream = contentResolver.openInputStream(contentUri)) {
+            writeInputStreamToOutputStream(inputStream, outputStream);
+          }
         };
-    return makePostRequest(tag, path, token, extraHeaders, requestBodyWriter);
+    return makePostRequest(tag, path, token, contentType, extraHeaders, requestBodyWriter);
   }
 
   private JSONObject makePostRequest(
       String tag,
       String path,
       String token,
+      String contentType,
       Map<String, String> extraHeaders,
       RequestBodyWriter requestBodyWriter)
       throws FirebaseAppDistributionException {
@@ -150,17 +163,14 @@ class TesterApiHttpClient {
       connection = openHttpsUrlConnection(getTesterApiUrl(path), token);
       connection.setDoOutput(true);
       connection.setRequestMethod(REQUEST_METHOD_POST);
-      connection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, JSON_CONTENT_TYPE);
+      connection.addRequestProperty(CONTENT_TYPE_HEADER_KEY, contentType);
       for (Map.Entry<String, String> e : extraHeaders.entrySet()) {
         connection.addRequestProperty(e.getKey(), e.getValue());
       }
-      OutputStream outputStream = connection.getOutputStream();
-      try {
+      try (OutputStream outputStream = connection.getOutputStream()) {
         requestBodyWriter.write(outputStream);
       } catch (IOException e) {
         throw getException(tag, "Error writing network request body", Status.UNKNOWN, e);
-      } finally {
-        outputStream.close();
       }
       return readResponse(tag, connection);
     } catch (IOException e) {
@@ -180,7 +190,7 @@ class TesterApiHttpClient {
       throws IOException, FirebaseAppDistributionException {
     int responseCode = connection.getResponseCode();
     String responseBody = readResponseBody(connection);
-    LogWrapper.getInstance().v(tag, String.format("Response (%d): %s", responseCode, responseBody));
+    LogWrapper.v(tag, String.format("Response (%d): %s", responseCode, responseBody));
     if (!isResponseSuccess(responseCode)) {
       throw getExceptionForHttpResponse(tag, responseCode, responseBody);
     }
@@ -218,14 +228,14 @@ class TesterApiHttpClient {
 
   private HttpsURLConnection openHttpsUrlConnection(String url, String authToken)
       throws IOException {
-    LogWrapper.getInstance().v("Opening connection to " + url);
-    Context context = firebaseApp.getApplicationContext();
+    LogWrapper.v(TAG, "Opening connection to " + url);
     HttpsURLConnection httpsURLConnection;
     httpsURLConnection = httpsUrlConnectionFactory.openConnection(url);
     httpsURLConnection.setRequestMethod(REQUEST_METHOD_GET);
-    httpsURLConnection.setRequestProperty(API_KEY_HEADER, firebaseApp.getOptions().getApiKey());
+    httpsURLConnection.setRequestProperty(API_KEY_HEADER, firebaseOptions.getApiKey());
     httpsURLConnection.setRequestProperty(INSTALLATION_AUTH_HEADER, authToken);
-    httpsURLConnection.addRequestProperty(X_ANDROID_PACKAGE_HEADER_KEY, context.getPackageName());
+    httpsURLConnection.addRequestProperty(
+        X_ANDROID_PACKAGE_HEADER_KEY, applicationContext.getPackageName());
     httpsURLConnection.addRequestProperty(
         X_ANDROID_CERT_HEADER_KEY, getFingerprintHashForPackage());
     httpsURLConnection.addRequestProperty(
@@ -293,29 +303,28 @@ class TesterApiHttpClient {
 
   /** Gets the Android package's SHA-1 fingerprint. */
   private String getFingerprintHashForPackage() {
-    Context context = firebaseApp.getApplicationContext();
     byte[] hash;
 
     try {
-      hash = AndroidUtilsLight.getPackageCertificateHashBytes(context, context.getPackageName());
+      hash =
+          AndroidUtilsLight.getPackageCertificateHashBytes(
+              applicationContext, applicationContext.getPackageName());
 
       if (hash == null) {
-        LogWrapper.getInstance()
-            .e(
-                TAG
-                    + "Could not get fingerprint hash for X-Android-Cert header. Package is not signed: "
-                    + context.getPackageName());
+        LogWrapper.e(
+            TAG,
+            "Could not get fingerprint hash for X-Android-Cert header. Package is not signed: "
+                + applicationContext.getPackageName());
         return null;
       } else {
         return Hex.bytesToStringUppercase(hash, /* zeroTerminated= */ false);
       }
     } catch (PackageManager.NameNotFoundException e) {
-      LogWrapper.getInstance()
-          .e(
-              TAG
-                  + "Could not get fingerprint hash for X-Android-Cert header. No such package: "
-                  + context.getPackageName(),
-              e);
+      LogWrapper.e(
+          TAG,
+          "Could not get fingerprint hash for X-Android-Cert header. No such package: "
+              + applicationContext.getPackageName(),
+          e);
       return null;
     }
   }

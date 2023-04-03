@@ -1,5 +1,15 @@
 # Unreleased
-- [changed] Internal infrastructure improvements.
+
+# 24.1.2
+* [changed] Internal infrastructure improvements.
+
+* [changed] Migrated [firebase_ml] to use standard Firebase executors.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-ml-modeldownloader` library. The Kotlin extensions library has no
+additional updates.
 
 # 24.1.1
 * [fixed] Fixed an issue where `FirebaseModelDownloader.getModel` was throwing
@@ -114,4 +124,3 @@ runtime.
 
 * [feature] Added ability to get the model download ID, which allows progress
   tracking of file downloads.
-

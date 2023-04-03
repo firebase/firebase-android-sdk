@@ -1,8 +1,47 @@
 # Unreleased
+* [changed] Added support for reporting GWP-ASan crashes on supported API levels.(#4721)
 * [changed] Improved crash reporting reliability for crashes that occur early in the app's
-  lifecycle.
-* [changed] Add improved support capturing build ids for Native ANRs on older
-  Android versions.
+  lifecycle.(#4608, #4786)
+
+# 18.3.5
+* [fixed] Updated `firebase-common` to its latest version (v20.3.0) to fix an
+  issue that was causing a nondeterministic crash on startup.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+# 18.3.4
+<aside class="caution">This version of <code>firebase-crashlytics</code> and
+  <code>firebase-crashlytics-ktx</code> can cause a nondeterministic crash on
+  startup. For more information, see
+  <a href="https://github.com/firebase/firebase-android-sdk/issues/4683"
+     class="external">GitHub Issue #4683</a>. We recommend updating to the
+  latest version (v18.3.5+) which contains a fix.
+</aside>
+
+* [changed] Improved crash reporting reliability for crashes that occur early
+  in the app's lifecycle.
+
+* [changed] Added improved support for capturing `BuildId`s for native ANRs on
+  older Android versions.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 18.3.3
+* [unchanged] Updated to accommodate the release of the updated
+  `firebase-crashlytics-ndk` v18.3.3.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
 
 # 18.3.2
 * [unchanged] Updated to accommodate the release of the updated
@@ -30,8 +69,9 @@ Warning: We're aware of an
 in this version of the [crashlytics] Android SDK.<br>**We strongly recommend
 using the latest version of the SDK (v18.3.1+ or [bom] v31.0.1+).**
 
-* [changed] Improved crash reporting reliability for crashes that occur early
-  in the app's lifecycle.
+* [changed] Improved reporting for crashes that occur early in the app's
+  lifecycle. After updating to this version, you might notice a sudden
+  _increase_ in the number of crashes that are reported for your app.
 
 
 ## Kotlin

@@ -32,12 +32,29 @@ import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
+import com.google.firebase.firestore.model.FieldPath;
+import com.google.firebase.firestore.model.ObjectValue;
+import com.google.firebase.firestore.model.ServerTimestamps;
+import com.google.firebase.firestore.model.mutation.FieldMask;
+import com.google.firebase.firestore.model.mutation.FieldTransform;
+import com.google.firebase.firestore.model.mutation.PatchMutation;
+import com.google.firebase.firestore.model.mutation.Precondition;
+import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
+import com.google.firestore.v1.Value;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -289,5 +306,64 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 0);
     assertOverlayTypes(keyMap("coll/a", CountingQueryEngine.OverlayType.Set));
     assertQueryReturned("coll/a");
+  }
+
+  @Test
+  public void testDeeplyNestedServerTimestamps() {
+    Timestamp timestamp = Timestamp.now();
+    Value initialServerTimestamp = ServerTimestamps.valueOf(timestamp, null);
+    Map<String, Value> fields =
+        new HashMap<String, Value>() {
+          {
+            put("timestamp", ServerTimestamps.valueOf(timestamp, initialServerTimestamp));
+          }
+        };
+    FieldPath path = FieldPath.fromSingleSegment("timestamp");
+    FieldMask mask =
+        FieldMask.fromSet(
+            new HashSet<FieldPath>() {
+              {
+                add(path);
+              }
+            });
+    FieldTransform fieldTransform =
+        new FieldTransform(path, ServerTimestampOperation.getInstance());
+    List<FieldTransform> fieldTransforms =
+        new ArrayList<FieldTransform>() {
+          {
+            add(fieldTransform);
+          }
+        };
+    // The purpose of this test is to ensure that deeply nested server timestamps do not result in
+    // a stack overflow error. Below we use a `Thread` object to create a large number of mutations
+    // because the `Thread` class allows us to specify the maximum stack size.
+    AtomicReference<Throwable> error = new AtomicReference<>();
+    Thread thread =
+        new Thread(
+            Thread.currentThread().getThreadGroup(),
+            () -> {
+              try {
+                for (int i = 0; i < 1000; ++i) {
+                  writeMutation(
+                      new PatchMutation(
+                          DocumentKey.fromPathString("some/object/for/test"),
+                          ObjectValue.fromMap(fields),
+                          mask,
+                          Precondition.NONE,
+                          fieldTransforms));
+                }
+              } catch (Throwable e) {
+                error.set(e);
+              }
+            },
+            /* name */ "test",
+            /* stackSize */ 1024 * 1024);
+    try {
+      thread.start();
+      thread.join();
+    } catch (InterruptedException e) {
+      throw new AssertionError(e);
+    }
+    assertThat(error.get()).isNull();
   }
 }
