@@ -13,15 +13,10 @@
 // limitations under the License.
 package com.google.firebase.gradle;
 
-import static com.google.firebase.gradle.plugins.ProjectUtilsKt.toBoolean;
-
 import com.google.common.collect.ImmutableMap;
 import com.google.firebase.gradle.bomgenerator.BomGeneratorTask;
-import com.google.firebase.gradle.plugins.FireEscapeArtifactPlugin;
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension;
-import com.google.firebase.gradle.plugins.JavadocPlugin;
 import com.google.firebase.gradle.plugins.publish.PublishingPlugin;
-import java.io.File;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.gradle.api.GradleException;
@@ -55,18 +50,6 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
   @Override
   public void apply(Project project) {
     project.apply(ImmutableMap.of("plugin", PublishingPlugin.class));
-
-    boolean releaseJavadocs = toBoolean(System.getProperty("releaseJavadocs", "true"));
-    File firebaseDevsiteJavadoc = new File(project.getBuildDir(), "firebase-kotlindoc/android");
-
-    project.subprojects(
-        sub -> {
-          sub.afterEvaluate(
-              p -> {
-                sub.apply(ImmutableMap.of("plugin", JavadocPlugin.class));
-                sub.apply(ImmutableMap.of("plugin", FireEscapeArtifactPlugin.class));
-              });
-        });
 
     project
         .getTasks()
@@ -104,35 +87,8 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
                                       "Required projectsToPublish parameter missing.");
                                 }
                               }));
-              Task firebasePublish = project.getTasks().findByName("firebasePublish");
-              firebasePublish.dependsOn(validateProjectsToPublish);
 
-              Task generateAllJavadocs =
-                  project.task(
-                      "generateAllJavadocs",
-                      task -> {
-                        for (Project p : projectsToPublish) {
-                          task.dependsOn(p.getPath() + ":kotlindoc");
-                        }
-                      });
-
-              Zip assembleFirebaseJavadocZip =
-                  project
-                      .getTasks()
-                      .create(
-                          "assembleFirebaseJavadocZip",
-                          Zip.class,
-                          zip -> {
-                            zip.dependsOn(generateAllJavadocs);
-                            zip.getDestinationDirectory().set(project.getBuildDir());
-                            zip.getArchiveFileName().set("firebase-javadoc.zip");
-                            zip.from(firebaseDevsiteJavadoc);
-                            zip.include("**/*");
-                          });
-
-              if (releaseJavadocs) {
-                firebasePublish.dependsOn(assembleFirebaseJavadocZip);
-              }
+              project.getTasks().findByName("firebasePublish").dependsOn(validateProjectsToPublish);
             });
   }
 }
