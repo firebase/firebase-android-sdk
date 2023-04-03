@@ -24,6 +24,7 @@ data class Project(
   val name: String,
   val group: String = "com.example",
   val version: String = "undefined",
+  val expectedVersion: String = version,
   val latestReleasedVersion: String? = null,
   val projectDependencies: Set<Project> = setOf(),
   val externalDependencies: Set<Artifact> = setOf(),
@@ -41,7 +42,7 @@ data class Project(
             version = '$version'
             ${if (latestReleasedVersion != null) "ext.latestReleasedVersion = $latestReleasedVersion" else ""}
             firebaseLibrary {
-                ${if (libraryGroup != null) "libraryGroup ${libraryGroup}" else ""}
+                ${if (libraryGroup != null) "libraryGroup '$libraryGroup'" else ""}
                 ${if (customizePom != null) "customizePom {$customizePom}" else ""}
                 ${"publishJavadoc = $publishJavadoc"}
             }
@@ -55,7 +56,7 @@ data class Project(
   }
 
   fun getPublishedPom(rootDirectory: String): Pom? {
-    val v = version
+    val v = expectedVersion
     return File(rootDirectory)
       .walk()
       .asSequence()

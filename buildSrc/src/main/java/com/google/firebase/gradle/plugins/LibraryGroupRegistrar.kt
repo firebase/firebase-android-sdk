@@ -20,8 +20,17 @@ class LibraryGroupRegistrar {
   private val librariesByGroup =
     Multimaps.synchronizedSetMultimap(HashMultimap.create<String, FirebaseLibraryExtension>())
 
-  fun registerLibrary(libraryGroup: String, project: FirebaseLibraryExtension) =
+  fun registerLibrary(libraryGroup: String, project: FirebaseLibraryExtension) {
     librariesByGroup.put(libraryGroup, project)
+    val maxVersion =
+      librariesByGroup
+        .get(libraryGroup)
+        .map { it.project.version.toString() }
+        .filter { it.first().isDigit() } // to filter out any flag values
+        .maxOrNull()
+        ?: "unspecified"
+    librariesByGroup.get(libraryGroup).forEach { it.project.version = maxVersion }
+  }
 
   fun getLibrariesForGroup(name: String) = librariesByGroup.get(name)
 
