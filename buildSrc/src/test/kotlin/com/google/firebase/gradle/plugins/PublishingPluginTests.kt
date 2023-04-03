@@ -247,13 +247,13 @@ licenses {
 
   @Test
   fun `Publish project should also publish coreleased projects`() {
-    val project1 = Project(name = "childProject1", version = "1.0")
+    val project1 = Project(name = "childProject1", version = "1.0", libraryGroup = "projects")
     val project2 =
       Project(
         name = "childProject2",
         version = "0.9",
         projectDependencies = setOf(project1),
-        releaseWith = project1
+        libraryGroup = "projects"
       )
     subprojectsDefined(project1, project2)
 
