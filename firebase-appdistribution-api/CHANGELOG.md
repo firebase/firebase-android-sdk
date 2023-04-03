@@ -1,4 +1,7 @@
 # Unreleased
+* [fixed] Fixed a crash when showing feedback notification on devices running Android 4 and below.
+
+# 16.0.0-beta07
 * [feature] Adds support for attaching JPEG screenshots to tester feedback.
 
 
