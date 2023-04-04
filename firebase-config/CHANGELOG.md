@@ -4,10 +4,11 @@
 
 ## Kotlin
 * [feature] Added the `FirebaseRemoteConfig.configUpdate` Kotlin Flow to listen for real-time config
-  updates. 
+  updates.
 
 # 21.3.0
-* [feature] Added support for real-time config updates. To learn more, see [Get started with Firebase Remote Config](https://firebase.google.com/docs/remote-config/get-started?platform=android).
+* [feature] Added support for real-time config updates. To learn more, see
+  [Get started with [firebase_remote_config]](/docs/remote-config/get-started?platform=android#add-real-time-listener).
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
