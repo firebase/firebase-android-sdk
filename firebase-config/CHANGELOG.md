@@ -3,8 +3,8 @@
   [remote_config] Kotlin extensions library.
 
 ## Kotlin
-* [feature] Added the `FirebaseRemoteConfig.configUpdate` Kotlin Flow to listen for real-time config
-  updates.
+* [feature] Added the `FirebaseRemoteConfig.configUpdates` Kotlin Flow to listen for real-time
+  config updates.
 
 # 21.3.0
 * [feature] Added support for real-time config updates. To learn more, see
