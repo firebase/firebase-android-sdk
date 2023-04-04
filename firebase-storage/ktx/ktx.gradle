@@ -20,7 +20,7 @@ plugins {
 group = "com.google.firebase"
 
 firebaseLibrary {
-    releaseWith project(':firebase-storage')
+    libraryGroup "storage"
     publishJavadoc = true
     publishSources = true
 }

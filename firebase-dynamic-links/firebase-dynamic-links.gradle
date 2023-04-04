@@ -17,6 +17,7 @@ plugins {
 }
 
 firebaseLibrary {
+    libraryGroup "dynamic-links"
     testLab.enabled = false
     publishSources = true
 }
