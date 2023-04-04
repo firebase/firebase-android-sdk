@@ -25,8 +25,8 @@ class LibraryGroupRegistrar {
     val maxVersion =
       librariesByGroup
         .get(libraryGroup)
-        .map { ModuleVersion.fromStringOrNull(it.project.version.toString()) }
-        .filterNotNull()
+        .map {it.project.version.toString()}
+        .mapNotNull { ModuleVersion.fromStringOrNull(it) }
         .maxOrNull()
     if (maxVersion != null) {
       librariesByGroup

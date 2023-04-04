@@ -61,9 +61,9 @@ enum class PreReleaseVersionType {
  * "12.13.1-beta" // 12.13.1-beta01
  * ```
  *
+ * @see fromStringsOrNull
  * @property type an enum of [PreReleaseVersionType] that identifies the pre-release identifier
  * @property build an [Int] that specifies the build number; defaults to one
- * @see fromStringsOrNull
  */
 data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1) :
   Comparable<PreReleaseVersion> {
@@ -124,11 +124,11 @@ data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1
  *
  * To see rules about pre-release (`PRE`) formatting, see [PreReleaseVersion].
  *
+ * @see fromStringOrNull
  * @property major An update that represents breaking changes
  * @property minor An update that represents new functionality
  * @property patch An update that represents bug fixes
  * @property pre An update that represents unstable changes not ready for a full release
- * @see fromStringOrNull
  */
 data class ModuleVersion(
   val major: Int,
@@ -147,8 +147,8 @@ data class ModuleVersion(
       { it.major },
       { it.minor },
       { it.patch },
-      { it.pre == null }, // False (no extra) sorts above true (has extra)
-      { it.pre } // gradle uses lexicographic ordering
+      { it.pre == null }, // a version with no prerelease version takes precedence
+      { it.pre }
     )
 
   companion object {
