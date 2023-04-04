@@ -23,6 +23,8 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.tasks.Copy;
+import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Zip;
 
 /**
@@ -63,7 +65,34 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
               task.getDestinationDirectory().set(project.getRootDir());
             });
 
-    project.getTasks().create("generateReleaseConfig", ReleaseGenerator.class);
+    TaskProvider<ReleaseGenerator> generatorTask =
+        project
+            .getTasks()
+            .register(
+                "makeReleaseConfigFiles",
+                ReleaseGenerator.class,
+                task -> {
+                  task.getCurrentRelease()
+                      .convention(project.property("currentRelease").toString());
+                  task.getPastRelease().convention(project.property("pastRelease").toString());
+                  task.getPrintReleaseConfig()
+                      .convention(project.property("printOutput").toString());
+                  task.getReleaseConfigFile()
+                      .convention(project.getLayout().getBuildDirectory().file("release.cfg"));
+                  task.getReleaseReportFile()
+                      .convention(
+                          project.getLayout().getBuildDirectory().file("release_report.md"));
+                });
+
+    project
+        .getTasks()
+        .register(
+            "generateReleaseConfig",
+            Copy.class,
+            task -> {
+              task.from(generatorTask);
+              task.into(project.getRootDir());
+            });
 
     project
         .getGradle()
@@ -87,7 +116,6 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
                                       "Required projectsToPublish parameter missing.");
                                 }
                               }));
-
               project.getTasks().findByName("firebasePublish").dependsOn(validateProjectsToPublish);
             });
   }

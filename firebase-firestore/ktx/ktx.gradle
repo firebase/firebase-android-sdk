@@ -20,7 +20,7 @@ plugins {
 group = "com.google.firebase"
 
 firebaseLibrary {
-    releaseWith project(':firebase-firestore')
+    libraryGroup "firestore"
     publishSources = true
 }
 

@@ -20,7 +20,7 @@ plugins {
 group = "com.google.firebase"
 
 firebaseLibrary {
-  releaseWith(project(":firebase-database"))
+  libraryGroup("database")
   publishJavadoc = true
   publishSources = true
 }
