@@ -18,6 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
+    libraryGroup "storage"
     testLab.enabled = true
     publishJavadoc = true
     publishSources = true

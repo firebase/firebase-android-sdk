@@ -15,6 +15,7 @@
 plugins { id("firebase-library") }
 
 firebaseLibrary {
+  libraryGroup("database")
   testLab.enabled = true
   publishSources = true
 }

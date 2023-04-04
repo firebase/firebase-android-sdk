@@ -1,11 +1,27 @@
 # Unreleased
-* [feature] Adds support for attaching JPEG screenshots to tester feedback.
+* [fixed] Fixed a crash when showing feedback notification on devices running Android 4 and below.
+
+# 16.0.0-beta07
+* [feature] Added support for testers to attach JPEG screenshots to their
+  feedback.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-appdistribution-api` library. The Kotlin extensions library has no
+additional updates.
 
 # 16.0.0-beta06
-* [feature] Adds support for in-app tester feedback. To learn more, see
+* [feature] Added support for in-app tester feedback. To learn more, see
   [Collect feedback from testers](/docs/app-distribution/collect-feedback-from-testers?platform=android).
-* [fixed] Fixed a bug where only the last listener added to an `UpdateTask` using
-  `addOnProgressListener()` would receive updates.
+* [fixed] Fixed a bug where only the last listener added to an `UpdateTask`
+  using `addOnProgressListener()` would receive updates.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-appdistribution-api` library. The Kotlin extensions library has no additional
+updates.
 
 # 16.0.0-beta05
 * [unchanged] Updated to accommodate the release of the updated
