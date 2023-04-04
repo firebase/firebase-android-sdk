@@ -35,6 +35,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.map
 
 /** Returns the [FirebaseFirestore] instance of the default [FirebaseApp]. */
 val Firebase.firestore: FirebaseFirestore
@@ -240,3 +241,31 @@ fun Query.snapshots(
     awaitClose { registration.remove() }
   }
 }
+
+/**
+ * Starts listening to this query with the given options and emits its values converted to a POJO
+ * via a [Flow].
+ *
+ * - When the returned flow starts being collected, an [EventListener] will be attached.
+ * - When the flow completes, the listener will be removed.
+ *
+ * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
+ * @param T The type of the object to convert to.
+ */
+inline fun <reified T : Any> Query.dataObjects(
+  metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
+): Flow<List<T>> = snapshots(metadataChanges).map { it.toObjects(T::class.java) }
+
+/**
+ * Starts listening to the document referenced by this `DocumentReference` with the given options
+ * and emits its values converted to a POJO via a [Flow].
+ *
+ * - When the returned flow starts being collected, an [EventListener] will be attached.
+ * - When the flow completes, the listener will be removed.
+ *
+ * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
+ * @param T The type of the object to convert to.
+ */
+inline fun <reified T : Any> DocumentReference.dataObjects(
+  metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
+): Flow<T?> = snapshots(metadataChanges).map { it.toObject(T::class.java) }
