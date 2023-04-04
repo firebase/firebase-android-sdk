@@ -17,7 +17,7 @@ class RealtimeKtListener {
             GlobalScope.future { listenForUpdates() }
 
         private suspend fun listenForUpdates() {
-            Firebase.remoteConfig.configUpdates()
+            Firebase.remoteConfig.configUpdates
                 .catch { exception ->
                     Log.w(TAG, "Error listening for updates!", exception)
                 }

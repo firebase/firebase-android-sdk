@@ -583,6 +583,15 @@ public class FirebaseRemoteConfig {
   }
 
   /**
+   * Execute a runnable in Remote Config's background thread pool.
+   *
+   * @hide
+   */
+  public void schedule(Runnable runnable) {
+    executor.execute(runnable);
+  }
+
+  /**
    * Processes the result of the put task that persists activated configs. If the task is
    * successful, clears the fetched cache and updates the ABT SDK with the current experiments.
    *

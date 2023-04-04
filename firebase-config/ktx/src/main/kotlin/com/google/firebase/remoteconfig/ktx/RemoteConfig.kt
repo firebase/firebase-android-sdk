@@ -61,11 +61,11 @@ fun remoteConfigSettings(
  * - When the flow completes, the listener will be removed. If there are no attached listeners,
  *   the connection to the Remote Config backend will be closed.
  */
-fun FirebaseRemoteConfig.configUpdates(): Flow<ConfigUpdate> {
-  return callbackFlow {
-    val registration = Firebase.remoteConfig.addOnConfigUpdateListener(object: ConfigUpdateListener {
+val FirebaseRemoteConfig.configUpdates
+  get() = callbackFlow {
+    val registration = addOnConfigUpdateListener(object: ConfigUpdateListener {
       override fun onUpdate(configUpdate: ConfigUpdate) {
-        trySendBlocking(configUpdate)
+        schedule { trySendBlocking(configUpdate) }
       }
 
       override fun onError(error: FirebaseRemoteConfigException) {
@@ -74,7 +74,6 @@ fun FirebaseRemoteConfig.configUpdates(): Flow<ConfigUpdate> {
     })
     awaitClose { registration.remove() }
   }
-}
 
 internal const val LIBRARY_NAME: String = "fire-cfg-ktx"
 
