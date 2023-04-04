@@ -1,10 +1,29 @@
 # Unreleased
-* [feature] Add support for disjunctions in queries (`OR` queries).
 * [fixed] Fixed stack overflow caused by deeply nested server timestamps (#4702).
+
+## Kotlin
+* [feature] Added
+  [`Query.dataObjects<T>()`](/docs/reference/kotlin/com/google/firebase/firestore/ktx/package-summary#dataObjects)
+  and
+  [`DocumentReference.dataObjects<T>()`](/docs/reference/kotlin/com/google/firebase/firestore/ktx/package-summary#dataObjects_1)
+  Kotlin Flows to listen for realtime updates and convert its values to a specific type.
+
+# 24.4.5
+* [feature] Add support for disjunctions in queries (`OR` queries).
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.4.4
 * [changed] Relaxed certain query validations performed by the SDK (#4231).
 * [changed] Updated grpc to 1.52.1 and javalite, protoc, protobufjavautil to 3.21.11.
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.4.3
 * [fixed] Fixed a potential high-memory usage issue.
