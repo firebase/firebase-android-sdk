@@ -118,9 +118,7 @@ data class Room(var a: Int = 0, var b: Int = 0)
 // Also, the properties need to be mutable; that is, declared with `var` and not `val`.
 // See https://github.com/firebase/firebase-android-sdk/issues/4822
 data class DataClassWithPropertyName(
-    @get:PropertyName("dbName")
-    @set:PropertyName("dbName")
-    var objName: String = "DefaultObjName"
+  @get:PropertyName("dbName") @set:PropertyName("dbName") var objName: String = "DefaultObjName"
 )
 
 @RunWith(RobolectricTestRunner::class)
