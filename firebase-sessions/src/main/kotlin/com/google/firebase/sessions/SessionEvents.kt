@@ -76,8 +76,9 @@ internal object SessionEvents {
     )
 
   fun getApplicationInfo(firebaseApp: FirebaseApp): ApplicationInfo {
-    val packageName = firebaseApp.applicationContext.packageName
-    val packageInfo = firebaseApp.applicationContext.packageManager.getPackageInfo(packageName, 0)
+    val context = firebaseApp.applicationContext
+    val packageName = context.packageName
+    val packageInfo = context.packageManager.getPackageInfo(packageName, 0)
 
     return ApplicationInfo(
       appId = firebaseApp.options.applicationId,
