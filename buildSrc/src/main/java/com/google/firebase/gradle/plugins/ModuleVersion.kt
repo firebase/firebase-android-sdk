@@ -85,7 +85,7 @@ data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1
      *
      * @param type a case insensitive string of any [PreReleaseVersionType]
      * @param build a string number; gets automatically converted to double digits, and defaults to
-     *   one if blank
+     * one if blank
      * @return a [PreReleaseVersion] created from the string, or null if the string was invalid.
      */
     fun fromStringsOrNull(type: String, build: String): PreReleaseVersion? =
@@ -212,7 +212,7 @@ data class ModuleVersion(
    * Returns a copy of this [ModuleVersion], with the given [VersionType] increased by one.
    *
    * @param version the [VersionType] to increase; defaults to the lowest valid version ([pre] else
-   *   [patch]).
+   * [patch]).
    */
   fun bump(version: VersionType? = null) =
     version
