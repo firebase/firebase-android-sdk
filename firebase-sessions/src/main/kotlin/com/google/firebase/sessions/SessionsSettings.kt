@@ -26,14 +26,16 @@ import kotlin.time.Duration.Companion.minutes
  */
 internal class SessionsSettings {
   // Setting to qualify if sessions service is enabled.
-  internal val sessionsEnabled: Boolean get() {
-    return true
-  }
+  internal val sessionsEnabled: Boolean
+    get() {
+      return true
+    }
 
   // Setting that provides the sessions sampling rate.
-  internal val samplingRate: Double get() {
-    return 1.0
-  }
+  internal val samplingRate: Double
+    get() {
+      return 1.0
+    }
 
   // Background timeout config value before which a new session is generated
   val sessionRestartTimeout: Duration
