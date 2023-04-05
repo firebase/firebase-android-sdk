@@ -46,4 +46,4 @@ internal class SessionsSettings {
     // Placeholder to initiate settings update on different sources
     // Expected sources: RemoteSettings, ManifestOverrides, SDK Defaults
   }
-
+}
