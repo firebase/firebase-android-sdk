@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    releaseWith project(':firebase-config')
+    libraryGroup "config"
     publishJavadoc = true
     publishSources = true
 }

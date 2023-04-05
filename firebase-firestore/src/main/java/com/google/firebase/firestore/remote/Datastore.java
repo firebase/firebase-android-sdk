@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.remote;
 
-import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Util.exceptionFromStatus;
 
 import android.content.Context;
@@ -22,6 +21,7 @@ import android.os.Build;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
@@ -33,7 +33,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.firestore.v1.AggregationResult;
 import com.google.firestore.v1.BatchGetDocumentsRequest;
 import com.google.firestore.v1.BatchGetDocumentsResponse;
 import com.google.firestore.v1.CommitRequest;
@@ -222,19 +221,12 @@ public class Datastore {
     return completionSource.getTask();
   }
 
-  public Task<Long> runCountQuery(Query query) {
+  public Task<Map<String, Value>> runAggregateQuery(
+      Query query, List<AggregateField> aggregateFields) {
     com.google.firestore.v1.Target.QueryTarget encodedQueryTarget =
         serializer.encodeQueryTarget(query.toTarget());
-
-    StructuredAggregationQuery.Builder structuredAggregationQuery =
-        StructuredAggregationQuery.newBuilder();
-    structuredAggregationQuery.setStructuredQuery(encodedQueryTarget.getStructuredQuery());
-
-    StructuredAggregationQuery.Aggregation.Builder aggregation =
-        StructuredAggregationQuery.Aggregation.newBuilder();
-    aggregation.setCount(StructuredAggregationQuery.Aggregation.Count.getDefaultInstance());
-    aggregation.setAlias("count_alias");
-    structuredAggregationQuery.addAggregations(aggregation);
+    StructuredAggregationQuery structuredAggregationQuery =
+        serializer.encodeStructuredAggregationQuery(encodedQueryTarget, aggregateFields);
 
     RunAggregationQueryRequest.Builder request = RunAggregationQueryRequest.newBuilder();
     request.setParent(encodedQueryTarget.getParent());
@@ -255,18 +247,7 @@ public class Datastore {
               }
 
               RunAggregationQueryResponse response = task.getResult();
-
-              AggregationResult aggregationResult = response.getResult();
-              Map<String, Value> aggregateFieldsByAlias = aggregationResult.getAggregateFieldsMap();
-              hardAssert(
-                  aggregateFieldsByAlias.size() == 1,
-                  "aggregateFieldsByAlias.size()==" + aggregateFieldsByAlias.size());
-              Value countValue = aggregateFieldsByAlias.get("count_alias");
-              hardAssert(countValue != null, "countValue == null");
-              hardAssert(
-                  countValue.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE,
-                  "countValue.getValueTypeCase() == " + countValue.getValueTypeCase());
-              return countValue.getIntegerValue();
+              return response.getResult().getAggregateFieldsMap();
             });
   }
 
