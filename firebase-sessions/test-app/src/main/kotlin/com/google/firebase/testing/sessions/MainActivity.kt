@@ -16,14 +16,12 @@
 
 package com.google.firebase.testing.sessions
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.sessions.FirebaseSessions
 
 class MainActivity : AppCompatActivity() {
-  @SuppressLint("DiscouragedApi")
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
