@@ -20,7 +20,6 @@ import android.app.Activity
 import android.app.Application.ActivityLifecycleCallbacks
 import android.os.Bundle
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.minutes
 
 /**
  * The [SessionInitiator] is responsible for calling the [initiateSessionStart] callback whenever a
@@ -34,7 +33,6 @@ internal class SessionInitiator(
   private val initiateSessionStart: () -> Unit
 ) {
   private var backgroundTime = elapsedRealtime()
-  private val sessionTimeout = 30.minutes // TODO(mrober): Get session timeout from settings
 
   init {
     initiateSessionStart()
@@ -46,6 +44,7 @@ internal class SessionInitiator(
 
   fun appForegrounded() {
     val interval = elapsedRealtime() - backgroundTime
+    val sessionTimeout = SessionsSettings().sessionRestartTimeout
     if (interval > sessionTimeout) {
       initiateSessionStart()
     }
