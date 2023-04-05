@@ -17,7 +17,9 @@
 apply plugin: 'com.android.application'
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 apply plugin: 'org.jetbrains.kotlin.android'
-apply plugin: 'com.google.gms.google-services'
+
+// Uncomment this line after adding a google-services.json file to the project.
+// apply plugin: 'com.google.gms.google-services'
 
 android {
     compileSdkVersion project.targetSdkVersion
