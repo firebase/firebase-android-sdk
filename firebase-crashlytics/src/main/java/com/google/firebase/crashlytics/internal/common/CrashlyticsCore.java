@@ -227,6 +227,8 @@ public class CrashlyticsCore {
     try {
       breadcrumbSource.registerBreadcrumbHandler(this::log);
 
+      controller.saveVersionControlInfo();
+
       final Settings settingsData = settingsProvider.getSettingsSync();
 
       if (!settingsData.featureFlagData.collectReports) {
