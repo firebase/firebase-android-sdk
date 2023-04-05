@@ -17,7 +17,6 @@
 plugins {
   id("com.android.application")
   id("org.jetbrains.kotlin.android")
-  id("com.google.gms.google-services")
 }
 
 android {
@@ -47,3 +46,6 @@ dependencies {
   implementation("androidx.core:core-ktx:1.9.0")
   implementation("com.google.android.material:material:1.8.0")
 }
+
+extra["packageName"] = "com.google.firebase.testing.sessions"
+apply(from = "../../gradle/googleServices.gradle")

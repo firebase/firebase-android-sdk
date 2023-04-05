@@ -74,4 +74,19 @@ internal object SessionEvents {
         ),
       applicationInfo = getApplicationInfo(firebaseApp)
     )
+
+  fun getApplicationInfo(firebaseApp: FirebaseApp): ApplicationInfo {
+    val context = firebaseApp.applicationContext
+    val packageName = context.packageName
+    val packageInfo = context.packageManager.getPackageInfo(packageName, 0)
+
+    return ApplicationInfo(
+      appId = firebaseApp.options.applicationId,
+      deviceModel = "",
+      sessionSdkVersion = BuildConfig.VERSION_NAME,
+      logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
+      androidAppInfo =
+        AndroidApplicationInfo(packageName = packageName, versionName = packageInfo.versionName)
+    )
+  }
 }
