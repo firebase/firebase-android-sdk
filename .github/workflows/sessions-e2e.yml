@@ -1,0 +1,37 @@
+name: Firebase Sessions E2E Tests
+
+on:
+  schedule:
+    - cron: 4 */4 * * *  # every 4 hours at 04 minutes past the hour
+  workflow_dispatch:     # allow triggering the workflow manually
+
+concurrency:
+  group: ${{ github.workflow }}
+
+env:
+  SESSIONS_E2E_GOOGLE_SERVICES: ${{ secrets.SESSIONS_E2E_GOOGLE_SERVICES }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [ prod, autopush ]
+    steps:
+      - name: Checkout firebase-android-sdk
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: 11
+          distribution: temurin
+          cache: gradle
+
+      - name: Add google-services.json
+        run: |
+          echo $SESSIONS_E2E_GOOGLE_SERVICES | base64 -d > google-services.json
+
+      - name: Run sessions end-to-end tests
+        run: |
+          ./gradlew firebase-sessions:deviceCheck withErrorProne -PtargetBackend="prod"
