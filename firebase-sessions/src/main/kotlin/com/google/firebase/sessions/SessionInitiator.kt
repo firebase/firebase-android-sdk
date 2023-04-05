@@ -33,7 +33,6 @@ internal class SessionInitiator(
   private val initiateSessionStart: () -> Unit
 ) {
   private var backgroundTime = elapsedRealtime()
-  private val sessionTimeout = SessionsSettings().sessionRestartTimeout
 
   init {
     initiateSessionStart()
@@ -45,6 +44,7 @@ internal class SessionInitiator(
 
   fun appForegrounded() {
     val interval = elapsedRealtime() - backgroundTime
+    val sessionTimeout = SessionsSettings().sessionRestartTimeout
     if (interval > sessionTimeout) {
       initiateSessionStart()
     }
