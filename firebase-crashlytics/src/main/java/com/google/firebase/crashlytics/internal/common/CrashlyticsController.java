@@ -23,7 +23,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
 import android.util.Base64;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.SuccessContinuation;
@@ -41,7 +40,6 @@ import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
@@ -75,12 +73,9 @@ class CrashlyticsController {
 
   private static final String GENERATOR_FORMAT = "Crashlytics Android SDK/%s";
 
-  private static final String VERSION_CONTROL_INFO_KEY =
-          "com.crashlytics.version-control-info";
-  private static final String VERSION_CONTROL_INFO_FILE =
-          "version-control-info.textproto";
-  private static final String META_INF_FOLDER =
-          "META-INF/";
+  private static final String VERSION_CONTROL_INFO_KEY = "com.crashlytics.version-control-info";
+  private static final String VERSION_CONTROL_INFO_FILE = "version-control-info.textproto";
+  private static final String META_INF_FOLDER = "META-INF/";
 
   private final Context context;
   private final DataCollectionArbiter dataCollectionArbiter;
