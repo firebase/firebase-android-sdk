@@ -24,8 +24,9 @@ class SessionsSettingsTest {
 
   @Test
   fun sessionSettings_fetchDefaults() {
-    assertThat(SessionsSettings().sessionsEnabled).isTrue()
-    assertThat(SessionsSettings().samplingRate).isEqualTo(1.0)
-    assertThat(SessionsSettings().sessionRestartTimeout).isEqualTo(30.minutes)
+    val sessionsSettings = SessionsSettings()
+    assertThat(sessionsSettings.sessionsEnabled).isTrue()
+    assertThat(sessionsSettings.samplingRate).isEqualTo(1.0)
+    assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(30.minutes)
   }
 }
