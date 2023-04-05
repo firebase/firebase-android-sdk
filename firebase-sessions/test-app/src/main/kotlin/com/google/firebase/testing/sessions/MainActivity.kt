@@ -19,13 +19,12 @@ package com.google.firebase.testing.sessions
 import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.google.firebase.sessions.FirebaseSessions
 
 class MainActivity : AppCompatActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
 
-    findViewById<TextView>(R.id.greeting_text).text = FirebaseSessions.instance.greeting()
+    findViewById<TextView>(R.id.greeting_text).text = getString(R.string.firebase_greetings)
   }
 }
