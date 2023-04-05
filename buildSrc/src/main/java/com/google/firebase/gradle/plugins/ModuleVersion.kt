@@ -124,11 +124,11 @@ data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1
  *
  * To see rules about pre-release (`PRE`) formatting, see [PreReleaseVersion].
  *
- * @see fromStringOrNull
  * @property major An update that represents breaking changes
  * @property minor An update that represents new functionality
  * @property patch An update that represents bug fixes
  * @property pre An update that represents unstable changes not ready for a full release
+ * @see fromStringOrNull
  */
 data class ModuleVersion(
   val major: Int,
