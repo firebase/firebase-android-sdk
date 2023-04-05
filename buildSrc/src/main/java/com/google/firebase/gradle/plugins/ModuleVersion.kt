@@ -61,9 +61,9 @@ enum class PreReleaseVersionType {
  * "12.13.1-beta" // 12.13.1-beta01
  * ```
  *
- * @see fromStringsOrNull
  * @property type an enum of [PreReleaseVersionType] that identifies the pre-release identifier
  * @property build an [Int] that specifies the build number; defaults to one
+ * @see fromStringsOrNull
  */
 data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1) :
   Comparable<PreReleaseVersion> {
