@@ -102,7 +102,7 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'androidx.test:rules:1.2.0'
     testImplementation 'androidx.test:core:1.2.0'
-    testImplementation project(':appcheck:firebase-appcheck')
+    testImplementation 'com.google.firebase:firebase-appcheck:16.1.1'
 }
 
 // ==========================================================================
