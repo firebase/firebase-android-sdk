@@ -18,7 +18,7 @@ import org.objectweb.asm.tree.ClassNode
 import org.objectweb.asm.tree.FieldNode
 import org.objectweb.asm.tree.MethodNode
 
-class ClassInfo(val _node: ClassNode, val _classNodes: Map<String, ClassNode>) {
+class ClassInfo(node: ClassNode, classNodes: Map<String, ClassNode>) {
   val name: String
   val node: ClassNode
   val fields: Map<String, FieldNode>
@@ -26,11 +26,11 @@ class ClassInfo(val _node: ClassNode, val _classNodes: Map<String, ClassNode>) {
   val methodsCache: MutableMap<String, Map<String, MethodNode>>
 
   init {
-    this.name = _node.name
-    this.node = _node
-    this.fields = getAllFields(_node)
+    this.name = node.name
+    this.node = node
+    this.fields = getAllFields(node)
     this.methodsCache = mutableMapOf()
-    this.methods = getAllMethods(_node, _classNodes)
+    this.methods = getAllMethods(node, classNodes)
   }
 
   fun getAllFields(node: ClassNode): Map<String, FieldNode> =
@@ -61,7 +61,7 @@ class ClassInfo(val _node: ClassNode, val _classNodes: Map<String, ClassNode>) {
     if (methodsCache.containsKey(node.name)) {
       return methodsCache.get(node.name)!!
     }
-    var result =
+    val result: MutableMap<String, MethodNode> =
       node.methods
         .filterNot {
           (AccessDescriptor(it.access).isSynthetic() ||
@@ -70,17 +70,14 @@ class ClassInfo(val _node: ClassNode, val _classNodes: Map<String, ClassNode>) {
         }
         .filterNot { UtilityClass.isObfuscatedSymbol(it.name) }
         .associate { method -> "${method.name}-${method.desc}" to method }
+        as MutableMap<String, MethodNode>
 
     if (node.superName != null) {
-      result =
-        (result + getAllNonStaticMethods(classNodes.get(node.superName), classNodes))
-          as MutableMap<String, MethodNode>
+      result.putAll(getAllNonStaticMethods(classNodes.get(node.superName), classNodes))
     }
     if (node.interfaces != null) {
       for (interfaceName in node.interfaces) {
-        result =
-          (result + getAllNonStaticMethods(classNodes.get(interfaceName), classNodes))
-            as MutableMap<String, MethodNode>
+        result.putAll(getAllNonStaticMethods(classNodes.get(interfaceName), classNodes))
       }
     }
     methodsCache.put(node.name, result)

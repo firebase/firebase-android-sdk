@@ -15,7 +15,7 @@
 package com.google.firebase.gradle.plugins.semver
 
 /** Encapsulation of a change between two APIs. */
-class Delta(
+data class Delta(
   val className: String,
   val memberName: String,
   val description: String,

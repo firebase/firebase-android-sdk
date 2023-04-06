@@ -81,7 +81,7 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     android.testServer(FirebaseTestServer(project, firebaseLibrary.testLab, android))
     setupStaticAnalysis(project, firebaseLibrary)
     getIsPomValidTask(project, firebaseLibrary)
-    getSemverTask(project, firebaseLibrary)
+    getSemverTaskAar(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary, android)
   }
 
