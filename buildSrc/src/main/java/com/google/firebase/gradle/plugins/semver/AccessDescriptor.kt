@@ -21,32 +21,21 @@ import org.objectweb.asm.Opcodes
  * Opcodes}
  */
 class AccessDescriptor(private val access: Int) {
-  fun isProtected(): Boolean {
-    return accessIs(Opcodes.ACC_PROTECTED)
-  }
-  fun isPublic(): Boolean {
-    return accessIs(Opcodes.ACC_PUBLIC)
-  }
-  fun isStatic(): Boolean {
-    return accessIs(Opcodes.ACC_STATIC)
-  }
-  fun isSynthetic(): Boolean {
-    return accessIs(Opcodes.ACC_SYNTHETIC)
-  }
-  fun isBridge(): Boolean {
-    return accessIs(Opcodes.ACC_BRIDGE)
-  }
-  fun isAbstract(): Boolean {
-    return accessIs(Opcodes.ACC_ABSTRACT)
-  }
+  fun isProtected(): Boolean = accessIs(Opcodes.ACC_PROTECTED)
 
-  fun isFinal(): Boolean {
-    return accessIs(Opcodes.ACC_FINAL)
-  }
+  fun isPublic(): Boolean = accessIs(Opcodes.ACC_PUBLIC)
 
-  fun isPrivate(): Boolean {
-    return !this.isProtected() && !this.isPublic()
-  }
+  fun isStatic(): Boolean = accessIs(Opcodes.ACC_STATIC)
+
+  fun isSynthetic(): Boolean = accessIs(Opcodes.ACC_SYNTHETIC)
+
+  fun isBridge(): Boolean = accessIs(Opcodes.ACC_BRIDGE)
+
+  fun isAbstract(): Boolean = accessIs(Opcodes.ACC_ABSTRACT)
+
+  fun isFinal(): Boolean = accessIs(Opcodes.ACC_FINAL)
+
+  fun isPrivate(): Boolean = !this.isProtected() && !this.isPublic()
 
   fun getVerboseDescription(): String {
     val outputStringList = mutableListOf<String>()
@@ -71,7 +60,5 @@ class AccessDescriptor(private val access: Int) {
     return outputStringList.joinToString(" ")
   }
   /** Returns true if the given access modifier matches the given opcode. */
-  fun accessIs(opcode: Int): Boolean {
-    return (access and opcode) != 0
-  }
+  fun accessIs(opcode: Int): Boolean = (access and opcode) != 0
 }
