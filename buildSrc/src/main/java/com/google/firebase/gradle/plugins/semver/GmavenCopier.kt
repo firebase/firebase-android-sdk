@@ -37,7 +37,7 @@ abstract class GmavenCopier : DefaultTask() {
   fun run() {
     val mavenHelper = GmavenHelper(groupId.get(), artifactId.get())
     val gMavenPath =
-      mavenHelper.getAarFileForVersion(
+      mavenHelper.getArtifactForVersion(
         mavenHelper.getLatestReleasedVersion(),
         !aarAndroidFile.get()
       )
