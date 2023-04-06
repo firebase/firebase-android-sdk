@@ -19,6 +19,8 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+interface LocalCacheSettings {}
+
 /** Settings used to configure a {@link FirebaseFirestore} instance. */
 public final class FirebaseFirestoreSettings {
   /**
@@ -30,8 +32,8 @@ public final class FirebaseFirestoreSettings {
   /** @hide */
   public static final String DEFAULT_HOST = "firestore.googleapis.com";
 
-  private static final long MINIMUM_CACHE_BYTES = 1 * 1024 * 1024; // 1 MB
-  private static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
+  static final long MINIMUM_CACHE_BYTES = 1 * 1024 * 1024; // 1 MB
+  static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
 
   /** A Builder for creating {@code FirebaseFirestoreSettings}. */
   public static final class Builder {
@@ -39,6 +41,7 @@ public final class FirebaseFirestoreSettings {
     private boolean sslEnabled;
     private boolean persistenceEnabled;
     private long cacheSizeBytes;
+    private LocalCacheSettings cacheSettings;
 
     /** Constructs a new {@code FirebaseFirestoreSettings} Builder object. */
     public Builder() {
@@ -90,6 +93,7 @@ public final class FirebaseFirestoreSettings {
      *     <tt>value</tt>.
      */
     @NonNull
+    @Deprecated
     public Builder setPersistenceEnabled(boolean value) {
       this.persistenceEnabled = value;
       return this;
@@ -107,12 +111,19 @@ public final class FirebaseFirestoreSettings {
      *     {@code value}.
      */
     @NonNull
+    @Deprecated
     public Builder setCacheSizeBytes(long value) {
       if (value != CACHE_SIZE_UNLIMITED && value < MINIMUM_CACHE_BYTES) {
         throw new IllegalArgumentException(
             "Cache size must be set to at least " + MINIMUM_CACHE_BYTES + " bytes");
       }
       this.cacheSizeBytes = value;
+      return this;
+    }
+
+    @NonNull
+    public Builder setLocalCacheSettings(@NonNull LocalCacheSettings settings) {
+      this.cacheSettings = settings;
       return this;
     }
 
@@ -128,11 +139,13 @@ public final class FirebaseFirestoreSettings {
     }
 
     /** @return boolean indicating whether local persistent storage is enabled or not. */
+    @Deprecated
     public boolean isPersistenceEnabled() {
       return persistenceEnabled;
     }
 
     /** @return cache size for on-disk data. */
+    @Deprecated
     public long getCacheSizeBytes() {
       return cacheSizeBytes;
     }
@@ -152,12 +165,15 @@ public final class FirebaseFirestoreSettings {
   private final boolean persistenceEnabled;
   private final long cacheSizeBytes;
 
+  private LocalCacheSettings cacheSettings;
+
   /** Constructs a {@code FirebaseFirestoreSettings} object based on the values in the Builder. */
   private FirebaseFirestoreSettings(Builder builder) {
     host = builder.host;
     sslEnabled = builder.sslEnabled;
     persistenceEnabled = builder.persistenceEnabled;
     cacheSizeBytes = builder.cacheSizeBytes;
+    cacheSettings = builder.cacheSettings;
   }
 
   @Override
@@ -213,6 +229,10 @@ public final class FirebaseFirestoreSettings {
 
   /** Returns whether or not to use local persistent storage. */
   public boolean isPersistenceEnabled() {
+    if (cacheSettings != null) {
+      return cacheSettings instanceof PersistentCacheSettings;
+    }
+
     return persistenceEnabled;
   }
 
@@ -221,6 +241,19 @@ public final class FirebaseFirestoreSettings {
    * recently used documents.
    */
   public long getCacheSizeBytes() {
+    if (cacheSettings != null) {
+      if (cacheSettings instanceof PersistentCacheSettings) {
+        return ((PersistentCacheSettings) cacheSettings).getSizeBytes();
+      } else {
+        return CACHE_SIZE_UNLIMITED;
+      }
+    }
+
     return cacheSizeBytes;
+  }
+
+  @NonNull
+  public LocalCacheSettings getCacheSettings() {
+    return cacheSettings;
   }
 }
