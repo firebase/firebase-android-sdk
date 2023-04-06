@@ -1,4 +1,4 @@
-// Copyright 2022 Google LLC
+// Copyright 2023 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,13 +14,6 @@
 
 package com.google.firebase.gradle.plugins.semver
 
-import com.google.firebase.gradle.plugins.GmavenHelper
-import com.google.firebase.gradle.plugins.UnzipAar
-import java.io.BufferedInputStream
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
-import java.net.URL
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -35,20 +28,19 @@ import org.objectweb.asm.ClassReader
 import org.objectweb.asm.tree.ClassNode
 
 abstract class ApiDiffer : DefaultTask() {
-  @get:Input abstract val aarPath: Property<File>
+  @get:Input abstract val currentJar: Property<String>
 
-  @get:Input abstract val artifactId: Property<String>
-
-  @get:Input abstract val groupId: Property<String>
+  @get:Input abstract val previousJar: Property<String>
 
   @get:Input abstract val version: Property<String>
+
+  @get:Input abstract val previousVersionString: Property<String>
 
   private val CLASS_EXTENSION = ".class"
 
   @TaskAction
   fun run() {
-    val gMavenHelper = GmavenHelper(groupId.get(), artifactId.get())
-    val previousVersion = gMavenHelper.getLatestReleasedVersion().split(".")
+    val previousVersion = previousVersionString.get().split(".")
     if (previousVersion.size != 3) {
       return
     }
@@ -61,27 +53,8 @@ abstract class ApiDiffer : DefaultTask() {
     } else {
       curVersionDelta = VersionDelta.PATCH
     }
-    val currentAarClassJar = aarPath.get().absolutePath.replace(".aar", "")
-    val afterJar = readApi(aarPath.get(), currentAarClassJar)
-    val lastAarPath = gMavenHelper.getAarFileForVersion(gMavenHelper.getLatestReleasedVersion())
-
-    val previousAarPath: String = aarPath.get().absolutePath.replace(".aar", "/old.aar")
-    try {
-      BufferedInputStream(URL(lastAarPath).openStream()).use { `in` ->
-        FileOutputStream(previousAarPath).use { fileOutputStream ->
-          val dataBuffer = ByteArray(1024)
-          var bytesRead: Int
-          while (`in`.read(dataBuffer, 0, 1024).also { bytesRead = it } != -1) {
-            fileOutputStream.write(dataBuffer, 0, bytesRead)
-          }
-        }
-      }
-    } catch (e: IOException) {
-      // handle exception
-    }
-
-    val previousAarClassJar = previousAarPath.replace(".aar", "")
-    val beforeJar = readApi(File(previousAarPath), previousAarClassJar)
+    val afterJar = readApi(currentJar.get())
+    val beforeJar = readApi(previousJar.get())
     val apiDeltas = mutableListOf<Delta>()
     val classKeys = afterJar.keys union beforeJar.keys
     classKeys.forEach {
@@ -110,9 +83,8 @@ abstract class ApiDiffer : DefaultTask() {
     }
   }
 
-  private fun readApi(aarPath: File, destFile: String): Map<String, ClassInfo> {
-    UnzipAar.unzip(aarPath, destFile)
-    val classes: Map<String, ClassNode> = readClassNodes(Paths.get("${destFile}/classes.jar"))
+  private fun readApi(jarPath: String): Map<String, ClassInfo> {
+    val classes: Map<String, ClassNode> = readClassNodes(Paths.get(jarPath))
     var classInfoDict = mutableMapOf<String, ClassInfo>()
     for (classNodeInfo in classes) {
       classInfoDict[classNodeInfo.key] = ClassInfo(classNodeInfo.value, classes)
