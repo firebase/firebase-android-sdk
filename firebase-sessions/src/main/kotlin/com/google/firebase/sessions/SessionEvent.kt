@@ -61,4 +61,50 @@ internal data class SessionInfo(
 
   /** Identifies a unique device+app installation: go/firebase-installations */
   var firebaseInstallationId: String = "",
+
+  // TODO: Update to how we want to do this
+  // TODO: Update to how we want to do this
+  // TODO: Update to how we want to do this
+  // TODO: Update to how we want to do this
+  // TODO: Update to how we want to do this
+  // TODO: Update to how we want to do this
+  // TODO: Update to how we want to do this
+  // TODO: Update to how we want to do this
+  // TODO: Update to how we want to do this
+  // TODO: Update to how we want to do this
+  // TODO: Update to how we want to do this
+  // TODO: Update to how we want to do this
+  var eventTimestampUs: Long = System.currentTimeMillis() * 1000,
+
+  var dataCollectionStatus: DataCollectionStatus = DataCollectionStatus()
 )
+
+/** Contains the data collection state for all dependent SDKs and sampling info */
+internal data class DataCollectionStatus(
+  val performance: DataCollectionState = DataCollectionState.COLLECTION_ENABLED,
+  val crashlytics: DataCollectionState = DataCollectionState.COLLECTION_ENABLED,
+  val sessionSamplingRate: Double = 1.0,
+)
+
+
+/** Enum denoting different data collection states. */
+internal enum class DataCollectionState(override val number: Int) : NumberedEnum {
+  COLLECTION_UNKNOWN(0),
+
+  // This product SDK is not present in this version of the app.
+  COLLECTION_SDK_NOT_INSTALLED(1),
+
+  // The product SDK is present and collecting all product-level events.
+  COLLECTION_ENABLED(2),
+
+  // The product SDK is present but data collection for it has been locally
+  // disabled.
+  COLLECTION_DISABLED(3),
+
+  // The product SDK is present but data collection has been remotely disabled.
+  COLLECTION_DISABLED_REMOTE(4),
+
+  // Indicates that the product SDK is present, but session data is being
+  // collected, but the product-level events are not being uploaded.
+  COLLECTION_SAMPLED(5),
+}

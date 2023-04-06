@@ -19,11 +19,28 @@ package com.google.firebase.sessions
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.sessions.SessionEvents.SESSION_EVENT_ENCODER
+import com.google.firebase.sessions.testing.FakeFirebaseApp
+import com.google.firebase.sessions.testing.TestSessionEventData
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SessionEventEncoderTest {
+  @Test
+  fun sessionEvent_encodedAndDecoded_decodesToSelf() {
+    val sessionEvent =
+      SessionEvents.startSession(
+        FakeFirebaseApp.fakeFirebaseApp(),
+        TestSessionEventData.TEST_SESSION_DETAILS
+      )
+
+    val json = SESSION_EVENT_ENCODER.encode(sessionEvent)
+
+    val decodedSessionEvent =
+
+    assertThat(decodedSessionEvent).isEqualTo(sessionEvent)
+  }
+
   @Test
   fun sessionEvent_encodesToJson() {
     val sessionEvent =

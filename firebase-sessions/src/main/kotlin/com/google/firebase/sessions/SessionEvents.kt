@@ -39,6 +39,7 @@ internal object SessionEvents {
           run {
             ctx.add(FieldDescriptor.of("event_type"), sessionEvent.eventType)
             ctx.add(FieldDescriptor.of("session_data"), sessionEvent.sessionData)
+            ctx.add(FieldDescriptor.of("application_info"), sessionEvent.applicationInfo)
           }
         }
 
@@ -53,6 +54,40 @@ internal object SessionEvents {
               FieldDescriptor.of("firebase_installation_id"),
               sessionInfo.firebaseInstallationId
             )
+            ctx.add(FieldDescriptor.of("event_timestamp_us"), sessionInfo.eventTimestampUs)
+            ctx.add(FieldDescriptor.of("data_collection_status"), sessionInfo.dataCollectionStatus)
+
+          }
+        }
+
+        it.registerEncoder(DataCollectionStatus::class.java) {
+            dataCollectionStatus: DataCollectionStatus,
+            ctx: ObjectEncoderContext ->
+          run {
+            ctx.add(FieldDescriptor.of("performance"), dataCollectionStatus.performance)
+            ctx.add(FieldDescriptor.of("crashlytics"), dataCollectionStatus.crashlytics)
+            ctx.add(FieldDescriptor.of("session_sampling_rate"), dataCollectionStatus.sessionSamplingRate)
+          }
+        }
+
+        it.registerEncoder(ApplicationInfo::class.java) {
+            applicationInfo: ApplicationInfo,
+            ctx: ObjectEncoderContext ->
+          run {
+            ctx.add(FieldDescriptor.of("app_id"), applicationInfo.appId)
+            ctx.add(FieldDescriptor.of("device_model"), applicationInfo.deviceModel)
+            ctx.add(FieldDescriptor.of("session_sdk_version"), applicationInfo.sessionSdkVersion)
+            ctx.add(FieldDescriptor.of("log_environment"), applicationInfo.logEnvironment)
+            ctx.add(FieldDescriptor.of("android_app_info"), applicationInfo.androidAppInfo)
+          }
+        }
+
+        it.registerEncoder(AndroidApplicationInfo::class.java) {
+            androidAppInfo: AndroidApplicationInfo,
+            ctx: ObjectEncoderContext ->
+          run {
+            ctx.add(FieldDescriptor.of("package_name"), androidAppInfo.packageName)
+            ctx.add(FieldDescriptor.of("version_name"), androidAppInfo.versionName)
           }
         }
       }
@@ -82,7 +117,17 @@ internal object SessionEvents {
 
     return ApplicationInfo(
       appId = firebaseApp.options.applicationId,
-      deviceModel = "",
+      // TODO REVERT AND USE REAL
+      // TODO REVERT AND USE REAL
+      // TODO REVERT AND USE REAL
+      // TODO REVERT AND USE REAL
+      // TODO REVERT AND USE REAL
+      // TODO REVERT AND USE REAL
+      // TODO REVERT AND USE REAL
+      // TODO REVERT AND USE REAL
+      // TODO REVERT AND USE REAL
+      // TODO REVERT AND USE REAL
+      deviceModel = "TEST_DEVICE_MODEL",
       sessionSdkVersion = BuildConfig.VERSION_NAME,
       logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
       androidAppInfo =
