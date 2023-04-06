@@ -57,17 +57,17 @@ enum class PreReleaseVersionType {
  *
  * Note that `build` will always be present as starting at one by defalt. That is, the following
  * transform occurs:
- *
  * ```
  * "12.13.1-beta" // 12.13.1-beta01
  * ```
  *
  * @see fromStringsOrNull
- *
  * @property type an enum of [PreReleaseVersionType] that identifies the pre-release identifier
  * @property build an [Int] that specifies the build number; defaults to one
  */
-data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1) {
+data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1) :
+  Comparable<PreReleaseVersion> {
+
   companion object {
 
     /**
@@ -77,7 +77,6 @@ data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1
      * [PreReleaseVersion].
      *
      * Example Usage:
-     *
      * ```
      * PreReleaseVersion.fromStringsOrNull("alpha", "6") // PreReleaseVersion(ALPHA, 6)
      * PreReleaseVersion.fromStringsOrNull("Beta", "") // PreReleaseVersion(BETA, 1)
@@ -87,7 +86,6 @@ data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1
      * @param type a case insensitive string of any [PreReleaseVersionType]
      * @param build a string number; gets automatically converted to double digits, and defaults to
      * one if blank
-     *
      * @return a [PreReleaseVersion] created from the string, or null if the string was invalid.
      */
     fun fromStringsOrNull(type: String, build: String): PreReleaseVersion? =
@@ -100,6 +98,9 @@ data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1
         .getOrNull()
   }
 
+  override fun compareTo(other: PreReleaseVersion) =
+    compareValuesBy(this, other, { it.type }, { it.build })
+
   /** Returns a copy of this [PreReleaseVersion], with the [build] increased by one. */
   fun bump() = copy(build = build + 1)
 
@@ -107,7 +108,6 @@ data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1
    * Formatted as `TypeBuild`
    *
    * For example:
-   *
    * ```
    * PreReleaseVersion(ALPHA, 5).toString() // "alpha05"
    * PreReleaseVersion(RC, 12).toString() // "rc12"
@@ -124,21 +124,32 @@ data class PreReleaseVersion(val type: PreReleaseVersionType, val build: Int = 1
  *
  * To see rules about pre-release (`PRE`) formatting, see [PreReleaseVersion].
  *
+ * @see fromStringOrNull
  * @property major An update that represents breaking changes
  * @property minor An update that represents new functionality
  * @property patch An update that represents bug fixes
  * @property pre An update that represents unstable changes not ready for a full release
- * @see fromStringOrNull
  */
 data class ModuleVersion(
   val major: Int,
   val minor: Int,
   val patch: Int,
   val pre: PreReleaseVersion? = null
-) {
+) : Comparable<ModuleVersion> {
 
   /** Formatted as `MAJOR.MINOR.PATCH-PRE` */
-  override fun toString() = "$major.$minor.$patch${pre?.let { "-${it.toString()}" }}"
+  override fun toString() = "$major.$minor.$patch${pre?.let { "-${it.toString()}" } ?: ""}"
+
+  override fun compareTo(other: ModuleVersion) =
+    compareValuesBy(
+      this,
+      other,
+      { it.major },
+      { it.minor },
+      { it.patch },
+      { it.pre == null }, // a version with no prerelease version takes precedence
+      { it.pre }
+    )
 
   companion object {
     /**
@@ -149,7 +160,6 @@ data class ModuleVersion(
      * `(N digits).(N digits).(N digits)-(maybe letters)(maybe numbers)`
      *
      * For example, the following would be valid matches:
-     *
      * ```
      * "13.1.5" // valid
      * "5.0.5-beta" // valid
@@ -157,7 +167,6 @@ data class ModuleVersion(
      * ```
      *
      * While the following would not be:
-     *
      * ```
      * "1.3.4-" // invalid
      * "16.2.3-01" // invalid
@@ -181,7 +190,6 @@ data class ModuleVersion(
      * ```
      *
      * @param str a [String] that matches the SemVer format.
-     *
      * @return a [ModuleVersion] created from the string, or null if the string was invalid.
      */
     fun fromStringOrNull(str: String): ModuleVersion? =
