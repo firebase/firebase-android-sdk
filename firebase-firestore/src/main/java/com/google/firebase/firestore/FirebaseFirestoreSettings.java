@@ -17,9 +17,7 @@ package com.google.firebase.firestore;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-interface LocalCacheSettings {}
+import java.util.Objects;
 
 /** Settings used to configure a {@link FirebaseFirestore} instance. */
 public final class FirebaseFirestoreSettings {
@@ -43,6 +41,8 @@ public final class FirebaseFirestoreSettings {
     private long cacheSizeBytes;
     private LocalCacheSettings cacheSettings;
 
+    private boolean usedLegacyCacheSettings = false;
+
     /** Constructs a new {@code FirebaseFirestoreSettings} Builder object. */
     public Builder() {
       host = DEFAULT_HOST;
@@ -61,6 +61,7 @@ public final class FirebaseFirestoreSettings {
       sslEnabled = settings.sslEnabled;
       persistenceEnabled = settings.persistenceEnabled;
       cacheSizeBytes = settings.cacheSizeBytes;
+      cacheSettings = settings.cacheSettings;
     }
 
     /**
@@ -95,7 +96,12 @@ public final class FirebaseFirestoreSettings {
     @NonNull
     @Deprecated
     public Builder setPersistenceEnabled(boolean value) {
+      if (cacheSettings != null) {
+        throw new IllegalStateException(
+            "New cache config API setLocalCacheSettings() is already used.");
+      }
       this.persistenceEnabled = value;
+      this.usedLegacyCacheSettings = true;
       return this;
     }
 
@@ -113,16 +119,33 @@ public final class FirebaseFirestoreSettings {
     @NonNull
     @Deprecated
     public Builder setCacheSizeBytes(long value) {
+      if (cacheSettings != null) {
+        throw new IllegalStateException(
+            "New cache config API setLocalCacheSettings() is already used.");
+      }
       if (value != CACHE_SIZE_UNLIMITED && value < MINIMUM_CACHE_BYTES) {
         throw new IllegalArgumentException(
             "Cache size must be set to at least " + MINIMUM_CACHE_BYTES + " bytes");
       }
       this.cacheSizeBytes = value;
+      this.usedLegacyCacheSettings = true;
       return this;
     }
 
     @NonNull
     public Builder setLocalCacheSettings(@NonNull LocalCacheSettings settings) {
+      if (usedLegacyCacheSettings) {
+        throw new IllegalStateException(
+            "Deprecated setPersistenceEnabled() or setCacheSizeBytes() is already used,"
+                + " remove those first.");
+      }
+
+      if (!(settings instanceof MemoryCacheSettings)
+          && !(settings instanceof PersistentCacheSettings)) {
+        throw new IllegalArgumentException(
+            "Only MemoryCacheSettings and PersistentCacheSettings are accepted");
+      }
+
       this.cacheSettings = settings;
       return this;
     }
@@ -177,19 +200,17 @@ public final class FirebaseFirestoreSettings {
   }
 
   @Override
-  public boolean equals(@Nullable Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
 
     FirebaseFirestoreSettings that = (FirebaseFirestoreSettings) o;
-    return host.equals(that.host)
-        && sslEnabled == that.sslEnabled
-        && persistenceEnabled == that.persistenceEnabled
-        && cacheSizeBytes == that.cacheSizeBytes;
+
+    if (sslEnabled != that.sslEnabled) return false;
+    if (persistenceEnabled != that.persistenceEnabled) return false;
+    if (cacheSizeBytes != that.cacheSizeBytes) return false;
+    if (!host.equals(that.host)) return false;
+    return Objects.equals(cacheSettings, that.cacheSettings);
   }
 
   @Override
@@ -197,7 +218,8 @@ public final class FirebaseFirestoreSettings {
     int result = host.hashCode();
     result = 31 * result + (sslEnabled ? 1 : 0);
     result = 31 * result + (persistenceEnabled ? 1 : 0);
-    result = 31 * result + (int) cacheSizeBytes;
+    result = 31 * result + (int) (cacheSizeBytes ^ (cacheSizeBytes >>> 32));
+    result = 31 * result + (cacheSettings != null ? cacheSettings.hashCode() : 0);
     return result;
   }
 
@@ -205,15 +227,19 @@ public final class FirebaseFirestoreSettings {
   @NonNull
   public String toString() {
     return "FirebaseFirestoreSettings{"
-        + "host="
-        + host
-        + ", sslEnabled="
-        + sslEnabled
-        + ", persistenceEnabled="
-        + persistenceEnabled
-        + ", cacheSizeBytes="
-        + cacheSizeBytes
-        + "}";
+                + "host="
+                + host
+                + ", sslEnabled="
+                + sslEnabled
+                + ", persistenceEnabled="
+                + persistenceEnabled
+                + ", cacheSizeBytes="
+                + cacheSizeBytes
+                + ", cacheSettings="
+                + cacheSettings
+            == null
+        ? "null"
+        : cacheSettings.toString() + "}";
   }
 
   /** Returns the host of the Cloud Firestore backend. */

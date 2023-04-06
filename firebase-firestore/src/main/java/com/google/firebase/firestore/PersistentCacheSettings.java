@@ -16,10 +16,39 @@ package com.google.firebase.firestore;
 import androidx.annotation.NonNull;
 
 public class PersistentCacheSettings implements LocalCacheSettings {
+  @NonNull
+  public static PersistentCacheSettings.Builder newBuilder() {
+    return new Builder();
+  }
+
   private final long sizeBytes;
 
   private PersistentCacheSettings(long sizeBytes) {
     this.sizeBytes = sizeBytes;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    PersistentCacheSettings that = (PersistentCacheSettings) o;
+
+    return sizeBytes == that.sizeBytes;
+  }
+
+  @Override
+  public int hashCode() {
+    return (int) (sizeBytes ^ (sizeBytes >>> 32));
+  }
+
+  @Override
+  public String toString() {
+    return "PersistentCacheSettings{" + "sizeBytes=" + sizeBytes + '}';
+  }
+
+  public long getSizeBytes() {
+    return sizeBytes;
   }
 
   public static class Builder {
@@ -28,22 +57,15 @@ public class PersistentCacheSettings implements LocalCacheSettings {
 
     private Builder() {}
 
-    public void setSizeBytes(long sizeBytes) {
+    @NonNull
+    public Builder setSizeBytes(long sizeBytes) {
       this.sizeBytes = sizeBytes;
+      return this;
     }
 
     @NonNull
     public PersistentCacheSettings build() {
       return new PersistentCacheSettings(sizeBytes);
     }
-  }
-
-  @NonNull
-  public static PersistentCacheSettings.Builder newBuilder() {
-    return new Builder();
-  }
-
-  public long getSizeBytes() {
-    return sizeBytes;
   }
 }

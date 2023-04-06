@@ -15,9 +15,34 @@
 package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 public class MemoryCacheSettings implements LocalCacheSettings {
+
+  @NonNull
+  public static MemoryCacheSettings.Builder newBuilder() {
+    return new MemoryCacheSettings.Builder();
+  }
+
   private MemoryCacheSettings() {}
+
+  @Override
+  public int hashCode() {
+    return super.hashCode();
+  }
+
+  @Override
+  public boolean equals(@Nullable Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+
+    return true;
+  }
+
+  @Override
+  public String toString() {
+    return "MemoryCacheSettings{}";
+  }
 
   public static class Builder {
 
@@ -27,10 +52,5 @@ public class MemoryCacheSettings implements LocalCacheSettings {
     public MemoryCacheSettings build() {
       return new MemoryCacheSettings();
     }
-  }
-
-  @NonNull
-  public static MemoryCacheSettings.Builder newBuilder() {
-    return new MemoryCacheSettings.Builder();
   }
 }
