@@ -37,6 +37,7 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v0
       - name: Run sessions end-to-end tests
         env:
+          FTL_RESULTS_BUCKET: fireescape
           FIREBASE_APP_CHECK_DEBUG_SECRET: ${{ secrets.FIREBASE_APP_CHECK_DEBUG_SECRET }}
         run: |
           ./gradlew :firebase-sessions:deviceCheck withErrorProne -PtargetBackend="prod"
