@@ -40,19 +40,11 @@ abstract class ApiDiffer : DefaultTask() {
 
   @TaskAction
   fun run() {
-    val previousVersion = previousVersionString.get().split(".")
-    if (previousVersion.size != 3) {
-      return
-    }
-    val versionlist = version.get().split(".")
-    var curVersionDelta: VersionDelta
-    if (versionlist[0] > previousVersion[0]) {
-      curVersionDelta = VersionDelta.MAJOR
-    } else if (versionlist[1] > previousVersion[1]) {
-      curVersionDelta = VersionDelta.MINOR
-    } else {
-      curVersionDelta = VersionDelta.PATCH
-    }
+    val (pMajor, pMinor, _) = previousVersionString.get().split(".")
+    val (major, minor, _) = version.get().split(".")
+    val curVersionDelta: VersionDelta =
+      if (major > pMajor) VersionDelta.MAJOR
+      else if (minor > pMinor) VersionDelta.MINOR else VersionDelta.PATCH
     val afterJar = readApi(currentJar.get())
     val beforeJar = readApi(previousJar.get())
     val classKeys = afterJar.keys union beforeJar.keys
