@@ -56,6 +56,12 @@ jobs:
           distribution: temurin
           cache: gradle
 
+      - name: Add google-services.json
+        env:
+          INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
+        run: |
+          echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
+
       - name: ${{ matrix.module }} Unit Tests
         env:
           FIREBASE_CI: 1
