@@ -33,32 +33,23 @@ class ClassInfo(val _node: ClassNode, val _classNodes: Map<String, ClassNode>) {
     this.methods = getAllMethods(_node, _classNodes)
   }
 
-  fun getAllFields(node: ClassNode): Map<String, FieldNode> {
-    var fields: MutableMap<String, FieldNode> = mutableMapOf()
-    for (field in node.fields) {
-      val descriptor = AccessDescriptor(field.access)
-      if (descriptor.isSynthetic() || UtilityClass.isObfuscatedSymbol(field.name)) continue
-      fields.put("${field.name}-${field.desc}", field)
-    }
-    return fields
-  }
-
-  fun getAllMethods(node: ClassNode, classNodes: Map<String, ClassNode>): Map<String, MethodNode> {
-    return getAllStaticMethods(node) + getAllNonStaticMethods(node, classNodes)
-  }
-
-  fun getAllStaticMethods(node: ClassNode): Map<String, MethodNode> {
-    var staticMethods: MutableMap<String, MethodNode> = mutableMapOf()
-    for (method in node.methods) {
-      val descriptor = AccessDescriptor(method.access)
-      if (!descriptor.isStatic() || descriptor.isSynthetic()) continue
-      if (UtilityClass.isObfuscatedSymbol(method.name) || method.name.equals("<clint>")) {
-        continue
+  fun getAllFields(node: ClassNode): Map<String, FieldNode> =
+    node.fields
+      .filterNot {
+        AccessDescriptor(it.access).isSynthetic() || UtilityClass.isObfuscatedSymbol(it.name)
       }
-      staticMethods.put("${method.name}-${method.desc}", method)
-    }
-    return staticMethods
-  }
+      .associate { field -> "${field.name}-${field.desc}" to field }
+
+  fun getAllMethods(node: ClassNode, classNodes: Map<String, ClassNode>): Map<String, MethodNode> =
+    getAllStaticMethods(node) + getAllNonStaticMethods(node, classNodes)
+
+  fun getAllStaticMethods(node: ClassNode): Map<String, MethodNode> =
+    node.methods
+      .filterNot {
+        !AccessDescriptor(it.access).isStatic() || AccessDescriptor(it.access).isSynthetic()
+      }
+      .filterNot { UtilityClass.isObfuscatedSymbol(it.name) || it.name.equals("<clint>") }
+      .associate { method -> "${method.name}-${method.desc}" to method }
 
   fun getAllNonStaticMethods(
     node: ClassNode?,
@@ -70,17 +61,16 @@ class ClassInfo(val _node: ClassNode, val _classNodes: Map<String, ClassNode>) {
     if (methodsCache.containsKey(node.name)) {
       return methodsCache.get(node.name)!!
     }
-    var result = mutableMapOf<String, MethodNode>()
-    for (method in node.methods) {
-      var descriptor = AccessDescriptor(method.access)
-      if (descriptor.isSynthetic() || descriptor.isBridge() || descriptor.isStatic()) {
-        continue
-      }
-      if (UtilityClass.isObfuscatedSymbol(method.name)) {
-        continue
-      }
-      result.put("${method.name}-${method.desc}", method)
-    }
+    var result =
+      node.methods
+        .filterNot {
+          (AccessDescriptor(it.access).isSynthetic() ||
+            AccessDescriptor(it.access).isBridge() ||
+            AccessDescriptor(it.access).isStatic())
+        }
+        .filterNot { UtilityClass.isObfuscatedSymbol(it.name) }
+        .associate { method -> "${method.name}-${method.desc}" to method }
+
     if (node.superName != null) {
       result =
         (result + getAllNonStaticMethods(classNodes.get(node.superName), classNodes))

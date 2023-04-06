@@ -55,44 +55,44 @@ abstract class ApiDiffer : DefaultTask() {
     }
     val afterJar = readApi(currentJar.get())
     val beforeJar = readApi(previousJar.get())
-    val apiDeltas = mutableListOf<Delta>()
     val classKeys = afterJar.keys union beforeJar.keys
-      val apiDeltas =
+    val apiDeltas =
       classKeys
         .map { className -> Pair(beforeJar.get(className), afterJar.get(className)) }
         .flatMap { (before, after) ->
           DeltaType.values().flatMap { it.getViolations(before, after) }
         }
-    var deltaViolations: List<Delta> = mutableListOf()
-    if (curVersionDelta == VersionDelta.MINOR) {
-      deltaViolations = apiDeltas.filter { it.versionDelta == VersionDelta.MAJOR }
-    } else if (curVersionDelta == VersionDelta.PATCH) {
-      deltaViolations = apiDeltas
+    val deltaViolations: List<Delta> =
+      if (curVersionDelta == VersionDelta.MINOR)
+        apiDeltas.filter { it.versionDelta == VersionDelta.MAJOR }
+      else if (curVersionDelta == VersionDelta.PATCH) apiDeltas else mutableListOf()
+    if (!apiDeltas.isEmpty()) {
+      val printString =
+        apiDeltas.joinToString(
+          prefix =
+            "Here is a list of all the minor/major version bump changes which are made since the last release.\n",
+          separator = "\n"
+        ) {
+          "[${it.versionDelta}] ${it.description}"
+        }
+      println(printString)
     }
-    if (apiDeltas.size != 0) {
-      println(
-        "Here is a list of all the minor/major version bump changes which are made since the last release"
-      )
-      apiDeltas.forEach { println("[${it.versionDelta}] ${it.description}") }
-    }
-    if (deltaViolations.size != 0) {
-      var outputString =
-        "Here is a list of all the violations which needs to be fixed before we could release.\n"
-      deltaViolations.forEach { outputString += "[${it.versionDelta}] ${it.description}\n" }
+    if (!deltaViolations.isEmpty()) {
+      val outputString =
+        deltaViolations.joinToString(
+          prefix =
+            "Here is a list of all the violations which needs to be fixed before we could release.\n",
+          separator = "\n"
+        ) {
+          "[${it.versionDelta}] ${it.description}"
+        }
       throw GradleException(outputString)
     }
   }
 
   private fun readApi(jarPath: String): Map<String, ClassInfo> {
     val classes: Map<String, ClassNode> = readClassNodes(Paths.get(jarPath))
-    var classInfoDict = mutableMapOf<String, ClassInfo>()
-    for (classNodeInfo in classes) {
-      classInfoDict[classNodeInfo.key] = ClassInfo(classNodeInfo.value, classes)
-    }
-    for (classNodeInfo in classes) {
-      classInfoDict[classNodeInfo.key] = ClassInfo(classNodeInfo.value, classes)
-    }
-    return classInfoDict
+    return classes.entries.associate { (key, value) -> key to ClassInfo(value, classes) }
   }
 
   /** Returns true if the class is local or anonymous. */
