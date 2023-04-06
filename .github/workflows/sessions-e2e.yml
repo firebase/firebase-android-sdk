@@ -1,7 +1,9 @@
 name: Firebase Sessions E2E Tests
 
 on:
-  workflow_dispatch: # allow triggering the workflow manually
+  schedule:
+    - cron: 4 */4 * * *  # every 4 hours at 04 minutes past the hour
+  workflow_dispatch:     # allow triggering the workflow manually
 
 concurrency:
   group: ${{ github.workflow }}
