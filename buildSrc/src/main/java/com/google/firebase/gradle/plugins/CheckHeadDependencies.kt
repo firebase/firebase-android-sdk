@@ -38,6 +38,7 @@ abstract class CheckHeadDependencies : DefaultTask() {
               .projectDependenciesByName()
               .intersect(allFirebaseProjects.get())
               .subtract(projectsReleasing)
+              .subtract(DEPENDENCIES_TO_IGNORE)
         }
         .filterValues { it.isNotEmpty() }
         .map { "${it.key} requires: ${it.value.joinToString(", ") }" }
@@ -59,4 +60,8 @@ abstract class CheckHeadDependencies : DefaultTask() {
       .allDependencies
       .filter { it is ProjectDependency }
       .map { it.name }
+
+  companion object {
+    val DEPENDENCIES_TO_IGNORE: List<String> = listOf("protolite-well-known-types")
+  }
 }
