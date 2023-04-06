@@ -22,6 +22,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.PropertyName
 import com.google.firebase.firestore.TestUtil
 import com.google.firebase.firestore.model.ObjectValue
 import com.google.firebase.firestore.testutil.TestUtil.wrap
@@ -113,6 +114,13 @@ class LibraryVersionTest : BaseTestCase() {
 
 data class Room(var a: Int = 0, var b: Int = 0)
 
+// NOTE: When Kotlin properties are annotated with `PropertyName` they need to use @get and @set.
+// Also, the properties need to be mutable; that is, declared with `var` and not `val`.
+// See https://github.com/firebase/firebase-android-sdk/issues/4822
+data class DataClassWithPropertyName(
+  @get:PropertyName("dbName") @set:PropertyName("dbName") var objName: String = "DefaultObjName"
+)
+
 @RunWith(RobolectricTestRunner::class)
 class DocumentSnapshotTests {
   @Before
@@ -154,6 +162,15 @@ class DocumentSnapshotTests {
     assertThat(room).isEqualTo(Room(1, 2))
     assertThat(room)
       .isEqualTo(ds.toObject(Room::class.java, DocumentSnapshot.ServerTimestampBehavior.ESTIMATE))
+  }
+
+  @Test
+  fun `PropertyName annotation works on data classes`() {
+    val ds = TestUtil.documentSnapshot("foo/bar", mapOf("dbName" to "CustomValue"), false)
+
+    val toObjectReturnValue = ds.toObject<DataClassWithPropertyName>()
+
+    assertThat(toObjectReturnValue).isEqualTo(DataClassWithPropertyName("CustomValue"))
   }
 }
 
