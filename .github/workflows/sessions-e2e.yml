@@ -1,7 +1,7 @@
 name: Firebase Sessions E2E Tests
 
 on:
-  workflow_dispatch:     # allow triggering the workflow manually
+  workflow_dispatch: # allow triggering the workflow manually
 
 concurrency:
   group: ${{ github.workflow }}
@@ -10,26 +10,29 @@ env:
   SESSIONS_E2E_GOOGLE_SERVICES: ${{ secrets.SESSIONS_E2E_GOOGLE_SERVICES }}
 
 jobs:
-  test:
+  build:
+
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        environment: [ prod, autopush ]
+
     steps:
-      - name: Checkout firebase-android-sdk
-        uses: actions/checkout@v3
+    - name: Checkout firebase-sessions
+      uses: actions/checkout@v3
+      with:
+        ref: 'firebase-sessions'
 
-      - name: Set up JDK 11
-        uses: actions/setup-java@v2
-        with:
-          java-version: 11
-          distribution: temurin
-          cache: gradle
+    - name: set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: gradle
 
-      - name: Add google-services.json
-        run: |
-          echo $SESSIONS_E2E_GOOGLE_SERVICES | base64 -d > google-services.json
+    - name: Add google-services.json
+      run: |
+        echo $SESSIONS_E2E_GOOGLE_SERVICES | base64 -d > google-services.json
 
-      - name: Run sessions end-to-end tests
-        run: |
-          ./gradlew firebase-sessions:deviceCheck withErrorProne -PtargetBackend="prod"
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Run sessions end-to-end tests
+      run: ./gradlew firebase-sessions:deviceCheck withErrorProne -PtargetBackend="prod"
