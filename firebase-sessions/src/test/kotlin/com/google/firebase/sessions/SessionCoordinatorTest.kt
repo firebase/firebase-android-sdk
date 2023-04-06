@@ -18,6 +18,7 @@ package com.google.firebase.sessions
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.sessions.testing.FakeEventGDTLogger
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -31,10 +32,12 @@ import org.junit.runner.RunWith
 class SessionCoordinatorTest {
   @Test
   fun attemptLoggingSessionEvent_populatesFid() = runTest {
+    val fakeEventGDTLogger = FakeEventGDTLogger()
     val sessionCoordinator =
       SessionCoordinator(
         firebaseInstallations = FakeFirebaseInstallations("FaKeFiD"),
         backgroundDispatcher = StandardTestDispatcher(testScheduler),
+        eventGDTLogger = fakeEventGDTLogger,
       )
 
     // Construct an event with no fid set.
@@ -62,5 +65,7 @@ class SessionCoordinatorTest {
     runCurrent()
 
     assertThat(sessionEvent.sessionData.firebaseInstallationId).isEqualTo("FaKeFiD")
+    assertThat(fakeEventGDTLogger.loggedEvent!!.sessionData.firebaseInstallationId)
+      .isEqualTo("FaKeFiD")
   }
 }

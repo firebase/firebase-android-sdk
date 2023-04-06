@@ -31,7 +31,8 @@ import kotlinx.coroutines.tasks.await
  */
 internal class SessionCoordinator(
   private val firebaseInstallations: FirebaseInstallationsApi,
-  backgroundDispatcher: CoroutineDispatcher
+  backgroundDispatcher: CoroutineDispatcher,
+  private val eventGDTLogger: EventGDTLoggerInterface,
 ) {
   private val scope = CoroutineScope(backgroundDispatcher)
 
@@ -46,7 +47,13 @@ internal class SessionCoordinator(
           ""
         }
 
-      Log.i(TAG, "Initiate session start: $sessionEvent")
+      try {
+        eventGDTLogger.log(sessionEvent)
+
+        Log.i(TAG, "Logged Session Start event: $sessionEvent")
+      } catch (e: RuntimeException) {
+        Log.w(TAG, "Failed to log Session Start event: ", e)
+      }
     }
 
   companion object {
