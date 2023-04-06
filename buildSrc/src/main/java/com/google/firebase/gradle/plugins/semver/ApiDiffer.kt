@@ -57,12 +57,12 @@ abstract class ApiDiffer : DefaultTask() {
     val beforeJar = readApi(previousJar.get())
     val apiDeltas = mutableListOf<Delta>()
     val classKeys = afterJar.keys union beforeJar.keys
-    classKeys.forEach {
-      val afterClass = afterJar.get(it)
-      val beforeClass = beforeJar.get(it)
-      val allDeltas = DeltaType.values()
-      allDeltas.forEach { apiDeltas.addAll(it.getViolations(beforeClass, afterClass)) }
-    }
+      val apiDeltas =
+      classKeys
+        .map { className -> Pair(beforeJar.get(className), afterJar.get(className)) }
+        .flatMap { (before, after) ->
+          DeltaType.values().flatMap { it.getViolations(before, after) }
+        }
     var deltaViolations: List<Delta> = mutableListOf()
     if (curVersionDelta == VersionDelta.MINOR) {
       deltaViolations = apiDeltas.filter { it.versionDelta == VersionDelta.MAJOR }
