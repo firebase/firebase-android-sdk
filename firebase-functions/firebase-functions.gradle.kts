@@ -47,7 +47,7 @@ dependencies {
   implementation("com.google.firebase:firebase-annotations:16.2.0")
   implementation("com.google.firebase:firebase-common:20.3.1")
   implementation("com.google.firebase:firebase-components:17.1.0")
-  implementation("com.google.firebase:firebase-appcheck-interop:16.1.1")
+  implementation(project(":appcheck:firebase-appcheck-interop"))
   implementation(libs.playservices.base)
   implementation(libs.playservices.basement)
   implementation(libs.playservices.tasks)
