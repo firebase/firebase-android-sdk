@@ -17,10 +17,17 @@
 package com.google.firebase.sessions
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.FirebaseApp
+import com.google.firebase.sessions.settings.SessionsSettings
+import com.google.firebase.sessions.testing.FakeFirebaseApp
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
+import org.junit.After
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class SessionInitiatorTest {
   class FakeClock {
     var elapsed = Duration.ZERO
@@ -43,9 +50,11 @@ class SessionInitiatorTest {
   @Test
   fun coldStart_initiatesSession() {
     val sessionStartCounter = SessionStartCounter()
+    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val settings = SessionsSettings(context)
 
     // Simulate a cold start by simply constructing the SessionInitiator object
-    SessionInitiator(Duration::ZERO, sessionStartCounter::initiateSessionStart)
+    SessionInitiator(Duration::ZERO, sessionStartCounter::initiateSessionStart, settings)
 
     assertThat(sessionStartCounter.count).isEqualTo(1)
   }
@@ -54,9 +63,11 @@ class SessionInitiatorTest {
   fun appForegrounded_largeInterval_initiatesSession() {
     val fakeClock = FakeClock()
     val sessionStartCounter = SessionStartCounter()
+    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val settings = SessionsSettings(context)
 
     val sessionInitiator =
-      SessionInitiator(fakeClock::elapsed, sessionStartCounter::initiateSessionStart)
+      SessionInitiator(fakeClock::elapsed, sessionStartCounter::initiateSessionStart, settings)
 
     // First session on cold start
     assertThat(sessionStartCounter.count).isEqualTo(1)
@@ -73,9 +84,11 @@ class SessionInitiatorTest {
   fun appForegrounded_smallInterval_doesNotInitiatesSession() {
     val fakeClock = FakeClock()
     val sessionStartCounter = SessionStartCounter()
+    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val settings = SessionsSettings(context)
 
     val sessionInitiator =
-      SessionInitiator(fakeClock::elapsed, sessionStartCounter::initiateSessionStart)
+      SessionInitiator(fakeClock::elapsed, sessionStartCounter::initiateSessionStart, settings)
 
     // First session on cold start
     assertThat(sessionStartCounter.count).isEqualTo(1)
@@ -92,9 +105,11 @@ class SessionInitiatorTest {
   fun appForegrounded_background_foreground_largeIntervals_initiatesSessions() {
     val fakeClock = FakeClock()
     val sessionStartCounter = SessionStartCounter()
+    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val settings = SessionsSettings(context)
 
     val sessionInitiator =
-      SessionInitiator(fakeClock::elapsed, sessionStartCounter::initiateSessionStart)
+      SessionInitiator(fakeClock::elapsed, sessionStartCounter::initiateSessionStart, settings)
 
     assertThat(sessionStartCounter.count).isEqualTo(1)
 
@@ -114,9 +129,11 @@ class SessionInitiatorTest {
   fun appForegrounded_background_foreground_smallIntervals_doesNotInitiateNewSessions() {
     val fakeClock = FakeClock()
     val sessionStartCounter = SessionStartCounter()
+    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val settings = SessionsSettings(context)
 
     val sessionInitiator =
-      SessionInitiator(fakeClock::elapsed, sessionStartCounter::initiateSessionStart)
+      SessionInitiator(fakeClock::elapsed, sessionStartCounter::initiateSessionStart, settings)
 
     // First session on cold start
     assertThat(sessionStartCounter.count).isEqualTo(1)
@@ -133,6 +150,11 @@ class SessionInitiatorTest {
     assertThat(sessionStartCounter.count).isEqualTo(1)
 
     assertThat(sessionStartCounter.count).isEqualTo(1)
+  }
+
+  @After
+  fun cleanUp() {
+    FirebaseApp.clearInstancesForTest()
   }
 
   companion object {

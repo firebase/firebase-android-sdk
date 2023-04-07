@@ -25,6 +25,7 @@ import com.google.firebase.inject.Provider
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
+import com.google.firebase.sessions.settings.SessionsSettings
 import kotlinx.coroutines.CoroutineDispatcher
 
 class FirebaseSessions
@@ -38,9 +39,11 @@ internal constructor(
   private val eventGDTLogger = EventGDTLogger(transportFactoryProvider)
   private val sessionCoordinator =
     SessionCoordinator(firebaseInstallations, backgroundDispatcher, eventGDTLogger)
+  private val sessionSettings = SessionsSettings(firebaseApp.applicationContext)
 
   init {
-    val sessionInitiator = SessionInitiator(WallClock::elapsedRealtime, this::initiateSessionStart)
+    val sessionInitiator =
+      SessionInitiator(WallClock::elapsedRealtime, this::initiateSessionStart, sessionSettings)
     val appContext = firebaseApp.applicationContext.applicationContext
     if (appContext is Application) {
       appContext.registerActivityLifecycleCallbacks(sessionInitiator.activityLifecycleCallbacks)

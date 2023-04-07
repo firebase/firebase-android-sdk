@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.google.firebase.sessions
+package com.google.firebase.sessions.settings
 
+import android.content.Context
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -24,26 +25,52 @@ import kotlin.time.Duration.Companion.minutes
  *
  * @hide
  */
-internal class SessionsSettings {
+internal class SessionsSettings(val context: Context) {
+
+  var localOverrideSettings = LocalOverrideSettings(context)
+
+  // Order of preference for all the configs below:
+  // 1. Honor local overrides
+  // 2. If no local overrides, use remote config
+  // 3. If no remote config, fall back to SDK defaults.
+
   // Setting to qualify if sessions service is enabled.
   val sessionsEnabled: Boolean
     get() {
+      if (localOverrideSettings.sessionEnabled != null) {
+        return localOverrideSettings.sessionEnabled!!
+      }
+
+      // SDK Default
       return true
     }
 
   // Setting that provides the sessions sampling rate.
   val samplingRate: Double
     get() {
+      if (localOverrideSettings.samplingRate != null) {
+        return localOverrideSettings.samplingRate!!
+      }
+
+      // SDK Default
       return 1.0
     }
 
   // Background timeout config value before which a new session is generated
   val sessionRestartTimeout: Duration
-    get() = 30.minutes
+    get() {
+      if (localOverrideSettings.sessionRestartTimeout != null) {
+        return localOverrideSettings.sessionRestartTimeout!!
+      }
+
+      // SDK Default
+      return 30.minutes
+    }
 
   // Update the settings for all the settings providers
   fun updateSettings() {
     // Placeholder to initiate settings update on different sources
-    // Expected sources: RemoteSettings, ManifestOverrides, SDK Defaults
+    // Pending sources: RemoteSettings
+    localOverrideSettings.updateSettings()
   }
 }
