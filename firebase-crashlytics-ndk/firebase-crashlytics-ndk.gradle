@@ -18,10 +18,12 @@ plugins {
 }
 
 firebaseLibrary {
+    libraryGroup "crashlytics"
     testLab {
         enabled = true
         device 'model=panther,version=33' // Pixel7
     }
+    testLab.enabled = true
     publishJavadoc = false
 }
 

@@ -54,6 +54,7 @@ package com.google.firebase.database.ktx {
     method @NonNull public static kotlinx.coroutines.flow.Flow<com.google.firebase.database.DataSnapshot> getSnapshots(@NonNull com.google.firebase.database.Query);
     method public static inline <reified T> T getValue(@NonNull com.google.firebase.database.DataSnapshot);
     method public static inline <reified T> T getValue(@NonNull com.google.firebase.database.MutableData);
+    method public static inline <reified T> kotlinx.coroutines.flow.Flow<? extends T> values(@NonNull com.google.firebase.database.Query);
   }
 
 }

@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
@@ -64,6 +65,7 @@ import com.google.firestore.v1.DocumentRemove;
 import com.google.firestore.v1.DocumentTransform;
 import com.google.firestore.v1.ListenResponse;
 import com.google.firestore.v1.ListenResponse.ResponseTypeCase;
+import com.google.firestore.v1.StructuredAggregationQuery;
 import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.StructuredQuery.CollectionSelector;
 import com.google.firestore.v1.StructuredQuery.CompositeFilter;
@@ -636,6 +638,41 @@ public final class RemoteSerializer {
 
   public com.google.firebase.firestore.core.Target decodeQueryTarget(QueryTarget target) {
     return decodeQueryTarget(target.getParent(), target.getStructuredQuery());
+  }
+
+  StructuredAggregationQuery encodeStructuredAggregationQuery(
+      QueryTarget encodedQueryTarget, List<AggregateField> aggregateFields) {
+    StructuredAggregationQuery.Builder structuredAggregationQuery =
+        StructuredAggregationQuery.newBuilder();
+    structuredAggregationQuery.setStructuredQuery(encodedQueryTarget.getStructuredQuery());
+
+    // We use a Set here to automatically remove duplicates.
+    Set<StructuredAggregationQuery.Aggregation> aggregations = new HashSet<>();
+    for (AggregateField aggregateField : aggregateFields) {
+      StructuredAggregationQuery.Aggregation.Builder aggregation =
+          StructuredAggregationQuery.Aggregation.newBuilder();
+      StructuredQuery.FieldReference fieldPath =
+          StructuredQuery.FieldReference.newBuilder()
+              .setFieldPath(aggregateField.getFieldPath())
+              .build();
+
+      if (aggregateField instanceof AggregateField.CountAggregateField) {
+        aggregation.setCount(StructuredAggregationQuery.Aggregation.Count.getDefaultInstance());
+      } else if (aggregateField instanceof AggregateField.SumAggregateField) {
+        aggregation.setSum(
+            StructuredAggregationQuery.Aggregation.Sum.newBuilder().setField(fieldPath).build());
+      } else if (aggregateField instanceof AggregateField.AverageAggregateField) {
+        aggregation.setAvg(
+            StructuredAggregationQuery.Aggregation.Avg.newBuilder().setField(fieldPath).build());
+      } else {
+        throw new RuntimeException("Unsupported aggregation");
+      }
+
+      aggregation.setAlias(aggregateField.getAlias());
+      aggregations.add(aggregation.build());
+    }
+    structuredAggregationQuery.addAllAggregations(aggregations);
+    return structuredAggregationQuery.build();
   }
 
   // Filters

@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    releaseWith project(':appcheck:firebase-appcheck')
+    libraryGroup "appcheck"
     testLab.enabled = true
     publishJavadoc = true
     publishSources = true
