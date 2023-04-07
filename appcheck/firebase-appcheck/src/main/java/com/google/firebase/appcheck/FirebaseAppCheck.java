@@ -80,6 +80,17 @@ public abstract class FirebaseAppCheck implements InternalAppCheckTokenProvider 
   public abstract Task<AppCheckToken> getAppCheckToken(boolean forceRefresh);
 
   /**
+   * Requests a Firebase App Check token. This method should be used ONLY if you need to authorize
+   * requests to a non-Firebase backend.
+   *
+   * <p>Returns limited-use tokens that are intended for use with your non-Firebase backend
+   * endpoints that are protected with <a href=[--URL to public docs--]>Replay Protection</a>. This
+   * method does not affect the token generation behavior of the #getAppCheckToken() method.
+   */
+  @NonNull
+  public abstract Task<AppCheckToken> getLimitedUseAppCheckToken();
+
+  /**
    * Registers an {@link AppCheckListener} to changes in the token state. This method should be used
    * ONLY if you need to authorize requests to a non-Firebase backend. Requests to Firebase backends
    * are authorized automatically if configured.
