@@ -21,6 +21,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Query;
@@ -41,6 +42,7 @@ import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
+import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import java.util.ArrayDeque;
@@ -752,9 +754,10 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     return this.listenTargets.get(targetId);
   }
 
-  public Task<Long> runCountQuery(Query query) {
+  public Task<Map<String, Value>> runAggregateQuery(
+      Query query, List<AggregateField> aggregateFields) {
     if (canUseNetwork()) {
-      return datastore.runCountQuery(query);
+      return datastore.runAggregateQuery(query, aggregateFields);
     } else {
       return Tasks.forException(
           new FirebaseFirestoreException(

@@ -213,7 +213,7 @@ public interface FirebaseAppDistribution {
    * @param interruptionLevel the level of interruption for the feedback notification. On platforms
    *     below Android 8, this corresponds to a <a
    *     href="https://developer.android.com/develop/ui/views/notifications/channels#importance">notification
-   *     channel importance</a> and once set cannot be changed except by the user.
+   *     channel importance</a> and once set cannot be changed except by the tester.
    */
   void showFeedbackNotification(
       @StringRes int additionalFormText, @NonNull InterruptionLevel interruptionLevel);
@@ -243,7 +243,7 @@ public interface FirebaseAppDistribution {
    * @param interruptionLevel the level of interruption for the feedback notification. On platforms
    *     below Android 8, this corresponds to a <a
    *     href="https://developer.android.com/develop/ui/views/notifications/channels#importance">notification
-   *     channel importance</a> and once set cannot be changed except by the user.
+   *     channel importance</a> and once set cannot be changed except by the tester.
    */
   void showFeedbackNotification(
       @NonNull CharSequence additionalFormText, @NonNull InterruptionLevel interruptionLevel);
