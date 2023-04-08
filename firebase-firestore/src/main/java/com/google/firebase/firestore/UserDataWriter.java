@@ -31,7 +31,6 @@ import static com.google.firebase.firestore.model.Values.typeOrder;
 import static com.google.firebase.firestore.util.Assert.fail;
 
 import androidx.annotation.RestrictTo;
-import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -53,7 +52,6 @@ public class UserDataWriter {
   private final FirebaseFirestore firestore;
   private final DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior;
 
-  @VisibleForTesting
   public UserDataWriter(
       FirebaseFirestore firestore,
       DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior) {
@@ -61,7 +59,6 @@ public class UserDataWriter {
     this.serverTimestampBehavior = serverTimestampBehavior;
   }
 
-  @VisibleForTesting
   public Object convertValue(Value value) {
     switch (typeOrder(value)) {
       case TYPE_ORDER_MAP:

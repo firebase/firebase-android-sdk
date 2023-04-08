@@ -114,6 +114,9 @@ public class CrashlyticsReportJsonTransform {
         case "ndkPayload":
           builder.setNdkPayload(parseNdkPayload(jsonReader));
           break;
+        case "appExitInfo":
+          builder.setAppExitInfo(parseAppExitInfo(jsonReader));
+          break;
         default:
           jsonReader.skipValue();
           break;

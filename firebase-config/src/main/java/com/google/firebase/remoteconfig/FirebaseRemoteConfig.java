@@ -549,21 +549,21 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Start listening for config updates from Realtime Remote Config and automatically fetch updates
-   * from the RC backend when they are available.
+   * Starts listening for real-time config updates from the Remote Config backend and automatically
+   * fetches updates from the RC backend when they are available.
    *
-   * <p>If a connection to Realtime RC is not already open, calling this method will open it.
-   * Multiple listeners can be added by calling this method again, but subsequent calls re-use the
-   * same connection to the backend.
+   * <p>If a connection to the Remote Config backend is not already open, calling this method will
+   * open it. Multiple listeners can be added by calling this method again, but subsequent calls
+   * re-use the same connection to the backend.
    *
-   * <p>Note: Realtime Remote Config requires the Firebase Remote Config Realtime API. See the <a
-   * href="https://firebase.google.com/docs/remote-config/get-started">Remote Config Get Started
-   * </a> guide to enable the API.
+   * <p>Note: Real-time Remote Config requires the Firebase Remote Config Realtime API. See the <a
+   * href="https://firebase.google.com/docs/remote-config/get-started#add-real-time-listener">Remote
+   * Config Get Started </a> guide to enable the API.
    *
    * @param configUpdateListener A {@link ConfigUpdateListener} that can be used to respond to
    *     config updates when they're fetched.
-   * @return A {@link ConfigUpdateListenerRegistration} that allows the user to remove the added
-   *     {@code configUpdateListener} and close the connection when there are no more listeners.
+   * @return A {@link ConfigUpdateListenerRegistration} that allows you to remove the added {@code
+   *     configUpdateListener} and close the connection when there are no more listeners.
    */
   @NonNull
   public ConfigUpdateListenerRegistration addOnConfigUpdateListener(
@@ -658,7 +658,8 @@ public class FirebaseRemoteConfig {
   }
 
   /**
-   * Changes background state of the Realtime handler depending on if the app is in the foreground
+   * Changes background state of the real-time handler depending on if the app is in the foreground
+   * Changes background state of the real-time handler depending on if the app is in the foreground
    * or not.
    *
    * @hide

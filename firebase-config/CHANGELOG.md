@@ -1,5 +1,15 @@
 # Unreleased
 
+# 21.3.0
+* [feature] Added support for real-time config updates. To learn more, see
+  [Get started with [firebase_remote_config]](/docs/remote-config/get-started?platform=android#add-real-time-listener).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-config` library. The Kotlin extensions library has no additional
+updates.
+
 # 21.2.1
 * [changed] Migrated [remote_config] to use standard Firebase executors.
 

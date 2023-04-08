@@ -18,21 +18,23 @@ import androidx.annotation.NonNull;
 import javax.annotation.Nonnull;
 
 /**
- * Event listener interface for Realtime RC updates. Implement {@code ConfigUpdateListner} to call
- * {@link com.google.firebase.remoteconfig.FirebaseRemoteConfig#addOnConfigUpdateListener}.
+ * Event listener interface for real-time Remote Config updates. Implement {@link
+ * ConfigUpdateListener} to call {@link
+ * com.google.firebase.remoteconfig.FirebaseRemoteConfig#addOnConfigUpdateListener}.
  */
 public interface ConfigUpdateListener {
   /**
-   * Callback for when a new config has been automatically fetched from the backend and has changed
-   * from the activated config.
+   * Callback for when a new config version has been automatically fetched from the backend and has
+   * changed from the activated config.
    *
-   * @param configUpdate A {@link ConfigUpdate} with information about the updated config, including
-   *     the set of updated parameters.
+   * @param configUpdate A {@link ConfigUpdate} with information about the updated config version,
+   *     including the set of updated parameters.
    */
   void onUpdate(@NonNull ConfigUpdate configUpdate);
 
   /**
-   * Callback for when an error occurs while listening or fetching a config update.
+   * Callback for when an error occurs while listening for updates or fetching the latest version of
+   * the config.
    *
    * @param error A {@link FirebaseRemoteConfigException} with information about the error.
    */

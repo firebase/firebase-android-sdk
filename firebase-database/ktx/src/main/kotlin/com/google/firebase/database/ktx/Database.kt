@@ -31,7 +31,9 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.map
 
 /** Returns the [FirebaseDatabase] instance of the default [FirebaseApp]. */
 val Firebase.database: FirebaseDatabase
@@ -126,6 +128,16 @@ val Query.childEvents
         )
       awaitClose { removeEventListener(listener) }
     }
+
+/**
+ * Starts listening to this query and emits its values converted to a POJO via a [Flow].
+ *
+ * - When the returned flow starts being collected, a [ValueEventListener] will be attached.
+ * - When the flow completes, the listener will be removed.
+ */
+inline fun <reified T : Any> Query.values(): Flow<T?> {
+  return snapshots.map { it.getValue(T::class.java) }
+}
 
 internal const val LIBRARY_NAME: String = "fire-db-ktx"
 

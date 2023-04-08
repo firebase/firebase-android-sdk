@@ -126,7 +126,8 @@ public class FeedbackActivity extends AppCompatActivity {
             v -> {
               Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
               intent.addCategory(Intent.CATEGORY_OPENABLE);
-              intent.setType("image/png");
+              intent.setType("*/*");
+              intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] {"image/png", "image/jpeg"});
               chooseScreenshotLauncher.launch(intent);
             });
 
