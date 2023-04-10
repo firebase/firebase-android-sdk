@@ -230,6 +230,8 @@ public class DeviceCacheManager {
     try {
       // Default value should never be used because key existence is checked above.
       long defaultValue = Double.doubleToLongBits(0.0);
+      // SharedPreferences does not allow storing a Double directly. We store the double's bits as a
+      // long so here we convert that back to a double.
       return Optional.of(Double.longBitsToDouble(sharedPref.getLong(key, defaultValue)));
     } catch (ClassCastException e) {
       logger.debug(
@@ -257,6 +259,9 @@ public class DeviceCacheManager {
         return false;
       }
     }
+    // SharedPreferences does not allow storing a Double directly. The main way to store it without
+    // losing precision is to store the double's bits as a long so it can then be converted back to
+    // a double.
     sharedPref.edit().putLong(key, Double.doubleToRawLongBits(value)).apply();
     return true;
   }
