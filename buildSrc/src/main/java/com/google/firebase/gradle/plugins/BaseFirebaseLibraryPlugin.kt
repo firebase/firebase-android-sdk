@@ -200,7 +200,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
  * groupId:artifactId:version
  * ```
  */
-// TODO(b/277607560): Remove when Gradle adds functionality for aar types
+// TODO(b/277607560): Remove when Gradle's MavenPublishPlugin adds functionality for aar types
 val FirebaseLibraryExtension.androidDependencies
   get() =
     project.configurations
