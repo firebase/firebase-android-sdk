@@ -17,6 +17,7 @@
 package com.google.firebase.sessions.testing
 
 import android.content.Context
+import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.core.content.pm.PackageInfoBuilder
 import com.google.firebase.FirebaseApp
@@ -32,6 +33,10 @@ object FakeFirebaseApp {
   internal val MOCK_APP_VERSION = "1.0.0"
 
   fun fakeFirebaseApp(): FirebaseApp {
+    return fakeFirebaseApp(null)
+  }
+
+  fun fakeFirebaseApp(metadata: Bundle?): FirebaseApp {
     val shadowPackageManager =
       Shadows.shadowOf(ApplicationProvider.getApplicationContext<Context>().packageManager)
     val packageInfo =
@@ -39,6 +44,10 @@ object FakeFirebaseApp {
         .setPackageName(ApplicationProvider.getApplicationContext<Context>().packageName)
         .build()
     packageInfo.versionName = MOCK_APP_VERSION
+
+    if (metadata != null) {
+      packageInfo.applicationInfo.metaData = metadata
+    }
     shadowPackageManager.installPackage(packageInfo)
 
     val firebaseApp =

@@ -19,7 +19,7 @@ package com.google.firebase.sessions
 import android.os.Bundle
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
-import com.google.firebase.sessions.settings.SessionsSettings
+import com.google.firebase.sessions.settings.LocalOverrideSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import kotlin.time.Duration.Companion.minutes
 import org.junit.After
@@ -28,43 +28,43 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class SessionsSettingsTest {
+class LocalOverrideSettingsTest {
 
   @Test
-  fun sessionSettings_fetchDefaults() {
+  fun localOverrides_returnsNullByDefault() {
     val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
 
-    val sessionsSettings = SessionsSettings(context)
-    assertThat(sessionsSettings.sessionsEnabled).isTrue()
-    assertThat(sessionsSettings.samplingRate).isEqualTo(1.0)
-    assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(30.minutes)
+    val localSettings = LocalOverrideSettings(context)
+    assertThat(localSettings.sessionEnabled).isNull()
+    assertThat(localSettings.sessionRestartTimeout).isNull()
+    assertThat(localSettings.samplingRate).isNull()
   }
 
   @Test
-  fun sessionSettings_fetchOverridingConfigs() {
+  fun localOverrides_validateIfOverrideValuesAreFetchedCorrectly() {
     val metadata = Bundle()
     metadata.putBoolean("firebase_sessions_enabled", false)
     metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
     metadata.putInt("firebase_sessions_sessions_restart_timeout", 180)
     val context = FakeFirebaseApp.fakeFirebaseApp(metadata).applicationContext
 
-    val sessionsSettings = SessionsSettings(context)
-    assertThat(sessionsSettings.sessionsEnabled).isFalse()
-    assertThat(sessionsSettings.samplingRate).isEqualTo(0.5)
-    assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(3.minutes)
+    val localSettings = LocalOverrideSettings(context)
+    assertThat(localSettings.sessionEnabled).isFalse()
+    assertThat(localSettings.sessionRestartTimeout).isEqualTo(3.minutes)
+    assertThat(localSettings.samplingRate).isEqualTo(0.5)
   }
 
   @Test
-  fun sessionSettings_fetchOverridingConfigsOnlyWhenPresent() {
+  fun localOverridesForSomeFields_validateIfOverrideValuesAreFetchedCorrectly() {
     val metadata = Bundle()
     metadata.putBoolean("firebase_sessions_enabled", false)
-    metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
+    metadata.putInt("firebase_sessions_sessions_restart_timeout", 180)
     val context = FakeFirebaseApp.fakeFirebaseApp(metadata).applicationContext
 
-    val sessionsSettings = SessionsSettings(context)
-    assertThat(sessionsSettings.sessionsEnabled).isFalse()
-    assertThat(sessionsSettings.samplingRate).isEqualTo(0.5)
-    assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(30.minutes)
+    val localSettings = LocalOverrideSettings(context)
+    assertThat(localSettings.sessionEnabled).isFalse()
+    assertThat(localSettings.sessionRestartTimeout).isEqualTo(3.minutes)
+    assertThat(localSettings.samplingRate).isNull()
   }
 
   @After

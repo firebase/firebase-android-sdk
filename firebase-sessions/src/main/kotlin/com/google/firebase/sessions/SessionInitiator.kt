@@ -19,6 +19,7 @@ package com.google.firebase.sessions
 import android.app.Activity
 import android.app.Application.ActivityLifecycleCallbacks
 import android.os.Bundle
+import com.google.firebase.sessions.settings.SessionsSettings
 import kotlin.time.Duration
 
 /**
@@ -30,7 +31,8 @@ import kotlin.time.Duration
  */
 internal class SessionInitiator(
   private val elapsedRealtime: () -> Duration,
-  private val initiateSessionStart: () -> Unit
+  private val initiateSessionStart: () -> Unit,
+  private val sessionsSettings: SessionsSettings
 ) {
   private var backgroundTime = elapsedRealtime()
 
@@ -44,7 +46,7 @@ internal class SessionInitiator(
 
   fun appForegrounded() {
     val interval = elapsedRealtime() - backgroundTime
-    val sessionTimeout = SessionsSettings().sessionRestartTimeout
+    val sessionTimeout = sessionsSettings.sessionRestartTimeout
     if (interval > sessionTimeout) {
       initiateSessionStart()
     }
