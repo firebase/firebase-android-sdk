@@ -113,7 +113,6 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
           url = rootProject.fileFromBuildDir("m2repository").toURI()
           name = "BuildDir"
         }
-        // TODO(): Do we need to remove multidex?
         publications.create<MavenPublication>("mavenAar") {
           artifactId = firebaseLibrary.artifactId.get()
           groupId = firebaseLibrary.groupId.get()
