@@ -38,7 +38,8 @@ class EventGDTLoggerTest {
     val sessionEvent =
       SessionEvents.startSession(
         FakeFirebaseApp.fakeFirebaseApp(),
-        TestSessionEventData.TEST_SESSION_DETAILS
+        TestSessionEventData.TEST_SESSION_DETAILS,
+        TestSessionEventData.TEST_SESSION_TIMESTAMP_US,
       )
     val fakeTransportFactory = FakeTransportFactory()
     val fakeTransportFactoryProvider = FakeProvider(fakeTransportFactory as TransportFactory)
