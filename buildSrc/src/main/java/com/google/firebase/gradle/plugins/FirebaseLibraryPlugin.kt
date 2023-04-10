@@ -21,15 +21,15 @@ import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatPlugin
 import com.google.firebase.gradle.plugins.LibraryType.ANDROID
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
+import com.google.firebase.gradle.plugins.semver.ApiDiffer
+import com.google.firebase.gradle.plugins.semver.GmavenCopier
 import java.io.File
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
-import org.gradle.kotlin.dsl.apply
-import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.getByType
-import org.gradle.kotlin.dsl.withType
+import org.gradle.api.tasks.Copy
+import org.gradle.kotlin.dsl.*
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
@@ -81,7 +81,49 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     android.testServer(FirebaseTestServer(project, firebaseLibrary.testLab, android))
     setupStaticAnalysis(project, firebaseLibrary)
     getIsPomValidTask(project, firebaseLibrary)
+    getSemverTaskAar(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary, android)
+  }
+
+  private fun getSemverTaskAar(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+    project.mkdir("semver")
+    project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {
+      dependsOn("bundleReleaseAar")
+      project.file("semver/previous.aar").delete()
+
+      groupId.value(firebaseLibrary.groupId.get())
+      artifactId.value(firebaseLibrary.artifactId.get())
+      aarAndroidFile.value(true)
+      filePath.value(project.file("semver/previous.aar").absolutePath)
+    }
+
+    project.tasks.register<Copy>("extractCurrentClasses") {
+      dependsOn("bundleReleaseAar")
+
+      from(project.zipTree("build/outputs/aar/${firebaseLibrary.artifactId.get()}-release.aar"))
+      into(project.file("semver/current-version"))
+    }
+    project.tasks.register<Copy>("extractPreviousClasses") {
+      dependsOn("copyPreviousArtifacts")
+
+      from(project.zipTree("semver/previous.aar"))
+      into(project.file("semver/previous-version"))
+    }
+
+    val currentJarFile = project.file("semver/current-version/classes.jar").absolutePath
+
+    val previousJarFile = project.file("semver/previous-version/classes.jar").absolutePath
+    project.tasks.register<ApiDiffer>("semverCheck") {
+      currentJar.value(currentJarFile)
+      previousJar.value(previousJarFile)
+      version.value(firebaseLibrary.version)
+      previousVersionString.value(
+        GmavenHelper(firebaseLibrary.groupId.get(), firebaseLibrary.artifactId.get())
+          .getLatestReleasedVersion()
+      )
+      dependsOn("extractCurrentClasses")
+      dependsOn("extractPreviousClasses")
+    }
   }
 
   private fun setupApiInformationAnalysis(project: Project, android: LibraryExtension) {

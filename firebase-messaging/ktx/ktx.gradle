@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    releaseWith project(':firebase-messaging')
+    libraryGroup "messaging"
     publishJavadoc = true
     publishSources = true
 }

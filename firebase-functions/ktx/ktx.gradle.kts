@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-  releaseWith(project(":firebase-functions"))
+  libraryGroup("functions")
   publishJavadoc = true
   publishSources = true
   testLab.enabled = true
