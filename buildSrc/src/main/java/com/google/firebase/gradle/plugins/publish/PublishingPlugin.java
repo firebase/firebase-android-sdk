@@ -16,7 +16,6 @@ package com.google.firebase.gradle.plugins.publish;
 
 import com.google.firebase.gradle.plugins.CheckHeadDependencies;
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,8 +26,6 @@ import java.util.stream.Stream;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.api.publish.PublishingExtension;
-import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.tasks.bundling.Zip;
 
 /**
@@ -95,6 +92,18 @@ public class PublishingPlugin implements Plugin<Project> {
 
   public PublishingPlugin() {}
 
+  private static String getPropertyOr(Project p, String property, String defaultValue) {
+    Object value = p.findProperty(property);
+    if (value != null) {
+      return value.toString();
+    }
+    return defaultValue;
+  }
+
+  private static String getPublishTask(FirebaseLibraryExtension p, String repoName) {
+    return p.getPath() + ":publishMavenAarPublicationTo" + repoName;
+  }
+
   @Override
   public void apply(Project project) {
     String projectNamesToPublish = getPropertyOr(project, "projectsToPublish", "");
@@ -142,7 +151,6 @@ public class PublishingPlugin implements Plugin<Project> {
                   .getExtraProperties()
                   .set("projectsToPublish", projectsToPublish);
 
-              Publisher publisher = new Publisher(publishMode, projectsToPublish);
               project
                   .getTasks()
                   .create(
@@ -159,23 +167,6 @@ public class PublishingPlugin implements Plugin<Project> {
                     if (firebaseLibrary == null) {
                       return;
                     }
-                    PublishingExtension publishing =
-                        sub.getExtensions().getByType(PublishingExtension.class);
-                    publishing.repositories(
-                        repos ->
-                            repos.maven(
-                                repo -> {
-                                  String s = sub.getRootProject().getBuildDir() + "/m2repository";
-                                  File file = new File(s);
-                                  repo.setUrl(file.toURI());
-                                  repo.setName("BuildDir");
-                                }));
-                    publishing.publications(
-                        publications -> {
-                          MavenPublication publication =
-                              (MavenPublication) publications.getByName("mavenAar");
-                          publisher.decorate(firebaseLibrary, publication);
-                        });
                     publishAllToLocal.dependsOn(
                         sub.getPath() + ":publishMavenAarPublicationToMavenLocal");
                     publishAllToBuildDir.dependsOn(
@@ -267,17 +258,5 @@ public class PublishingPlugin implements Plugin<Project> {
       throw new IllegalArgumentException(
           "Error reading configuration file " + publishConfigurationFilePath, e);
     }
-  }
-
-  private static String getPropertyOr(Project p, String property, String defaultValue) {
-    Object value = p.findProperty(property);
-    if (value != null) {
-      return value.toString();
-    }
-    return defaultValue;
-  }
-
-  private static String getPublishTask(FirebaseLibraryExtension p, String repoName) {
-    return p.getPath() + ":publishMavenAarPublicationTo" + repoName;
   }
 }
