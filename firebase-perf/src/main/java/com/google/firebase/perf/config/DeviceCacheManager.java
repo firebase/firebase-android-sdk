@@ -214,7 +214,6 @@ public class DeviceCacheManager {
       logger.debug("Key is null when getting double value on device cache.");
       return Optional.absent();
     }
-    key = newKeyForDoubleMigration(key);
 
     if (sharedPref == null) {
       setContext(getFirebaseApplicationContext());
@@ -228,14 +227,19 @@ public class DeviceCacheManager {
     }
 
     try {
-      // Default value should never be used because key existence is checked above.
-      long defaultValue = Double.doubleToLongBits(0.0);
       // SharedPreferences does not allow storing a Double directly. We store the double's bits as a
       // long so here we convert that back to a double.
-      return Optional.of(Double.longBitsToDouble(sharedPref.getLong(key, defaultValue)));
-    } catch (ClassCastException e) {
-      logger.debug(
-          "Key %s from sharedPreferences has type other than double: %s", key, e.getMessage());
+      // Default value should never be used because key existence is checked above.
+      return Optional.of(Double.longBitsToDouble(sharedPref.getLong(key, 0)));
+    } catch (ClassCastException unused) {
+      // In the past, we used to store a Float here instead of a Double. Before the value is
+      // overwritten for the first time, it will still have a Float and so this may be expected.
+      try {
+        return Optional.of(Float.valueOf(sharedPref.getFloat(key, 0.0f)).doubleValue());
+      } catch (ClassCastException e) {
+        logger.debug(
+            "Key %s from sharedPreferences has type other than double: %s", key, e.getMessage());
+      }
     }
     return Optional.absent();
   }
@@ -251,7 +255,6 @@ public class DeviceCacheManager {
       logger.debug("Key is null when setting double value on device cache.");
       return false;
     }
-    key = newKeyForDoubleMigration(key);
 
     if (sharedPref == null) {
       setContext(getFirebaseApplicationContext());
@@ -264,16 +267,6 @@ public class DeviceCacheManager {
     // a double.
     sharedPref.edit().putLong(key, Double.doubleToRawLongBits(value)).apply();
     return true;
-  }
-
-  /**
-   * This method creates a new key to disambiguate from an old one.
-   *
-   * <p>It should be used when we are changing the type of a key, so that we don't try to read the
-   * key with the old type and cause a crash.
-   */
-  private static String newKeyForDoubleMigration(String key) {
-    return String.format("%sNewKeyForDoubleMigration", key);
   }
 
   /**

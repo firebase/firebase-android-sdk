@@ -16,8 +16,12 @@ package com.google.firebase.perf.config;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import android.content.Context;
+import android.content.SharedPreferences;
+
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
+import com.google.firebase.perf.util.Constants;
 import com.google.testing.timing.FakeScheduledExecutorService;
 import org.junit.Before;
 import org.junit.Test;
@@ -194,6 +198,19 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
     deviceCacheManager.setValue("some_key", 1.2);
 
     assertThat(deviceCacheManager.getDouble("some_key").get()).isEqualTo(1.2);
+  }
+
+  @Test
+  public void getDouble_valueIsSetAsFloat_returnsSetValue() {
+    deviceCacheManager.setContext(appContext);
+    fakeScheduledExecutorService.runAll();
+
+    // Manually setting a Float to simulate it being cached from a previous SDK version.
+    SharedPreferences sharedPreferences =
+        appContext.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
+    sharedPreferences.edit().putFloat("some_key", 1.2f).apply();
+
+    assertThat(deviceCacheManager.getDouble("some_key").get()).isWithin(0.001).of(1.2);
   }
 
   @Test
