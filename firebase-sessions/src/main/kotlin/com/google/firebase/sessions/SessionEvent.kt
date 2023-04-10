@@ -62,20 +62,10 @@ internal data class SessionInfo(
   /** Identifies a unique device+app installation: go/firebase-installations */
   var firebaseInstallationId: String = "",
 
-  // TODO: Update to how we want to do this
-  // TODO: Update to how we want to do this
-  // TODO: Update to how we want to do this
-  // TODO: Update to how we want to do this
-  // TODO: Update to how we want to do this
-  // TODO: Update to how we want to do this
-  // TODO: Update to how we want to do this
-  // TODO: Update to how we want to do this
-  // TODO: Update to how we want to do this
-  // TODO: Update to how we want to do this
-  // TODO: Update to how we want to do this
-  // TODO: Update to how we want to do this
+  /** Tracks when the event was initiated */
   var eventTimestampUs: Long = System.currentTimeMillis() * 1000,
 
+  /** Data collection status of the dependent product SDKs. */
   var dataCollectionStatus: DataCollectionStatus = DataCollectionStatus()
 )
 

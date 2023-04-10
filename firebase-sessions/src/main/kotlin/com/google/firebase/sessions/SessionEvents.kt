@@ -117,17 +117,7 @@ internal object SessionEvents {
 
     return ApplicationInfo(
       appId = firebaseApp.options.applicationId,
-      // TODO REVERT AND USE REAL
-      // TODO REVERT AND USE REAL
-      // TODO REVERT AND USE REAL
-      // TODO REVERT AND USE REAL
-      // TODO REVERT AND USE REAL
-      // TODO REVERT AND USE REAL
-      // TODO REVERT AND USE REAL
-      // TODO REVERT AND USE REAL
-      // TODO REVERT AND USE REAL
-      // TODO REVERT AND USE REAL
-      deviceModel = "TEST_DEVICE_MODEL",
+      deviceModel = "",
       sessionSdkVersion = BuildConfig.VERSION_NAME,
       logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
       androidAppInfo =

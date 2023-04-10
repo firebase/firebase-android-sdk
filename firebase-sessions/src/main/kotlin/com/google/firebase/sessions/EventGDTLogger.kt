@@ -32,7 +32,7 @@ internal interface EventGDTLoggerInterface {
 }
 
 /**
- * The [EventGDTLogger] is responsible for encoding and logging events to the Google Data Transport
+ * The [EventGDTLogger] is responsible for encoding        and logging events to the Google Data Transport
  * library.
  *
  * @hide
@@ -54,11 +54,14 @@ internal class EventGDTLogger(private val transportFactoryProvider: Provider<Tra
   }
 
   private fun encode(value: SessionEvent): ByteArray {
-    Log.w("[SAM]", SessionEvents.SESSION_EVENT_ENCODER.encode(value))
-    return SessionEvents.SESSION_EVENT_ENCODER.encode(value).toByteArray()
+    val jsonEvent = SessionEvents.SESSION_EVENT_ENCODER.encode(value)
+    Log.d(TAG, "Encoded Session Start event $jsonEvent")
+    return jsonEvent.toByteArray()
   }
 
   companion object {
+    private const val TAG = "EventGDTLogger"
+
     private const val AQS_LOG_SOURCE = "FIREBASE_APPQUALITY_SESSION"
   }
 }

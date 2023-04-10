@@ -50,7 +50,7 @@ internal class SessionCoordinator(
       try {
         eventGDTLogger.log(sessionEvent)
 
-        Log.i(TAG, "Logged Session Start event: $sessionEvent")
+        Log.i(TAG, "Logged Session Start event: ${sessionEvent.sessionData.sessionId}")
       } catch (e: RuntimeException) {
         Log.w(TAG, "Failed to log Session Start event: ", e)
       }
