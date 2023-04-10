@@ -56,23 +56,25 @@ internal object SessionEvents {
             )
             ctx.add(FieldDescriptor.of("event_timestamp_us"), sessionInfo.eventTimestampUs)
             ctx.add(FieldDescriptor.of("data_collection_status"), sessionInfo.dataCollectionStatus)
-
           }
         }
 
         it.registerEncoder(DataCollectionStatus::class.java) {
-            dataCollectionStatus: DataCollectionStatus,
-            ctx: ObjectEncoderContext ->
+          dataCollectionStatus: DataCollectionStatus,
+          ctx: ObjectEncoderContext ->
           run {
             ctx.add(FieldDescriptor.of("performance"), dataCollectionStatus.performance)
             ctx.add(FieldDescriptor.of("crashlytics"), dataCollectionStatus.crashlytics)
-            ctx.add(FieldDescriptor.of("session_sampling_rate"), dataCollectionStatus.sessionSamplingRate)
+            ctx.add(
+              FieldDescriptor.of("session_sampling_rate"),
+              dataCollectionStatus.sessionSamplingRate
+            )
           }
         }
 
         it.registerEncoder(ApplicationInfo::class.java) {
-            applicationInfo: ApplicationInfo,
-            ctx: ObjectEncoderContext ->
+          applicationInfo: ApplicationInfo,
+          ctx: ObjectEncoderContext ->
           run {
             ctx.add(FieldDescriptor.of("app_id"), applicationInfo.appId)
             ctx.add(FieldDescriptor.of("device_model"), applicationInfo.deviceModel)
@@ -83,8 +85,8 @@ internal object SessionEvents {
         }
 
         it.registerEncoder(AndroidApplicationInfo::class.java) {
-            androidAppInfo: AndroidApplicationInfo,
-            ctx: ObjectEncoderContext ->
+          androidAppInfo: AndroidApplicationInfo,
+          ctx: ObjectEncoderContext ->
           run {
             ctx.add(FieldDescriptor.of("package_name"), androidAppInfo.packageName)
             ctx.add(FieldDescriptor.of("version_name"), androidAppInfo.versionName)
@@ -98,7 +100,11 @@ internal object SessionEvents {
    *
    * Some mutable fields, e.g. firebaseInstallationId, get populated later.
    */
-  fun startSession(firebaseApp: FirebaseApp, sessionDetails: SessionDetails) =
+  fun startSession(
+    firebaseApp: FirebaseApp,
+    sessionDetails: SessionDetails,
+    currentTimeUs: Long = System.currentTimeMillis() * 1000
+  ) =
     SessionEvent(
       eventType = EventType.SESSION_START,
       sessionData =
@@ -106,6 +112,7 @@ internal object SessionEvents {
           sessionDetails.sessionId,
           sessionDetails.firstSessionId,
           sessionDetails.sessionIndex,
+          currentTimeUs,
         ),
       applicationInfo = getApplicationInfo(firebaseApp)
     )

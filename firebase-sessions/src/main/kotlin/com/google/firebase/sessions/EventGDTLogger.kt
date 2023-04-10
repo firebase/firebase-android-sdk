@@ -32,7 +32,7 @@ internal interface EventGDTLoggerInterface {
 }
 
 /**
- * The [EventGDTLogger] is responsible for encoding        and logging events to the Google Data Transport
+ * The [EventGDTLogger] is responsible for encoding and logging events to the Google Data Transport
  * library.
  *
  * @hide
