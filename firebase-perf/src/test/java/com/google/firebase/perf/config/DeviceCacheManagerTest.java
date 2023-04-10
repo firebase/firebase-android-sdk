@@ -18,7 +18,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.util.Constants;
