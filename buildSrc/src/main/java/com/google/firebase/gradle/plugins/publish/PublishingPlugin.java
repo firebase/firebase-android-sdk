@@ -162,11 +162,6 @@ public class PublishingPlugin implements Plugin<Project> {
                       });
               project.subprojects(
                   sub -> {
-                    FirebaseLibraryExtension firebaseLibrary =
-                        sub.getExtensions().findByType(FirebaseLibraryExtension.class);
-                    if (firebaseLibrary == null) {
-                      return;
-                    }
                     publishAllToLocal.dependsOn(
                         sub.getPath() + ":publishMavenAarPublicationToMavenLocal");
                     publishAllToBuildDir.dependsOn(
