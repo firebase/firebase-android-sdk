@@ -18,6 +18,8 @@ import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatExtension
 import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatPlugin
 import com.google.common.collect.ImmutableList
 import com.google.firebase.gradle.plugins.LibraryType.JAVA
+import com.google.firebase.gradle.plugins.semver.ApiDiffer
+import com.google.firebase.gradle.plugins.semver.GmavenCopier
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.plugins.JavaLibraryPlugin
@@ -48,7 +50,36 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     setupStaticAnalysis(project, firebaseLibrary)
     setupApiInformationAnalysis(project)
     getIsPomValidTask(project, firebaseLibrary)
+    getSemverTaskJar(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary)
+  }
+
+  private fun getSemverTaskJar(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+    project.mkdir("semver")
+    project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {
+      dependsOn("jar")
+      project.file("semver/previous.jar").delete()
+      groupId.value(firebaseLibrary.groupId.get())
+      artifactId.value(firebaseLibrary.artifactId.get())
+      aarAndroidFile.value(false)
+      filePath.value(project.file("semver/previous.jar").absolutePath)
+    }
+    val currentJarFile =
+      project
+        .file("build/libs/${firebaseLibrary.artifactId.get()}-${firebaseLibrary.version}.jar")
+        .absolutePath
+    val previousJarFile = project.file("semver/previous.jar").absolutePath
+    project.tasks.register<ApiDiffer>("semverCheck") {
+      currentJar.value(currentJarFile)
+      previousJar.value(previousJarFile)
+      version.value(firebaseLibrary.version)
+      previousVersionString.value(
+        GmavenHelper(firebaseLibrary.groupId.get(), firebaseLibrary.artifactId.get())
+          .getLatestReleasedVersion()
+      )
+
+      dependsOn("copyPreviousArtifacts")
+    }
   }
 
   private fun setupApiInformationAnalysis(project: Project) {
