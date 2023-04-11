@@ -47,6 +47,10 @@ class FirebaseSessionsTest {
 
     // Wait for the session start event to send.
     // TODO(mrober): Setup logger we can access from tests.
-    Thread.sleep(40_000)
+    Thread.sleep(TIME_TO_LOG_SESSION)
+  }
+
+  companion object {
+    private const val TIME_TO_LOG_SESSION = 60_000L
   }
 }
