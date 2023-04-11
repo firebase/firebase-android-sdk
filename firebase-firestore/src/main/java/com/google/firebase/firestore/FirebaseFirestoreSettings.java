@@ -92,6 +92,9 @@ public final class FirebaseFirestoreSettings {
      *
      * @return A settings object that uses local persistent storage as specified by the given
      *     <tt>value</tt>.
+     * @deprecated Use {@link
+     *     FirebaseFirestoreSettings.Builder#setLocalCacheSettings(LocalCacheSettings)} to configure
+     *     SDK cache instead.
      */
     @NonNull
     @Deprecated
@@ -115,6 +118,9 @@ public final class FirebaseFirestoreSettings {
      *
      * @return A settings object on which the cache size is configured as specified by the given
      *     {@code value}.
+     * @deprecated Use {@link
+     *     FirebaseFirestoreSettings.Builder#setLocalCacheSettings(LocalCacheSettings)} to configure
+     *     SDK cache instead.
      */
     @NonNull
     @Deprecated
@@ -161,13 +167,21 @@ public final class FirebaseFirestoreSettings {
       return sslEnabled;
     }
 
-    /** @return boolean indicating whether local persistent storage is enabled or not. */
+    /**
+     * @return boolean indicating whether local persistent storage is enabled or not.
+     * @deprecated Build the {@code FirebaseFirestoreSettings} instance to check cache
+     *     configurations.
+     */
     @Deprecated
     public boolean isPersistenceEnabled() {
       return persistenceEnabled;
     }
 
-    /** @return cache size for on-disk data. */
+    /**
+     * @return cache size for on-disk data.
+     * @deprecated Build the {@code FirebaseFirestoreSettings} instance to check cache
+     *     configurations.
+     */
     @Deprecated
     public long getCacheSizeBytes() {
       return cacheSizeBytes;

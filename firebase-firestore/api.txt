@@ -312,7 +312,10 @@ package com.google.firebase.firestore {
     enum_constant public static final com.google.firebase.firestore.LoadBundleTaskProgress.TaskState SUCCESS;
   }
 
-  public class MemoryCacheSettings {
+  public interface LocalCacheSettings {
+  }
+
+  public class MemoryCacheSettings implements com.google.firebase.firestore.LocalCacheSettings {
     method @NonNull public static com.google.firebase.firestore.MemoryCacheSettings.Builder newBuilder();
   }
 
@@ -329,14 +332,14 @@ package com.google.firebase.firestore {
     method public void onProgress(@NonNull ProgressT);
   }
 
-  public class PersistentCacheSettings {
+  public class PersistentCacheSettings implements com.google.firebase.firestore.LocalCacheSettings {
     method public long getSizeBytes();
     method @NonNull public static com.google.firebase.firestore.PersistentCacheSettings.Builder newBuilder();
   }
 
   public static class PersistentCacheSettings.Builder {
     method @NonNull public com.google.firebase.firestore.PersistentCacheSettings build();
-    method public void setSizeBytes(long);
+    method @NonNull public com.google.firebase.firestore.PersistentCacheSettings.Builder setSizeBytes(long);
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface PropertyName {
