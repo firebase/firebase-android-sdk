@@ -20,7 +20,7 @@ jobs:
       - name: Checkout firebase-sessions
         uses: actions/checkout@v3
         with:
-          ref: 'sessions-apptest'
+          ref: 'firebase-sessions'
 
       - name: set up JDK 11
         uses: actions/setup-java@v3
