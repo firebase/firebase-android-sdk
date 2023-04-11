@@ -224,7 +224,7 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void setValueFloat_setTwice_canGetLatestValue() {
+  public void setValueDouble_setTwice_canGetLatestValue() {
     deviceCacheManager.setContext(appContext);
     fakeScheduledExecutorService.runAll();
     deviceCacheManager.setValue("some_key", 1.01);
@@ -235,13 +235,27 @@ public final class DeviceCacheManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void setValueFloat_contextNotSet_returnsEmpty() {
+  public void setValueDouble_wasSetAsFloat_canGetLatestValue() {
+    deviceCacheManager.setContext(appContext);
+    fakeScheduledExecutorService.runAll();
+
+    // Manually setting a Float to simulate it being cached from a previous SDK version.
+    SharedPreferences sharedPreferences =
+        appContext.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE);
+    sharedPreferences.edit().putFloat("some_key", 1.2f).apply();
+
+    deviceCacheManager.setValue("some_key", 0.01);
+    assertThat(deviceCacheManager.getDouble("some_key").get()).isEqualTo(0.01);
+  }
+
+  @Test
+  public void setValueDouble_contextNotSet_returnsEmpty() {
     deviceCacheManager.setValue("some_key", 100.0);
     assertThat(deviceCacheManager.getDouble("some_key").isAvailable()).isFalse();
   }
 
   @Test
-  public void setValueFloat_keyIsNull_returnsFalse() {
+  public void setValueDouble_keyIsNull_returnsFalse() {
     deviceCacheManager.setContext(appContext);
     fakeScheduledExecutorService.runAll();
     assertThat(deviceCacheManager.setValue(null, 10.0)).isFalse();
