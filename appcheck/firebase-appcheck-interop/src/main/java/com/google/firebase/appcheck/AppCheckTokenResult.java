@@ -20,7 +20,7 @@ import androidx.annotation.Nullable;
 /**
  * Class to hold the result emitted by a Firebase App Check service application verification
  * attempt. The result will always contain a token, which will either be a valid raw JWT attesting
- * application identity, or a dummy value. The result may optionally contain a {@link Exception} if
+ * application identity, or a dummy value. The result may optionally contain an {@link Exception} if
  * application verification does not succeed.
  */
 public abstract class AppCheckTokenResult {
