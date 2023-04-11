@@ -136,6 +136,9 @@ public class MainActivity extends AppCompatActivity {
                 new OnSuccessListener<AppCheckToken>() {
                   @Override
                   public void onSuccess(AppCheckToken appCheckToken) {
+                    // Note: Logging App Check tokens is bad practice and should NEVER be done in a
+                    // production application. We log the token here in our unpublished test
+                    // application for easier debugging.
                     Log.d(
                         TAG, "Successfully retrieved App Check token: " + appCheckToken.getToken());
                     showToast("Successfully retrieved App Check token.");
@@ -161,6 +164,9 @@ public class MainActivity extends AppCompatActivity {
                 new OnSuccessListener<AppCheckToken>() {
                   @Override
                   public void onSuccess(AppCheckToken appCheckToken) {
+                    // Note: Logging App Check tokens is bad practice and should NEVER be done in a
+                    // production application. We log the token here in our unpublished test
+                    // application for easier debugging.
                     Log.d(
                         TAG,
                         "Successfully retrieved limited-use App Check token: "
