@@ -155,7 +155,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
    * @param dependency the element to append the `scope` to
    * @see applyPomTransformations
    */
-  // TODO(b/277605778): Remove after Fireconf 2023
+  // TODO(b/277605778): Remove after configurations have been migrated to the right type
   private fun convertToCompileDependency(dependency: Element) {
     dependency.findOrCreate("scope").textContent = "compile"
   }
