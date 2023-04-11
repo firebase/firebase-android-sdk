@@ -16,6 +16,7 @@
 
 package com.google.firebase.sessions
 
+import android.util.Log
 import com.google.android.datatransport.*
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.inject.Provider
@@ -53,11 +54,14 @@ internal class EventGDTLogger(private val transportFactoryProvider: Provider<Tra
   }
 
   private fun encode(value: SessionEvent): ByteArray {
-    return SessionEvents.SESSION_EVENT_ENCODER.encode(value).toByteArray()
+    val jsonEvent = SessionEvents.SESSION_EVENT_ENCODER.encode(value)
+    Log.d(TAG, "Encoded Session Start event $jsonEvent")
+    return jsonEvent.toByteArray()
   }
 
   companion object {
-    // TODO What do we put for the AQS Log Source
+    private const val TAG = "EventGDTLogger"
+
     private const val AQS_LOG_SOURCE = "FIREBASE_APPQUALITY_SESSION"
   }
 }

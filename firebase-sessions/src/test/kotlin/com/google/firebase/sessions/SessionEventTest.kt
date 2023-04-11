@@ -32,7 +32,8 @@ class SessionEventTest {
     val sessionEvent =
       SessionEvents.startSession(
         FakeFirebaseApp.fakeFirebaseApp(),
-        TestSessionEventData.TEST_SESSION_DETAILS
+        TestSessionEventData.TEST_SESSION_DETAILS,
+        TestSessionEventData.TEST_SESSION_TIMESTAMP_US,
       )
 
     assertThat(sessionEvent).isEqualTo(TestSessionEventData.EXPECTED_DEFAULT_SESSION_EVENT)

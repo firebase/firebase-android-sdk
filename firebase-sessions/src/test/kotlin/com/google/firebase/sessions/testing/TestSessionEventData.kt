@@ -29,6 +29,8 @@ internal object TestSessionEventData {
       sessionIndex = 3,
     )
 
+  const val TEST_SESSION_TIMESTAMP_US: Long = 12340000
+
   val EXPECTED_DEFAULT_SESSION_EVENT =
     SessionEvent(
       eventType = EventType.SESSION_START,
@@ -37,6 +39,8 @@ internal object TestSessionEventData {
           sessionId = "a1b2c3",
           firstSessionId = "a1a1a1",
           sessionIndex = 3,
+          firebaseInstallationId = "",
+          eventTimestampUs = TestSessionEventData.TEST_SESSION_TIMESTAMP_US,
         ),
       applicationInfo =
         ApplicationInfo(
