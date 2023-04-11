@@ -1,3 +1,7 @@
+@file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
+
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+
 /*
  * Copyright 2023 Google LLC
  *
@@ -57,3 +61,5 @@ dependencies {
 extra["packageName"] = "com.google.firebase.testing.sessions"
 
 apply(from = "../../gradle/googleServices.gradle")
+
+apply<FirebaseTestLabPlugin>()
