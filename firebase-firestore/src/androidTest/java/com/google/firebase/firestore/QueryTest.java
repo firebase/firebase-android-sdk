@@ -1148,14 +1148,6 @@ public class QueryTest {
           .that(existenceFilterMismatchInfo.existenceFilterCount())
           .isEqualTo(50);
 
-      // Skip the verification of the bloom filter when testing against production because the bloom
-      // filter is only implemented in nightly.
-      // TODO(b/271949433) Remove this "if" block once the bloom filter logic is deployed to
-      // production.
-      if (IntegrationTestUtil.getTargetBackend() != IntegrationTestUtil.TargetBackend.NIGHTLY) {
-        return;
-      }
-
       // Verify that Watch sent a valid bloom filter.
       ExistenceFilterMismatchListener.ExistenceFilterBloomFilterInfo bloomFilter =
           existenceFilterMismatchInfo.bloomFilter();
