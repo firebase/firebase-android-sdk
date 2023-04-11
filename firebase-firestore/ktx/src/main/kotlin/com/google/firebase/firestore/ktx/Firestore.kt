@@ -176,9 +176,7 @@ fun firestoreSettings(
   return builder.build()
 }
 
-fun memoryCacheSettings(
-  init: MemoryCacheSettings.Builder.() -> Unit
-): MemoryCacheSettings {
+fun memoryCacheSettings(init: MemoryCacheSettings.Builder.() -> Unit): MemoryCacheSettings {
   val builder = MemoryCacheSettings.newBuilder()
   builder.init()
   return builder.build()

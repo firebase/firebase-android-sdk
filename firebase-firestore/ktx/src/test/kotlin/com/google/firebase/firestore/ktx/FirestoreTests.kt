@@ -118,9 +118,7 @@ class FirestoreTests : BaseTestCase() {
     assertThat(settings.isPersistenceEnabled).isTrue()
     assertThat(settings.cacheSizeBytes).isEqualTo(1_000_000)
 
-    val otherSettings = firestoreSettings {
-      this.setLocalCacheSettings(memoryCacheSettings{})
-    }
+    val otherSettings = firestoreSettings { this.setLocalCacheSettings(memoryCacheSettings {}) }
 
     assertThat(otherSettings.host).isEqualTo(FirebaseFirestoreSettings.DEFAULT_HOST)
     assertThat(otherSettings.isSslEnabled).isEqualTo(true)
