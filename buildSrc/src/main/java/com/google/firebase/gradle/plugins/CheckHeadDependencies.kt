@@ -29,24 +29,39 @@ abstract class CheckHeadDependencies : DefaultTask() {
   @TaskAction
   fun run() {
     val projectsReleasing: Set<String> = projectsToPublish.get().map { it.artifactId.get() }.toSet()
-    val projectsToRelease =
+    val errors =
       projectsToPublish
         .get()
-        .flatMap {
-          it.project.configurations
-            .getByName(it.runtimeClasspath)
-            .allDependencies
-            .filter { it is ProjectDependency }
-            .map { it.name }
-            .toSet()
+        .associate {
+          it.artifactId.get() to
+            it
+              .projectDependenciesByName()
+              .intersect(allFirebaseProjects.get())
+              .subtract(projectsReleasing)
+              .subtract(DEPENDENCIES_TO_IGNORE)
         }
-        .intersect(allFirebaseProjects.get())
-        .subtract(projectsReleasing)
+        .filterValues { it.isNotEmpty() }
+        .map { "${it.key} requires: ${it.value.joinToString(", ") }" }
 
-    if (projectsToRelease.isNotEmpty()) {
+    if (errors.isNotEmpty()) {
       throw GradleException(
-        "Following Sdks have to release as well. Please update the release config.\n${projectsToRelease.joinToString("\n")}"
+        "Project-level dependency errors found. Please update the release config.\n${
+                errors.joinToString(
+                    "\n"
+                )
+            }"
       )
     }
+  }
+
+  fun FirebaseLibraryExtension.projectDependenciesByName(): List<String> =
+    project.configurations
+      .getByName(runtimeClasspath)
+      .allDependencies
+      .filter { it is ProjectDependency }
+      .map { it.name }
+
+  companion object {
+    val DEPENDENCIES_TO_IGNORE: List<String> = listOf("protolite-well-known-types")
   }
 }
