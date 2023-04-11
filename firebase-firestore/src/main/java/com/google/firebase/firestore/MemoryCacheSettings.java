@@ -17,8 +17,18 @@ package com.google.firebase.firestore;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+/**
+ * Configures the SDK to use a memory cache. Firestore documents and mutations are NOT persisted
+ * across App restart.
+ *
+ * <p>To use, create an instance using {@link MemoryCacheSettings#newBuilder().build()}, then set
+ * the instance to {@link
+ * FirebaseFirestoreSettings.Builder#setLocalCacheSettings(LocalCacheSettings)}, and use the built
+ * `FirebaseFirestoreSettings` instance to configure Firestore SDK.
+ */
 public class MemoryCacheSettings implements LocalCacheSettings {
 
+  /** Returns a new instance of {@link MemoryCacheSettings.Builder} with default configurations. */
   @NonNull
   public static MemoryCacheSettings.Builder newBuilder() {
     return new MemoryCacheSettings.Builder();
@@ -44,10 +54,12 @@ public class MemoryCacheSettings implements LocalCacheSettings {
     return "MemoryCacheSettings{}";
   }
 
+  /** A Builder for creating {@code MemoryCacheSettings} instance. */
   public static class Builder {
 
     private Builder() {}
 
+    /** Creates a {@code MemoryCacheSettings} instance. */
     @NonNull
     public MemoryCacheSettings build() {
       return new MemoryCacheSettings();

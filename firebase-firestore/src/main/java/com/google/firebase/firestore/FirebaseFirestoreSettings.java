@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
 import java.util.Objects;
+import javax.annotation.Nullable;
 
 /** Settings used to configure a {@link FirebaseFirestore} instance. */
 public final class FirebaseFirestoreSettings {
@@ -138,6 +139,20 @@ public final class FirebaseFirestoreSettings {
       return this;
     }
 
+    /**
+     * Specifies the cache used by the SDK. Available options are {@link PersistentCacheSettings}
+     * and {@link MemoryCacheSettings}, each with different configuration options.
+     *
+     * <p>When unspecified, {@link PersistentCacheSettings} will be used by default.
+     *
+     * <p>NOTE: Calling this setter and {@code setPersistenceEnabled()} or @{code
+     * setCacheSizeBytes()} at the same time will throw an exception during SDK initialization.
+     * Instead, use the configuration in the {@link PersistentCacheSettings} object to specify the
+     * cache size.
+     *
+     * @return A settings object on which the cache settings is configured as specified by the given
+     *     {@code settings}.
+     */
     @NonNull
     public Builder setLocalCacheSettings(@NonNull LocalCacheSettings settings) {
       if (usedLegacyCacheSettings) {
@@ -292,7 +307,11 @@ public final class FirebaseFirestoreSettings {
     return cacheSizeBytes;
   }
 
-  @NonNull
+  /**
+   * Returns the cache settings configured for the SDK. Returns null if it is not configured, in
+   * which case a default {@link PersistentCacheSettings} instance is used.
+   */
+  @Nullable
   public LocalCacheSettings getCacheSettings() {
     return cacheSettings;
   }

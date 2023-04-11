@@ -14,4 +14,10 @@
 
 package com.google.firebase.firestore;
 
+/**
+ * Marker interface implemented by all supported cache settings.
+ *
+ * <p>The two cache types supported are {@link PersistentCacheSettings} and {@link
+ * MemoryCacheSettings}. Custom implementation is not supported by the SDK.
+ */
 public interface LocalCacheSettings {}
