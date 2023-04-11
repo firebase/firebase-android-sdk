@@ -1,3 +1,7 @@
+@file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
+
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+
 /*
  * Copyright 2023 Google LLC
  *
@@ -30,6 +34,7 @@ android {
     versionCode = 1
     versionName = "1.0"
     multiDexEnabled = true
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
@@ -46,8 +51,15 @@ dependencies {
   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
   implementation("androidx.core:core-ktx:1.9.0")
   implementation("com.google.android.material:material:1.8.0")
+
+  androidTestImplementation("com.google.firebase:firebase-common-ktx:20.3.2")
+  androidTestImplementation(libs.androidx.test.junit)
+  androidTestImplementation(libs.androidx.test.runner)
+  androidTestImplementation(libs.truth)
 }
 
 extra["packageName"] = "com.google.firebase.testing.sessions"
 
 apply(from = "../../gradle/googleServices.gradle")
+
+apply<FirebaseTestLabPlugin>()

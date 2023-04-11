@@ -12,7 +12,7 @@ env:
   SESSIONS_E2E_GOOGLE_SERVICES: ${{ secrets.SESSIONS_E2E_GOOGLE_SERVICES }}
 
 jobs:
-  build:
+  test:
 
     runs-on: ubuntu-latest
 
@@ -42,4 +42,4 @@ jobs:
           FTL_RESULTS_BUCKET: fireescape
           FIREBASE_APP_CHECK_DEBUG_SECRET: ${{ secrets.FIREBASE_APP_CHECK_DEBUG_SECRET }}
         run: |
-          ./gradlew :firebase-sessions:deviceCheck withErrorProne -PtargetBackend="prod"
+          ./gradlew :firebase-sessions:test-app:deviceCheck withErrorProne -PtargetBackend="prod"
