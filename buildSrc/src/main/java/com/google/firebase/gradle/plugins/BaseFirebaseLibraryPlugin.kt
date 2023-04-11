@@ -139,9 +139,9 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
   private fun FirebaseLibraryExtension.applyPomTransformations(pom: MavenPom) {
     pom.withXml {
       val dependencies = asElement().findElementsByTag("dependency")
-      dependencies.forEach {
-        convertToCompileDependency(it)
-        addTypeWithAARSupport(it, androidDependencies)
+      for (dependency in dependencies) {
+        convertToCompileDependency(dependency)
+        addTypeWithAARSupport(dependency, androidDependencies)
       }
     }
   }
