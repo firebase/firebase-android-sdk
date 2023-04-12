@@ -19,9 +19,9 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 
-public abstract class FirebaseAppCheck implements InternalAppCheckTokenProvider {
+public abstract class FirebaseAppCheck implements InteropAppCheckTokenProvider {
 
   /** Gets the default instance of {@code FirebaseAppCheck}. */
   @NonNull

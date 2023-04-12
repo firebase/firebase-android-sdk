@@ -19,7 +19,7 @@ import androidx.annotation.Keep;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.annotations.concurrent.UiThread;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
@@ -51,7 +51,7 @@ public class FunctionsRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseOptions.class))
             .add(Dependency.optionalProvider(InternalAuthProvider.class))
             .add(Dependency.requiredProvider(FirebaseInstanceIdInternal.class))
-            .add(Dependency.deferred(InternalAppCheckTokenProvider.class))
+            .add(Dependency.deferred(InteropAppCheckTokenProvider.class))
             .add(Dependency.required(liteExecutor))
             .add(Dependency.required(uiExecutor))
             .factory(
@@ -63,7 +63,7 @@ public class FunctionsRegistrar implements ComponentRegistrar {
                         .setUiExecutor(c.get(uiExecutor))
                         .setAuth(c.getProvider(InternalAuthProvider.class))
                         .setIid(c.getProvider(FirebaseInstanceIdInternal.class))
-                        .setAppCheck(c.getDeferred(InternalAppCheckTokenProvider.class))
+                        .setAppCheck(c.getDeferred(InteropAppCheckTokenProvider.class))
                         .build()
                         .getMultiResourceComponent())
             .build(),

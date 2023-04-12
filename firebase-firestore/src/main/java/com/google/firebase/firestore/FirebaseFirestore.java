@@ -29,7 +29,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.PreviewApi;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
@@ -132,7 +132,7 @@ public class FirebaseFirestore {
       @NonNull Context context,
       @NonNull FirebaseApp app,
       @NonNull Deferred<InternalAuthProvider> deferredAuthProvider,
-      @NonNull Deferred<InternalAppCheckTokenProvider> deferredAppCheckTokenProvider,
+      @NonNull Deferred<InteropAppCheckTokenProvider> deferredAppCheckTokenProvider,
       @NonNull String database,
       @NonNull InstanceRegistry instanceRegistry,
       @Nullable GrpcMetadataProvider metadataProvider) {
