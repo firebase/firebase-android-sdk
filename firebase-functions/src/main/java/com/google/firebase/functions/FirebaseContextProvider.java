@@ -36,8 +36,7 @@ class FirebaseContextProvider implements ContextProvider {
 
   private final Provider<InternalAuthProvider> tokenProvider;
   private final Provider<FirebaseInstanceIdInternal> instanceId;
-  private final AtomicReference<InteropAppCheckTokenProvider> appCheckRef =
-      new AtomicReference<>();
+  private final AtomicReference<InteropAppCheckTokenProvider> appCheckRef = new AtomicReference<>();
   private final Executor executor;
 
   @Inject

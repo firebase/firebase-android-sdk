@@ -75,8 +75,7 @@ public class FirebaseAppCheckTokenProviderTest {
 
   @Rule public final MockitoRule mocks = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
 
-  @Mock
-  InteropAppCheckTokenProvider mockInteropAppCheckTokenProvider;
+  @Mock InteropAppCheckTokenProvider mockInteropAppCheckTokenProvider;
   @Mock Listener<String> mockAppCheckTokenListener;
   @Mock AppCheckTokenResult mockAppCheckTokenResult;
   @Captor ArgumentCaptor<AppCheckTokenListener> idTokenListenerCaptor;

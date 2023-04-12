@@ -16,7 +16,6 @@ package com.google.firebase.appcheck;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 
 /**
@@ -35,8 +34,8 @@ public abstract class AppCheckTokenResult {
   public abstract String getToken();
 
   /**
-   * Returns the {@link Exception} if the {@link
-   * InteropAppCheckTokenProvider} failed to obtain a token.
+   * Returns the {@link Exception} if the {@link InteropAppCheckTokenProvider} failed to obtain a
+   * token.
    */
   @Nullable
   public abstract Exception getError();
