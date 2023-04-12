@@ -74,7 +74,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
   public void shouldCollectGaugesAndEvents_perfMonDisabledAtRuntime_sessionNotVerbose() {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     Bundle bundle = new Bundle();
-    bundle.putFloat("sessions_sampling_percentage", 100f);
+    bundle.putFloat("sessions_sampling_percentage", 100);
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
     // By default, session is verbose if developer has set 100% of session verbosity.
@@ -96,7 +96,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     // Developer disables Performance collection at AndroidManifest.
     Bundle bundle = new Bundle();
-    bundle.putFloat("sessions_sampling_percentage", 100f);
+    bundle.putFloat("sessions_sampling_percentage", 100);
     bundle.putBoolean("firebase_performance_collection_enabled", false);
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
@@ -119,7 +119,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
   public void shouldCollectGaugesAndEvents_perfMonDeactivated_sessionNotVerbose() {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     Bundle bundle = new Bundle();
-    bundle.putFloat("sessions_sampling_percentage", 100f);
+    bundle.putFloat("sessions_sampling_percentage", 100);
     bundle.putBoolean("firebase_performance_collection_deactivated", true);
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
