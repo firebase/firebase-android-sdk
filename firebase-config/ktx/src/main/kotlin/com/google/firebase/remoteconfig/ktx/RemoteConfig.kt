@@ -20,9 +20,17 @@ import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import com.google.firebase.remoteconfig.ConfigUpdate
+import com.google.firebase.remoteconfig.ConfigUpdateListener
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigException
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 
 /** Returns the [FirebaseRemoteConfig] instance of the default [FirebaseApp]. */
 val Firebase.remoteConfig: FirebaseRemoteConfig
@@ -44,6 +52,31 @@ fun remoteConfigSettings(
   builder.init()
   return builder.build()
 }
+
+/**
+ * Starts listening for config updates from the Remote Config backend and emits [ConfigUpdate]s via
+ * a [Flow]. See [FirebaseRemoteConfig.addOnConfigUpdateListener] for more information.
+ *
+ * - When the returned flow starts being collected, an [ConfigUpdateListener] will be attached.
+ * - When the flow completes, the listener will be removed. If there are no attached listeners, the
+ * connection to the Remote Config backend will be closed.
+ */
+val FirebaseRemoteConfig.configUpdates
+  get() = callbackFlow {
+    val registration =
+      addOnConfigUpdateListener(
+        object : ConfigUpdateListener {
+          override fun onUpdate(configUpdate: ConfigUpdate) {
+            schedule { trySendBlocking(configUpdate) }
+          }
+
+          override fun onError(error: FirebaseRemoteConfigException) {
+            cancel(message = "Error listening for config updates.", cause = error)
+          }
+        }
+      )
+    awaitClose { registration.remove() }
+  }
 
 internal const val LIBRARY_NAME: String = "fire-cfg-ktx"
 

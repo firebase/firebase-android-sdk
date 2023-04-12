@@ -139,23 +139,23 @@ public class RemoteConfigManager {
   }
 
   /**
-   * Retrieves the double value of the given key from the remote config, converts to float type and
+   * Retrieves the double value of the given key from the remote config, converts to double type and
    * returns this value.
    *
    * @implNote Triggers a remote config fetch on a background thread if it hasn't yet been fetched.
    * @param key The key to fetch the double value for.
-   * @return The float value of the key or not present.
+   * @return The double value of the key or not present.
    */
-  public Optional<Float> getFloat(String key) {
+  public Optional<Double> getDouble(String key) {
     if (key == null) {
-      logger.debug("The key to get Remote Config float value is null.");
+      logger.debug("The key to get Remote Config double value is null.");
       return Optional.absent();
     }
 
     FirebaseRemoteConfigValue rcValue = getRemoteConfigValue(key);
     if (rcValue != null) {
       try {
-        return Optional.of(Double.valueOf(rcValue.asDouble()).floatValue());
+        return Optional.of(rcValue.asDouble());
       } catch (IllegalArgumentException e) {
         if (!rcValue.asString().isEmpty()) {
           logger.debug("Could not parse value: '%s' for key: '%s'.", rcValue.asString(), key);
@@ -260,8 +260,8 @@ public class RemoteConfigManager {
         if (defaultValue instanceof Boolean) {
           valueToReturn = rcValue.asBoolean();
 
-        } else if (defaultValue instanceof Float) {
-          valueToReturn = Double.valueOf(rcValue.asDouble()).floatValue();
+        } else if (defaultValue instanceof Double) {
+          valueToReturn = rcValue.asDouble();
 
         } else if (defaultValue instanceof Long || defaultValue instanceof Integer) {
           valueToReturn = rcValue.asLong();
