@@ -39,7 +39,7 @@ class FirebaseStorageComponent {
           @NonNull FirebaseApp app,
           @Nullable Provider<InternalAuthProvider> authProvider,
           @Nullable Provider<InternalAppCheckTokenProvider> appCheckProvider,
-          @NonNull @Blocking Executor blockingExecutor,
+          @NonNull Executor blockingExecutor,
           @NonNull Executor uiExecutor) {
     this.app = app;
     this.authProvider = authProvider;
