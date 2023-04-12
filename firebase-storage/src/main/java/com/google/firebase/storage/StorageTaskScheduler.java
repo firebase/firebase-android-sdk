@@ -41,6 +41,8 @@ public class StorageTaskScheduler {
         FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, DOWNLOAD_POOL_SIZE);
     UPLOAD_QUEUE_EXECUTOR =
         FirebaseExecutors.newLimitedConcurrencyExecutor(firebaseExecutor, UPLOAD_POOL_SIZE);
+    CALLBACK_QUEUE_EXECUTOR =
+            FirebaseExecutors.newSequentialExecutor(firebaseExecutor);
     MAIN_THREAD_EXECUTOR = uiExecutor;
   }
 

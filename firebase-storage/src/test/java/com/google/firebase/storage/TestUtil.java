@@ -32,7 +32,6 @@ import org.robolectric.Robolectric;
 public class TestUtil {
 
   static FirebaseApp createApp() {
-    FirebaseApp.clearInstancesForTest();
     FirebaseApp app = FirebaseApp.initializeApp(
         ApplicationProvider.getApplicationContext(),
         new FirebaseOptions.Builder()
