@@ -77,8 +77,10 @@ public abstract class FirebaseAppCheck implements InternalAppCheckTokenProvider 
    * if configured.
    *
    * <p>If your non-Firebase backend exposes sensitive or expensive endpoints that has low traffic
-   * volume, consider protecting it with <a href=[--URL to public docs--]>Replay Protection</a>. In
-   * this case, use the #getLimitedUseAppCheckToken() instead to obtain a limited-use token.
+   * volume, consider protecting it with <a
+   * href=https://firebase.google.com/docs/app-check/custom-resource-backend#replay-protection>Replay
+   * Protection</a>. In this case, use the #getLimitedUseAppCheckToken() instead to obtain a
+   * limited-use token.
    */
   @NonNull
   public abstract Task<AppCheckToken> getAppCheckToken(boolean forceRefresh);
@@ -88,8 +90,10 @@ public abstract class FirebaseAppCheck implements InternalAppCheckTokenProvider 
    * requests to a non-Firebase backend.
    *
    * <p>Returns limited-use tokens that are intended for use with your non-Firebase backend
-   * endpoints that are protected with <a href=[--URL to public docs--]>Replay Protection</a>. This
-   * method does not affect the token generation behavior of the #getAppCheckToken() method.
+   * endpoints that are protected with <a
+   * href=https://firebase.google.com/docs/app-check/custom-resource-backend#replay-protection>Replay
+   * Protection</a>. This method does not affect the token generation behavior of the
+   * #getAppCheckToken() method.
    */
   @NonNull
   public abstract Task<AppCheckToken> getLimitedUseAppCheckToken();
