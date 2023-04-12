@@ -45,7 +45,6 @@ dependencies {
     // resolution works, otherwise it breaks Fireperf Test Apps.
     // See https://github.com/gradle/gradle/issues/12286
     implementation("com.google.firebase:perf-plugin:$perfPluginVersion")
-    implementation("org.ow2.asm", "asm-tree", "9.5")
     implementation("com.google.auto.value:auto-value-annotations:1.8.1")
     annotationProcessor("com.google.auto.value:auto-value:1.6.5")
     implementation(kotlin("gradle-plugin", "1.7.10"))
@@ -53,6 +52,7 @@ dependencies {
 
     implementation("org.eclipse.aether:aether-api:1.0.0.v20140518")
     implementation("org.eclipse.aether:aether-util:1.0.0.v20140518")
+    implementation("org.ow2.asm:asm-tree:9.5 ")
     implementation("org.eclipse.aether:aether-impl:1.0.0.v20140518")
     implementation("org.eclipse.aether:aether-connector-basic:1.0.0.v20140518")
     implementation("org.eclipse.aether:aether-transport-file:1.0.0.v20140518")
