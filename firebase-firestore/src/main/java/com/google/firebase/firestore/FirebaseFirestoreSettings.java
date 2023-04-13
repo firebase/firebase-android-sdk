@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
@@ -62,7 +63,15 @@ public final class FirebaseFirestoreSettings {
       sslEnabled = settings.sslEnabled;
       persistenceEnabled = settings.persistenceEnabled;
       cacheSizeBytes = settings.cacheSizeBytes;
-      cacheSettings = settings.cacheSettings;
+      if(!persistenceEnabled || cacheSizeBytes != DEFAULT_CACHE_SIZE_BYTES) {
+        usedLegacyCacheSettings = true;
+      }
+
+      if(!usedLegacyCacheSettings) {
+        cacheSettings = settings.cacheSettings;
+      } else {
+        hardAssert(settings.cacheSettings == null, "Given settings object mixes both cache config APIs, which is impossible.");
+      }
     }
 
     /**
