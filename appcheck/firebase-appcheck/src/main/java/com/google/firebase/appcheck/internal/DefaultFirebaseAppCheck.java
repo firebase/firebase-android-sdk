@@ -229,6 +229,19 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
         });
   }
 
+  @NonNull
+  @Override
+  public Task<AppCheckToken> getLimitedUseAppCheckToken() {
+    if (appCheckProvider == null) {
+      return Tasks.forException(new FirebaseException("No AppCheckProvider installed."));
+    }
+
+    // We explicitly do not call the fetchTokenFromProvider helper method, as that method includes
+    // side effects such as notifying listeners, updating the cached token, and scheduling token
+    // refresh.
+    return appCheckProvider.getToken();
+  }
+
   /** Fetches an {@link AppCheckToken} via the installed {@link AppCheckProvider}. */
   Task<AppCheckToken> fetchTokenFromProvider() {
     return appCheckProvider
