@@ -35,9 +35,7 @@ import org.robolectric.RobolectricTestRunner
 class SessionEventTest {
   @Test
   fun sessionStart_populatesSessionDetailsCorrectly() {
-    val metadata = Bundle()
-    metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
-    val fakeFirebaseApp = FakeFirebaseApp(metadata)
+    val fakeFirebaseApp = FakeFirebaseApp()
     val sessionEvent =
       SessionEvents.startSession(
         fakeFirebaseApp.firebaseApp,
