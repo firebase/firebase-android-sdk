@@ -105,7 +105,7 @@ internal object SessionEvents {
     firebaseApp: FirebaseApp,
     sessionDetails: SessionDetails,
     sessionsSettings: SessionsSettings,
-    currentTimeUs: Long = System.currentTimeMillis() * 1000
+    currentTimeUs: Long = WallClock.currentTimeUs()
   ) =
     SessionEvent(
       eventType = EventType.SESSION_START,
