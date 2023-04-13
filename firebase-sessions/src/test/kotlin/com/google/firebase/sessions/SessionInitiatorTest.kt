@@ -50,7 +50,7 @@ class SessionInitiatorTest {
   @Test
   fun coldStart_initiatesSession() {
     val sessionStartCounter = SessionStartCounter()
-    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settings = SessionsSettings(context)
 
     // Simulate a cold start by simply constructing the SessionInitiator object
@@ -63,7 +63,7 @@ class SessionInitiatorTest {
   fun appForegrounded_largeInterval_initiatesSession() {
     val fakeClock = FakeClock()
     val sessionStartCounter = SessionStartCounter()
-    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settings = SessionsSettings(context)
 
     val sessionInitiator =
@@ -84,7 +84,7 @@ class SessionInitiatorTest {
   fun appForegrounded_smallInterval_doesNotInitiatesSession() {
     val fakeClock = FakeClock()
     val sessionStartCounter = SessionStartCounter()
-    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settings = SessionsSettings(context)
 
     val sessionInitiator =
@@ -105,7 +105,7 @@ class SessionInitiatorTest {
   fun appForegrounded_background_foreground_largeIntervals_initiatesSessions() {
     val fakeClock = FakeClock()
     val sessionStartCounter = SessionStartCounter()
-    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settings = SessionsSettings(context)
 
     val sessionInitiator =
@@ -129,7 +129,7 @@ class SessionInitiatorTest {
   fun appForegrounded_background_foreground_smallIntervals_doesNotInitiateNewSessions() {
     val fakeClock = FakeClock()
     val sessionStartCounter = SessionStartCounter()
-    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settings = SessionsSettings(context)
 
     val sessionInitiator =

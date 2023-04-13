@@ -31,17 +31,27 @@ internal object TestSessionEventData {
 
   const val TEST_SESSION_TIMESTAMP_US: Long = 12340000
 
-  val EXPECTED_DEFAULT_SESSION_EVENT =
+  val TEST_DATA_COLLECTION_STATUS =
+    DataCollectionStatus(
+      performance = DataCollectionState.COLLECTION_ENABLED,
+      crashlytics = DataCollectionState.COLLECTION_ENABLED,
+      sessionSamplingRate = 1.0
+    )
+
+  val TEST_SESSION_DATA =
+    SessionInfo(
+      sessionId = "a1b2c3",
+      firstSessionId = "a1a1a1",
+      sessionIndex = 3,
+      eventTimestampUs = TEST_SESSION_TIMESTAMP_US,
+      dataCollectionStatus = TEST_DATA_COLLECTION_STATUS,
+      firebaseInstallationId = "",
+    )
+
+  val TEST_SESSION_EVENT =
     SessionEvent(
       eventType = EventType.SESSION_START,
-      sessionData =
-        SessionInfo(
-          sessionId = "a1b2c3",
-          firstSessionId = "a1a1a1",
-          sessionIndex = 3,
-          firebaseInstallationId = "",
-          eventTimestampUs = TestSessionEventData.TEST_SESSION_TIMESTAMP_US,
-        ),
+      sessionData = TEST_SESSION_DATA,
       applicationInfo =
         ApplicationInfo(
           appId = FakeFirebaseApp.MOCK_APP_ID,

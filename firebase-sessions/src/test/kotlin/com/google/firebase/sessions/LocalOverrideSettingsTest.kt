@@ -32,7 +32,7 @@ class LocalOverrideSettingsTest {
 
   @Test
   fun localOverrides_returnsNullByDefault() {
-    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val context = FakeFirebaseApp().firebaseApp.applicationContext
 
     val localSettings = LocalOverrideSettings(context)
     assertThat(localSettings.sessionEnabled).isNull()
@@ -46,7 +46,7 @@ class LocalOverrideSettingsTest {
     metadata.putBoolean("firebase_sessions_enabled", false)
     metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
     metadata.putInt("firebase_sessions_sessions_restart_timeout", 180)
-    val context = FakeFirebaseApp.fakeFirebaseApp(metadata).applicationContext
+    val context = FakeFirebaseApp(metadata).firebaseApp.applicationContext
 
     val localSettings = LocalOverrideSettings(context)
     assertThat(localSettings.sessionEnabled).isFalse()
@@ -59,7 +59,7 @@ class LocalOverrideSettingsTest {
     val metadata = Bundle()
     metadata.putBoolean("firebase_sessions_enabled", false)
     metadata.putInt("firebase_sessions_sessions_restart_timeout", 180)
-    val context = FakeFirebaseApp.fakeFirebaseApp(metadata).applicationContext
+    val context = FakeFirebaseApp(metadata).firebaseApp.applicationContext
 
     val localSettings = LocalOverrideSettings(context)
     assertThat(localSettings.sessionEnabled).isFalse()

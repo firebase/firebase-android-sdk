@@ -16,10 +16,16 @@
 
 package com.google.firebase.sessions
 
+import android.os.Bundle
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
+import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
-import com.google.firebase.sessions.testing.TestSessionEventData
+import com.google.firebase.sessions.testing.TestSessionEventData.TEST_DATA_COLLECTION_STATUS
+import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_DATA
+import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_DETAILS
+import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_EVENT
+import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_TIMESTAMP_US
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,14 +35,43 @@ import org.robolectric.RobolectricTestRunner
 class SessionEventTest {
   @Test
   fun sessionStart_populatesSessionDetailsCorrectly() {
+    val metadata = Bundle()
+    metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
+    val fakeFirebaseApp = FakeFirebaseApp(metadata)
     val sessionEvent =
       SessionEvents.startSession(
-        FakeFirebaseApp.fakeFirebaseApp(),
-        TestSessionEventData.TEST_SESSION_DETAILS,
-        TestSessionEventData.TEST_SESSION_TIMESTAMP_US,
+        fakeFirebaseApp.firebaseApp,
+        TEST_SESSION_DETAILS,
+        SessionsSettings(fakeFirebaseApp.firebaseApp.applicationContext),
+        TEST_SESSION_TIMESTAMP_US,
       )
 
-    assertThat(sessionEvent).isEqualTo(TestSessionEventData.EXPECTED_DEFAULT_SESSION_EVENT)
+    assertThat(sessionEvent).isEqualTo(TEST_SESSION_EVENT)
+  }
+
+  @Test
+  fun sessionStart_samplingRate() {
+    val metadata = Bundle()
+    metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
+    val fakeFirebaseApp = FakeFirebaseApp(metadata)
+
+    val sessionEvent =
+      SessionEvents.startSession(
+        fakeFirebaseApp.firebaseApp,
+        TEST_SESSION_DETAILS,
+        SessionsSettings(fakeFirebaseApp.firebaseApp.applicationContext),
+        TEST_SESSION_TIMESTAMP_US,
+      )
+
+    assertThat(sessionEvent)
+      .isEqualTo(
+        TEST_SESSION_EVENT.copy(
+          sessionData =
+            TEST_SESSION_DATA.copy(
+              dataCollectionStatus = TEST_DATA_COLLECTION_STATUS.copy(sessionSamplingRate = 0.5)
+            )
+        )
+      )
   }
 
   @After

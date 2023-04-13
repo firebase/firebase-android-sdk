@@ -18,6 +18,7 @@ package com.google.firebase.sessions
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeEventGDTLogger
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
@@ -43,10 +44,12 @@ class SessionCoordinatorTest {
       )
 
     // Construct an event with no fid set.
+    val fakeFirebaseApp = FakeFirebaseApp()
     val sessionEvent =
       SessionEvents.startSession(
-        FakeFirebaseApp.fakeFirebaseApp(),
+        fakeFirebaseApp.firebaseApp,
         TestSessionEventData.TEST_SESSION_DETAILS,
+        SessionsSettings(fakeFirebaseApp.firebaseApp.applicationContext),
         TestSessionEventData.TEST_SESSION_TIMESTAMP_US,
       )
 
