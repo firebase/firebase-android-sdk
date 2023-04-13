@@ -230,10 +230,10 @@ package com.google.firebase.firestore {
   }
 
   public final class FirebaseFirestoreSettings {
-    method @NonNull public com.google.firebase.firestore.LocalCacheSettings getCacheSettings();
-    method public long getCacheSizeBytes();
+    method @Nullable public com.google.firebase.firestore.LocalCacheSettings getCacheSettings();
+    method @Deprecated public long getCacheSizeBytes();
     method @NonNull public String getHost();
-    method public boolean isPersistenceEnabled();
+    method @Deprecated public boolean isPersistenceEnabled();
     method public boolean isSslEnabled();
     field public static final long CACHE_SIZE_UNLIMITED = -1L; // 0xffffffffffffffffL
   }
@@ -315,7 +315,7 @@ package com.google.firebase.firestore {
   public interface LocalCacheSettings {
   }
 
-  public class MemoryCacheSettings implements com.google.firebase.firestore.LocalCacheSettings {
+  public final class MemoryCacheSettings implements com.google.firebase.firestore.LocalCacheSettings {
     method @NonNull public static com.google.firebase.firestore.MemoryCacheSettings.Builder newBuilder();
   }
 
@@ -332,7 +332,7 @@ package com.google.firebase.firestore {
     method public void onProgress(@NonNull ProgressT);
   }
 
-  public class PersistentCacheSettings implements com.google.firebase.firestore.LocalCacheSettings {
+  public final class PersistentCacheSettings implements com.google.firebase.firestore.LocalCacheSettings {
     method public long getSizeBytes();
     method @NonNull public static com.google.firebase.firestore.PersistentCacheSettings.Builder newBuilder();
   }
