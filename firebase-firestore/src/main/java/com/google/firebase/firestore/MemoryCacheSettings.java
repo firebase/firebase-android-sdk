@@ -26,7 +26,7 @@ import androidx.annotation.Nullable;
  * FirebaseFirestoreSettings.Builder#setLocalCacheSettings(LocalCacheSettings)}, and use the built
  * `FirebaseFirestoreSettings` instance to configure Firestore SDK.
  */
-public class MemoryCacheSettings implements LocalCacheSettings {
+public final class MemoryCacheSettings implements LocalCacheSettings {
 
   /** Returns a new instance of {@link MemoryCacheSettings.Builder} with default configurations. */
   @NonNull

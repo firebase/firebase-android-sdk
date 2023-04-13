@@ -283,6 +283,7 @@ public final class FirebaseFirestoreSettings {
   }
 
   /** Returns whether or not to use local persistent storage. */
+  @Deprecated
   public boolean isPersistenceEnabled() {
     if (cacheSettings != null) {
       return cacheSettings instanceof PersistentCacheSettings;
@@ -295,6 +296,7 @@ public final class FirebaseFirestoreSettings {
    * Returns the threshold for the cache size above which the SDK will attempt to collect the least
    * recently used documents.
    */
+  @Deprecated
   public long getCacheSizeBytes() {
     if (cacheSettings != null) {
       if (cacheSettings instanceof PersistentCacheSettings) {
