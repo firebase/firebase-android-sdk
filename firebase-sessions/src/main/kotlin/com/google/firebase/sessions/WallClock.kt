@@ -24,4 +24,12 @@ import kotlin.time.Duration.Companion.milliseconds
 internal object WallClock {
   /** Gets the [Duration] elapsed in "wall clock" time since device boot. */
   fun elapsedRealtime(): Duration = SystemClock.elapsedRealtime().milliseconds
+
+  /**
+   * Gets the current time in microseconds. The clock can be set by the user or phone network so it
+   * is not universally accurate or increasing.
+   */
+  fun currentTimeUs(): Long {
+    return System.currentTimeMillis() * 1000
+  }
 }
