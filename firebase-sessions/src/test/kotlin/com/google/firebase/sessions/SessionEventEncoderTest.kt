@@ -68,7 +68,7 @@ class SessionEventEncoderTest {
             },
             "application_info":{
               "app_id":"1:12345:android:app",
-              "device_model":"",
+              "device_model":"robolectric",
               "session_sdk_version":"0.1.0",
               "log_environment":3,
               "android_app_info":{

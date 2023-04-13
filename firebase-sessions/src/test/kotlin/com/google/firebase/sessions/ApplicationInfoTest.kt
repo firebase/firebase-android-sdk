@@ -36,7 +36,7 @@ class ApplicationInfoTest {
       .isEqualTo(
         ApplicationInfo(
           appId = FakeFirebaseApp.MOCK_APP_ID,
-          deviceModel = "",
+          deviceModel = "robolectric",
           sessionSdkVersion = BuildConfig.VERSION_NAME,
           logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
           AndroidApplicationInfo(
