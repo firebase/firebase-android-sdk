@@ -63,14 +63,16 @@ public final class FirebaseFirestoreSettings {
       sslEnabled = settings.sslEnabled;
       persistenceEnabled = settings.persistenceEnabled;
       cacheSizeBytes = settings.cacheSizeBytes;
-      if(!persistenceEnabled || cacheSizeBytes != DEFAULT_CACHE_SIZE_BYTES) {
+      if (!persistenceEnabled || cacheSizeBytes != DEFAULT_CACHE_SIZE_BYTES) {
         usedLegacyCacheSettings = true;
       }
 
-      if(!usedLegacyCacheSettings) {
+      if (!usedLegacyCacheSettings) {
         cacheSettings = settings.cacheSettings;
       } else {
-        hardAssert(settings.cacheSettings == null, "Given settings object mixes both cache config APIs, which is impossible.");
+        hardAssert(
+            settings.cacheSettings == null,
+            "Given settings object mixes both cache config APIs, which is impossible.");
       }
     }
 
@@ -291,7 +293,11 @@ public final class FirebaseFirestoreSettings {
     return sslEnabled;
   }
 
-  /** Returns whether or not to use local persistent storage. */
+  /**
+   * Returns whether or not to use local persistent storage.
+   *
+   * @deprecated Use {@link FirebaseFirestoreSettings#getCacheSettings()} instead.
+   */
   @Deprecated
   public boolean isPersistenceEnabled() {
     if (cacheSettings != null) {
@@ -304,6 +310,8 @@ public final class FirebaseFirestoreSettings {
   /**
    * Returns the threshold for the cache size above which the SDK will attempt to collect the least
    * recently used documents.
+   *
+   * @deprecated Use {@link FirebaseFirestoreSettings#getCacheSettings()} instead.
    */
   @Deprecated
   public long getCacheSizeBytes() {
