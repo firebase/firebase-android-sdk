@@ -251,6 +251,15 @@ projects may be published as follows.
 
 ### Code Formatting
 
+The code in this repo is formatted with the [spotless plugin](https://github.com/diffplug/spotless/tree/main/plugin-gradle).
+
+To run formatting on your entire project you can run
+```bash
+./gradlew :<firebase-project>:spotlessApply
+```
+
+This should format both your Java and Kotlin sources.
+
 #### Java
 
 Java code in this repo is formatted with the google-java-format tool. You can
@@ -259,9 +268,9 @@ enable this formatting in Android Studio by downloading and installing the
 The plugin is disabled by default, but the repo contains configuration information
 and links to additional plugins.
 
-To run formatting on your entire project you can run
+To run Java formatting on your entire project you can run
 ```bash
-./gradlew :<firebase-project>:googleJavaFormat
+./gradlew :<firebase-project>:spotlessJavaApply
 ```
 
 #### Kotlin
@@ -271,9 +280,9 @@ this formatting in Android Studio by downloading and installing the
 [ktfmt plugin](https://plugins.jetbrains.com/plugin/14912-ktfmt).
 Enable the plugin in Preferences | Editor | ktfmt Settings. and set code style to Google (internal).
 
-To run formatting on your entire project you can run
+To run Kotlin formatting on your entire project you can run
 ```bash
-./gradlew :<firebase-project>:ktfmtFormat
+./gradlew :<firebase-project>:spotlessKotlinApply
 ```
 
 ### Contributing
