@@ -1,5 +1,6 @@
 # Unreleased
 * [fixed] Fixed stack overflow caused by deeply nested server timestamps (#4702).
+* [feature] Add new cache config APIs to customize SDK's cache setup.
 
 ## Kotlin
 * [feature] Added

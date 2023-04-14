@@ -179,7 +179,6 @@ public class IntegrationTestUtil {
     FirebaseFirestoreSettings.Builder settings = new FirebaseFirestoreSettings.Builder();
     settings.setHost(getFirestoreHost());
     settings.setSslEnabled(getSslEnabled());
-    settings.setPersistenceEnabled(true);
     return settings.build();
   }
 
