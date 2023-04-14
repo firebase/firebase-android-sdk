@@ -108,7 +108,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
    * @see [FirebaseLibraryExtension.applyPomCustomization]
    */
   protected fun configurePublishing(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
-    project.afterEvaluate {
+    with(project) {
       apply<MavenPublishPlugin>()
       extensions.configure<PublishingExtension> {
         repositories.maven {
@@ -116,14 +116,15 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
           name = "BuildDir"
         }
         publications.create<MavenPublication>("mavenAar") {
-          artifactId =
-            firebaseLibrary.artifactId.get() // these dont get populated until afterEvaluate :(
-          groupId = firebaseLibrary.groupId.get()
+          afterEvaluate {
+            artifactId =
+              firebaseLibrary.artifactId.get() // these dont get populated until afterEvaluate :(
+            groupId = firebaseLibrary.groupId.get()
 
-          firebaseLibrary.applyPomCustomization(pom)
-          firebaseLibrary.applyPomTransformations(pom)
-
-          from(components.findByName(firebaseLibrary.type.componentName))
+            firebaseLibrary.applyPomCustomization(pom)
+            firebaseLibrary.applyPomTransformations(pom)
+            from(components.findByName(firebaseLibrary.type.componentName))
+          }
         }
       }
     }
@@ -216,7 +217,7 @@ fun FirebaseLibraryExtension.resolveAndroidDependencies() =
  * This is collected via the [runtimeClasspath][FirebaseLibraryExtension.getRuntimeClasspath].
  *
  * @throws RuntimeException if a project level dependency is found that doesn't have
- * [FirebaseLibraryExtension]
+ *   [FirebaseLibraryExtension]
  */
 // TODO(b/277607560): Remove when Gradle's MavenPublishPlugin adds functionality for aar types
 fun FirebaseLibraryExtension.resolveProjectLevelDependencies() =
