@@ -40,6 +40,11 @@ ktfmt {
     googleStyle()
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 dependencies {
     // Firebase performance plugin, it should be added here because of how gradle dependency
     // resolution works, otherwise it breaks Fireperf Test Apps.
@@ -59,7 +64,7 @@ dependencies {
     implementation("org.eclipse.aether:aether-transport-http:1.0.0.v20140518")
     implementation("org.eclipse.aether:aether-transport-wagon:1.0.0.v20140518")
     implementation("org.apache.maven:maven-aether-provider:3.1.0")
-    
+
     implementation("org.eclipse.jgit:org.eclipse.jgit:6.3.0.202209071007-r")
 
     implementation("com.google.code.gson:gson:2.8.9")
@@ -109,10 +114,4 @@ tasks.withType<Test> {
     }
     val enablePluginTests: String? by rootProject
     enabled = enablePluginTests == "true"
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = "11"
-    }
 }
