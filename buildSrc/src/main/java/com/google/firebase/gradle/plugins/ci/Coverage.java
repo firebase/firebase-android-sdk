@@ -36,7 +36,7 @@ public final class Coverage {
     JacocoPluginExtension jacoco = project.getExtensions().getByType(JacocoPluginExtension.class);
 
     jacoco.setToolVersion("0.8.8");
-    jacoco.setReportsDir(reportsDir);
+    jacoco.getReportsDirectory().set(reportsDir);
     project
         .getTasks()
         .withType(
