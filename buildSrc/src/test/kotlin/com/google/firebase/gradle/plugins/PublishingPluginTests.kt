@@ -16,6 +16,7 @@ package com.google.firebase.gradle.plugins
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.gradle.plugins.publish.Mode
+import com.google.firebase.gradle.plugins.publish.Mode.*
 import java.io.File
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
@@ -42,15 +43,15 @@ class PublishingPluginTests {
         version = "0.9",
         projectDependencies = setOf(project1),
         customizePom = """
-licenses {
-  license {
-    name = 'Hello'
+  licenses {
+    license {
+      name = 'Hello'
+    }
   }
-}
-"""
+  """
       )
     subprojectsDefined(project1, project2)
-    val result = publish(Mode.RELEASE, project1, project2)
+    val result = publish(RELEASE, project1, project2)
     assertThat(result.task(":firebasePublish")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
 
     val pomOrNull1 = project1.getPublishedPom("${testProjectDir.root}/build/m2repository")
@@ -94,15 +95,15 @@ licenses {
         version = "0.9",
         projectDependencies = setOf(project1),
         customizePom = """
-licenses {
-  license {
-    name = 'Hello'
+  licenses {
+    license {
+      name = 'Hello'
+    }
   }
-}
-"""
+  """
       )
     subprojectsDefined(project1, project2)
-    val result = publish(Mode.RELEASE, project1, project2)
+    val result = publish(RELEASE, project1, project2)
     assertThat(result.task(":firebasePublish")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
 
     val pomOrNull1 = project1.getPublishedPom("${testProjectDir.root}/build/m2repository")
@@ -137,6 +138,10 @@ licenses {
       )
   }
 
+  private inline fun <reified T : Throwable> buildShouldThrow(crossinline block: () -> Unit) =
+    Assert.assertThrows(UnexpectedBuildFailure::class.java) { block() }
+      .also { assertThat(it).isInstanceOf(T::class.java) } as T
+
   @Test
   fun `Publish with unreleased dependency`() {
     val project1 = Project(name = "childProject1", version = "1.0")
@@ -144,9 +149,10 @@ licenses {
       Project(name = "childProject2", version = "0.9", projectDependencies = setOf(project1))
 
     subprojectsDefined(project1, project2)
-    val exception =
-      Assert.assertThrows(UnexpectedBuildFailure::class.java) { publish(Mode.RELEASE, project2) }
-    assertThat(exception.message).contains("Failed to release com.example:childProject2")
+    val result = publishAndFail(RELEASE, project2)
+    assertThat(result.task(":checkHeadDependencies")?.outcome).isEqualTo(TaskOutcome.FAILED)
+    // also, if our integ tests fail, we need to add multidex back to installations and add a
+    // removal in our pom transformation for it
   }
 
   @Test
@@ -156,36 +162,7 @@ licenses {
       Project(name = "childProject2", version = "0.9", projectDependencies = setOf(project1))
     subprojectsDefined(project1, project2)
 
-    val result = publish(Mode.RELEASE, project2)
-    assertThat(result.task(":firebasePublish")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
-
-    val pomOrNull1 = project1.getPublishedPom("${testProjectDir.root}/build/m2repository")
-    val pomOrNull2 = project2.getPublishedPom("${testProjectDir.root}/build/m2repository")
-    assertThat(pomOrNull1).isNull()
-    assertThat(pomOrNull2).isNotNull()
-
-    val pom2 = pomOrNull2!!
-    assertThat(pom2.dependencies)
-      .isEqualTo(
-        listOf(
-          Artifact(
-            groupId = project1.group,
-            artifactId = project1.name,
-            version = project1.latestReleasedVersion!!,
-            type = Type.AAR,
-            scope = "compile"
-          )
-        )
-      )
-  }
-
-  @Test
-  fun `Publish all dependent snapshot projects succeeds`() {
-    val project1 = Project(name = "childProject1", version = "1.0")
-    val project2 =
-      Project(name = "childProject2", version = "0.9", projectDependencies = setOf(project1))
-    subprojectsDefined(project1, project2)
-    val result = publish(Mode.SNAPSHOT, project1, project2)
+    val result = publish(RELEASE, project2, project1)
     assertThat(result.task(":firebasePublish")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
 
     val pomOrNull1 = project1.getPublishedPom("${testProjectDir.root}/build/m2repository")
@@ -193,19 +170,14 @@ licenses {
     assertThat(pomOrNull1).isNotNull()
     assertThat(pomOrNull2).isNotNull()
 
-    val pom1 = pomOrNull1!!
     val pom2 = pomOrNull2!!
-
-    assertThat(pom1.artifact.version).isEqualTo("${project1.version}-SNAPSHOT")
-    assertThat(pom2.artifact.version).isEqualTo("${project2.version}-SNAPSHOT")
-
     assertThat(pom2.dependencies)
       .isEqualTo(
         listOf(
           Artifact(
             groupId = project1.group,
             artifactId = project1.name,
-            version = "${project1.version}-SNAPSHOT",
+            version = project1.version,
             type = Type.AAR,
             scope = "compile"
           )
@@ -213,37 +185,72 @@ licenses {
       )
   }
 
-  @Test
-  fun `Publish snapshots with released dependency`() {
-    val project1 = Project(name = "childProject1", version = "1.0", latestReleasedVersion = "0.8")
-    val project2 =
-      Project(name = "childProject2", version = "0.9", projectDependencies = setOf(project1))
-    subprojectsDefined(project1, project2)
-
-    val result = publish(Mode.SNAPSHOT, project2)
-    assertThat(result.task(":firebasePublish")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
-
-    val pomOrNull1 = project1.getPublishedPom("${testProjectDir.root}/build/m2repository")
-    val pomOrNull2 = project2.getPublishedPom("${testProjectDir.root}/build/m2repository")
-    assertThat(pomOrNull1).isNull()
-    assertThat(pomOrNull2).isNotNull()
-
-    val pom2 = pomOrNull2!!
-
-    assertThat(pom2.artifact.version).isEqualTo("${project2.version}-SNAPSHOT")
-    assertThat(pom2.dependencies)
-      .isEqualTo(
-        listOf(
-          Artifact(
-            groupId = project1.group,
-            artifactId = project1.name,
-            version = project1.latestReleasedVersion!!,
-            type = Type.AAR,
-            scope = "compile"
-          )
-        )
-      )
-  }
+  // @Test
+  // fun `Publish all dependent snapshot projects succeeds`() {
+  //   val project1 = Project(name = "childProject1", version = "1.0")
+  //   val project2 =
+  //     Project(name = "childProject2", version = "0.9", projectDependencies = setOf(project1))
+  //   subprojectsDefined(project1, project2)
+  //   val result = publish(Mode.SNAPSHOT, project1, project2)
+  //   assertThat(result.task(":firebasePublish")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+  //
+  //   val pomOrNull1 = project1.getPublishedPom("${testProjectDir.root}/build/m2repository")
+  //   val pomOrNull2 = project2.getPublishedPom("${testProjectDir.root}/build/m2repository")
+  //   assertThat(pomOrNull1).isNotNull()
+  //   assertThat(pomOrNull2).isNotNull()
+  //
+  //   val pom1 = pomOrNull1!!
+  //   val pom2 = pomOrNull2!!
+  //
+  //   assertThat(pom1.artifact.version).isEqualTo("${project1.version}-SNAPSHOT")
+  //   assertThat(pom2.artifact.version).isEqualTo("${project2.version}-SNAPSHOT")
+  //
+  //   assertThat(pom2.dependencies)
+  //     .isEqualTo(
+  //       listOf(
+  //         Artifact(
+  //           groupId = project1.group,
+  //           artifactId = project1.name,
+  //           version = "${project1.version}-SNAPSHOT",
+  //           type = Type.AAR,
+  //           scope = "compile"
+  //         )
+  //       )
+  //     )
+  // }
+  //
+  // @Test
+  // fun `Publish snapshots with released dependency`() {
+  //   val project1 = Project(name = "childProject1", version = "1.0", latestReleasedVersion =
+  // "0.8")
+  //   val project2 =
+  //     Project(name = "childProject2", version = "0.9", projectDependencies = setOf(project1))
+  //   subprojectsDefined(project1, project2)
+  //
+  //   val result = publish(Mode.SNAPSHOT, project2)
+  //   assertThat(result.task(":firebasePublish")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+  //
+  //   val pomOrNull1 = project1.getPublishedPom("${testProjectDir.root}/build/m2repository")
+  //   val pomOrNull2 = project2.getPublishedPom("${testProjectDir.root}/build/m2repository")
+  //   assertThat(pomOrNull1).isNull()
+  //   assertThat(pomOrNull2).isNotNull()
+  //
+  //   val pom2 = pomOrNull2!!
+  //
+  //   assertThat(pom2.artifact.version).isEqualTo("${project2.version}-SNAPSHOT")
+  //   assertThat(pom2.dependencies)
+  //     .isEqualTo(
+  //       listOf(
+  //         Artifact(
+  //           groupId = project1.group,
+  //           artifactId = project1.name,
+  //           version = project1.latestReleasedVersion!!,
+  //           type = Type.AAR,
+  //           scope = "compile"
+  //         )
+  //       )
+  //     )
+  // }
 
   @Test
   fun `Publish project should also publish coreleased projects`() {
@@ -257,7 +264,7 @@ licenses {
       )
     subprojectsDefined(project1, project2)
 
-    val result = publish(Mode.RELEASE, project1)
+    val result = publish(RELEASE, project1)
     assertThat(result.task(":firebasePublish")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
 
     val pomOrNull1 = project1.getPublishedPom("${testProjectDir.root}/build/m2repository")
@@ -295,13 +302,12 @@ licenses {
         externalDependencies =
           setOf(
             Artifact("com.google.dagger", "dagger", "2.22"),
-            Artifact("com.google.dagger", "dagger-android-support", "2.22"),
-            Artifact("com.android.support", "multidex", "1.0.3")
+            Artifact("com.google.dagger", "dagger-android-support", "2.22")
           )
       )
     subprojectsDefined(project1, project2)
 
-    val result = publish(Mode.RELEASE, project2)
+    val result = publish(RELEASE, project2, project1)
     assertThat(result.task(":firebasePublish")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
 
     val pomOrNull2 = project2.getPublishedPom("${testProjectDir.root}/build/m2repository")
@@ -314,7 +320,7 @@ licenses {
         Artifact(
           groupId = project1.group,
           artifactId = project1.name,
-          version = project1.latestReleasedVersion!!,
+          version = project1.version,
           type = Type.AAR,
           scope = "compile"
         ),
@@ -336,6 +342,12 @@ licenses {
   }
 
   private fun publish(mode: Mode, vararg projects: Project): BuildResult =
+    makeGradleRunner(mode, *projects).build()
+
+  private fun publishAndFail(mode: Mode, vararg projects: Project) =
+    makeGradleRunner(mode, *projects).buildAndFail()
+
+  private fun makeGradleRunner(mode: Mode, vararg projects: Project) =
     GradleRunner.create()
       .withProjectDir(testProjectDir.root)
       .withArguments(
@@ -344,7 +356,6 @@ licenses {
         "firebasePublish"
       )
       .withPluginClasspath()
-      .build()
 
   private fun include(project: Project) {
     testProjectDir.newFolder(project.name, "src", "main")

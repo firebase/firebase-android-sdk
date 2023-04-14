@@ -18,6 +18,7 @@ import java.io.File
 import java.nio.file.Paths
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.MavenPublication
@@ -26,6 +27,7 @@ import org.gradle.api.tasks.TaskProvider
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.register
 import org.w3c.dom.Element
 
@@ -106,7 +108,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
    * @see [FirebaseLibraryExtension.applyPomCustomization]
    */
   protected fun configurePublishing(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
-    with(project) {
+    project.afterEvaluate {
       apply<MavenPublishPlugin>()
       extensions.configure<PublishingExtension> {
         repositories.maven {
@@ -114,13 +116,14 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
           name = "BuildDir"
         }
         publications.create<MavenPublication>("mavenAar") {
-          artifactId = firebaseLibrary.artifactId.get()
+          artifactId =
+            firebaseLibrary.artifactId.get() // these dont get populated until afterEvaluate :(
           groupId = firebaseLibrary.groupId.get()
 
           firebaseLibrary.applyPomCustomization(pom)
           firebaseLibrary.applyPomTransformations(pom)
 
-          afterEvaluate { from(components.findByName(firebaseLibrary.type.componentName)) }
+          from(components.findByName(firebaseLibrary.type.componentName))
         }
       }
     }
@@ -141,7 +144,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
       val dependencies = asElement().findElementsByTag("dependency")
       for (dependency in dependencies) {
         convertToCompileDependency(dependency)
-        addTypeWithAARSupport(dependency, androidDependencies)
+        addTypeWithAARSupport(dependency, resolveAndroidDependencies())
       }
     }
   }
@@ -190,7 +193,46 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
 }
 
 /**
- * A list of dependencies that publish `aar` artifacts.
+ * A list of _all_ dependencies that publish `aar` artifacts.
+ *
+ * This is collected via the [runtimeClasspath][FirebaseLibraryExtension.getRuntimeClasspath], and
+ * includes project level dependencies as well as external dependencies.
+ *
+ * The dependencies are mapped to their [artifactName].
+ *
+ * @see resolveProjectLevelDependencies
+ * @see resolveExternalAndroidLibraries
+ */
+// TODO(b/277607560): Remove when Gradle's MavenPublishPlugin adds functionality for aar types
+fun FirebaseLibraryExtension.resolveAndroidDependencies() =
+  resolveExternalAndroidLibraries() +
+    resolveProjectLevelDependencies()
+      .filter { it.type == LibraryType.ANDROID }
+      .map { it.artifactName }
+
+/**
+ * A list of project level dependencies.
+ *
+ * This is collected via the [runtimeClasspath][FirebaseLibraryExtension.getRuntimeClasspath].
+ *
+ * @throws RuntimeException if a project level dependency is found that doesn't have
+ * [FirebaseLibraryExtension]
+ */
+// TODO(b/277607560): Remove when Gradle's MavenPublishPlugin adds functionality for aar types
+fun FirebaseLibraryExtension.resolveProjectLevelDependencies() =
+  project.configurations
+    .getByName(runtimeClasspath)
+    .allDependencies
+    .mapNotNull { it as? ProjectDependency }
+    .map {
+      it.dependencyProject.extensions.findByType<FirebaseLibraryExtension>()
+        ?: throw RuntimeException(
+          "Project level dependencies must have the firebaseLibrary plugin. The following dependency does not: ${it.artifactName}"
+        )
+    }
+
+/**
+ * A list of _external_ dependencies that publish `aar` artifacts.
  *
  * This is collected via the [runtimeClasspath][FirebaseLibraryExtension.getRuntimeClasspath], using
  * an [ArtifactView][org.gradle.api.artifacts.ArtifactView] that filters for `aar` artifactType.
@@ -201,11 +243,26 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
  * ```
  */
 // TODO(b/277607560): Remove when Gradle's MavenPublishPlugin adds functionality for aar types
-val FirebaseLibraryExtension.androidDependencies
-  get() =
-    project.configurations
-      .getByName(runtimeClasspath)
-      .incoming
-      .artifactView { attributes { attribute("artifactType", "aar") } }
-      .artifacts
-      .map { it.variant.displayName.substringBefore(" ") }
+fun FirebaseLibraryExtension.resolveExternalAndroidLibraries() =
+  project.configurations
+    .getByName(runtimeClasspath)
+    .incoming
+    .artifactView { attributes { attribute("artifactType", "aar") } }
+    .artifacts
+    .map { it.variant.displayName.substringBefore(" ") }
+
+/**
+ * The name provided to this artifact when published.
+ *
+ * Syntax sugar for:
+ * ```
+ * "$mavenName:$version"
+ * ```
+ *
+ * For example, the following could be an artifact name:
+ * ```
+ * "com.google.firebase:firebase-common:16.0.5"
+ * ```
+ */
+val FirebaseLibraryExtension.artifactName: String
+  get() = "$mavenName:$version"

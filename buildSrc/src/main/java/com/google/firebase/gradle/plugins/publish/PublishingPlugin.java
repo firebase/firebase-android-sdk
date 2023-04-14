@@ -146,6 +146,7 @@ public class PublishingPlugin implements Plugin<Project> {
                       .filter(ext -> ext != null)
                       .flatMap(lib -> lib.getLibrariesToRelease().stream())
                       .collect(Collectors.toSet());
+
               project
                   .getExtensions()
                   .getExtraProperties()
@@ -170,20 +171,22 @@ public class PublishingPlugin implements Plugin<Project> {
               project
                   .getTasks()
                   .create(
-                      "publishProjectsToMavenLocal",
-                      t -> {
-                        for (FirebaseLibraryExtension toPublish : projectsToPublish) {
-                          t.dependsOn(getPublishTask(toPublish, "MavenLocal"));
-                        }
-                      });
-              project
-                  .getTasks()
-                  .create(
                       "checkHeadDependencies",
                       CheckHeadDependencies.class,
                       t -> {
                         t.getProjectsToPublish().set(projectsToPublish);
                         t.getAllFirebaseProjects().set(allFirebaseProjects);
+                        firebasePublish.dependsOn(t);
+                      });
+
+              project
+                  .getTasks()
+                  .create(
+                      "publishProjectsToMavenLocal",
+                      t -> {
+                        for (FirebaseLibraryExtension toPublish : projectsToPublish) {
+                          t.dependsOn(getPublishTask(toPublish, "MavenLocal"));
+                        }
                       });
 
               Task publishProjectsToBuildDir =
