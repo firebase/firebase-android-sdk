@@ -146,7 +146,8 @@ class FirebaseAppDistributionTesterApiClient {
           String path = String.format("v1alpha/%s/feedbackReports", testerReleaseName);
           String requestBody = buildCreateFeedbackBody(feedbackText).toString();
           JSONObject responseBody =
-              testerApiHttpClient.makePostRequest(CREATE_FEEDBACK_TAG, path, token, requestBody);
+              testerApiHttpClient.makeJsonPostRequest(
+                  CREATE_FEEDBACK_TAG, path, token, requestBody);
           return parseJsonFieldFromResponse(responseBody, "name");
         });
   }
@@ -157,13 +158,15 @@ class FirebaseAppDistributionTesterApiClient {
    * @return a {@link Task} containing the feedback name, for convenience when chaining subsequent
    *     requests off of this task
    */
-  Task<String> attachScreenshot(String feedbackName, Uri screenshotUri) {
+  Task<String> attachScreenshot(
+      String feedbackName, Uri screenshotUri, String filename, String contentType) {
     return runWithFidAndToken(
         (unused, token) -> {
           LogWrapper.i(TAG, "Uploading screenshot for feedback: " + feedbackName);
           String path =
               String.format("upload/v1alpha/%s:uploadArtifact?type=SCREENSHOT", feedbackName);
-          testerApiHttpClient.makeUploadRequest(UPLOAD_SCREENSHOT_TAG, path, token, screenshotUri);
+          testerApiHttpClient.makeUploadRequest(
+              UPLOAD_SCREENSHOT_TAG, path, token, filename, contentType, screenshotUri);
           return feedbackName;
         });
   }
@@ -177,7 +180,7 @@ class FirebaseAppDistributionTesterApiClient {
           String path = "v1alpha/" + feedbackName + ":commit";
           Map<String, String> extraHeaders = new HashMap<>();
           extraHeaders.put(X_APP_DISTRO_FEEDBACK_TRIGGER, trigger.toString());
-          testerApiHttpClient.makePostRequest(
+          testerApiHttpClient.makeJsonPostRequest(
               COMMIT_FEEDBACK_TAG, path, token, /* requestBody= */ "", extraHeaders);
           return null;
         });

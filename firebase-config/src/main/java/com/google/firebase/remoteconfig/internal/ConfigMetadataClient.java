@@ -53,6 +53,7 @@ public class ConfigMetadataClient {
 
   static final Date LAST_FETCH_TIME_NO_FETCH_YET = new Date(LAST_FETCH_TIME_IN_MILLIS_NO_FETCH_YET);
 
+  static final int NO_FAILED_REALTIME_STREAMS = 0;
   @VisibleForTesting static final int NO_FAILED_FETCHES = 0;
   private static final long NO_BACKOFF_TIME_IN_MILLIS = -1L;
   @VisibleForTesting static final Date NO_BACKOFF_TIME = new Date(NO_BACKOFF_TIME_IN_MILLIS);
@@ -66,16 +67,25 @@ public class ConfigMetadataClient {
   private static final String LAST_FETCH_ETAG_KEY = "last_fetch_etag";
   private static final String BACKOFF_END_TIME_IN_MILLIS_KEY = "backoff_end_time_in_millis";
   private static final String NUM_FAILED_FETCHES_KEY = "num_failed_fetches";
+  private static final String LAST_TEMPLATE_VERSION = "last_template_version";
+
+  /** Realtime backoff key names. */
+  private static final String NUM_FAILED_REALTIME_STREAMS_KEY = "num_failed_realtime_streams";
+
+  private static final String REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY =
+      "realtime_backoff_end_time_in_millis";
 
   private final SharedPreferences frcMetadata;
 
   private final Object frcInfoLock;
   private final Object backoffMetadataLock;
+  private final Object realtimeBackoffMetadataLock;
 
   public ConfigMetadataClient(SharedPreferences frcMetadata) {
     this.frcMetadata = frcMetadata;
     this.frcInfoLock = new Object();
     this.backoffMetadataLock = new Object();
+    this.realtimeBackoffMetadataLock = new Object();
   }
 
   public long getFetchTimeoutInSeconds() {
@@ -101,6 +111,10 @@ public class ConfigMetadataClient {
   @Nullable
   String getLastFetchETag() {
     return frcMetadata.getString(LAST_FETCH_ETAG_KEY, null);
+  }
+
+  long getLastTemplateVersion() {
+    return frcMetadata.getLong(LAST_TEMPLATE_VERSION, 0);
   }
 
   public FirebaseRemoteConfigInfo getInfo() {
@@ -207,6 +221,12 @@ public class ConfigMetadataClient {
     }
   }
 
+  void setLastTemplateVersion(long templateVersion) {
+    synchronized (frcInfoLock) {
+      frcMetadata.edit().putLong(LAST_TEMPLATE_VERSION, templateVersion).apply();
+    }
+  }
+
   // -----------------------------------------------------------------
   // Exponential backoff logic.
   // -----------------------------------------------------------------
@@ -251,6 +271,59 @@ public class ConfigMetadataClient {
 
     int getNumFailedFetches() {
       return numFailedFetches;
+    }
+
+    Date getBackoffEndTime() {
+      return backoffEndTime;
+    }
+  }
+
+  // -----------------------------------------------------------------
+  // Realtime exponential backoff logic.
+  // -----------------------------------------------------------------
+
+  RealtimeBackoffMetadata getRealtimeBackoffMetadata() {
+    synchronized (realtimeBackoffMetadataLock) {
+      return new RealtimeBackoffMetadata(
+          frcMetadata.getInt(NUM_FAILED_REALTIME_STREAMS_KEY, NO_FAILED_REALTIME_STREAMS),
+          new Date(
+              frcMetadata.getLong(
+                  REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY, NO_BACKOFF_TIME_IN_MILLIS)));
+    }
+  }
+
+  void setRealtimeBackoffMetadata(int numFailedStreams, Date backoffEndTime) {
+    synchronized (realtimeBackoffMetadataLock) {
+      frcMetadata
+          .edit()
+          .putInt(NUM_FAILED_REALTIME_STREAMS_KEY, numFailedStreams)
+          .putLong(REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY, backoffEndTime.getTime())
+          .apply();
+    }
+  }
+
+  void resetRealtimeBackoff() {
+    setRealtimeBackoffMetadata(NO_FAILED_REALTIME_STREAMS, NO_BACKOFF_TIME);
+  }
+
+  /**
+   * Container for backoff metadata values such as the number of failed streams and the backoff end
+   * time.
+   *
+   * <p>The purpose of this class is to avoid race conditions when retrieving backoff metadata
+   * values separately.
+   */
+  static class RealtimeBackoffMetadata {
+    private int numFailedStreams;
+    private Date backoffEndTime;
+
+    RealtimeBackoffMetadata(int numFailedStreams, Date backoffEndTime) {
+      this.numFailedStreams = numFailedStreams;
+      this.backoffEndTime = backoffEndTime;
+    }
+
+    int getNumFailedStreams() {
+      return numFailedStreams;
     }
 
     Date getBackoffEndTime() {

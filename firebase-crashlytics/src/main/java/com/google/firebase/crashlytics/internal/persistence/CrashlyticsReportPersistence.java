@@ -194,11 +194,13 @@ public class CrashlyticsReportPersistence {
   }
 
   public void finalizeSessionWithNativeEvent(
-      String previousSessionId, CrashlyticsReport.FilesPayload ndkPayload) {
+      String previousSessionId,
+      CrashlyticsReport.FilesPayload ndkPayload,
+      CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
     final File reportFile = fileStore.getSessionFile(previousSessionId, REPORT_FILE_NAME);
     Logger.getLogger()
         .d("Writing native session report for " + previousSessionId + " to file: " + reportFile);
-    synthesizeNativeReportFile(reportFile, ndkPayload, previousSessionId);
+    synthesizeNativeReportFile(reportFile, ndkPayload, previousSessionId, applicationExitInfo);
   }
 
   /**
@@ -316,10 +318,14 @@ public class CrashlyticsReportPersistence {
   private void synthesizeNativeReportFile(
       @NonNull File reportFile,
       @NonNull CrashlyticsReport.FilesPayload ndkPayload,
-      @NonNull String previousSessionId) {
+      @NonNull String previousSessionId,
+      CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
     try {
       final CrashlyticsReport report =
-          TRANSFORM.reportFromJson(readTextFile(reportFile)).withNdkPayload(ndkPayload);
+          TRANSFORM
+              .reportFromJson(readTextFile(reportFile))
+              .withNdkPayload(ndkPayload)
+              .withApplicationExitInfo(applicationExitInfo);
 
       writeTextFile(fileStore.getNativeReport(previousSessionId), TRANSFORM.reportToJson(report));
     } catch (IOException e) {

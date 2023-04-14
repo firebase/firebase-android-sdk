@@ -18,6 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
+    libraryGroup "inappmessaging"
     testLab.enabled = true
 }
 
@@ -71,8 +72,8 @@ thirdPartyLicenses {
 }
 
 dependencies {
-    implementation project(':firebase-common')
-    implementation project(':firebase-components')
+    implementation 'com.google.firebase:firebase-common:20.3.1'
+    implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation project(':firebase-inappmessaging')
 
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'

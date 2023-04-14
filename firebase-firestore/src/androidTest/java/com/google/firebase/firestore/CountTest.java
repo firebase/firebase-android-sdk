@@ -135,7 +135,7 @@ public class CountTest {
   }
 
   @Test
-  public void testSnapshotEquals() {
+  public void testCountSnapshotEquals() {
     CollectionReference collection =
         testCollectionWithDocs(
             map(
@@ -167,7 +167,7 @@ public class CountTest {
   }
 
   @Test
-  public void testCanRunCollectionGroupQuery() {
+  public void testCanRunCountCollectionGroupQuery() {
     FirebaseFirestore db = testFirestore();
     // Use .document() to get a random collection group name to use but ensure it starts with 'b'
     // for predictable ordering.
@@ -201,7 +201,7 @@ public class CountTest {
   }
 
   @Test
-  public void testCanRunCountWithFiltersAndLimits() {
+  public void testCanRunCountAggregateWithFiltersAndLimits() {
     CollectionReference collection =
         testCollectionWithDocs(
             map(
@@ -241,7 +241,7 @@ public class CountTest {
   }
 
   @Test
-  public void testFailWithoutNetwork() {
+  public void testCountFailWithoutNetwork() {
     CollectionReference collection =
         testCollectionWithDocs(
             map(
@@ -261,7 +261,7 @@ public class CountTest {
   }
 
   @Test
-  public void testFailWithGoodMessageIfMissingIndex() {
+  public void testCountFailWithGoodMessageIfMissingIndex() {
     assumeFalse(
         "Skip this test when running against the Firestore emulator because the Firestore emulator "
             + "does not use indexes and never fails with a 'missing index' error",
