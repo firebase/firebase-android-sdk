@@ -16,6 +16,9 @@ package com.google.firebase.firestore.core;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedSet;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
+import com.google.firebase.firestore.MemoryCacheSettings;
+import com.google.firebase.firestore.MemoryLruGcSettings;
 import com.google.firebase.firestore.local.IndexBackfiller;
 import com.google.firebase.firestore.local.LocalSerializer;
 import com.google.firebase.firestore.local.LocalStore;
@@ -65,9 +68,19 @@ public class MemoryComponentProvider extends ComponentProvider {
     return new AndroidConnectivityMonitor(configuration.getContext());
   }
 
+  private boolean isMemoryLruGcEnabled(FirebaseFirestoreSettings settings) {
+    if (settings.getCacheSettings() != null
+        && settings.getCacheSettings() instanceof MemoryCacheSettings) {
+      MemoryCacheSettings memorySettings = (MemoryCacheSettings) settings.getCacheSettings();
+      return memorySettings.getGarbageCollectorSettings() instanceof MemoryLruGcSettings;
+    }
+
+    return false;
+  }
+
   @Override
   protected Persistence createPersistence(Configuration configuration) {
-    if (configuration.getSettings().isMemoryLruGcEnabled()) {
+    if (isMemoryLruGcEnabled(configuration.getSettings())) {
       LocalSerializer serializer =
           new LocalSerializer(
               new RemoteSerializer(configuration.getDatabaseInfo().getDatabaseId()));

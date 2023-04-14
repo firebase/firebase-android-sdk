@@ -27,6 +27,7 @@ import androidx.annotation.Nullable;
  * `FirebaseFirestoreSettings` instance to configure Firestore SDK.
  */
 public final class MemoryCacheSettings implements LocalCacheSettings {
+  private MemoryGarbageCollectorSettings gcSettings;
 
   /** Returns a new instance of {@link MemoryCacheSettings.Builder} with default configurations. */
   @NonNull
@@ -34,11 +35,13 @@ public final class MemoryCacheSettings implements LocalCacheSettings {
     return new MemoryCacheSettings.Builder();
   }
 
-  private MemoryCacheSettings() {}
+  private MemoryCacheSettings(MemoryGarbageCollectorSettings settings) {
+    gcSettings = settings;
+  }
 
   @Override
   public int hashCode() {
-    return super.hashCode();
+    return gcSettings.hashCode();
   }
 
   @Override
@@ -46,23 +49,36 @@ public final class MemoryCacheSettings implements LocalCacheSettings {
     if (this == obj) return true;
     if (obj == null || getClass() != obj.getClass()) return false;
 
-    return true;
+    return getGarbageCollectorSettings()
+        .equals(((MemoryCacheSettings) obj).getGarbageCollectorSettings());
   }
 
   @Override
   public String toString() {
-    return "MemoryCacheSettings{}";
+    return "MemoryCacheSettings{gcSettings " + getGarbageCollectorSettings() + "}";
+  }
+
+  @NonNull
+  public MemoryGarbageCollectorSettings getGarbageCollectorSettings() {
+    return gcSettings;
   }
 
   /** A Builder for creating {@code MemoryCacheSettings} instance. */
   public static class Builder {
+    private MemoryGarbageCollectorSettings gcSettings = MemoryEagerGcSettings.newBuilder().build();
 
     private Builder() {}
 
     /** Creates a {@code MemoryCacheSettings} instance. */
     @NonNull
     public MemoryCacheSettings build() {
-      return new MemoryCacheSettings();
+      return new MemoryCacheSettings(gcSettings);
+    }
+
+    @NonNull
+    public Builder setGcSettings(@NonNull MemoryGarbageCollectorSettings gcSettings) {
+      this.gcSettings = gcSettings;
+      return this;
     }
   }
 }
