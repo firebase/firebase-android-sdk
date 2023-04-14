@@ -22,6 +22,7 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
@@ -50,8 +51,10 @@ import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
+import com.google.firestore.v1.Value;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -242,14 +245,15 @@ public final class FirestoreClient {
 
   // TODO(b/261013682): Use an explicit executor in continuations.
   @SuppressLint("TaskMainThread")
-  public Task<Long> runCountQuery(Query query) {
+  public Task<Map<String, Value>> runAggregateQuery(
+      Query query, List<AggregateField> aggregateFields) {
     this.verifyNotTerminated();
-    final TaskCompletionSource<Long> result = new TaskCompletionSource<>();
+    final TaskCompletionSource<Map<String, Value>> result = new TaskCompletionSource<>();
     asyncQueue.enqueueAndForget(
         () ->
             syncEngine
-                .runCountQuery(query)
-                .addOnSuccessListener(count -> result.setResult(count))
+                .runAggregateQuery(query, aggregateFields)
+                .addOnSuccessListener(data -> result.setResult(data))
                 .addOnFailureListener(e -> result.setException(e)));
     return result.getTask();
   }

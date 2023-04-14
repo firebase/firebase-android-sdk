@@ -20,7 +20,7 @@ plugins {
 group = "com.google.firebase"
 
 firebaseLibrary {
-    releaseWith project(':firebase-firestore')
+    libraryGroup "firestore"
     publishSources = true
 }
 
@@ -52,9 +52,9 @@ tasks.withType(Test) {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    implementation project(':firebase-common')
-    implementation project(':firebase-components')
-    implementation project(':firebase-common:ktx')
+    implementation 'com.google.firebase:firebase-common:20.3.1'
+    implementation 'com.google.firebase:firebase-components:17.1.0'
+    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
     implementation project(':firebase-firestore')
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"

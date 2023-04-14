@@ -38,6 +38,7 @@ import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
@@ -240,6 +241,11 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
               }
 
               @Override
+              public CrashlyticsReport.ApplicationExitInfo getApplicationExitInto() {
+                return null;
+              }
+
+              @Override
               public File getBinaryImagesFile() {
                 return null;
               }
@@ -279,9 +285,9 @@ public class CrashlyticsControllerTest extends CrashlyticsTestCase {
 
     controller.finalizeSessions(testSettingsProvider);
     verify(mockSessionReportingCoordinator)
-        .finalizeSessionWithNativeEvent(eq(previousSessionId), any());
+        .finalizeSessionWithNativeEvent(eq(previousSessionId), any(), any());
     verify(mockSessionReportingCoordinator, never())
-        .finalizeSessionWithNativeEvent(eq(sessionId), any());
+        .finalizeSessionWithNativeEvent(eq(sessionId), any(), any());
   }
 
   public void testMissingNativeComponentCausesNoReports() {

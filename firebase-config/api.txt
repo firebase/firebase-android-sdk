@@ -1,8 +1,24 @@
 // Signature format: 2.0
 package com.google.firebase.remoteconfig {
 
+  @com.google.auto.value.AutoValue public abstract class ConfigUpdate {
+    ctor public ConfigUpdate();
+    method @NonNull public static com.google.firebase.remoteconfig.ConfigUpdate create(@NonNull java.util.Set<java.lang.String>);
+    method @NonNull public abstract java.util.Set<java.lang.String> getUpdatedKeys();
+  }
+
+  public interface ConfigUpdateListener {
+    method public void onError(@NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigException);
+    method public void onUpdate(@NonNull com.google.firebase.remoteconfig.ConfigUpdate);
+  }
+
+  public interface ConfigUpdateListenerRegistration {
+    method public void remove();
+  }
+
   public class FirebaseRemoteConfig {
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Boolean> activate();
+    method @NonNull public com.google.firebase.remoteconfig.ConfigUpdateListenerRegistration addOnConfigUpdateListener(@NonNull com.google.firebase.remoteconfig.ConfigUpdateListener);
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.remoteconfig.FirebaseRemoteConfigInfo> ensureInitialized();
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> fetch();
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> fetch(long);
@@ -38,11 +54,25 @@ package com.google.firebase.remoteconfig {
   public class FirebaseRemoteConfigClientException extends com.google.firebase.remoteconfig.FirebaseRemoteConfigException {
     ctor public FirebaseRemoteConfigClientException(@NonNull String);
     ctor public FirebaseRemoteConfigClientException(@NonNull String, @Nullable Throwable);
+    ctor public FirebaseRemoteConfigClientException(@NonNull String, @NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code);
+    ctor public FirebaseRemoteConfigClientException(@NonNull String, @Nullable Throwable, @NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code);
   }
 
   public class FirebaseRemoteConfigException extends com.google.firebase.FirebaseException {
     ctor public FirebaseRemoteConfigException(@NonNull String);
     ctor public FirebaseRemoteConfigException(@NonNull String, @Nullable Throwable);
+    ctor public FirebaseRemoteConfigException(@NonNull String, @NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code);
+    ctor public FirebaseRemoteConfigException(@NonNull String, @Nullable Throwable, @NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code);
+    method @NonNull public com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code getCode();
+  }
+
+  public enum FirebaseRemoteConfigException.Code {
+    method public int value();
+    enum_constant public static final com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code CONFIG_UPDATE_MESSAGE_INVALID;
+    enum_constant public static final com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code CONFIG_UPDATE_NOT_FETCHED;
+    enum_constant public static final com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code CONFIG_UPDATE_STREAM_ERROR;
+    enum_constant public static final com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code CONFIG_UPDATE_UNAVAILABLE;
+    enum_constant public static final com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code UNKNOWN;
   }
 
   public class FirebaseRemoteConfigFetchThrottledException extends com.google.firebase.remoteconfig.FirebaseRemoteConfigException {
@@ -59,6 +89,10 @@ package com.google.firebase.remoteconfig {
   public class FirebaseRemoteConfigServerException extends com.google.firebase.remoteconfig.FirebaseRemoteConfigException {
     ctor public FirebaseRemoteConfigServerException(int, @NonNull String);
     ctor public FirebaseRemoteConfigServerException(int, @NonNull String, @Nullable Throwable);
+    ctor public FirebaseRemoteConfigServerException(@NonNull String, @NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code);
+    ctor public FirebaseRemoteConfigServerException(int, @NonNull String, @NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code);
+    ctor public FirebaseRemoteConfigServerException(@NonNull String, @Nullable Throwable, @NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code);
+    ctor public FirebaseRemoteConfigServerException(int, @NonNull String, @Nullable Throwable, @NonNull com.google.firebase.remoteconfig.FirebaseRemoteConfigException.Code);
     method public int getHttpStatusCode();
   }
 

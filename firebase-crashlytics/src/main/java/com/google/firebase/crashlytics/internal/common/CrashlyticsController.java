@@ -22,6 +22,7 @@ import android.os.Build.VERSION;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StatFs;
+import android.util.Base64;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.SuccessContinuation;
@@ -34,13 +35,16 @@ import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -68,6 +72,10 @@ class CrashlyticsController {
   static final int FIREBASE_CRASH_TYPE_FATAL = 1;
 
   private static final String GENERATOR_FORMAT = "Crashlytics Android SDK/%s";
+
+  private static final String VERSION_CONTROL_INFO_KEY = "com.crashlytics.version-control-info";
+  private static final String VERSION_CONTROL_INFO_FILE = "version-control-info.textproto";
+  private static final String META_INF_FOLDER = "META-INF/";
 
   private final Context context;
   private final DataCollectionArbiter dataCollectionArbiter;
@@ -610,15 +618,69 @@ class CrashlyticsController {
     return fileStore.getCommonFiles(APP_EXCEPTION_MARKER_FILTER);
   }
 
+  void saveVersionControlInfo() {
+    try {
+      String versionControlInfo = getVersionControlInfo();
+      if (versionControlInfo != null) {
+        setInternalKey(VERSION_CONTROL_INFO_KEY, versionControlInfo);
+        Logger.getLogger().i("Saved version control info");
+      }
+    } catch (IOException e) {
+      Logger.getLogger().w("Unable to save version control info", e);
+    }
+  }
+
+  String getVersionControlInfo() throws IOException {
+    InputStream is = getResourceAsStream(META_INF_FOLDER + VERSION_CONTROL_INFO_FILE);
+    if (is == null) {
+      return null;
+    }
+
+    Logger.getLogger().d("Read version control info");
+    return Base64.encodeToString(readResource(is), 0);
+  }
+
+  private InputStream getResourceAsStream(String resource) {
+    ClassLoader classLoader = this.getClass().getClassLoader();
+    if (classLoader == null) {
+      Logger.getLogger().w("Couldn't get Class Loader");
+      return null;
+    }
+
+    InputStream is = classLoader.getResourceAsStream(resource);
+    if (is == null) {
+      Logger.getLogger().i("No version control information found");
+      return null;
+    }
+
+    return is;
+  }
+
+  private static byte[] readResource(InputStream is) throws IOException {
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    byte[] buffer = new byte[1024];
+    int length;
+
+    while ((length = is.read(buffer)) != -1) {
+      out.write(buffer, 0, length);
+    }
+
+    return out.toByteArray();
+  }
+
   private void finalizePreviousNativeSession(String previousSessionId) {
     Logger.getLogger().v("Finalizing native report for session " + previousSessionId);
     NativeSessionFileProvider nativeSessionFileProvider =
         nativeComponent.getSessionFileProvider(previousSessionId);
     File minidumpFile = nativeSessionFileProvider.getMinidumpFile();
-    if (minidumpFile == null || !minidumpFile.exists()) {
-      Logger.getLogger().w("No minidump data found for session " + previousSessionId);
+    CrashlyticsReport.ApplicationExitInfo applicationExitInfo =
+        nativeSessionFileProvider.getApplicationExitInto();
+
+    if (nativeCoreAbsent(previousSessionId, minidumpFile, applicationExitInfo)) {
+      Logger.getLogger().w("No native core present");
       return;
     }
+
     // Because we don't want to read the minidump to get its timestamp, just use file creation time.
     final long eventTime = minidumpFile.lastModified();
 
@@ -642,8 +704,24 @@ class CrashlyticsController {
 
     Logger.getLogger().d("CrashlyticsController#finalizePreviousNativeSession");
 
-    reportingCoordinator.finalizeSessionWithNativeEvent(previousSessionId, nativeSessionFiles);
+    reportingCoordinator.finalizeSessionWithNativeEvent(
+        previousSessionId, nativeSessionFiles, applicationExitInfo);
     previousSessionLogManager.clearLog();
+  }
+
+  private static boolean nativeCoreAbsent(
+      String previousSessionId,
+      File minidumpFile,
+      CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+    if (minidumpFile == null || !minidumpFile.exists()) {
+      Logger.getLogger().w("No minidump data found for session " + previousSessionId);
+    }
+
+    if (applicationExitInfo == null) {
+      Logger.getLogger().i("No Tombstones data found for session " + previousSessionId);
+    }
+
+    return (minidumpFile == null || !minidumpFile.exists()) && applicationExitInfo == null;
   }
 
   private static long getCurrentTimestampSeconds() {
@@ -801,12 +879,18 @@ class CrashlyticsController {
             "device_meta_file", "device", fileProvider.getDeviceFile()));
     nativeSessionFiles.add(
         new FileBackedNativeSessionFile("os_meta_file", "os", fileProvider.getOsFile()));
-    nativeSessionFiles.add(
-        new FileBackedNativeSessionFile(
-            "minidump_file", "minidump", fileProvider.getMinidumpFile()));
+    nativeSessionFiles.add(nativeCoreFile(fileProvider));
     nativeSessionFiles.add(new FileBackedNativeSessionFile("user_meta_file", "user", userFile));
     nativeSessionFiles.add(new FileBackedNativeSessionFile("keys_file", "keys", keysFile));
     return nativeSessionFiles;
+  }
+
+  private static NativeSessionFile nativeCoreFile(NativeSessionFileProvider fileProvider) {
+    File minidump = fileProvider.getMinidumpFile();
+
+    return minidump == null || !minidump.exists()
+        ? new BytesBackedNativeSessionFile("minidump_file", "minidump", new byte[] {0})
+        : new FileBackedNativeSessionFile("minidump_file", "minidump", minidump);
   }
 
   // endregion

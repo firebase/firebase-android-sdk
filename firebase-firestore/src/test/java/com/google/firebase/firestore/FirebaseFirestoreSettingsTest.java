@@ -15,6 +15,7 @@
 package com.google.firebase.firestore;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,12 +41,12 @@ public class FirebaseFirestoreSettingsTest {
         new FirebaseFirestoreSettings.Builder()
             .setHost("a.b.c")
             .setSslEnabled(false)
-            .setPersistenceEnabled(false)
-            .setCacheSizeBytes(2000000L)
+            .setLocalCacheSettings(
+                PersistentCacheSettings.newBuilder().setSizeBytes(2000000L).build())
             .build();
     assertEquals(settings.getHost(), "a.b.c");
     assertEquals(settings.isSslEnabled(), false);
-    assertEquals(settings.isPersistenceEnabled(), false);
+    assertEquals(settings.isPersistenceEnabled(), true);
     assertEquals(settings.getCacheSizeBytes(), 2000000L);
   }
 
@@ -55,13 +56,48 @@ public class FirebaseFirestoreSettingsTest {
         new FirebaseFirestoreSettings.Builder()
             .setHost("a.b.c")
             .setSslEnabled(false)
-            .setPersistenceEnabled(false)
-            .setCacheSizeBytes(2000000L)
+            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
             .build();
     FirebaseFirestoreSettings settings2 = new FirebaseFirestoreSettings.Builder(settings1).build();
     assertEquals(settings2.getHost(), "a.b.c");
     assertEquals(settings2.isSslEnabled(), false);
     assertEquals(settings2.isPersistenceEnabled(), false);
-    assertEquals(settings2.getCacheSizeBytes(), 2000000L);
+    assertEquals(settings2.getCacheSizeBytes(), FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED);
+  }
+
+  @Test
+  public void cannotMixLegacyAndNewCacheConfig() {
+    FirebaseFirestoreSettings.Builder builder =
+        new FirebaseFirestoreSettings.Builder()
+            .setHost("a.b.c")
+            .setSslEnabled(false)
+            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build());
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          builder.setPersistenceEnabled(false);
+        });
+
+    FirebaseFirestoreSettings.Builder builder1 =
+        new FirebaseFirestoreSettings.Builder()
+            .setHost("a.b.c")
+            .setSslEnabled(false)
+            .setCacheSizeBytes(2_000_000);
+    assertThrows(
+        IllegalStateException.class,
+        () -> {
+          builder1.setLocalCacheSettings(PersistentCacheSettings.newBuilder().build());
+        });
+  }
+
+  @Test
+  public void cannotCustomizeCacheConfig() {
+    FirebaseFirestoreSettings.Builder builder =
+        new FirebaseFirestoreSettings.Builder().setHost("a.b.c").setSslEnabled(false);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          builder.setLocalCacheSettings(new LocalCacheSettings() {});
+        });
   }
 }

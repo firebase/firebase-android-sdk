@@ -16,6 +16,10 @@
 
 apply plugin: 'com.android.application'
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+apply plugin: 'org.jetbrains.kotlin.android'
+
+// Uncomment this line after adding a google-services.json file to the project.
+// apply plugin: 'com.google.gms.google-services'
 
 android {
     compileSdkVersion project.targetSdkVersion
@@ -59,12 +63,17 @@ firebaseTestLab {
 }
 
 dependencies {
+    // Depend on development artifacts for Remote Config.
     implementation project(":firebase-config")
-    // This is required since a project dependency on frc does not expose the Apis of its "implementation" dependencies.
-    // The alternative would be to make common an "api" dep of remote-config.
-    // It should not matter for released artifacts.
-    implementation project(":firebase-common")
-    implementation project(":firebase-components")
+    implementation project(":firebase-config:ktx")
+
+    // This is required since a `project` dependency on frc does not expose the APIs of its
+    // "implementation" dependencies. The alternative would be to make common an "api" dep of remote-config.
+    // Released artifacts don't need these dependencies since they don't use `project` to refer
+    // to Remote Config.
+    implementation "com.google.firebase:firebase-common:20.3.2"
+    implementation 'com.google.firebase:firebase-common-ktx:20.3.2'
+    implementation "com.google.firebase:firebase-components:17.1.0"
 
     implementation project(":firebase-installations-interop")
     runtimeOnly project(":firebase-installations")
@@ -75,6 +84,7 @@ dependencies {
     // Support Libraries
     implementation 'com.google.guava:guava:28.1-android'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.6.4"
 
     implementation 'androidx.appcompat:appcompat:1.0.2'
     implementation 'androidx.annotation:annotation:1.1.0'

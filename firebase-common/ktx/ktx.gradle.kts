@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    releaseWith(project(":firebase-common"))
+    libraryGroup("common")
 }
 
 android {
@@ -43,9 +43,9 @@ android {
 dependencies {
     implementation(libs.kotlin.stdlib)
 
-    implementation(project(":firebase-annotations"))
+    implementation("com.google.firebase:firebase-annotations:16.2.0")
     implementation(project(":firebase-common"))
-    implementation(project(":firebase-components"))
+    implementation("com.google.firebase:firebase-components:17.1.0")
     implementation(libs.androidx.annotation)
 
     // We"re exposing this library as a transitive dependency so developers can

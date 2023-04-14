@@ -14,15 +14,18 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.util.Assert.hardAssert;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import java.util.Objects;
+import javax.annotation.Nullable;
 
 /** Settings used to configure a {@link FirebaseFirestore} instance. */
 public final class FirebaseFirestoreSettings {
   /**
-   * Constant to use with {@link FirebaseFirestoreSettings.Builder#setCacheSizeBytes(long)} to
+   * Constant to use with
+   * {@link FirebaseFirestoreSettings.Builder#setCacheSizeBytes(long)} to
    * disable garbage collection.
    */
   public static final long CACHE_SIZE_UNLIMITED = -1;
@@ -30,8 +33,8 @@ public final class FirebaseFirestoreSettings {
   /** @hide */
   public static final String DEFAULT_HOST = "firestore.googleapis.com";
 
-  private static final long MINIMUM_CACHE_BYTES = 1 * 1024 * 1024; // 1 MB
-  private static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
+  static final long MINIMUM_CACHE_BYTES = 1 * 1024 * 1024; // 1 MB
+  static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
 
   /** A Builder for creating {@code FirebaseFirestoreSettings}. */
   public static final class Builder {
@@ -41,6 +44,9 @@ public final class FirebaseFirestoreSettings {
 
     private boolean memoryLruGcEnabled;
     private long cacheSizeBytes;
+    private LocalCacheSettings cacheSettings;
+
+    private boolean usedLegacyCacheSettings = false;
 
     /** Constructs a new {@code FirebaseFirestoreSettings} Builder object. */
     public Builder() {
@@ -52,7 +58,8 @@ public final class FirebaseFirestoreSettings {
     }
 
     /**
-     * Constructs a new {@code FirebaseFirestoreSettings} Builder based on an existing {@code
+     * Constructs a new {@code FirebaseFirestoreSettings} Builder based on an
+     * existing {@code
      * FirebaseFirestoreSettings} object.
      */
     public Builder(@NonNull FirebaseFirestoreSettings settings) {
@@ -61,7 +68,17 @@ public final class FirebaseFirestoreSettings {
       sslEnabled = settings.sslEnabled;
       persistenceEnabled = settings.persistenceEnabled;
       cacheSizeBytes = settings.cacheSizeBytes;
-      memoryLruGcEnabled = settings.memoryLruGcEnabled;
+      if (!persistenceEnabled || cacheSizeBytes != DEFAULT_CACHE_SIZE_BYTES) {
+        usedLegacyCacheSettings = true;
+      }
+
+      if (!usedLegacyCacheSettings) {
+        cacheSettings = settings.cacheSettings;
+      } else {
+        hardAssert(
+            settings.cacheSettings == null,
+            "Given settings object mixes both cache config APIs, which is impossible.");
+      }
     }
 
     /**
@@ -88,14 +105,26 @@ public final class FirebaseFirestoreSettings {
     }
 
     /**
-     * Enables or disables local persistent storage. The default is to use local persistent storage.
+     * Enables or disables local persistent storage. The default is to use local
+     * persistent storage.
      *
-     * @return A settings object that uses local persistent storage as specified by the given
-     *     <tt>value</tt>.
+     * @return A settings object that uses local persistent storage as specified by
+     *         the given
+     *         <tt>value</tt>.
+     * @deprecated Use {@link
+     *             FirebaseFirestoreSettings.Builder#setLocalCacheSettings(LocalCacheSettings)}
+     *             to configure
+     *             SDK cache instead.
      */
     @NonNull
+    @Deprecated
     public Builder setPersistenceEnabled(boolean value) {
+      if (cacheSettings != null) {
+        throw new IllegalStateException(
+            "New cache config API setLocalCacheSettings() is already used.");
+      }
       this.persistenceEnabled = value;
+      this.usedLegacyCacheSettings = true;
       return this;
     }
 
@@ -106,23 +135,77 @@ public final class FirebaseFirestoreSettings {
     }
 
     /**
-     * Sets an approximate cache size threshold for the on-disk data. If the cache grows beyond this
-     * size, Cloud Firestore will start removing data that hasn't been recently used. The size is
-     * not a guarantee that the cache will stay below that size, only that if the cache exceeds the
+     * Sets an approximate cache size threshold for the on-disk data. If the cache
+     * grows beyond this
+     * size, Cloud Firestore will start removing data that hasn't been recently
+     * used. The size is
+     * not a guarantee that the cache will stay below that size, only that if the
+     * cache exceeds the
      * given size, cleanup will be attempted.
      *
-     * <p>By default, collection is enabled with a cache size of 100 MB. The minimum value is 1 MB.
+     * <p>
+     * By default, collection is enabled with a cache size of 100 MB. The minimum
+     * value is 1 MB.
      *
-     * @return A settings object on which the cache size is configured as specified by the given
-     *     {@code value}.
+     * @return A settings object on which the cache size is configured as specified
+     *         by the given
+     *         {@code value}.
+     * @deprecated Use {@link
+     *             FirebaseFirestoreSettings.Builder#setLocalCacheSettings(LocalCacheSettings)}
+     *             to configure
+     *             SDK cache instead.
      */
     @NonNull
+    @Deprecated
     public Builder setCacheSizeBytes(long value) {
+      if (cacheSettings != null) {
+        throw new IllegalStateException(
+            "New cache config API setLocalCacheSettings() is already used.");
+      }
       if (value != CACHE_SIZE_UNLIMITED && value < MINIMUM_CACHE_BYTES) {
         throw new IllegalArgumentException(
             "Cache size must be set to at least " + MINIMUM_CACHE_BYTES + " bytes");
       }
       this.cacheSizeBytes = value;
+      this.usedLegacyCacheSettings = true;
+      return this;
+    }
+
+    /**
+     * Specifies the cache used by the SDK. Available options are
+     * {@link PersistentCacheSettings}
+     * and {@link MemoryCacheSettings}, each with different configuration options.
+     *
+     * <p>
+     * When unspecified, {@link PersistentCacheSettings} will be used by default.
+     *
+     * <p>
+     * NOTE: Calling this setter and {@code setPersistenceEnabled()} or @{code
+     * setCacheSizeBytes()} at the same time will throw an exception during SDK
+     * initialization.
+     * Instead, use the configuration in the {@link PersistentCacheSettings} object
+     * to specify the
+     * cache size.
+     *
+     * @return A settings object on which the cache settings is configured as
+     *         specified by the given
+     *         {@code settings}.
+     */
+    @NonNull
+    public Builder setLocalCacheSettings(@NonNull LocalCacheSettings settings) {
+      if (usedLegacyCacheSettings) {
+        throw new IllegalStateException(
+            "Deprecated setPersistenceEnabled() or setCacheSizeBytes() is already used,"
+                + " remove those first.");
+      }
+
+      if (!(settings instanceof MemoryCacheSettings)
+          && !(settings instanceof PersistentCacheSettings)) {
+        throw new IllegalArgumentException(
+            "Only MemoryCacheSettings and PersistentCacheSettings are accepted");
+      }
+
+      this.cacheSettings = settings;
       return this;
     }
 
@@ -137,12 +220,25 @@ public final class FirebaseFirestoreSettings {
       return sslEnabled;
     }
 
-    /** @return boolean indicating whether local persistent storage is enabled or not. */
+    /**
+     * @return boolean indicating whether local persistent storage is enabled or
+     *         not.
+     * @deprecated Build the {@code FirebaseFirestoreSettings} instance to check
+     *             cache
+     *             configurations.
+     */
+    @Deprecated
     public boolean isPersistenceEnabled() {
       return persistenceEnabled;
     }
 
-    /** @return cache size for on-disk data. */
+    /**
+     * @return cache size for on-disk data.
+     * @deprecated Build the {@code FirebaseFirestoreSettings} instance to check
+     *             cache
+     *             configurations.
+     */
+    @Deprecated
     public long getCacheSizeBytes() {
       return cacheSizeBytes;
     }
@@ -163,29 +259,38 @@ public final class FirebaseFirestoreSettings {
   private final boolean memoryLruGcEnabled;
   private final long cacheSizeBytes;
 
-  /** Constructs a {@code FirebaseFirestoreSettings} object based on the values in the Builder. */
+  private LocalCacheSettings cacheSettings;
+
+  /**
+   * Constructs a {@code FirebaseFirestoreSettings} object based on the values in
+   * the Builder.
+   */
   private FirebaseFirestoreSettings(Builder builder) {
     host = builder.host;
     sslEnabled = builder.sslEnabled;
     persistenceEnabled = builder.persistenceEnabled;
     cacheSizeBytes = builder.cacheSizeBytes;
-    memoryLruGcEnabled = builder.memoryLruGcEnabled;
+    cacheSettings = builder.cacheSettings;
   }
 
   @Override
-  public boolean equals(@Nullable Object o) {
-    if (this == o) {
+  public boolean equals(Object o) {
+    if (this == o)
       return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
+    if (o == null || getClass() != o.getClass())
       return false;
-    }
 
     FirebaseFirestoreSettings that = (FirebaseFirestoreSettings) o;
-    return host.equals(that.host)
-        && sslEnabled == that.sslEnabled
-        && persistenceEnabled == that.persistenceEnabled
-        && cacheSizeBytes == that.cacheSizeBytes;
+
+    if (sslEnabled != that.sslEnabled)
+      return false;
+    if (persistenceEnabled != that.persistenceEnabled)
+      return false;
+    if (cacheSizeBytes != that.cacheSizeBytes)
+      return false;
+    if (!host.equals(that.host))
+      return false;
+    return Objects.equals(cacheSettings, that.cacheSettings);
   }
 
   @Override
@@ -193,7 +298,8 @@ public final class FirebaseFirestoreSettings {
     int result = host.hashCode();
     result = 31 * result + (sslEnabled ? 1 : 0);
     result = 31 * result + (persistenceEnabled ? 1 : 0);
-    result = 31 * result + (int) cacheSizeBytes;
+    result = 31 * result + (int) (cacheSizeBytes ^ (cacheSizeBytes >>> 32));
+    result = 31 * result + (cacheSettings != null ? cacheSettings.hashCode() : 0);
     return result;
   }
 
@@ -209,7 +315,10 @@ public final class FirebaseFirestoreSettings {
         + persistenceEnabled
         + ", cacheSizeBytes="
         + cacheSizeBytes
-        + "}";
+        + ", cacheSettings="
+        + cacheSettings == null
+            ? "null"
+            : cacheSettings.toString() + "}";
   }
 
   /** Returns the host of the Cloud Firestore backend. */
@@ -223,8 +332,17 @@ public final class FirebaseFirestoreSettings {
     return sslEnabled;
   }
 
-  /** Returns whether or not to use local persistent storage. */
+  /**
+   * Returns whether or not to use local persistent storage.
+   *
+   * @deprecated Use {@link FirebaseFirestoreSettings#getCacheSettings()} instead.
+   */
+  @Deprecated
   public boolean isPersistenceEnabled() {
+    if (cacheSettings != null) {
+      return cacheSettings instanceof PersistentCacheSettings;
+    }
+
     return persistenceEnabled;
   }
 
@@ -233,10 +351,32 @@ public final class FirebaseFirestoreSettings {
   }
 
   /**
-   * Returns the threshold for the cache size above which the SDK will attempt to collect the least
+   * Returns the threshold for the cache size above which the SDK will attempt to
+   * collect the least
    * recently used documents.
+   *
+   * @deprecated Use {@link FirebaseFirestoreSettings#getCacheSettings()} instead.
    */
+  @Deprecated
   public long getCacheSizeBytes() {
+    if (cacheSettings != null) {
+      if (cacheSettings instanceof PersistentCacheSettings) {
+        return ((PersistentCacheSettings) cacheSettings).getSizeBytes();
+      } else {
+        return CACHE_SIZE_UNLIMITED;
+      }
+    }
+
     return cacheSizeBytes;
+  }
+
+  /**
+   * Returns the cache settings configured for the SDK. Returns null if it is not
+   * configured, in
+   * which case a default {@link PersistentCacheSettings} instance is used.
+   */
+  @Nullable
+  public LocalCacheSettings getCacheSettings() {
+    return cacheSettings;
   }
 }

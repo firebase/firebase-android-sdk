@@ -68,21 +68,26 @@ public final class ImmutableBundle {
   }
 
   /**
-   * Returns float value associated with the given key, or not present if no mapping of the desired
+   * Returns double value associated with the given key, or not present if no mapping of the desired
    * type exists for the given key.
    */
-  public Optional<Float> getFloat(String key) {
+  public Optional<Double> getDouble(String key) {
     if (!containsKey(key)) {
       return Optional.absent();
     }
 
-    try {
-      Object o = bundle.get(key);
-      return Optional.fromNullable((Float) o);
-    } catch (ClassCastException e) {
-      logger.debug("Metadata key %s contains type other than float: %s", key, e.getMessage());
+    Object o = bundle.get(key);
+    if (o == null) {
+      return Optional.absent();
+    }
+    if (o instanceof Float) {
+      return Optional.of(((Float) o).doubleValue());
+    }
+    if (o instanceof Double) {
+      return Optional.of((Double) o);
     }
 
+    logger.debug("Metadata key %s contains type other than double: %s", key);
     return Optional.absent();
   }
 

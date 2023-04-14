@@ -14,6 +14,7 @@
 
 package com.google.firebase.appdistribution.impl;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -28,6 +29,7 @@ import dagger.Binds;
 import dagger.BindsInstance;
 import dagger.Component;
 import dagger.Module;
+import dagger.Provides;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
@@ -85,32 +87,39 @@ interface AppDistroComponent {
   void inject(TakeScreenshotAndStartFeedbackActivity activity);
 
   @Module
-  interface MainModule {
+  abstract class MainModule {
     @Binds
-    FirebaseAppDistribution bindAppDistro(FirebaseAppDistributionImpl impl);
+    abstract FirebaseAppDistribution bindAppDistro(FirebaseAppDistributionImpl impl);
 
     @Binds
     @Background
-    ExecutorService bindBackgroundExecutorService(@Background ScheduledExecutorService ses);
+    abstract ExecutorService bindBackgroundExecutorService(
+        @Background ScheduledExecutorService ses);
 
     @Binds
     @Background
-    Executor bindBackgroundExecutor(@Background ExecutorService es);
+    abstract Executor bindBackgroundExecutor(@Background ExecutorService es);
 
     @Binds
     @Lightweight
-    ExecutorService bindLightweightExecutorService(@Lightweight ScheduledExecutorService ses);
+    abstract ExecutorService bindLightweightExecutorService(
+        @Lightweight ScheduledExecutorService ses);
 
     @Binds
     @Lightweight
-    Executor bindLightweightExecutor(@Lightweight ExecutorService es);
+    abstract Executor bindLightweightExecutor(@Lightweight ExecutorService es);
 
     @Binds
     @Blocking
-    ExecutorService bindBlockingExecutorService(@Blocking ScheduledExecutorService ses);
+    abstract ExecutorService bindBlockingExecutorService(@Blocking ScheduledExecutorService ses);
 
     @Binds
     @Blocking
-    Executor bindBlockingExecutor(@Blocking ExecutorService es);
+    abstract Executor bindBlockingExecutor(@Blocking ExecutorService es);
+
+    @Provides
+    static ContentResolver bindContentResolver(Context applicationContext) {
+      return applicationContext.getContentResolver();
+    }
   }
 }

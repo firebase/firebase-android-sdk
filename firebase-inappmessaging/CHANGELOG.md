@@ -1,6 +1,17 @@
 # Unreleased
-* [fixed] Fixed nullpointer crash #4214
-* [changed] Updated grpc to 1.52.1 and javalite, protoc, protobufjavautil to 3.21.11.
+
+# 20.3.1
+* [fixed] Fixed nullpointer crash
+  ([GitHub Issue #4214](//github.com/firebase/firebase-android-sdk/issues/4214))
+
+* [changed] Updated gRPC to 1.52.1, and updated JavaLite, protoc,
+  protobuf-java-util to 3.21.11.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.3.0
 * [changed] Migrated [inappmessaging] to use standard Firebase executors.

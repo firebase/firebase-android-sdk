@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    releaseWith project(':firebase-installations')
+    libraryGroup "installations"
     publishJavadoc = true
     publishSources = true
 }
@@ -43,11 +43,11 @@ android {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 
-    implementation project(':firebase-common')
-    implementation project(':firebase-common:ktx')
-    implementation project(':firebase-components')
+    implementation 'com.google.firebase:firebase-common:20.3.1'
+    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
+    implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation project(':firebase-installations')
-    implementation project(':firebase-installations-interop')
+    implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
 
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.13'

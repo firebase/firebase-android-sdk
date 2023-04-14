@@ -22,8 +22,8 @@ public class Constants {
   public static final String PREFS_NAME = "FirebasePerfSharedPrefs";
   public static final String ENABLE_DISABLE = "isEnabled";
 
-  public static final float MIN_SAMPLING_RATE = 0.00f;
-  public static final float MAX_SAMPLING_RATE = 1.00f;
+  public static final double MIN_SAMPLING_RATE = 0.0;
+  public static final double MAX_SAMPLING_RATE = 1.0;
 
   // Max length of URL.
   public static final int MAX_URL_LENGTH = 2000;

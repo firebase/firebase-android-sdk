@@ -176,7 +176,9 @@ public class BundleTest {
     // This test really only makes sense with memory persistence, as SQLite persistence only ever
     // lazily deletes data
     db.setFirestoreSettings(
-        new FirebaseFirestoreSettings.Builder().setPersistenceEnabled(false).build());
+        new FirebaseFirestoreSettings.Builder()
+            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+            .build());
 
     InputStream bundle = new ByteArrayInputStream(createBundle());
     LoadBundleTask bundleTask = db.loadBundle(bundle); // Test the InputStream overload
