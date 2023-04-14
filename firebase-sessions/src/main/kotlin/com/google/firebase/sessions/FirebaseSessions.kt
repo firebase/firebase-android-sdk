@@ -64,6 +64,7 @@ internal constructor(
 
     if (!sessionDetails.collectEvents) {
       Log.d(TAG, "Session Start event sampled.")
+      return
     }
 
     sessionCoordinator.attemptLoggingSessionEvent(sessionEvent)
