@@ -26,17 +26,10 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import org.robolectric.Shadows
 
-object FakeFirebaseApp {
-  internal val MOCK_PROJECT_ID = "project"
-  internal val MOCK_APP_ID = "1:12345:android:app"
-  internal val MOCK_API_KEY = "RANDOM_APIKEY_FOR_TESTING"
-  internal val MOCK_APP_VERSION = "1.0.0"
+internal class FakeFirebaseApp(metadata: Bundle? = null) {
+  val firebaseApp: FirebaseApp
 
-  fun fakeFirebaseApp(): FirebaseApp {
-    return fakeFirebaseApp(null)
-  }
-
-  fun fakeFirebaseApp(metadata: Bundle?): FirebaseApp {
+  init {
     val shadowPackageManager =
       Shadows.shadowOf(ApplicationProvider.getApplicationContext<Context>().packageManager)
     val packageInfo =
@@ -45,12 +38,10 @@ object FakeFirebaseApp {
         .build()
     packageInfo.versionName = MOCK_APP_VERSION
 
-    if (metadata != null) {
-      packageInfo.applicationInfo.metaData = metadata
-    }
+    metadata?.let { packageInfo.applicationInfo.metaData = it }
     shadowPackageManager.installPackage(packageInfo)
 
-    val firebaseApp =
+    firebaseApp =
       Firebase.initialize(
         ApplicationProvider.getApplicationContext(),
         FirebaseOptions.Builder()
@@ -59,6 +50,12 @@ object FakeFirebaseApp {
           .setProjectId(MOCK_PROJECT_ID)
           .build()
       )
-    return firebaseApp
+  }
+
+  companion object {
+    internal const val MOCK_PROJECT_ID = "project"
+    internal const val MOCK_APP_ID = "1:12345:android:app"
+    internal const val MOCK_API_KEY = "RANDOM_APIKEY_FOR_TESTING"
+    internal const val MOCK_APP_VERSION = "1.0.0"
   }
 }

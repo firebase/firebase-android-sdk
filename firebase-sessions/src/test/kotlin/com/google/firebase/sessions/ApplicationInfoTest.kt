@@ -31,7 +31,7 @@ class ApplicationInfoTest {
 
   @Test
   fun applicationInfo_populatesInfoCorrectly() {
-    val applicationInfo = SessionEvents.getApplicationInfo(FakeFirebaseApp.fakeFirebaseApp())
+    val applicationInfo = SessionEvents.getApplicationInfo(FakeFirebaseApp().firebaseApp)
     assertThat(applicationInfo)
       .isEqualTo(
         ApplicationInfo(

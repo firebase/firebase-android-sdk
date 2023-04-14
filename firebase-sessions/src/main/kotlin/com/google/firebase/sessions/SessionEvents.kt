@@ -21,6 +21,7 @@ import com.google.firebase.encoders.DataEncoder
 import com.google.firebase.encoders.FieldDescriptor
 import com.google.firebase.encoders.ObjectEncoderContext
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder
+import com.google.firebase.sessions.settings.SessionsSettings
 
 /**
  * Contains functions for [SessionEvent]s.
@@ -103,7 +104,8 @@ internal object SessionEvents {
   fun startSession(
     firebaseApp: FirebaseApp,
     sessionDetails: SessionDetails,
-    currentTimeUs: Long = WallClock.currentTimeUs(),
+    sessionsSettings: SessionsSettings,
+    currentTimeUs: Long = WallClock.currentTimeUs()
   ) =
     SessionEvent(
       eventType = EventType.SESSION_START,
@@ -113,6 +115,7 @@ internal object SessionEvents {
           sessionDetails.firstSessionId,
           sessionDetails.sessionIndex,
           currentTimeUs,
+          DataCollectionStatus(sessionSamplingRate = sessionsSettings.samplingRate),
         ),
       applicationInfo = getApplicationInfo(firebaseApp)
     )

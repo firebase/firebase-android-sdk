@@ -20,6 +20,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.SessionEvents.SESSION_EVENT_ENCODER
+import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.TestSessionEventData
 import org.junit.After
@@ -36,10 +37,12 @@ class SessionEventEncoderTest {
 
   @Test
   fun sessionEvent_encodesToJson() {
+    val fakeFirebaseApp = FakeFirebaseApp()
     val sessionEvent =
       SessionEvents.startSession(
-        FakeFirebaseApp.fakeFirebaseApp(),
+        fakeFirebaseApp.firebaseApp,
         TestSessionEventData.TEST_SESSION_DETAILS,
+        SessionsSettings(fakeFirebaseApp.firebaseApp.applicationContext),
         TestSessionEventData.TEST_SESSION_TIMESTAMP_US,
       )
 

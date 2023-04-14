@@ -21,6 +21,7 @@ import com.google.android.datatransport.Event
 import com.google.android.datatransport.TransportFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
+import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeProvider
 import com.google.firebase.sessions.testing.FakeTransportFactory
@@ -35,10 +36,12 @@ class EventGDTLoggerTest {
 
   @Test
   fun event_logsToGoogleDataTransport() {
+    val fakeFirebaseApp = FakeFirebaseApp()
     val sessionEvent =
       SessionEvents.startSession(
-        FakeFirebaseApp.fakeFirebaseApp(),
+        fakeFirebaseApp.firebaseApp,
         TestSessionEventData.TEST_SESSION_DETAILS,
+        SessionsSettings(fakeFirebaseApp.firebaseApp.applicationContext),
         TestSessionEventData.TEST_SESSION_TIMESTAMP_US,
       )
     val fakeTransportFactory = FakeTransportFactory()
@@ -50,7 +53,7 @@ class EventGDTLoggerTest {
     assertThat(fakeTransportFactory.name).isEqualTo("FIREBASE_APPQUALITY_SESSION")
     assertThat(fakeTransportFactory.payloadEncoding).isEqualTo(Encoding.of("json"))
     assertThat(fakeTransportFactory.fakeTransport!!.sentEvent)
-      .isEqualTo(Event.ofData(TestSessionEventData.EXPECTED_DEFAULT_SESSION_EVENT))
+      .isEqualTo(Event.ofData(TestSessionEventData.TEST_SESSION_EVENT))
   }
 
   @After
