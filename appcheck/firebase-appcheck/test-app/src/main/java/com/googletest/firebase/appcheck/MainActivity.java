@@ -47,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
   private Button installSafetyNetButton;
   private Button installDebugButton;
   private Button getAppCheckTokenButton;
+  private Button getLimitedUseTokenButton;
   private Button listStorageFilesButton;
 
   @Override
@@ -74,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
         new AppCheckListener() {
           @Override
           public void onAppCheckTokenChanged(@NonNull AppCheckToken token) {
-            Log.d(TAG, "onAppCheckTokenChanged");
+            Log.d(TAG, "onAppCheckTokenChanged: " + token.getToken());
           }
         };
 
@@ -86,6 +87,7 @@ public class MainActivity extends AppCompatActivity {
     installSafetyNetButton = findViewById(R.id.install_safety_net_app_check_button);
     installDebugButton = findViewById(R.id.install_debug_app_check_button);
     getAppCheckTokenButton = findViewById(R.id.exchange_app_check_button);
+    getLimitedUseTokenButton = findViewById(R.id.limited_use_app_check_button);
     listStorageFilesButton = findViewById(R.id.storage_list_files_button);
 
     setOnClickListeners();
@@ -134,20 +136,55 @@ public class MainActivity extends AppCompatActivity {
                 new OnSuccessListener<AppCheckToken>() {
                   @Override
                   public void onSuccess(AppCheckToken appCheckToken) {
-                    Log.d(TAG, "Successfully retrieved AppCheck token.");
-                    showToast("Successfully retrieved AppCheck token.");
+                    // Note: Logging App Check tokens is bad practice and should NEVER be done in a
+                    // production application. We log the token here in our unpublished test
+                    // application for easier debugging.
+                    Log.d(
+                        TAG, "Successfully retrieved App Check token: " + appCheckToken.getToken());
+                    showToast("Successfully retrieved App Check token.");
                   }
                 });
             task.addOnFailureListener(
                 new OnFailureListener() {
                   @Override
                   public void onFailure(@NonNull Exception e) {
-                    Log.d(TAG, "AppCheck token exchange failed with error: " + e.getMessage());
-                    showToast("AppCheck token exchange failed.");
+                    Log.d(TAG, "App Check token exchange failed with error: " + e.getMessage());
+                    showToast("App Check token exchange failed.");
                   }
                 });
           }
         });
+
+    getLimitedUseTokenButton.setOnClickListener(
+        new OnClickListener() {
+          @Override
+          public void onClick(View v) {
+            Task<AppCheckToken> task = firebaseAppCheck.getLimitedUseAppCheckToken();
+            task.addOnSuccessListener(
+                new OnSuccessListener<AppCheckToken>() {
+                  @Override
+                  public void onSuccess(AppCheckToken appCheckToken) {
+                    // Note: Logging App Check tokens is bad practice and should NEVER be done in a
+                    // production application. We log the token here in our unpublished test
+                    // application for easier debugging.
+                    Log.d(
+                        TAG,
+                        "Successfully retrieved limited-use App Check token: "
+                            + appCheckToken.getToken());
+                    showToast("Successfully retrieved limited-use App Check token.");
+                  }
+                });
+            task.addOnFailureListener(
+                new OnFailureListener() {
+                  @Override
+                  public void onFailure(@NonNull Exception e) {
+                    Log.d(TAG, "App Check token exchange failed with error: " + e.getMessage());
+                    showToast("App Check token exchange failed.");
+                  }
+                });
+          }
+        });
+
     listStorageFilesButton.setOnClickListener(
         new OnClickListener() {
           @Override
