@@ -112,7 +112,9 @@ public final class DynamicLink {
       return this;
     }
 
-    /** @return the long Dynamic link associated with this DynamicLink. */
+    /**
+     * @return the long Dynamic link associated with this DynamicLink.
+     */
     @NonNull
     public Uri getLongLink() {
       Uri longLink = fdlParameters.getParcelable(KEY_DYNAMIC_LINK);
@@ -136,7 +138,9 @@ public final class DynamicLink {
       return this;
     }
 
-    /** @return the deep link associated with this DynamicLink. */
+    /**
+     * @return the deep link associated with this DynamicLink.
+     */
     @NonNull
     public Uri getLink() {
       Uri link = fdlParameters.getParcelable(KEY_LINK);
@@ -186,7 +190,9 @@ public final class DynamicLink {
       return this;
     }
 
-    /** @return the deep link set to this DynamicLink. */
+    /**
+     * @return the deep link set to this DynamicLink.
+     */
     @NonNull
     public String getDomainUriPrefix() {
       return builderParameters.getString(KEY_DOMAIN_URI_PREFIX, "");
@@ -377,7 +383,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the link to open on Android if the app isn't installed. */
+      /**
+       * @return the link to open on Android if the app isn't installed.
+       */
       @NonNull
       public Uri getFallbackUrl() {
         Uri fallbackUrl = parameters.getParcelable(KEY_ANDROID_FALLBACK_LINK);
@@ -398,7 +406,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the minimum version of your app that can open the link. */
+      /**
+       * @return the minimum version of your app that can open the link.
+       */
       public int getMinimumVersion() {
         return parameters.getInt(KEY_ANDROID_MIN_VERSION_CODE);
       }
@@ -480,7 +490,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the app's custom URL scheme. */
+      /**
+       * @return the app's custom URL scheme.
+       */
       @NonNull
       public String getCustomScheme() {
         return parameters.getString(KEY_IOS_CUSTOM_SCHEME, "");
@@ -500,7 +512,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the link to open on iPad if the app is not installed. */
+      /**
+       * @return the link to open on iPad if the app is not installed.
+       */
       @NonNull
       public Uri getIpadFallbackUrl() {
         Uri fallbackUrl = parameters.getParcelable(KEY_IPAD_FALLBACK_LINK);
@@ -522,7 +536,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the iPad bundle ID of the app. */
+      /**
+       * @return the iPad bundle ID of the app.
+       */
       @NonNull
       public String getIpadBundleId() {
         return parameters.getString(KEY_IPAD_BUNDLE_ID, "");
@@ -558,7 +574,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the minimum version of your app that can open the link. */
+      /**
+       * @return the minimum version of your app that can open the link.
+       */
       @NonNull
       public String getMinimumVersion() {
         return parameters.getString(KEY_IOS_MINIMUM_VERSION, "");
@@ -635,7 +653,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the campaign source. */
+      /**
+       * @return the campaign source.
+       */
       @NonNull
       public String getSource() {
         return parameters.getString(KEY_UTM_SOURCE, "");
@@ -653,7 +673,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the campaign medium. */
+      /**
+       * @return the campaign medium.
+       */
       @NonNull
       public String getMedium() {
         return parameters.getString(KEY_UTM_MEDIUM, "");
@@ -671,7 +693,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the campaign name. */
+      /**
+       * @return the campaign name.
+       */
       @NonNull
       public String getCampaign() {
         return parameters.getString(KEY_UTM_CAMPAIGN, "");
@@ -688,7 +712,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the campaign term. */
+      /**
+       * @return the campaign term.
+       */
       @NonNull
       public String getTerm() {
         return parameters.getString(KEY_UTM_TERM, "");
@@ -706,7 +732,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the campaign content. */
+      /**
+       * @return the campaign content.
+       */
       @NonNull
       public String getContent() {
         return parameters.getString(KEY_UTM_CONTENT, "");
@@ -763,7 +791,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the provider token. */
+      /**
+       * @return the provider token.
+       */
       @NonNull
       public String getProviderToken() {
         return parameters.getString(KEY_ITUNES_CONNECT_PT, "");
@@ -781,7 +811,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the affiliate token. */
+      /**
+       * @return the affiliate token.
+       */
       @NonNull
       public String getAffiliateToken() {
         return parameters.getString(KEY_ITUNES_CONNECT_AT, "");
@@ -800,7 +832,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the campaign token. */
+      /**
+       * @return the campaign token.
+       */
       @NonNull
       public String getCampaignToken() {
         return parameters.getString(KEY_ITUNES_CONNECT_CT, "");
@@ -855,7 +889,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the meta-tag title. */
+      /**
+       * @return the meta-tag title.
+       */
       @NonNull
       public String getTitle() {
         return parameters.getString(KEY_SOCIAL_TITLE, "");
@@ -872,7 +908,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the meta-tag description. */
+      /**
+       * @return the meta-tag description.
+       */
       @NonNull
       public String getDescription() {
         return parameters.getString(KEY_SOCIAL_DESCRIPTION, "");
@@ -889,7 +927,9 @@ public final class DynamicLink {
         return this;
       }
 
-      /** @return the meta-tag image link. */
+      /**
+       * @return the meta-tag image link.
+       */
       @NonNull
       public Uri getImageUrl() {
         Uri imageUrl = parameters.getParcelable(KEY_SOCIAL_IMAGE_LINK);

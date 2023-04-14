@@ -57,7 +57,9 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
             storage.getMaxDownloadRetryTimeMillis());
   }
 
-  /** @return the number of bytes downloaded so far into the file. */
+  /**
+   * @return the number of bytes downloaded so far into the file.
+   */
   /*package*/ long getDownloadedSizeInBytes() {
     return mBytesDownloaded;
   }
@@ -70,7 +72,9 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
     return mTotalBytes;
   }
 
-  /** @return the target of the upload. */
+  /**
+   * @return the target of the upload.
+   */
   @NonNull
   @Override
   /*package*/ StorageReference getStorage() {
@@ -280,12 +284,16 @@ public class FileDownloadTask extends StorageTask<FileDownloadTask.TaskSnapshot>
       mBytesDownloaded = bytesDownloaded;
     }
 
-    /** @return the total bytes downloaded so far. */
+    /**
+     * @return the total bytes downloaded so far.
+     */
     public long getBytesTransferred() {
       return mBytesDownloaded;
     }
 
-    /** @return the total bytes to upload.. */
+    /**
+     * @return the total bytes to upload..
+     */
     public long getTotalByteCount() {
       return FileDownloadTask.this.getTotalBytes();
     }

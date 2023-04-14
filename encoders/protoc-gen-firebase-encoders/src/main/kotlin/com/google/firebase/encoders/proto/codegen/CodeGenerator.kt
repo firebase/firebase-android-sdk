@@ -156,7 +156,6 @@ internal class Gen(
    * Generates an enum.
    *
    * Example generated enum:
-   *
    * ```java
    * import com.google.firebase.encoders.proto.ProtoEnum;
    *

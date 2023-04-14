@@ -147,7 +147,9 @@ public class CardMessage extends InAppMessage {
     return secondaryAction;
   }
 
-  /** @deprecated Use {@link #getPrimaryAction()} or {@link #getSecondaryAction()} instead. */
+  /**
+   * @deprecated Use {@link #getPrimaryAction()} or {@link #getSecondaryAction()} instead.
+   */
   @Nullable
   @Deprecated
   @Override

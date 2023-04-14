@@ -208,7 +208,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
    *     sent.
    */
   public Task<Void> sendReports(@NonNull Executor reportSendCompleteExecutor) {
-    return sendReports(reportSendCompleteExecutor, /*sessionId=*/ null);
+    return sendReports(reportSendCompleteExecutor, /* sessionId= */ null);
   }
 
   public Task<Void> sendReports(

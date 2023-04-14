@@ -53,7 +53,7 @@ public class MockDatastore extends Datastore {
     private final Map<Integer, TargetData> activeTargets = new HashMap<>();
 
     MockWatchStream(AsyncQueue workerQueue, WatchStream.Callback listener) {
-      super(/*channel=*/ null, workerQueue, serializer, listener);
+      super(/* channel= */ null, workerQueue, serializer, listener);
     }
 
     @Override
@@ -141,7 +141,7 @@ public class MockDatastore extends Datastore {
     private final List<List<Mutation>> sentWrites;
 
     MockWriteStream(AsyncQueue workerQueue, WriteStream.Callback listener) {
-      super(/*channel=*/ null, workerQueue, serializer, listener);
+      super(/* channel= */ null, workerQueue, serializer, listener);
       sentWrites = new ArrayList<>();
     }
 

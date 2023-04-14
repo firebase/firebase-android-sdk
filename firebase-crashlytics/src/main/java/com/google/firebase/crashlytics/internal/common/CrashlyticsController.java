@@ -176,7 +176,7 @@ class CrashlyticsController {
       @NonNull SettingsProvider settingsProvider,
       @NonNull final Thread thread,
       @NonNull final Throwable ex) {
-    handleUncaughtException(settingsProvider, thread, ex, /*isOnDemand=*/ false);
+    handleUncaughtException(settingsProvider, thread, ex, /* isOnDemand= */ false);
   }
 
   synchronized void handleUncaughtException(
@@ -451,7 +451,7 @@ class CrashlyticsController {
       Logger.getLogger().w("settingsProvider not set");
       return;
     }
-    handleUncaughtException(settingsProvider, thread, ex, /*isOnDemand=*/ true);
+    handleUncaughtException(settingsProvider, thread, ex, /* isOnDemand= */ true);
   }
 
   void setUserId(String identifier) {

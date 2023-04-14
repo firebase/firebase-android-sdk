@@ -113,6 +113,8 @@ interface TargetCache {
 
   ImmutableSortedSet<DocumentKey> getMatchingKeysForTargetId(int targetId);
 
-  /** @return True if the document is part of any target */
+  /**
+   * @return True if the document is part of any target
+   */
   boolean containsKey(DocumentKey key);
 }

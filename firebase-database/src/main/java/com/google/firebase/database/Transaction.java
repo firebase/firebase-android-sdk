@@ -53,7 +53,9 @@ public class Transaction {
       this.data = data;
     }
 
-    /** @return Whether or not this result is a success */
+    /**
+     * @return Whether or not this result is a success
+     */
     public boolean isSuccess() {
       return success;
     }
@@ -108,7 +110,9 @@ public class Transaction {
         @Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot currentData);
   }
 
-  /** @return A {@link Result} that aborts the transaction */
+  /**
+   * @return A {@link Result} that aborts the transaction
+   */
   @NonNull
   public static Result abort() {
     return new Result(false, null);

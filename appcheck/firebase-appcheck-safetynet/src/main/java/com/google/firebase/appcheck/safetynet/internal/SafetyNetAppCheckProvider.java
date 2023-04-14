@@ -55,7 +55,9 @@ public class SafetyNetAppCheckProvider implements AppCheckProvider {
   private final RetryManager retryManager;
   private final String apiKey;
 
-  /** @param firebaseApp the FirebaseApp to which this Factory is tied. */
+  /**
+   * @param firebaseApp the FirebaseApp to which this Factory is tied.
+   */
   public SafetyNetAppCheckProvider(
       @NonNull FirebaseApp firebaseApp,
       @Lightweight Executor liteExecutor,

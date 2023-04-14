@@ -89,7 +89,7 @@ final class TopicOperation {
       return null;
     }
 
-    return new TopicOperation(/*operation=*/ splits[0], /*topic=*/ splits[1]);
+    return new TopicOperation(/* operation= */ splits[0], /* topic= */ splits[1]);
   }
 
   public String getTopic() {

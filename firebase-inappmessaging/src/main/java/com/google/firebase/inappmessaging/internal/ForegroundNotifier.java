@@ -63,7 +63,9 @@ public class ForegroundNotifier implements Application.ActivityLifecycleCallback
   private Runnable check;
   private final BehaviorSubject<String> foregroundSubject = BehaviorSubject.create();
 
-  /** @return a {@link ConnectableFlowable} representing a stream of foreground events */
+  /**
+   * @return a {@link ConnectableFlowable} representing a stream of foreground events
+   */
   public ConnectableFlowable<String> foregroundFlowable() {
     return foregroundSubject.toFlowable(BackpressureStrategy.BUFFER).publish();
   }

@@ -192,7 +192,9 @@ public class AabUpdaterTest {
 
   @Test
   public void updateApp_whenCalledMultipleTimesWithAAB_onlyMakesOneRequest()
-      throws IOException, FirebaseAppDistributionException, ExecutionException,
+      throws IOException,
+          FirebaseAppDistributionException,
+          ExecutionException,
           InterruptedException {
     // Block thread actually making the request on a latch, which gives us time to add listeners to
     // the returned UpdateTask in time to get all the progress updates

@@ -1172,7 +1172,7 @@ public abstract class LocalStoreTestCase {
     Assert.assertEquals(SnapshotVersion.NONE, cachedTargetData.getLastLimboFreeSnapshotVersion());
 
     // Mark the view synced, which updates the last limbo free snapshot version.
-    updateViews(targetId, /* fromCache=*/ false);
+    updateViews(targetId, /* fromCache= */ false);
     cachedTargetData = localStore.getTargetData(target);
     Assert.assertEquals(version(10), cachedTargetData.getLastLimboFreeSnapshotVersion());
 
@@ -1228,7 +1228,7 @@ public abstract class LocalStoreTestCase {
 
     applyRemoteEvent(addedRemoteEvent(doc("foo/a", 10, map("matches", true)), targetId));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    updateViews(targetId, /* fromCache=*/ false);
+    updateViews(targetId, /* fromCache= */ false);
     releaseTarget(targetId);
 
     // Start another query and add more matching documents to the collection.
@@ -1265,7 +1265,7 @@ public abstract class LocalStoreTestCase {
             asList(targetId),
             emptyList()));
     applyRemoteEvent(noChangeEvent(targetId, 10));
-    updateViews(targetId, /* fromCache=*/ false);
+    updateViews(targetId, /* fromCache= */ false);
     releaseTarget(targetId);
 
     // Modify one of the documents to no longer match while the filtered query is inactive.

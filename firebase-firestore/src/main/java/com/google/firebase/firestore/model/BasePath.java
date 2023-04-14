@@ -60,7 +60,9 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
     return createPathWithSegments(newPath);
   }
 
-  /** @return Returns a new path with the current path's first segment removed. */
+  /**
+   * @return Returns a new path with the current path's first segment removed.
+   */
   public B popFirst() {
     return popFirst(1);
   }
@@ -73,12 +75,16 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
     return createPathWithSegments(segments.subList(count, length));
   }
 
-  /** @return Returns a new path with the current path's last segment removed. */
+  /**
+   * @return Returns a new path with the current path's last segment removed.
+   */
   public B popLast() {
     return createPathWithSegments(segments.subList(0, length() - 1));
   }
 
-  /** @return Returns a new path made up of the first count segments of the current path. */
+  /**
+   * @return Returns a new path made up of the first count segments of the current path.
+   */
   public B keepFirst(int count) {
     return createPathWithSegments(segments.subList(0, count));
   }
@@ -98,12 +104,16 @@ public abstract class BasePath<B extends BasePath<B>> implements Comparable<B> {
     return Util.compareIntegers(myLength, theirLength);
   }
 
-  /** @return Returns the last segment of the path */
+  /**
+   * @return Returns the last segment of the path
+   */
   public String getLastSegment() {
     return segments.get(length() - 1);
   }
 
-  /** @return Returns the first segment of the path */
+  /**
+   * @return Returns the first segment of the path
+   */
   public String getFirstSegment() {
     return segments.get(0);
   }

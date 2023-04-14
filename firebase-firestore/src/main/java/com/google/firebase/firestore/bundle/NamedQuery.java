@@ -38,7 +38,9 @@ public class NamedQuery implements BundleElement {
     return bundledQuery;
   }
 
-  /** @return The time at which the results for this query were read. */
+  /**
+   * @return The time at which the results for this query were read.
+   */
   public SnapshotVersion getReadTime() {
     return readTime;
   }

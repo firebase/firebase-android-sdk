@@ -16,6 +16,8 @@ package com.google.firebase.crashlytics.internal.common;
 
 public interface InstallIdProvider {
 
-  /** @return an ID that uniquely identifies the app installation on the current device. */
+  /**
+   * @return an ID that uniquely identifies the app installation on the current device.
+   */
   String getCrashlyticsInstallId();
 }

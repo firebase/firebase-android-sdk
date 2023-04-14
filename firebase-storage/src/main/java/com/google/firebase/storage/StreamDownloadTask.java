@@ -75,7 +75,9 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
     return this;
   }
 
-  /** @return the target of the download. */
+  /**
+   * @return the target of the download.
+   */
   @Override
   @NonNull
   /*package*/ StorageReference getStorage() {
@@ -476,12 +478,16 @@ public class StreamDownloadTask extends StorageTask<StreamDownloadTask.TaskSnaps
       mBytesDownloaded = bytesDownloaded;
     }
 
-    /** @return the total bytes downloaded so far. */
+    /**
+     * @return the total bytes downloaded so far.
+     */
     public long getBytesTransferred() {
       return mBytesDownloaded;
     }
 
-    /** @return the total bytes of the download. */
+    /**
+     * @return the total bytes of the download.
+     */
     public long getTotalByteCount() {
       return StreamDownloadTask.this.getTotalBytes();
     }

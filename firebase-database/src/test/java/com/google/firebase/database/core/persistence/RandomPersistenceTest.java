@@ -160,8 +160,8 @@ public class RandomPersistenceTest {
                   overwrite.getSnapshot(),
                   overwrite.getSnapshot(),
                   currentWriteId++,
-                  /*visible=*/ true,
-                  /*persist=*/ true);
+                  /* visible= */ true,
+                  /* persist= */ true);
             }
             break;
           }
@@ -177,7 +177,7 @@ public class RandomPersistenceTest {
                   merge.getChildren(),
                   merge.getChildren(),
                   currentWriteId++,
-                  /*persist=*/ true);
+                  /* persist= */ true);
             }
             break;
           }
@@ -185,7 +185,10 @@ public class RandomPersistenceTest {
           {
             AckUserWrite userWrite = (AckUserWrite) operation;
             syncTree.ackUserWrite(
-                currentUnackedWriteId++, userWrite.isRevert(), /*persist=*/ true, new TestClock());
+                currentUnackedWriteId++,
+                userWrite.isRevert(),
+                /* persist= */ true,
+                new TestClock());
             break;
           }
         default:

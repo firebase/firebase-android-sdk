@@ -47,7 +47,7 @@ public final class Query {
    * @return A new instance of the Query.
    */
   public static Query atPath(ResourcePath path) {
-    return new Query(path, /*collectionGroup=*/ null);
+    return new Query(path, /* collectionGroup= */ null);
   }
 
   private static final OrderBy KEY_ORDERING_ASC =
@@ -304,7 +304,7 @@ public final class Query {
   public Query asCollectionQueryAtPath(ResourcePath path) {
     return new Query(
         path,
-        /*collectionGroup=*/ null,
+        /* collectionGroup= */ null,
         filters,
         explicitSortOrder,
         limit,
@@ -458,7 +458,9 @@ public final class Query {
     }
   }
 
-  /** @return A {@code Target} instance this query will be mapped to in backend and local store. */
+  /**
+   * @return A {@code Target} instance this query will be mapped to in backend and local store.
+   */
   public Target toTarget() {
     if (this.memoizedTarget == null) {
       if (this.limitType == LimitType.LIMIT_TO_FIRST) {

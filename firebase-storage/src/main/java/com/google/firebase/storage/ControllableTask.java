@@ -43,7 +43,9 @@ public abstract class ControllableTask<StateT> extends CancellableTask<StateT> {
    */
   public abstract boolean resume();
 
-  /** @return true if the task has been paused. */
+  /**
+   * @return true if the task has been paused.
+   */
   public abstract boolean isPaused();
 
   /**

@@ -1093,7 +1093,7 @@ public class QueryTest {
       } else {
         existenceFilterMismatchInfo =
             existenceFilterMismatchListener.getOrWaitForExistenceFilterMismatch(
-                /*timeoutMillis=*/ 5000);
+                /* timeoutMillis= */ 5000);
       }
     } finally {
       existenceFilterMismatchListener.stopListening();

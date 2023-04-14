@@ -751,7 +751,7 @@ public class TestUtil {
   // TODO: We could probably do some de-duplication between assertFails / expectError.
   /** Expects runnable to throw an exception with a specific error message. */
   public static void expectError(Runnable runnable, String exceptionMessage) {
-    expectError(runnable, exceptionMessage, /*context=*/ null);
+    expectError(runnable, exceptionMessage, /* context= */ null);
   }
 
   /**

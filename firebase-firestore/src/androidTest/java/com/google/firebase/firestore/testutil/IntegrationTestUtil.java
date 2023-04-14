@@ -301,8 +301,8 @@ public class IntegrationTestUtil {
             MockCredentialsProvider.instance(),
             new EmptyAppCheckTokenProvider(),
             asyncQueue,
-            /*firebaseApp=*/ null,
-            /*instanceRegistry=*/ (dbId) -> {});
+            /* firebaseApp= */ null,
+            /* instanceRegistry= */ (dbId) -> {});
     waitFor(firestore.clearPersistence());
     firestore.setFirestoreSettings(settings);
     firestoreStatus.put(firestore, true);

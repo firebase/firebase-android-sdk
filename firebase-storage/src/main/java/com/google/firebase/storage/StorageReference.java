@@ -327,13 +327,17 @@ public class StorageReference implements Comparable<StorageReference> {
 
   // region LifeCycle support
 
-  /** @return the set of active upload tasks currently in progress or recently completed. */
+  /**
+   * @return the set of active upload tasks currently in progress or recently completed.
+   */
   @NonNull
   public List<UploadTask> getActiveUploadTasks() {
     return StorageTaskManager.getInstance().getUploadTasksUnder(this);
   }
 
-  /** @return the set of active download tasks currently in progress or recently completed. */
+  /**
+   * @return the set of active download tasks currently in progress or recently completed.
+   */
   @NonNull
   public List<FileDownloadTask> getActiveDownloadTasks() {
     return StorageTaskManager.getInstance().getDownloadTasksUnder(this);

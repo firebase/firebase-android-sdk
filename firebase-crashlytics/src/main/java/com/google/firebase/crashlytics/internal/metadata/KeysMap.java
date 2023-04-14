@@ -37,7 +37,9 @@ class KeysMap {
     this.maxEntryLength = maxEntryLength;
   }
 
-  /** @return defensive, unmodifiable copy of the key/value pairs. */
+  /**
+   * @return defensive, unmodifiable copy of the key/value pairs.
+   */
   @NonNull
   public synchronized Map<String, String> getKeys() {
     return Collections.unmodifiableMap(new HashMap<String, String>(keys));

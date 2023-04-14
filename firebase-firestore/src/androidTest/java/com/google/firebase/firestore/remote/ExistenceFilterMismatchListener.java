@@ -130,7 +130,9 @@ public final class ExistenceFilterMismatchListener {
     }
   }
 
-  /** @see TestingHooks.ExistenceFilterMismatchInfo */
+  /**
+   * @see TestingHooks.ExistenceFilterMismatchInfo
+   */
   public static final class ExistenceFilterMismatchInfo {
 
     private final TestingHooks.ExistenceFilterMismatchInfo info;

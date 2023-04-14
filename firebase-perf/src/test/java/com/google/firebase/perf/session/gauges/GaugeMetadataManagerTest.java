@@ -93,7 +93,9 @@ public class GaugeMetadataManagerTest extends FirebasePerformanceTestBase {
     assertThat(ramSize).isEqualTo(testGaugeMetadataManager.readTotalRAM(createFakeMemInfoFile()));
   }
 
-  /** @return The file path of this fake file which can be used to read the file. */
+  /**
+   * @return The file path of this fake file which can be used to read the file.
+   */
   private String createFakeMemInfoFile() throws IOException {
     // Due to file permission issues on forge, it's easiest to just write this file to the emulated
     // robolectric external storage.

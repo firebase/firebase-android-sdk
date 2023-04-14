@@ -285,7 +285,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     LocalDocumentsResult result = localStore.writeLocally(mutations);
     addUserCallback(result.getBatchId(), userTask);
 
-    emitNewSnapsAndNotifyLocalStore(result.getDocuments(), /*remoteEvent=*/ null);
+    emitNewSnapsAndNotifyLocalStore(result.getDocuments(), /* remoteEvent= */ null);
     remoteStore.fillWritePipeline();
   }
 
@@ -447,14 +447,14 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     // The local store may or may not be able to apply the write result and raise events immediately
     // (depending on whether the watcher is caught up), so we raise user callbacks first so that
     // they consistently happen before listen events.
-    notifyUser(mutationBatchResult.getBatch().getBatchId(), /*status=*/ null);
+    notifyUser(mutationBatchResult.getBatch().getBatchId(), /* status= */ null);
 
     resolvePendingWriteTasks(mutationBatchResult.getBatch().getBatchId());
 
     ImmutableSortedMap<DocumentKey, Document> changes =
         localStore.acknowledgeBatch(mutationBatchResult);
 
-    emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
+    emitNewSnapsAndNotifyLocalStore(changes, /* remoteEvent= */ null);
   }
 
   @Override
@@ -473,7 +473,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
     resolvePendingWriteTasks(batchId);
 
-    emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
+    emitNewSnapsAndNotifyLocalStore(changes, /* remoteEvent= */ null);
   }
 
   /**
@@ -745,7 +745,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       failOutstandingPendingWritesAwaitingTasks();
       // Notify local store and emit any resulting events from swapping out the mutation queue.
       ImmutableSortedMap<DocumentKey, Document> changes = localStore.handleUserChange(user);
-      emitNewSnapsAndNotifyLocalStore(changes, /*remoteEvent=*/ null);
+      emitNewSnapsAndNotifyLocalStore(changes, /* remoteEvent= */ null);
     }
 
     // Notify remote store so it can restart its streams.

@@ -37,11 +37,15 @@ public abstract class CancellableTask<StateT> extends Task<StateT> {
    */
   public abstract boolean cancel();
 
-  /** @return true if the task has been canceled. */
+  /**
+   * @return true if the task has been canceled.
+   */
   @Override
   public abstract boolean isCanceled();
 
-  /** @return true if the task is currently running. */
+  /**
+   * @return true if the task is currently running.
+   */
   public abstract boolean isInProgress();
 
   /**

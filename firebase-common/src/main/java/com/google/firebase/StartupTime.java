@@ -30,13 +30,19 @@ import com.google.auto.value.AutoValue;
 @AutoValue
 public abstract class StartupTime {
 
-  /** @return The epoch time that Firebase began initializing, in milliseconds */
+  /**
+   * @return The epoch time that Firebase began initializing, in milliseconds
+   */
   public abstract long getEpochMillis();
 
-  /** @return The number of milliseconds from boot to when Firebase began initializing */
+  /**
+   * @return The number of milliseconds from boot to when Firebase began initializing
+   */
   public abstract long getElapsedRealtime();
 
-  /** @return The number of milliseconds of uptime measured by SystemClock.uptimeMillis() */
+  /**
+   * @return The number of milliseconds of uptime measured by SystemClock.uptimeMillis()
+   */
   public abstract long getUptimeMillis();
 
   /**
@@ -48,7 +54,9 @@ public abstract class StartupTime {
     return new AutoValue_StartupTime(epochMillis, elapsedRealtime, uptimeMillis);
   }
 
-  /** @return A StartupTime represented by the current epoch time and JVM nano time */
+  /**
+   * @return A StartupTime represented by the current epoch time and JVM nano time
+   */
   public static @NonNull StartupTime now() {
     return create(
         System.currentTimeMillis(), SystemClock.elapsedRealtime(), SystemClock.uptimeMillis());

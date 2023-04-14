@@ -33,17 +33,23 @@ public class CustomModelDownloadConditions {
     this.isDeviceIdleRequired = isDeviceIdleRequired;
   }
 
-  /** @return True if charging is required for download. */
+  /**
+   * @return True if charging is required for download.
+   */
   public boolean isChargingRequired() {
     return isChargingRequired;
   }
 
-  /** @return True if wifi is required for download. */
+  /**
+   * @return True if wifi is required for download.
+   */
   public boolean isWifiRequired() {
     return isWifiRequired;
   }
 
-  /** @return True if device idle is required for download. */
+  /**
+   * @return True if device idle is required for download.
+   */
   public boolean isDeviceIdleRequired() {
     return isDeviceIdleRequired;
   }

@@ -32,7 +32,9 @@ import java.util.concurrent.TimeoutException;
 public final class Utils {
   private static final int TIMEOUT_SEC = 4;
 
-  /** @return A tasks that is resolved when either of the given tasks is resolved. */
+  /**
+   * @return A tasks that is resolved when either of the given tasks is resolved.
+   */
   // TODO(b/261014167): Use an explicit executor in continuations.
   @SuppressLint("TaskMainThread")
   public static <T> Task<T> race(Task<T> t1, Task<T> t2) {
@@ -51,7 +53,9 @@ public final class Utils {
     return result.getTask();
   }
 
-  /** @return A tasks that is resolved when either of the given tasks is resolved. */
+  /**
+   * @return A tasks that is resolved when either of the given tasks is resolved.
+   */
   public static <T> Task<T> race(Executor executor, Task<T> t1, Task<T> t2) {
     final TaskCompletionSource<T> result = new TaskCompletionSource<>();
     Continuation<T, Void> continuation =

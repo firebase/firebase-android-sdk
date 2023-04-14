@@ -43,7 +43,9 @@ public final class IntentSubject extends Subject {
     this.actual = subject;
   }
 
-  /** @see #hasComponentClass(String) */
+  /**
+   * @see #hasComponentClass(String)
+   */
   public final void hasComponentClass(Class<?> componentClass) {
     hasComponentClass(componentClass.getName());
   }
@@ -57,7 +59,9 @@ public final class IntentSubject extends Subject {
     hasComponent(component.getPackageName(), component.getClassName());
   }
 
-  /** @see #hasComponentClass(Class) */
+  /**
+   * @see #hasComponentClass(Class)
+   */
   public final void hasComponentClass(String className) {
     check("getComponent().getClassName()")
         .that(actual.getComponent().getClassName())

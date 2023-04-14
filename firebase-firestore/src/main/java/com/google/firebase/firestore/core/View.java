@@ -332,7 +332,7 @@ public class View {
       this.current = false;
       return applyChanges(
           new DocumentChanges(
-              documentSet, new DocumentViewChangeSet(), mutatedKeys, /*needsRefill=*/ false));
+              documentSet, new DocumentViewChangeSet(), mutatedKeys, /* needsRefill= */ false));
     } else {
       // No effect, just return a no-op ViewChange.
       return new ViewChange(null, Collections.emptyList());

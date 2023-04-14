@@ -69,8 +69,8 @@ public class ConfigCacheClientTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
 
-    cacheThreadPool = Executors.newFixedThreadPool(/*nThreads=*/ 2);
-    testingThreadPool = Executors.newFixedThreadPool(/*nThreads=*/ 3);
+    cacheThreadPool = Executors.newFixedThreadPool(/* nThreads= */ 2);
+    testingThreadPool = Executors.newFixedThreadPool(/* nThreads= */ 3);
 
     ConfigCacheClient.clearInstancesForTest();
     when(mockStorageClient.getFileName()).thenReturn("FILE_NAME");
@@ -222,7 +222,7 @@ public class ConfigCacheClientTest {
   public void getBlocking_hasNoCachedValueAndFileReadTimesOut_returnsNull() throws Exception {
     when(mockStorageClient.read()).thenReturn(configContainer);
 
-    ConfigContainer container = cacheClient.getBlocking(/*diskReadTimeoutInSeconds=*/ 0L);
+    ConfigContainer container = cacheClient.getBlocking(/* diskReadTimeoutInSeconds= */ 0L);
 
     assertThat(container).isNull();
   }

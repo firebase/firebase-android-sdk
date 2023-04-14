@@ -379,7 +379,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   public void screenTrace_noHardwareAccelerated_noExceptionThrown() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
     Activity activityWithNonHardwareAcceleratedView =
-        createFakeActivity(/* isHardwareAccelerated =*/ false);
+        createFakeActivity(/* isHardwareAccelerated= */ false);
 
     monitor.onActivityStarted(activityWithNonHardwareAcceleratedView);
 
@@ -391,7 +391,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   public void screenTrace_perfMonDisabledAtBuildTime_traceNotCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
     Activity activityWithNonHardwareAcceleratedView =
-        createFakeActivity(/* isHardwareAccelerated =*/ true);
+        createFakeActivity(/* isHardwareAccelerated= */ true);
 
     Bundle bundle = new Bundle();
     bundle.putBoolean("firebase_performance_collection_enabled", false);
@@ -407,7 +407,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   public void screenTrace_perfMonEnabledSwitchAtRuntime_traceCreationDependsOnRuntime() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
     Activity activityWithNonHardwareAcceleratedView =
-        createFakeActivity(/* isHardwareAccelerated =*/ true);
+        createFakeActivity(/* isHardwareAccelerated= */ true);
 
     // Developer disables Performance Monitoring during build time.
     Bundle bundle = new Bundle();
@@ -439,7 +439,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   public void screenTrace_perfMonDeactivated_traceNotCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
     Activity activityWithNonHardwareAcceleratedView =
-        createFakeActivity(/* isHardwareAccelerated =*/ true);
+        createFakeActivity(/* isHardwareAccelerated= */ true);
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
 

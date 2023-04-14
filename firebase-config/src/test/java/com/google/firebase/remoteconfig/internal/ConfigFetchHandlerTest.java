@@ -154,7 +154,7 @@ public class ConfigFetchHandlerTest {
     when(mockFetchedCache.get()).thenReturn(Tasks.forResult(null));
 
     // Assume there is no analytics SDK for most of the tests.
-    fetchHandler = getNewFetchHandler(/*analyticsConnector=*/ null);
+    fetchHandler = getNewFetchHandler(/* analyticsConnector= */ null);
 
     firstFetchedContainer =
         ConfigContainer.newBuilder()
@@ -456,19 +456,19 @@ public class ConfigFetchHandlerTest {
   @Test
   public void fetch_HasNoETag_doesNotSendETagAndSavesResponseETag() throws Exception {
     String responseETag = "Response eTag";
-    loadETags(/*requestETag=*/ null, responseETag);
+    loadETags(/* requestETag= */ null, responseETag);
     fetchCallToHttpClientUpdatesClockAndReturnsConfig(firstFetchedContainer);
 
     assertWithMessage("Fetch() failed!").that(fetchHandler.fetch().isSuccessful()).isTrue();
 
-    verifyETags(/*requestETag=*/ null, responseETag);
+    verifyETags(/* requestETag= */ null, responseETag);
   }
 
   @Test
   public void fetch_hasAbtExperiments_storesExperiments() throws Exception {
     ConfigContainer containerWithExperiments =
         ConfigContainer.newBuilder(firstFetchedContainer)
-            .withAbtExperiments(generateAbtExperiments(/*numExperiments=*/ 5))
+            .withAbtExperiments(generateAbtExperiments(/* numExperiments= */ 5))
             .build();
     ArgumentCaptor<ConfigContainer> captor = ArgumentCaptor.forClass(ConfigContainer.class);
 
@@ -484,10 +484,10 @@ public class ConfigFetchHandlerTest {
   @Test
   public void fetch_getsThrottledResponseFromServer_backsOffOnSecondCall() throws Exception {
     fetchCallToBackendThrowsException(HTTP_TOO_MANY_REQUESTS);
-    long backoffDurationInMillis = loadAndGetNextBackoffDuration(/*numFailedFetches=*/ 1);
+    long backoffDurationInMillis = loadAndGetNextBackoffDuration(/* numFailedFetches= */ 1);
 
     FirebaseRemoteConfigFetchThrottledException actualException =
-        getThrottledException(fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0L));
+        getThrottledException(fetchHandler.fetch(/* minimumFetchIntervalInSeconds= */ 0L));
 
     assertThat(actualException.getThrottleEndTimeMillis())
         .isEqualTo(mockClock.currentTimeMillis() + backoffDurationInMillis);
@@ -501,7 +501,7 @@ public class ConfigFetchHandlerTest {
       long backoffDurationInMillis = loadAndGetNextBackoffDuration(numFetch);
 
       assertThrowsThrottledException(
-          fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0L),
+          fetchHandler.fetch(/* minimumFetchIntervalInSeconds= */ 0L),
           mockClock.currentTimeMillis() + backoffDurationInMillis);
 
       // Wait long enough for throttling to clear.
@@ -519,7 +519,7 @@ public class ConfigFetchHandlerTest {
 
     fetchCallToHttpClientReturnsConfigWithCurrentTime(firstFetchedContainer);
 
-    Task<FetchResponse> fetchTask = fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0L);
+    Task<FetchResponse> fetchTask = fetchHandler.fetch(/* minimumFetchIntervalInSeconds= */ 0L);
 
     assertWithMessage("Fetch() failed!").that(fetchTask.isSuccessful()).isTrue();
 
@@ -542,7 +542,7 @@ public class ConfigFetchHandlerTest {
           .thenReturn(new Random().nextInt((int) backoffDurationInterval));
 
       FirebaseRemoteConfigFetchThrottledException actualException =
-          getThrottledException(fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0L));
+          getThrottledException(fetchHandler.fetch(/* minimumFetchIntervalInSeconds= */ 0L));
 
       long actualBackoffDuration =
           actualException.getThrottleEndTimeMillis() - mockClock.currentTimeMillis();
@@ -644,9 +644,9 @@ public class ConfigFetchHandlerTest {
     Map<String, Object> allUserProperties =
         ImmutableMap.of(
             "up_key1", "up_val1", "up_key2", "up_val2", FIRST_OPEN_TIME_KEY, firstOpenTime);
-    when(mockAnalyticsConnector.getUserProperties(/*includeInternal=*/ false))
+    when(mockAnalyticsConnector.getUserProperties(/* includeInternal= */ false))
         .thenReturn(ImmutableMap.copyOf(customUserProperties));
-    when(mockAnalyticsConnector.getUserProperties(/*includeInternal=*/ true))
+    when(mockAnalyticsConnector.getUserProperties(/* includeInternal= */ true))
         .thenReturn(ImmutableMap.copyOf(allUserProperties));
 
     fetchCallToHttpClientUpdatesClockAndReturnsConfig(firstFetchedContainer);
@@ -703,7 +703,7 @@ public class ConfigFetchHandlerTest {
 
     fetchCallToBackendThrowsException(HTTP_NOT_FOUND);
 
-    fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0);
+    fetchHandler.fetch(/* minimumFetchIntervalInSeconds= */ 0);
 
     assertThat(metadataClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_FAILURE);
     assertThat(metadataClient.getLastSuccessfulFetchTime())
@@ -717,7 +717,7 @@ public class ConfigFetchHandlerTest {
 
     fetchCallToHttpClientUpdatesClockAndReturnsConfig(secondFetchedContainer);
 
-    fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0);
+    fetchHandler.fetch(/* minimumFetchIntervalInSeconds= */ 0);
 
     assertThat(metadataClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_SUCCESS);
     assertThat(metadataClient.getLastSuccessfulFetchTime())
@@ -731,7 +731,7 @@ public class ConfigFetchHandlerTest {
 
     fetchCallToBackendThrowsException(HTTP_TOO_MANY_REQUESTS);
 
-    fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0);
+    fetchHandler.fetch(/* minimumFetchIntervalInSeconds= */ 0);
 
     assertThat(metadataClient.getLastFetchStatus()).isEqualTo(LAST_FETCH_STATUS_THROTTLED);
     assertThat(metadataClient.getLastSuccessfulFetchTime())
@@ -847,9 +847,9 @@ public class ConfigFetchHandlerTest {
 
     long backoffDurationInMillis =
         loadAndGetNextBackoffDuration(
-            /*numFailedFetches=*/ metadataClient.getBackoffMetadata().getNumFailedFetches() + 1);
+            /* numFailedFetches= */ metadataClient.getBackoffMetadata().getNumFailedFetches() + 1);
 
-    assertThrowsThrottledException(fetchHandler.fetch(/*minimumFetchIntervalInSeconds=*/ 0L));
+    assertThrowsThrottledException(fetchHandler.fetch(/* minimumFetchIntervalInSeconds= */ 0L));
 
     // Wait long enough for throttling to clear.
     mockClock.advance(backoffDurationInMillis);

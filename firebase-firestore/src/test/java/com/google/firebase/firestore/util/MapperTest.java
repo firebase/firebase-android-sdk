@@ -908,7 +908,7 @@ public class MapperTest {
   }
 
   private static <T> T deserialize(String jsonString, Class<T> clazz) {
-    return deserialize(jsonString, clazz, /*docRef=*/ null);
+    return deserialize(jsonString, clazz, /* docRef= */ null);
   }
 
   private static <T> T deserialize(String jsonString, Class<T> clazz, DocumentReference docRef) {

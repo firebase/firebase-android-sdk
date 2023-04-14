@@ -265,7 +265,7 @@ public final class SQLitePersistence extends Persistence {
    * @see "https://www.sqlite.org/pragma.html#pragma_page_size"
    */
   private long getPageSize() {
-    return query("PRAGMA page_size").firstValue(row -> row.getLong(/*column=*/ 0));
+    return query("PRAGMA page_size").firstValue(row -> row.getLong(/* column= */ 0));
   }
 
   /**
@@ -275,7 +275,7 @@ public final class SQLitePersistence extends Persistence {
    * @see "https://www.sqlite.org/pragma.html#pragma_page_count."
    */
   private long getPageCount() {
-    return query("PRAGMA page_count").firstValue(row -> row.getLong(/*column=*/ 0));
+    return query("PRAGMA page_count").firstValue(row -> row.getLong(/* column= */ 0));
   }
 
   /**

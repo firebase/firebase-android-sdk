@@ -49,6 +49,7 @@ fun Firebase.firestore(app: FirebaseApp): FirebaseFirestore = FirebaseFirestore.
  *
  * @param T The type of the object to create.
  * @return The contents of the document in an object of type T or null if the document doesn't
+ *
  * ```
  *     exist.
  * ```
@@ -60,11 +61,14 @@ inline fun <reified T> DocumentSnapshot.toObject(): T? = toObject(T::class.java)
  *
  * @param T The type of the object to create.
  * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
+ *
  * ```
  *     been set to their final value.
  * @return
  * ```
+ *
  * The contents of the document in an object of type T or null if the document doesn't
+ *
  * ```
  *     exist.
  * ```
@@ -90,10 +94,12 @@ inline fun <reified T> DocumentSnapshot.getField(field: String): T? = get(field,
  * @param field The path to the field.
  * @param T The type to convert the field value to.
  * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
+ *
  * ```
  *     been set to their final value.
  * @return
  * ```
+ *
  * The value at the given field or null.
  */
 inline fun <reified T> DocumentSnapshot.getField(
@@ -119,10 +125,12 @@ inline fun <reified T> DocumentSnapshot.getField(fieldPath: FieldPath): T? =
  * @param fieldPath The path to the field.
  * @param T The type to convert the field value to.
  * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
+ *
  * ```
  *     been set to their final value.
  * @return
  * ```
+ *
  * The value at the given field or null.
  */
 inline fun <reified T> DocumentSnapshot.getField(
@@ -143,10 +151,12 @@ inline fun <reified T : Any> QueryDocumentSnapshot.toObject(): T = toObject(T::c
  *
  * @param T The type of the object to create.
  * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
+ *
  * ```
  *     been set to their final value.
  * @return
  * ```
+ *
  * The contents of the document in an object of type T.
  */
 inline fun <reified T : Any> QueryDocumentSnapshot.toObject(
@@ -167,6 +177,7 @@ inline fun <reified T : Any> QuerySnapshot.toObjects(): List<T> = toObjects(T::c
  *
  * @param T The POJO type used to convert the documents in the list.
  * @param serverTimestampBehavior Configures the behavior for server timestamps that have not yet
+ *
  * ```
  *     been set to their final value.
  * ```
@@ -196,7 +207,6 @@ class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
 /**
  * Starts listening to the document referenced by this `DocumentReference` with the given options
  * and emits its values via a [Flow].
- *
  * - When the returned flow starts being collected, an [EventListener] will be attached.
  * - When the flow completes, the listener will be removed.
  *
@@ -220,7 +230,6 @@ fun DocumentReference.snapshots(
 
 /**
  * Starts listening to this query with the given options and emits its values via a [Flow].
- *
  * - When the returned flow starts being collected, an [EventListener] will be attached.
  * - When the flow completes, the listener will be removed.
  *
@@ -245,7 +254,6 @@ fun Query.snapshots(
 /**
  * Starts listening to this query with the given options and emits its values converted to a POJO
  * via a [Flow].
- *
  * - When the returned flow starts being collected, an [EventListener] will be attached.
  * - When the flow completes, the listener will be removed.
  *
@@ -259,7 +267,6 @@ inline fun <reified T : Any> Query.dataObjects(
 /**
  * Starts listening to the document referenced by this `DocumentReference` with the given options
  * and emits its values converted to a POJO via a [Flow].
- *
  * - When the returned flow starts being collected, an [EventListener] will be attached.
  * - When the flow completes, the listener will be removed.
  *

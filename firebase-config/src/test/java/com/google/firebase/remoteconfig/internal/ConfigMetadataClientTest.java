@@ -178,7 +178,7 @@ public class ConfigMetadataClientTest {
   @Test
   public void resetRealtimeBackoff_hasValues_clearsAllValues() {
     metadataClient.setRealtimeBackoffMetadata(
-        /*numFailedStreams=*/ 5, /*backoffEndTime=*/ new Date(1000L));
+        /* numFailedStreams= */ 5, /* backoffEndTime= */ new Date(1000L));
 
     ConfigMetadataClient.RealtimeBackoffMetadata realtimeBackoffMetadata =
         metadataClient.getRealtimeBackoffMetadata();
@@ -216,7 +216,8 @@ public class ConfigMetadataClientTest {
 
   @Test
   public void resetBackoff_hasValues_clearsAllValues() {
-    metadataClient.setBackoffMetadata(/*numFailedFetches=*/ 5, /*backoffEndTime=*/ new Date(1000L));
+    metadataClient.setBackoffMetadata(
+        /* numFailedFetches= */ 5, /* backoffEndTime= */ new Date(1000L));
 
     BackoffMetadata backoffMetadata = metadataClient.getBackoffMetadata();
     Preconditions.checkArgument(backoffMetadata.getNumFailedFetches() != NO_FAILED_FETCHES);

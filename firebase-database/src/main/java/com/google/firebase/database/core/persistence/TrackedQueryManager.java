@@ -162,7 +162,7 @@ public class TrackedQueryManager {
       hardAssert(
           isActive, "If we're setting the query to inactive, we should already be tracking it!");
       trackedQuery =
-          new TrackedQuery(this.currentQueryId++, query, lastUse, /*complete=*/ false, isActive);
+          new TrackedQuery(this.currentQueryId++, query, lastUse, /* complete= */ false, isActive);
     }
 
     saveTrackedQuery(trackedQuery);
@@ -313,8 +313,8 @@ public class TrackedQueryManager {
                 this.currentQueryId++,
                 querySpec,
                 clock.millis(),
-                /*complete=*/ true,
-                /*active=*/ false);
+                /* complete= */ true,
+                /* active= */ false);
       } else {
         hardAssert(!trackedQuery.complete, "This should have been handled above!");
         trackedQuery = trackedQuery.setComplete();

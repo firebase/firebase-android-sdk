@@ -102,7 +102,9 @@ public class UserMetadata {
         });
   }
 
-  /** @return defensive copy of the custom keys. */
+  /**
+   * @return defensive copy of the custom keys.
+   */
   public Map<String, String> getCustomKeys() {
     return customKeys.getKeys();
   }
@@ -125,7 +127,9 @@ public class UserMetadata {
     customKeys.setKeys(keysAndValues);
   }
 
-  /** @return defensive copy of the internal keys. */
+  /**
+   * @return defensive copy of the internal keys.
+   */
   public Map<String, String> getInternalKeys() {
     return internalKeys.getKeys();
   }

@@ -197,13 +197,17 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
             storage.getMaxUploadRetryTimeMillis());
   }
 
-  /** @return the target of the upload. */
+  /**
+   * @return the target of the upload.
+   */
   @Override
   /*package*/ StorageReference getStorage() {
     return mStorageRef;
   }
 
-  /** @return The number of bytes to upload. Will return -1 if uploading from a stream. */
+  /**
+   * @return The number of bytes to upload. Will return -1 if uploading from a stream.
+   */
   @SuppressWarnings("unused")
   /*package*/ long getTotalByteCount() {
     return mTotalByteCount;
@@ -595,12 +599,16 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
       mMetadata = metadata;
     }
 
-    /** @return the total bytes uploaded so far. */
+    /**
+     * @return the total bytes uploaded so far.
+     */
     public long getBytesTransferred() {
       return mBytesUploaded;
     }
 
-    /** @return The number of bytes to upload. Will return -1 if uploading from a stream. */
+    /**
+     * @return The number of bytes to upload. Will return -1 if uploading from a stream.
+     */
     public long getTotalByteCount() {
       return UploadTask.this.getTotalByteCount();
     }
