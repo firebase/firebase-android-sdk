@@ -51,7 +51,9 @@ public class FirebaseFirestoreTest {
     FirebaseFirestore firestore = FirebaseFirestore.getInstance(app);
     firestore.useEmulator("10.0.2.2", 8080);
     firestore.setFirestoreSettings(
-        new FirebaseFirestoreSettings.Builder().setPersistenceEnabled(false).build());
+        new FirebaseFirestoreSettings.Builder()
+            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+            .build());
 
     FirebaseFirestoreSettings settings = firestore.getFirestoreSettings();
 
@@ -101,7 +103,9 @@ public class FirebaseFirestoreTest {
     firestore.useEmulator("10.0.2.2", 8080);
 
     FirebaseFirestoreSettings settings =
-        new FirebaseFirestoreSettings.Builder().setPersistenceEnabled(false).build();
+        new FirebaseFirestoreSettings.Builder()
+            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+            .build();
     firestore.setFirestoreSettings(settings);
 
     // This should 'start' Firestore
