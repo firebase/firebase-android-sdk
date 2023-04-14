@@ -38,9 +38,8 @@ buildscript {
     dependencies {
         classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.14'
         classpath 'net.ltgt.gradle:gradle-errorprone-plugin:1.3.0'
-        classpath 'gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9'
+        classpath "com.diffplug.spotless:spotless-plugin-gradle:6.18.0"
         classpath 'com.google.gms:google-services:4.3.15'
-        classpath "com.ncorti.ktfmt.gradle:plugin:0.11.0"
         classpath 'com.google.firebase:firebase-appdistribution-gradle:3.0.2'
     }
 }
@@ -89,10 +88,22 @@ configure(subprojects) {
         }
     }
 
-    apply plugin: "com.ncorti.ktfmt.gradle"
+    apply plugin: "com.diffplug.spotless"
 
-    ktfmt {
-        googleStyle()
+    spotless {
+        spotless {
+            java {
+                target("**/*.java")
+                googleJavaFormat("1.16.0").groupArtifact("com.google.googlejavaformat:google-java-format")
+                targetExclude(".gradle/**")
+            }
+        }
+        kotlin {
+            // Setting a target here is a workaround for a spotless issue in Android projects
+            // See https://github.com/diffplug/spotless/issues/858#issuecomment-830681795
+            target("**/*.kt")
+            ktfmt('0.43').googleStyle()
+        }
     }
 }
 

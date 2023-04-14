@@ -13,7 +13,6 @@
 // limitations under the License.
 
 plugins {
-    id("com.ncorti.ktfmt.gradle") version "0.11.0"
     id("com.diffplug.spotless") version "6.18.0"
     `kotlin-dsl`
 }
@@ -36,10 +35,9 @@ spotless {
         googleJavaFormat("1.16.0").groupArtifact("com.google.googlejavaformat:google-java-format")
         targetExclude(".gradle/**")
     }
-}
-
-ktfmt {
-    googleStyle()
+    kotlin {
+        ktfmt("0.43").googleStyle()
+    }
 }
 
 dependencies {
