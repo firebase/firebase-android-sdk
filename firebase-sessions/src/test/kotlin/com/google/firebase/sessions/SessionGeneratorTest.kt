@@ -72,7 +72,6 @@ class SessionGeneratorTest {
         SessionDetails(
           sessionId = SESSION_ID_1,
           firstSessionId = SESSION_ID_1,
-          collectEvents = true,
           sessionIndex = 0,
         )
       )
@@ -94,7 +93,6 @@ class SessionGeneratorTest {
         SessionDetails(
           sessionId = SESSION_ID_1,
           firstSessionId = SESSION_ID_1,
-          collectEvents = true,
           sessionIndex = 0,
         )
       )
@@ -110,7 +108,6 @@ class SessionGeneratorTest {
         SessionDetails(
           sessionId = SESSION_ID_2,
           firstSessionId = SESSION_ID_1,
-          collectEvents = true,
           sessionIndex = 1,
         )
       )
@@ -126,7 +123,6 @@ class SessionGeneratorTest {
         SessionDetails(
           sessionId = SESSION_ID_3,
           firstSessionId = SESSION_ID_1,
-          collectEvents = true,
           sessionIndex = 2,
         )
       )

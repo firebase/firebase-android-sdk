@@ -62,7 +62,7 @@ internal constructor(
     val sessionDetails = sessionGenerator.generateNewSession()
     val sessionEvent = SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings)
 
-    if (!sessionDetails.collectEvents) {
+    if (!sessionGenerator.collectEvents) {
       Log.d(TAG, "Session Start event sampled.")
       return
     }
