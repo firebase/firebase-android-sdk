@@ -93,48 +93,48 @@ public final class ImmutableBundleTest {
   }
 
   @Test
-  public void getFloatOptional_noValueFound_returnsEmpty() {
+  public void getDoubleOptional_noValueFound_returnsEmpty() {
     Bundle testBundle = new Bundle();
     testBundle.putFloat("testKey", 25.0f);
 
     ImmutableBundle testImmutableBundle = new ImmutableBundle(testBundle);
-    assertThat(testImmutableBundle.getFloat("notPresentKey").isAvailable()).isFalse();
+    assertThat(testImmutableBundle.getDouble("notPresentKey").isAvailable()).isFalse();
   }
 
   @Test
-  public void getFloatOptional_valueFound_returnsValue() {
+  public void getDoubleOptional_valueFound_returnsValue() {
     Bundle testBundle = new Bundle();
     testBundle.putFloat("testKey", 25.0f);
 
     ImmutableBundle testImmutableBundle = new ImmutableBundle(testBundle);
-    assertThat(testImmutableBundle.getFloat("testKey").get()).isEqualTo(25.0f);
+    assertThat(testImmutableBundle.getDouble("testKey").get()).isEqualTo(25.0);
   }
 
   @Test
-  public void getFloatOptional_keyIsNull_returnsEmpty() {
+  public void getDoubleOptional_keyIsNull_returnsEmpty() {
     Bundle testBundle = new Bundle();
     testBundle.putFloat("testKey", 25.0f);
 
     ImmutableBundle testImmutableBundle = new ImmutableBundle(testBundle);
-    assertThat(testImmutableBundle.getFloat(null).isAvailable()).isFalse();
+    assertThat(testImmutableBundle.getDouble(null).isAvailable()).isFalse();
   }
 
   @Test
-  public void getFloatOptional_valueTypeNotMatch_returnsEmpty() {
+  public void getDoubleOptional_valueTypeNotMatch_returnsEmpty() {
     Bundle testBundle = new Bundle();
     testBundle.putBoolean("testKey", true);
 
     ImmutableBundle testImmutableBundle = new ImmutableBundle(testBundle);
-    assertThat(testImmutableBundle.getFloat("testKey").isAvailable()).isFalse();
+    assertThat(testImmutableBundle.getDouble("testKey").isAvailable()).isFalse();
   }
 
   @Test
-  public void getFloatOptional_valueIsNull_returnsEmpty() {
+  public void getDoubleOptional_valueIsNull_returnsEmpty() {
     Bundle testBundle = new Bundle();
     testBundle.putString("testKey", null);
 
     ImmutableBundle testImmutableBundle = new ImmutableBundle(testBundle);
-    assertThat(testImmutableBundle.getFloat("testKey").isAvailable()).isFalse();
+    assertThat(testImmutableBundle.getDouble("testKey").isAvailable()).isFalse();
   }
 
   @Test

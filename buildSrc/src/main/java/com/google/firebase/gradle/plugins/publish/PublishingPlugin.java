@@ -145,6 +145,15 @@ public class PublishingPlugin implements Plugin<Project> {
               Publisher publisher = new Publisher(publishMode, projectsToPublish);
               project
                   .getTasks()
+                  .register(
+                      "semverCheckForRelease",
+                      t -> {
+                        for (FirebaseLibraryExtension toPublish : projectsToPublish) {
+                          t.dependsOn(toPublish.getPath() + ":semverCheck");
+                        }
+                      });
+              project
+                  .getTasks()
                   .create(
                       "validatePomForRelease",
                       t -> {

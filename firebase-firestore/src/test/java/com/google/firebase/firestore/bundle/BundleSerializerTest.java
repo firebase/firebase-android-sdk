@@ -51,8 +51,10 @@ import org.robolectric.annotation.Config;
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class BundleSerializerTest {
-  // Note: This tests uses single-quoted JSON strings, which are accepted by org.json.JSONObject.
-  // While they are invalid JSON, they allow us to no use non-escaped quotes in the test file.
+  // Note: This tests uses single-quoted JSON strings, which are accepted by
+  // org.json.JSONObject.
+  // While they are invalid JSON, they allow us to no use non-escaped quotes in
+  // the test file.
 
   private static String TEST_PROJECT = "projects/project/databases/(default)/documents";
   private static String TEST_DOCUMENT = TEST_PROJECT + "/coll/doc";
@@ -568,9 +570,34 @@ public class BundleSerializerTest {
 
   @Test
   public void testDecodesLimitToLastQuery() throws JSONException {
-    String json = "{ from: [ { collectionId: 'coll' } ], limit: {value: 5 } }";
-    Query query = TestUtil.query("coll").limitToLast(5);
-    assertDecodesNamedQuery(json, query);
+    String queryJson =
+        "{\n"
+            + "  name: 'query-1',\n"
+            + "  bundledQuery: {\n"
+            + "    parent: '"
+            + TEST_PROJECT
+            + "',\n"
+            + "    structuredQuery:\n"
+            + "{ from: [ { collectionId: 'coll' } ], limit: {value: 5 } }"
+            + ",\n"
+            + "    limitType: 'LAST'\n"
+            + "   },\n"
+            + " readTime: '2020-01-01T00:00:01.000000001Z'\n"
+            + "}";
+    NamedQuery actualNamedQuery = serializer.decodeNamedQuery(new JSONObject(queryJson));
+
+    // Note we use limitToFirst instead of limitToLast to avoid order reverse.
+    // Because this is what is saved in bundle files.
+    Query query = TestUtil.query("coll").limitToFirst(5);
+    Target target = query.toTarget();
+    BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_LAST);
+    NamedQuery expectedNamedQuery =
+        new NamedQuery(
+            "query-1",
+            bundledQuery,
+            new SnapshotVersion(new com.google.firebase.Timestamp(1577836801, 1)));
+
+    assertEquals(expectedNamedQuery, actualNamedQuery);
   }
 
   @Test
@@ -672,6 +699,33 @@ public class BundleSerializerTest {
     assertEquals(expectedMetadata, actualMetadata);
   }
 
+  @Test
+  public void testDecodesTargetWithoutImplicitOrderByOnName() throws JSONException {
+    String json =
+        "{\"name\":\"myNamedQuery\",\"bundledQuery\":{\"parent\":\"projects/project/databases"
+            + "/(default)/documents\",\"structuredQuery\":{\"from\":[{\"collectionId\":\"foo\"}],"
+            + "\"limit\":{\"value\":10}},\"limitType\":\"FIRST\"},"
+            + "\"readTime\":{\"seconds\":\"1679674432\",\"nanos\":579934000}}";
+    NamedQuery query = serializer.decodeNamedQuery(new JSONObject(json));
+    assertEquals(
+        TestUtil.query("foo").limitToFirst(10).toTarget(), query.getBundledQuery().getTarget());
+    assertEquals(Query.LimitType.LIMIT_TO_FIRST, query.getBundledQuery().getLimitType());
+  }
+
+  @Test
+  public void testDecodesLimitToLastTargetWithoutImplicitOrderByOnName() throws JSONException {
+    String json =
+        "{\"name\":\"myNamedQuery\",\"bundledQuery\":{\"parent\":\"projects/project/databases"
+            + "/(default)/documents\",\"structuredQuery\":{\"from\":[{\"collectionId\":\"foo\"}],"
+            + "\"limit\":{\"value\":10}},\"limitType\":\"LAST\"},"
+            + "\"readTime\":{\"seconds\":\"1679674432\",\"nanos\":579934000}}";
+    NamedQuery query = serializer.decodeNamedQuery(new JSONObject(json));
+    assertEquals(
+        // Note that `limitToFirst(10)` is expected.
+        TestUtil.query("foo").limitToFirst(10).toTarget(), query.getBundledQuery().getTarget());
+    assertEquals(Query.LimitType.LIMIT_TO_LAST, query.getBundledQuery().getLimitType());
+  }
+
   private void assertDecodesValue(String json, Value proto) throws JSONException {
     String documentJson =
         "{\n"
@@ -719,15 +773,7 @@ public class BundleSerializerTest {
             + "}";
     NamedQuery actualNamedQuery = serializer.decodeNamedQuery(new JSONObject(queryJson));
 
-    Target target =
-        new Target(
-            query.getPath(),
-            query.getCollectionGroup(),
-            query.getFilters(),
-            query.getExplicitOrderBy(),
-            query.getLimit(),
-            query.getStartAt(),
-            query.getEndAt());
+    Target target = query.toTarget();
     BundledQuery bundledQuery =
         new BundledQuery(
             target,
