@@ -21,7 +21,7 @@ import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appcheck.internal.DefaultFirebaseAppCheck;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
@@ -53,7 +53,7 @@ public class FirebaseAppCheckRegistrar implements ComponentRegistrar {
         Qualified.qualified(Blocking.class, ScheduledExecutorService.class);
 
     return Arrays.asList(
-        Component.builder(FirebaseAppCheck.class, (InternalAppCheckTokenProvider.class))
+        Component.builder(FirebaseAppCheck.class, (InteropAppCheckTokenProvider.class))
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(uiExecutor))

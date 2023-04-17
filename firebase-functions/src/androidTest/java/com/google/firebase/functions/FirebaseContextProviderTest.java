@@ -18,7 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Tasks;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
@@ -45,10 +45,10 @@ public class FirebaseContextProviderTest {
           });
   private static final FirebaseInstanceIdInternal fixedIidProvider =
       new TestFirebaseInstanceIdInternal(IID_TOKEN);
-  private static final InternalAppCheckTokenProvider fixedAppCheckProvider =
-      new TestInternalAppCheckTokenProvider(APP_CHECK_TOKEN);
-  private static final InternalAppCheckTokenProvider errorAppCheckProvider =
-      new TestInternalAppCheckTokenProvider(APP_CHECK_TOKEN, ERROR);
+  private static final InteropAppCheckTokenProvider fixedAppCheckProvider =
+      new TestInteropAppCheckTokenProvider(APP_CHECK_TOKEN);
+  private static final InteropAppCheckTokenProvider errorAppCheckProvider =
+      new TestInteropAppCheckTokenProvider(APP_CHECK_TOKEN, ERROR);
 
   @Test
   public void getContext_whenAuthAndAppCheckAreNotAvailable_shouldContainOnlyIid()
