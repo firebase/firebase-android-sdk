@@ -109,7 +109,6 @@ public class PublishingPlugin implements Plugin<Project> {
     String projectNamesToPublish = getPropertyOr(project, "projectsToPublish", "");
     String projectsToPublishSeparator = getPropertyOr(project, "projectsToPublishSeparator", ",");
     String publishConfigFilePath = getPropertyOr(project, "publishConfigFilePath", "");
-    Mode publishMode = Enum.valueOf(Mode.class, getPropertyOr(project, "publishMode", "SNAPSHOT"));
 
     Task publishAllToLocal = project.task("publishAllToLocal");
     Task publishAllToBuildDir = project.task("publishAllToBuildDir");
