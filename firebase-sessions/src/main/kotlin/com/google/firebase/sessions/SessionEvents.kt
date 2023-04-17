@@ -105,7 +105,7 @@ internal object SessionEvents {
     firebaseApp: FirebaseApp,
     sessionDetails: SessionDetails,
     sessionsSettings: SessionsSettings,
-    currentTimeUs: Long = WallClock.currentTimeUs()
+    timeProvider: TimeProvider
   ) =
     SessionEvent(
       eventType = EventType.SESSION_START,
@@ -114,7 +114,7 @@ internal object SessionEvents {
           sessionDetails.sessionId,
           sessionDetails.firstSessionId,
           sessionDetails.sessionIndex,
-          currentTimeUs,
+          eventTimestampUs = timeProvider.currentTimeUs(),
           DataCollectionStatus(sessionSamplingRate = sessionsSettings.samplingRate),
         ),
       applicationInfo = getApplicationInfo(firebaseApp)
