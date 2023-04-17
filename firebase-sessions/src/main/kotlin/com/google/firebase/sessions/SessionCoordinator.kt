@@ -18,6 +18,7 @@ package com.google.firebase.sessions
 
 import android.util.Log
 import com.google.firebase.installations.FirebaseInstallationsApi
+import java.net.URL
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -38,6 +39,10 @@ internal class SessionCoordinator(
 
   fun attemptLoggingSessionEvent(sessionEvent: SessionEvent) =
     scope.launch {
+
+      // this should be a policy violation, but tests still pass?
+      URL("https://google.com").openConnection().connect()
+
       sessionEvent.sessionData.firebaseInstallationId =
         try {
           firebaseInstallations.id.await()
