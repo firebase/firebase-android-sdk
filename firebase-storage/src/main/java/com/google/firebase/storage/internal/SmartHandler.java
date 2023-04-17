@@ -15,12 +15,8 @@
 package com.google.firebase.storage.internal;
 
 import android.annotation.SuppressLint;
-import android.os.Handler;
-import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
-import com.google.android.gms.auth.api.signin.internal.Storage;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.firebase.storage.StorageTaskScheduler;
 import java.util.concurrent.Executor;
@@ -67,11 +63,11 @@ public class SmartHandler {
    */
   public void callBack(@NonNull final Runnable runnable) {
     Preconditions.checkNotNull(runnable);
-      if (executor != null) {
-        // manually specified executor
-        executor.execute(runnable);
-      } else {
-        StorageTaskScheduler.getInstance().scheduleCallback(runnable);
-      }
+    if (executor != null) {
+      // manually specified executor
+      executor.execute(runnable);
+    } else {
+      StorageTaskScheduler.getInstance().scheduleCallback(runnable);
+    }
   }
 }

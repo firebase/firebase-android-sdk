@@ -16,10 +16,8 @@ package com.google.firebase.storage;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.UiThread;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.inject.Provider;
@@ -36,11 +34,11 @@ class FirebaseStorageComponent {
   @Nullable private final Provider<InternalAppCheckTokenProvider> appCheckProvider;
 
   FirebaseStorageComponent(
-          @NonNull FirebaseApp app,
-          @Nullable Provider<InternalAuthProvider> authProvider,
-          @Nullable Provider<InternalAppCheckTokenProvider> appCheckProvider,
-          @NonNull Executor blockingExecutor,
-          @NonNull Executor uiExecutor) {
+      @NonNull FirebaseApp app,
+      @Nullable Provider<InternalAuthProvider> authProvider,
+      @Nullable Provider<InternalAppCheckTokenProvider> appCheckProvider,
+      @NonNull Executor blockingExecutor,
+      @NonNull Executor uiExecutor) {
     this.app = app;
     this.authProvider = authProvider;
     this.appCheckProvider = appCheckProvider;

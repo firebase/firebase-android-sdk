@@ -32,13 +32,14 @@ import org.robolectric.Robolectric;
 public class TestUtil {
 
   static FirebaseApp createApp() {
-    FirebaseApp app = FirebaseApp.initializeApp(
-        ApplicationProvider.getApplicationContext(),
-        new FirebaseOptions.Builder()
-            .setApiKey("fooey")
-            .setApplicationId("fooey")
-            .setStorageBucket("fooey.appspot.com")
-            .build());
+    FirebaseApp app =
+        FirebaseApp.initializeApp(
+            ApplicationProvider.getApplicationContext(),
+            new FirebaseOptions.Builder()
+                .setApiKey("fooey")
+                .setApplicationId("fooey")
+                .setStorageBucket("fooey.appspot.com")
+                .build());
     System.out.println(app == null);
     return app;
     // Point to staging:

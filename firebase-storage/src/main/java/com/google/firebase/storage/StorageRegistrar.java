@@ -16,7 +16,6 @@ package com.google.firebase.storage;
 
 import androidx.annotation.Keep;
 import androidx.annotation.RestrictTo;
-
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.UiThread;
@@ -46,7 +45,7 @@ public class StorageRegistrar implements ComponentRegistrar {
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(blockingExecutor))
-                .add(Dependency.required(uiExecutor))
+            .add(Dependency.required(uiExecutor))
             .add(Dependency.optionalProvider(InternalAuthProvider.class))
             .add(Dependency.optionalProvider(InternalAppCheckTokenProvider.class))
             .factory(
@@ -56,7 +55,7 @@ public class StorageRegistrar implements ComponentRegistrar {
                         c.getProvider(InternalAuthProvider.class),
                         c.getProvider(InternalAppCheckTokenProvider.class),
                         c.get(blockingExecutor),
-                            c.get(uiExecutor)))
+                        c.get(uiExecutor)))
             .build(),
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
