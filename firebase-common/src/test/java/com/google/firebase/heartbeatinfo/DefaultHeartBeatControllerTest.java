@@ -53,12 +53,7 @@ public class DefaultHeartBeatControllerTest {
   private final HeartBeatInfoStorage storage = mock(HeartBeatInfoStorage.class);
   private final UserAgentPublisher publisher = mock(UserAgentPublisher.class);
   private final Context applicationContext = ApplicationProvider.getApplicationContext();
-  private final Set<HeartBeatConsumer> logSources =
-      new HashSet<HeartBeatConsumer>() {
-        {
-          add(new HeartBeatConsumer() {});
-        }
-      };
+  private final Set<HeartBeatConsumer> logSources = Set.of(new HeartBeatConsumer());
   private DefaultHeartBeatController heartBeatController;
 
   @Before
