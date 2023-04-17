@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 // going to be removed. In this case it's required since we need to implement a ScheduledFuture so
 // we can't use CallbackToFutureAdapter.
 @SuppressLint("RestrictedApi")
+@SuppressWarnings("RestrictTo")
 class DelegatingScheduledFuture<V> extends AbstractResolvableFuture<V>
     implements ScheduledFuture<V> {
 
