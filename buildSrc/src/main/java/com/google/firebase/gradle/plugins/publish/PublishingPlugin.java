@@ -163,6 +163,8 @@ public class PublishingPlugin implements Plugin<Project> {
                       });
               project.subprojects(
                   sub -> {
+                    if (sub.getExtensions().findByType(FirebaseLibraryExtension.class) == null)
+                      return;
                     publishAllToLocal.dependsOn(
                         sub.getPath() + ":publishMavenAarPublicationToMavenLocal");
                     publishAllToBuildDir.dependsOn(
@@ -181,7 +183,7 @@ public class PublishingPlugin implements Plugin<Project> {
 
               project
                   .getTasks()
-                  .create(
+                  .register(
                       "publishProjectsToMavenLocal",
                       t -> {
                         for (FirebaseLibraryExtension toPublish : projectsToPublish) {
