@@ -47,10 +47,10 @@ import java.util.concurrent.TimeoutException;
 @SuppressWarnings("PMD.NullAssignment")
 public class CrashlyticsCore {
   private static final String MISSING_BUILD_ID_MSG =
-      "The Crashlytics build ID is missing. This "
-          + "occurs when Crashlytics tooling is absent from your app's build configuration. "
-          + "Please review Crashlytics onboarding instructions and ensure you have a valid "
-          + "Crashlytics account.";
+      "The Crashlytics build ID is missing. This occurs when the Crashlytics Gradle plugin is "
+          + "missing from your app's build configuration. Please review the Firebase Crashlytics "
+          + "onboarding instructions at "
+          + "https://firebase.google.com/docs/crashlytics/get-started?platform=android#add-plugin";
 
   static final int MAX_STACK_SIZE = 1024;
   static final int NUM_STACK_REPETITIONS_ALLOWED = 10;
@@ -59,7 +59,7 @@ public class CrashlyticsCore {
   static final String CRASHLYTICS_REQUIRE_BUILD_ID = "com.crashlytics.RequireBuildId";
   static final boolean CRASHLYTICS_REQUIRE_BUILD_ID_DEFAULT = true;
 
-  static final int DEFAULT_MAIN_HANDLER_TIMEOUT_SEC = 4;
+  static final int DEFAULT_MAIN_HANDLER_TIMEOUT_SEC = 3;
 
   private static final String ON_DEMAND_RECORDED_KEY =
       "com.crashlytics.on-demand.recorded-exceptions";
@@ -226,6 +226,8 @@ public class CrashlyticsCore {
 
     try {
       breadcrumbSource.registerBreadcrumbHandler(this::log);
+
+      controller.saveVersionControlInfo();
 
       final Settings settingsData = settingsProvider.getSettingsSync();
 

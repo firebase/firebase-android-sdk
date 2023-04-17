@@ -19,6 +19,7 @@ plugins {
 }
 
 firebaseLibrary {
+    libraryGroup "ml-modeldownloader"
     testLab.enabled = true
     publishJavadoc = true
 }
@@ -60,15 +61,15 @@ android {
 }
 
 dependencies {
-    implementation project(':encoders:firebase-encoders')
-    implementation project(':encoders:firebase-encoders-json')
-    implementation project(':firebase-common')
-    implementation project(':firebase-components')
-    implementation project(':firebase-annotations')
-    implementation project(':firebase-datatransport')
-    implementation project(':firebase-installations-interop')
-    implementation project(':transport:transport-api')
-    implementation project(':transport:transport-runtime')
+    implementation 'com.google.firebase:firebase-encoders:17.0.0'
+    implementation 'com.google.firebase:firebase-encoders-json:18.0.0'
+    implementation 'com.google.firebase:firebase-common:20.3.1'
+    implementation 'com.google.firebase:firebase-components:17.1.0'
+    implementation 'com.google.firebase:firebase-annotations:16.2.0'
+    implementation 'com.google.firebase:firebase-datatransport:18.1.7'
+    implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
+    implementation 'com.google.android.datatransport:transport-api:3.0.0'
+    implementation 'com.google.android.datatransport:transport-runtime:3.1.8'
     runtimeOnly project(':firebase-installations')
 
     javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
@@ -94,7 +95,7 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
-    testImplementation 'com.google.protobuf:protobuf-java-util:3.11.0'
+    testImplementation "com.google.protobuf:protobuf-java-util:$protobufJavaUtilVersion"
     testImplementation 'junit:junit:4.13-beta-2'
 
     //Android compatible version of Apache httpclient.

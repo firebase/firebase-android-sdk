@@ -33,10 +33,16 @@ val perfPluginVersion = System.getenv("FIREBASE_PERF_PLUGIN_VERSION") ?: "1.4.1"
 
 googleJavaFormat {
     toolVersion = "1.15.0"
+    exclude(".gradle/**")
 }
 
 ktfmt {
     googleStyle()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 dependencies {
@@ -44,7 +50,6 @@ dependencies {
     // resolution works, otherwise it breaks Fireperf Test Apps.
     // See https://github.com/gradle/gradle/issues/12286
     implementation("com.google.firebase:perf-plugin:$perfPluginVersion")
-
     implementation("com.google.auto.value:auto-value-annotations:1.8.1")
     annotationProcessor("com.google.auto.value:auto-value:1.6.5")
     implementation(kotlin("gradle-plugin", "1.7.10"))
@@ -52,20 +57,22 @@ dependencies {
 
     implementation("org.eclipse.aether:aether-api:1.0.0.v20140518")
     implementation("org.eclipse.aether:aether-util:1.0.0.v20140518")
+    implementation("org.ow2.asm:asm-tree:9.5")
     implementation("org.eclipse.aether:aether-impl:1.0.0.v20140518")
     implementation("org.eclipse.aether:aether-connector-basic:1.0.0.v20140518")
     implementation("org.eclipse.aether:aether-transport-file:1.0.0.v20140518")
     implementation("org.eclipse.aether:aether-transport-http:1.0.0.v20140518")
     implementation("org.eclipse.aether:aether-transport-wagon:1.0.0.v20140518")
     implementation("org.apache.maven:maven-aether-provider:3.1.0")
-    
+
     implementation("org.eclipse.jgit:org.eclipse.jgit:6.3.0.202209071007-r")
 
     implementation("com.google.code.gson:gson:2.8.9")
-    implementation("com.android.tools.build:gradle:7.4.0")
-    implementation("com.android.tools.build:builder-test-api:7.4.0")
+    implementation("com.android.tools.build:gradle:7.2.2")
+    implementation("com.android.tools.build:builder-test-api:7.2.2")
     implementation("gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9")
 
+    testImplementation(libs.bundles.kotest)
     testImplementation("junit:junit:4.13.2")
     testImplementation("com.google.truth:truth:1.1.2")
     testImplementation("commons-io:commons-io:2.6")
@@ -107,10 +114,4 @@ tasks.withType<Test> {
     }
     val enablePluginTests: String? by rootProject
     enabled = enablePluginTests == "true"
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = "11"
-    }
 }

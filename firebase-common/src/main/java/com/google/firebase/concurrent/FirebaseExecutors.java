@@ -15,6 +15,8 @@
 package com.google.firebase.concurrent;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ScheduledExecutorService;
 
 /** Provides commonly useful executors. */
 public class FirebaseExecutors {
@@ -31,6 +33,94 @@ public class FirebaseExecutors {
    */
   public static Executor newSequentialExecutor(Executor delegate) {
     return new SequentialExecutor(delegate);
+  }
+
+  /**
+   * Returns an {@link Executor} that limits the number of running tasks at a given time.
+   *
+   * <p>The executor uses the {@code delegate} in order to {@link Executor#execute(Runnable)
+   * execute} each task, and does not create any threads of its own.
+   *
+   * @param delegate {@link Executor} used to execute tasks
+   * @param concurrency max number of tasks executing concurrently
+   */
+  public static Executor newLimitedConcurrencyExecutor(Executor delegate, int concurrency) {
+    return new LimitedConcurrencyExecutor(delegate, concurrency);
+  }
+
+  /**
+   * Returns a {@link ExecutorService} that limits the number of running tasks at a given time.
+   *
+   * <p>The executor uses delegate in order to {@link Executor#execute(Runnable) execute} each task,
+   * and does not create any threads of its own.
+   *
+   * @param delegate {@link ExecutorService} used to execute tasks
+   * @param concurrency max number of tasks executing concurrently
+   */
+  public static ExecutorService newLimitedConcurrencyExecutorService(
+      ExecutorService delegate, int concurrency) {
+    return new LimitedConcurrencyExecutorService(delegate, concurrency);
+  }
+
+  /**
+   * Returns a {@link ScheduledExecutorService} that limits the number of running tasks at a given
+   * time.
+   *
+   * <p>The executor uses delegate in order to {@link Executor#execute(Runnable) execute} each task,
+   * and does not create any threads of its own.
+   *
+   * @param delegate {@link ExecutorService} used to execute tasks
+   * @param concurrency max number of tasks executing concurrently
+   */
+  public static ScheduledExecutorService newLimitedConcurrencyScheduledExecutorService(
+      ExecutorService delegate, int concurrency) {
+    return new DelegatingScheduledExecutorService(
+        newLimitedConcurrencyExecutorService(delegate, concurrency),
+        ExecutorsRegistrar.SCHEDULER.get());
+  }
+
+  /**
+   * Returns a {@link PausableExecutor }.
+   *
+   * <p>The executor does not create any threads of its own and instead delegates to the {@code
+   * delegate} executor.
+   *
+   * <p>While {@link PausableExecutor#pause() paused}, the executor queues tasks which are executed
+   * when the executor is {@link PausableExecutor#resume() resumed}, tasks that are already being
+   * executed will not be paused and will run to completion.
+   */
+  public static PausableExecutor newPausableExecutor(Executor delegate) {
+    return new PausableExecutorImpl(false, delegate);
+  }
+
+  /**
+   * Returns a {@link PausableExecutorService }.
+   *
+   * <p>The executor does not create any threads of its own and instead delegates to the {@code
+   * delegate} executor.
+   *
+   * <p>While {@link PausableExecutor#pause() paused}, the executor queues tasks which are executed
+   * when the executor is {@link PausableExecutor#resume() resumed}, tasks that are already being
+   * executed will not be paused and will run to completion.
+   */
+  public static PausableExecutorService newPausableExecutorService(ExecutorService delegate) {
+    return new PausableExecutorServiceImpl(false, delegate);
+  }
+
+  /**
+   * Returns a {@link PausableScheduledExecutorService }.
+   *
+   * <p>The executor does not create any threads of its own and instead delegates to the {@code
+   * delegate} executor.
+   *
+   * <p>While {@link PausableExecutor#pause() paused}, the executor queues tasks which are executed
+   * when the executor is {@link PausableExecutor#resume() resumed}, tasks that are already being
+   * executed will not be paused and will run to completion.
+   */
+  public static PausableScheduledExecutorService newPausableScheduledExecutorService(
+      ScheduledExecutorService delegate) {
+    return new PausableScheduledExecutorServiceImpl(
+        newPausableExecutorService(delegate), ExecutorsRegistrar.SCHEDULER.get());
   }
 
   /** Returns a direct executor. */

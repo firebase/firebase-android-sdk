@@ -32,7 +32,7 @@ import org.gradle.api.GradleException;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
+import org.gradle.work.InputChanges;
 
 abstract class GenerateLicensesTask extends DefaultTask {
   private static final int NEW_LINE_LENGTH = "\n".getBytes().length;
@@ -56,7 +56,7 @@ abstract class GenerateLicensesTask extends DefaultTask {
   }
 
   @TaskAction
-  void execute(IncrementalTaskInputs inputs) {
+  void execute(InputChanges inputs) {
     Set<URI> licenseUris = new HashSet<URI>();
     for (ThirdPartyLicensesExtension.CustomLicense license : getadditionalLicenses()) {
       licenseUris.addAll(license.licenseUris);

@@ -15,6 +15,8 @@
 package com.google.firebase.crashlytics.internal.send;
 
 import android.annotation.SuppressLint;
+import android.database.SQLException;
+import android.os.SystemClock;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.Transport;
@@ -38,10 +40,12 @@ final class ReportQueue {
   private static final int MS_PER_SECOND = 1_000;
   private static final int MS_PER_MINUTE = 60_000;
   private static final int MAX_DELAY_MS = 3_600_000; // 1 hour.
+  private static final int STARTUP_DURATION_MS = 2_000; // 2 seconds.
 
   private final double ratePerMinute;
   private final double base;
   private final long stepDurationMs;
+  private final long startTimeMs;
 
   private final int queueCapacity;
   private final BlockingQueue<Runnable> queue;
@@ -75,6 +79,8 @@ final class ReportQueue {
     this.stepDurationMs = stepDurationMs;
     this.transport = transport;
     this.onDemandCounter = onDemandCounter;
+
+    startTimeMs = SystemClock.elapsedRealtime();
 
     // The queue capacity is the per-minute rate number. // TODO(mrober): Round up to next int?
     queueCapacity = (int) ratePerMinute;
@@ -128,7 +134,11 @@ final class ReportQueue {
     CountDownLatch latch = new CountDownLatch(1);
     new Thread(
             () -> {
-              ForcedSender.sendBlocking(transport, Priority.HIGHEST);
+              try {
+                ForcedSender.sendBlocking(transport, Priority.HIGHEST);
+              } catch (SQLException ignored) {
+                // best effort only.
+              }
               latch.countDown();
             })
         .start();
@@ -141,6 +151,7 @@ final class ReportQueue {
       TaskCompletionSource<CrashlyticsReportWithSessionId> tcs) {
     Logger.getLogger()
         .d("Sending report through Google DataTransport: " + reportWithSessionId.getSessionId());
+    boolean isStartup = (SystemClock.elapsedRealtime() - startTimeMs) < STARTUP_DURATION_MS;
     transport.schedule(
         Event.ofUrgent(reportWithSessionId.getReport()),
         error -> {
@@ -148,7 +159,9 @@ final class ReportQueue {
             tcs.trySetException(error);
             return;
           }
-          flushScheduledReportsIfAble();
+          if (isStartup) {
+            flushScheduledReportsIfAble();
+          }
           tcs.trySetResult(reportWithSessionId);
         });
   }

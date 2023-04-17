@@ -36,6 +36,7 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.MetadataChanges;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.WriteBatch;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -128,6 +129,25 @@ public class IntegrationTestUtil {
     return provider;
   }
 
+  private static String getFirestoreHost() {
+    switch (backend) {
+      case EMULATOR:
+        return String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT);
+      case QA:
+        return "staging-firestore.sandbox.googleapis.com";
+      case NIGHTLY:
+        return "test-firestore.sandbox.googleapis.com";
+      case PROD:
+      default:
+        return "firestore.googleapis.com";
+    }
+  }
+
+  private static boolean getSslEnabled() {
+    // ssl is enabled in all environments except for the emulator.
+    return !isRunningAgainstEmulator();
+  }
+
   public static TargetBackend getTargetBackend() {
     if (backendForLocalTesting != null) {
       return backendForLocalTesting;
@@ -147,35 +167,18 @@ public class IntegrationTestUtil {
   }
 
   public static DatabaseInfo testEnvDatabaseInfo() {
-    if (backend.equals(TargetBackend.EMULATOR)) {
-      return new DatabaseInfo(
-          DatabaseId.forProject(provider.projectId()),
-          "test-persistenceKey",
-          String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT),
-          /*sslEnabled=*/ false);
-    } else {
-      return new DatabaseInfo(
-          DatabaseId.forProject(provider.projectId()),
-          "test-persistenceKey",
-          provider.firestoreHost(backend),
-          /*sslEnabled=*/ true);
-    }
+    return new DatabaseInfo(
+        DatabaseId.forProject(provider.projectId()),
+        "test-persistenceKey",
+        getFirestoreHost(),
+        getSslEnabled());
   }
 
   public static FirebaseFirestoreSettings newTestSettings() {
-    Logger.debug("IntegrationTestUtil", "target backend is: %s", BuildConfig.TARGET_BACKEND);
-
+    Logger.debug("IntegrationTestUtil", "target backend is: %s", backend.name());
     FirebaseFirestoreSettings.Builder settings = new FirebaseFirestoreSettings.Builder();
-
-    if (backend.equals(TargetBackend.EMULATOR)) {
-      settings.setHost(String.format("%s:%d", EMULATOR_HOST, EMULATOR_PORT));
-      settings.setSslEnabled(false);
-    } else {
-      settings.setHost(provider.firestoreHost(backend));
-    }
-
-    settings.setPersistenceEnabled(true);
-
+    settings.setHost(getFirestoreHost());
+    settings.setSslEnabled(getSslEnabled());
     return settings.build();
   }
 
@@ -344,8 +347,27 @@ public class IntegrationTestUtil {
 
   public static void writeAllDocs(
       CollectionReference collection, Map<String, Map<String, Object>> docs) {
+    WriteBatch writeBatch = null;
+    int writeBatchSize = 0;
+
     for (Map.Entry<String, Map<String, Object>> doc : docs.entrySet()) {
-      waitFor(collection.document(doc.getKey()).set(doc.getValue()));
+      if (writeBatch == null) {
+        writeBatch = collection.getFirestore().batch();
+      }
+
+      writeBatch.set(collection.document(doc.getKey()), doc.getValue());
+      writeBatchSize++;
+
+      // Write batches are capped at 500 writes. Use 400 just to be safe.
+      if (writeBatchSize == 400) {
+        waitFor(writeBatch.commit());
+        writeBatch = null;
+        writeBatchSize = 0;
+      }
+    }
+
+    if (writeBatch != null) {
+      waitFor(writeBatch.commit());
     }
   }
 

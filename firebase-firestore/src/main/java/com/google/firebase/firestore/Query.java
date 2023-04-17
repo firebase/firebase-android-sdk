@@ -22,6 +22,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -48,6 +49,7 @@ import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -388,14 +390,14 @@ public class Query {
     return where(Filter.notInArray(fieldPath, values));
   }
 
-  // TODO(orquery): This method will become public API. Change visibility and add documentation.
   /**
    * Creates and returns a new {@code Query} with the additional filter.
    *
    * @param filter The new filter to apply to the existing query.
    * @return The newly created {@code Query}.
    */
-  Query where(Filter filter) {
+  @NonNull
+  public Query where(@NonNull Filter filter) {
     com.google.firebase.firestore.core.Filter parsedFilter = parseFilter(filter);
     if (parsedFilter.getFilters().isEmpty()) {
       // Return the existing query if not adding any more filters (e.g. an empty composite filter).
@@ -540,12 +542,6 @@ public class Query {
       throw new IllegalArgumentException(
           "Invalid Query. A non-empty array is required for '" + op.toString() + "' filters.");
     }
-    if (((List) value).size() > 10) {
-      throw new IllegalArgumentException(
-          "Invalid Query. '"
-              + op.toString()
-              + "' filters support a maximum of 10 elements in the value array.");
-    }
   }
 
   private void validateOrderByFieldMatchesInequality(
@@ -566,36 +562,26 @@ public class Query {
   /**
    * Given an operator, returns the set of operators that cannot be used with it.
    *
+   * <p>This is not a comprehensive check, and this function should be removed in the long term.
+   * Validations should occur in the Firestore backend.
+   *
    * <p>Operators in a query must adhere to the following set of rules:
    *
    * <ol>
-   *   <li>Only one array operator is allowed.
-   *   <li>Only one disjunctive operator is allowed.
-   *   <li>NOT_EQUAL cannot be used with another NOT_EQUAL operator.
+   *   <li>Only one inequality per query.
    *   <li>NOT_IN cannot be used with array, disjunctive, or NOT_EQUAL operators.
    * </ol>
-   *
-   * <p>Array operators: ARRAY_CONTAINS, ARRAY_CONTAINS_ANY Disjunctive operators: IN,
-   * ARRAY_CONTAINS_ANY, NOT_IN
    */
   private List<Operator> conflictingOps(Operator op) {
     switch (op) {
       case NOT_EQUAL:
         return Arrays.asList(Operator.NOT_EQUAL, Operator.NOT_IN);
-      case ARRAY_CONTAINS:
-        return Arrays.asList(Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY, Operator.NOT_IN);
-      case IN:
-        return Arrays.asList(Operator.ARRAY_CONTAINS_ANY, Operator.IN, Operator.NOT_IN);
       case ARRAY_CONTAINS_ANY:
-        return Arrays.asList(
-            Operator.ARRAY_CONTAINS, Operator.ARRAY_CONTAINS_ANY, Operator.IN, Operator.NOT_IN);
+      case IN:
+        return Arrays.asList(Operator.NOT_IN);
       case NOT_IN:
         return Arrays.asList(
-            Operator.ARRAY_CONTAINS,
-            Operator.ARRAY_CONTAINS_ANY,
-            Operator.IN,
-            Operator.NOT_IN,
-            Operator.NOT_EQUAL);
+            Operator.ARRAY_CONTAINS_ANY, Operator.IN, Operator.NOT_IN, Operator.NOT_EQUAL);
       default:
         return new ArrayList<>();
     }
@@ -1239,11 +1225,39 @@ public class Query {
    * not the documents' data, is downloaded. The returned query can even count the documents if the
    * result set would be prohibitively large to download entirely (e.g. thousands of documents).
    *
-   * @return a query that counts the documents in the result set of this query.
+   * @return The {@code AggregateQuery} that counts the documents in the result set of this query.
    */
   @NonNull
   public AggregateQuery count() {
-    return new AggregateQuery(this);
+    return new AggregateQuery(this, Collections.singletonList(AggregateField.count()));
+  }
+
+  /**
+   * Calculates the specified aggregations over the documents in the result set of the given query,
+   * without actually downloading the documents.
+   *
+   * <p>Using this function to perform aggregations is efficient because only the final aggregation
+   * values, not the documents' data, is downloaded. This function can even perform aggregations of
+   * the documents if the result set would be prohibitively large to download entirely (e.g.
+   * thousands of documents).
+   *
+   * @return The {@code AggregateQuery} that performs aggregations on the documents in the result
+   *     set of this query.
+   */
+  // TODO(sumavg): Remove the `hide` and scope annotations.
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @NonNull
+  public AggregateQuery aggregate(
+      @NonNull AggregateField aggregateField, @NonNull AggregateField... aggregateFields) {
+    List<AggregateField> fields =
+        new ArrayList<AggregateField>() {
+          {
+            add(aggregateField);
+          }
+        };
+    fields.addAll(Arrays.asList(aggregateFields));
+    return new AggregateQuery(this, fields);
   }
 
   @Override

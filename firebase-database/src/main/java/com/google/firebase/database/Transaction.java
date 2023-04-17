@@ -25,8 +25,8 @@ import com.google.firebase.database.snapshot.Node;
  * <br>
  * To run a transaction, provide a {@link Handler} to {@link
  * DatabaseReference#runTransaction(com.google.firebase.database.Transaction.Handler)}. That handler
- * will be passed the current data at the location, and must return a {@link Result}. A {@link
- * Result} can be created using either {@link Transaction#success(MutableData)} or {@link
+ * will be passed the current data at the location, and must return a {@link Result}.<br>
+ * A {@link Result} can be created using either {@link Transaction#success(MutableData)} or {@link
  * com.google.firebase.database.Transaction#abort()}.
  */
 public class Transaction {

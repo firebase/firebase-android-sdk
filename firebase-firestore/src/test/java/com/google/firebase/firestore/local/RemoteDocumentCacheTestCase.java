@@ -18,9 +18,11 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.TestUtil.assertDoesNotThrow;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
+import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
+import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static com.google.firebase.firestore.testutil.TestUtil.version;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -30,12 +32,12 @@ import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
-import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import org.junit.After;
@@ -179,9 +181,9 @@ abstract class RemoteDocumentCacheTestCase {
     addTestDocumentAtPath("b/2");
     addTestDocumentAtPath("c/1");
 
-    ResourcePath collection = path("b");
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll(collection, IndexOffset.NONE);
+        remoteDocumentCache.getDocumentsMatchingQuery(
+            query("b"), IndexOffset.NONE, new HashSet<DocumentKey>());
     assertThat(results.values())
         .containsExactly(doc("b/1", 42, DOC_DATA), doc("b/2", 42, DOC_DATA));
   }
@@ -192,9 +194,9 @@ abstract class RemoteDocumentCacheTestCase {
     addTestDocumentAtPath("a/1/b/1");
     addTestDocumentAtPath("a/2");
 
-    ResourcePath collection = path("a");
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll(collection, IndexOffset.NONE);
+        remoteDocumentCache.getDocumentsMatchingQuery(
+            query("a"), IndexOffset.NONE, new HashSet<DocumentKey>());
     assertThat(results.values())
         .containsExactly(doc("a/1", 42, DOC_DATA), doc("a/2", 42, DOC_DATA));
   }
@@ -205,9 +207,9 @@ abstract class RemoteDocumentCacheTestCase {
     addTestDocumentAtPath("b/current", /* updateTime= */ 2, /*  readTime= = */ 12);
     addTestDocumentAtPath("b/new", /* updateTime= */ 3, /*  readTime= = */ 13);
 
-    ResourcePath collection = path("b");
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll(collection, IndexOffset.createSuccessor(version(12), -1));
+        remoteDocumentCache.getDocumentsMatchingQuery(
+            query("b"), IndexOffset.createSuccessor(version(12), -1), new HashSet<DocumentKey>());
     assertThat(results.values()).containsExactly(doc("b/new", 3, DOC_DATA));
   }
 
@@ -217,9 +219,9 @@ abstract class RemoteDocumentCacheTestCase {
     add(doc("b/current", 1, DOC_DATA), version(1, 2));
     add(doc("b/new", 1, DOC_DATA), version(1, 3));
 
-    ResourcePath collection = path("b");
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll(collection, IndexOffset.createSuccessor(version(1, 2), -1));
+        remoteDocumentCache.getDocumentsMatchingQuery(
+            query("b"), IndexOffset.createSuccessor(version(1, 2), -1), new HashSet<DocumentKey>());
     assertThat(results.values()).containsExactly(doc("b/new", 1, DOC_DATA));
   }
 
@@ -230,9 +232,11 @@ abstract class RemoteDocumentCacheTestCase {
     addTestDocumentAtPath("b/c", /* updateTime= */ 3, /*  readTime= = */ 11);
     addTestDocumentAtPath("b/d", /* updateTime= */ 4, /*  readTime= = */ 12);
 
-    ResourcePath collection = path("b");
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll(collection, IndexOffset.create(version(11), key("b/b"), -1));
+        remoteDocumentCache.getDocumentsMatchingQuery(
+            query("b"),
+            IndexOffset.create(version(11), key("b/b"), -1),
+            new HashSet<DocumentKey>());
     assertThat(results.values()).containsExactly(doc("b/c", 3, DOC_DATA), doc("b/d", 4, DOC_DATA));
   }
 
@@ -241,10 +245,37 @@ abstract class RemoteDocumentCacheTestCase {
     addTestDocumentAtPath("b/old", /* updateTime= */ 1, /* readTime= */ 2);
     addTestDocumentAtPath("b/new", /* updateTime= */ 2, /* readTime= */ 1);
 
-    ResourcePath collection = path("b");
     Map<DocumentKey, MutableDocument> results =
-        remoteDocumentCache.getAll(collection, IndexOffset.createSuccessor(version(1), -1));
+        remoteDocumentCache.getDocumentsMatchingQuery(
+            query("b"), IndexOffset.createSuccessor(version(1), -1), new HashSet<DocumentKey>());
     assertThat(results.values()).containsExactly(doc("b/old", 1, DOC_DATA));
+  }
+
+  @Test
+  public void testGetMatchingDocsAppliesQueryCheck() {
+    addTestDocumentAtPath("a/1", 1, 1, map("matches", true));
+    addTestDocumentAtPath("a/2", 1, 2, map("matches", true));
+    addTestDocumentAtPath("a/3", 1, 3, map("matches", false));
+
+    Map<DocumentKey, MutableDocument> results =
+        remoteDocumentCache.getDocumentsMatchingQuery(
+            query("a").filter(filter("matches", "==", true)),
+            IndexOffset.createSuccessor(version(1), -1),
+            new HashSet<DocumentKey>());
+    assertThat(results.values()).containsExactly(doc("a/2", 1, map("matches", true)));
+  }
+
+  @Test
+  public void testGetMatchingDocsRespectsMutatedDocs() {
+    addTestDocumentAtPath("a/1", 1, 1, map("matches", true));
+    addTestDocumentAtPath("a/2", 1, 2, map("matches", false));
+
+    Map<DocumentKey, MutableDocument> results =
+        remoteDocumentCache.getDocumentsMatchingQuery(
+            query("a").filter(filter("matches", "==", true)),
+            IndexOffset.createSuccessor(version(1), -1),
+            new HashSet<DocumentKey>(Collections.singletonList(key("a/2"))));
+    assertThat(results.values()).containsExactly(doc("a/2", 1, map("matches", false)));
   }
 
   protected MutableDocument addTestDocumentAtPath(String path) {
@@ -256,7 +287,12 @@ abstract class RemoteDocumentCacheTestCase {
   }
 
   protected MutableDocument addTestDocumentAtPath(String path, int updateTime, int readTime) {
-    MutableDocument doc = doc(path, updateTime, map("data", 2));
+    return addTestDocumentAtPath(path, updateTime, readTime, map("data", 2));
+  }
+
+  protected MutableDocument addTestDocumentAtPath(
+      String path, int updateTime, int readTime, Map<String, Object> data) {
+    MutableDocument doc = doc(path, updateTime, data);
     add(doc, version(readTime));
     return doc;
   }

@@ -45,7 +45,7 @@ class Changelog:
         if not self.has_ktx:
             return ''
         version_str = f'{{: #{self.version_name}-ktx_v{self.version.replace(".", "-")}}}'
-        return f'### {self.alt_name} Kotlin extensions version {self.version} {version_str}\n'
+        return f'#### {self.alt_name} Kotlin extensions version {self.version} {version_str}\n'
 
     def _get_version(self):
         properties = os.path.join(os.path.dirname(self.path),

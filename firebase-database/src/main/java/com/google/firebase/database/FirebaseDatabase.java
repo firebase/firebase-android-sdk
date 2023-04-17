@@ -186,9 +186,9 @@ public class FirebaseDatabase {
 
   /**
    * Gets a DatabaseReference for the provided URL. The URL must be a URL to a path within this
-   * FirebaseDatabase. To create a DatabaseReference to a different database, create a {@link
-   * FirebaseApp} with a {@link FirebaseOptions} object configured with the appropriate database
-   * URL.
+   * FirebaseDatabase. To create a DatabaseReference to a different database, create a <br>
+   * {@link FirebaseApp} with a {@link FirebaseOptions} object configured with the appropriate
+   * database URL.
    *
    * @param url A URL to a path within your database.
    * @return A DatabaseReference for the provided URL.
@@ -211,7 +211,7 @@ public class FirebaseDatabase {
               + url
               + ") passed to getReference().  "
               + "URL was expected to match configured Database URL: "
-              + getReference().toString());
+              + getReference());
     }
 
     return new DatabaseReference(this.repo, parsedUrl.path);

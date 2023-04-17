@@ -209,9 +209,9 @@ public class DeviceCacheManager {
    * Retrieves value stored in caching layer for {@code key}, if caching layer is not initialized,
    * or value with the desired type doesn't exist in caching layer, return {@code Optional.empty()}.
    */
-  public Optional<Float> getFloat(String key) {
+  public Optional<Double> getDouble(String key) {
     if (key == null) {
-      logger.debug("Key is null when getting float value on device cache.");
+      logger.debug("Key is null when getting double value on device cache.");
       return Optional.absent();
     }
 
@@ -227,11 +227,19 @@ public class DeviceCacheManager {
     }
 
     try {
+      // SharedPreferences does not allow storing a Double directly. We store the double's bits as a
+      // long so here we convert that back to a double.
       // Default value should never be used because key existence is checked above.
-      return Optional.of(sharedPref.getFloat(key, 0.0f));
-    } catch (ClassCastException e) {
-      logger.debug(
-          "Key %s from sharedPreferences has type other than float: %s", key, e.getMessage());
+      return Optional.of(Double.longBitsToDouble(sharedPref.getLong(key, 0)));
+    } catch (ClassCastException unused) {
+      // In the past, we used to store a Float here instead of a Double. Before the value is
+      // overwritten for the first time, it will still have a Float and so this may be expected.
+      try {
+        return Optional.of(Float.valueOf(sharedPref.getFloat(key, 0.0f)).doubleValue());
+      } catch (ClassCastException e) {
+        logger.debug(
+            "Key %s from sharedPreferences has type other than double: %s", key, e.getMessage());
+      }
     }
     return Optional.absent();
   }
@@ -242,18 +250,22 @@ public class DeviceCacheManager {
    *
    * @return whether provided value has been saved to device caching layer.
    */
-  public boolean setValue(String key, float value) {
+  public boolean setValue(String key, double value) {
     if (key == null) {
-      logger.debug("Key is null when setting float value on device cache.");
+      logger.debug("Key is null when setting double value on device cache.");
       return false;
     }
+
     if (sharedPref == null) {
       setContext(getFirebaseApplicationContext());
       if (sharedPref == null) {
         return false;
       }
     }
-    sharedPref.edit().putFloat(key, value).apply();
+    // SharedPreferences does not allow storing a Double directly. The main way to store it without
+    // losing precision is to store the double's bits as a long so it can then be converted back to
+    // a double.
+    sharedPref.edit().putLong(key, Double.doubleToRawLongBits(value)).apply();
     return true;
   }
 

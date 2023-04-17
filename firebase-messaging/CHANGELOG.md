@@ -1,5 +1,15 @@
 # Unreleased
 
+# 23.1.2
+* [fixed] Fixed a breakage related to Jetpack core library related to an
+  [upstream update](https://android-review.googlesource.com/c/platform/frameworks/support/+/2399893).
+* [changed] Updated JavaLite, protoc, protobuf-java-util to 3.21.11.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-messaging` library. The Kotlin extensions library has no additional
+updates.
 
 # 23.1.1
 * [fixed] Fixed deadlock when handling simultaneous messages.

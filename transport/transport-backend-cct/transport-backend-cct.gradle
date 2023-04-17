@@ -52,10 +52,10 @@ android {
 }
 
 dependencies {
-    implementation project(':transport:transport-api')
-    implementation project(':transport:transport-runtime')
-    implementation project(':encoders:firebase-encoders')
-    implementation project(':encoders:firebase-encoders-json')
+    implementation 'com.google.android.datatransport:transport-api:3.0.0'
+    implementation 'com.google.android.datatransport:transport-runtime:3.1.8'
+    implementation 'com.google.firebase:firebase-encoders:17.0.0'
+    implementation 'com.google.firebase:firebase-encoders-json:18.0.0'
     implementation 'androidx.annotation:annotation:1.1.0'
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
@@ -63,7 +63,7 @@ dependencies {
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"
     annotationProcessor project(':encoders:firebase-encoders-processor')
 
-    testImplementation 'com.google.protobuf:protobuf-java-util:3.11.0'
+    testImplementation "com.google.protobuf:protobuf-java-util:$protobufJavaUtilVersion"
     testImplementation 'androidx.test:core:1.2.0'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'

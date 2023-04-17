@@ -16,8 +16,10 @@ package com.google.firebase.appdistribution.internal;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -30,6 +32,7 @@ import com.google.firebase.appdistribution.AppDistributionRelease;
 import com.google.firebase.appdistribution.FirebaseAppDistribution;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
+import com.google.firebase.appdistribution.InterruptionLevel;
 import com.google.firebase.appdistribution.OnProgressListener;
 import com.google.firebase.appdistribution.UpdateTask;
 import java.util.concurrent.Executor;
@@ -60,9 +63,7 @@ public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
   }
 
   @Override
-  public void signOutTester() {
-    return;
-  }
+  public void signOutTester() {}
 
   @NonNull
   @Override
@@ -75,6 +76,30 @@ public class FirebaseAppDistributionStub implements FirebaseAppDistribution {
   public UpdateTask updateApp() {
     return new NotImplementedUpdateTask();
   }
+
+  @Override
+  public void startFeedback(@StringRes int additionalFormText) {}
+
+  @Override
+  public void startFeedback(@NonNull CharSequence additionalFormText) {}
+
+  @Override
+  public void startFeedback(@StringRes int additionalFormText, @Nullable Uri screenshotUri) {}
+
+  @Override
+  public void startFeedback(
+      @NonNull CharSequence additionalFormText, @Nullable Uri screenshotUri) {}
+
+  @Override
+  public void showFeedbackNotification(
+      @StringRes int additionalFormText, @NonNull InterruptionLevel interruptionLevel) {}
+
+  @Override
+  public void showFeedbackNotification(
+      @NonNull CharSequence additionalFormText, @NonNull InterruptionLevel interruptionLevel) {}
+
+  @Override
+  public void cancelFeedbackNotification() {}
 
   private static <TResult> Task<TResult> getNotImplementedTask() {
     return Tasks.forException(

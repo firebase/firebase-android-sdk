@@ -93,7 +93,7 @@ jobs:
                 title: 'FirePerf E2E Test Failures',
                 body: text,
                 labels: ['fireperf-e2e-tests'],
-                assignees: ['jeremyjiang-dev', 'leotianlizhan', 'raymondlam', 'visumickey']
+                assignees: ['raymondlam', 'visumickey']
               });
             }
       - name: Upload test artifacts

@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 
 /**
@@ -167,8 +168,10 @@ class CountingQueryEngine extends QueryEngine {
       }
 
       @Override
-      public Map<DocumentKey, MutableDocument> getAll(ResourcePath collection, IndexOffset offset) {
-        Map<DocumentKey, MutableDocument> result = subject.getAll(collection, offset);
+      public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+          Query query, IndexOffset offset, Set<DocumentKey> mutatedKeys) {
+        Map<DocumentKey, MutableDocument> result =
+            subject.getDocumentsMatchingQuery(query, offset, mutatedKeys);
         documentsReadByCollection[0] += result.size();
         return result;
       }
