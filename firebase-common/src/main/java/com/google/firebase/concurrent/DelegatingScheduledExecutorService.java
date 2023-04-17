@@ -100,7 +100,7 @@ class DelegatingScheduledExecutorService implements ScheduledExecutorService {
   }
 
   @Override
-  public void execute(Runnable command) {   
+  public void execute(Runnable command) {
     delegate.execute(command);
   }
 
