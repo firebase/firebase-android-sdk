@@ -19,7 +19,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.appcheck.AppCheckTokenResult;
 
 /** @hide */
-public interface InternalAppCheckTokenProvider {
+public interface InteropAppCheckTokenProvider {
 
   /**
    * Requests an {@link AppCheckTokenResult} from the installed {@code AppCheckFactory}. This will
