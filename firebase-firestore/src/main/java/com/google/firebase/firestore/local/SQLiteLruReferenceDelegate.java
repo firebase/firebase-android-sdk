@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Provides LRU functionality for SQLite persistence. */
-public class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
+class SQLiteLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   /**
    * The batch size for orphaned document GC in `removeOrphanedDocuments()`.
    *

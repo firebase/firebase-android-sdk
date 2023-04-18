@@ -1,7 +1,6 @@
 package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 public final class MemoryLruGcSettings implements MemoryGarbageCollectorSettings {
 
@@ -36,16 +35,18 @@ public final class MemoryLruGcSettings implements MemoryGarbageCollectorSettings
   }
 
   @Override
-  public int hashCode() {
-    return super.hashCode();
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    MemoryLruGcSettings that = (MemoryLruGcSettings) o;
+
+    return sizeBytes == that.sizeBytes;
   }
 
   @Override
-  public boolean equals(@Nullable Object obj) {
-    if (this == obj) return true;
-    if (obj == null || getClass() != obj.getClass()) return false;
-
-    return true;
+  public int hashCode() {
+    return (int) (sizeBytes ^ (sizeBytes >>> 32));
   }
 
   @NonNull

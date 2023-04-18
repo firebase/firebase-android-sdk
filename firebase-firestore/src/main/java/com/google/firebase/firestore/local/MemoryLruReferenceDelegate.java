@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 /** Provides LRU garbage collection functionality for MemoryPersistence. */
-public class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
+class MemoryLruReferenceDelegate implements ReferenceDelegate, LruDelegate {
   private final MemoryPersistence persistence;
   private final LocalSerializer serializer;
   private final Map<DocumentKey, Long> orphanedSequenceNumbers;

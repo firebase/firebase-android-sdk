@@ -30,11 +30,6 @@ public final class MemoryEagerGcSettings implements MemoryGarbageCollectorSettin
   }
 
   @Override
-  public int hashCode() {
-    return super.hashCode();
-  }
-
-  @Override
   public boolean equals(@Nullable Object obj) {
     if (this == obj) return true;
     if (obj == null || getClass() != obj.getClass()) return false;

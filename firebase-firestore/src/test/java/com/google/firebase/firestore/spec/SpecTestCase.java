@@ -56,12 +56,11 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.SyncEngine;
 import com.google.firebase.firestore.local.LocalStore;
+import com.google.firebase.firestore.local.LruDelegate;
 import com.google.firebase.firestore.local.LruGarbageCollector;
-import com.google.firebase.firestore.local.MemoryLruReferenceDelegate;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.PersistenceTestHelpers;
 import com.google.firebase.firestore.local.QueryPurpose;
-import com.google.firebase.firestore.local.SQLiteLruReferenceDelegate;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -326,14 +325,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
     ComponentProvider provider = initializeComponentProvider(configuration, useEagerGcForMemory);
     localPersistence = provider.getPersistence();
-    if (localPersistence.getReferenceDelegate() instanceof SQLiteLruReferenceDelegate) {
+    if (localPersistence.getReferenceDelegate() instanceof LruDelegate) {
       lruGarbageCollector =
-          ((SQLiteLruReferenceDelegate) localPersistence.getReferenceDelegate())
-              .getGarbageCollector();
-    } else if (localPersistence.getReferenceDelegate() instanceof MemoryLruReferenceDelegate) {
-      lruGarbageCollector =
-          ((MemoryLruReferenceDelegate) localPersistence.getReferenceDelegate())
-              .getGarbageCollector();
+          ((LruDelegate) localPersistence.getReferenceDelegate()).getGarbageCollector();
     }
     remoteStore = provider.getRemoteStore();
     localStore = provider.getLocalStore();
