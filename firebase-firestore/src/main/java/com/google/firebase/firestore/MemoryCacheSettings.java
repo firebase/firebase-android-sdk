@@ -55,7 +55,7 @@ public final class MemoryCacheSettings implements LocalCacheSettings {
 
   @Override
   public String toString() {
-    return "MemoryCacheSettings{gcSettings " + getGarbageCollectorSettings() + "}";
+    return "MemoryCacheSettings{gcSettings=" + getGarbageCollectorSettings() + "}";
   }
 
   @NonNull
