@@ -29,7 +29,7 @@ jobs:
       - name: Generate release notes
         run: |
           python3 docs/make_release_notes.py
-          mkdir build && mkdir build/changelog && cd build/changelog && zip -r ../release_notes.zip android
+          mkdir -p build/changelog && cd build/changelog && zip -r ../release_notes.zip android
 
       - name: Upload generated artifacts
         uses: actions/upload-artifact@v2
