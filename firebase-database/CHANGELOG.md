@@ -2,11 +2,17 @@
 * [unchanged] Updated to accommodate the release of the updated
   [database] Kotlin extensions library.
 
+
+# 20.2.0
+* [unchanged] Updated to accommodate the release of the updated
+  [database] Kotlin extensions library.
+
+
 ## Kotlin
 * [feature] Added
   [`Query.values<T>()`](/docs/reference/kotlin/com/google/firebase/database/ktx/package-summary#values)
-  Kotlin Flows to listen for realtime updates and convert its values to a specific type.
-
+  Kotlin Flows to listen for realtime updates and convert its values to a
+  specific type.
 # 20.1.0
 * [unchanged] Updated to accommodate the release of the updated
 [database] Kotlin extensions library.
