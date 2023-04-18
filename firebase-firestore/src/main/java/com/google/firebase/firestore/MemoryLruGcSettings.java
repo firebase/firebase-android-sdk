@@ -51,6 +51,6 @@ public final class MemoryLruGcSettings implements MemoryGarbageCollectorSettings
   @NonNull
   @Override
   public String toString() {
-    return "MemoryLruGcSettings{cacheSize= " + getSizeBytes() + "}";
+    return "MemoryLruGcSettings{cacheSize=" + getSizeBytes() + "}";
   }
 }
