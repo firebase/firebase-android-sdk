@@ -1304,8 +1304,10 @@ public class FirestoreTest {
     FirebaseFirestore db = testFirestore();
     db.setFirestoreSettings(
         new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())
-            .setPersistenceEnabled(false)
-            .setMemoryLruGcEnabled(true)
+            .setLocalCacheSettings(
+                MemoryCacheSettings.newBuilder()
+                    .setGcSettings(MemoryLruGcSettings.newBuilder().build())
+                    .build())
             .build());
 
     DocumentReference doc = db.collection("abc").document("123");
@@ -1322,8 +1324,10 @@ public class FirestoreTest {
     FirebaseFirestore db = testFirestore();
     db.setFirestoreSettings(
         new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())
-            .setPersistenceEnabled(false)
-            .setMemoryLruGcEnabled(false)
+            .setLocalCacheSettings(
+                MemoryCacheSettings.newBuilder()
+                    .setGcSettings(MemoryEagerGcSettings.newBuilder().build())
+                    .build())
             .build());
 
     DocumentReference doc = db.collection("abc").document("123");
