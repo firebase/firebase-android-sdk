@@ -18,7 +18,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.testing.integ.StrictModeRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,7 +43,7 @@ public class StrictModeTest {
                       .build(),
                   "hello");
           app.get(FirebaseAppCheck.class);
-          app.get(InternalAppCheckTokenProvider.class);
+          app.get(InteropAppCheckTokenProvider.class);
         });
   }
 }

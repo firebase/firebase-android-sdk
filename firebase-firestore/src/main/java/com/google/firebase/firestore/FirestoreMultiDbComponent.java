@@ -22,7 +22,7 @@ import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseAppLifecycleListener;
 import com.google.firebase.FirebaseOptions;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
 import com.google.firebase.inject.Deferred;
@@ -43,14 +43,14 @@ class FirestoreMultiDbComponent
   private final FirebaseApp app;
   private final Context context;
   private final Deferred<InternalAuthProvider> authProvider;
-  private final Deferred<InternalAppCheckTokenProvider> appCheckProvider;
+  private final Deferred<InteropAppCheckTokenProvider> appCheckProvider;
   private final GrpcMetadataProvider metadataProvider;
 
   FirestoreMultiDbComponent(
       @NonNull Context context,
       @NonNull FirebaseApp app,
       @NonNull Deferred<InternalAuthProvider> authProvider,
-      @NonNull Deferred<InternalAppCheckTokenProvider> appCheckProvider,
+      @NonNull Deferred<InteropAppCheckTokenProvider> appCheckProvider,
       @Nullable GrpcMetadataProvider metadataProvider) {
     this.context = context;
     this.app = app;
