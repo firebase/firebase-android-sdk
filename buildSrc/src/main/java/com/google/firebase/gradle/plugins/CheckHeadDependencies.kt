@@ -16,7 +16,6 @@ package com.google.firebase.gradle.plugins
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
-import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
@@ -54,12 +53,8 @@ abstract class CheckHeadDependencies : DefaultTask() {
     }
   }
 
-  fun FirebaseLibraryExtension.projectDependenciesByName(): List<String> =
-    project.configurations
-      .getByName(runtimeClasspath)
-      .allDependencies
-      .filter { it is ProjectDependency }
-      .map { it.name }
+  private fun FirebaseLibraryExtension.projectDependenciesByName() =
+    resolveProjectLevelDependencies().map { it.artifactId.get() }
 
   companion object {
     val DEPENDENCIES_TO_IGNORE: List<String> = listOf("protolite-well-known-types")

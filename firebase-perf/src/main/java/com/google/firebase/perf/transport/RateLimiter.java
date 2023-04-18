@@ -46,10 +46,10 @@ final class RateLimiter {
 
   /** Gets the sampling and rate limiting configs. */
   private final ConfigResolver configResolver;
-  /** The app's bucket ID for sampling, a number in [0.0f, 1.0f). */
-  private final float samplingBucketId;
+  /** The app's bucket ID for sampling, a number in [0.0, 1.0). */
+  private final double samplingBucketId;
 
-  private final float fragmentBucketId;
+  private final double fragmentBucketId;
 
   private RateLimiterImpl traceLimiter = null;
   private RateLimiterImpl networkLimiter = null;
@@ -77,23 +77,23 @@ final class RateLimiter {
 
   /** Generates a bucket id between [0.0f, 1.0f) for sampling, it is sticky across app lifecycle. */
   @VisibleForTesting
-  static float getSamplingBucketId() {
-    return new Random().nextFloat();
+  static double getSamplingBucketId() {
+    return new Random().nextDouble();
   }
 
   RateLimiter(
       final Rate rate,
       final long capacity,
       final Clock clock,
-      float samplingBucketId,
-      float fragmentBucketId,
+      double samplingBucketId,
+      double fragmentBucketId,
       ConfigResolver configResolver) {
     Utils.checkArgument(
-        0.0f <= samplingBucketId && samplingBucketId < 1.0f,
-        "Sampling bucket ID should be in range [0.0f, 1.0f).");
+        0.0 <= samplingBucketId && samplingBucketId < 1.0,
+        "Sampling bucket ID should be in range [0.0, 1.0).");
     Utils.checkArgument(
-        0.0f <= fragmentBucketId && fragmentBucketId < 1.0f,
-        "Fragment sampling bucket ID should be in range [0.0f, 1.0f).");
+        0.0 <= fragmentBucketId && fragmentBucketId < 1.0,
+        "Fragment sampling bucket ID should be in range [0.0, 1.0).");
     this.samplingBucketId = samplingBucketId;
     this.fragmentBucketId = fragmentBucketId;
     this.configResolver = configResolver;
@@ -107,13 +107,13 @@ final class RateLimiter {
 
   /** Returns whether device is allowed to send trace events based on trace sampling rate. */
   private boolean isDeviceAllowedToSendTraces() {
-    float validTraceSamplingBucketIdThreshold = configResolver.getTraceSamplingRate();
+    double validTraceSamplingBucketIdThreshold = configResolver.getTraceSamplingRate();
     return samplingBucketId < validTraceSamplingBucketIdThreshold;
   }
 
   /** Returns whether device is allowed to send network events based on network sampling rate. */
   private boolean isDeviceAllowedToSendNetworkEvents() {
-    float validNetworkSamplingBucketIdThreshold = configResolver.getNetworkRequestSamplingRate();
+    double validNetworkSamplingBucketIdThreshold = configResolver.getNetworkRequestSamplingRate();
     return samplingBucketId < validNetworkSamplingBucketIdThreshold;
   }
 
@@ -122,7 +122,7 @@ final class RateLimiter {
    * trace sampling rate.
    */
   private boolean isDeviceAllowedToSendFragmentScreenTraces() {
-    float validFragmentSamplingBucketIdThreshold = configResolver.getFragmentSamplingRate();
+    double validFragmentSamplingBucketIdThreshold = configResolver.getFragmentSamplingRate();
     return fragmentBucketId < validFragmentSamplingBucketIdThreshold;
   }
 

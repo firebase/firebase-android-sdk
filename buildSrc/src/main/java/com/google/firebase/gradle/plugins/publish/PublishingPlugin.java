@@ -16,7 +16,6 @@ package com.google.firebase.gradle.plugins.publish;
 
 import com.google.firebase.gradle.plugins.CheckHeadDependencies;
 import com.google.firebase.gradle.plugins.FirebaseLibraryExtension;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,8 +26,6 @@ import java.util.stream.Stream;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
-import org.gradle.api.publish.PublishingExtension;
-import org.gradle.api.publish.maven.MavenPublication;
 import org.gradle.api.tasks.bundling.Zip;
 
 /**
@@ -95,12 +92,23 @@ public class PublishingPlugin implements Plugin<Project> {
 
   public PublishingPlugin() {}
 
+  private static String getPropertyOr(Project p, String property, String defaultValue) {
+    Object value = p.findProperty(property);
+    if (value != null) {
+      return value.toString();
+    }
+    return defaultValue;
+  }
+
+  private static String getPublishTask(FirebaseLibraryExtension p, String repoName) {
+    return p.getPath() + ":publishMavenAarPublicationTo" + repoName;
+  }
+
   @Override
   public void apply(Project project) {
     String projectNamesToPublish = getPropertyOr(project, "projectsToPublish", "");
     String projectsToPublishSeparator = getPropertyOr(project, "projectsToPublishSeparator", ",");
     String publishConfigFilePath = getPropertyOr(project, "publishConfigFilePath", "");
-    Mode publishMode = Enum.valueOf(Mode.class, getPropertyOr(project, "publishMode", "SNAPSHOT"));
 
     Task publishAllToLocal = project.task("publishAllToLocal");
     Task publishAllToBuildDir = project.task("publishAllToBuildDir");
@@ -137,12 +145,21 @@ public class PublishingPlugin implements Plugin<Project> {
                       .filter(ext -> ext != null)
                       .flatMap(lib -> lib.getLibrariesToRelease().stream())
                       .collect(Collectors.toSet());
+
               project
                   .getExtensions()
                   .getExtraProperties()
                   .set("projectsToPublish", projectsToPublish);
 
-              Publisher publisher = new Publisher(publishMode, projectsToPublish);
+              project
+                  .getTasks()
+                  .register(
+                      "semverCheckForRelease",
+                      t -> {
+                        for (FirebaseLibraryExtension toPublish : projectsToPublish) {
+                          t.dependsOn(toPublish.getPath() + ":semverCheck");
+                        }
+                      });
               project
                   .getTasks()
                   .create(
@@ -154,28 +171,8 @@ public class PublishingPlugin implements Plugin<Project> {
                       });
               project.subprojects(
                   sub -> {
-                    FirebaseLibraryExtension firebaseLibrary =
-                        sub.getExtensions().findByType(FirebaseLibraryExtension.class);
-                    if (firebaseLibrary == null) {
+                    if (sub.getExtensions().findByType(FirebaseLibraryExtension.class) == null)
                       return;
-                    }
-                    PublishingExtension publishing =
-                        sub.getExtensions().getByType(PublishingExtension.class);
-                    publishing.repositories(
-                        repos ->
-                            repos.maven(
-                                repo -> {
-                                  String s = sub.getRootProject().getBuildDir() + "/m2repository";
-                                  File file = new File(s);
-                                  repo.setUrl(file.toURI());
-                                  repo.setName("BuildDir");
-                                }));
-                    publishing.publications(
-                        publications -> {
-                          MavenPublication publication =
-                              (MavenPublication) publications.getByName("mavenAar");
-                          publisher.decorate(firebaseLibrary, publication);
-                        });
                     publishAllToLocal.dependsOn(
                         sub.getPath() + ":publishMavenAarPublicationToMavenLocal");
                     publishAllToBuildDir.dependsOn(
@@ -184,20 +181,22 @@ public class PublishingPlugin implements Plugin<Project> {
               project
                   .getTasks()
                   .create(
-                      "publishProjectsToMavenLocal",
-                      t -> {
-                        for (FirebaseLibraryExtension toPublish : projectsToPublish) {
-                          t.dependsOn(getPublishTask(toPublish, "MavenLocal"));
-                        }
-                      });
-              project
-                  .getTasks()
-                  .create(
                       "checkHeadDependencies",
                       CheckHeadDependencies.class,
                       t -> {
                         t.getProjectsToPublish().set(projectsToPublish);
                         t.getAllFirebaseProjects().set(allFirebaseProjects);
+                        firebasePublish.dependsOn(t);
+                      });
+
+              project
+                  .getTasks()
+                  .register(
+                      "publishProjectsToMavenLocal",
+                      t -> {
+                        for (FirebaseLibraryExtension toPublish : projectsToPublish) {
+                          t.dependsOn(getPublishTask(toPublish, "MavenLocal"));
+                        }
                       });
 
               Task publishProjectsToBuildDir =
@@ -267,17 +266,5 @@ public class PublishingPlugin implements Plugin<Project> {
       throw new IllegalArgumentException(
           "Error reading configuration file " + publishConfigurationFilePath, e);
     }
-  }
-
-  private static String getPropertyOr(Project p, String property, String defaultValue) {
-    Object value = p.findProperty(property);
-    if (value != null) {
-      return value.toString();
-    }
-    return defaultValue;
-  }
-
-  private static String getPublishTask(FirebaseLibraryExtension p, String repoName) {
-    return p.getPath() + ":publishMavenAarPublicationTo" + repoName;
   }
 }

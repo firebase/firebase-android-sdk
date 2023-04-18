@@ -19,7 +19,7 @@ import androidx.annotation.RestrictTo;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Blocking;
 import com.google.firebase.annotations.concurrent.UiThread;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
@@ -47,13 +47,13 @@ public class StorageRegistrar implements ComponentRegistrar {
             .add(Dependency.required(blockingExecutor))
             .add(Dependency.required(uiExecutor))
             .add(Dependency.optionalProvider(InternalAuthProvider.class))
-            .add(Dependency.optionalProvider(InternalAppCheckTokenProvider.class))
+            .add(Dependency.optionalProvider(InteropAppCheckTokenProvider.class))
             .factory(
                 c ->
                     new FirebaseStorageComponent(
                         c.get(FirebaseApp.class),
                         c.getProvider(InternalAuthProvider.class),
-                        c.getProvider(InternalAppCheckTokenProvider.class),
+                        c.getProvider(InteropAppCheckTokenProvider.class),
                         c.get(blockingExecutor),
                         c.get(uiExecutor)))
             .build(),

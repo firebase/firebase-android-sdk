@@ -60,7 +60,7 @@ public class SmokeTestsPlugin implements Plugin<Project> {
                     String groupId = firebaseLibrary.groupId.get();
                     String artifactId = firebaseLibrary.artifactId.get();
                     String artifact =
-                        String.format("%s:%s:%s-SNAPSHOT", groupId, artifactId, sub.getVersion());
+                        String.format("%s:%s:%s", groupId, artifactId, sub.getVersion());
                     allArtifacts.add(artifact);
 
                     if (changedProjects.contains(sub)) {

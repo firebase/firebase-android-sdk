@@ -21,12 +21,12 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.appcheck.AppCheckTokenResult;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 
-public class TestInternalAppCheckTokenProvider implements InternalAppCheckTokenProvider {
+public class TestInteropAppCheckTokenProvider implements InteropAppCheckTokenProvider {
   private final AppCheckTokenResult testToken;
 
-  public TestInternalAppCheckTokenProvider(String testToken) {
+  public TestInteropAppCheckTokenProvider(String testToken) {
     this.testToken =
         new AppCheckTokenResult() {
           @NonNull
@@ -37,13 +37,13 @@ public class TestInternalAppCheckTokenProvider implements InternalAppCheckTokenP
 
           @Nullable
           @Override
-          public FirebaseException getError() {
+          public Exception getError() {
             return null;
           }
         };
   }
 
-  public TestInternalAppCheckTokenProvider(String testToken, String error) {
+  public TestInteropAppCheckTokenProvider(String testToken, String error) {
     this.testToken =
         new AppCheckTokenResult() {
           @NonNull
@@ -54,7 +54,7 @@ public class TestInternalAppCheckTokenProvider implements InternalAppCheckTokenP
 
           @Nullable
           @Override
-          public FirebaseException getError() {
+          public Exception getError() {
             return new FirebaseException(error);
           }
         };
