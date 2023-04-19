@@ -85,7 +85,7 @@ public final class MemoryPersistence extends Persistence {
   }
 
   @Override
-  ReferenceDelegate getReferenceDelegate() {
+  public ReferenceDelegate getReferenceDelegate() {
     return referenceDelegate;
   }
 
