@@ -1,6 +1,11 @@
 # Unreleased
 * [fixed] Fixed a crash when showing feedback notification on devices running Android 4 and below.
 
+
+# 16.0.0-beta08
+* [fixed] Fixed an issue where a crash happened whenever a feedback
+  notification was shown on devices running Android 4.4 and lower.
+
 # 16.0.0-beta07
 * [feature] Added support for testers to attach JPEG screenshots to their
   feedback.
