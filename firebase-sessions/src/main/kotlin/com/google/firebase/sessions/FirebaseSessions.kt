@@ -40,10 +40,11 @@ internal constructor(
   private val eventGDTLogger = EventGDTLogger(transportFactoryProvider)
   private val sessionCoordinator =
     SessionCoordinator(firebaseInstallations, backgroundDispatcher, eventGDTLogger)
+  private val timeProvider: TimeProvider = Time()
 
   init {
     val sessionInitiator =
-      SessionInitiator(WallClock::elapsedRealtime, this::initiateSessionStart, sessionSettings)
+      SessionInitiator(timeProvider, this::initiateSessionStart, sessionSettings)
     val appContext = firebaseApp.applicationContext.applicationContext
     if (appContext is Application) {
       appContext.registerActivityLifecycleCallbacks(sessionInitiator.activityLifecycleCallbacks)
@@ -60,7 +61,8 @@ internal constructor(
 
   private fun initiateSessionStart() {
     val sessionDetails = sessionGenerator.generateNewSession()
-    val sessionEvent = SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings)
+    val sessionEvent =
+      SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings, timeProvider)
 
     if (!sessionGenerator.collectEvents) {
       Log.d(TAG, "Session Start event sampled.")

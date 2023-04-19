@@ -18,15 +18,18 @@ package com.google.firebase.sessions
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeEventGDTLogger
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
+import com.google.firebase.sessions.testing.FakeTimeProvider
 import com.google.firebase.sessions.testing.TestSessionEventData
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -50,7 +53,7 @@ class SessionCoordinatorTest {
         fakeFirebaseApp.firebaseApp,
         TestSessionEventData.TEST_SESSION_DETAILS,
         SessionsSettings(fakeFirebaseApp.firebaseApp.applicationContext),
-        TestSessionEventData.TEST_SESSION_TIMESTAMP_US,
+        FakeTimeProvider(),
       )
 
     sessionCoordinator.attemptLoggingSessionEvent(sessionEvent)
@@ -60,5 +63,10 @@ class SessionCoordinatorTest {
     assertThat(sessionEvent.sessionData.firebaseInstallationId).isEqualTo("FaKeFiD")
     assertThat(fakeEventGDTLogger.loggedEvent!!.sessionData.firebaseInstallationId)
       .isEqualTo("FaKeFiD")
+  }
+
+  @After
+  fun cleanUp() {
+    FirebaseApp.clearInstancesForTest()
   }
 }

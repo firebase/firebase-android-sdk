@@ -21,11 +21,11 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
+import com.google.firebase.sessions.testing.FakeTimeProvider
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_DATA_COLLECTION_STATUS
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_DATA
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_DETAILS
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_EVENT
-import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_TIMESTAMP_US
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -41,7 +41,7 @@ class SessionEventTest {
         fakeFirebaseApp.firebaseApp,
         TEST_SESSION_DETAILS,
         SessionsSettings(fakeFirebaseApp.firebaseApp.applicationContext),
-        TEST_SESSION_TIMESTAMP_US,
+        FakeTimeProvider(),
       )
 
     assertThat(sessionEvent).isEqualTo(TEST_SESSION_EVENT)
@@ -58,7 +58,7 @@ class SessionEventTest {
         fakeFirebaseApp.firebaseApp,
         TEST_SESSION_DETAILS,
         SessionsSettings(fakeFirebaseApp.firebaseApp.applicationContext),
-        TEST_SESSION_TIMESTAMP_US,
+        FakeTimeProvider(),
       )
 
     assertThat(sessionEvent)

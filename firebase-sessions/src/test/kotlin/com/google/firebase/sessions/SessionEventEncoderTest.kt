@@ -22,6 +22,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.SessionEvents.SESSION_EVENT_ENCODER
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
+import com.google.firebase.sessions.testing.FakeTimeProvider
 import com.google.firebase.sessions.testing.TestSessionEventData
 import org.junit.After
 import org.junit.Test
@@ -43,7 +44,7 @@ class SessionEventEncoderTest {
         fakeFirebaseApp.firebaseApp,
         TestSessionEventData.TEST_SESSION_DETAILS,
         SessionsSettings(fakeFirebaseApp.firebaseApp.applicationContext),
-        TestSessionEventData.TEST_SESSION_TIMESTAMP_US,
+        FakeTimeProvider(),
       )
 
     val json = SESSION_EVENT_ENCODER.encode(sessionEvent)
