@@ -133,17 +133,20 @@ class FirestoreTests : BaseTestCase() {
     val settings = firestoreSettings {
       this.host = host
       this.isSslEnabled = isSslEnabled
-      this.setLocalCacheSettings(memoryCacheSettings {  })
+      this.setLocalCacheSettings(memoryCacheSettings {})
     }
 
     assertThat(host).isEqualTo(settings.host)
     assertThat(isSslEnabled).isEqualTo(settings.isSslEnabled)
     assertThat(settings.isPersistenceEnabled).isFalse()
-    assertThat(settings.cacheSettings).isEqualTo(memoryCacheSettings { setGcSettings(
-      memoryEagerGcSettings {  }) })
+    assertThat(settings.cacheSettings)
+      .isEqualTo(memoryCacheSettings { setGcSettings(memoryEagerGcSettings {}) })
 
-    val otherSettings = firestoreSettings { this.setLocalCacheSettings(memoryCacheSettings {setGcSettings(
-      memoryLruGcSettings { setSizeBytes(1_000) })}) }
+    val otherSettings = firestoreSettings {
+      this.setLocalCacheSettings(
+        memoryCacheSettings { setGcSettings(memoryLruGcSettings { setSizeBytes(1_000) }) }
+      )
+    }
 
     assertThat(otherSettings.host).isEqualTo(FirebaseFirestoreSettings.DEFAULT_HOST)
     assertThat(otherSettings.isPersistenceEnabled).isFalse()

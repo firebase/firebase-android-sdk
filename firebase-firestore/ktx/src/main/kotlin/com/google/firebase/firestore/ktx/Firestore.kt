@@ -182,17 +182,13 @@ fun memoryCacheSettings(init: MemoryCacheSettings.Builder.() -> Unit): MemoryCac
   return builder.build()
 }
 
-fun memoryEagerGcSettings(
-  init: MemoryEagerGcSettings.Builder.() -> Unit
-): MemoryEagerGcSettings {
+fun memoryEagerGcSettings(init: MemoryEagerGcSettings.Builder.() -> Unit): MemoryEagerGcSettings {
   val builder = MemoryEagerGcSettings.newBuilder()
   builder.init()
   return builder.build()
 }
 
-fun memoryLruGcSettings(
-  init: MemoryLruGcSettings.Builder.() -> Unit
-): MemoryLruGcSettings {
+fun memoryLruGcSettings(init: MemoryLruGcSettings.Builder.() -> Unit): MemoryLruGcSettings {
   val builder = MemoryLruGcSettings.newBuilder()
   builder.init()
   return builder.build()
