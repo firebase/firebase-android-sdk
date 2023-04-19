@@ -16,7 +16,7 @@ package com.google.firebase.database;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.database.android.AndroidAppCheckTokenProvider;
 import com.google.firebase.database.android.AndroidAuthTokenProvider;
@@ -44,7 +44,7 @@ class FirebaseDatabaseComponent {
   FirebaseDatabaseComponent(
       @NonNull FirebaseApp app,
       Deferred<InternalAuthProvider> authProvider,
-      Deferred<InternalAppCheckTokenProvider> appCheckProvider) {
+      Deferred<InteropAppCheckTokenProvider> appCheckProvider) {
     this.app = app;
     this.authProvider = new AndroidAuthTokenProvider(authProvider);
     this.appCheckProvider = new AndroidAppCheckTokenProvider(appCheckProvider);

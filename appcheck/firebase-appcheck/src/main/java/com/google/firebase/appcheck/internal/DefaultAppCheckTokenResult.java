@@ -58,7 +58,7 @@ public final class DefaultAppCheckTokenResult extends AppCheckTokenResult {
 
   @Nullable
   @Override
-  public FirebaseException getError() {
+  public Exception getError() {
     return error;
   }
 }

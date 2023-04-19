@@ -119,7 +119,8 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
                 new AbtIntegrationHelper(
                     container
                         .get(AbtComponent.class)
-                        .get(FirebaseABTesting.OriginService.INAPP_MESSAGING)))
+                        .get(FirebaseABTesting.OriginService.INAPP_MESSAGING),
+                    container.get(blockingExecutor)))
             .apiClientModule(
                 new ApiClientModule(firebaseApp, firebaseInstallations, universalComponent.clock()))
             .grpcClientModule(new GrpcClientModule(firebaseApp))

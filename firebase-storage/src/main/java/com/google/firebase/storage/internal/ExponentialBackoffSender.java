@@ -21,7 +21,7 @@ import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.common.util.Clock;
 import com.google.android.gms.common.util.DefaultClock;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.storage.network.NetworkRequest;
 import java.util.Random;
@@ -42,14 +42,14 @@ public class ExponentialBackoffSender {
   /*package*/ static Clock clock = DefaultClock.getInstance();
   private final Context context;
   @Nullable private final InternalAuthProvider authProvider;
-  @Nullable private final InternalAppCheckTokenProvider appCheckProvider;
+  @Nullable private final InteropAppCheckTokenProvider appCheckProvider;
   private long retryTime;
   private volatile boolean canceled;
 
   public ExponentialBackoffSender(
       Context context,
       @Nullable InternalAuthProvider authProvider,
-      @Nullable InternalAppCheckTokenProvider appCheckProvider,
+      @Nullable InteropAppCheckTokenProvider appCheckProvider,
       long retryTime) {
     this.context = context;
     this.authProvider = authProvider;
