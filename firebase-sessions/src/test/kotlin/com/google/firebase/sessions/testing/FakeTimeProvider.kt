@@ -21,7 +21,11 @@ import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_TI
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 
-/** Fake [TimeProvider] that allows programmatically elapsing time forward. */
+/**
+ * Fake [TimeProvider] that allows programmatically elapsing time forward.
+ *
+ * Default [elapsedRealtime] is [Duration.ZERO] until the time is moved using [addInterval].
+ */
 class FakeTimeProvider(private val initialTimeUs: Long = TEST_SESSION_TIMESTAMP_US) : TimeProvider {
   private var elapsed = Duration.ZERO
 
