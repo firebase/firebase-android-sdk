@@ -24,6 +24,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeProvider
+import com.google.firebase.sessions.testing.FakeTimeProvider
 import com.google.firebase.sessions.testing.FakeTransportFactory
 import com.google.firebase.sessions.testing.TestSessionEventData
 import org.junit.After
@@ -42,7 +43,7 @@ class EventGDTLoggerTest {
         fakeFirebaseApp.firebaseApp,
         TestSessionEventData.TEST_SESSION_DETAILS,
         SessionsSettings(fakeFirebaseApp.firebaseApp.applicationContext),
-        TestSessionEventData.TEST_SESSION_TIMESTAMP_US,
+        FakeTimeProvider(),
       )
     val fakeTransportFactory = FakeTransportFactory()
     val fakeTransportFactoryProvider = FakeProvider(fakeTransportFactory as TransportFactory)

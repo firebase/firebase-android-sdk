@@ -20,7 +20,6 @@ import android.app.Activity
 import android.app.Application.ActivityLifecycleCallbacks
 import android.os.Bundle
 import com.google.firebase.sessions.settings.SessionsSettings
-import kotlin.time.Duration
 
 /**
  * The [SessionInitiator] is responsible for calling the [initiateSessionStart] callback whenever a
@@ -30,22 +29,22 @@ import kotlin.time.Duration
  * @hide
  */
 internal class SessionInitiator(
-  private val elapsedRealtime: () -> Duration,
+  private val timeProvider: TimeProvider,
   private val initiateSessionStart: () -> Unit,
   private val sessionsSettings: SessionsSettings
 ) {
-  private var backgroundTime = elapsedRealtime()
+  private var backgroundTime = timeProvider.elapsedRealtime()
 
   init {
     initiateSessionStart()
   }
 
   fun appBackgrounded() {
-    backgroundTime = elapsedRealtime()
+    backgroundTime = timeProvider.elapsedRealtime()
   }
 
   fun appForegrounded() {
-    val interval = elapsedRealtime() - backgroundTime
+    val interval = timeProvider.elapsedRealtime() - backgroundTime
     val sessionTimeout = sessionsSettings.sessionRestartTimeout
     if (interval > sessionTimeout) {
       initiateSessionStart()
