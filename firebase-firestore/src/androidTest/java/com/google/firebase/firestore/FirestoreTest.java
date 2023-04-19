@@ -1298,4 +1298,43 @@ public class FirestoreTest {
     DocumentSnapshot snap = waitFor(instance.document("coll/doc").get(Source.CACHE));
     assertEquals(map("foo", "bar"), snap.getData());
   }
+
+  @Test
+  public void testCanGetDocumentWithMemoryLruGCEnabled() {
+    FirebaseFirestore db = testFirestore();
+    db.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())
+            .setLocalCacheSettings(
+                MemoryCacheSettings.newBuilder()
+                    .setGcSettings(MemoryLruGcSettings.newBuilder().build())
+                    .build())
+            .build());
+
+    DocumentReference doc = db.collection("abc").document("123");
+    waitFor(doc.set(map("key", "value")));
+
+    DocumentSnapshot snapshot = waitFor(doc.get(Source.CACHE));
+    assertTrue(snapshot.exists());
+    assertTrue(snapshot.getMetadata().isFromCache());
+    assertEquals(snapshot.getData(), map("key", "value"));
+  }
+
+  @Test
+  public void testCannotGetDocumentWithMemoryEagerGcEnabled() {
+    FirebaseFirestore db = testFirestore();
+    db.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())
+            .setLocalCacheSettings(
+                MemoryCacheSettings.newBuilder()
+                    .setGcSettings(MemoryEagerGcSettings.newBuilder().build())
+                    .build())
+            .build());
+
+    DocumentReference doc = db.collection("abc").document("123");
+    waitFor(doc.set(map("key", "value")));
+
+    Exception e = waitForException(doc.get(Source.CACHE));
+    assertTrue(e instanceof FirebaseFirestoreException);
+    assertEquals(((FirebaseFirestoreException) e).getCode(), Code.UNAVAILABLE);
+  }
 }
