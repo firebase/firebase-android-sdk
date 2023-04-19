@@ -61,15 +61,16 @@ internal constructor(
 
   private fun initiateSessionStart() {
     val sessionDetails = sessionGenerator.generateNewSession()
-    val sessionEvent =
-      SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings, timeProvider)
 
     if (!sessionGenerator.collectEvents) {
+      // TODO(mrober): Make log levels/messages consistent with iOS
       Log.d(TAG, "Session Start event sampled.")
       return
     }
 
-    sessionCoordinator.attemptLoggingSessionEvent(sessionEvent)
+    sessionCoordinator.attemptLoggingSessionEvent(
+      SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings, timeProvider)
+    )
   }
 
   /** Calculate whether we should sample events using [sessionSettings] data. */
