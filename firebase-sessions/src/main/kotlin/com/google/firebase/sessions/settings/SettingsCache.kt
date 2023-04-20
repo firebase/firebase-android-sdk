@@ -136,7 +136,6 @@ internal class SettingsCache(private val store: DataStore<Preferences>) {
   }
 
   suspend fun removeConfigs() {
-    val configs = store
     store.edit { preferences ->
       preferences.clear()
       updateSessionConfigs()
