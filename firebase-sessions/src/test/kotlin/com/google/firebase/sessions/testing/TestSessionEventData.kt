@@ -17,6 +17,7 @@
 package com.google.firebase.sessions.testing
 
 import android.content.Context
+import android.os.Build
 import androidx.test.core.app.ApplicationProvider
 import com.google.firebase.sessions.*
 
@@ -55,7 +56,7 @@ internal object TestSessionEventData {
       applicationInfo =
         ApplicationInfo(
           appId = FakeFirebaseApp.MOCK_APP_ID,
-          deviceModel = "",
+          deviceModel = Build.MODEL,
           sessionSdkVersion = BuildConfig.VERSION_NAME,
           logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
           AndroidApplicationInfo(

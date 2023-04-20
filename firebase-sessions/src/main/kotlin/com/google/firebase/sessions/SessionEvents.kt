@@ -16,6 +16,7 @@
 
 package com.google.firebase.sessions
 
+import android.os.Build
 import com.google.firebase.FirebaseApp
 import com.google.firebase.encoders.DataEncoder
 import com.google.firebase.encoders.FieldDescriptor
@@ -127,7 +128,7 @@ internal object SessionEvents {
 
     return ApplicationInfo(
       appId = firebaseApp.options.applicationId,
-      deviceModel = "",
+      deviceModel = Build.MODEL,
       sessionSdkVersion = BuildConfig.VERSION_NAME,
       logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
       androidAppInfo =
