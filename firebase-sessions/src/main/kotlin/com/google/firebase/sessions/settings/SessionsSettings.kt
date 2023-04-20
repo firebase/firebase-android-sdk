@@ -28,6 +28,7 @@ import kotlin.time.Duration.Companion.minutes
 internal class SessionsSettings(val context: Context) {
 
   var localOverrideSettings = LocalOverrideSettings(context)
+  var remoteSettings = RemoteSettings(context)
 
   // Order of preference for all the configs below:
   // 1. Honor local overrides
@@ -37,10 +38,12 @@ internal class SessionsSettings(val context: Context) {
   // Setting to qualify if sessions service is enabled.
   val sessionsEnabled: Boolean
     get() {
-      if (localOverrideSettings.sessionEnabled != null) {
-        return localOverrideSettings.sessionEnabled!!
+      localOverrideSettings.sessionEnabled?.let {
+        return it
       }
-
+      remoteSettings.sessionEnabled?.let {
+        return it
+      }
       // SDK Default
       return true
     }
@@ -48,10 +51,12 @@ internal class SessionsSettings(val context: Context) {
   // Setting that provides the sessions sampling rate.
   val samplingRate: Double
     get() {
-      if (localOverrideSettings.samplingRate != null) {
-        return localOverrideSettings.samplingRate!!
+      localOverrideSettings.samplingRate?.let {
+        return it
       }
-
+      remoteSettings.samplingRate?.let {
+        return it
+      }
       // SDK Default
       return 1.0
     }
@@ -59,10 +64,12 @@ internal class SessionsSettings(val context: Context) {
   // Background timeout config value before which a new session is generated
   val sessionRestartTimeout: Duration
     get() {
-      if (localOverrideSettings.sessionRestartTimeout != null) {
-        return localOverrideSettings.sessionRestartTimeout!!
+      localOverrideSettings.sessionRestartTimeout?.let {
+        return it
       }
-
+      remoteSettings.sessionRestartTimeout?.let {
+        return it
+      }
       // SDK Default
       return 30.minutes
     }
@@ -70,7 +77,7 @@ internal class SessionsSettings(val context: Context) {
   // Update the settings for all the settings providers
   fun updateSettings() {
     // Placeholder to initiate settings update on different sources
-    // Pending sources: RemoteSettings
     localOverrideSettings.updateSettings()
+    remoteSettings.updateSettings()
   }
 }
