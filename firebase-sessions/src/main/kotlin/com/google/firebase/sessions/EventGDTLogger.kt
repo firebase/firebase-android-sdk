@@ -55,7 +55,7 @@ internal class EventGDTLogger(private val transportFactoryProvider: Provider<Tra
 
   private fun encode(value: SessionEvent): ByteArray {
     val jsonEvent = SessionEvents.SESSION_EVENT_ENCODER.encode(value)
-    Log.d(TAG, "Encoded Session Start event $jsonEvent")
+    Log.d(TAG, "Session Event: $jsonEvent")
     return jsonEvent.toByteArray()
   }
 

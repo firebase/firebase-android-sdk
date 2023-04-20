@@ -42,7 +42,7 @@ internal class SessionCoordinator(
         try {
           firebaseInstallations.id.await()
         } catch (ex: Exception) {
-          Log.w(TAG, "Session Installations Error", ex)
+          Log.e(TAG, "Error getting Firebase Installation ID: ${ex}. Using an empty ID")
           // Use an empty fid if there is any failure.
           ""
         }
@@ -50,9 +50,9 @@ internal class SessionCoordinator(
       try {
         eventGDTLogger.log(sessionEvent)
 
-        Log.i(TAG, "Logged Session Start event: ${sessionEvent.sessionData.sessionId}")
+        Log.i(TAG, "Successfully logged Session Start event: ${sessionEvent.sessionData.sessionId}")
       } catch (e: RuntimeException) {
-        Log.w(TAG, "Failed to log Session Start event: ", e)
+        Log.e(TAG, "Error logging Session Start event to DataTransport: ", e)
       }
     }
 
