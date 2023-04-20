@@ -27,8 +27,8 @@ import kotlin.time.Duration.Companion.minutes
  */
 internal class SessionsSettings(val context: Context) {
 
-  var localOverrideSettings = LocalOverrideSettings(context)
-  var remoteSettings = RemoteSettings(context)
+  private var localOverrideSettings = LocalOverrideSettings(context)
+  private var remoteSettings = RemoteSettings(context)
 
   // Order of preference for all the configs below:
   // 1. Honor local overrides

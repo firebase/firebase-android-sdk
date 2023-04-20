@@ -26,7 +26,7 @@ firebaseLibrary {
 
 android {
   val targetSdkVersion: Int by rootProject
-  compileSdk = 30
+  compileSdk = 33
   defaultConfig {
     minSdk = 16
     targetSdk = targetSdkVersion

@@ -26,22 +26,15 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import kotlinx.coroutines.flow.first
 
 internal data class SessionConfigs(
-  val sessionEnabled: Boolean?,
-  val sessionSamplingRate: Double?,
-  val cacheDuration: Int?,
-  val sessionRestartTimeout: Int?,
-  val cacheUpdatedTime: Long?
+  val sessionEnabled: Boolean? = null,
+  val sessionSamplingRate: Double? = null,
+  val cacheDuration: Int? = null,
+  val sessionRestartTimeout: Int? = null,
+  val cacheUpdatedTime: Long? = null
 )
 
 internal class SettingsCache(private val store: DataStore<Preferences>) {
-  private var sessionConfigs =
-    SessionConfigs(
-      sessionEnabled = null,
-      sessionSamplingRate = null,
-      sessionRestartTimeout = null,
-      cacheDuration = null,
-      cacheUpdatedTime = null
-    )
+  private var sessionConfigs = SessionConfigs()
 
   private object SettingsCacheKeys {
     val SETTINGS_CACHE_SESSIONS_ENABLED = booleanPreferencesKey("firebase_sessions_enabled")
@@ -84,17 +77,11 @@ internal class SettingsCache(private val store: DataStore<Preferences>) {
     return true
   }
 
-  fun sessionsEnabled(): Boolean? {
-    return sessionConfigs.sessionEnabled
-  }
+  fun sessionsEnabled(): Boolean? = sessionConfigs.sessionEnabled
 
-  fun sessionSamplingRate(): Double? {
-    return sessionConfigs.sessionSamplingRate
-  }
+  fun sessionSamplingRate(): Double? = sessionConfigs.sessionSamplingRate
 
-  fun sessionRestartTimeout(): Int? {
-    return sessionConfigs.sessionRestartTimeout
-  }
+  fun sessionRestartTimeout(): Int? = sessionConfigs.sessionRestartTimeout
 
   suspend fun updateSettingsEnabled(enabled: Boolean?) {
     store.edit { preferences ->
@@ -154,9 +141,5 @@ internal class SettingsCache(private val store: DataStore<Preferences>) {
       preferences.clear()
       updateSessionConfigs()
     }
-  }
-
-  companion object {
-    private const val TAG = "SessionSettings"
   }
 }

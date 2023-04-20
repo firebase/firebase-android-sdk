@@ -20,20 +20,19 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
-import com.google.firebase.sessions.settings.SettingsCache
-import com.google.firebase.sessions.testing.FakeFirebaseApp
-import org.junit.Test
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
+import com.google.firebase.sessions.settings.SettingsCache
+import com.google.firebase.sessions.testing.FakeFirebaseApp
 import kotlinx.coroutines.runBlocking
 import org.junit.After
-import org.junit.Before
+import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import kotlin.time.Duration.Companion.minutes
 
 val SESSION_TEST_CONFIGS_NAME = "firebase_test_session_settings"
-val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = SESSION_TEST_CONFIGS_NAME)
+val Context.dataStore: DataStore<Preferences> by
+  preferencesDataStore(name = SESSION_TEST_CONFIGS_NAME)
 
 @RunWith(RobolectricTestRunner::class)
 class SettingsCacheTest {

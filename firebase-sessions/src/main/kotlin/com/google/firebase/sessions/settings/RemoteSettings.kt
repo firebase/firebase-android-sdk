@@ -24,7 +24,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 internal class RemoteSettings(val context: Context) : SettingsProvider {
-  private val SESSION_CONFIGS_NAME = "firebase_session_settings"
   private val Context.dataStore by preferencesDataStore(name = SESSION_CONFIGS_NAME)
   private val settingsCache = SettingsCache(context.dataStore)
 
@@ -56,22 +55,24 @@ internal class RemoteSettings(val context: Context) : SettingsProvider {
   }
 
   companion object SettingsFetcher {
-    private val FIREBASE_SESSIONS_BASE_URL_STRING = "https://firebase-settings.crashlytics.com"
-    private val FIREBASE_PLATFORM = "android"
-    private val fetchInProgress = false
+    private const val SESSION_CONFIGS_NAME = "firebase_session_settings"
+    private const val FIREBASE_SESSIONS_BASE_URL_STRING =
+      "https://firebase-settings.crashlytics.com"
+    private const val FIREBASE_PLATFORM = "android"
+    private const val fetchInProgress = false
     private val settingsUrl: URL = run {
-      var uri = Uri.Builder()
-      uri.scheme("https")
-      uri.authority(FIREBASE_SESSIONS_BASE_URL_STRING)
-      uri.appendPath("spi/v2/platforms")
-      uri.appendPath(FIREBASE_PLATFORM)
-      uri.appendPath("gmp")
-      // TODO(visum) Replace below with the GMP APPId
-      uri.appendPath("GMP_APP_ID")
-      uri.appendPath("settings")
-
-      uri.appendQueryParameter("build_version", "")
-      uri.appendQueryParameter("display_version", "")
+      var uri =
+        Uri.Builder()
+          .scheme("https")
+          .authority(FIREBASE_SESSIONS_BASE_URL_STRING)
+          .appendPath("spi/v2/platforms")
+          .appendPath(FIREBASE_PLATFORM)
+          .appendPath("gmp")
+          // TODO(visum) Replace below with the GMP APPId
+          .appendPath("GMP_APP_ID")
+          .appendPath("settings")
+          .appendQueryParameter("build_version", "")
+          .appendQueryParameter("display_version", "")
 
       URL(uri.build().toString())
     }
@@ -84,6 +85,7 @@ internal class RemoteSettings(val context: Context) : SettingsProvider {
 
       // Check if cache is expired. If not, return
       // Initiate a fetch. On successful response cache the fetched values
+
     }
   }
 }
