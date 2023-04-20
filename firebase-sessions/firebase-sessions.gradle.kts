@@ -26,7 +26,7 @@ firebaseLibrary {
 
 android {
   val targetSdkVersion: Int by rootProject
-  compileSdk = targetSdkVersion
+  compileSdk = 33
   defaultConfig {
     minSdk = 16
     targetSdk = targetSdkVersion
@@ -48,6 +48,7 @@ dependencies {
   implementation("com.google.firebase:firebase-encoders:17.0.0")
   implementation("com.google.firebase:firebase-installations-interop:17.1.0")
   implementation("com.google.android.datatransport:transport-api:3.0.0")
+  implementation ("androidx.datastore:datastore-preferences:1.0.0")
   implementation(libs.androidx.annotation)
 
   runtimeOnly("com.google.firebase:firebase-installations:17.1.3")

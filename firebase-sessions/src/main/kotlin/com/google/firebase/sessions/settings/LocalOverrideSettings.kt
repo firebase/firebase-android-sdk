@@ -35,26 +35,32 @@ internal class LocalOverrideSettings(val context: Context) : SettingsProvider {
 
   override val sessionEnabled: Boolean?
     get() {
-      if (metadata != null && metadata.containsKey(sessions_metadata_flag_sessionsEnabled)) {
-        return metadata.getBoolean(sessions_metadata_flag_sessionsEnabled)
+      metadata?.let {
+        if (it.containsKey(sessions_metadata_flag_sessionsEnabled)) {
+          return it.getBoolean(sessions_metadata_flag_sessionsEnabled)
+        }
       }
       return null
     }
 
   override val sessionRestartTimeout: Duration?
     get() {
-      if (metadata != null && metadata.containsKey(sessions_metadata_flag_sessionRestartTimeout)) {
-        val timeoutInSeconds = metadata.getInt(sessions_metadata_flag_sessionRestartTimeout)
-        val duration = timeoutInSeconds!!.toDuration(DurationUnit.SECONDS)
-        return duration
+      metadata?.let {
+        if (it.containsKey(sessions_metadata_flag_sessionRestartTimeout)) {
+          val timeoutInSeconds = it.getInt(sessions_metadata_flag_sessionRestartTimeout)
+          val duration = timeoutInSeconds.toDuration(DurationUnit.SECONDS)
+          return duration
+        }
       }
       return null
     }
 
   override val samplingRate: Double?
     get() {
-      if (metadata != null && metadata.containsKey(sessions_metadata_flag_samplingRate)) {
-        return metadata.getDouble(sessions_metadata_flag_samplingRate)
+      metadata?.let {
+        if (it.containsKey(sessions_metadata_flag_samplingRate)) {
+          return it.getDouble(sessions_metadata_flag_samplingRate)
+        }
       }
       return null
     }
