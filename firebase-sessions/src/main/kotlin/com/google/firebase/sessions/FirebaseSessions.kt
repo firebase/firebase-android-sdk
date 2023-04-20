@@ -63,8 +63,7 @@ internal constructor(
     val sessionDetails = sessionGenerator.generateNewSession()
 
     if (!sessionGenerator.collectEvents) {
-      // TODO(mrober): Make log levels/messages consistent with iOS
-      Log.d(TAG, "Session Start event sampled.")
+      Log.d(TAG, "Sessions SDK has sampled this session")
       return
     }
 
