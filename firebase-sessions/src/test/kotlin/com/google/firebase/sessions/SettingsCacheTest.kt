@@ -39,7 +39,7 @@ class SettingsCacheTest {
 
   @Test
   fun sessionCache_returnsEmptyCache() {
-    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settingsCache = SettingsCache(context.dataStore)
     assertThat(settingsCache.sessionSamplingRate()).isNull()
     assertThat(settingsCache.sessionsEnabled()).isNull()
@@ -49,7 +49,7 @@ class SettingsCacheTest {
 
   @Test
   fun sessionCache_SettingConfigsReturnsCachedValue() {
-    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settingsCache = SettingsCache(context.dataStore)
 
     runBlocking {
@@ -70,7 +70,7 @@ class SettingsCacheTest {
 
   @Test
   fun sessionCache_SettingConfigsReturnsCacheExpiredWithShortCacheDuration() {
-    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settingsCache = SettingsCache(context.dataStore)
 
     runBlocking {
@@ -91,7 +91,7 @@ class SettingsCacheTest {
 
   @Test
   fun sessionCache_SettingConfigsReturnsCachedValueWithPartialConfigs() {
-    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settingsCache = SettingsCache(context.dataStore)
 
     runBlocking {
@@ -111,7 +111,7 @@ class SettingsCacheTest {
 
   @Test
   fun sessionCache_SettingConfigsAllowsUpdateConfigsAndCachesValues() {
-    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settingsCache = SettingsCache(context.dataStore)
 
     runBlocking {
@@ -143,7 +143,7 @@ class SettingsCacheTest {
 
   @Test
   fun sessionCache_SettingConfigsCleansCacheForNullValues() {
-    val context = FakeFirebaseApp.fakeFirebaseApp().applicationContext
+    val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settingsCache = SettingsCache(context.dataStore)
 
     runBlocking {
