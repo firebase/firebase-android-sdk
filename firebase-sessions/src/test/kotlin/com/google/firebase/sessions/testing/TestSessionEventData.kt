@@ -26,7 +26,6 @@ internal object TestSessionEventData {
     SessionDetails(
       sessionId = "a1b2c3",
       firstSessionId = "a1a1a1",
-      collectEvents = true,
       sessionIndex = 3,
     )
 

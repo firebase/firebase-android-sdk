@@ -35,11 +35,11 @@ internal constructor(
   backgroundDispatcher: CoroutineDispatcher,
   transportFactoryProvider: Provider<TransportFactory>,
 ) {
-  private val sessionGenerator = SessionGenerator(collectEvents = true)
+  private val sessionSettings = SessionsSettings(firebaseApp.applicationContext)
+  private val sessionGenerator = SessionGenerator(collectEvents = shouldCollectEvents())
   private val eventGDTLogger = EventGDTLogger(transportFactoryProvider)
   private val sessionCoordinator =
     SessionCoordinator(firebaseInstallations, backgroundDispatcher, eventGDTLogger)
-  private val sessionSettings = SessionsSettings(firebaseApp.applicationContext)
   private val timeProvider: TimeProvider = Time()
 
   init {
@@ -61,12 +61,22 @@ internal constructor(
 
   private fun initiateSessionStart() {
     val sessionDetails = sessionGenerator.generateNewSession()
-    val sessionEvent =
-      SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings, timeProvider)
 
-    if (sessionDetails.collectEvents) {
-      sessionCoordinator.attemptLoggingSessionEvent(sessionEvent)
+    if (!sessionGenerator.collectEvents) {
+      Log.d(TAG, "Sessions SDK has sampled this session")
+      return
     }
+
+    sessionCoordinator.attemptLoggingSessionEvent(
+      SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings, timeProvider)
+    )
+  }
+
+  /** Calculate whether we should sample events using [sessionSettings] data. */
+  private fun shouldCollectEvents(): Boolean {
+    // Sampling rate of 1 means we do not sample.
+    val randomValue = Math.random()
+    return randomValue <= sessionSettings.samplingRate
   }
 
   companion object {

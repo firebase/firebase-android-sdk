@@ -26,7 +26,6 @@ import java.util.UUID
 internal data class SessionDetails(
   val sessionId: String,
   val firstSessionId: String,
-  val collectEvents: Boolean,
   val sessionIndex: Int,
 )
 
@@ -37,7 +36,7 @@ internal data class SessionDetails(
  * @hide
  */
 internal class SessionGenerator(
-  private val collectEvents: Boolean,
+  val collectEvents: Boolean,
   private val uuidGenerator: () -> UUID = UUID::randomUUID
 ) {
   private val firstSessionId = generateSessionId()
@@ -54,7 +53,6 @@ internal class SessionGenerator(
       SessionDetails(
         sessionId = if (sessionIndex == 0) firstSessionId else generateSessionId(),
         firstSessionId,
-        collectEvents,
         sessionIndex,
       )
     return currentSession
