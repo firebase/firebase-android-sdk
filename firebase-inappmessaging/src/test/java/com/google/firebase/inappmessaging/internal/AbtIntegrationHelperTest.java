@@ -18,6 +18,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
 import com.google.firebase.abt.FirebaseABTesting;
+import com.google.firebase.concurrent.TestOnlyExecutors;
 import com.google.firebase.inappmessaging.MessagesProto;
 import com.google.internal.firebase.inappmessaging.v1.CampaignProto;
 import com.google.internal.firebase.inappmessaging.v1.sdkserving.FetchEligibleCampaignsResponse;
@@ -66,7 +67,7 @@ public class AbtIntegrationHelperTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    abtIntegrationHelper = new AbtIntegrationHelper(abTesting);
+    abtIntegrationHelper = new AbtIntegrationHelper(abTesting, TestOnlyExecutors.blocking());
     // make executor immediately execute
     abtIntegrationHelper.executor = Runnable::run;
   }

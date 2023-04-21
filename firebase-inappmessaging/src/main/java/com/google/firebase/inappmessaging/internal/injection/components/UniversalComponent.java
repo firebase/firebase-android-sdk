@@ -72,7 +72,7 @@ import javax.inject.Singleton;
       ExecutorsModule.class
     })
 public interface UniversalComponent {
-  ProviderInstaller probiderInstaller();
+  ProviderInstaller providerInstaller();
 
   Channel gRPCChannel();
 

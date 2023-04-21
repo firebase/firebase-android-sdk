@@ -38,6 +38,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.common.collect.Sets;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.LoadBundleTask;
@@ -54,6 +55,9 @@ import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.SyncEngine;
+import com.google.firebase.firestore.local.LocalStore;
+import com.google.firebase.firestore.local.LruDelegate;
+import com.google.firebase.firestore.local.LruGarbageCollector;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.PersistenceTestHelpers;
 import com.google.firebase.firestore.local.QueryPurpose;
@@ -158,7 +162,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           ? Sets.newHashSet("no-android", "multi-client")
           : Sets.newHashSet("no-android", BENCHMARK_TAG, "multi-client");
 
-  private boolean garbageCollectionEnabled;
+  private boolean useEagerGcForMemory;
   private int maxConcurrentLimboResolutions;
   private boolean networkEnabled = true;
 
@@ -170,7 +174,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private AsyncQueue queue;
   private MockDatastore datastore;
   private RemoteStore remoteStore;
+  private LocalStore localStore;
   private SyncEngine syncEngine;
+  private LruGarbageCollector lruGarbageCollector;
   private EventManager eventManager;
   private DatabaseInfo databaseInfo;
 
@@ -268,7 +274,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
     outstandingWrites = new HashMap<>();
 
-    this.garbageCollectionEnabled = config.optBoolean("useGarbageCollection", false);
+    this.useEagerGcForMemory = config.optBoolean("useEagerGCForMemory", true);
     this.maxConcurrentLimboResolutions =
         config.optInt("maxConcurrentLimboResolutions", Integer.MAX_VALUE);
 
@@ -317,10 +323,14 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             maxConcurrentLimboResolutions,
             new FirebaseFirestoreSettings.Builder().build());
 
-    ComponentProvider provider =
-        initializeComponentProvider(configuration, garbageCollectionEnabled);
+    ComponentProvider provider = initializeComponentProvider(configuration, useEagerGcForMemory);
     localPersistence = provider.getPersistence();
+    if (localPersistence.getReferenceDelegate() instanceof LruDelegate) {
+      lruGarbageCollector =
+          ((LruDelegate) localPersistence.getReferenceDelegate()).getGarbageCollector();
+    }
     remoteStore = provider.getRemoteStore();
+    localStore = provider.getLocalStore();
     syncEngine = provider.getSyncEngine();
     eventManager = provider.getEventManager();
   }
@@ -473,6 +483,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   //
 
   private void doListen(JSONObject listenSpec) throws Exception {
+    FirebaseFirestore.setLoggingEnabled(true);
     int expectedId = listenSpec.getInt("targetId");
     Query query = parseQuery(listenSpec.getJSONObject("query"));
     // TODO: Allow customizing listen options in spec tests
@@ -789,6 +800,15 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     queue.runSync(() -> syncEngine.handleCredentialChange(currentUser));
   }
 
+  private void doTriggerLruGc(long cacheThreshold) throws Exception {
+    queue.runSync(
+        () -> {
+          if (lruGarbageCollector != null) {
+            localStore.collectGarbage(lruGarbageCollector.withNewThreshold(cacheThreshold));
+          }
+        });
+  }
+
   private void doRestart() throws Exception {
     queue.runSync(
         () -> {
@@ -861,6 +881,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       // "changeUser".
       String uid = step.isNull("changeUser") ? null : step.getString("changeUser");
       doChangeUser(uid);
+    } else if (step.has("triggerLruGC")) {
+      long cacheThreshold = step.getLong("triggerLruGC");
+      doTriggerLruGc(cacheThreshold);
     } else if (step.has("restart")) {
       doRestart();
     } else if (step.has("applyClientState")) {

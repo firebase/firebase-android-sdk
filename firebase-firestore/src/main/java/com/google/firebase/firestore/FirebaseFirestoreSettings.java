@@ -40,6 +40,7 @@ public final class FirebaseFirestoreSettings {
     private String host;
     private boolean sslEnabled;
     private boolean persistenceEnabled;
+
     private long cacheSizeBytes;
     private LocalCacheSettings cacheSettings;
 
@@ -323,6 +324,12 @@ public final class FirebaseFirestoreSettings {
       if (cacheSettings instanceof PersistentCacheSettings) {
         return ((PersistentCacheSettings) cacheSettings).getSizeBytes();
       } else {
+        MemoryCacheSettings memorySettings = (MemoryCacheSettings) cacheSettings;
+        if (memorySettings.getGarbageCollectorSettings() instanceof MemoryLruGcSettings) {
+          return ((MemoryLruGcSettings) memorySettings.getGarbageCollectorSettings())
+              .getSizeBytes();
+        }
+
         return CACHE_SIZE_UNLIMITED;
       }
     }

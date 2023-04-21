@@ -16,6 +16,7 @@ package com.google.firebase.gradle.plugins
 
 import java.io.File
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Dependency
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.provider.Provider
@@ -102,3 +103,14 @@ inline fun <reified T> AttributeContainer.attribute(name: String, value: T) =
  */
 inline fun <reified T : Any> org.gradle.api.plugins.PluginManager.`apply`(): Unit =
   `apply`(T::class)
+
+/**
+ * The name provided to this artifact when published.
+ *
+ * For example, the following could be an artifact name:
+ * ```
+ * "com.google.firebase:firebase-common:16.0.5"
+ * ```
+ */
+val Dependency.artifactName: String
+  get() = listOf(group, name, version).filterNotNull().joinToString(":")

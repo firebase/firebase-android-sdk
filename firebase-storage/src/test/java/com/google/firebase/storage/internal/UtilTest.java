@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.appcheck.AppCheckTokenResult;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -40,7 +40,7 @@ public class UtilTest {
   // Tasks.await() cannot be invoked on the main thread, so we need a real executor.
   private final ExecutorService executorService = Executors.newSingleThreadExecutor();
 
-  @Mock InternalAppCheckTokenProvider mockAppCheckTokenProvider;
+  @Mock InteropAppCheckTokenProvider mockAppCheckTokenProvider;
   @Mock AppCheckTokenResult mockAppCheckTokenResult;
 
   @Before
