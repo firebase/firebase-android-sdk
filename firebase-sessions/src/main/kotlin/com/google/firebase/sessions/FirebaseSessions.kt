@@ -49,7 +49,7 @@ internal constructor(
     if (appContext is Application) {
       appContext.registerActivityLifecycleCallbacks(sessionInitiator.activityLifecycleCallbacks)
     } else {
-      Log.w(
+      Log.e(
         TAG,
         "Failed to register lifecycle callbacks, unexpected context ${appContext.javaClass}."
       )
