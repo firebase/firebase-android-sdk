@@ -117,6 +117,7 @@ dependencies {
     }
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
+    compileOnly "com.google.errorprone:error_prone_annotations:2.9.0"
 
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"
     annotationProcessor 'com.google.dagger:dagger-compiler:2.27'

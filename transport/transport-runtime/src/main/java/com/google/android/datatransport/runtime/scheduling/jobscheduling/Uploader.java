@@ -29,6 +29,7 @@ import com.google.android.datatransport.runtime.backends.BackendResponse;
 import com.google.android.datatransport.runtime.backends.TransportBackend;
 import com.google.android.datatransport.runtime.firebase.transport.ClientMetrics;
 import com.google.android.datatransport.runtime.firebase.transport.LogEventDropped;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.android.datatransport.runtime.logging.Logging;
 import com.google.android.datatransport.runtime.scheduling.persistence.ClientHealthMetricsStore;
 import com.google.android.datatransport.runtime.scheduling.persistence.EventStore;
@@ -113,6 +114,7 @@ public class Uploader {
   }
 
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  @CanIgnoreReturnValue
   public BackendResponse logAndUpdateState(TransportContext transportContext, int attemptNumber) {
     TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
     long maxNextRequestWaitMillis = 0;
