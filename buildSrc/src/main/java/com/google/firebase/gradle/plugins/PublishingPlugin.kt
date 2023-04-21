@@ -115,7 +115,7 @@ abstract class PublishingPlugin : Plugin<Project> {
   /**
    * Figures out what libraries are intended to release.
    *
-   * Libraries can be provided wither via the `projectsToRelease` property, or a [ReleaseConfig]
+   * Libraries can be provided either via the `projectsToRelease` property, or a [ReleaseConfig]
    * file.
    *
    * The `projectsToRelease` property takes priority over the [ReleaseConfig].
