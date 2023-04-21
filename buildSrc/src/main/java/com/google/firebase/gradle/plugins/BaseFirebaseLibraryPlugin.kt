@@ -218,7 +218,7 @@ fun FirebaseLibraryExtension.resolveAndroidDependencies() =
  * This is collected via the [runtimeClasspath][FirebaseLibraryExtension.getRuntimeClasspath].
  *
  * @throws RuntimeException if a project level dependency is found that doesn't have
- * [FirebaseLibraryExtension]
+ *   [FirebaseLibraryExtension]
  */
 // TODO(b/277607560): Remove when Gradle's MavenPublishPlugin adds functionality for aar types
 fun FirebaseLibraryExtension.resolveProjectLevelDependencies() =

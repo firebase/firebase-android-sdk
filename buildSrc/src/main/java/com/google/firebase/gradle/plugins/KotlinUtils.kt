@@ -53,7 +53,7 @@ public fun <T> Sequence<T>.takeAll(): Sequence<T> = take(count())
  * ```
  *
  * @throws NoSuchElementException if the [Element] does not have descendant [Element]s with tags
- * that match the components of an Artifact string; groupId, artifactId, version.
+ *   that match the components of an Artifact string; groupId, artifactId, version.
  */
 fun Element.toArtifactString() =
   "${textByTag("groupId")}:${textByTag("artifactId")}:${textByTag("version")}"
