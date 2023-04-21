@@ -11,10 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.google.firebase.gradle
+package com.google.firebase.gradle.plugins
 
 import com.google.common.collect.ImmutableList
-import com.google.firebase.gradle.plugins.FirebaseLibraryExtension
 import java.io.File
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand
@@ -27,11 +26,12 @@ import org.gradle.api.Project
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.findByType
 
-data class FirebaseLibrary(val moduleNames: List<String>, val directories: List<String>)
+data class FirebaseLibraryEntry(val moduleNames: List<String>, val directories: List<String>)
 
 data class CommitDiff(
   val commitId: String,
@@ -57,7 +57,7 @@ abstract class ReleaseGenerator : DefaultTask() {
 
   @get:Input abstract val pastRelease: Property<String>
 
-  @get:Input abstract val printReleaseConfig: Property<String>
+  @get:Optional @get:Input abstract val printReleaseConfig: Property<String>
 
   @get:OutputFile abstract val releaseConfigFile: RegularFileProperty
 
@@ -84,7 +84,7 @@ abstract class ReleaseGenerator : DefaultTask() {
       ReleaseConfig(currentRelease.get(), libsToRelease.map { it.path }.toSet())
     )
     val releaseReport = generateReleaseReport(changes, changedLibsWithNoChangelog)
-    if (printReleaseConfig.get().toBoolean()) {
+    if (printReleaseConfig.orNull.toBoolean()) {
       project.logger.info(releaseReport)
     }
     writeReleaseReport(releaseReportFile.get().asFile, releaseReport)
@@ -206,26 +206,4 @@ abstract class ReleaseGenerator : DefaultTask() {
     file.writeText(config.toFile())
 
   private fun getRelativeDir(project: Project) = project.path.substring(1).replace(':', '/')
-}
-
-data class ReleaseConfig(val releaseName: String, val libs: Set<String>) {
-  companion object {
-    fun fromFile(file: File): ReleaseConfig {
-      val contents = file.readLines()
-      val libs = contents.filter { it.startsWith(":") }.toSet()
-      val releaseName = contents.first { it.startsWith("name") }.substringAfter("=").trim()
-      return ReleaseConfig(releaseName, libs)
-    }
-  }
-
-  fun toFile() =
-    """
-    |[release]
-    |name = $releaseName
-    |mode = RELEASE
-                    
-    |[modules]
-    |${libs.sorted().joinToString("\n")}
-    """
-      .trimMargin()
 }

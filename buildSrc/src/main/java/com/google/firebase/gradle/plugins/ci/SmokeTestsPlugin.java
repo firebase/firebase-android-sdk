@@ -69,8 +69,7 @@ public class SmokeTestsPlugin implements Plugin<Project> {
                   });
 
               // Reuse the publish task for building the libraries.
-              Task publishAllTask = project.getTasks().getByPath("publishAllToBuildDir");
-              assembleAllTask.dependsOn(publishAllTask);
+              assembleAllTask.dependsOn("publishAllPublicationsToBuildDirRepository");
 
               // Generate a JSON file listing the artifacts after everything is complete.
               assembleAllTask.doLast(
