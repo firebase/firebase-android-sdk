@@ -23,7 +23,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApiNotAvailableException;
 import com.google.firebase.appcheck.AppCheckTokenResult;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Listener;
 import com.google.firebase.firestore.util.Logger;
@@ -41,11 +41,11 @@ public final class FirebaseAppCheckTokenProvider extends CredentialsProvider<Str
   private Listener<String> changeListener;
 
   /**
-   * The {@link Provider} that gives access to the {@link InternalAppCheckTokenProvider} instance.
+   * The {@link Provider} that gives access to the {@link InteropAppCheckTokenProvider} instance.
    */
   @Nullable
   @GuardedBy("this")
-  private InternalAppCheckTokenProvider internalAppCheckTokenProvider;
+  private InteropAppCheckTokenProvider interopAppCheckTokenProvider;
 
   @GuardedBy("this")
   private boolean forceRefresh;
@@ -58,14 +58,14 @@ public final class FirebaseAppCheckTokenProvider extends CredentialsProvider<Str
   /** Creates a new FirebaseAppCheckTokenProvider. */
   @SuppressLint("ProviderAssignment") // TODO: Remove this @SuppressLint once b/181014061 is fixed.
   public FirebaseAppCheckTokenProvider(
-      Deferred<InternalAppCheckTokenProvider> deferredAppCheckTokenProvider) {
+      Deferred<InteropAppCheckTokenProvider> deferredAppCheckTokenProvider) {
     deferredAppCheckTokenProvider.whenAvailable(
         provider -> {
           synchronized (this) {
-            internalAppCheckTokenProvider = provider.get();
+            interopAppCheckTokenProvider = provider.get();
             // Get notified when AppCheck token changes to a new value in the future.
-            if (internalAppCheckTokenProvider != null) {
-              internalAppCheckTokenProvider.addAppCheckTokenListener(tokenListener);
+            if (interopAppCheckTokenProvider != null) {
+              interopAppCheckTokenProvider.addAppCheckTokenListener(tokenListener);
             }
           }
         });
@@ -89,11 +89,11 @@ public final class FirebaseAppCheckTokenProvider extends CredentialsProvider<Str
    */
   @Override
   public synchronized Task<String> getToken() {
-    if (internalAppCheckTokenProvider == null) {
+    if (interopAppCheckTokenProvider == null) {
       return Tasks.forException(new FirebaseApiNotAvailableException("AppCheck is not available"));
     }
 
-    Task<AppCheckTokenResult> res = internalAppCheckTokenProvider.getToken(forceRefresh);
+    Task<AppCheckTokenResult> res = interopAppCheckTokenProvider.getToken(forceRefresh);
     forceRefresh = false;
 
     return res.continueWithTask(
@@ -121,8 +121,8 @@ public final class FirebaseAppCheckTokenProvider extends CredentialsProvider<Str
   public synchronized void removeChangeListener() {
     changeListener = null;
 
-    if (internalAppCheckTokenProvider != null) {
-      internalAppCheckTokenProvider.removeAppCheckTokenListener(tokenListener);
+    if (interopAppCheckTokenProvider != null) {
+      interopAppCheckTokenProvider.removeAppCheckTokenListener(tokenListener);
     }
   }
 

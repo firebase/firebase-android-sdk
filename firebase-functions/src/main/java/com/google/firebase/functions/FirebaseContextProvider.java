@@ -18,7 +18,7 @@ import android.util.Log;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.annotations.concurrent.Lightweight;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
 import com.google.firebase.inject.Deferred;
@@ -36,22 +36,21 @@ class FirebaseContextProvider implements ContextProvider {
 
   private final Provider<InternalAuthProvider> tokenProvider;
   private final Provider<FirebaseInstanceIdInternal> instanceId;
-  private final AtomicReference<InternalAppCheckTokenProvider> appCheckRef =
-      new AtomicReference<>();
+  private final AtomicReference<InteropAppCheckTokenProvider> appCheckRef = new AtomicReference<>();
   private final Executor executor;
 
   @Inject
   FirebaseContextProvider(
       Provider<InternalAuthProvider> tokenProvider,
       Provider<FirebaseInstanceIdInternal> instanceId,
-      Deferred<InternalAppCheckTokenProvider> appCheckDeferred,
+      Deferred<InteropAppCheckTokenProvider> appCheckDeferred,
       @Lightweight Executor executor) {
     this.tokenProvider = tokenProvider;
     this.instanceId = instanceId;
     this.executor = executor;
     appCheckDeferred.whenAvailable(
         p -> {
-          InternalAppCheckTokenProvider appCheck = p.get();
+          InteropAppCheckTokenProvider appCheck = p.get();
           appCheckRef.set(appCheck);
 
           appCheck.addAppCheckTokenListener(
@@ -102,7 +101,7 @@ class FirebaseContextProvider implements ContextProvider {
   }
 
   private Task<String> getAppCheckToken() {
-    InternalAppCheckTokenProvider appCheck = appCheckRef.get();
+    InteropAppCheckTokenProvider appCheck = appCheckRef.get();
     if (appCheck == null) {
       return Tasks.forResult(null);
     }
