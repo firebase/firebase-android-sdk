@@ -18,7 +18,7 @@ import java.net.URL
 import javax.xml.parsers.DocumentBuilderFactory
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
-import org.gradle.api.file.RegularFile
+import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -37,7 +37,7 @@ import org.w3c.dom.Element
  * @throws GradleException if a dependency is found with a degraded version
  */
 abstract class PomValidator : DefaultTask() {
-  @get:InputFile abstract val pomFile: Property<RegularFile>
+  @get:InputFile abstract val pomFile: RegularFileProperty
   @get:Input abstract val artifactId: Property<String>
   @get:Input abstract val groupId: Property<String>
 
