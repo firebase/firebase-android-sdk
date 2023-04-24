@@ -90,7 +90,7 @@ gradlePlugin {
         }
         register("publishingPlugin") {
             id = "PublishingPlugin"
-            implementationClass = "com.google.firebase.gradle.plugins.publish.PublishingPlugin"
+            implementationClass = "com.google.firebase.gradle.plugins.PublishingPlugin"
         }
         register("firebaseLibraryPlugin") {
             id = "firebase-library"
