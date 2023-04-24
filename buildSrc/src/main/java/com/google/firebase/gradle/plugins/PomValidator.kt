@@ -14,11 +14,11 @@
 
 package com.google.firebase.gradle.plugins
 
-import java.io.File
 import java.net.URL
 import javax.xml.parsers.DocumentBuilderFactory
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -31,14 +31,13 @@ import org.w3c.dom.Element
  * Compares the latest pom at gmaven for the given artifact with the one generate for the current
  * release.
  *
- * @throws GradleException if a dependency is found with a degraded version
- *
  * @property pomFile The pom file for the current release
  * @property artifactId The artifactId for the pom parent
  * @property groupId The groupId for the pom parent
+ * @throws GradleException if a dependency is found with a degraded version
  */
 abstract class PomValidator : DefaultTask() {
-  @get:InputFile abstract val pomFile: Property<File>
+  @get:InputFile abstract val pomFile: Property<RegularFile>
   @get:Input abstract val artifactId: Property<String>
   @get:Input abstract val groupId: Property<String>
 
@@ -60,7 +59,7 @@ abstract class PomValidator : DefaultTask() {
     doc
       .findElementsByTag("dependency")
       .associate { it.textByTag("artifactId") to it.textByTag("version") }
-      .filter { it.key != "javax.inject" } // javax.inject doesn't respect SemVer and doesn't update
+      .filterKeys { it !in IGNORED_DEPENDENCIES }
       .mapValues {
         ModuleVersion.fromStringOrNull(it.value)
           ?: throw RuntimeException("Invalid module version found for '${it.key}': ${it.value}")
@@ -76,7 +75,7 @@ abstract class PomValidator : DefaultTask() {
     val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
 
     val oldPom = documentBuilder.parse(URL(url).openStream())
-    val currentPom = documentBuilder.parse(pomFile.get())
+    val currentPom = documentBuilder.parse(pomFile.get().asFile)
 
     val oldDependencies = getMapOfDependencies(oldPom.documentElement)
     val currentDependencies = getMapOfDependencies(currentPom.documentElement)
@@ -88,5 +87,12 @@ abstract class PomValidator : DefaultTask() {
         "Dependency on ${it.artifactId} has been degraded from ${it.oldVersion} to ${it.currentVersion}"
       }
       .joinToString("\n")
+  }
+
+  companion object {
+    val IGNORED_DEPENDENCIES =
+      listOf(
+        "javax.inject" // javax.inject doesn't respect SemVer and doesn't update
+      )
   }
 }
