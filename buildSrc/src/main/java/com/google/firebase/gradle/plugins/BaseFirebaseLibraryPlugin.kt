@@ -78,9 +78,9 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
 
   protected fun getIsPomValidTask(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
     project.tasks.register<PomValidator>("isPomDependencyValid") {
-      pomFilePath.value(project.file("build/publications/mavenAar/pom-default.xml"))
-      groupId.value(firebaseLibrary.groupId.get())
-      artifactId.value(firebaseLibrary.artifactId.get())
+      pomFile.set(project.layout.buildDirectory.file("publications/mavenAar/pom-default.xml"))
+      groupId.set(firebaseLibrary.groupId.get())
+      artifactId.set(firebaseLibrary.artifactId.get())
       dependsOn("generatePomFileForMavenAarPublication")
     }
   }
