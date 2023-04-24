@@ -20,6 +20,7 @@ import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Document
 
+/** TODO(b/279466888) - Make GmavenHelper testable */
 class GmavenHelper(val groupId: String, val artifactId: String) {
   val GMAVEN_ROOT = "https://dl.google.com/dl/android/maven2"
 
