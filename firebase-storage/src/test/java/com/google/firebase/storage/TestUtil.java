@@ -33,12 +33,12 @@ public class TestUtil {
 
   static FirebaseApp createApp() {
     return FirebaseApp.initializeApp(
-            ApplicationProvider.getApplicationContext(),
-            new FirebaseOptions.Builder()
-                .setApiKey("fooey")
-                .setApplicationId("fooey")
-                .setStorageBucket("fooey.appspot.com")
-                .build());
+        ApplicationProvider.getApplicationContext(),
+        new FirebaseOptions.Builder()
+            .setApiKey("fooey")
+            .setApplicationId("fooey")
+            .setStorageBucket("fooey.appspot.com")
+            .build());
     // Point to staging:
     // NetworkRequest.sNetworkRequestUrl = "https://staging-firebasestorage.sandbox.googleapis"
     // + ".com/v0";

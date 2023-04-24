@@ -52,7 +52,6 @@ public class StorageTaskScheduler {
     MAIN_THREAD_EXECUTOR = uiExecutor;
   }
 
-
   public static StorageTaskScheduler getInstance() {
     return sInstance;
   }
