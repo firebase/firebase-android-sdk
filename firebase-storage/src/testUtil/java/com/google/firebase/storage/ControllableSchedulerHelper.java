@@ -66,7 +66,7 @@ public class ControllableSchedulerHelper extends StorageTaskScheduler {
 
     if (callbackThread != Thread.currentThread().getId()) {
       /*
-       * Note: This should be removed in the future.
+       * TODO(b/279463318): This should be removed in the future.
        * Previously, since we used to guarantee max one live thread at any given time,
        * this threw an error if the executor ran the callback on a new thread.
        * Since we no longer guarantee this, there's a chance that the executor may spawn a new thread if no tasks are pending.
