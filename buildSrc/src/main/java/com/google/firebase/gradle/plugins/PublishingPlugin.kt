@@ -55,11 +55,13 @@ import org.gradle.kotlin.dsl.register
  * - [RELEASE_GENEATOR_TASK][registerGenerateReleaseConfigFilesTask]
  * - [PUBLISH_RELEASING_LIBS_TO_LOCAL_TASK][registerPublishReleasingLibrariesToMavenLocalTask]
  * - [SEMVER_CHECK_TASK][registerSemverCheckForReleaseTask]
+ * - [PUBLISH_ALL_TO_BUILD_TASK][registerPublishAllToBuildDir]
  */
 abstract class PublishingPlugin : Plugin<Project> {
   override fun apply(project: Project) {
     project.gradle.projectsEvaluated {
-      val releasingFirebaseLibraries = computeReleasingLibraries(project)
+      val allFirebaseLibraries = project.subprojects.mapNotNull { it.firebaseLibraryOrNull }
+      val releasingFirebaseLibraries = computeReleasingLibraries(project, allFirebaseLibraries)
       val releasingProjects = releasingFirebaseLibraries.map { it.project }
 
       val generateBom = registerGenerateBomTask(project)
@@ -76,6 +78,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       registerGenerateReleaseConfigFilesTask(project)
       registerPublishReleasingLibrariesToMavenLocalTask(project, releasingProjects)
       registerSemverCheckForReleaseTask(project, releasingProjects)
+      registerPublishAllToBuildDir(project, allFirebaseLibraries)
 
       val buildMavenZip =
         project.tasks.register<Zip>(BUILD_MAVEN_ZIP_TASK) {
@@ -144,9 +147,10 @@ abstract class PublishingPlugin : Plugin<Project> {
    * If both `projectsToPublish` and [ReleaseConfig] are empty, or do not exist- this method will
    * return an empty list.
    */
-  private fun computeReleasingLibraries(project: Project): List<FirebaseLibraryExtension> {
-    val allFirebaseLibraries = project.subprojects.mapNotNull { it.firebaseLibraryOrNull }
-
+  private fun computeReleasingLibraries(
+    project: Project,
+    allFirebaseLibraries: List<FirebaseLibraryExtension>
+  ): List<FirebaseLibraryExtension> {
     val releasingLibrariesFromProperty = releasingLibsFromProperty(project)
     if (releasingLibrariesFromProperty != null) {
       return allFirebaseLibraries
@@ -349,6 +353,28 @@ abstract class PublishingPlugin : Plugin<Project> {
       }
     }
 
+  /**
+   * Registers the [PUBLISH_ALL_TO_BUILD_TASK] task.
+   *
+   * A collection of [publishMavenAarPublicationToBuildDirRepository][PublishToMavenRepository] for
+   * __ALL__ firebase library projects.
+   *
+   * The artifacts are provided in a repository under the [buildDir][Project.getBuildDir] of the
+   * provided [project].
+   */
+  private fun registerPublishAllToBuildDir(
+    project: Project,
+    allFirebaseLibraries: List<FirebaseLibraryExtension>
+  ) =
+    project.tasks.register(PUBLISH_ALL_TO_BUILD_TASK) {
+      for (firebaseLibrary in allFirebaseLibraries) {
+        val publishTask =
+          firebaseLibrary.project.tasks.named("publishMavenAarPublicationToBuildDirRepository")
+
+        dependsOn(publishTask)
+      }
+    }
+
   companion object {
     const val RELEASE_CONFIG_FILE = "release.cfg"
     const val RELEASE_REPORT_FILE = "release_report.md"
@@ -366,6 +392,7 @@ abstract class PublishingPlugin : Plugin<Project> {
     const val BUILD_KOTLINDOC_ZIP_TASK = "buildKotlindocZip"
     const val BUILD_BOM_ZIP_TASK = "buildBomZip"
     const val FIREBASE_PUBLISH_TASK = "firebasePublish"
+    const val PUBLISH_ALL_TO_BUILD_TASK = "publishAllToBuildDir"
 
     const val BUILD_DIR_REPOSITORY_DIR = "m2repository"
   }
