@@ -684,7 +684,6 @@ public class TestUploadHelper {
 
   private static void verifyTaskCount(StorageReference reference, int expectedTasks) {
     List<UploadTask> globalUploadTasks = reference.getActiveUploadTasks();
-    System.out.println("Size: " + globalUploadTasks.size());
     Preconditions.checkState(
         globalUploadTasks.size() == expectedTasks,
         "Expected active upload task to contain %d item(s), but contained %d item(s)",
