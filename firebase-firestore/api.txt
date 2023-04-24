@@ -316,11 +316,34 @@ package com.google.firebase.firestore {
   }
 
   public final class MemoryCacheSettings implements com.google.firebase.firestore.LocalCacheSettings {
+    method @NonNull public com.google.firebase.firestore.MemoryGarbageCollectorSettings getGarbageCollectorSettings();
     method @NonNull public static com.google.firebase.firestore.MemoryCacheSettings.Builder newBuilder();
   }
 
   public static class MemoryCacheSettings.Builder {
     method @NonNull public com.google.firebase.firestore.MemoryCacheSettings build();
+    method @NonNull public com.google.firebase.firestore.MemoryCacheSettings.Builder setGcSettings(@NonNull com.google.firebase.firestore.MemoryGarbageCollectorSettings);
+  }
+
+  public final class MemoryEagerGcSettings implements com.google.firebase.firestore.MemoryGarbageCollectorSettings {
+    method @NonNull public static com.google.firebase.firestore.MemoryEagerGcSettings.Builder newBuilder();
+  }
+
+  public static class MemoryEagerGcSettings.Builder {
+    method @NonNull public com.google.firebase.firestore.MemoryEagerGcSettings build();
+  }
+
+  public interface MemoryGarbageCollectorSettings {
+  }
+
+  public final class MemoryLruGcSettings implements com.google.firebase.firestore.MemoryGarbageCollectorSettings {
+    method public long getSizeBytes();
+    method @NonNull public static com.google.firebase.firestore.MemoryLruGcSettings.Builder newBuilder();
+  }
+
+  public static class MemoryLruGcSettings.Builder {
+    method @NonNull public com.google.firebase.firestore.MemoryLruGcSettings build();
+    method public void setSizeBytes(long);
   }
 
   public enum MetadataChanges {
