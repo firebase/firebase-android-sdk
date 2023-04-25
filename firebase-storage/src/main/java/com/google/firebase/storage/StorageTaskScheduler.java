@@ -38,6 +38,9 @@ public class StorageTaskScheduler {
 
   private static BlockingQueue<Runnable> mCommandQueue = new LinkedBlockingQueue<>();
 
+  public static int maxDownloadExecutors = 3;
+  public static int maxUploadExecutors = 2;
+
   // TODO(b/258426744): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
   private static final ThreadPoolExecutor COMMAND_POOL_EXECUTOR =
@@ -88,10 +91,22 @@ public class StorageTaskScheduler {
   }
 
   public void scheduleUpload(Runnable task) {
+    int corePoolSize = UPLOAD_QUEUE_EXECUTOR.getCorePoolSize();
+    int maxPoolSize = UPLOAD_QUEUE_EXECUTOR.getMaximumPoolSize();
+    if (corePoolSize != maxUploadExecutors && maxPoolSize != maxUploadExecutors) {
+      UPLOAD_QUEUE_EXECUTOR.setCorePoolSize(maxUploadExecutors);
+      UPLOAD_QUEUE_EXECUTOR.setMaximumPoolSize(maxUploadExecutors);
+    }
     UPLOAD_QUEUE_EXECUTOR.execute(task);
   }
 
   public void scheduleDownload(Runnable task) {
+    int corePoolSize = DOWNLOAD_QUEUE_EXECUTOR.getCorePoolSize();
+    int maxPoolSize = DOWNLOAD_QUEUE_EXECUTOR.getMaximumPoolSize();
+    if (corePoolSize != maxDownloadExecutors && maxPoolSize != maxDownloadExecutors) {
+      DOWNLOAD_QUEUE_EXECUTOR.setCorePoolSize(maxDownloadExecutors);
+      DOWNLOAD_QUEUE_EXECUTOR.setMaximumPoolSize(maxDownloadExecutors);
+    }
     DOWNLOAD_QUEUE_EXECUTOR.execute(task);
   }
 
