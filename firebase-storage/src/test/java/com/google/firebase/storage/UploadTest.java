@@ -428,7 +428,15 @@ public class UploadTest {
     // This is 20 seconds due to a fairness bug where resumed tasks can be put at the end.
     TestUtil.await(task, 20, TimeUnit.SECONDS);
 
+    System.out.println("Checking State Changes");
     TestUtil.verifyTaskStateChanges("fileUploadWithPauseResume", task.getResult().toString());
+  }
+
+  @Test
+  public void run50() throws Exception {
+    for(int i = 0; i < 1000; i++) {
+      fileUploadWithPauseResume();
+    }
   }
 
   @Test
