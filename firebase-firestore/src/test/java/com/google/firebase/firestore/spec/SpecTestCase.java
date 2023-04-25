@@ -478,6 +478,18 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     return result;
   }
 
+  /** Deeply parses a JSONArray into a List<String>. */
+  private List<String> parseStringList(@Nullable JSONArray arr) throws JSONException {
+    List<String> result = new ArrayList<>();
+    if (arr == null) {
+      return result;
+    }
+    for (int i = 0; i < arr.length(); ++i) {
+      result.add(arr.getString(i));
+    }
+    return result;
+  }
+
   //
   // Methods for doing the steps of the spec test.
   //
@@ -665,15 +677,14 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
   }
 
-  private void doWatchFilter(JSONArray watchFilter) throws Exception {
-    List<Integer> targets = parseIntList(watchFilter.getJSONArray(0));
+  private void doWatchFilter(JSONObject watchFilter) throws Exception {
+    List<String> keys = parseStringList(watchFilter.getJSONArray("keys"));
+    List<Integer> targets = parseIntList(watchFilter.getJSONArray("targetIds"));
     Assert.hardAssert(
         targets.size() == 1, "ExistenceFilters currently support exactly one target only.");
 
-    int keyCount = watchFilter.length() == 0 ? 0 : watchFilter.length() - 1;
-
     // TODO: extend this with different existence filters over time.
-    ExistenceFilter filter = new ExistenceFilter(keyCount);
+    ExistenceFilter filter = new ExistenceFilter(keys.size());
     ExistenceFilterWatchChange change = new ExistenceFilterWatchChange(targets.get(0), filter);
     writeWatchChange(change, SnapshotVersion.NONE);
   }
@@ -850,7 +861,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     } else if (step.has("watchEntity")) {
       doWatchEntity(step.getJSONObject("watchEntity"));
     } else if (step.has("watchFilter")) {
-      doWatchFilter(step.getJSONArray("watchFilter"));
+      doWatchFilter(step.getJSONObject("watchFilter"));
     } else if (step.has("watchReset")) {
       doWatchReset(step.getJSONArray("watchReset"));
     } else if (step.has("watchSnapshot")) {
