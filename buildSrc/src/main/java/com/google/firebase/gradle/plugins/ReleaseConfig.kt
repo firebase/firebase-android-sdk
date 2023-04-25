@@ -34,19 +34,6 @@ import kotlinx.serialization.json.Json
  */
 @Serializable
 data class ReleaseConfig(val name: String, val libraries: List<String>) {
-  companion object {
-    val formatter = Json { prettyPrint = true }
-
-    /**
-     * Parses a [ReleaseConfig] from the contents of a given [File].
-     *
-     * Allows one to reuse an already generated [ReleaseConfig] that was saved to disc.
-     *
-     * @param file the [File] to parse
-     * @see toFile
-     */
-    fun fromFile(file: File): ReleaseConfig = formatter.decodeFromString(file.readText())
-  }
 
   /**
    * Writes a [ReleaseConfig] into a [File] as JSON.
@@ -65,4 +52,18 @@ data class ReleaseConfig(val name: String, val libraries: List<String>) {
    * @see fromFile
    */
   fun toFile(file: File) = file.also { it.writeText(formatter.encodeToString(this)) }
+
+  companion object {
+    val formatter = Json { prettyPrint = true }
+
+    /**
+     * Parses a [ReleaseConfig] from the contents of a given [File].
+     *
+     * Allows one to reuse an already generated [ReleaseConfig] that was saved to disc.
+     *
+     * @param file the [File] to parse
+     * @see toFile
+     */
+    fun fromFile(file: File): ReleaseConfig = formatter.decodeFromString(file.readText())
+  }
 }
