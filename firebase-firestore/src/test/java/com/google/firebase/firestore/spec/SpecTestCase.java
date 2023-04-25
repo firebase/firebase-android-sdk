@@ -420,6 +420,22 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
   }
 
+  private static QueryPurpose parseQueryPurpose(Object value) {
+    if (!(value instanceof Integer)) {
+      throw new IllegalArgumentException("invalid query purpose: " + value);
+    }
+    switch ((Integer) value) {
+      case 0:
+        return QueryPurpose.LISTEN;
+      case 1:
+        return QueryPurpose.EXISTENCE_FILTER_MISMATCH;
+      case 3:
+        return QueryPurpose.LIMBO_RESOLUTION;
+      default:
+        throw new IllegalArgumentException("unknown query purpose value: " + value);
+    }
+  }
+
   private DocumentViewChange parseChange(JSONObject jsonDoc, DocumentViewChange.Type type)
       throws JSONException {
     long version = jsonDoc.getLong("version");
@@ -1027,7 +1043,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
             QueryPurpose purpose = QueryPurpose.LISTEN;
             if (queryDataJson.has("targetPurpose")) {
-              purpose = QueryPurpose.values()[queryDataJson.getInt("targetPurpose")];
+              purpose = parseQueryPurpose(queryDataJson.get("targetPurpose"));
             }
 
             TargetData targetData =
