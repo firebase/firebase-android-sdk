@@ -124,6 +124,7 @@ class DelegatingScheduledExecutorService implements ScheduledExecutorService {
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
     return new DelegatingScheduledFuture<>(
         completer ->

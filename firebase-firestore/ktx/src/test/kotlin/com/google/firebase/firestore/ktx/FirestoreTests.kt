@@ -101,6 +101,57 @@ class FirestoreTests : BaseTestCase() {
     assertThat(isSslEnabled).isEqualTo(settings.isSslEnabled)
     assertThat(isPersistenceEnabled).isEqualTo(settings.isPersistenceEnabled)
   }
+
+  @Test
+  fun `LocalCacheSettings builder works`() {
+    val host = "http://10.0.2.2:8080"
+    val isSslEnabled = false
+
+    val settings = firestoreSettings {
+      this.host = host
+      this.isSslEnabled = isSslEnabled
+      this.setLocalCacheSettings(persistentCacheSettings { setSizeBytes(1_000_000) })
+    }
+
+    assertThat(host).isEqualTo(settings.host)
+    assertThat(isSslEnabled).isEqualTo(settings.isSslEnabled)
+    assertThat(settings.isPersistenceEnabled).isTrue()
+    assertThat(settings.cacheSizeBytes).isEqualTo(1_000_000)
+
+    val otherSettings = firestoreSettings { this.setLocalCacheSettings(memoryCacheSettings {}) }
+
+    assertThat(otherSettings.host).isEqualTo(FirebaseFirestoreSettings.DEFAULT_HOST)
+    assertThat(otherSettings.isSslEnabled).isEqualTo(true)
+    assertThat(otherSettings.isPersistenceEnabled).isFalse()
+  }
+
+  @Test
+  fun `MemoryCacheSettings Garbage Collector builder works`() {
+    val host = "http://10.0.2.2:8080"
+    val isSslEnabled = false
+
+    val settings = firestoreSettings {
+      this.host = host
+      this.isSslEnabled = isSslEnabled
+      this.setLocalCacheSettings(memoryCacheSettings {})
+    }
+
+    assertThat(host).isEqualTo(settings.host)
+    assertThat(isSslEnabled).isEqualTo(settings.isSslEnabled)
+    assertThat(settings.isPersistenceEnabled).isFalse()
+    assertThat(settings.cacheSettings)
+      .isEqualTo(memoryCacheSettings { setGcSettings(memoryEagerGcSettings {}) })
+
+    val otherSettings = firestoreSettings {
+      this.setLocalCacheSettings(
+        memoryCacheSettings { setGcSettings(memoryLruGcSettings { setSizeBytes(1_000) }) }
+      )
+    }
+
+    assertThat(otherSettings.host).isEqualTo(FirebaseFirestoreSettings.DEFAULT_HOST)
+    assertThat(otherSettings.isPersistenceEnabled).isFalse()
+    assertThat(otherSettings.cacheSizeBytes).isEqualTo(1_000)
+  }
 }
 
 @RunWith(RobolectricTestRunner::class)

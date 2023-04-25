@@ -18,15 +18,7 @@ import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldPath
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreSettings
-import com.google.firebase.firestore.MetadataChanges
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.QueryDocumentSnapshot
-import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.*
 import com.google.firebase.firestore.util.Executors.BACKGROUND_EXECUTOR
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
@@ -180,6 +172,32 @@ fun firestoreSettings(
   init: FirebaseFirestoreSettings.Builder.() -> Unit
 ): FirebaseFirestoreSettings {
   val builder = FirebaseFirestoreSettings.Builder()
+  builder.init()
+  return builder.build()
+}
+
+fun memoryCacheSettings(init: MemoryCacheSettings.Builder.() -> Unit): MemoryCacheSettings {
+  val builder = MemoryCacheSettings.newBuilder()
+  builder.init()
+  return builder.build()
+}
+
+fun memoryEagerGcSettings(init: MemoryEagerGcSettings.Builder.() -> Unit): MemoryEagerGcSettings {
+  val builder = MemoryEagerGcSettings.newBuilder()
+  builder.init()
+  return builder.build()
+}
+
+fun memoryLruGcSettings(init: MemoryLruGcSettings.Builder.() -> Unit): MemoryLruGcSettings {
+  val builder = MemoryLruGcSettings.newBuilder()
+  builder.init()
+  return builder.build()
+}
+
+fun persistentCacheSettings(
+  init: PersistentCacheSettings.Builder.() -> Unit
+): PersistentCacheSettings {
+  val builder = PersistentCacheSettings.newBuilder()
   builder.init()
   return builder.build()
 }

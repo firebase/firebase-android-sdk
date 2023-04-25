@@ -96,11 +96,12 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
       aarAndroidFile.value(true)
       filePath.value(project.file("semver/previous.aar").absolutePath)
     }
-
+    val artifact = firebaseLibrary.artifactId.get()
+    val releaseAar = if (artifact.contains("-ktx")) "ktx-release.aar" else "${artifact}-release.aar"
     project.tasks.register<Copy>("extractCurrentClasses") {
       dependsOn("bundleReleaseAar")
 
-      from(project.zipTree("build/outputs/aar/${firebaseLibrary.artifactId.get()}-release.aar"))
+      from(project.zipTree("build/outputs/aar/${releaseAar}"))
       into(project.file("semver/current-version"))
     }
     project.tasks.register<Copy>("extractPreviousClasses") {

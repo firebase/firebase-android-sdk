@@ -49,6 +49,12 @@ import org.gradle.api.tasks.bundling.Zip;
  */
 public class MultiProjectReleasePlugin implements Plugin<Project> {
 
+  // TODO() - Will be removed once migrated to Kotlin
+  private static String findStringProperty(Project p, String property) {
+    Object value = p.findProperty(property);
+    return value != null ? value.toString() : null;
+  }
+
   @Override
   public void apply(Project project) {
     project.apply(ImmutableMap.of("plugin", PublishingPlugin.class));
@@ -73,10 +79,10 @@ public class MultiProjectReleasePlugin implements Plugin<Project> {
                 ReleaseGenerator.class,
                 task -> {
                   task.getCurrentRelease()
-                      .convention(project.property("currentRelease").toString());
-                  task.getPastRelease().convention(project.property("pastRelease").toString());
+                      .convention(findStringProperty(project, "currentRelease"));
+                  task.getPastRelease().convention(findStringProperty(project, "pastRelease"));
                   task.getPrintReleaseConfig()
-                      .convention(project.property("printOutput").toString());
+                      .convention(findStringProperty(project, "printOutput"));
                   task.getReleaseConfigFile()
                       .convention(project.getLayout().getBuildDirectory().file("release.cfg"));
                   task.getReleaseReportFile()

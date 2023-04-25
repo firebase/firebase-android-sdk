@@ -126,7 +126,7 @@ dependencies {
     implementation project(':protolite-well-known-types')
     implementation 'com.google.firebase:firebase-database-collection:18.0.1'
     implementation 'com.google.firebase:firebase-components:17.1.0'
-    implementation 'com.google.firebase:firebase-appcheck-interop:16.1.1'
+    implementation project(':appcheck:firebase-appcheck-interop')
 
     //To provide @Generated annotations
     compileOnly 'javax.annotation:jsr250-api:1.0'

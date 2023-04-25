@@ -18,7 +18,7 @@ import android.content.Context;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.annotations.concurrent.Lightweight;
 import com.google.firebase.annotations.concurrent.UiThread;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
 import com.google.firebase.inject.Deferred;
@@ -59,7 +59,7 @@ interface FunctionsComponent {
     Builder setIid(Provider<FirebaseInstanceIdInternal> iid);
 
     @BindsInstance
-    Builder setAppCheck(Deferred<InternalAppCheckTokenProvider> appCheck);
+    Builder setAppCheck(Deferred<InteropAppCheckTokenProvider> appCheck);
 
     FunctionsComponent build();
   }

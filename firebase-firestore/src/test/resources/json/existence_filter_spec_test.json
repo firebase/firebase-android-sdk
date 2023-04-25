@@ -3,10 +3,11 @@
     "describeName": "Existence Filters:",
     "itName": "Bloom filter can process special characters in document name",
     "tags": [
+      "no-ios"
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -46,6 +47,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/ÀÒ∑",
               "options": {
                 "hasCommittedMutations": false,
@@ -57,6 +59,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/À∑Ò",
               "options": {
                 "hasCommittedMutations": false,
@@ -91,6 +94,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/ÀÒ∑",
                 "options": {
                   "hasCommittedMutations": false,
@@ -102,6 +106,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/À∑Ò",
                 "options": {
                   "hasCommittedMutations": false,
@@ -179,7 +184,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "2": {
               "queries": [
@@ -202,10 +207,11 @@
     "describeName": "Existence Filters:",
     "itName": "Bloom filter fills in default values for undefined padding and hashCount",
     "tags": [
+      "no-ios"
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -245,6 +251,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/a",
               "options": {
                 "hasCommittedMutations": false,
@@ -256,6 +263,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/b",
               "options": {
                 "hasCommittedMutations": false,
@@ -290,6 +298,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -301,6 +310,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -373,7 +383,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -384,10 +394,11 @@
     "describeName": "Existence Filters:",
     "itName": "Bloom filter is handled at global snapshot",
     "tags": [
+      "no-ios"
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -427,6 +438,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/a",
               "options": {
                 "hasCommittedMutations": false,
@@ -438,6 +450,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/b",
               "options": {
                 "hasCommittedMutations": false,
@@ -472,6 +485,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -483,6 +497,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -528,6 +543,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/c",
               "options": {
                 "hasCommittedMutations": false,
@@ -554,6 +570,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -593,7 +610,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "2": {
               "queries": [
@@ -616,10 +633,11 @@
     "describeName": "Existence Filters:",
     "itName": "Bloom filter limbo resolution is denied",
     "tags": [
+      "no-ios"
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -659,6 +677,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/a",
               "options": {
                 "hasCommittedMutations": false,
@@ -670,6 +689,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/b",
               "options": {
                 "hasCommittedMutations": false,
@@ -704,6 +724,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -715,6 +736,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -792,7 +814,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "2": {
               "queries": [
@@ -832,6 +854,7 @@
             },
             "removed": [
               {
+                "createTime": 0,
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -870,10 +893,11 @@
     "describeName": "Existence Filters:",
     "itName": "Bloom filter with large size works as expected",
     "tags": [
+      "no-ios"
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -913,6 +937,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/doc0",
               "options": {
                 "hasCommittedMutations": false,
@@ -924,6 +949,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc1",
               "options": {
                 "hasCommittedMutations": false,
@@ -935,6 +961,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc2",
               "options": {
                 "hasCommittedMutations": false,
@@ -946,6 +973,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc3",
               "options": {
                 "hasCommittedMutations": false,
@@ -957,6 +985,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc4",
               "options": {
                 "hasCommittedMutations": false,
@@ -968,6 +997,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc5",
               "options": {
                 "hasCommittedMutations": false,
@@ -979,6 +1009,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc6",
               "options": {
                 "hasCommittedMutations": false,
@@ -990,6 +1021,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc7",
               "options": {
                 "hasCommittedMutations": false,
@@ -1001,6 +1033,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc8",
               "options": {
                 "hasCommittedMutations": false,
@@ -1012,6 +1045,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc9",
               "options": {
                 "hasCommittedMutations": false,
@@ -1023,6 +1057,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc10",
               "options": {
                 "hasCommittedMutations": false,
@@ -1034,6 +1069,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc11",
               "options": {
                 "hasCommittedMutations": false,
@@ -1045,6 +1081,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc12",
               "options": {
                 "hasCommittedMutations": false,
@@ -1056,6 +1093,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc13",
               "options": {
                 "hasCommittedMutations": false,
@@ -1067,6 +1105,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc14",
               "options": {
                 "hasCommittedMutations": false,
@@ -1078,6 +1117,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc15",
               "options": {
                 "hasCommittedMutations": false,
@@ -1089,6 +1129,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc16",
               "options": {
                 "hasCommittedMutations": false,
@@ -1100,6 +1141,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc17",
               "options": {
                 "hasCommittedMutations": false,
@@ -1111,6 +1153,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc18",
               "options": {
                 "hasCommittedMutations": false,
@@ -1122,6 +1165,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc19",
               "options": {
                 "hasCommittedMutations": false,
@@ -1133,6 +1177,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc20",
               "options": {
                 "hasCommittedMutations": false,
@@ -1144,6 +1189,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc21",
               "options": {
                 "hasCommittedMutations": false,
@@ -1155,6 +1201,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc22",
               "options": {
                 "hasCommittedMutations": false,
@@ -1166,6 +1213,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc23",
               "options": {
                 "hasCommittedMutations": false,
@@ -1177,6 +1225,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc24",
               "options": {
                 "hasCommittedMutations": false,
@@ -1188,6 +1237,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc25",
               "options": {
                 "hasCommittedMutations": false,
@@ -1199,6 +1249,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc26",
               "options": {
                 "hasCommittedMutations": false,
@@ -1210,6 +1261,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc27",
               "options": {
                 "hasCommittedMutations": false,
@@ -1221,6 +1273,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc28",
               "options": {
                 "hasCommittedMutations": false,
@@ -1232,6 +1285,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc29",
               "options": {
                 "hasCommittedMutations": false,
@@ -1243,6 +1297,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc30",
               "options": {
                 "hasCommittedMutations": false,
@@ -1254,6 +1309,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc31",
               "options": {
                 "hasCommittedMutations": false,
@@ -1265,6 +1321,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc32",
               "options": {
                 "hasCommittedMutations": false,
@@ -1276,6 +1333,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc33",
               "options": {
                 "hasCommittedMutations": false,
@@ -1287,6 +1345,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc34",
               "options": {
                 "hasCommittedMutations": false,
@@ -1298,6 +1357,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc35",
               "options": {
                 "hasCommittedMutations": false,
@@ -1309,6 +1369,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc36",
               "options": {
                 "hasCommittedMutations": false,
@@ -1320,6 +1381,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc37",
               "options": {
                 "hasCommittedMutations": false,
@@ -1331,6 +1393,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc38",
               "options": {
                 "hasCommittedMutations": false,
@@ -1342,6 +1405,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc39",
               "options": {
                 "hasCommittedMutations": false,
@@ -1353,6 +1417,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc40",
               "options": {
                 "hasCommittedMutations": false,
@@ -1364,6 +1429,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc41",
               "options": {
                 "hasCommittedMutations": false,
@@ -1375,6 +1441,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc42",
               "options": {
                 "hasCommittedMutations": false,
@@ -1386,6 +1453,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc43",
               "options": {
                 "hasCommittedMutations": false,
@@ -1397,6 +1465,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc44",
               "options": {
                 "hasCommittedMutations": false,
@@ -1408,6 +1477,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc45",
               "options": {
                 "hasCommittedMutations": false,
@@ -1419,6 +1489,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc46",
               "options": {
                 "hasCommittedMutations": false,
@@ -1430,6 +1501,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc47",
               "options": {
                 "hasCommittedMutations": false,
@@ -1441,6 +1513,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc48",
               "options": {
                 "hasCommittedMutations": false,
@@ -1452,6 +1525,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc49",
               "options": {
                 "hasCommittedMutations": false,
@@ -1463,6 +1537,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc50",
               "options": {
                 "hasCommittedMutations": false,
@@ -1474,6 +1549,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc51",
               "options": {
                 "hasCommittedMutations": false,
@@ -1485,6 +1561,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc52",
               "options": {
                 "hasCommittedMutations": false,
@@ -1496,6 +1573,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc53",
               "options": {
                 "hasCommittedMutations": false,
@@ -1507,6 +1585,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc54",
               "options": {
                 "hasCommittedMutations": false,
@@ -1518,6 +1597,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc55",
               "options": {
                 "hasCommittedMutations": false,
@@ -1529,6 +1609,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc56",
               "options": {
                 "hasCommittedMutations": false,
@@ -1540,6 +1621,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc57",
               "options": {
                 "hasCommittedMutations": false,
@@ -1551,6 +1633,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc58",
               "options": {
                 "hasCommittedMutations": false,
@@ -1562,6 +1645,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc59",
               "options": {
                 "hasCommittedMutations": false,
@@ -1573,6 +1657,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc60",
               "options": {
                 "hasCommittedMutations": false,
@@ -1584,6 +1669,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc61",
               "options": {
                 "hasCommittedMutations": false,
@@ -1595,6 +1681,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc62",
               "options": {
                 "hasCommittedMutations": false,
@@ -1606,6 +1693,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc63",
               "options": {
                 "hasCommittedMutations": false,
@@ -1617,6 +1705,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc64",
               "options": {
                 "hasCommittedMutations": false,
@@ -1628,6 +1717,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc65",
               "options": {
                 "hasCommittedMutations": false,
@@ -1639,6 +1729,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc66",
               "options": {
                 "hasCommittedMutations": false,
@@ -1650,6 +1741,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc67",
               "options": {
                 "hasCommittedMutations": false,
@@ -1661,6 +1753,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc68",
               "options": {
                 "hasCommittedMutations": false,
@@ -1672,6 +1765,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc69",
               "options": {
                 "hasCommittedMutations": false,
@@ -1683,6 +1777,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc70",
               "options": {
                 "hasCommittedMutations": false,
@@ -1694,6 +1789,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc71",
               "options": {
                 "hasCommittedMutations": false,
@@ -1705,6 +1801,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc72",
               "options": {
                 "hasCommittedMutations": false,
@@ -1716,6 +1813,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc73",
               "options": {
                 "hasCommittedMutations": false,
@@ -1727,6 +1825,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc74",
               "options": {
                 "hasCommittedMutations": false,
@@ -1738,6 +1837,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc75",
               "options": {
                 "hasCommittedMutations": false,
@@ -1749,6 +1849,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc76",
               "options": {
                 "hasCommittedMutations": false,
@@ -1760,6 +1861,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc77",
               "options": {
                 "hasCommittedMutations": false,
@@ -1771,6 +1873,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc78",
               "options": {
                 "hasCommittedMutations": false,
@@ -1782,6 +1885,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc79",
               "options": {
                 "hasCommittedMutations": false,
@@ -1793,6 +1897,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc80",
               "options": {
                 "hasCommittedMutations": false,
@@ -1804,6 +1909,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc81",
               "options": {
                 "hasCommittedMutations": false,
@@ -1815,6 +1921,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc82",
               "options": {
                 "hasCommittedMutations": false,
@@ -1826,6 +1933,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc83",
               "options": {
                 "hasCommittedMutations": false,
@@ -1837,6 +1945,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc84",
               "options": {
                 "hasCommittedMutations": false,
@@ -1848,6 +1957,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc85",
               "options": {
                 "hasCommittedMutations": false,
@@ -1859,6 +1969,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc86",
               "options": {
                 "hasCommittedMutations": false,
@@ -1870,6 +1981,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc87",
               "options": {
                 "hasCommittedMutations": false,
@@ -1881,6 +1993,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc88",
               "options": {
                 "hasCommittedMutations": false,
@@ -1892,6 +2005,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc89",
               "options": {
                 "hasCommittedMutations": false,
@@ -1903,6 +2017,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc90",
               "options": {
                 "hasCommittedMutations": false,
@@ -1914,6 +2029,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc91",
               "options": {
                 "hasCommittedMutations": false,
@@ -1925,6 +2041,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc92",
               "options": {
                 "hasCommittedMutations": false,
@@ -1936,6 +2053,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc93",
               "options": {
                 "hasCommittedMutations": false,
@@ -1947,6 +2065,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc94",
               "options": {
                 "hasCommittedMutations": false,
@@ -1958,6 +2077,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc95",
               "options": {
                 "hasCommittedMutations": false,
@@ -1969,6 +2089,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc96",
               "options": {
                 "hasCommittedMutations": false,
@@ -1980,6 +2101,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc97",
               "options": {
                 "hasCommittedMutations": false,
@@ -1991,6 +2113,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc98",
               "options": {
                 "hasCommittedMutations": false,
@@ -2002,6 +2125,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/doc99",
               "options": {
                 "hasCommittedMutations": false,
@@ -2036,6 +2160,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/doc0",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2047,6 +2172,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2058,6 +2184,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2069,6 +2196,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc3",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2080,6 +2208,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc4",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2091,6 +2220,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc5",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2102,6 +2232,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc6",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2113,6 +2244,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc7",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2124,6 +2256,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc8",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2135,6 +2268,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc9",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2146,6 +2280,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc10",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2157,6 +2292,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc11",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2168,6 +2304,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc12",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2179,6 +2316,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc13",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2190,6 +2328,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc14",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2201,6 +2340,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc15",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2212,6 +2352,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc16",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2223,6 +2364,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc17",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2234,6 +2376,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc18",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2245,6 +2388,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc19",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2256,6 +2400,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc20",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2267,6 +2412,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc21",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2278,6 +2424,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc22",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2289,6 +2436,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc23",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2300,6 +2448,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc24",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2311,6 +2460,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc25",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2322,6 +2472,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc26",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2333,6 +2484,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc27",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2344,6 +2496,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc28",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2355,6 +2508,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc29",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2366,6 +2520,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc30",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2377,6 +2532,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc31",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2388,6 +2544,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc32",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2399,6 +2556,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc33",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2410,6 +2568,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc34",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2421,6 +2580,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc35",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2432,6 +2592,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc36",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2443,6 +2604,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc37",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2454,6 +2616,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc38",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2465,6 +2628,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc39",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2476,6 +2640,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc40",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2487,6 +2652,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc41",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2498,6 +2664,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc42",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2509,6 +2676,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc43",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2520,6 +2688,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc44",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2531,6 +2700,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc45",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2542,6 +2712,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc46",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2553,6 +2724,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc47",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2564,6 +2736,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc48",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2575,6 +2748,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc49",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2586,6 +2760,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc50",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2597,6 +2772,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc51",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2608,6 +2784,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc52",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2619,6 +2796,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc53",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2630,6 +2808,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc54",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2641,6 +2820,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc55",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2652,6 +2832,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc56",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2663,6 +2844,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc57",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2674,6 +2856,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc58",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2685,6 +2868,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc59",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2696,6 +2880,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc60",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2707,6 +2892,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc61",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2718,6 +2904,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc62",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2729,6 +2916,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc63",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2740,6 +2928,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc64",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2751,6 +2940,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc65",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2762,6 +2952,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc66",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2773,6 +2964,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc67",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2784,6 +2976,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc68",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2795,6 +2988,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc69",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2806,6 +3000,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc70",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2817,6 +3012,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc71",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2828,6 +3024,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc72",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2839,6 +3036,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc73",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2850,6 +3048,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc74",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2861,6 +3060,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc75",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2872,6 +3072,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc76",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2883,6 +3084,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc77",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2894,6 +3096,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc78",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2905,6 +3108,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc79",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2916,6 +3120,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc80",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2927,6 +3132,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc81",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2938,6 +3144,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc82",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2949,6 +3156,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc83",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2960,6 +3168,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc84",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2971,6 +3180,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc85",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2982,6 +3192,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc86",
                 "options": {
                   "hasCommittedMutations": false,
@@ -2993,6 +3204,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc87",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3004,6 +3216,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc88",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3015,6 +3228,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc89",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3026,6 +3240,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc90",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3037,6 +3252,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc91",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3048,6 +3264,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc92",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3059,6 +3276,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc93",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3070,6 +3288,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc94",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3081,6 +3300,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc95",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3092,6 +3312,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc96",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3103,6 +3324,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc97",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3114,6 +3336,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc98",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3125,6 +3348,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/doc99",
                 "options": {
                   "hasCommittedMutations": false,
@@ -3300,7 +3524,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "11": {
               "queries": [
@@ -3313,7 +3537,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "13": {
               "queries": [
@@ -3326,7 +3550,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "15": {
               "queries": [
@@ -3339,7 +3563,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "17": {
               "queries": [
@@ -3352,7 +3576,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "19": {
               "queries": [
@@ -3365,7 +3589,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "2": {
               "queries": [
@@ -3390,7 +3614,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "23": {
               "queries": [
@@ -3403,7 +3627,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "25": {
               "queries": [
@@ -3416,7 +3640,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "27": {
               "queries": [
@@ -3429,7 +3653,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "29": {
               "queries": [
@@ -3442,7 +3666,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "3": {
               "queries": [
@@ -3455,7 +3679,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "31": {
               "queries": [
@@ -3468,7 +3692,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "33": {
               "queries": [
@@ -3481,7 +3705,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "35": {
               "queries": [
@@ -3494,7 +3718,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "37": {
               "queries": [
@@ -3507,7 +3731,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "39": {
               "queries": [
@@ -3520,7 +3744,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "41": {
               "queries": [
@@ -3533,7 +3757,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "43": {
               "queries": [
@@ -3546,7 +3770,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "45": {
               "queries": [
@@ -3559,7 +3783,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "47": {
               "queries": [
@@ -3572,7 +3796,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "49": {
               "queries": [
@@ -3585,7 +3809,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "5": {
               "queries": [
@@ -3598,7 +3822,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "51": {
               "queries": [
@@ -3611,7 +3835,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "53": {
               "queries": [
@@ -3624,7 +3848,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "55": {
               "queries": [
@@ -3637,7 +3861,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "57": {
               "queries": [
@@ -3650,7 +3874,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "59": {
               "queries": [
@@ -3663,7 +3887,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "61": {
               "queries": [
@@ -3676,7 +3900,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "63": {
               "queries": [
@@ -3689,7 +3913,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "65": {
               "queries": [
@@ -3702,7 +3926,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "67": {
               "queries": [
@@ -3715,7 +3939,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "69": {
               "queries": [
@@ -3728,7 +3952,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "7": {
               "queries": [
@@ -3741,7 +3965,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "71": {
               "queries": [
@@ -3754,7 +3978,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "73": {
               "queries": [
@@ -3767,7 +3991,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "75": {
               "queries": [
@@ -3780,7 +4004,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "77": {
               "queries": [
@@ -3793,7 +4017,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "79": {
               "queries": [
@@ -3806,7 +4030,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "81": {
               "queries": [
@@ -3819,7 +4043,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "83": {
               "queries": [
@@ -3832,7 +4056,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "85": {
               "queries": [
@@ -3845,7 +4069,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "87": {
               "queries": [
@@ -3858,7 +4082,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "89": {
               "queries": [
@@ -3871,7 +4095,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "9": {
               "queries": [
@@ -3884,7 +4108,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "91": {
               "queries": [
@@ -3897,7 +4121,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "93": {
               "queries": [
@@ -3910,7 +4134,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "95": {
               "queries": [
@@ -3923,7 +4147,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "97": {
               "queries": [
@@ -3936,7 +4160,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "99": {
               "queries": [
@@ -3949,7 +4173,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             }
           }
         }
@@ -3964,7 +4188,7 @@
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -4004,6 +4228,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/1",
               "options": {
                 "hasCommittedMutations": false,
@@ -4015,6 +4240,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/2",
               "options": {
                 "hasCommittedMutations": false,
@@ -4049,6 +4275,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4060,6 +4287,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4127,7 +4355,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -4158,6 +4386,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4169,6 +4398,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4218,7 +4448,7 @@
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -4258,6 +4488,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/1",
               "options": {
                 "hasCommittedMutations": false,
@@ -4292,6 +4523,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4331,6 +4563,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/3",
               "options": {
                 "hasCommittedMutations": false,
@@ -4357,6 +4590,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/3",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4393,7 +4627,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -4414,6 +4648,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/1",
               "options": {
                 "hasCommittedMutations": false,
@@ -4425,6 +4660,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/2",
               "options": {
                 "hasCommittedMutations": false,
@@ -4436,6 +4672,7 @@
               "version": 2000
             },
             {
+              "createTime": 0,
               "key": "collection/3",
               "options": {
                 "hasCommittedMutations": false,
@@ -4470,6 +4707,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4503,7 +4741,7 @@
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": false
+      "useEagerGCForMemory": false
     },
     "steps": [
       {
@@ -4543,6 +4781,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/1",
               "options": {
                 "hasCommittedMutations": false,
@@ -4577,6 +4816,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4632,6 +4872,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4731,7 +4972,7 @@
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -4771,6 +5012,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/1",
               "options": {
                 "hasCommittedMutations": false,
@@ -4782,6 +5024,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/2",
               "options": {
                 "hasCommittedMutations": false,
@@ -4816,6 +5059,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4827,6 +5071,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -4894,7 +5139,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -4915,6 +5160,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/1",
               "options": {
                 "hasCommittedMutations": false,
@@ -4961,7 +5207,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "2": {
               "queries": [
@@ -4974,7 +5220,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -5002,6 +5248,7 @@
             },
             "removed": [
               {
+                "createTime": 0,
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5030,7 +5277,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -5044,7 +5291,7 @@
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -5084,6 +5331,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/1",
               "options": {
                 "hasCommittedMutations": false,
@@ -5118,6 +5366,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5168,7 +5417,7 @@
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -5237,6 +5486,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/1",
               "options": {
                 "hasCommittedMutations": false,
@@ -5273,6 +5523,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5306,7 +5557,7 @@
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -5346,6 +5597,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/1",
               "options": {
                 "hasCommittedMutations": false,
@@ -5357,6 +5609,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/2",
               "options": {
                 "hasCommittedMutations": false,
@@ -5391,6 +5644,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5402,6 +5656,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5469,7 +5724,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -5490,6 +5745,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/1",
               "options": {
                 "hasCommittedMutations": false,
@@ -5536,7 +5792,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "2": {
               "queries": [
@@ -5549,7 +5805,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -5587,6 +5843,7 @@
             },
             "removed": [
               {
+                "createTime": 0,
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5615,7 +5872,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -5629,7 +5886,7 @@
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -5669,6 +5926,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/1",
               "options": {
                 "hasCommittedMutations": false,
@@ -5680,6 +5938,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/2",
               "options": {
                 "hasCommittedMutations": false,
@@ -5714,6 +5973,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/1",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5725,6 +5985,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5822,7 +6083,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -5843,6 +6104,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/1",
               "options": {
                 "hasCommittedMutations": false,
@@ -5889,7 +6151,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "2": {
               "queries": [
@@ -5902,7 +6164,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -5940,6 +6202,7 @@
             },
             "removed": [
               {
+                "createTime": 0,
                 "key": "collection/2",
                 "options": {
                   "hasCommittedMutations": false,
@@ -5968,7 +6231,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -5982,7 +6245,7 @@
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -6022,6 +6285,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/a",
               "options": {
                 "hasCommittedMutations": false,
@@ -6056,6 +6320,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6109,6 +6374,7 @@
             },
             "removed": [
               {
+                "createTime": 0,
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6132,7 +6398,7 @@
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -6240,7 +6506,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -6251,10 +6517,11 @@
     "describeName": "Existence Filters:",
     "itName": "Full re-query is skipped when bloom filter can identify documents deleted",
     "tags": [
+      "no-ios"
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -6294,6 +6561,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/a",
               "options": {
                 "hasCommittedMutations": false,
@@ -6305,6 +6573,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/b",
               "options": {
                 "hasCommittedMutations": false,
@@ -6339,6 +6608,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6350,6 +6620,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6427,7 +6698,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "2": {
               "queries": [
@@ -6477,6 +6748,7 @@
             },
             "removed": [
               {
+                "createTime": 0,
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6520,7 +6792,7 @@
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -6560,6 +6832,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/a",
               "options": {
                 "hasCommittedMutations": false,
@@ -6571,6 +6844,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/b",
               "options": {
                 "hasCommittedMutations": false,
@@ -6605,6 +6879,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6616,6 +6891,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6690,7 +6966,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -6701,10 +6977,11 @@
     "describeName": "Existence Filters:",
     "itName": "Full re-query is triggered when bloom filter can not identify documents deleted",
     "tags": [
+      "no-ios"
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -6744,6 +7021,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/a",
               "options": {
                 "hasCommittedMutations": false,
@@ -6755,6 +7033,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/b",
               "options": {
                 "hasCommittedMutations": false,
@@ -6766,6 +7045,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/c",
               "options": {
                 "hasCommittedMutations": false,
@@ -6800,6 +7080,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6811,6 +7092,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6822,6 +7104,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -6896,7 +7179,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 2
+              "targetPurpose": "TargetPurposeExistenceFilterMismatchBloom"
             }
           }
         }
@@ -6907,10 +7190,11 @@
     "describeName": "Existence Filters:",
     "itName": "Full re-query is triggered when bloom filter hashCount is invalid",
     "tags": [
+      "no-ios"
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -6950,6 +7234,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/a",
               "options": {
                 "hasCommittedMutations": false,
@@ -6961,6 +7246,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/b",
               "options": {
                 "hasCommittedMutations": false,
@@ -6995,6 +7281,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7006,6 +7293,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7080,7 +7368,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -7091,10 +7379,11 @@
     "describeName": "Existence Filters:",
     "itName": "Full re-query is triggered when bloom filter is empty",
     "tags": [
+      "no-ios"
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -7134,6 +7423,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/a",
               "options": {
                 "hasCommittedMutations": false,
@@ -7145,6 +7435,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/b",
               "options": {
                 "hasCommittedMutations": false,
@@ -7179,6 +7470,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7190,6 +7482,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7264,7 +7557,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 1
+              "targetPurpose": "TargetPurposeExistenceFilterMismatch"
             }
           }
         }
@@ -7275,10 +7568,11 @@
     "describeName": "Existence Filters:",
     "itName": "Same documents can have different bloom filters",
     "tags": [
+      "no-ios"
     ],
     "config": {
       "numClients": 1,
-      "useGarbageCollection": true
+      "useEagerGCForMemory": true
     },
     "steps": [
       {
@@ -7328,6 +7622,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/a",
               "options": {
                 "hasCommittedMutations": false,
@@ -7339,6 +7634,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/b",
               "options": {
                 "hasCommittedMutations": false,
@@ -7373,6 +7669,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/a",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7384,6 +7681,7 @@
                 "version": 1000
               },
               {
+                "createTime": 0,
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7433,6 +7731,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/b",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7509,6 +7808,7 @@
         "watchEntity": {
           "docs": [
             {
+              "createTime": 0,
               "key": "collection/b",
               "options": {
                 "hasCommittedMutations": false,
@@ -7520,6 +7820,7 @@
               "version": 1000
             },
             {
+              "createTime": 0,
               "key": "collection/c",
               "options": {
                 "hasCommittedMutations": false,
@@ -7554,6 +7855,7 @@
           {
             "added": [
               {
+                "createTime": 0,
                 "key": "collection/c",
                 "options": {
                   "hasCommittedMutations": false,
@@ -7641,7 +7943,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "2": {
               "queries": [
@@ -7739,7 +8041,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "2": {
               "queries": [
@@ -7769,7 +8071,7 @@
                 }
               ],
               "resumeToken": "",
-              "targetPurpose": 3
+              "targetPurpose": "TargetPurposeLimboResolution"
             },
             "4": {
               "queries": [
