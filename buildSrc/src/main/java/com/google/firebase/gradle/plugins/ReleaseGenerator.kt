@@ -31,8 +31,6 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.findByType
 
-data class FirebaseLibraryEntry(val moduleNames: List<String>, val directories: List<String>)
-
 data class CommitDiff(
   val commitId: String,
   val author: String,
@@ -79,10 +77,10 @@ abstract class ReleaseGenerator : DefaultTask() {
         libsToRelease.map { it.path }.toSet()
 
     val changes = getChangesForLibraries(repo, branchRef, headRef, libsToRelease)
-    writeReleaseConfig(
-      releaseConfigFile.get().asFile,
-      ReleaseConfig(currentRelease.get(), libsToRelease.map { it.path }.toSet())
-    )
+
+    val releaseConfig = ReleaseConfig(currentRelease.get(), libsToRelease.map { it.path })
+    releaseConfig.toFile(releaseConfigFile.get().asFile)
+
     val releaseReport = generateReleaseReport(changes, changedLibsWithNoChangelog)
     if (printReleaseConfig.orNull.toBoolean()) {
       project.logger.info(releaseReport)
@@ -201,9 +199,6 @@ abstract class ReleaseGenerator : DefaultTask() {
     }
 
   private fun writeReleaseReport(file: File, report: String) = file.writeText(report)
-
-  private fun writeReleaseConfig(file: File, config: ReleaseConfig) =
-    file.writeText(config.toFile())
 
   private fun getRelativeDir(project: Project) = project.path.substring(1).replace(':', '/')
 }

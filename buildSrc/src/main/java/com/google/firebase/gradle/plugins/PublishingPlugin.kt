@@ -175,7 +175,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       .file(RELEASE_CONFIG_FILE)
       .asFile
       .takeIf { it.exists() }
-      ?.let { ReleaseConfig.fromFile(it).libs.toList() }
+      ?.let { ReleaseConfig.fromFile(it).libraries }
 
   /**
    * Registers the [GENERATE_BOM_TASK] task.
@@ -239,7 +239,7 @@ abstract class PublishingPlugin : Plugin<Project> {
         throw GradleException(
           "No projects to release. " +
             "Ensure you've specified the projectsToPublish parameter, " +
-            "or have a valid release.cfg file at the root directory."
+            "or have a valid $RELEASE_CONFIG_FILE file at the root directory."
         )
       }
     }
@@ -376,7 +376,7 @@ abstract class PublishingPlugin : Plugin<Project> {
     }
 
   companion object {
-    const val RELEASE_CONFIG_FILE = "release.cfg"
+    const val RELEASE_CONFIG_FILE = "release.json"
     const val RELEASE_REPORT_FILE = "release_report.md"
 
     const val GENERATE_BOM_TASK = "generateBom"

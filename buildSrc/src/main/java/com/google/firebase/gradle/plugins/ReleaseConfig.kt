@@ -14,8 +14,11 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.google.firebase.gradle.plugins.ReleaseConfig.Companion.fromFile
 import java.io.File
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 
 /**
  * Container for providing data about a release.
@@ -26,11 +29,14 @@ import java.io.File
  * @see fromFile
  * @see toFile
  *
- * @property releaseName the name of a release, such as `m130`
- * @property libs a list of project paths intending to release
+ * @property name the name of a release, such as `m130`
+ * @property libraries a list of project paths intending to release
  */
-data class ReleaseConfig(val releaseName: String, val libs: Set<String>) {
+@Serializable
+data class ReleaseConfig(val name: String, val libraries: List<String>) {
   companion object {
+    val formatter = Json { prettyPrint = true }
+
     /**
      * Parses a [ReleaseConfig] from the contents of a given [File].
      *
@@ -39,36 +45,24 @@ data class ReleaseConfig(val releaseName: String, val libs: Set<String>) {
      * @param file the [File] to parse
      * @see toFile
      */
-    fun fromFile(file: File): ReleaseConfig {
-      val contents = file.readLines()
-      val libs = contents.filter { it.startsWith(":") }.toSet()
-      val releaseName = contents.first { it.startsWith("name") }.substringAfter("=").trim()
-      return ReleaseConfig(releaseName, libs)
-    }
+    fun fromFile(file: File): ReleaseConfig = formatter.decodeFromString(file.readText())
   }
 
   /**
-   * Converts a [ReleaseConfig] to a [String] to be saved in a [File].
+   * Writes a [ReleaseConfig] into a [File] as JSON.
    *
-   * An example of the output fomat can be seen below:
+   * An example of the output can be seen below:
    * ```
-   * [release]
-   * name = m130
-   *
-   * [modules]
-   * :firebase-common
-   * :appcheck:firebase-appcheck
+   * {
+   *   "name": "m130",
+   *   "libraries": [
+   *     ":firebase-appdistribution",
+   *     ":firebase-config",
+   *   ]
+   * }
    * ```
    *
    * @see fromFile
    */
-  fun toFile() =
-    """
-    |[release]
-    |name = $releaseName
-                    
-    |[modules]
-    |${libs.sorted().joinToString("\n")}
-    """
-      .trimMargin()
+  fun toFile(file: File) = file.also { it.writeText(formatter.encodeToString(this)) }
 }
