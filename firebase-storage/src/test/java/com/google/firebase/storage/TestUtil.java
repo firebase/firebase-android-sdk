@@ -115,7 +115,7 @@ public class TestUtil {
             System.err.println("New:");
             System.err.println(contents);
           }
-          if(!originalLine.equals(newLine)) {
+          if (!originalLine.equals(newLine)) {
             System.err.println("Original:");
             System.err.println(baselineContents);
             System.err.println("New:");
