@@ -1,6 +1,4 @@
 # Unreleased
-# 20.2.0
-* [changed] Replaced custom Thread implementation with Firebase Core executors.
 
 # 20.1.0
 * [fixed] Fixed an issue that caused an infinite number of retries with no
