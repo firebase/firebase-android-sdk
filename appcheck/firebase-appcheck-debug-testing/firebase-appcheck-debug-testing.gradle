@@ -49,7 +49,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation project(':appcheck:firebase-appcheck')
     implementation project(':appcheck:firebase-appcheck-debug')
-    implementation project(':appcheck:firebase-appcheck-interop')
+    implementation 'com.google.firebase:firebase-appcheck-interop:17.0.0'
     implementation 'com.google.android.gms:play-services-base:18.0.1'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation 'androidx.test:core:1.2.0'
