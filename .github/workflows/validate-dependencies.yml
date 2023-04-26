@@ -14,4 +14,4 @@ jobs:
 
       - name: Perform gradle build
         run: |
-          ./gradlew validatePomForRelease
+          ./gradlew validatePomForRelease -PpublishConfigFilePath=release.cfg -PpublishMode=RELEASE
