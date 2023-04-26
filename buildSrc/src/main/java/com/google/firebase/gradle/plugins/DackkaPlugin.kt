@@ -134,8 +134,6 @@ abstract class DackkaPlugin : Plugin<Project> {
 
         kotlinDoc.configure {
           dependsOn(generateDocumentation, firesiteTransform, copyDocsToCommonDirectory)
-
-          outputs.dir(copyDocsToCommonDirectory.map { it.destinationDir })
         }
       }
     }
