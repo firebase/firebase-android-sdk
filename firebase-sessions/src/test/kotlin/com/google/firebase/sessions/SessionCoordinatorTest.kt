@@ -16,6 +16,7 @@
 
 package com.google.firebase.sessions
 
+import android.os.StrictMode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.concurrent.TestOnlyExecutors
@@ -24,8 +25,12 @@ import com.google.firebase.sessions.testing.FakeEventGDTLogger
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.TestSessionEventData
+import java.net.URL
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -34,6 +39,22 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class SessionCoordinatorTest {
+
+  @Test
+  fun tempTest() = runTest {
+    StrictMode.setThreadPolicy(
+      StrictMode.ThreadPolicy.Builder().detectAll().penaltyDeath().build()
+    )
+    val scope = CoroutineScope(newSingleThreadContext("test"))
+    val job = scope.launch {
+      val tempFile = createTempFile("fdsdfs")
+      tempFile.writeText("Hello!")
+      URL("https://google.com").openConnection().connect()
+      println("I'm done!")
+    }
+
+    job.join()
+  }
   @Test
   fun attemptLoggingSessionEvent_populatesFid() = runTest {
     val fakeEventGDTLogger = FakeEventGDTLogger()
