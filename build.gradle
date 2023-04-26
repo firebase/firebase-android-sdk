@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
-import com.google.firebase.gradle.MultiProjectReleasePlugin
-
 buildscript {
     // TODO: remove once all sdks have migrated to version catalog
     ext.kotlinVersion = libs.versions.kotlin.get()
@@ -58,11 +55,10 @@ ext {
     protobufJavaUtilVersion = libs.versions.protobufjavautil.get()
 }
 
-apply plugin: com.google.firebase.gradle.plugins.publish.PublishingPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.ContinuousIntegrationPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.SmokeTestsPlugin
 
-apply plugin: MultiProjectReleasePlugin
+apply plugin: com.google.firebase.gradle.plugins.PublishingPlugin
 
 firebaseContinuousIntegration {
     ignorePaths = [
