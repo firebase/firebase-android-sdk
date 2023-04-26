@@ -23,7 +23,7 @@ import os
 import string
 from dataclasses import dataclass, field
 
-# TODO(b/279610345) - Replace this with a Gradle task
+
 @dataclass
 class Changelog:
     path: str

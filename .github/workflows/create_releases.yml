@@ -39,7 +39,7 @@ jobs:
         with:
           base: 'releases/${{ inputs.name }}'
           branch: 'releases/${{ inputs.name }}.release'
-          add-paths: release.json,release_report.md
+          add-paths: release.cfg,release_report.md
           title: '${{ inputs.name}} release'
           body: 'Auto-generated PR for release ${{ inputs.name}}'
           commit-message: 'Create release config for ${{ inputs.name }}'

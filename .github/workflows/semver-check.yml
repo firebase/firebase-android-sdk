@@ -14,4 +14,4 @@ jobs:
 
       - name: Perform gradle build
         run: |
-          ./gradlew semverCheckForRelease
+          ./gradlew semverCheckForRelease -PpublishConfigFilePath=release.cfg -PpublishMode=RELEASE
