@@ -432,13 +432,6 @@ public class UploadTest {
   }
 
   @Test
-  public void run50() throws Exception {
-    for (int i = 0; i < 1000; i++) {
-      fileUploadWithPauseResume();
-    }
-  }
-
-  @Test
   public void fileUploadWithQueueCancel() throws Exception {
     System.out.println("Starting test fileUploadWithQueueCancel.");
 
