@@ -309,7 +309,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       printReleaseConfig.convention(project.provideProperty("printOutput"))
 
       releaseConfigFile.convention(project.layout.projectDirectory.file(RELEASE_CONFIG_FILE))
-      releaseReportFile.convention(project.layout.buildDirectory.file(RELEASE_REPORT_FILE))
+      releaseReportFile.convention(project.layout.projectDirectory.file(RELEASE_REPORT_FILE))
     }
 
   /**
