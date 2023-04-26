@@ -58,7 +58,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation project(path: ':appcheck:firebase-appcheck')
-    implementation project(path: ':appcheck:firebase-appcheck-interop')
+    implementation("com.google.firebase:firebase-appcheck-interop:17.0.0")
 
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
