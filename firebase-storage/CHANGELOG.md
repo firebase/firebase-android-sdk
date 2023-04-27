@@ -1,5 +1,5 @@
 # Unreleased
-* [changed] Internal improvements.
+* [changed] Internal changes to ensure alignment with other SDK releases.
 
 # 20.1.0
 * [fixed] Fixed an issue that caused an infinite number of retries with no
