@@ -177,20 +177,34 @@ Qualified<Executor> bgExecutor = qualified(Background.class, Executor.class);
 Executor sequentialExecutor = FirebaseExecutors.newSequentialExecutor(c.get(bgExecutor));
 ```
 
+#### Proper Kotlin usage
+
+TODO(this PR) - Go over `CoroutineContext` and when it should be preferred over an
+executor.
+
 ## Testing
 
-`@Lightweight` and `@Background` executors have StrictMode enabled and throw exceptions on violations.
+### Using Executors in tests
+
+`@Lightweight` and `@Background` executors have StrictMode enabled and throw
+exceptions on violations.
 For example trying to do Network IO on either of them will throw.
-With that in mind, when it comes to writing tests, prefer to use the common executors as opposed to creating
-your own thread pools. This will ensure that your code uses the appropriate executor and does not slow down
+With that in mind, when it comes to writing tests, prefer to use the common
+executors as opposed to creating
+your own thread pools. This will ensure that your code uses the appropriate
+executor and does not slow down
 all of Firebase by using the wrong one.
 
-To do that, you should prefer relying on Components to inject the right executor even in tests. This will ensure
-your tests are always using the executor that is actually used in your SDK build.
-If your SDK uses Dagger, see [Dependency Injection]({{ site.baseurl }}{% link best_practices/dependency_injection.md %})
+To do that, you should prefer relying on Components to inject the right executor
+even in tests. This will ensure
+your tests are always using the executor that is actually used in your SDK
+build.
+If your SDK uses Dagger, see [Dependency Injection]({{ site.baseurl }}{% link
+best_practices/dependency_injection.md %})
 and [Dagger's testing guide](https://dagger.dev/dev-guide/testing).
 
-When the above is not an option, you can use `TestOnlyExecutors`, but make sure you're testing your code with
+When the above is not an option, you can use `TestOnlyExecutors`, but make sure
+you're testing your code with
 the same executor that is used in production code:
 
 ```kotlin
@@ -200,7 +214,6 @@ dependencies {
   // or
   androidTestImplementation(project(":integ-testing"))
 }
-
 ```
 
 This gives access to
@@ -210,4 +223,54 @@ TestOnlyExecutors.ui();
 TestOnlyExecutors.background();
 TestOnlyExecutors.blocking();
 TestOnlyExecutors.lite();
+```
+
+### Policy violations in tests
+
+Unit tests require [Robolectric](https://github.com/robolectric/robolectric) to
+function correctly, and this comes with a major drawback; no policy validation.
+
+Robolectric supports `StrictMode`- but does not provided the backing for its
+policy mechanisms to fire on violations. As such, you'll be able to do things
+like using `TestOnlyExecutors.background()` to execute blocking actions; usage
+that would've otherwise crashed in a real application.
+
+Unfortunately, there is no easy way to fix this for unit tests. You can get
+around the issue by moving the tests to an emulator (integration tests)- but
+those can be more expensive than your standard unit tests, so you may want to
+take that into consideration when planning your testing strategy.
+
+### StandardTestDispatcher support
+
+The [kotlin.coroutines.test](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-test/)
+library provides support for a number of different mechanisms in tests. Some of the more
+famous features include:
+
+- [advanceUntilIdle](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/-test-coroutine-scheduler/advance-until-idle.html)
+- [advanceTimeBy](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/-test-coroutine-scheduler/advance-time-by.html)
+- [runCurrent](https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-test/kotlinx.coroutines.test/-test-coroutine-scheduler/run-current.html)
+
+These features are all backed by `StandardTestDispatcher`, or more appropriately,
+the `TestScope` provided in a `runTest` block.
+
+Unfortunately, `TestOnlyExecutors` does not natively bind with `TestScope`.
+Meaning, should you use `TestOnlyExecutors` in your tests- you won't be able to utilize
+the features provided by `TestScope`.
+
+To help fix this, we provide an extension method on `TestScope` called
+`firebaseLibrary`. It facilitates the binding of `TestOnlyExecutors` with the
+current `TestScope`.
+
+For example, here's how you could use this extension method in a test:
+
+```kotlin
+@Test
+fun doesStuff() = runTest {
+    val scope = CoroutineScope(firebaseExecutors.background)
+    scope.launch {
+      // ... does stuff
+    }
+
+    runCurrent()
+  }
 ```
