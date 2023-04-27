@@ -25,16 +25,50 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.TestScope
 
-data class FirebaseTestExecutors(
+/**
+ * Container for type-safe access to the [CoroutineContext] of [TestOnlyExecutors].
+ *
+ * @property ui the instance provided by [TestOnlyExecutors.ui]
+ * @property blocking the instance provided by [TestOnlyExecutors.blocking]
+ * @property background the instance provided by [TestOnlyExecutors.background]
+ * @property lite the instance provided by [TestOnlyExecutors.lite]
+ * @see TestScope.firebaseExecutors
+ */
+data class FirebaseTestExecutorsContainer(
+  val ui: CoroutineContext,
   val blocking: CoroutineContext,
   val background: CoroutineContext,
   val lite: CoroutineContext
 )
 
+/**
+ * Provides a [CoroutineContext] of a given [TestOnlyExecutors] merged with this [TestScope].
+ *
+ * Your standard [TestOnlyExecutors] does not support special mechanisms that other [TestScope] may
+ * provide (such as fast forwarding). To fix this, you must wrap the [CoroutineContext] of a given
+ * [TestOnlyExecutors] with the inherited one in a [TestScope]. This property facilitates that
+ * automatically.
+ *
+ * Now, you can utilize [TestOnlyExecutors] AND special methods provided to [TestScope].
+ *
+ * Example usage:
+ * ```
+ * @Test
+ * fun doesStuff() = runTest {
+ *   val scope = CoroutineScope(firebaseExecutors.background)
+ *   scope.launch {
+ *    // ... does stuff
+ *   }
+ *
+ *   runCurrent()
+ * }
+ * ```
+ */
 @get:RestrictTo(RestrictTo.Scope.TESTS)
-val TestScope.firebaseExecutors: FirebaseTestExecutors
+val TestScope.firebaseExecutors: FirebaseTestExecutorsContainer
   get() =
-    FirebaseTestExecutors(
+    FirebaseTestExecutorsContainer(
+      TestOnlyExecutors.ui().asCoroutineDispatcher() + coroutineContext,
       TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
       TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
       TestOnlyExecutors.lite().asCoroutineDispatcher() + coroutineContext
