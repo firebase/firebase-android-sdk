@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Internal changes to ensure alignment with other SDK releases.
 
 # 20.2.2
 * [changed] Moved Task continuations off the main thread.
