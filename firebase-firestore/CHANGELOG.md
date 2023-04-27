@@ -1,5 +1,4 @@
 # Unreleased
-* [fixed] Fixed stack overflow caused by deeply nested server timestamps (#4702).
 * [feature] Add new cache config APIs to customize SDK's cache setup.
 * [feature] Add LRU garbage collector to SDK's memory cache.
 

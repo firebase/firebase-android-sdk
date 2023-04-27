@@ -1,7 +1,5 @@
 # Unreleased
-* [unchanged] Updated to accommodate the release of the updated
-  [database] Kotlin extensions library.
-
+* [changed] Internal improvements.
 
 # 20.2.0
 * [unchanged] Updated to accommodate the release of the updated

@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Internal improvements.
 
 # 20.1.0
 * [fixed] Fixed an issue that caused an infinite number of retries with no
