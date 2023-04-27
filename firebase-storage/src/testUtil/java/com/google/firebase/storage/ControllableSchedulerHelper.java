@@ -15,7 +15,6 @@
 package com.google.firebase.storage;
 
 import android.annotation.SuppressLint;
-import com.google.android.gms.common.internal.Preconditions;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,9 +63,17 @@ public class ControllableSchedulerHelper extends StorageTaskScheduler {
     if (callbackThread == null) {
       callbackThread = Thread.currentThread().getId();
     }
-    Preconditions.checkState(
-        callbackThread == Thread.currentThread().getId(),
-        "Callback fired on unexpected callback thread.");
+
+    if (callbackThread != Thread.currentThread().getId()) {
+      /*
+       * TODO(b/279463318): This should be removed in the future.
+       * Previously, since we used to guarantee max one live thread at any given time,
+       * this threw an error if the executor ran the callback on a new thread.
+       * Since we no longer guarantee this, there's a chance that the executor may spawn a new thread if no tasks are pending.
+       * The error remains for future debugging needs.
+       */
+      System.err.println("WARNING: Callback fired on unexpected callback thread.");
+    }
   }
 
   @Override

@@ -32,12 +32,6 @@ import org.robolectric.Robolectric;
 public class TestUtil {
 
   static FirebaseApp createApp() {
-    /**
-     * Many tests require you to call the callback on the same thread that was initially
-     * instantiated. With the 5 second keepalive, after 5 seconds, the thread will get killed and
-     * eventually a new one will be created. Therefore causing many of the tests to fail.
-     */
-    StorageTaskScheduler.setCallbackQueueKeepAlive(90, TimeUnit.SECONDS);
     return FirebaseApp.initializeApp(
         ApplicationProvider.getApplicationContext(),
         new FirebaseOptions.Builder()
@@ -115,6 +109,12 @@ public class TestUtil {
             System.out.println("Warning!!! Line " + line + " is different.");
           }
         } else {
+          if (!originalLine.equals(newLine)) {
+            System.err.println("Original:");
+            System.err.println(baselineContents);
+            System.err.println("New:");
+            System.err.println(contents);
+          }
           if (!originalLine.equals(newLine)) {
             System.err.println("Original:");
             System.err.println(baselineContents);
