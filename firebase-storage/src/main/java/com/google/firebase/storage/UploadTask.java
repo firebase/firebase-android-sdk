@@ -343,6 +343,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     // we attempt to recover by calling recoverStatus(true)
     if (inErrorState) {
       if (currentTime > deadLine || !recoverStatus(true)) {
+        System.out.println("Deadline reached!");
         if (serverStateValid()) {
           tryChangeState(INTERNAL_STATE_FAILURE, false);
         }
