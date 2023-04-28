@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Internal changes to ensure alignment with other SDK releases.
 
 # 16.1.2
 * [unchanged] Updated to keep [app_check] SDK versions aligned.
