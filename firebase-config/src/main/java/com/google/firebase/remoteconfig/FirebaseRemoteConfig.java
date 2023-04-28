@@ -48,14 +48,12 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Entry point for the Firebase Remote Config (FRC) API.
+ * Entry point for the Firebase Remote Config API.
  *
  * <p>Callers should first get the singleton object using {@link #getInstance()}, and then call
- * operations on that singleton object. The singleton contains the complete set of FRC parameter
- * values available to your app. The singleton also stores values fetched from the FRC Server until
+ * operations on that singleton object. The singleton contains the complete set of Remote Config parameter
+ * values available to your app. The singleton also stores values fetched from the Remote Config Server until
  * they are made available for use with a call to {@link #activate()}.
- *
- * @author Miraziz Yusupov
  */
 public class FirebaseRemoteConfig {
   // -------------------------------------------------------------------------------
@@ -557,8 +555,8 @@ public class FirebaseRemoteConfig {
    * re-use the same connection to the backend.
    *
    * <p>Note: Real-time Remote Config requires the Firebase Remote Config Realtime API. See the <a
-   * href="https://firebase.google.com/docs/remote-config/get-started#add-real-time-listener">Remote
-   * Config Get Started </a> guide to enable the API.
+   * href="https://firebase.google.com/docs/remote-config/get-started?platform=android#add-real-time-listener">Remote
+   * Config Get Started</a> guide to enable the API.
    *
    * @param configUpdateListener A {@link ConfigUpdateListener} that can be used to respond to
    *     config updates when they're fetched.

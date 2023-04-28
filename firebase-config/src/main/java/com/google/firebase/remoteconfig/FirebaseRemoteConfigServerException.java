@@ -21,8 +21,6 @@ import javax.annotation.Nonnull;
 /**
  * A Firebase Remote Config internal issue caused by an interaction with the Firebase Remote Config
  * server.
- *
- * @author Miraziz Yusupov
  */
 public class FirebaseRemoteConfigServerException extends FirebaseRemoteConfigException {
   private final int httpStatusCode;
