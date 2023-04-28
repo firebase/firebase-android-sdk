@@ -5,6 +5,7 @@
 * [changed] Mark isPersistenceEnabled and getCacheSizeBytes as deprecated from FirebaseFirestoreSettings.
 * [changed] Mark isPersistenceEnabled, getCacheSizeBytes, setPersistenceEnabled and setCacheSizeBytes 
             from FirebaseFirestoreSettings.Builder as deprecated.
+* [changed] Internal changes to ensure alignment with other SDK releases.
 
 # 24.5.0
 * [fixed] Fixed stack overflow caused by deeply nested server timestamps.

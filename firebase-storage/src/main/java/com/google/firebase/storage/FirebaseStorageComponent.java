@@ -18,11 +18,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.annotations.concurrent.Blocking;
+import com.google.firebase.annotations.concurrent.UiThread;
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.inject.Provider;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 class FirebaseStorageComponent {
   /** A map from storage buckets to Firebase Storage instances. */
@@ -35,10 +38,13 @@ class FirebaseStorageComponent {
   FirebaseStorageComponent(
       @NonNull FirebaseApp app,
       @Nullable Provider<InternalAuthProvider> authProvider,
-      @Nullable Provider<InteropAppCheckTokenProvider> appCheckProvider) {
+      @Nullable Provider<InteropAppCheckTokenProvider> appCheckProvider,
+      @NonNull @Blocking Executor blockingExecutor,
+      @NonNull @UiThread Executor uiExecutor) {
     this.app = app;
     this.authProvider = authProvider;
     this.appCheckProvider = appCheckProvider;
+    StorageTaskScheduler.initializeExecutors(blockingExecutor, uiExecutor);
   }
 
   /** Provides instances of Firebase Storage for given bucket names. */
