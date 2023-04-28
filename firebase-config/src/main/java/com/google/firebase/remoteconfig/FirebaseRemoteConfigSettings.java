@@ -19,9 +19,7 @@ import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAU
 
 import androidx.annotation.NonNull;
 
-/**
- * Wraps the settings for {@link FirebaseRemoteConfig} operations.
- */
+/** Wraps the settings for {@link FirebaseRemoteConfig} operations. */
 public class FirebaseRemoteConfigSettings {
   private final long fetchTimeoutInSeconds;
   private final long minimumFetchInterval;

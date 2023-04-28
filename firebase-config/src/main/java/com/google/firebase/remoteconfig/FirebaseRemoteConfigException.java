@@ -77,6 +77,7 @@ public class FirebaseRemoteConfigException extends FirebaseException {
 
   /**
    * Gets the {@link Code} representing the type of exception.
+   *
    * @return A {@link Code} representing the type of exception.
    */
   @NonNull

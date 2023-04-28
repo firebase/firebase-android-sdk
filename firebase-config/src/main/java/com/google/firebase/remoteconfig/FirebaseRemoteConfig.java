@@ -51,9 +51,9 @@ import org.json.JSONObject;
  * Entry point for the Firebase Remote Config API.
  *
  * <p>Callers should first get the singleton object using {@link #getInstance()}, and then call
- * operations on that singleton object. The singleton contains the complete set of Remote Config parameter
- * values available to your app. The singleton also stores values fetched from the Remote Config Server until
- * they are made available for use with a call to {@link #activate()}.
+ * operations on that singleton object. The singleton contains the complete set of Remote Config
+ * parameter values available to your app. The singleton also stores values fetched from the Remote
+ * Config Server until they are made available for use with a call to {@link #activate()}.
  */
 public class FirebaseRemoteConfig {
   // -------------------------------------------------------------------------------
