@@ -18,7 +18,7 @@ package com.google.firebase.sessions
 
 import android.util.Log
 import com.google.firebase.installations.FirebaseInstallationsApi
-import kotlinx.coroutines.CoroutineDispatcher
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -31,10 +31,10 @@ import kotlinx.coroutines.tasks.await
  */
 internal class SessionCoordinator(
   private val firebaseInstallations: FirebaseInstallationsApi,
-  backgroundDispatcher: CoroutineDispatcher,
+  context: CoroutineContext,
   private val eventGDTLogger: EventGDTLoggerInterface,
 ) {
-  private val scope = CoroutineScope(backgroundDispatcher)
+  private val scope = CoroutineScope(context)
 
   fun attemptLoggingSessionEvent(sessionEvent: SessionEvent) =
     scope.launch {
