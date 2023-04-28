@@ -633,14 +633,25 @@ public final class RemoteSerializer {
   }
 
   StructuredAggregationQuery encodeStructuredAggregationQuery(
-      QueryTarget encodedQueryTarget, List<AggregateField> aggregateFields) {
+      QueryTarget encodedQueryTarget,
+      List<AggregateField> aggregateFields,
+      HashMap<String, String> aliasMap) {
     StructuredAggregationQuery.Builder structuredAggregationQuery =
         StructuredAggregationQuery.newBuilder();
     structuredAggregationQuery.setStructuredQuery(encodedQueryTarget.getStructuredQuery());
 
-    // We use a Set here to automatically remove duplicates.
-    Set<StructuredAggregationQuery.Aggregation> aggregations = new HashSet<>();
+    List<StructuredAggregationQuery.Aggregation> aggregations = new ArrayList<>();
+    HashSet<String> uniqueField = new HashSet<>();
+    int aliasID = 1;
     for (AggregateField aggregateField : aggregateFields) {
+      // deduplicate aggregateFields
+      final int count = uniqueField.size();
+      uniqueField.add(aggregateField.getAlias());
+      if (count == uniqueField.size()) {
+        continue;
+      }
+      aliasMap.put("aggregate_" + aliasID, aggregateField.getAlias());
+
       StructuredAggregationQuery.Aggregation.Builder aggregation =
           StructuredAggregationQuery.Aggregation.newBuilder();
       StructuredQuery.FieldReference fieldPath =
@@ -660,7 +671,7 @@ public final class RemoteSerializer {
         throw new RuntimeException("Unsupported aggregation");
       }
 
-      aggregation.setAlias(aggregateField.getAlias());
+      aggregation.setAlias("aggregate_" + aliasID++);
       aggregations.add(aggregation.build());
     }
     structuredAggregationQuery.addAllAggregations(aggregations);

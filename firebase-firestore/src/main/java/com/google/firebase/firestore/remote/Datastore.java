@@ -225,8 +225,9 @@ public class Datastore {
       Query query, List<AggregateField> aggregateFields) {
     com.google.firestore.v1.Target.QueryTarget encodedQueryTarget =
         serializer.encodeQueryTarget(query.toTarget());
+    HashMap<String, String> aliasMap = new HashMap<>();
     StructuredAggregationQuery structuredAggregationQuery =
-        serializer.encodeStructuredAggregationQuery(encodedQueryTarget, aggregateFields);
+        serializer.encodeStructuredAggregationQuery(encodedQueryTarget, aggregateFields, aliasMap);
 
     RunAggregationQueryRequest.Builder request = RunAggregationQueryRequest.newBuilder();
     request.setParent(encodedQueryTarget.getParent());
@@ -246,8 +247,13 @@ public class Datastore {
                 throw task.getException();
               }
 
+              Map<String, Value> result = new HashMap<>();
               RunAggregationQueryResponse response = task.getResult();
-              return response.getResult().getAggregateFieldsMap();
+              for (Map.Entry<String, Value> entry :
+                  response.getResult().getAggregateFieldsMap().entrySet()) {
+                result.put(aliasMap.get(entry.getKey()), entry.getValue());
+              }
+              return result;
             });
   }
 
