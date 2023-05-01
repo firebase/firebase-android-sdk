@@ -105,9 +105,9 @@ public final class FirebaseFirestoreSettings {
      *
      * @return A settings object that uses local persistent storage as specified by the given
      *     <tt>value</tt>.
-     * @deprecated Use {@link
+     * @deprecated Instead, use {@link
      *     FirebaseFirestoreSettings.Builder#setLocalCacheSettings(LocalCacheSettings)} to configure
-     *     SDK cache instead.
+     *     SDK cache.
      */
     @NonNull
     @Deprecated
@@ -131,9 +131,9 @@ public final class FirebaseFirestoreSettings {
      *
      * @return A settings object on which the cache size is configured as specified by the given
      *     {@code value}.
-     * @deprecated Use {@link
+     * @deprecated Instead, use {@link
      *     FirebaseFirestoreSettings.Builder#setLocalCacheSettings(LocalCacheSettings)} to configure
-     *     SDK cache instead.
+     *     SDK cache.
      */
     @NonNull
     @Deprecated
@@ -157,7 +157,7 @@ public final class FirebaseFirestoreSettings {
      *
      * <p>When unspecified, {@link PersistentCacheSettings} will be used by default.
      *
-     * <p>NOTE: Calling this setter and {@code setPersistenceEnabled()} or @{code
+     * <p>NOTE: Calling this setter and {@code setPersistenceEnabled()} or {@code
      * setCacheSizeBytes()} at the same time will throw an exception during SDK initialization.
      * Instead, use the configuration in the {@link PersistentCacheSettings} object to specify the
      * cache size.
@@ -196,8 +196,8 @@ public final class FirebaseFirestoreSettings {
 
     /**
      * @return boolean indicating whether local persistent storage is enabled or not.
-     * @deprecated Build the {@code FirebaseFirestoreSettings} instance to check cache
-     *     configurations.
+     * @deprecated Instead, build the {@link FirebaseFirestoreSettings} instance to check the SDK
+     *     cache configurations.
      */
     @Deprecated
     public boolean isPersistenceEnabled() {
@@ -206,8 +206,8 @@ public final class FirebaseFirestoreSettings {
 
     /**
      * @return cache size for on-disk data.
-     * @deprecated Build the {@code FirebaseFirestoreSettings} instance to check cache
-     *     configurations.
+     * @deprecated Instead, build the {@link FirebaseFirestoreSettings} instance to check the SDK
+     *     cache configurations.
      */
     @Deprecated
     public long getCacheSizeBytes() {
@@ -297,7 +297,8 @@ public final class FirebaseFirestoreSettings {
   /**
    * Returns whether or not to use local persistent storage.
    *
-   * @deprecated Use {@link FirebaseFirestoreSettings#getCacheSettings()} instead.
+   * @deprecated Instead, use {@link FirebaseFirestoreSettings#getCacheSettings()} to check which
+   *     cache is used.
    */
   @Deprecated
   public boolean isPersistenceEnabled() {
@@ -312,7 +313,8 @@ public final class FirebaseFirestoreSettings {
    * Returns the threshold for the cache size above which the SDK will attempt to collect the least
    * recently used documents.
    *
-   * @deprecated Use {@link FirebaseFirestoreSettings#getCacheSettings()} instead.
+   * @deprecated Instead, use {@link FirebaseFirestoreSettings#getCacheSettings()} to check cache
+   *     size.
    */
   @Deprecated
   public long getCacheSizeBytes() {

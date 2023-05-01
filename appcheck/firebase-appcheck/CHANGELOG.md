@@ -1,6 +1,6 @@
 # Unreleased
-* [feature] Added `getLimtedUseAppCheckToken()` for obtaining limited-use tokens
-  for protecting non-Firebase backends.
+* [feature] Added [`getLimtedUseAppCheckToken()`](/docs/reference/android/com/google/firebase/appcheck/FirebaseAppCheck#getLimitedUseAppCheckToken())
+  for obtaining limited-use tokens for protecting non-Firebase backends.
 
 # 16.1.2
 * [unchanged] Updated to keep [app_check] SDK versions aligned.

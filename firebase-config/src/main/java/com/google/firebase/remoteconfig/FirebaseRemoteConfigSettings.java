@@ -19,11 +19,7 @@ import static com.google.firebase.remoteconfig.internal.ConfigFetchHandler.DEFAU
 
 import androidx.annotation.NonNull;
 
-/**
- * Wraps the settings for {@link FirebaseRemoteConfig} operations.
- *
- * @author Lucas Png
- */
+/** Wraps the settings for {@link FirebaseRemoteConfig} operations. */
 public class FirebaseRemoteConfigSettings {
   private final long fetchTimeoutInSeconds;
   private final long minimumFetchInterval;
@@ -37,7 +33,7 @@ public class FirebaseRemoteConfigSettings {
    * Returns the fetch timeout in seconds.
    *
    * <p>The timeout specifies how long the client should wait for a connection to the Firebase
-   * Remote Config servers.
+   * Remote Config server.
    */
   public long getFetchTimeoutInSeconds() {
     return fetchTimeoutInSeconds;
@@ -48,7 +44,7 @@ public class FirebaseRemoteConfigSettings {
     return minimumFetchInterval;
   }
 
-  /** Constructs a builder initialized with the current FirebaseRemoteConfigSettings. */
+  /** Constructs a builder initialized with the current {@link FirebaseRemoteConfigSettings}. */
   @NonNull
   public FirebaseRemoteConfigSettings.Builder toBuilder() {
     FirebaseRemoteConfigSettings.Builder frcBuilder = new FirebaseRemoteConfigSettings.Builder();
@@ -68,7 +64,7 @@ public class FirebaseRemoteConfigSettings {
      * servers in seconds.
      *
      * <p>A fetch call will fail if it takes longer than the specified timeout to connect to or read
-     * from the Remote Config servers.
+     * from the Remote Config server.
      *
      * @param duration Timeout duration in seconds. Should be a non-negative number.
      */
@@ -109,7 +105,7 @@ public class FirebaseRemoteConfigSettings {
      * Returns the fetch timeout in seconds.
      *
      * <p>The timeout specifies how long the client should wait for a connection to the Firebase
-     * Remote Config servers.
+     * Remote Config server.
      */
     public long getFetchTimeoutInSeconds() {
       return fetchTimeoutInSeconds;
