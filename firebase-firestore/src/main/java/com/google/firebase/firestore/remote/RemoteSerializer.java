@@ -641,16 +641,21 @@ public final class RemoteSerializer {
     structuredAggregationQuery.setStructuredQuery(encodedQueryTarget.getStructuredQuery());
 
     List<StructuredAggregationQuery.Aggregation> aggregations = new ArrayList<>();
-    HashSet<String> uniqueField = new HashSet<>();
+
+    HashSet<String> uniqueFields = new HashSet<>();
     int aliasID = 1;
     for (AggregateField aggregateField : aggregateFields) {
-      // deduplicate aggregateFields
-      final int count = uniqueField.size();
-      uniqueField.add(aggregateField.getAlias());
-      if (count == uniqueField.size()) {
+      // The code block below is used to deduplicate the same aggregate fields.
+      // If two aggregateFields are identical, their aliases would be the same.
+      // Therefore, when adding duplicated alias into uniqueFields, the size of uniqueFields
+      // won't increase, and we can skip this aggregateField processing.
+      final int count = uniqueFields.size();
+      uniqueFields.add(aggregateField.getAlias());
+      if (count == uniqueFields.size()) {
         continue;
       }
-      aliasMap.put("aggregate_" + aliasID, aggregateField.getAlias());
+      String serverAlias = "aggregate_" + aliasID++;
+      aliasMap.put(serverAlias, aggregateField.getAlias());
 
       StructuredAggregationQuery.Aggregation.Builder aggregation =
           StructuredAggregationQuery.Aggregation.newBuilder();
@@ -671,7 +676,7 @@ public final class RemoteSerializer {
         throw new RuntimeException("Unsupported aggregation");
       }
 
-      aggregation.setAlias("aggregate_" + aliasID++);
+      aggregation.setAlias(serverAlias);
       aggregations.add(aggregation.build());
     }
     structuredAggregationQuery.addAllAggregations(aggregations);
