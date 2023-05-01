@@ -421,15 +421,15 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   }
 
   private static QueryPurpose parseQueryPurpose(Object value) {
-    if (!(value instanceof Integer)) {
+    if (!(value instanceof String)) {
       throw new IllegalArgumentException("invalid query purpose: " + value);
     }
-    switch ((Integer) value) {
-      case 0:
+    switch ((String) value) {
+      case "TargetPurposeListen":
         return QueryPurpose.LISTEN;
-      case 1:
+      case "TargetPurposeExistenceFilterMismatch":
         return QueryPurpose.EXISTENCE_FILTER_MISMATCH;
-      case 3:
+      case "TargetPurposeLimboResolution":
         return QueryPurpose.LIMBO_RESOLUTION;
       default:
         throw new IllegalArgumentException("unknown query purpose value: " + value);
