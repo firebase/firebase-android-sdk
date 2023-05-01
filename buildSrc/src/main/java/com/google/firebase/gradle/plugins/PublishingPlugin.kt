@@ -230,17 +230,20 @@ abstract class PublishingPlugin : Plugin<Project> {
    *
    * @throws GradleException if no releasing projects are found.
    */
+  // TODO(b/280320915): Remove doLast when Gradle + IDEA fix task configuration avoidance bug
   private fun registerValidateProjectsToPublishTask(
     project: Project,
     releasingProjects: List<Project>
   ) =
     project.tasks.register(VALIDATE_PROJECTS_TO_PUBLISH_TASK) {
-      if (releasingProjects.isEmpty()) {
-        throw GradleException(
-          "No projects to release. " +
-            "Ensure you've specified the projectsToPublish parameter, " +
-            "or have a valid $RELEASE_CONFIG_FILE file at the root directory."
-        )
+      doLast {
+        if (releasingProjects.isEmpty()) {
+          throw GradleException(
+            "No projects to release. " +
+              "Ensure you've specified the projectsToPublish parameter, " +
+              "or have a valid $RELEASE_CONFIG_FILE file at the root directory."
+          )
+        }
       }
     }
 
