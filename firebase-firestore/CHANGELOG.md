@@ -1,7 +1,7 @@
 # Unreleased
 * [fixed] Fixed stack overflow caused by deeply nested server timestamps (#4702).
-* [feature] Add new cache config APIs to customize SDK's cache setup.
-* [feature] Add LRU garbage collector to SDK's memory cache.
+* [feature] Add new [cache config APIs](docs/reference/android/com/google/firebase/firestore/FirebaseFirestoreSettings.Builder#setLocalCacheSettings(com.google.firebase.firestore.LocalCacheSettings)) to customize SDK's cache setup.
+* [feature] Add [LRU garbage collector](docs/reference/android/com/google/firebase/firestore/MemoryLruGcSettings) to SDK's memory cache.
 * [changed] Mark isPersistenceEnabled and getCacheSizeBytes as deprecated from FirebaseFirestoreSettings.
 * [changed] Mark isPersistenceEnabled, getCacheSizeBytes, setPersistenceEnabled and setCacheSizeBytes 
             from FirebaseFirestoreSettings.Builder as deprecated.
