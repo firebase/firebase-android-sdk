@@ -1,6 +1,6 @@
 # Unreleased
 * [fixed] Fixed nullpointer crash when using experiments
-  ([GitHub Issue #4214](//github.com/firebase/firebase-android-sdk/issues/4716))
+  ([GitHub Issue #4716](//github.com/firebase/firebase-android-sdk/issues/4716))
 
 # 20.3.1
 * [fixed] Fixed nullpointer crash
