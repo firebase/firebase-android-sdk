@@ -179,8 +179,24 @@ Executor sequentialExecutor = FirebaseExecutors.newSequentialExecutor(c.get(bgEx
 
 #### Proper Kotlin usage
 
-TODO(this PR) - Go over `CoroutineContext` and when it should be preferred over an
-executor.
+A `CoroutineContext` should be preferred when possible over an explicit `Executor`
+or `CoroutineDispatcher`. You should only use your `Executor` at the highest 
+(or inversely the lowest) level of your implementations. Most classes should not 
+be concerned with the existence of an `Executor`.
+
+Keep in mind that you can combine `CoroutineContext` with other `CoroutineScope` 
+or `CoroutineContext`. And that all `suspend` functions inherent their `coroutineContext`:
+
+```kotlin
+suspend fun createSession(): Session {
+  val context = backgroundDispatcher.coroutineContext + coroutineContext
+  return Session(context)
+}
+```
+
+To learn more, you should give the following Kotlin wiki page a read:
+
+[Coroutine context and dispatchers](https://kotlinlang.org/docs/coroutine-context-and-dispatchers.html#dispatchers-and-threads)
 
 ## Testing
 
