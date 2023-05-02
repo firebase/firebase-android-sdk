@@ -1,7 +1,4 @@
 # Unreleased
-* [feature] Added `getLimtedUseAppCheckToken()` for obtaining limited-use tokens
-  for protecting non-Firebase backends. [#4876](//github.com/firebase/firebase-android-sdk/issues/4876){: .external})
-* [changed] Internal changes to ensure alignment with other SDK releases.
 
 
 # 17.0.0

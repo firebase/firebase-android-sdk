@@ -1,6 +1,4 @@
 # Unreleased
-* [changed] Updated javalite, protoc, protobufjavautil to 3.21.11.
-* [changed] Updated [perfmon] to use Double precision for sampling.
 
 
 # 20.3.2

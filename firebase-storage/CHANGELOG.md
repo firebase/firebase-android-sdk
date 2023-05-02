@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Replaced custom Thread implementation with Firebase Core executors.
 
 # 20.2.0
 * [changed] Internal changes to ensure alignment with other SDK releases.

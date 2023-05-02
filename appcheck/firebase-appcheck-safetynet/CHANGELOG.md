@@ -1,22 +1,13 @@
 # Unreleased
 
 # 16.1.2
-* [deprecated] Added deprecation tagging to the
-  `SafetyNetAppCheckProviderFactory` class.
-  ([GitHub Issue #4686](//github.com/firebase/firebase-android-sdk/issues/4686))
+* [deprecated] Added deprecation tagging to the `SafetyNetAppCheckProviderFactory` class. (#4686)
 
 # 16.1.1
-* [changed] Migrated [app_check] SDKs to use standard Firebase executors.
-  (GitHub [#4431](//github.com/firebase/firebase-android-sdk/issues/4431){: .external}
-  and
-  [#4449](//github.com/firebase/firebase-android-sdk/issues/4449){: .external})
+* [changed] Migrated [app_check] SDKs to use standard Firebase executors. (#4431, #4449)
+* [changed] Integrated the [app_check] SafetyNet SDK with Firebase Components. (#4436)
+* [changed] Moved Task continuations off the main thread. (#4453)
 
-* [changed] Integrated the [app_check] SafetyNet SDK with Firebase
-  components.
-  (GitHub [#4436](//github.com/firebase/firebase-android-sdk/issues/4436){: .external})
-
-* [changed] Moved Task continuations off the main thread.
-  (GitHub [#4453](//github.com/firebase/firebase-android-sdk/issues/4453){: .external})
 # 16.1.0
 * [unchanged] Updated to accommodate the release of the updated
   [app_check] Kotlin extensions library.

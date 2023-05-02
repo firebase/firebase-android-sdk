@@ -1,6 +1,4 @@
 # Unreleased
-* [unchanged] Updated to accommodate the release of the updated
-  [remote_config] Kotlin extensions library.
 
 
 # 21.4.0
