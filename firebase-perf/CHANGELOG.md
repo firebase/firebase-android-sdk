@@ -1,6 +1,16 @@
 # Unreleased
-* [changed] Updated javalite, protoc, protobufjavautil to 3.21.11.
-* [changed] Updated [perfmon] to use Double precision for sampling.
+
+
+# 20.3.2
+* [changed] Updated JavaLite, protoc, protobuf-java-util to 3.21.11.
+
+* [changed] Updated [perfmon] to use double-precision for sampling.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.3.1
 * [changed] Migrated [perfmon] to use standard Firebase executors.
@@ -334,3 +344,4 @@ updates.
 
 # 16.1.0
 * [fixed] Fixed a `SecurityException` crash on certain devices that do not have Google Play Services on them.
+
