@@ -92,7 +92,8 @@ abstract class PomValidator : DefaultTask() {
   companion object {
     val IGNORED_DEPENDENCIES =
       listOf(
-        "javax.inject" // javax.inject doesn't respect SemVer and doesn't update
+        "javax.inject", // javax.inject doesn't respect SemVer and doesn't update
+        "dagger", // dagger doesn't respect Semver
       )
   }
 }
