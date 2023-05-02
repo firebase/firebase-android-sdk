@@ -1,6 +1,16 @@
 # Unreleased
 * [changed] Internal changes to ensure alignment with other SDK releases.
 
+
+# 20.2.1
+* [changed] Internal changes to ensure alignment with other SDK releases.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-database` library. The Kotlin extensions library has no additional
+updates.
+
 # 20.2.0
 * [unchanged] Updated to accommodate the release of the updated
   [database] Kotlin extensions library.

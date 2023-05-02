@@ -1,7 +1,13 @@
 # Unreleased
+
 # 20.2.0
-* [changed] Replaced custom Thread implementation with Firebase Core executors.
 * [changed] Internal changes to ensure alignment with other SDK releases.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-storage` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.1.0
 * [fixed] Fixed an issue that caused an infinite number of retries with no
