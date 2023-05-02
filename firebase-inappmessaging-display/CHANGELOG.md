@@ -1,6 +1,15 @@
 # Unreleased
+
+
+# 20.3.2
 * [fixed] Fixed nullpointer crash when using experiments
-  ([GitHub Issue #4716](//github.com/firebase/firebase-android-sdk/issues/4716))
+  (GitHub [#4716](//github.com/firebase/firebase-android-sdk/issues/4716){: .external})
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging-display` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.3.1
 * [fixed] Fixed nullpointer crash
