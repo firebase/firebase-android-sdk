@@ -53,7 +53,7 @@ import org.json.JSONObject;
  * <p>Callers should first get the singleton object using {@link #getInstance()}, and then call
  * operations on that singleton object. The singleton contains the complete set of Remote Config
  * parameter values available to your app. The singleton also stores values fetched from the Remote
- * Config Server until they are made available for use with a call to {@link #activate()}.
+ * Config server until they are made available for use with a call to {@link #activate()}.
  */
 public class FirebaseRemoteConfig {
   // -------------------------------------------------------------------------------
@@ -104,27 +104,27 @@ public class FirebaseRemoteConfig {
   public static final int VALUE_SOURCE_STATIC = 0;
   /** Indicates that the value returned was retrieved from the defaults set by the client. */
   public static final int VALUE_SOURCE_DEFAULT = 1;
-  /** Indicates that the value returned was retrieved from the Firebase Remote Config Server. */
+  /** Indicates that the value returned was retrieved from the Firebase Remote Config server. */
   public static final int VALUE_SOURCE_REMOTE = 2;
 
   /**
-   * Indicates that the most recent fetch of parameter values from the Firebase Remote Config Server
+   * Indicates that the most recent fetch of parameter values from the Firebase Remote Config server
    * was completed successfully.
    */
   public static final int LAST_FETCH_STATUS_SUCCESS = -1;
   /**
    * Indicates that the FirebaseRemoteConfig singleton object has not yet attempted to fetch
-   * parameter values from the Firebase Remote Config Server.
+   * parameter values from the Firebase Remote Config server.
    */
   public static final int LAST_FETCH_STATUS_NO_FETCH_YET = 0;
   /**
    * Indicates that the most recent attempt to fetch parameter values from the Firebase Remote
-   * Config Server has failed.
+   * Config server has failed.
    */
   public static final int LAST_FETCH_STATUS_FAILURE = 1;
   /**
    * Indicates that the most recent attempt to fetch parameter values from the Firebase Remote
-   * Config Server was throttled.
+   * Config server was throttled.
    */
   public static final int LAST_FETCH_STATUS_THROTTLED = 2;
 
