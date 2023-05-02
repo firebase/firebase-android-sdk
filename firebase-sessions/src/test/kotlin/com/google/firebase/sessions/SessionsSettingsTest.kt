@@ -21,6 +21,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
+import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import kotlin.time.Duration.Companion.minutes
 import org.junit.After
 import org.junit.Test
@@ -32,9 +33,16 @@ class SessionsSettingsTest {
 
   @Test
   fun sessionSettings_fetchDefaults() {
-    val context = FakeFirebaseApp().firebaseApp.applicationContext
+    val firebaseApp = FakeFirebaseApp().firebaseApp
+    val context = firebaseApp.applicationContext
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
 
-    val sessionsSettings = SessionsSettings(context)
+    val sessionsSettings =
+      SessionsSettings(
+        context,
+        firebaseInstallations,
+        SessionEvents.getApplicationInfo(firebaseApp)
+      )
     assertThat(sessionsSettings.sessionsEnabled).isTrue()
     assertThat(sessionsSettings.samplingRate).isEqualTo(1.0)
     assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(30.minutes)
@@ -46,9 +54,16 @@ class SessionsSettingsTest {
     metadata.putBoolean("firebase_sessions_enabled", false)
     metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
     metadata.putInt("firebase_sessions_sessions_restart_timeout", 180)
-    val context = FakeFirebaseApp(metadata).firebaseApp.applicationContext
+    val firebaseApp = FakeFirebaseApp(metadata).firebaseApp
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
+    val context = firebaseApp.applicationContext
 
-    val sessionsSettings = SessionsSettings(context)
+    val sessionsSettings =
+      SessionsSettings(
+        context,
+        firebaseInstallations,
+        SessionEvents.getApplicationInfo(firebaseApp)
+      )
     assertThat(sessionsSettings.sessionsEnabled).isFalse()
     assertThat(sessionsSettings.samplingRate).isEqualTo(0.5)
     assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(3.minutes)
@@ -59,9 +74,16 @@ class SessionsSettingsTest {
     val metadata = Bundle()
     metadata.putBoolean("firebase_sessions_enabled", false)
     metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
-    val context = FakeFirebaseApp(metadata).firebaseApp.applicationContext
+    val firebaseApp = FakeFirebaseApp(metadata).firebaseApp
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
+    val context = firebaseApp.applicationContext
 
-    val sessionsSettings = SessionsSettings(context)
+    val sessionsSettings =
+      SessionsSettings(
+        context,
+        firebaseInstallations,
+        SessionEvents.getApplicationInfo(firebaseApp)
+      )
     assertThat(sessionsSettings.sessionsEnabled).isFalse()
     assertThat(sessionsSettings.samplingRate).isEqualTo(0.5)
     assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(30.minutes)

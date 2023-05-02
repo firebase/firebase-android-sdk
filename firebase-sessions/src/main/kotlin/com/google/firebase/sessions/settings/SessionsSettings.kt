@@ -17,6 +17,8 @@
 package com.google.firebase.sessions.settings
 
 import android.content.Context
+import com.google.firebase.installations.FirebaseInstallationsApi
+import com.google.firebase.sessions.ApplicationInfo
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -25,10 +27,14 @@ import kotlin.time.Duration.Companion.minutes
  *
  * @hide
  */
-internal class SessionsSettings(val context: Context) {
+internal class SessionsSettings(
+  val context: Context,
+  val firebaseInstallationsApi: FirebaseInstallationsApi,
+  val appInfo: ApplicationInfo
+) {
 
   private var localOverrideSettings = LocalOverrideSettings(context)
-  private var remoteSettings = RemoteSettings(context)
+  private var remoteSettings = RemoteSettings(context, firebaseInstallationsApi, appInfo)
 
   // Order of preference for all the configs below:
   // 1. Honor local overrides

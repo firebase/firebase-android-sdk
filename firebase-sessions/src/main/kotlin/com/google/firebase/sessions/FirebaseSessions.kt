@@ -35,7 +35,9 @@ internal constructor(
   backgroundDispatcher: CoroutineDispatcher,
   transportFactoryProvider: Provider<TransportFactory>,
 ) {
-  private val sessionSettings = SessionsSettings(firebaseApp.applicationContext)
+  private val applicationInfo = SessionEvents.getApplicationInfo(firebaseApp)
+  private val sessionSettings =
+    SessionsSettings(firebaseApp.applicationContext, firebaseInstallations, applicationInfo)
   private val sessionGenerator = SessionGenerator(collectEvents = shouldCollectEvents())
   private val eventGDTLogger = EventGDTLogger(transportFactoryProvider)
   private val sessionCoordinator =
@@ -43,6 +45,7 @@ internal constructor(
   private val timeProvider: TimeProvider = Time()
 
   init {
+    sessionSettings.updateSettings()
     val sessionInitiator =
       SessionInitiator(timeProvider, this::initiateSessionStart, sessionSettings)
     val appContext = firebaseApp.applicationContext.applicationContext

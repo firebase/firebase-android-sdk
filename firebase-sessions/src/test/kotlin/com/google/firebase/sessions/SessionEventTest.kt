@@ -21,6 +21,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
+import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.FakeTimeProvider
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_DATA_COLLECTION_STATUS
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_DATA
@@ -36,11 +37,16 @@ class SessionEventTest {
   @Test
   fun sessionStart_populatesSessionDetailsCorrectly() {
     val fakeFirebaseApp = FakeFirebaseApp()
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
     val sessionEvent =
       SessionEvents.startSession(
         fakeFirebaseApp.firebaseApp,
         TEST_SESSION_DETAILS,
-        SessionsSettings(fakeFirebaseApp.firebaseApp.applicationContext),
+        SessionsSettings(
+          fakeFirebaseApp.firebaseApp.applicationContext,
+          firebaseInstallations,
+          SessionEvents.getApplicationInfo(fakeFirebaseApp.firebaseApp)
+        ),
         FakeTimeProvider(),
       )
 
@@ -52,12 +58,17 @@ class SessionEventTest {
     val metadata = Bundle()
     metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
     val fakeFirebaseApp = FakeFirebaseApp(metadata)
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
 
     val sessionEvent =
       SessionEvents.startSession(
         fakeFirebaseApp.firebaseApp,
         TEST_SESSION_DETAILS,
-        SessionsSettings(fakeFirebaseApp.firebaseApp.applicationContext),
+        SessionsSettings(
+          fakeFirebaseApp.firebaseApp.applicationContext,
+          firebaseInstallations,
+          SessionEvents.getApplicationInfo(fakeFirebaseApp.firebaseApp)
+        ),
         FakeTimeProvider(),
       )
 

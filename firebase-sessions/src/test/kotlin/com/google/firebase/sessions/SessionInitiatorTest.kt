@@ -20,6 +20,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
+import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.FakeTimeProvider
 import kotlin.time.Duration.Companion.minutes
 import org.junit.After
@@ -41,8 +42,15 @@ class SessionInitiatorTest {
   @Test
   fun coldStart_initiatesSession() {
     val sessionStartCounter = SessionStartCounter()
-    val context = FakeFirebaseApp().firebaseApp.applicationContext
-    val settings = SessionsSettings(context)
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
+    val firebaseApp = FakeFirebaseApp().firebaseApp
+    val context = firebaseApp.applicationContext
+    val settings =
+      SessionsSettings(
+        context,
+        firebaseInstallations,
+        SessionEvents.getApplicationInfo(firebaseApp)
+      )
 
     // Simulate a cold start by simply constructing the SessionInitiator object
     SessionInitiator(FakeTimeProvider(), sessionStartCounter::initiateSessionStart, settings)
@@ -54,8 +62,15 @@ class SessionInitiatorTest {
   fun appForegrounded_largeInterval_initiatesSession() {
     val fakeTimeProvider = FakeTimeProvider()
     val sessionStartCounter = SessionStartCounter()
-    val context = FakeFirebaseApp().firebaseApp.applicationContext
-    val settings = SessionsSettings(context)
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
+    val firebaseApp = FakeFirebaseApp().firebaseApp
+    val context = firebaseApp.applicationContext
+    val settings =
+      SessionsSettings(
+        context,
+        firebaseInstallations,
+        SessionEvents.getApplicationInfo(firebaseApp)
+      )
 
     val sessionInitiator =
       SessionInitiator(fakeTimeProvider, sessionStartCounter::initiateSessionStart, settings)
@@ -75,8 +90,15 @@ class SessionInitiatorTest {
   fun appForegrounded_smallInterval_doesNotInitiatesSession() {
     val fakeTimeProvider = FakeTimeProvider()
     val sessionStartCounter = SessionStartCounter()
-    val context = FakeFirebaseApp().firebaseApp.applicationContext
-    val settings = SessionsSettings(context)
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
+    val firebaseApp = FakeFirebaseApp().firebaseApp
+    val context = firebaseApp.applicationContext
+    val settings =
+      SessionsSettings(
+        context,
+        firebaseInstallations,
+        SessionEvents.getApplicationInfo(firebaseApp)
+      )
 
     val sessionInitiator =
       SessionInitiator(fakeTimeProvider, sessionStartCounter::initiateSessionStart, settings)
@@ -96,8 +118,15 @@ class SessionInitiatorTest {
   fun appForegrounded_background_foreground_largeIntervals_initiatesSessions() {
     val fakeTimeProvider = FakeTimeProvider()
     val sessionStartCounter = SessionStartCounter()
-    val context = FakeFirebaseApp().firebaseApp.applicationContext
-    val settings = SessionsSettings(context)
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
+    val firebaseApp = FakeFirebaseApp().firebaseApp
+    val context = firebaseApp.applicationContext
+    val settings =
+      SessionsSettings(
+        context,
+        firebaseInstallations,
+        SessionEvents.getApplicationInfo(firebaseApp)
+      )
 
     val sessionInitiator =
       SessionInitiator(fakeTimeProvider, sessionStartCounter::initiateSessionStart, settings)
@@ -120,8 +149,15 @@ class SessionInitiatorTest {
   fun appForegrounded_background_foreground_smallIntervals_doesNotInitiateNewSessions() {
     val fakeTimeProvider = FakeTimeProvider()
     val sessionStartCounter = SessionStartCounter()
-    val context = FakeFirebaseApp().firebaseApp.applicationContext
-    val settings = SessionsSettings(context)
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
+    val firebaseApp = FakeFirebaseApp().firebaseApp
+    val context = firebaseApp.applicationContext
+    val settings =
+      SessionsSettings(
+        context,
+        firebaseInstallations,
+        SessionEvents.getApplicationInfo(firebaseApp)
+      )
 
     val sessionInitiator =
       SessionInitiator(fakeTimeProvider, sessionStartCounter::initiateSessionStart, settings)
