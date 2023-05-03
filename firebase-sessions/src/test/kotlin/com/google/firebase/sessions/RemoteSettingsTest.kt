@@ -17,7 +17,7 @@
 package com.google.firebase.sessions
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth
+import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.settings.RemoteSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
@@ -47,16 +47,16 @@ class RemoteSettingsTest {
         fakeFetcher,
         SESSION_TEST_CONFIGS_NAME
       )
-    Truth.assertThat(remoteSettings.sessionEnabled).isNull()
-    Truth.assertThat(remoteSettings.samplingRate).isNull()
-    Truth.assertThat(remoteSettings.sessionRestartTimeout).isNull()
+    assertThat(remoteSettings.sessionEnabled).isNull()
+    assertThat(remoteSettings.samplingRate).isNull()
+    assertThat(remoteSettings.sessionRestartTimeout).isNull()
 
     fakeFetcher.responseJSONObject = JSONObject(validResponse)
     remoteSettings.updateSettings()
 
-    Truth.assertThat(remoteSettings.sessionEnabled).isFalse()
-    Truth.assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
-    Truth.assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
+    assertThat(remoteSettings.sessionEnabled).isFalse()
+    assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
+    assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
 
     remoteSettings.clearCachedSettings()
   }
@@ -76,18 +76,18 @@ class RemoteSettingsTest {
         fakeFetcher,
         SESSION_TEST_CONFIGS_NAME
       )
-    Truth.assertThat(remoteSettings.sessionEnabled).isNull()
-    Truth.assertThat(remoteSettings.samplingRate).isNull()
-    Truth.assertThat(remoteSettings.sessionRestartTimeout).isNull()
+    assertThat(remoteSettings.sessionEnabled).isNull()
+    assertThat(remoteSettings.samplingRate).isNull()
+    assertThat(remoteSettings.sessionRestartTimeout).isNull()
 
     val fetchedResponse = JSONObject(validResponse)
     fetchedResponse.getJSONObject("app_quality").remove("sessions_enabled")
     fakeFetcher.responseJSONObject = fetchedResponse
     remoteSettings.updateSettings()
 
-    Truth.assertThat(remoteSettings.sessionEnabled).isNull()
-    Truth.assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
-    Truth.assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
+    assertThat(remoteSettings.sessionEnabled).isNull()
+    assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
+    assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
 
     remoteSettings.clearCachedSettings()
   }
@@ -112,9 +112,9 @@ class RemoteSettingsTest {
     fakeFetcher.responseJSONObject = fetchedResponse
     remoteSettings.updateSettings()
 
-    Truth.assertThat(remoteSettings.sessionEnabled).isFalse()
-    Truth.assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
-    Truth.assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
+    assertThat(remoteSettings.sessionEnabled).isFalse()
+    assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
+    assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
 
     fetchedResponse.getJSONObject("app_quality").put("sessions_enabled", true)
     fetchedResponse.getJSONObject("app_quality").put("sampling_rate", 0.25)
@@ -126,9 +126,9 @@ class RemoteSettingsTest {
     fakeFetcher.responseJSONObject = fetchedResponse
     remoteSettings.updateSettings()
 
-    Truth.assertThat(remoteSettings.sessionEnabled).isTrue()
-    Truth.assertThat(remoteSettings.samplingRate).isEqualTo(0.25)
-    Truth.assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(20.minutes)
+    assertThat(remoteSettings.sessionEnabled).isTrue()
+    assertThat(remoteSettings.samplingRate).isEqualTo(0.25)
+    assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(20.minutes)
 
     remoteSettings.clearCachedSettings()
   }
@@ -153,9 +153,9 @@ class RemoteSettingsTest {
     fakeFetcher.responseJSONObject = fetchedResponse
     remoteSettings.updateSettings()
 
-    Truth.assertThat(remoteSettings.sessionEnabled).isFalse()
-    Truth.assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
-    Truth.assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
+    assertThat(remoteSettings.sessionEnabled).isFalse()
+    assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
+    assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
 
     fetchedResponse.remove("app_quality")
 
@@ -165,9 +165,9 @@ class RemoteSettingsTest {
     fakeFetcher.responseJSONObject = fetchedResponse
     remoteSettings.updateSettings()
 
-    Truth.assertThat(remoteSettings.sessionEnabled).isFalse()
-    Truth.assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
-    Truth.assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
+    assertThat(remoteSettings.sessionEnabled).isFalse()
+    assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
+    assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
 
     remoteSettings.clearCachedSettings()
   }

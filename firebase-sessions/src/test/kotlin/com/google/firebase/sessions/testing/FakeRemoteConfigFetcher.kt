@@ -19,8 +19,8 @@ package com.google.firebase.sessions.testing
 import com.google.firebase.sessions.settings.CrashlyticsSettingsFetcher
 import org.json.JSONObject
 
-class FakeRemoteConfigFetcher : CrashlyticsSettingsFetcher {
-  var responseJSONObject: JSONObject = JSONObject()
+internal class FakeRemoteConfigFetcher(var responseJSONObject: JSONObject = JSONObject()) :
+  CrashlyticsSettingsFetcher {
   override suspend fun doConfigFetch(
     headerOptions: Map<String, String>,
     onSuccess: suspend (JSONObject) -> Unit,
