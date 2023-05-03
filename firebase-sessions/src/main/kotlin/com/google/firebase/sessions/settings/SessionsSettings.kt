@@ -30,12 +30,11 @@ import kotlin.time.Duration.Companion.minutes
 internal class SessionsSettings(
   val context: Context,
   val firebaseInstallationsApi: FirebaseInstallationsApi,
-  val appInfo: ApplicationInfo
+  val appInfo: ApplicationInfo,
+  private val localOverrideSettings: LocalOverrideSettings = LocalOverrideSettings(context),
+  private val remoteSettings: RemoteSettings =
+    RemoteSettings(context, firebaseInstallationsApi, appInfo)
 ) {
-
-  private var localOverrideSettings = LocalOverrideSettings(context)
-  private var remoteSettings = RemoteSettings(context, firebaseInstallationsApi, appInfo)
-
   // Order of preference for all the configs below:
   // 1. Honor local overrides
   // 2. If no local overrides, use remote config
