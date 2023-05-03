@@ -21,6 +21,7 @@ import android.util.Log
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
@@ -39,7 +40,7 @@ internal class RemoteSettings(
 ) : SettingsProvider {
   private val Context.dataStore by preferencesDataStore(name = dataStoreName)
   private val settingsCache = SettingsCache(context.dataStore)
-  private var fetchInProgress = false
+  private var fetchInProgress = AtomicBoolean(false)
 
   override val sessionEnabled: Boolean?
     get() {
@@ -74,7 +75,7 @@ internal class RemoteSettings(
 
   suspend private fun fetchConfigs() {
     // Check if a fetch is in progress. If yes, return
-    if (fetchInProgress) {
+    if (fetchInProgress.get()) {
       return
     }
 
@@ -83,74 +84,76 @@ internal class RemoteSettings(
       return
     }
 
-    fetchInProgress = true
+    fetchInProgress.set(true)
 
     // Get the installations ID before making a remote config fetch
     var installationId = firebaseInstallationsApi.id.await()
     if (installationId == null) {
-      fetchInProgress = false
-    } else {
-      val options =
-        mapOf(
-          "X-Crashlytics-Installation-ID" to installationId as String,
-          "X-Crashlytics-Device-Model" to appInfo.deviceModel,
-          // TODO(visum) Add OS version parameters
-          // "X-Crashlytics-OS-Build-Version" to "",
-          // "X-Crashlytics-OS-Display-Version" to "",
-          "X-Crashlytics-API-Client-Version" to appInfo.sessionSdkVersion
-        )
-
-      configsFetcher.doConfigFetch(
-        headerOptions = options,
-        onSuccess = {
-          var sessionsEnabled: Boolean? = null
-          var sessionSamplingRate: Double? = null
-          var sessionTimeoutSeconds: Int? = null
-          var cacheDuration: Int? = null
-          if (it.has("app_quality")) {
-            val aqsSettings = it.get("app_quality") as JSONObject
-            try {
-              if (aqsSettings.has("sessions_enabled")) {
-                sessionsEnabled = aqsSettings.get("sessions_enabled") as Boolean?
-              }
-
-              if (aqsSettings.has("sampling_rate")) {
-                sessionSamplingRate = aqsSettings.get("sampling_rate") as Double?
-              }
-
-              if (aqsSettings.has("session_timeout_seconds")) {
-                sessionTimeoutSeconds = aqsSettings.get("session_timeout_seconds") as Int?
-              }
-
-              if (aqsSettings.has("cache_duration")) {
-                cacheDuration = aqsSettings.get("cache_duration") as Int?
-              }
-            } catch (exception: JSONException) {
-              Log.e(TAG, "Error parsing the configs remotely fetched: ", exception)
-            }
-          }
-
-          sessionsEnabled?.let { settingsCache.updateSettingsEnabled(sessionsEnabled) }
-
-          sessionTimeoutSeconds?.let {
-            settingsCache.updateSessionRestartTimeout(sessionTimeoutSeconds)
-          }
-
-          sessionSamplingRate?.let { settingsCache.updateSamplingRate(sessionSamplingRate) }
-
-          cacheDuration?.let { settingsCache.updateSessionCacheDuration(cacheDuration) }
-            ?: let { settingsCache.updateSessionCacheDuration(86400) }
-
-          settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
-          fetchInProgress = false
-        },
-        onFailure = {
-          // Network request failed here.
-          Log.e(TAG, "Error failing to fetch the remote configs")
-          fetchInProgress = false
-        }
-      )
+      fetchInProgress.set(false)
+      return
     }
+
+    // All the required fields are available, start making a network request.
+    val options =
+      mapOf(
+        "X-Crashlytics-Installation-ID" to installationId as String,
+        "X-Crashlytics-Device-Model" to appInfo.deviceModel,
+        // TODO(visum) Add OS version parameters
+        // "X-Crashlytics-OS-Build-Version" to "",
+        // "X-Crashlytics-OS-Display-Version" to "",
+        "X-Crashlytics-API-Client-Version" to appInfo.sessionSdkVersion
+      )
+
+    configsFetcher.doConfigFetch(
+      headerOptions = options,
+      onSuccess = {
+        var sessionsEnabled: Boolean? = null
+        var sessionSamplingRate: Double? = null
+        var sessionTimeoutSeconds: Int? = null
+        var cacheDuration: Int? = null
+        if (it.has("app_quality")) {
+          val aqsSettings = it.get("app_quality") as JSONObject
+          try {
+            if (aqsSettings.has("sessions_enabled")) {
+              sessionsEnabled = aqsSettings.get("sessions_enabled") as Boolean?
+            }
+
+            if (aqsSettings.has("sampling_rate")) {
+              sessionSamplingRate = aqsSettings.get("sampling_rate") as Double?
+            }
+
+            if (aqsSettings.has("session_timeout_seconds")) {
+              sessionTimeoutSeconds = aqsSettings.get("session_timeout_seconds") as Int?
+            }
+
+            if (aqsSettings.has("cache_duration")) {
+              cacheDuration = aqsSettings.get("cache_duration") as Int?
+            }
+          } catch (exception: JSONException) {
+            Log.e(TAG, "Error parsing the configs remotely fetched: ", exception)
+          }
+        }
+
+        sessionsEnabled?.let { settingsCache.updateSettingsEnabled(sessionsEnabled) }
+
+        sessionTimeoutSeconds?.let {
+          settingsCache.updateSessionRestartTimeout(sessionTimeoutSeconds)
+        }
+
+        sessionSamplingRate?.let { settingsCache.updateSamplingRate(sessionSamplingRate) }
+
+        cacheDuration?.let { settingsCache.updateSessionCacheDuration(cacheDuration) }
+          ?: let { settingsCache.updateSessionCacheDuration(86400) }
+
+        settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
+        fetchInProgress.set(false)
+      },
+      onFailure = {
+        // Network request failed here.
+        Log.e(TAG, "Error failing to fetch the remote configs")
+        fetchInProgress.set(false)
+      }
+    )
   }
 
   companion object {
