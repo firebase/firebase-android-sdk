@@ -61,11 +61,7 @@ internal class RemoteSettings(
     }
 
   override fun updateSettings() {
-    runBlocking {
-      launch(Dispatchers.Default) {
-        fetchConfigs()
-      }
-    }
+    runBlocking { launch(Dispatchers.Default) { fetchConfigs() } }
   }
 
   override fun isSettingsStale(): Boolean {
