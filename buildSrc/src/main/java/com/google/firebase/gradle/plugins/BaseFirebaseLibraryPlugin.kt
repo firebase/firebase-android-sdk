@@ -76,6 +76,17 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
     return apiInfo
   }
 
+  protected fun getTransformToKotlin(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+    val currentJarFile = project.file("semver/current-version/classes.jar").absolutePath
+    project.tasks.register<KotlinTransform>("kotlinTransform") {
+      groupId.set(firebaseLibrary.groupId.get())
+      artifactId.set(firebaseLibrary.artifactId.get())
+      projectPath.set(project.projectDir.absolutePath)
+      currentJar.set(currentJarFile)
+      dependsOn("extractCurrentClasses")
+    }
+  }
+
   protected fun getIsPomValidTask(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
     project.tasks.register<PomValidator>("isPomDependencyValid") {
       pomFile.set(project.layout.buildDirectory.file("publications/mavenAar/pom-default.xml"))
