@@ -1,0 +1,32 @@
+{
+    "name": "m132_test",
+    "libraries": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api:ktx",
+        ":firebase-appdistribution-api",
+        ":firebase-config",
+        ":firebase-config:ktx",
+        ":firebase-crashlytics-ndk",
+        ":firebase-crashlytics:ktx",
+        ":firebase-crashlytics",
+        ":firebase-database",
+        ":firebase-database:ktx",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-functions",
+        ":firebase-functions:ktx",
+        ":firebase-inappmessaging:ktx",
+        ":firebase-inappmessaging-display:ktx",
+        ":firebase-inappmessaging-display",
+        ":firebase-inappmessaging",
+        ":firebase-perf:ktx",
+        ":firebase-perf",
+        ":firebase-storage",
+        ":firebase-storage:ktx",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck:ktx",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":appcheck:firebase-appcheck-debug"
+    ]
+}
