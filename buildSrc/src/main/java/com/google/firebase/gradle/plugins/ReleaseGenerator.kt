@@ -120,12 +120,6 @@ abstract class ReleaseGenerator : DefaultTask() {
       .associateWith { getDirChanges(repo, branchRef, headRef, it) }
       .toMap()
 
-  private fun parseSubProjects(rootDir: File) =
-    File(rootDir, "subprojects.cfg")
-      .readLines()
-      .filterNot { it.startsWith("#") || it.isEmpty() }
-      .toSet()
-
   @Throws(GitAPIException::class)
   private fun getObjectRefForBranchName(repo: Git, branchName: String) =
     repo
@@ -183,10 +177,10 @@ abstract class ReleaseGenerator : DefaultTask() {
       .log()
       .addPath(directory)
       .addRange(previousReleaseRef, currentReleaseRef)
-      .setMaxCount(1)
+      .setMaxCount(10)
       .call()
-      .iterator()
-      .hasNext()
+      .filter { !it.fullMessage.contains("NO_RELEASE_CHANGE") }
+      .isNotEmpty()
 
   private fun getDirChanges(
     repo: Git,
