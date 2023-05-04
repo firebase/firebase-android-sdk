@@ -15,6 +15,7 @@
 package com.google.firebase.firestore;
 
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.firebase.firestore.remote.TestingHooksUtil.captureExistenceFilterMismatches;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
@@ -37,7 +38,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.common.collect.Lists;
 import com.google.firebase.firestore.Query.Direction;
-import com.google.firebase.firestore.remote.ExistenceFilterMismatchListener;
+import com.google.firebase.firestore.remote.TestingHooksUtil.ExistenceFilterMismatchInfo;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1079,25 +1081,14 @@ public class QueryTest {
 
     // Resume the query and save the resulting snapshot for verification. Use some internal testing
     // hooks to "capture" the existence filter mismatches to verify them.
-    ExistenceFilterMismatchListener existenceFilterMismatchListener =
-        new ExistenceFilterMismatchListener();
-    QuerySnapshot snapshot2;
-    ExistenceFilterMismatchListener.ExistenceFilterMismatchInfo existenceFilterMismatchInfo;
-    try {
-      existenceFilterMismatchListener.startListening();
-      snapshot2 = waitFor(collection.get());
-      // TODO(b/270731363): Remove the "if" condition below once the Firestore Emulator is fixed
-      //  to send an existence filter.
-      if (isRunningAgainstEmulator()) {
-        existenceFilterMismatchInfo = null;
-      } else {
-        existenceFilterMismatchInfo =
-            existenceFilterMismatchListener.getOrWaitForExistenceFilterMismatch(
-                /*timeoutMillis=*/ 5000);
-      }
-    } finally {
-      existenceFilterMismatchListener.stopListening();
-    }
+    AtomicReference<QuerySnapshot> snapshot2Ref = new AtomicReference<>();
+    ArrayList<ExistenceFilterMismatchInfo> existenceFilterMismatches =
+        captureExistenceFilterMismatches(
+            () -> {
+              QuerySnapshot querySnapshot = waitFor(collection.get());
+              snapshot2Ref.set(querySnapshot);
+            });
+    QuerySnapshot snapshot2 = snapshot2Ref.get();
 
     // Verify that the snapshot from the resumed query contains the expected documents; that is,
     // that it contains the 50 documents that were _not_ deleted.
@@ -1131,9 +1122,10 @@ public class QueryTest {
 
     // Verify that Watch sent an existence filter with the correct counts when the query was
     // resumed.
-    assertWithMessage("Watch should have sent an existence filter")
-        .that(existenceFilterMismatchInfo)
-        .isNotNull();
+    assertWithMessage("Watch should have sent exactly 1 existence filter")
+        .that(existenceFilterMismatches)
+        .hasSize(1);
+    ExistenceFilterMismatchInfo existenceFilterMismatchInfo = existenceFilterMismatches.get(0);
     assertWithMessage("localCacheCount")
         .that(existenceFilterMismatchInfo.localCacheCount())
         .isEqualTo(100);
