@@ -225,7 +225,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
                     DefaultAppCheckTokenResult.constructFromAppCheckToken(
                         appCheckTokenTask.getResult()));
               }
-              // If the token exchange failed, return a dummy oken for integrators to attach
+              // If the token exchange failed, return a dummy token for integrators to attach
               // in their headers.
               return Tasks.forResult(
                   DefaultAppCheckTokenResult.constructFromError(
