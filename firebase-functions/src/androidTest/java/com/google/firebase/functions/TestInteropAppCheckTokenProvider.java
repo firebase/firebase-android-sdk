@@ -66,11 +66,11 @@ public class TestInteropAppCheckTokenProvider implements InteropAppCheckTokenPro
     return Tasks.forResult(testToken);
   }
 
-    @NonNull
-    @Override
-    public Task<AppCheckTokenResult> getLimitedUseToken() {
-        return Tasks.forResult(testToken);
-    }
+  @NonNull
+  @Override
+  public Task<AppCheckTokenResult> getLimitedUseToken() {
+    return Tasks.forResult(testToken);
+  }
 
   @Override
   public void addAppCheckTokenListener(@NonNull AppCheckTokenListener listener) {}
