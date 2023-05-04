@@ -1,5 +1,5 @@
 # Unreleased
-
+* [unchanged] Update to internal interop API
 
 # 17.0.0
 * [feature] Added [`getLimtedUseAppCheckToken()`](/docs/reference/android/com/google/firebase/appcheck/FirebaseAppCheck#getLimitedUseAppCheckToken())
