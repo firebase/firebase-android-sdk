@@ -37,8 +37,11 @@ internal data class AndroidApplicationInfo(
   /** The package name of the application/bundle name. */
   val packageName: String,
 
-  /** The version of the application. */
+  /** The display version of the application. */
   val versionName: String,
+
+  /** The build version of the application. */
+  val buildVersion: String,
 )
 
 internal data class ApplicationInfo(

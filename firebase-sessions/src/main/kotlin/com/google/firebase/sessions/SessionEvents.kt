@@ -134,7 +134,11 @@ internal object SessionEvents {
       osDisplayVersion = Build.VERSION.RELEASE,
       logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
       androidAppInfo =
-        AndroidApplicationInfo(packageName = packageName, versionName = packageInfo.versionName)
+        AndroidApplicationInfo(
+          packageName = packageName,
+          versionName = packageInfo.versionName,
+          buildVersion = packageInfo.versionCode.toString()
+        )
     )
   }
 }

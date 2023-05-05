@@ -43,7 +43,8 @@ class ApplicationInfoTest {
           logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
           AndroidApplicationInfo(
             packageName = ApplicationProvider.getApplicationContext<Context>().packageName,
-            versionName = FakeFirebaseApp.MOCK_APP_VERSION
+            versionName = FakeFirebaseApp.MOCK_APP_VERSION,
+            buildVersion = FakeFirebaseApp.MOCK_APP_BUILD_VERSION,
           )
         )
       )
