@@ -51,6 +51,9 @@ internal data class ApplicationInfo(
   /** The SDK version of the sessions library. */
   val sessionSdkVersion: String,
 
+  /** The display version of the Android operating system. */
+  val osDisplayVersion: String,
+
   /** The logging environment for the events. */
   val logEnvironment: LogEnvironment,
 

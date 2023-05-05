@@ -81,6 +81,7 @@ internal object SessionEvents {
             ctx.add(FieldDescriptor.of("app_id"), applicationInfo.appId)
             ctx.add(FieldDescriptor.of("device_model"), applicationInfo.deviceModel)
             ctx.add(FieldDescriptor.of("session_sdk_version"), applicationInfo.sessionSdkVersion)
+            ctx.add(FieldDescriptor.of("os_version"), applicationInfo.osDisplayVersion)
             ctx.add(FieldDescriptor.of("log_environment"), applicationInfo.logEnvironment)
             ctx.add(FieldDescriptor.of("android_app_info"), applicationInfo.androidAppInfo)
           }
@@ -130,6 +131,7 @@ internal object SessionEvents {
       appId = firebaseApp.options.applicationId,
       deviceModel = Build.MODEL,
       sessionSdkVersion = BuildConfig.VERSION_NAME,
+      osDisplayVersion = Build.VERSION.RELEASE,
       logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
       androidAppInfo =
         AndroidApplicationInfo(packageName = packageName, versionName = packageInfo.versionName)
