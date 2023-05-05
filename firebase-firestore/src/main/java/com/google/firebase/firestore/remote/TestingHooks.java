@@ -22,7 +22,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.auto.value.AutoValue;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.util.Executors;
 import com.google.firestore.v1.BloomFilter;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
@@ -52,7 +51,7 @@ final class TestingHooks {
   }
 
   /**
-   * Asynchronously notifies all registered {@link ExistenceFilterMismatchListener}` listeners
+   * Synchronously notifies all registered {@link ExistenceFilterMismatchListener}` listeners
    * registered via {@link #addExistenceFilterMismatchListener}.
    *
    * @param info Information about the existence filter mismatch to deliver to the listeners.
@@ -60,13 +59,10 @@ final class TestingHooks {
   void notifyOnExistenceFilterMismatch(@NonNull ExistenceFilterMismatchInfo info) {
     for (AtomicReference<ExistenceFilterMismatchListener> listenerRef :
         existenceFilterMismatchListeners) {
-      Executors.BACKGROUND_EXECUTOR.execute(
-          () -> {
-            ExistenceFilterMismatchListener listener = listenerRef.get();
-            if (listener != null) {
-              listener.onExistenceFilterMismatch(info);
-            }
-          });
+      ExistenceFilterMismatchListener listener = listenerRef.get();
+      if (listener != null) {
+        listener.onExistenceFilterMismatch(info);
+      }
     }
   }
 
@@ -78,15 +74,17 @@ final class TestingHooks {
    * particular ordering. If a given callback is registered multiple times then it will be notified
    * multiple times, once per registration.
    *
-   * <p>The thread on which the callback occurs is unspecified; listeners should perform their work
-   * as quickly as possible and return to avoid blocking any critical work. In particular, the
-   * listener callbacks should <em>not</em> block or perform long-running operations. Listener
-   * callbacks can occur concurrently with other callbacks on the same and other listeners.
+   * <p>The listener callbacks are performed synchronously in `NotifyOnExistenceFilterMismatch()`;
+   * therefore, listeners should perform their work as quickly as possible and return to avoid
+   * blocking any critical work. In particular, the listener callbacks should <em>not</em> block or
+   * perform long-running operations.
    *
    * @param listener the listener to register.
    * @return an object that unregisters the given listener via its {@link
    *     ListenerRegistration#remove} method; only the first unregistration request does anything;
-   *     all subsequent requests do nothing.
+   *     all subsequent requests do nothing. Note that due to inherent race conditions it is
+   *     technically possible, although unlikely, that callbacks could still occur <em>after</em>
+   *     unregistering.
    */
   ListenerRegistration addExistenceFilterMismatchListener(
       @NonNull ExistenceFilterMismatchListener listener) {
