@@ -43,7 +43,6 @@ object FirebaseSessionsDependencies {
 
     // The dependency is locked until the subscriber registers itself.
     dependencies[subscriberName] = Dependency(Mutex(locked = true))
-    Log.i("find me", "Added dep $subscriberName")
   }
 
   /** Register and unlock the subscriber. This must be called before [getSubscribers] can return. */
