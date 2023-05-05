@@ -40,9 +40,10 @@ class SessionCoordinatorTest {
   @Test
   fun attemptLoggingSessionEvent_populatesFid() = runTest {
     val fakeEventGDTLogger = FakeEventGDTLogger()
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
     val sessionCoordinator =
       SessionCoordinator(
-        firebaseInstallations = FakeFirebaseInstallations("FaKeFiD"),
+        firebaseInstallations,
         context = TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         eventGDTLogger = fakeEventGDTLogger,
       )
@@ -53,7 +54,13 @@ class SessionCoordinatorTest {
       SessionEvents.startSession(
         fakeFirebaseApp.firebaseApp,
         TestSessionEventData.TEST_SESSION_DETAILS,
-        SessionsSettings(fakeFirebaseApp.firebaseApp.applicationContext),
+        SessionsSettings(
+          fakeFirebaseApp.firebaseApp.applicationContext,
+          TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+          firebaseInstallations,
+          SessionEvents.getApplicationInfo(fakeFirebaseApp.firebaseApp)
+        ),
         FakeTimeProvider(),
       )
 

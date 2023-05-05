@@ -18,6 +18,7 @@ import androidx.annotation.Keep
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.concurrent.Background
+import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.components.*
 import com.google.firebase.components.Qualified.qualified
 import com.google.firebase.components.Qualified.unqualified
@@ -45,6 +46,7 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .add(Dependency.required(firebaseApp))
         .add(Dependency.required(firebaseInstallationsApi))
         .add(Dependency.required(backgroundDispatcher))
+        .add(Dependency.required(blockingDispatcher))
         .add(Dependency.requiredProvider(transportFactory))
         .factory { container ->
           // Make sure FirebaseSessionsEarly has started up
@@ -53,6 +55,7 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
             container.get(firebaseApp),
             container.get(firebaseInstallationsApi),
             container.get(backgroundDispatcher),
+            container.get(blockingDispatcher),
             container.getProvider(transportFactory),
           )
         }
@@ -69,6 +72,8 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
     private val firebaseInstallationsApi = unqualified(FirebaseInstallationsApi::class.java)
     private val backgroundDispatcher =
       qualified(Background::class.java, CoroutineDispatcher::class.java)
+    private val blockingDispatcher =
+      qualified(Blocking::class.java, CoroutineDispatcher::class.java)
     private val transportFactory = unqualified(TransportFactory::class.java)
   }
 }
