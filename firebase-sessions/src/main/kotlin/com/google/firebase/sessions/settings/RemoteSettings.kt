@@ -40,7 +40,7 @@ internal class RemoteSettings(
   val firebaseInstallationsApi: FirebaseInstallationsApi,
   val appInfo: ApplicationInfo,
   private val configsFetcher: CrashlyticsSettingsFetcher = RemoteSettingsFetcher(appInfo),
-  private val dataStoreName: String = SESSION_CONFIGS_NAME
+  dataStoreName: String = SESSION_CONFIGS_NAME
 ) : SettingsProvider {
   private val Context.dataStore by preferencesDataStore(name = dataStoreName)
   private val settingsCache = SettingsCache(context.dataStore)

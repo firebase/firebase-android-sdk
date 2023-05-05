@@ -124,7 +124,6 @@ class RemoteSettingsTest {
     fakeFetcher.responseJSONObject = fetchedResponse
     remoteSettings.updateSettings()
 
-    //    runCurrent()
     assertThat(remoteSettings.sessionEnabled).isFalse()
     assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
     assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
