@@ -128,6 +128,12 @@ internal object SessionEvents {
     val context = firebaseApp.applicationContext
     val packageName = context.packageName
     val packageInfo = context.packageManager.getPackageInfo(packageName, 0)
+    val buildVersion =
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        packageInfo.longVersionCode
+      } else {
+        @Suppress("DEPRECATION") packageInfo.versionCode
+      }
 
     return ApplicationInfo(
       appId = firebaseApp.options.applicationId,
@@ -139,7 +145,7 @@ internal object SessionEvents {
         AndroidApplicationInfo(
           packageName = packageName,
           versionName = packageInfo.versionName,
-          appBuildVersion = packageInfo.versionCode.toString(),
+          appBuildVersion = buildVersion.toString(),
           deviceManufacturer = Build.MANUFACTURER,
         )
     )
