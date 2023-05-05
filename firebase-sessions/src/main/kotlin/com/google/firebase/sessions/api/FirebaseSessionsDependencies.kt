@@ -16,7 +16,6 @@
 
 package com.google.firebase.sessions.api
 
-import android.util.Log
 import androidx.annotation.VisibleForTesting
 import java.util.Collections.synchronizedMap
 import kotlinx.coroutines.sync.Mutex
