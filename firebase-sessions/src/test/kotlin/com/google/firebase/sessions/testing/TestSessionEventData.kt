@@ -57,12 +57,12 @@ internal object TestSessionEventData {
           appId = FakeFirebaseApp.MOCK_APP_ID,
           deviceModel = Build.MODEL,
           sessionSdkVersion = BuildConfig.VERSION_NAME,
-          osDisplayVersion = Build.VERSION.RELEASE,
+          osVersion = Build.VERSION.RELEASE,
           logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
           AndroidApplicationInfo(
             packageName = ApplicationProvider.getApplicationContext<Context>().packageName,
             versionName = FakeFirebaseApp.MOCK_APP_VERSION,
-            buildVersion = FakeFirebaseApp.MOCK_APP_BUILD_VERSION,
+            appBuildVersion = FakeFirebaseApp.MOCK_APP_BUILD_VERSION,
             deviceManufacturer = Build.MANUFACTURER,
           ),
         )

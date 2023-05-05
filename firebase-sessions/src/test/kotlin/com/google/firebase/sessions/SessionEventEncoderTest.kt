@@ -104,12 +104,12 @@ class SessionEventEncoderTest {
             appId = "",
             deviceModel = "",
             sessionSdkVersion = "",
-            osDisplayVersion = "",
+            osVersion = "",
             logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
             AndroidApplicationInfo(
               packageName = "",
               versionName = "",
-              buildVersion = "",
+              appBuildVersion = "",
               deviceManufacturer = "",
             ),
           )
