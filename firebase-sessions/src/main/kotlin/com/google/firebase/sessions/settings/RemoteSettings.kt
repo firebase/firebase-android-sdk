@@ -22,8 +22,10 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -33,6 +35,8 @@ import org.json.JSONObject
 
 internal class RemoteSettings(
   val context: Context,
+  val blockingDispatcher: CoroutineContext,
+  val backgroundDispatcher: CoroutineContext,
   val firebaseInstallationsApi: FirebaseInstallationsApi,
   val appInfo: ApplicationInfo,
   private val configsFetcher: CrashlyticsSettingsFetcher = RemoteSettingsFetcher(appInfo),
@@ -62,7 +66,8 @@ internal class RemoteSettings(
     }
 
   override fun updateSettings() {
-    runBlocking { launch(Dispatchers.Default) { fetchConfigs() } }
+    // TODO: Move to blocking coroutine dispatcher.
+    runBlocking(Dispatchers.Default) { launch { fetchConfigs() } }
   }
 
   override fun isSettingsStale(): Boolean {
@@ -70,7 +75,8 @@ internal class RemoteSettings(
   }
 
   internal fun clearCachedSettings() {
-    runBlocking { launch(Dispatchers.Default) { settingsCache.removeConfigs() } }
+    val scope = CoroutineScope(backgroundDispatcher)
+    scope.launch { settingsCache.removeConfigs() }
   }
 
   suspend private fun fetchConfigs() {
@@ -134,6 +140,7 @@ internal class RemoteSettings(
           }
         }
 
+        val scope = CoroutineScope(backgroundDispatcher)
         sessionsEnabled?.let { settingsCache.updateSettingsEnabled(sessionsEnabled) }
 
         sessionTimeoutSeconds?.let {

@@ -20,12 +20,15 @@ import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
+import com.google.firebase.concurrent.TestOnlyExecutors
 import com.google.firebase.sessions.SessionEvents.SESSION_EVENT_ENCODER
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.FakeTimeProvider
 import com.google.firebase.sessions.testing.TestSessionEventData
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,7 +42,7 @@ class SessionEventEncoderTest {
   }
 
   @Test
-  fun sessionEvent_encodesToJson() {
+  fun sessionEvent_encodesToJson() = runTest {
     val fakeFirebaseApp = FakeFirebaseApp()
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
     val sessionEvent =
@@ -48,6 +51,8 @@ class SessionEventEncoderTest {
         TestSessionEventData.TEST_SESSION_DETAILS,
         SessionsSettings(
           fakeFirebaseApp.firebaseApp.applicationContext,
+          TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
           firebaseInstallations,
           SessionEvents.getApplicationInfo(fakeFirebaseApp.firebaseApp)
         ),

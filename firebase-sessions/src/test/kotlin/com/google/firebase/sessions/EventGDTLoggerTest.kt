@@ -21,6 +21,7 @@ import com.google.android.datatransport.Event
 import com.google.android.datatransport.TransportFactory
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
+import com.google.firebase.concurrent.TestOnlyExecutors
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
@@ -28,6 +29,8 @@ import com.google.firebase.sessions.testing.FakeProvider
 import com.google.firebase.sessions.testing.FakeTimeProvider
 import com.google.firebase.sessions.testing.FakeTransportFactory
 import com.google.firebase.sessions.testing.TestSessionEventData
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,7 +40,7 @@ import org.robolectric.RobolectricTestRunner
 class EventGDTLoggerTest {
 
   @Test
-  fun event_logsToGoogleDataTransport() {
+  fun event_logsToGoogleDataTransport() = runTest {
     val fakeFirebaseApp = FakeFirebaseApp()
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
     val sessionEvent =
@@ -46,6 +49,8 @@ class EventGDTLoggerTest {
         TestSessionEventData.TEST_SESSION_DETAILS,
         SessionsSettings(
           fakeFirebaseApp.firebaseApp.applicationContext,
+          TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
           firebaseInstallations,
           SessionEvents.getApplicationInfo(fakeFirebaseApp.firebaseApp)
         ),

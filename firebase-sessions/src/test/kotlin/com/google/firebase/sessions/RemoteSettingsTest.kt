@@ -19,11 +19,14 @@ package com.google.firebase.sessions
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
+import com.google.firebase.concurrent.TestOnlyExecutors
 import com.google.firebase.sessions.settings.RemoteSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.FakeRemoteConfigFetcher
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Test
@@ -33,7 +36,7 @@ import org.junit.runner.RunWith
 class RemoteSettingsTest {
 
   @Test
-  fun RemoteSettings_successfulFetchCachesValues() {
+  fun RemoteSettings_successfulFetchCachesValues() = runTest {
     val firebaseApp = FakeFirebaseApp().firebaseApp
     val context = firebaseApp.applicationContext
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
@@ -42,6 +45,8 @@ class RemoteSettingsTest {
     val remoteSettings =
       RemoteSettings(
         context,
+        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         firebaseInstallations,
         SessionEvents.getApplicationInfo(firebaseApp),
         fakeFetcher,
@@ -62,7 +67,7 @@ class RemoteSettingsTest {
   }
 
   @Test
-  fun RemoteSettings_successfulFetchWithLessConfigsCachesOnlyReceivedValues() {
+  fun RemoteSettings_successfulFetchWithLessConfigsCachesOnlyReceivedValues() = runTest {
     val firebaseApp = FakeFirebaseApp().firebaseApp
     val context = firebaseApp.applicationContext
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
@@ -71,6 +76,8 @@ class RemoteSettingsTest {
     val remoteSettings =
       RemoteSettings(
         context,
+        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         firebaseInstallations,
         SessionEvents.getApplicationInfo(firebaseApp),
         fakeFetcher,
@@ -93,15 +100,20 @@ class RemoteSettingsTest {
   }
 
   @Test
-  fun RemoteSettings_successfulRefetchUpdatesCache() {
+  fun RemoteSettings_successfulRefetchUpdatesCache() = runTest {
     val firebaseApp = FakeFirebaseApp().firebaseApp
     val context = firebaseApp.applicationContext
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
     val fakeFetcher = FakeRemoteConfigFetcher()
 
+    val blockingDispatcher = TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext
+    val backgroundDispatcher =
+      TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext
     val remoteSettings =
       RemoteSettings(
         context,
+        blockingDispatcher,
+        backgroundDispatcher,
         firebaseInstallations,
         SessionEvents.getApplicationInfo(firebaseApp),
         fakeFetcher,
@@ -112,6 +124,7 @@ class RemoteSettingsTest {
     fakeFetcher.responseJSONObject = fetchedResponse
     remoteSettings.updateSettings()
 
+    //    runCurrent()
     assertThat(remoteSettings.sessionEnabled).isFalse()
     assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
     assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
@@ -134,7 +147,7 @@ class RemoteSettingsTest {
   }
 
   @Test
-  fun RemoteSettings_successfulFetchWithEmptyConfigRetainsOldConfigs() {
+  fun RemoteSettings_successfulFetchWithEmptyConfigRetainsOldConfigs() = runTest {
     val firebaseApp = FakeFirebaseApp().firebaseApp
     val context = firebaseApp.applicationContext
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
@@ -143,6 +156,8 @@ class RemoteSettingsTest {
     val remoteSettings =
       RemoteSettings(
         context,
+        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         firebaseInstallations,
         SessionEvents.getApplicationInfo(firebaseApp),
         fakeFetcher,

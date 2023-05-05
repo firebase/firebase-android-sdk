@@ -19,13 +19,17 @@ package com.google.firebase.sessions
 import android.os.Bundle
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
+import com.google.firebase.concurrent.TestOnlyExecutors
 import com.google.firebase.sessions.settings.LocalOverrideSettings
 import com.google.firebase.sessions.settings.RemoteSettings
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.FakeRemoteConfigFetcher
+import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Test
@@ -36,7 +40,7 @@ import org.robolectric.RobolectricTestRunner
 class SessionsSettingsTest {
 
   @Test
-  fun sessionSettings_fetchDefaults() {
+  fun sessionSettings_fetchDefaults() = runTest {
     val firebaseApp = FakeFirebaseApp().firebaseApp
     val context = firebaseApp.applicationContext
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
@@ -44,6 +48,8 @@ class SessionsSettingsTest {
     val sessionsSettings =
       SessionsSettings(
         context,
+        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         firebaseInstallations,
         SessionEvents.getApplicationInfo(firebaseApp)
       )
@@ -53,7 +59,7 @@ class SessionsSettingsTest {
   }
 
   @Test
-  fun sessionSettings_fetchOverridingConfigs() {
+  fun sessionSettings_fetchOverridingConfigs() = runTest {
     val metadata = Bundle()
     metadata.putBoolean("firebase_sessions_enabled", false)
     metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
@@ -65,6 +71,8 @@ class SessionsSettingsTest {
     val sessionsSettings =
       SessionsSettings(
         context,
+        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         firebaseInstallations,
         SessionEvents.getApplicationInfo(firebaseApp)
       )
@@ -74,7 +82,7 @@ class SessionsSettingsTest {
   }
 
   @Test
-  fun sessionSettings_fetchOverridingConfigsOnlyWhenPresent() {
+  fun sessionSettings_fetchOverridingConfigsOnlyWhenPresent() = runTest {
     val metadata = Bundle()
     metadata.putBoolean("firebase_sessions_enabled", false)
     metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
@@ -85,6 +93,8 @@ class SessionsSettingsTest {
     val sessionsSettings =
       SessionsSettings(
         context,
+        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         firebaseInstallations,
         SessionEvents.getApplicationInfo(firebaseApp)
       )
@@ -94,7 +104,7 @@ class SessionsSettingsTest {
   }
 
   @Test
-  fun sessionSettings_RemoteSettingsOverrideDefaultsWhenPresent() {
+  fun sessionSettings_RemoteSettingsOverrideDefaultsWhenPresent() = runTest {
     val firebaseApp = FakeFirebaseApp().firebaseApp
     val context = firebaseApp.applicationContext
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
@@ -104,6 +114,8 @@ class SessionsSettingsTest {
     val remoteSettings =
       RemoteSettings(
         context,
+        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         firebaseInstallations,
         SessionEvents.getApplicationInfo(firebaseApp),
         fakeFetcher,
@@ -114,6 +126,8 @@ class SessionsSettingsTest {
     val sessionsSettings =
       SessionsSettings(
         context,
+        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         firebaseInstallations,
         SessionEvents.getApplicationInfo(firebaseApp),
         localOverrideSettings = LocalOverrideSettings(context),
@@ -127,7 +141,7 @@ class SessionsSettingsTest {
   }
 
   @Test
-  fun sessionSettings_ManifestOverridesRemoteSettingsAndDefaultsWhenPresent() {
+  fun sessionSettings_ManifestOverridesRemoteSettingsAndDefaultsWhenPresent() = runTest {
     val metadata = Bundle()
     metadata.putBoolean("firebase_sessions_enabled", true)
     metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
@@ -141,6 +155,8 @@ class SessionsSettingsTest {
     val remoteSettings =
       RemoteSettings(
         context,
+        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         firebaseInstallations,
         SessionEvents.getApplicationInfo(firebaseApp),
         fakeFetcher,
@@ -151,6 +167,8 @@ class SessionsSettingsTest {
     val sessionsSettings =
       SessionsSettings(
         context,
+        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         firebaseInstallations,
         SessionEvents.getApplicationInfo(firebaseApp),
         localOverrideSettings = LocalOverrideSettings(context),

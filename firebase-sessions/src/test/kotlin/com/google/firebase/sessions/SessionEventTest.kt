@@ -19,6 +19,7 @@ package com.google.firebase.sessions
 import android.os.Bundle
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
+import com.google.firebase.concurrent.TestOnlyExecutors
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
@@ -27,6 +28,8 @@ import com.google.firebase.sessions.testing.TestSessionEventData.TEST_DATA_COLLE
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_DATA
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_DETAILS
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_EVENT
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,7 +38,7 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class SessionEventTest {
   @Test
-  fun sessionStart_populatesSessionDetailsCorrectly() {
+  fun sessionStart_populatesSessionDetailsCorrectly() = runTest {
     val fakeFirebaseApp = FakeFirebaseApp()
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
     val sessionEvent =
@@ -44,6 +47,8 @@ class SessionEventTest {
         TEST_SESSION_DETAILS,
         SessionsSettings(
           fakeFirebaseApp.firebaseApp.applicationContext,
+          TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
           firebaseInstallations,
           SessionEvents.getApplicationInfo(fakeFirebaseApp.firebaseApp)
         ),
@@ -54,7 +59,7 @@ class SessionEventTest {
   }
 
   @Test
-  fun sessionStart_samplingRate() {
+  fun sessionStart_samplingRate() = runTest {
     val metadata = Bundle()
     metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
     val fakeFirebaseApp = FakeFirebaseApp(metadata)
@@ -66,6 +71,8 @@ class SessionEventTest {
         TEST_SESSION_DETAILS,
         SessionsSettings(
           fakeFirebaseApp.firebaseApp.applicationContext,
+          TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
           firebaseInstallations,
           SessionEvents.getApplicationInfo(fakeFirebaseApp.firebaseApp)
         ),

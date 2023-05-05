@@ -56,6 +56,8 @@ class SessionCoordinatorTest {
         TestSessionEventData.TEST_SESSION_DETAILS,
         SessionsSettings(
           fakeFirebaseApp.firebaseApp.applicationContext,
+          TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
           firebaseInstallations,
           SessionEvents.getApplicationInfo(fakeFirebaseApp.firebaseApp)
         ),
