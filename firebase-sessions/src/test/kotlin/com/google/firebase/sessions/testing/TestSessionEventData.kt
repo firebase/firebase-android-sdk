@@ -63,6 +63,7 @@ internal object TestSessionEventData {
             packageName = ApplicationProvider.getApplicationContext<Context>().packageName,
             versionName = FakeFirebaseApp.MOCK_APP_VERSION,
             buildVersion = FakeFirebaseApp.MOCK_APP_BUILD_VERSION,
+            deviceManufacturer = Build.MANUFACTURER,
           ),
         )
     )

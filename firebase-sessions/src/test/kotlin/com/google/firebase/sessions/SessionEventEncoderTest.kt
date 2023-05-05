@@ -75,7 +75,9 @@ class SessionEventEncoderTest {
               "log_environment":3,
               "android_app_info":{
                 "package_name":"com.google.firebase.sessions.test",
-                "version_name":"1.0.0"
+                "version_name":"1.0.0",
+                "app_build_version":"0",
+                "device_manufacturer":"${Build.MANUFACTURER}"
               }
             }
           }
@@ -104,7 +106,12 @@ class SessionEventEncoderTest {
             sessionSdkVersion = "",
             osDisplayVersion = "",
             logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
-            AndroidApplicationInfo(packageName = "", versionName = "", buildVersion = ""),
+            AndroidApplicationInfo(
+              packageName = "",
+              versionName = "",
+              buildVersion = "",
+              deviceManufacturer = "",
+            ),
           )
       )
 
@@ -135,7 +142,9 @@ class SessionEventEncoderTest {
               "log_environment":3,
               "android_app_info":{
                 "package_name":"",
-                "version_name":""
+                "version_name":"",
+                "app_build_version":"",
+                "device_manufacturer":""
               }
             }
           }

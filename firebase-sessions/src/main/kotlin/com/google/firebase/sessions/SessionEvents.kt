@@ -93,6 +93,8 @@ internal object SessionEvents {
           run {
             ctx.add(FieldDescriptor.of("package_name"), androidAppInfo.packageName)
             ctx.add(FieldDescriptor.of("version_name"), androidAppInfo.versionName)
+            ctx.add(FieldDescriptor.of("app_build_version"), androidAppInfo.buildVersion)
+            ctx.add(FieldDescriptor.of("device_manufacturer"), androidAppInfo.deviceManufacturer)
           }
         }
       }
@@ -137,7 +139,8 @@ internal object SessionEvents {
         AndroidApplicationInfo(
           packageName = packageName,
           versionName = packageInfo.versionName,
-          buildVersion = packageInfo.versionCode.toString()
+          buildVersion = packageInfo.versionCode.toString(),
+          deviceManufacturer = Build.MANUFACTURER,
         )
     )
   }

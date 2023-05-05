@@ -42,6 +42,9 @@ internal data class AndroidApplicationInfo(
 
   /** The build version of the application. */
   val buildVersion: String,
+
+  /** The manufacturer of the device that runs the application. */
+  val deviceManufacturer: String,
 )
 
 internal data class ApplicationInfo(
