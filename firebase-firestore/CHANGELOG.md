@@ -1,12 +1,34 @@
 # Unreleased
-* [fixed] Fixed stack overflow caused by deeply nested server timestamps (#4702).
-* [feature] Add new cache config APIs to customize SDK's cache setup.
-* [feature] Add LRU garbage collector to SDK's memory cache.
-* [changed] Mark isPersistenceEnabled and getCacheSizeBytes as deprecated from FirebaseFirestoreSettings.
-* [changed] Mark isPersistenceEnabled, getCacheSizeBytes, setPersistenceEnabled and setCacheSizeBytes 
-            from FirebaseFirestoreSettings.Builder as deprecated.
+
+
+# 24.6.0
+* [fixed] Fixed stack overflow caused by deeply nested server timestamps.
+  (GitHub [#4702](//github.com/firebase/firebase-android-sdk/issues/4702){: .external})
+
+* [feature] Added new
+  [cache config APIs](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestoreSettings.Builder#setLocalCacheSettings(com.google.firebase.firestore.LocalCacheSettings))
+  to customize the SDK's cache setup.
+
+* [feature] Added
+  [LRU garbage collector](/docs/reference/android/com/google/firebase/firestore/MemoryLruGcSettings)
+  to the SDK's memory cache.
+
+* [deprecated] Deprecated the following APIs from
+  [`FirebaseFirestoreSettings`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestoreSettings):<br>
+  `isPersistenceEnabled` and `getCacheSizeBytes`.
+
+* [deprecated] Deprecated the following APIs from
+  [`FirebaseFirestoreSettings.Builder`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestoreSettings.Builder#setLocalCacheSettings(com.google.firebase.firestore.LocalCacheSettings)):<br>
+  `isPersistenceEnabled`, `getCacheSizeBytes`, `setPersistenceEnabled`,
+  and `setCacheSizeBytes`.
+
 * [changed] Internal changes to ensure alignment with other SDK releases.
 
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 # 24.5.0
 * [fixed] Fixed stack overflow caused by deeply nested server timestamps.
   (GitHub [#4702](//github.com/firebase/firebase-android-sdk/issues/4702){: .external})
