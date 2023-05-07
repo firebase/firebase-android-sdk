@@ -31,6 +31,7 @@ import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.util.Logger;
+import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -252,14 +253,14 @@ public class WatchChangeAggregator {
       return BloomFilterApplicationStatus.SKIPPED;
     }
 
-    byte[] bitmap = unchangedNames.getBits().getBitmap().toByteArray();
+    ByteString bitmap = unchangedNames.getBits().getBitmap();
     BloomFilter bloomFilter;
 
     try {
       bloomFilter =
-          new BloomFilter(
+          BloomFilter.create(
               bitmap, unchangedNames.getBits().getPadding(), unchangedNames.getHashCount());
-    } catch (BloomFilterException e) {
+    } catch (BloomFilter.BloomFilterCreateException e) {
       Logger.warn(
           LOG_TAG,
           "Applying bloom filter failed: ("

@@ -50,7 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -1092,11 +1091,11 @@ public class QueryTest {
       // bloom filter, and it was used to avert a full requery.
       AtomicReference<QuerySnapshot> snapshot2Ref = new AtomicReference<>();
       ArrayList<ExistenceFilterMismatchInfo> existenceFilterMismatches =
-              captureExistenceFilterMismatches(
-                      () -> {
-                        QuerySnapshot querySnapshot = waitFor(collection.get());
-                        snapshot2Ref.set(querySnapshot);
-                      });
+          captureExistenceFilterMismatches(
+              () -> {
+                QuerySnapshot querySnapshot = waitFor(collection.get());
+                snapshot2Ref.set(querySnapshot);
+              });
       QuerySnapshot snapshot2 = snapshot2Ref.get();
 
       // Verify that the snapshot from the resumed query contains the expected documents; that is,
@@ -1132,8 +1131,8 @@ public class QueryTest {
       // Verify that Watch sent an existence filter with the correct counts when the query was
       // resumed.
       assertWithMessage("Watch should have sent exactly 1 existence filter")
-              .that(existenceFilterMismatches)
-              .hasSize(1);
+          .that(existenceFilterMismatches)
+          .hasSize(1);
       ExistenceFilterMismatchInfo existenceFilterMismatchInfo = existenceFilterMismatches.get(0);
       assertWithMessage("localCacheCount")
           .that(existenceFilterMismatchInfo.localCacheCount())
