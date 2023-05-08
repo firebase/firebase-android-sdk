@@ -117,7 +117,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys) {
+  public Map<DocumentKey, MutableDocument> getAll(
+      Iterable<DocumentKey> documentKeys, AutoIndexing counter) {
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
     List<Object> bindVars = new ArrayList<>();
     for (DocumentKey key : documentKeys) {
@@ -140,10 +141,17 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     while (longQuery.hasMoreSubqueries()) {
       longQuery
           .performNextSubquery()
-          .forEach(row -> processRowInBackground(backgroundQueue, results, row, /*filter*/ null));
+          .forEach(
+              row ->
+                  processRowInBackground(backgroundQueue, results, row, /*filter*/ null, counter));
     }
     backgroundQueue.drain();
     return results;
+  }
+
+  @Override
+  public Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys) {
+    return getAll(documentKeys, new AutoIndexing());
   }
 
   @Override
@@ -182,7 +190,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       List<ResourcePath> collections,
       IndexOffset offset,
       int count,
-      @Nullable Function<MutableDocument, Boolean> filter) {
+      @Nullable Function<MutableDocument, Boolean> filter,
+      AutoIndexing counter) {
     Timestamp readTime = offset.getReadTime().getTimestamp();
     DocumentKey documentKey = offset.getDocumentKey();
 
@@ -218,16 +227,25 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
     db.query(sql.toString())
         .binding(bindVars)
-        .forEach(row -> processRowInBackground(backgroundQueue, results, row, filter));
+        .forEach(row -> processRowInBackground(backgroundQueue, results, row, filter, counter));
     backgroundQueue.drain();
     return results;
+  }
+
+  private Map<DocumentKey, MutableDocument> getAll(
+      List<ResourcePath> collections,
+      IndexOffset offset,
+      int count,
+      @Nullable Function<MutableDocument, Boolean> filter) {
+    return getAll(collections, offset, count, filter, new AutoIndexing());
   }
 
   private void processRowInBackground(
       BackgroundQueue backgroundQueue,
       Map<DocumentKey, MutableDocument> results,
       Cursor row,
-      @Nullable Function<MutableDocument, Boolean> filter) {
+      @Nullable Function<MutableDocument, Boolean> filter,
+      AutoIndexing counter) {
     byte[] rawDocument = row.getBlob(0);
     int readTimeSeconds = row.getInt(1);
     int readTimeNanos = row.getInt(2);
@@ -239,6 +257,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         () -> {
           MutableDocument document =
               decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
+          counter.fullScanCount++;
           if (filter == null || filter.apply(document)) {
             synchronized (results) {
               results.put(document.getKey(), document);
@@ -250,11 +269,21 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
+    return getDocumentsMatchingQuery(query, offset, mutatedKeys, new AutoIndexing());
+  }
+
+  @Override
+  public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+      Query query,
+      IndexOffset offset,
+      @Nonnull Set<DocumentKey> mutatedKeys,
+      AutoIndexing counter) {
     return getAll(
         Collections.singletonList(query.getPath()),
         offset,
         Integer.MAX_VALUE,
-        (MutableDocument doc) -> query.matches(doc) || mutatedKeys.contains(doc.getKey()));
+        (MutableDocument doc) -> query.matches(doc) || mutatedKeys.contains(doc.getKey()),
+        counter);
   }
 
   private MutableDocument decodeMaybeDocument(

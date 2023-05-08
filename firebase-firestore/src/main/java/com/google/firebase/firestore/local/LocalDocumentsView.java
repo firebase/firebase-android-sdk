@@ -102,9 +102,14 @@ class LocalDocumentsView {
    * <p>If we don't have cached state for a document in {@code keys}, a NoDocument will be stored
    * for that key in the resulting set.
    */
-  ImmutableSortedMap<DocumentKey, Document> getDocuments(Iterable<DocumentKey> keys) {
-    Map<DocumentKey, MutableDocument> docs = remoteDocumentCache.getAll(keys);
+  ImmutableSortedMap<DocumentKey, Document> getDocuments(
+      Iterable<DocumentKey> keys, AutoIndexing counter) {
+    Map<DocumentKey, MutableDocument> docs = remoteDocumentCache.getAll(keys, counter);
     return getLocalViewOfDocuments(docs, new HashSet<>());
+  }
+
+  ImmutableSortedMap<DocumentKey, Document> getDocuments(Iterable<DocumentKey> keys) {
+    return getDocuments(keys, new AutoIndexing());
   }
 
   /**
@@ -260,20 +265,26 @@ class LocalDocumentsView {
    * @param offset Read time and key to start scanning by (exclusive).
    */
   ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset) {
+      Query query, IndexOffset offset, AutoIndexing counter) {
     ResourcePath path = query.getPath();
     if (query.isDocumentQuery()) {
-      return getDocumentsMatchingDocumentQuery(path);
+      return getDocumentsMatchingDocumentQuery(path, counter);
     } else if (query.isCollectionGroupQuery()) {
-      return getDocumentsMatchingCollectionGroupQuery(query, offset);
+      return getDocumentsMatchingCollectionGroupQuery(query, offset, counter);
     } else {
-      return getDocumentsMatchingCollectionQuery(query, offset);
+      return getDocumentsMatchingCollectionQuery(query, offset, counter);
     }
+  }
+
+  ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
+      Query query, IndexOffset offset) {
+    return getDocumentsMatchingQuery(query, offset, new AutoIndexing());
   }
 
   /** Performs a simple document lookup for the given path. */
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingDocumentQuery(
-      ResourcePath path) {
+      ResourcePath path, AutoIndexing counter) {
+    counter.fullScanCount++;
     ImmutableSortedMap<DocumentKey, Document> result = emptyDocumentMap();
     // Just do a simple document lookup.
     Document doc = getDocument(DocumentKey.fromPath(path));
@@ -284,7 +295,7 @@ class LocalDocumentsView {
   }
 
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionGroupQuery(
-      Query query, IndexOffset offset) {
+      Query query, IndexOffset offset, AutoIndexing counter) {
     hardAssert(
         query.getPath().isEmpty(),
         "Currently we only support collection group queries at the root.");
@@ -297,7 +308,7 @@ class LocalDocumentsView {
     for (ResourcePath parent : parents) {
       Query collectionQuery = query.asCollectionQueryAtPath(parent.append(collectionId));
       ImmutableSortedMap<DocumentKey, Document> collectionResults =
-          getDocumentsMatchingCollectionQuery(collectionQuery, offset);
+          getDocumentsMatchingCollectionQuery(collectionQuery, offset, counter);
       for (Map.Entry<DocumentKey, Document> docEntry : collectionResults) {
         results = results.insert(docEntry.getKey(), docEntry.getValue());
       }
@@ -362,11 +373,11 @@ class LocalDocumentsView {
   }
 
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
-      Query query, IndexOffset offset) {
+      Query query, IndexOffset offset, AutoIndexing counter) {
     Map<DocumentKey, Overlay> overlays =
         documentOverlayCache.getOverlays(query.getPath(), offset.getLargestBatchId());
     Map<DocumentKey, MutableDocument> remoteDocuments =
-        remoteDocumentCache.getDocumentsMatchingQuery(query, offset, overlays.keySet());
+        remoteDocumentCache.getDocumentsMatchingQuery(query, offset, overlays.keySet(), counter);
 
     // As documents might match the query because of their overlay we need to include documents
     // for all overlays in the initial document set.

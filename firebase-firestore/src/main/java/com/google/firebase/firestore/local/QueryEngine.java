@@ -82,12 +82,13 @@ public class QueryEngine {
       return result;
     }
 
-    result = performQueryUsingRemoteKeys(query, remoteKeys, lastLimboFreeSnapshotVersion);
+    AutoIndexing counter = new AutoIndexing();
+    result = performQueryUsingRemoteKeys(query, remoteKeys, lastLimboFreeSnapshotVersion, counter);
     if (result != null) {
       return result;
     }
-
-    return executeFullCollectionScan(query);
+    counter = new AutoIndexing();
+    return executeFullCollectionScan(query, counter);
   }
 
   /**
@@ -144,7 +145,8 @@ public class QueryEngine {
   private @Nullable ImmutableSortedMap<DocumentKey, Document> performQueryUsingRemoteKeys(
       Query query,
       ImmutableSortedSet<DocumentKey> remoteKeys,
-      SnapshotVersion lastLimboFreeSnapshotVersion) {
+      SnapshotVersion lastLimboFreeSnapshotVersion,
+      AutoIndexing counter) {
     if (query.matchesAllDocuments()) {
       // Don't use indexes for queries that can be executed by scanning the collection.
       return null;
@@ -157,7 +159,7 @@ public class QueryEngine {
     }
 
     ImmutableSortedMap<DocumentKey, Document> documents =
-        localDocumentsView.getDocuments(remoteKeys);
+        localDocumentsView.getDocuments(remoteKeys, counter);
     ImmutableSortedSet<Document> previousResults = applyQuery(query, documents);
 
     if (needsRefill(query, remoteKeys.size(), previousResults, lastLimboFreeSnapshotVersion)) {
@@ -176,7 +178,8 @@ public class QueryEngine {
         previousResults,
         query,
         IndexOffset.createSuccessor(
-            lastLimboFreeSnapshotVersion, FieldIndex.INITIAL_LARGEST_BATCH_ID));
+            lastLimboFreeSnapshotVersion, FieldIndex.INITIAL_LARGEST_BATCH_ID),
+        counter);
   }
 
   /** Applies the query filter and sorting to the provided documents. */
@@ -241,11 +244,12 @@ public class QueryEngine {
         || documentAtLimitEdge.getVersion().compareTo(limboFreeSnapshotVersion) > 0;
   }
 
-  private ImmutableSortedMap<DocumentKey, Document> executeFullCollectionScan(Query query) {
+  private ImmutableSortedMap<DocumentKey, Document> executeFullCollectionScan(
+      Query query, AutoIndexing counter) {
     if (Logger.isDebugEnabled()) {
       Logger.debug(LOG_TAG, "Using full collection scan to execute query: %s", query.toString());
     }
-    return localDocumentsView.getDocumentsMatchingQuery(query, IndexOffset.NONE);
+    return localDocumentsView.getDocumentsMatchingQuery(query, IndexOffset.NONE, counter);
   }
 
   /**
@@ -253,13 +257,18 @@ public class QueryEngine {
    * been indexed.
    */
   private ImmutableSortedMap<DocumentKey, Document> appendRemainingResults(
-      Iterable<Document> indexedResults, Query query, IndexOffset offset) {
+      Iterable<Document> indexedResults, Query query, IndexOffset offset, AutoIndexing counter) {
     // Retrieve all results for documents that were updated since the offset.
     ImmutableSortedMap<DocumentKey, Document> remainingResults =
-        localDocumentsView.getDocumentsMatchingQuery(query, offset);
+        localDocumentsView.getDocumentsMatchingQuery(query, offset, counter);
     for (Document entry : indexedResults) {
       remainingResults = remainingResults.insert(entry.getKey(), entry);
     }
     return remainingResults;
+  }
+
+  private ImmutableSortedMap<DocumentKey, Document> appendRemainingResults(
+      Iterable<Document> indexedResults, Query query, IndexOffset offset) {
+    return appendRemainingResults(indexedResults, query, offset, new AutoIndexing());
   }
 }

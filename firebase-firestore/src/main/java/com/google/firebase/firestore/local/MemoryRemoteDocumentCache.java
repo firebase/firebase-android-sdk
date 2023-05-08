@@ -80,12 +80,18 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   }
 
   @Override
-  public Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> keys) {
+  public Map<DocumentKey, MutableDocument> getAll(
+      Iterable<DocumentKey> keys, AutoIndexing counter) {
     Map<DocumentKey, MutableDocument> result = new HashMap<>();
     for (DocumentKey key : keys) {
       result.put(key, get(key));
     }
     return result;
+  }
+
+  @Override
+  public Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> keys) {
+    return getAll(keys, new AutoIndexing());
   }
 
   @Override
@@ -97,7 +103,10 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
+      Query query,
+      IndexOffset offset,
+      @Nonnull Set<DocumentKey> mutatedKeys,
+      AutoIndexing counter) {
     Map<DocumentKey, MutableDocument> result = new HashMap<>();
 
     // Documents are ordered by key, so we can use a prefix scan to narrow down the documents
@@ -133,6 +142,12 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     }
 
     return result;
+  }
+
+  @Override
+  public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
+    return getDocumentsMatchingQuery(query, offset, mutatedKeys, new AutoIndexing());
   }
 
   Iterable<Document> getDocuments() {
