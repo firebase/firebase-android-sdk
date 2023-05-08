@@ -130,9 +130,9 @@ internal object SessionEvents {
     val packageInfo = context.packageManager.getPackageInfo(packageName, 0)
     val buildVersion =
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        packageInfo.longVersionCode
+        packageInfo.longVersionCode.toString()
       } else {
-        @Suppress("DEPRECATION") packageInfo.versionCode
+        @Suppress("DEPRECATION") packageInfo.versionCode.toString()
       }
 
     return ApplicationInfo(
@@ -145,7 +145,7 @@ internal object SessionEvents {
         AndroidApplicationInfo(
           packageName = packageName,
           versionName = packageInfo.versionName,
-          appBuildVersion = buildVersion.toString(),
+          appBuildVersion = buildVersion,
           deviceManufacturer = Build.MANUFACTURER,
         )
     )
