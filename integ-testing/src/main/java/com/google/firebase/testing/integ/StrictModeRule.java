@@ -85,6 +85,7 @@ public class StrictModeRule implements TestRule {
   }
 
   /** Runs {@code callable} on Main thread and returns it result. */
+  @SuppressLint("RestrictedApi")
   public <T, E extends Throwable> T runOnMainThread(MaybeThrowingCallable<T, E> callable) throws E {
     try {
       AtomicReference<T> result = new AtomicReference<>();
