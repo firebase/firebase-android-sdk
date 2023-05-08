@@ -37,8 +37,14 @@ internal data class AndroidApplicationInfo(
   /** The package name of the application/bundle name. */
   val packageName: String,
 
-  /** The version of the application. */
+  /** The display version of the application. */
   val versionName: String,
+
+  /** The build version of the application. */
+  val appBuildVersion: String,
+
+  /** The manufacturer of the device that runs the application. */
+  val deviceManufacturer: String,
 )
 
 internal data class ApplicationInfo(
@@ -50,6 +56,9 @@ internal data class ApplicationInfo(
 
   /** The SDK version of the sessions library. */
   val sessionSdkVersion: String,
+
+  /** The display version of the Android operating system. */
+  val osVersion: String,
 
   /** The logging environment for the events. */
   val logEnvironment: LogEnvironment,

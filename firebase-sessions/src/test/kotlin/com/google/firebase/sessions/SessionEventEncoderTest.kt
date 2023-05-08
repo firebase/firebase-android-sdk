@@ -20,11 +20,15 @@ import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
+import com.google.firebase.concurrent.TestOnlyExecutors
 import com.google.firebase.sessions.SessionEvents.SESSION_EVENT_ENCODER
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
+import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.FakeTimeProvider
 import com.google.firebase.sessions.testing.TestSessionEventData
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,13 +42,20 @@ class SessionEventEncoderTest {
   }
 
   @Test
-  fun sessionEvent_encodesToJson() {
+  fun sessionEvent_encodesToJson() = runTest {
     val fakeFirebaseApp = FakeFirebaseApp()
+    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
     val sessionEvent =
       SessionEvents.startSession(
         fakeFirebaseApp.firebaseApp,
         TestSessionEventData.TEST_SESSION_DETAILS,
-        SessionsSettings(fakeFirebaseApp.firebaseApp.applicationContext),
+        SessionsSettings(
+          fakeFirebaseApp.firebaseApp.applicationContext,
+          TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+          TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+          firebaseInstallations,
+          SessionEvents.getApplicationInfo(fakeFirebaseApp.firebaseApp)
+        ),
         FakeTimeProvider(),
       )
 
@@ -71,10 +82,13 @@ class SessionEventEncoderTest {
               "app_id":"1:12345:android:app",
               "device_model":"${Build.MODEL}",
               "session_sdk_version":"0.1.0",
+              "os_version":"${Build.VERSION.RELEASE}",
               "log_environment":3,
               "android_app_info":{
                 "package_name":"com.google.firebase.sessions.test",
-                "version_name":"1.0.0"
+                "version_name":"1.0.0",
+                "app_build_version":"0",
+                "device_manufacturer":"${Build.MANUFACTURER}"
               }
             }
           }
@@ -101,8 +115,14 @@ class SessionEventEncoderTest {
             appId = "",
             deviceModel = "",
             sessionSdkVersion = "",
+            osVersion = "",
             logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
-            AndroidApplicationInfo(packageName = "", versionName = ""),
+            AndroidApplicationInfo(
+              packageName = "",
+              versionName = "",
+              appBuildVersion = "",
+              deviceManufacturer = "",
+            ),
           )
       )
 
@@ -129,10 +149,13 @@ class SessionEventEncoderTest {
               "app_id":"",
               "device_model":"",
               "session_sdk_version":"",
+              "os_version":"",
               "log_environment":3,
               "android_app_info":{
                 "package_name":"",
-                "version_name":""
+                "version_name":"",
+                "app_build_version":"",
+                "device_manufacturer":""
               }
             }
           }

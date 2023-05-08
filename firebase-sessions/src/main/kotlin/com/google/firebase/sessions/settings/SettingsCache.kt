@@ -69,7 +69,7 @@ internal class SettingsCache(private val store: DataStore<Preferences>) {
   }
 
   internal fun hasCacheExpired(): Boolean {
-    if (sessionConfigs.cacheUpdatedTime != null) {
+    if (sessionConfigs.cacheUpdatedTime != null && sessionConfigs.cacheDuration != null) {
       val currentTimestamp = System.currentTimeMillis()
       val timeDifferenceSeconds = (currentTimestamp - sessionConfigs.cacheUpdatedTime!!) / 1000
       if (timeDifferenceSeconds < sessionConfigs.cacheDuration!!) return false
