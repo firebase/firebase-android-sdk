@@ -82,10 +82,13 @@ class SessionEventEncoderTest {
               "app_id":"1:12345:android:app",
               "device_model":"${Build.MODEL}",
               "session_sdk_version":"0.1.0",
+              "os_version":"${Build.VERSION.RELEASE}",
               "log_environment":3,
               "android_app_info":{
                 "package_name":"com.google.firebase.sessions.test",
-                "version_name":"1.0.0"
+                "version_name":"1.0.0",
+                "app_build_version":"0",
+                "device_manufacturer":"${Build.MANUFACTURER}"
               }
             }
           }
@@ -112,8 +115,14 @@ class SessionEventEncoderTest {
             appId = "",
             deviceModel = "",
             sessionSdkVersion = "",
+            osVersion = "",
             logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
-            AndroidApplicationInfo(packageName = "", versionName = ""),
+            AndroidApplicationInfo(
+              packageName = "",
+              versionName = "",
+              appBuildVersion = "",
+              deviceManufacturer = "",
+            ),
           )
       )
 
@@ -140,10 +149,13 @@ class SessionEventEncoderTest {
               "app_id":"",
               "device_model":"",
               "session_sdk_version":"",
+              "os_version":"",
               "log_environment":3,
               "android_app_info":{
                 "package_name":"",
-                "version_name":""
+                "version_name":"",
+                "app_build_version":"",
+                "device_manufacturer":""
               }
             }
           }

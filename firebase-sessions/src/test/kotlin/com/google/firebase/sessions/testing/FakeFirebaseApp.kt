@@ -57,5 +57,6 @@ internal class FakeFirebaseApp(metadata: Bundle? = null) {
     internal const val MOCK_APP_ID = "1:12345:android:app"
     internal const val MOCK_API_KEY = "RANDOM_APIKEY_FOR_TESTING"
     internal const val MOCK_APP_VERSION = "1.0.0"
+    internal const val MOCK_APP_BUILD_VERSION = "0"
   }
 }
