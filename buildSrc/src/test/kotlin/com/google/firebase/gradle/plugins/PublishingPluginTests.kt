@@ -264,6 +264,37 @@ class PublishingPluginTests {
       )
   }
 
+  @Test
+  fun `Publish project should ignore dependency versions`() {
+    val externalAARLibrary = Artifact("com.google.dagger", "dagger-android-support", "2.21")
+
+    val project1 =
+      Project(
+        name = "childProject1",
+        version = "1.0",
+        libraryType = LibraryType.ANDROID,
+        externalDependencies = setOf(externalAARLibrary)
+      )
+    val project2 =
+      Project(
+        name = "childProject2",
+        version = "1.0",
+        libraryType = LibraryType.ANDROID,
+        externalDependencies = setOf(externalAARLibrary.copy(version = "2.22"))
+      )
+
+    subprojectsDefined(project1, project2)
+    val result = publish(project1, project2)
+    assertThat(result.task(":firebasePublish")?.outcome).isEqualTo(TaskOutcome.SUCCESS)
+
+    val pomOrNull2 = project2.getPublishedPom("${testProjectDir.root}/build/m2repository")
+    assertThat(pomOrNull2).isNotNull()
+
+    val pom2 = pomOrNull2!!
+
+    assertThat(pom2.dependencies.first().type).isEqualTo(Type.AAR)
+  }
+
   private fun publish(vararg projects: Project): BuildResult = makeGradleRunner(*projects).build()
 
   private fun publishAndFail(vararg projects: Project) = makeGradleRunner(*projects).buildAndFail()
