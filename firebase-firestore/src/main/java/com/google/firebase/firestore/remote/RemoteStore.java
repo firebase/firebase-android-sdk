@@ -29,6 +29,7 @@ import com.google.firebase.firestore.core.Transaction;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
@@ -371,6 +372,12 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   private void sendWatchRequest(TargetData targetData) {
     watchChangeAggregator.recordPendingTargetRequest(targetData.getTargetId());
+    if (!targetData.getResumeToken().isEmpty()
+        || targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0) {
+      int expectedCount = this.getRemoteKeysForTarget(targetData.getTargetId()).size();
+      targetData = targetData.withExpectedCount(expectedCount);
+    }
+
     watchStream.watchQuery(targetData);
   }
 
@@ -542,7 +549,8 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
     // Re-establish listens for the targets that have been invalidated by existence filter
     // mismatches.
-    for (int targetId : remoteEvent.getTargetMismatches()) {
+    for (Map.Entry<Integer, QueryPurpose> entry : remoteEvent.getTargetMismatches().entrySet()) {
+      int targetId = entry.getKey();
       TargetData targetData = this.listenTargets.get(targetId);
       // A watched target might have been removed already.
       if (targetData != null) {
@@ -564,7 +572,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
                 targetData.getTarget(),
                 targetId,
                 targetData.getSequenceNumber(),
-                QueryPurpose.EXISTENCE_FILTER_MISMATCH);
+                /*purpose=*/ entry.getValue());
         this.sendWatchRequest(requestTargetData);
       }
     }
@@ -752,6 +760,11 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   @Override
   public TargetData getTargetDataForTarget(int targetId) {
     return this.listenTargets.get(targetId);
+  }
+
+  @Override
+  public DatabaseId getDatabaseId() {
+    return this.datastore.getDatabaseInfo().getDatabaseId();
   }
 
   public Task<Map<String, Value>> runAggregateQuery(
