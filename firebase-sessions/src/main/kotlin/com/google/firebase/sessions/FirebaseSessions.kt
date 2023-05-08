@@ -25,8 +25,14 @@ import com.google.firebase.inject.Provider
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
+import com.google.firebase.sessions.api.FirebaseSessionsDependencies
+import com.google.firebase.sessions.api.SessionSubscriber
+import com.google.firebase.sessions.api.SessionSubscriber.Name.CRASHLYTICS
+import com.google.firebase.sessions.api.SessionSubscriber.Name.PERFORMANCE
 import com.google.firebase.sessions.settings.SessionsSettings
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 class FirebaseSessions
 internal constructor(
@@ -38,9 +44,9 @@ internal constructor(
   private val sessionSettings = SessionsSettings(firebaseApp.applicationContext)
   private val sessionGenerator = SessionGenerator(collectEvents = shouldCollectEvents())
   private val eventGDTLogger = EventGDTLogger(transportFactoryProvider)
-  private val sessionCoordinator =
-    SessionCoordinator(firebaseInstallations, backgroundDispatcher, eventGDTLogger)
+  private val sessionCoordinator = SessionCoordinator(firebaseInstallations, eventGDTLogger)
   private val timeProvider: TimeProvider = Time()
+  private val sessionStartScope = CoroutineScope(backgroundDispatcher)
 
   init {
     val sessionInitiator =
@@ -59,6 +65,17 @@ internal constructor(
   @Discouraged(message = "This will be replaced with a real API.")
   fun greeting(): String = "Matt says hi!"
 
+  /** Register the [subscriber]. This must be called for every dependency. */
+  fun register(subscriber: SessionSubscriber) {
+    FirebaseSessionsDependencies.register(subscriber)
+
+    Log.d(
+      TAG,
+      "Registering Sessions SDK subscriber with name: ${subscriber.sessionSubscriberName}, " +
+        "data collection enabled: ${subscriber.isDataCollectionEnabled}"
+    )
+  }
+
   private fun initiateSessionStart() {
     val sessionDetails = sessionGenerator.generateNewSession()
 
@@ -67,9 +84,45 @@ internal constructor(
       return
     }
 
-    sessionCoordinator.attemptLoggingSessionEvent(
-      SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings, timeProvider)
-    )
+    sessionStartScope.launch {
+      val subscribers = FirebaseSessionsDependencies.getSubscribers()
+
+      if (subscribers.isEmpty()) {
+        Log.e(
+          TAG,
+          "Sessions SDK did not have any dependent SDKs register as dependencies. Events will not be sent."
+        )
+        return@launch
+      }
+
+      if (subscribers.values.none() { it.isDataCollectionEnabled }) {
+        Log.d(TAG, "Data Collection is disabled for all subscribers. Skipping this Session Event")
+        return@launch
+      }
+
+      Log.d(TAG, "Data Collection is enabled for at least one Subscriber")
+
+      subscribers[CRASHLYTICS]?.let { crashlyticsSubscriber ->
+        if (crashlyticsSubscriber.isDataCollectionEnabled) {
+          crashlyticsSubscriber.onSessionChanged(
+            SessionSubscriber.SessionDetails(sessionDetails.sessionId)
+          )
+        }
+      }
+
+      // TODO(mrober): Product specific information.
+      subscribers[PERFORMANCE]?.let { performanceSubscriber ->
+        if (performanceSubscriber.isDataCollectionEnabled) {
+          performanceSubscriber.onSessionChanged(
+            SessionSubscriber.SessionDetails(sessionDetails.sessionId)
+          )
+        }
+      }
+
+      sessionCoordinator.attemptLoggingSessionEvent(
+        SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings, timeProvider)
+      )
+    }
   }
 
   /** Calculate whether we should sample events using [sessionSettings] data. */

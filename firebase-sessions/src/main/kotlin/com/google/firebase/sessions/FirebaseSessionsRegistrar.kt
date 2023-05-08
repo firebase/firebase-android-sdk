@@ -18,7 +18,9 @@ import androidx.annotation.Keep
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.concurrent.Background
-import com.google.firebase.components.*
+import com.google.firebase.components.Component
+import com.google.firebase.components.ComponentRegistrar
+import com.google.firebase.components.Dependency
 import com.google.firebase.components.Qualified.qualified
 import com.google.firebase.components.Qualified.unqualified
 import com.google.firebase.installations.FirebaseInstallationsApi
@@ -34,21 +36,13 @@ import kotlinx.coroutines.CoroutineDispatcher
 internal class FirebaseSessionsRegistrar : ComponentRegistrar {
   override fun getComponents() =
     listOf(
-      Component.builder(firebaseSessionsEarly)
-        .name(EARLY_LIBRARY_NAME)
-        .factory { _ -> FirebaseSessionsEarly() }
-        .eagerInDefaultApp()
-        .build(),
       Component.builder(FirebaseSessions::class.java)
         .name(LIBRARY_NAME)
-        .add(Dependency.required(firebaseSessionsEarly))
         .add(Dependency.required(firebaseApp))
         .add(Dependency.required(firebaseInstallationsApi))
         .add(Dependency.required(backgroundDispatcher))
         .add(Dependency.requiredProvider(transportFactory))
         .factory { container ->
-          // Make sure FirebaseSessionsEarly has started up
-          container.get(firebaseSessionsEarly)
           FirebaseSessions(
             container.get(firebaseApp),
             container.get(firebaseInstallationsApi),
@@ -62,9 +56,7 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
 
   companion object {
     private const val LIBRARY_NAME = "fire-sessions"
-    private const val EARLY_LIBRARY_NAME = "fire-sessions-early"
 
-    private val firebaseSessionsEarly = unqualified(FirebaseSessionsEarly::class.java)
     private val firebaseApp = unqualified(FirebaseApp::class.java)
     private val firebaseInstallationsApi = unqualified(FirebaseInstallationsApi::class.java)
     private val backgroundDispatcher =

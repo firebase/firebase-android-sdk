@@ -43,7 +43,7 @@ class FirebaseSessionsTest {
   @Test
   fun initializeSession() {
     // Force the Firebase Sessions SDK to initialize.
-    assertThat(FirebaseSessions.instance.greeting()).isEqualTo("Matt says hi!")
+    assertThat(FirebaseSessions.instance).isNotNull()
 
     // Wait for the session start event to send.
     // TODO(mrober): Setup logger we can access from tests.

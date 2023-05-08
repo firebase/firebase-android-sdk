@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
-package com.google.firebase.sessions
+package com.google.firebase.sessions.api
 
-/**
- * The Firebase Sessions early initialization.
- *
- * @hide
- *
- * TODO: This should handle generating the Session ID and communicating with subscribers.
- */
-class FirebaseSessionsEarly {}
+/** [SessionSubscriber] is an interface that dependent SDKs must implement. */
+interface SessionSubscriber {
+  /** [SessionSubscriber.Name]s are used for identifying subscribers. */
+  enum class Name {
+    CRASHLYTICS,
+    PERFORMANCE,
+  }
+
+  /** [SessionDetails] contains session data passed to subscribers whenever the session changes */
+  data class SessionDetails(val sessionId: String)
+
+  fun onSessionChanged(sessionDetails: SessionDetails)
+
+  val isDataCollectionEnabled: Boolean
+
+  val sessionSubscriberName: Name
+}
