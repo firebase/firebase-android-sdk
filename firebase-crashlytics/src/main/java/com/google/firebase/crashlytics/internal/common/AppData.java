@@ -47,7 +47,7 @@ public class AppData {
     final String installerPackageName = idManager.getInstallerPackageName();
     final PackageManager packageManager = context.getPackageManager();
     final PackageInfo packageInfo = packageManager.getPackageInfo(packageName, 0);
-    final String versionCode = AppData.getAppBuildVersion(packageInfo);
+    final String versionCode = getAppBuildVersion(packageInfo);
     final String versionName =
         packageInfo.versionName == null ? IdManager.DEFAULT_VERSION_NAME : packageInfo.versionName;
 
