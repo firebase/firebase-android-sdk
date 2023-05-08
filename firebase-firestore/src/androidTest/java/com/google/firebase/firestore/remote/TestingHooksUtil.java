@@ -16,7 +16,6 @@ package com.google.firebase.firestore.remote;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
 import com.google.firebase.firestore.ListenerRegistration;
 import java.util.ArrayList;
 
