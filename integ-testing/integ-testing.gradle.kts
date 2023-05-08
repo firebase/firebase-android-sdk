@@ -21,7 +21,6 @@ android {
   val targetSdkVersion: Int by rootProject
   val minSdkVersion: Int by rootProject
 
-  kotlinOptions.jvmTarget = "1.8"
   compileSdk = targetSdkVersion
 
   defaultConfig {
