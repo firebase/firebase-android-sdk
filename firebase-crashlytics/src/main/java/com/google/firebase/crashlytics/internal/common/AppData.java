@@ -64,7 +64,7 @@ public class AppData {
 
   private static String getAppBuildVersion(PackageInfo packageInfo) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-      return Integer.toString(packageInfo.longVersionCode);
+      return Long.toString(packageInfo.getLongVersionCode());
     } else {
       return Integer.toString(packageInfo.versionCode);
     }
