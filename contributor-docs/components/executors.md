@@ -202,25 +202,19 @@ To learn more, you should give the following Kotlin wiki page a read:
 
 ### Using Executors in tests
 
-`@Lightweight` and `@Background` executors have StrictMode enabled and throw
-exceptions on violations.
+`@Lightweight` and `@Background` executors have StrictMode enabled and throw exceptions on violations.
 For example trying to do Network IO on either of them will throw.
-With that in mind, when it comes to writing tests, prefer to use the common
-executors as opposed to creating
-your own thread pools. This will ensure that your code uses the appropriate
-executor and does not slow down
+With that in mind, when it comes to writing tests, prefer to use the common executors as opposed to creating
+your own thread pools. This will ensure that your code uses the appropriate executor and does not slow down
 all of Firebase by using the wrong one.
 
-To do that, you should prefer relying on Components to inject the right executor
-even in tests. This will ensure
-your tests are always using the executor that is actually used in your SDK
-build.
+To do that, you should prefer relying on Components to inject the right executor even in tests. 
+This will ensure your tests are always using the executor that is actually used in your SDK build.
 If your SDK uses Dagger, see [Dependency Injection]({{ site.baseurl }}{% link
 best_practices/dependency_injection.md %})
 and [Dagger's testing guide](https://dagger.dev/dev-guide/testing).
 
-When the above is not an option, you can use `TestOnlyExecutors`, but make sure
-you're testing your code with
+When the above is not an option, you can use `TestOnlyExecutors`, but make sure you're testing your code with 
 the same executor that is used in production code:
 
 ```kotlin
