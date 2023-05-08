@@ -473,6 +473,8 @@ public final class RemoteSerializer {
         return null;
       case EXISTENCE_FILTER_MISMATCH:
         return "existence-filter-mismatch";
+      case EXISTENCE_FILTER_MISMATCH_BLOOM:
+        return "existence-filter-mismatch-bloom";
       case LIMBO_RESOLUTION:
         return "limbo-document";
       default:
@@ -499,6 +501,12 @@ public final class RemoteSerializer {
       builder.setReadTime(encodeTimestamp(targetData.getSnapshotVersion().getTimestamp()));
     } else {
       builder.setResumeToken(targetData.getResumeToken());
+    }
+
+    if (targetData.getExpectedCount() != null
+        && (!targetData.getResumeToken().isEmpty()
+            || targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0)) {
+      builder.setExpectedCount(Int32Value.newBuilder().setValue(targetData.getExpectedCount()));
     }
 
     return builder.build();
@@ -991,8 +999,8 @@ public final class RemoteSerializer {
         break;
       case FILTER:
         com.google.firestore.v1.ExistenceFilter protoFilter = protoChange.getFilter();
-        // TODO: implement existence filter parsing (see b/33076578)
-        ExistenceFilter filter = new ExistenceFilter(protoFilter.getCount());
+        ExistenceFilter filter =
+            new ExistenceFilter(protoFilter.getCount(), protoFilter.getUnchangedNames());
         int targetId = protoFilter.getTargetId();
         watchChange = new ExistenceFilterWatchChange(targetId, filter);
         break;
