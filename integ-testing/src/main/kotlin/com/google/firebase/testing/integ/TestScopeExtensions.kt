@@ -65,6 +65,7 @@ data class FirebaseTestExecutorsContainer(
  * ```
  */
 @get:RestrictTo(RestrictTo.Scope.TESTS)
+@get:Suppress("RestrictedApi")
 val TestScope.firebaseExecutors: FirebaseTestExecutorsContainer
   get() =
     FirebaseTestExecutorsContainer(
