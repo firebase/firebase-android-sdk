@@ -331,7 +331,8 @@ public abstract class TargetCacheTestCase {
         QueryPurpose.LISTEN,
         version(version),
         version(version),
-        resumeToken(version));
+        resumeToken(version),
+        null);
   }
 
   /** Adds the given query data to the targetCache under test, committing immediately. */

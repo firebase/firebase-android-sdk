@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.remote;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.firestore.ListenerRegistration;
 import java.util.ArrayList;
 
@@ -78,6 +79,38 @@ public final class TestingHooksUtil {
 
     public int existenceFilterCount() {
       return info.existenceFilterCount();
+    }
+
+    @Nullable
+    public ExistenceFilterBloomFilterInfo bloomFilter() {
+      TestingHooks.ExistenceFilterBloomFilterInfo bloomFilterInfo = info.bloomFilter();
+      return bloomFilterInfo == null ? null : new ExistenceFilterBloomFilterInfo(bloomFilterInfo);
+    }
+  }
+
+  /** @see TestingHooks.ExistenceFilterBloomFilterInfo */
+  public static final class ExistenceFilterBloomFilterInfo {
+
+    private final TestingHooks.ExistenceFilterBloomFilterInfo info;
+
+    ExistenceFilterBloomFilterInfo(@NonNull TestingHooks.ExistenceFilterBloomFilterInfo info) {
+      this.info = info;
+    }
+
+    public boolean applied() {
+      return info.applied();
+    }
+
+    public int hashCount() {
+      return info.hashCount();
+    }
+
+    public int bitmapLength() {
+      return info.bitmapLength();
+    }
+
+    public int padding() {
+      return info.padding();
     }
   }
 }
