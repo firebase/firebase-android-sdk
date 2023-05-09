@@ -40,6 +40,8 @@ import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.sessions.FirebaseSessions;
+import com.google.firebase.sessions.api.SessionSubscriber;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -62,6 +64,7 @@ public class FirebaseCrashlytics {
   static @Nullable FirebaseCrashlytics init(
       @NonNull FirebaseApp app,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
+      @NonNull FirebaseSessions firebaseSessions,
       @NonNull Deferred<CrashlyticsNativeComponent> nativeComponent,
       @NonNull Deferred<AnalyticsConnector> analyticsConnector) {
 
@@ -175,6 +178,26 @@ public class FirebaseCrashlytics {
             return null;
           }
         });
+
+    // TODO(mrober): Replace with a real session implementation.
+    firebaseSessions.register(new SessionSubscriber() {
+      @Override
+      public void onSessionChanged(@NonNull SessionDetails sessionDetails) {
+        Logger.getLogger().d("onSessionChanged: " + sessionDetails);
+        core.setInternalKey("sessionId", sessionDetails.getSessionId());
+      }
+
+      @Override
+      public boolean isDataCollectionEnabled() {
+        return arbiter.isAutomaticDataCollectionEnabled();
+      }
+
+      @NonNull
+      @Override
+      public SessionSubscriber.Name getSessionSubscriberName() {
+        return SessionSubscriber.Name.CRASHLYTICS;
+      }
+    });
 
     return new FirebaseCrashlytics(core);
   }

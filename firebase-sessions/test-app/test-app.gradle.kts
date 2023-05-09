@@ -22,6 +22,7 @@ plugins {
   id("com.android.application")
   id("org.jetbrains.kotlin.android")
   id("com.google.gms.google-services")
+  id("com.google.firebase.crashlytics")
 }
 
 android {
@@ -45,6 +46,7 @@ android {
 
 dependencies {
   // TODO(mrober): Remove when we have configurable deps on Crashlytics and Fireperf.
+  implementation(project(":firebase-crashlytics"))
   implementation(project(":firebase-sessions"))
 
   implementation("androidx.appcompat:appcompat:1.6.1")
