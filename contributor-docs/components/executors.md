@@ -177,10 +177,10 @@ Qualified<Executor> bgExecutor = qualified(Background.class, Executor.class);
 Executor sequentialExecutor = FirebaseExecutors.newSequentialExecutor(c.get(bgExecutor));
 ```
 
-#### Proper Kotlin usage
+## Proper Kotlin usage
 
 A `CoroutineContext` should be preferred when possible over an explicit `Executor`
-or `CoroutineDispatcher`. You should only use your `Executor` at the highest 
+or `CoroutineDispatcher`. You should only use an `Executor` at the highest 
 (or inversely the lowest) level of your implementations. Most classes should not 
 be concerned with the existence of an `Executor`.
 
@@ -240,14 +240,14 @@ TestOnlyExecutors.lite();
 Unit tests require [Robolectric](https://github.com/robolectric/robolectric) to
 function correctly, and this comes with a major drawback; no policy validation.
 
-Robolectric supports `StrictMode`- but does not provided the backing for its
+Robolectric supports `StrictMode`- but does not provide the backing for its
 policy mechanisms to fire on violations. As such, you'll be able to do things
 like using `TestOnlyExecutors.background()` to execute blocking actions; usage
-that would've otherwise crashed in a real application.
+that would have otherwise crashed in a real application.
 
 Unfortunately, there is no easy way to fix this for unit tests. You can get
 around the issue by moving the tests to an emulator (integration tests)- but
-those can be more expensive than your standard unit tests, so you may want to
+those can be more expensive than your standard unit test, so you may want to
 take that into consideration when planning your testing strategy.
 
 ### StandardTestDispatcher support
@@ -265,10 +265,22 @@ the `TestScope` provided in a `runTest` block.
 
 Unfortunately, `TestOnlyExecutors` does not natively bind with `TestScope`.
 Meaning, should you use `TestOnlyExecutors` in your tests- you won't be able to utilize
-the features provided by `TestScope`.
+the features provided by `TestScope`:
+
+```kotlin
+@Test
+fun doesStuff() = runTest {
+    val scope = CoroutineScope(TestOnlyExecutors.background().asCoroutineDispatcher())
+    scope.launch {
+      // ... does stuff
+    }
+
+    runCurrent() // doesn't invoke scope ??
+  }
+```
 
 To help fix this, we provide an extension method on `TestScope` called
-`firebaseLibrary`. It facilitates the binding of `TestOnlyExecutors` with the
+`firebaseExecutors`. It facilitates the binding of `TestOnlyExecutors` with the
 current `TestScope`.
 
 For example, here's how you could use this extension method in a test:
