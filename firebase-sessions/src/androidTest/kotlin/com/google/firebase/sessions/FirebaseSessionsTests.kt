@@ -53,9 +53,8 @@ class FirebaseSessionsTests {
   }
 
   @Test
-  fun mattDoesDayHi() {
-    // This will be replaced with real tests.
-    assertThat(FirebaseSessions.instance.greeting()).isEqualTo("Matt says hi!")
+  fun firebaseSessionsDoesInitialize() {
+    assertThat(FirebaseSessions.instance).isNotNull()
   }
 
   companion object {

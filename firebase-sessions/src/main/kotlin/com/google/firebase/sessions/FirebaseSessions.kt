@@ -18,7 +18,6 @@ package com.google.firebase.sessions
 
 import android.app.Application
 import android.util.Log
-import androidx.annotation.Discouraged
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.FirebaseApp
 import com.google.firebase.inject.Provider
@@ -27,8 +26,6 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
-import com.google.firebase.sessions.api.SessionSubscriber.Name.CRASHLYTICS
-import com.google.firebase.sessions.api.SessionSubscriber.Name.PERFORMANCE
 import com.google.firebase.sessions.settings.SessionsSettings
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -72,9 +69,6 @@ internal constructor(
     }
   }
 
-  @Discouraged(message = "This will be replaced with a real API.")
-  fun greeting(): String = "Matt says hi!"
-
   /** Register the [subscriber]. This must be called for every dependency. */
   fun register(subscriber: SessionSubscriber) {
     FirebaseSessionsDependencies.register(subscriber)
@@ -112,20 +106,9 @@ internal constructor(
 
       Log.d(TAG, "Data Collection is enabled for at least one Subscriber")
 
-      subscribers[CRASHLYTICS]?.let { crashlyticsSubscriber ->
-        if (crashlyticsSubscriber.isDataCollectionEnabled) {
-          crashlyticsSubscriber.onSessionChanged(
-            SessionSubscriber.SessionDetails(sessionDetails.sessionId)
-          )
-        }
-      }
-
-      // TODO(mrober): Product specific information.
-      subscribers[PERFORMANCE]?.let { performanceSubscriber ->
-        if (performanceSubscriber.isDataCollectionEnabled) {
-          performanceSubscriber.onSessionChanged(
-            SessionSubscriber.SessionDetails(sessionDetails.sessionId)
-          )
+      subscribers.values.forEach { subscriber ->
+        if (subscriber.isDataCollectionEnabled) {
+          subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionDetails.sessionId))
         }
       }
 
