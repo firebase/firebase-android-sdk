@@ -74,9 +74,8 @@ internal class RemoteSettingsFetcher(val appInfo: ApplicationInfo) : Crashlytics
         .appendPath("gmp")
         .appendPath(appInfo.appId)
         .appendPath("settings")
-    // TODO(visum) Setup build version and display version
-    // .appendQueryParameter("build_version", "")
-    // .appendQueryParameter("display_version", "")
+        .appendQueryParameter("build_version", appInfo.androidAppInfo.app_build_version)
+        .appendQueryParameter("display_version", appInfo.androidAppInfo.versionName)
 
     return URL(uri.build().toString())
   }
