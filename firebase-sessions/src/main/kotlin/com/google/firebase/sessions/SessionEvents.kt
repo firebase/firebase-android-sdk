@@ -81,6 +81,7 @@ internal object SessionEvents {
             ctx.add(FieldDescriptor.of("app_id"), applicationInfo.appId)
             ctx.add(FieldDescriptor.of("device_model"), applicationInfo.deviceModel)
             ctx.add(FieldDescriptor.of("session_sdk_version"), applicationInfo.sessionSdkVersion)
+            ctx.add(FieldDescriptor.of("os_version"), applicationInfo.os_version)
             ctx.add(FieldDescriptor.of("log_environment"), applicationInfo.logEnvironment)
             ctx.add(FieldDescriptor.of("android_app_info"), applicationInfo.androidAppInfo)
           }
@@ -92,6 +93,8 @@ internal object SessionEvents {
           run {
             ctx.add(FieldDescriptor.of("package_name"), androidAppInfo.packageName)
             ctx.add(FieldDescriptor.of("version_name"), androidAppInfo.versionName)
+            ctx.add(FieldDescriptor.of("app_build_version"), androidAppInfo.app_build_version)
+            ctx.add(FieldDescriptor.of("device_manufacturer"), androidAppInfo.device_manufacturer)
           }
         }
       }
@@ -126,13 +129,34 @@ internal object SessionEvents {
     val packageName = context.packageName
     val packageInfo = context.packageManager.getPackageInfo(packageName, 0)
 
+    println("App Build Version: " + packageInfo.versionCode.toString())
     return ApplicationInfo(
       appId = firebaseApp.options.applicationId,
       deviceModel = Build.MODEL,
       sessionSdkVersion = BuildConfig.VERSION_NAME,
       logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
+      os_version = Build.VERSION.SDK_INT.toString(),
       androidAppInfo =
-        AndroidApplicationInfo(packageName = packageName, versionName = packageInfo.versionName)
+        AndroidApplicationInfo(
+          packageName = packageName,
+          versionName = packageInfo.versionName,
+          app_build_version = getAppBuildVersion(firebaseApp),
+          device_manufacturer = Build.MANUFACTURER
+        )
     )
+  }
+
+  private fun getAppBuildVersion(firebaseApp: FirebaseApp): String {
+    val context = firebaseApp.applicationContext
+    val packageName = context.packageName
+    val packageInfo = context.packageManager.getPackageInfo(packageName, 0)
+    val buildVersion =
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        packageInfo.longVersionCode
+      } else {
+        @Suppress("DEPRECATION") packageInfo.versionCode
+      }
+
+    return buildVersion.toString()
   }
 }

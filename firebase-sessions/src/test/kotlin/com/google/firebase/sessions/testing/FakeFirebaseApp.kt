@@ -37,6 +37,7 @@ internal class FakeFirebaseApp(metadata: Bundle? = null) {
         .setPackageName(ApplicationProvider.getApplicationContext<Context>().packageName)
         .build()
     packageInfo.versionName = MOCK_APP_VERSION
+    packageInfo.versionCode = MOCK_APP_BUILD_VERSION
 
     metadata?.let { packageInfo.applicationInfo.metaData = it }
     shadowPackageManager.installPackage(packageInfo)
@@ -57,5 +58,6 @@ internal class FakeFirebaseApp(metadata: Bundle? = null) {
     internal const val MOCK_APP_ID = "1:12345:android:app"
     internal const val MOCK_API_KEY = "RANDOM_APIKEY_FOR_TESTING"
     internal const val MOCK_APP_VERSION = "1.0.0"
+    internal const val MOCK_APP_BUILD_VERSION = 5
   }
 }
