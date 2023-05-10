@@ -68,7 +68,7 @@ interface RemoteDocumentCache {
   Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys);
 
   Map<DocumentKey, MutableDocument> getAll(
-      Iterable<DocumentKey> documentKeys, AutoIndexing counter);
+      Iterable<DocumentKey> documentKeys, QueryContext counter);
 
   /**
    * Looks up the next {@code limit} documents for a collection group based on the provided offset.
@@ -94,5 +94,5 @@ interface RemoteDocumentCache {
       Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys);
 
   Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys, AutoIndexing counter);
+      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys, QueryContext counter);
 }

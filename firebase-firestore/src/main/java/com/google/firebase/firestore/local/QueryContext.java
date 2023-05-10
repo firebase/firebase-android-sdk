@@ -1,7 +1,7 @@
 package com.google.firebase.firestore.local;
 
-public class AutoIndexing {
-  AutoIndexing() {}
+public class QueryContext {
+  QueryContext() {}
 
   int fullScanCount = 0;
 }

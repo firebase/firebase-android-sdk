@@ -82,12 +82,12 @@ public class QueryEngine {
       return result;
     }
 
-    AutoIndexing counter = new AutoIndexing();
+    QueryContext counter = new QueryContext();
     result = performQueryUsingRemoteKeys(query, remoteKeys, lastLimboFreeSnapshotVersion, counter);
     if (result != null) {
       return result;
     }
-    counter = new AutoIndexing();
+    counter = new QueryContext();
     return executeFullCollectionScan(query, counter);
   }
 
@@ -146,7 +146,7 @@ public class QueryEngine {
       Query query,
       ImmutableSortedSet<DocumentKey> remoteKeys,
       SnapshotVersion lastLimboFreeSnapshotVersion,
-      AutoIndexing counter) {
+      QueryContext counter) {
     if (query.matchesAllDocuments()) {
       // Don't use indexes for queries that can be executed by scanning the collection.
       return null;
@@ -245,7 +245,7 @@ public class QueryEngine {
   }
 
   private ImmutableSortedMap<DocumentKey, Document> executeFullCollectionScan(
-      Query query, AutoIndexing counter) {
+      Query query, QueryContext counter) {
     if (Logger.isDebugEnabled()) {
       Logger.debug(LOG_TAG, "Using full collection scan to execute query: %s", query.toString());
     }
@@ -257,7 +257,7 @@ public class QueryEngine {
    * been indexed.
    */
   private ImmutableSortedMap<DocumentKey, Document> appendRemainingResults(
-      Iterable<Document> indexedResults, Query query, IndexOffset offset, AutoIndexing counter) {
+      Iterable<Document> indexedResults, Query query, IndexOffset offset, QueryContext counter) {
     // Retrieve all results for documents that were updated since the offset.
     ImmutableSortedMap<DocumentKey, Document> remainingResults =
         localDocumentsView.getDocumentsMatchingQuery(query, offset, counter);
@@ -269,6 +269,6 @@ public class QueryEngine {
 
   private ImmutableSortedMap<DocumentKey, Document> appendRemainingResults(
       Iterable<Document> indexedResults, Query query, IndexOffset offset) {
-    return appendRemainingResults(indexedResults, query, offset, new AutoIndexing());
+    return appendRemainingResults(indexedResults, query, offset, new QueryContext());
   }
 }

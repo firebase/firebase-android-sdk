@@ -153,12 +153,12 @@ class CountingQueryEngine extends QueryEngine {
 
       @Override
       public Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys) {
-        return getAll(documentKeys, new AutoIndexing());
+        return getAll(documentKeys, new QueryContext());
       }
 
       @Override
       public Map<DocumentKey, MutableDocument> getAll(
-          Iterable<DocumentKey> documentKeys, AutoIndexing counter) {
+          Iterable<DocumentKey> documentKeys, QueryContext counter) {
         Map<DocumentKey, MutableDocument> result = subject.getAll(documentKeys);
         for (MutableDocument document : result.values()) {
           documentsReadByKey[0] += document.isValidDocument() ? 1 : 0;
@@ -177,7 +177,7 @@ class CountingQueryEngine extends QueryEngine {
       @Override
       public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
           Query query, IndexOffset offset, Set<DocumentKey> mutatedKeys) {
-        return getDocumentsMatchingQuery(query, offset, mutatedKeys, new AutoIndexing());
+        return getDocumentsMatchingQuery(query, offset, mutatedKeys, new QueryContext());
       }
 
       @Override
@@ -185,7 +185,7 @@ class CountingQueryEngine extends QueryEngine {
           Query query,
           IndexOffset offset,
           @NonNull Set<DocumentKey> mutatedKeys,
-          AutoIndexing counter) {
+          QueryContext counter) {
         Map<DocumentKey, MutableDocument> result =
             subject.getDocumentsMatchingQuery(query, offset, mutatedKeys);
         documentsReadByCollection[0] += result.size();
