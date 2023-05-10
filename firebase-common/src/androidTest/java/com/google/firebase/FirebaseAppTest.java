@@ -398,7 +398,7 @@ public class FirebaseAppTest {
 
     isUserUnlocked.set(false);
     FirebaseApp firebaseApp = FirebaseApp.initializeApp(mockContext);
-    assert (firebaseApp != null);
+    assertThat(firebaseApp).isNotNull();
     firebaseApp.setDataCollectionDefaultEnabled(false);
     assertFalse(firebaseApp.isDataCollectionDefaultEnabled());
     // User unlocks the device.
