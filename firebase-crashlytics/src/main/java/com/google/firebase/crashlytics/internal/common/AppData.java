@@ -17,6 +17,7 @@ package com.google.firebase.crashlytics.internal.common;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
 import java.util.List;
 
@@ -46,7 +47,7 @@ public class AppData {
     final String installerPackageName = idManager.getInstallerPackageName();
     final PackageManager packageManager = context.getPackageManager();
     final PackageInfo packageInfo = packageManager.getPackageInfo(packageName, 0);
-    final String versionCode = Integer.toString(packageInfo.versionCode);
+    final String versionCode = getAppBuildVersion(packageInfo);
     final String versionName =
         packageInfo.versionName == null ? IdManager.DEFAULT_VERSION_NAME : packageInfo.versionName;
 
@@ -59,6 +60,15 @@ public class AppData {
         versionCode,
         versionName,
         developmentPlatformProvider);
+  }
+
+  @SuppressWarnings("DEPRECATION")
+  private static String getAppBuildVersion(PackageInfo packageInfo) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      return Long.toString(packageInfo.getLongVersionCode());
+    } else {
+      return Integer.toString(packageInfo.versionCode);
+    }
   }
 
   public AppData(
