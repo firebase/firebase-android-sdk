@@ -143,10 +143,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
           .performNextSubquery()
           .forEach(
               row -> {
-                QueryContext singleCounter = new QueryContext();
-                processRowInBackground(
-                    backgroundQueue, results, row, /*filter*/ null, singleCounter);
-                counter.fullScanCount += singleCounter.fullScanCount;
+                processRowInBackground(backgroundQueue, results, row, /*filter*/ null);
+                counter.fullScanCount++;
               });
     }
     backgroundQueue.drain();
@@ -234,8 +232,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         .forEach(
             row -> {
               QueryContext singleCounter = new QueryContext();
-              processRowInBackground(backgroundQueue, results, row, filter, singleCounter);
-              counter.fullScanCount += singleCounter.fullScanCount;
+              processRowInBackground(backgroundQueue, results, row, filter);
+              counter.fullScanCount++;
             });
     backgroundQueue.drain();
     return results;
@@ -253,8 +251,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       BackgroundQueue backgroundQueue,
       Map<DocumentKey, MutableDocument> results,
       Cursor row,
-      @Nullable Function<MutableDocument, Boolean> filter,
-      QueryContext counter) {
+      @Nullable Function<MutableDocument, Boolean> filter) {
     byte[] rawDocument = row.getBlob(0);
     int readTimeSeconds = row.getInt(1);
     int readTimeNanos = row.getInt(2);
@@ -266,7 +263,6 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         () -> {
           MutableDocument document =
               decodeMaybeDocument(rawDocument, readTimeSeconds, readTimeNanos);
-          counter.fullScanCount++;
           if (filter == null || filter.apply(document)) {
             synchronized (results) {
               results.put(document.getKey(), document);
