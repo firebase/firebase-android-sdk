@@ -62,6 +62,7 @@ public class AppData {
         developmentPlatformProvider);
   }
 
+  @SuppressWarnings("DEPRECATION")
   private static String getAppBuildVersion(PackageInfo packageInfo) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
       return Long.toString(packageInfo.getLongVersionCode());
