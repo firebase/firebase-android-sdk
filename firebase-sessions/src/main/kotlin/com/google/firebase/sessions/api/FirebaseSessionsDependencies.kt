@@ -48,7 +48,10 @@ object FirebaseSessionsDependencies {
     dependencies[subscriberName] = Dependency(Mutex(locked = true))
   }
 
-  /** Register and unlock the subscriber. This must be called before [getSubscribers] can return. */
+  /**
+   * Register and unlock the subscriber. This must be called before [getRegisteredSubscribers] can
+   * return.
+   */
   internal fun register(subscriber: SessionSubscriber) {
     val subscriberName = subscriber.sessionSubscriberName
     val dependency = getDependency(subscriberName)
@@ -64,7 +67,7 @@ object FirebaseSessionsDependencies {
   }
 
   /** Gets the subscribers safely, blocks until all the subscribers are registered. */
-  internal suspend fun getSubscribers(): Map<SessionSubscriber.Name, SessionSubscriber> {
+  internal suspend fun getRegisteredSubscribers(): Map<SessionSubscriber.Name, SessionSubscriber> {
     // The call to getSubscriber will never throw because the mutex guarantees it's been registered.
     return dependencies.mapValues { (subscriberName, dependency) ->
       dependency.mutex.withLock { getSubscriber(subscriberName) }
