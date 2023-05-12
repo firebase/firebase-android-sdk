@@ -38,6 +38,7 @@ import com.google.android.datatransport.runtime.synchronization.SynchronizationG
 import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -113,6 +114,7 @@ public class Uploader {
   }
 
   @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
+  @CanIgnoreReturnValue
   public BackendResponse logAndUpdateState(TransportContext transportContext, int attemptNumber) {
     TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
     long maxNextRequestWaitMillis = 0;

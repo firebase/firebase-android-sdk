@@ -83,16 +83,11 @@ internal constructor(
   private fun initiateSessionStart() {
     val sessionDetails = sessionGenerator.generateNewSession()
 
-    if (!sessionGenerator.collectEvents) {
-      Log.d(TAG, "Sessions SDK has sampled this session")
-      return
-    }
-
     sessionStartScope.launch {
       val subscribers = FirebaseSessionsDependencies.getSubscribers()
 
       if (subscribers.isEmpty()) {
-        Log.e(
+        Log.d(
           TAG,
           "Sessions SDK did not have any dependent SDKs register as dependencies. Events will not be sent."
         )
@@ -110,6 +105,11 @@ internal constructor(
         if (subscriber.isDataCollectionEnabled) {
           subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionDetails.sessionId))
         }
+      }
+
+      if (!sessionGenerator.collectEvents) {
+        Log.d(TAG, "Sessions SDK has sampled this session")
+        return@launch
       }
 
       sessionCoordinator.attemptLoggingSessionEvent(

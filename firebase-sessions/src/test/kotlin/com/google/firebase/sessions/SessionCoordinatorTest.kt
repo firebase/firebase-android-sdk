@@ -43,7 +43,7 @@ class SessionCoordinatorTest {
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
     val sessionCoordinator =
       SessionCoordinator(
-        firebaseInstallations = FakeFirebaseInstallations("FaKeFiD"),
+        firebaseInstallations,
         eventGDTLogger = fakeEventGDTLogger,
       )
 

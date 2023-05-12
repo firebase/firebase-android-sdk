@@ -16,6 +16,7 @@
 
 package com.google.firebase.sessions.api
 
+import android.util.Log
 import androidx.annotation.VisibleForTesting
 import java.util.Collections.synchronizedMap
 import kotlinx.coroutines.sync.Mutex
@@ -29,6 +30,8 @@ import kotlinx.coroutines.sync.withLock
  * This is important because the Sessions SDK starts up before dependent SDKs.
  */
 object FirebaseSessionsDependencies {
+  private const val TAG = "SessionsDependencies"
+
   private val dependencies = synchronizedMap(mutableMapOf<SessionSubscriber.Name, Dependency>())
 
   /**
@@ -37,7 +40,8 @@ object FirebaseSessionsDependencies {
    */
   fun addDependency(subscriberName: SessionSubscriber.Name) {
     if (dependencies.containsKey(subscriberName)) {
-      throw IllegalArgumentException("Dependency $subscriberName already added.")
+      Log.d(TAG, "Dependency $subscriberName already added.")
+      return
     }
 
     // The dependency is locked until the subscriber registers itself.
@@ -50,7 +54,8 @@ object FirebaseSessionsDependencies {
     val dependency = getDependency(subscriberName)
 
     dependency.subscriber?.run {
-      throw IllegalArgumentException("Subscriber $subscriberName already registered.")
+      Log.d(TAG, "Subscriber $subscriberName already registered.")
+      return
     }
     dependency.subscriber = subscriber
 
@@ -60,24 +65,21 @@ object FirebaseSessionsDependencies {
 
   /** Gets the subscribers safely, blocks until all the subscribers are registered. */
   internal suspend fun getSubscribers(): Map<SessionSubscriber.Name, SessionSubscriber> {
-    // The call to get will never throw because the mutex guarantees it's been registered.
+    // The call to getSubscriber will never throw because the mutex guarantees it's been registered.
     return dependencies.mapValues { (subscriberName, dependency) ->
-      dependency.mutex.withLock { get(subscriberName) }
+      dependency.mutex.withLock { getSubscriber(subscriberName) }
     }
   }
 
-  /** Gets the subscriber regardless of being registered. This is exposed for testing. */
+  /** Gets the subscriber, regardless of being registered. This is exposed for testing. */
   @VisibleForTesting
-  internal operator fun get(subscriberName: SessionSubscriber.Name): SessionSubscriber {
+  internal fun getSubscriber(subscriberName: SessionSubscriber.Name): SessionSubscriber {
     return getDependency(subscriberName).subscriber
       ?: throw IllegalStateException("Subscriber $subscriberName has not been registered.")
   }
 
-  /** Resets the registered subscribers for testing purposes. */
-  @VisibleForTesting
-  internal fun reset() {
-    dependencies.keys.forEach { dependencies[it] = Dependency(Mutex(locked = true)) }
-  }
+  /** Resets all the dependencies for testing purposes. */
+  @VisibleForTesting internal fun reset() = dependencies.clear()
 
   private fun getDependency(subscriberName: SessionSubscriber.Name): Dependency {
     return dependencies.getOrElse(subscriberName) {
