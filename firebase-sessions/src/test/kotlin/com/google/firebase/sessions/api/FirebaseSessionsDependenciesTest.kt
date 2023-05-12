@@ -39,63 +39,64 @@ import org.junit.runner.RunWith
 class FirebaseSessionsDependenciesTest {
   @After
   fun cleanUp() {
-    // Reset any registered subscribers after each test.
+    // Reset all dependencies after each test.
     FirebaseSessionsDependencies.reset()
   }
 
   @Test
   fun register_dependencyAdded_canGet() {
+    val crashlyticsSubscriber = FakeSessionSubscriber(sessionSubscriberName = CRASHLYTICS)
+    FirebaseSessionsDependencies.addDependency(CRASHLYTICS)
     FirebaseSessionsDependencies.register(crashlyticsSubscriber)
 
-    assertThat(FirebaseSessionsDependencies[CRASHLYTICS]).isEqualTo(crashlyticsSubscriber)
+    assertThat(FirebaseSessionsDependencies.getSubscriber(CRASHLYTICS))
+      .isEqualTo(crashlyticsSubscriber)
   }
 
   @Test
-  fun register_alreadyRegistered_throws() {
+  fun register_alreadyRegisteredSameName_ignoresSecondSubscriber() {
+    val firstSubscriber = FakeSessionSubscriber(sessionSubscriberName = CRASHLYTICS)
+    val secondSubscriber = FakeSessionSubscriber(sessionSubscriberName = CRASHLYTICS)
+
+    FirebaseSessionsDependencies.addDependency(CRASHLYTICS)
+
     // Register the first time, no problem.
-    FirebaseSessionsDependencies.register(crashlyticsSubscriber)
+    FirebaseSessionsDependencies.register(firstSubscriber)
 
-    val thrown =
-      assertThrows(IllegalArgumentException::class.java) {
-        // Attempt to register the same subscriber a second time.
-        FirebaseSessionsDependencies.register(crashlyticsSubscriber)
-      }
+    // Attempt to register a second subscriber with the same name.
+    FirebaseSessionsDependencies.register(secondSubscriber)
 
-    assertThat(thrown).hasMessageThat().contains("Subscriber CRASHLYTICS already registered")
+    assertThat(FirebaseSessionsDependencies.getSubscriber(CRASHLYTICS)).isEqualTo(firstSubscriber)
   }
 
   @Test
   fun getSubscriber_dependencyAdded_notRegistered_throws() {
-    val thrown =
-      assertThrows(IllegalStateException::class.java) { FirebaseSessionsDependencies[CRASHLYTICS] }
+    FirebaseSessionsDependencies.addDependency(PERFORMANCE)
 
-    assertThat(thrown).hasMessageThat().contains("Subscriber CRASHLYTICS has not been registered")
+    val thrown =
+      assertThrows(IllegalStateException::class.java) {
+        FirebaseSessionsDependencies.getSubscriber(PERFORMANCE)
+      }
+
+    assertThat(thrown).hasMessageThat().contains("Subscriber PERFORMANCE has not been registered")
   }
 
   @Test
   fun getSubscriber_notDepended_throws() {
     val thrown =
       assertThrows(IllegalStateException::class.java) {
-        // Performance was never added as a dependency.
-        FirebaseSessionsDependencies[PERFORMANCE]
+        // Crashlytics was never added as a dependency.
+        FirebaseSessionsDependencies.getSubscriber(CRASHLYTICS)
       }
 
-    assertThat(thrown).hasMessageThat().contains("Cannot get dependency PERFORMANCE")
-  }
-
-  @Test
-  fun addDependencyTwice_throws() {
-    val thrown =
-      assertThrows(IllegalArgumentException::class.java) {
-        // CRASHLYTICS has already been added. Attempt to add it again.
-        FirebaseSessionsDependencies.addDependency(CRASHLYTICS)
-      }
-
-    assertThat(thrown).hasMessageThat().contains("Dependency CRASHLYTICS already added")
+    assertThat(thrown).hasMessageThat().contains("Cannot get dependency CRASHLYTICS")
   }
 
   @Test
   fun getSubscribers_waitsForRegister(): Unit = runBlocking {
+    val crashlyticsSubscriber = FakeSessionSubscriber(sessionSubscriberName = CRASHLYTICS)
+    FirebaseSessionsDependencies.addDependency(CRASHLYTICS)
+
     // Wait a few seconds and then register.
     launch {
       delay(2.seconds)
@@ -103,25 +104,23 @@ class FirebaseSessionsDependenciesTest {
     }
 
     // Block until the register happens.
-    val subscribers = runBlocking { FirebaseSessionsDependencies.getSubscribers() }
+    val subscribers = FirebaseSessionsDependencies.getSubscribers()
 
     assertThat(subscribers).containsExactly(CRASHLYTICS, crashlyticsSubscriber)
   }
 
+  @Test
+  fun getSubscribers_noDependencies() = runTest {
+    val subscribers = FirebaseSessionsDependencies.getSubscribers()
+
+    assertThat(subscribers).isEmpty()
+  }
+
   @Test(expected = TimeoutCancellationException::class)
   fun getSubscribers_neverRegister_waitsForever() = runTest {
+    FirebaseSessionsDependencies.addDependency(CRASHLYTICS)
+
     // The register never happens, wait until the timeout.
     withTimeout(2.seconds) { FirebaseSessionsDependencies.getSubscribers() }
   }
-
-  companion object {
-    init {
-      // Add only Crashlytics as a dependency, not Performance.
-      // This is similar to how 1P SDKs will add themselves as dependencies. Note that this
-      // dependency is added for all unit tests after this class is loaded into memory.
-      FirebaseSessionsDependencies.addDependency(CRASHLYTICS)
-    }
-  }
-
-  private val crashlyticsSubscriber = FakeSessionSubscriber(sessionSubscriberName = CRASHLYTICS)
 }
