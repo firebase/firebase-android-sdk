@@ -205,13 +205,27 @@ public class FirebaseFunctions {
   /** Returns a reference to the Callable HTTPS trigger with the given name. */
   @NonNull
   public HttpsCallableReference getHttpsCallable(@NonNull String name) {
-    return new HttpsCallableReference(this, name);
+    return new HttpsCallableReference(this, name, new HttpsCallOptions());
   }
 
   /** Returns a reference to the Callable HTTPS trigger with the provided url. */
   @NonNull
   public HttpsCallableReference getHttpsCallableFromUrl(@NonNull URL url) {
-    return new HttpsCallableReference(this, url);
+    return new HttpsCallableReference(this, url, new HttpsCallOptions());
+  }
+
+  /** Returns a reference to the Callable HTTPS trigger with the given name. */
+  @NonNull
+  public HttpsCallableReference getHttpsCallable(
+      @NonNull String name, @NonNull HttpsCallableOptions options) {
+    return new HttpsCallableReference(this, name, new HttpsCallOptions(options));
+  }
+
+  /** Returns a reference to the Callable HTTPS trigger with the provided url. */
+  @NonNull
+  public HttpsCallableReference getHttpsCallableFromUrl(
+      @NonNull URL url, @NonNull HttpsCallableOptions options) {
+    return new HttpsCallableReference(this, url, new HttpsCallOptions(options));
   }
 
   /**
@@ -273,7 +287,8 @@ public class FirebaseFunctions {
   Task<HttpsCallableResult> call(String name, @Nullable Object data, HttpsCallOptions options) {
     return providerInstalled
         .getTask()
-        .continueWithTask(executor, task -> contextProvider.getContext())
+        .continueWithTask(
+            executor, task -> contextProvider.getContext(options.getLimitedUseAppCheckTokens()))
         .continueWithTask(
             executor,
             task -> {
@@ -296,7 +311,8 @@ public class FirebaseFunctions {
   Task<HttpsCallableResult> call(URL url, @Nullable Object data, HttpsCallOptions options) {
     return providerInstalled
         .getTask()
-        .continueWithTask(executor, task -> contextProvider.getContext())
+        .continueWithTask(
+            executor, task -> contextProvider.getContext(options.getLimitedUseAppCheckTokens()))
         .continueWithTask(
             executor,
             task -> {

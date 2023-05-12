@@ -88,7 +88,7 @@ public class CallTest {
             app.getApplicationContext(),
             app.getOptions().getProjectId(),
             "us-central1",
-            () -> {
+            (unused) -> {
               HttpsCallableContext context = new HttpsCallableContext("token", null, null);
               return Tasks.forResult(context);
             },
@@ -110,7 +110,7 @@ public class CallTest {
             app.getApplicationContext(),
             app.getOptions().getProjectId(),
             "us-central1",
-            () -> {
+            (unused) -> {
               HttpsCallableContext context = new HttpsCallableContext(null, "iid", null);
               return Tasks.forResult(context);
             },
@@ -132,7 +132,7 @@ public class CallTest {
             app.getApplicationContext(),
             app.getOptions().getProjectId(),
             "us-central1",
-            () -> {
+            (unused) -> {
               HttpsCallableContext context = new HttpsCallableContext(null, null, "appCheck");
               return Tasks.forResult(context);
             },
@@ -140,6 +140,32 @@ public class CallTest {
             TestOnlyExecutors.ui());
 
     HttpsCallableReference function = functions.getHttpsCallable("appCheckTest");
+    Task<HttpsCallableResult> result = function.call(new HashMap<>());
+    Object actual = Tasks.await(result).getData();
+
+    assertEquals(new HashMap<>(), actual);
+  }
+
+  @Test
+  public void testAppCheckLimitedUse() throws InterruptedException, ExecutionException {
+    // Override the normal token provider to simulate FirebaseAuth being logged in.
+    FirebaseFunctions functions =
+        new FirebaseFunctions(
+            app.getApplicationContext(),
+            app.getOptions().getProjectId(),
+            "us-central1",
+            (unused) -> {
+              HttpsCallableContext context =
+                  new HttpsCallableContext(null, null, "appCheck-limited-use");
+              return Tasks.forResult(context);
+            },
+            TestOnlyExecutors.lite(),
+            TestOnlyExecutors.ui());
+
+    HttpsCallableReference function =
+        functions.getHttpsCallable(
+            "appCheckLimitedUseTest",
+            new HttpsCallableOptions.Builder().setLimitedUseAppCheckTokens(true).build());
     Task<HttpsCallableResult> result = function.call(new HashMap<>());
     Object actual = Tasks.await(result).getData();
 
