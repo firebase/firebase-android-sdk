@@ -20,8 +20,6 @@ import androidx.annotation.Nullable;
 /**
  * A Firebase Remote Config internal issue that isn't caused by an interaction with the Firebase
  * Remote Config server.
- *
- * @author Miraziz Yusupov
  */
 public class FirebaseRemoteConfigClientException extends FirebaseRemoteConfigException {
   /** Creates a Firebase Remote Config client exception with the given message. */
@@ -36,8 +34,8 @@ public class FirebaseRemoteConfigClientException extends FirebaseRemoteConfigExc
   }
 
   /**
-   * Creates a Firebase Remote Config client exception with the given message and
-   * FirebaseRemoteConfigException code.
+   * Creates a Firebase Remote Config client exception with the given message and {@code
+   * FirebaseRemoteConfigException} code.
    */
   public FirebaseRemoteConfigClientException(@NonNull String detailMessage, @NonNull Code code) {
     super(detailMessage, code);

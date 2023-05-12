@@ -39,10 +39,13 @@ class ApplicationInfoTest {
           appId = FakeFirebaseApp.MOCK_APP_ID,
           deviceModel = Build.MODEL,
           sessionSdkVersion = BuildConfig.VERSION_NAME,
+          osVersion = Build.VERSION.RELEASE,
           logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
           AndroidApplicationInfo(
             packageName = ApplicationProvider.getApplicationContext<Context>().packageName,
-            versionName = FakeFirebaseApp.MOCK_APP_VERSION
+            versionName = FakeFirebaseApp.MOCK_APP_VERSION,
+            appBuildVersion = FakeFirebaseApp.MOCK_APP_BUILD_VERSION,
+            deviceManufacturer = Build.MANUFACTURER,
           )
         )
       )

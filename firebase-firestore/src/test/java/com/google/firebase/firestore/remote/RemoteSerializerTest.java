@@ -509,6 +509,11 @@ public final class RemoteSerializerTest {
     targetData = new TargetData(query.toTarget(), 2, 3, QueryPurpose.EXISTENCE_FILTER_MISMATCH);
     result = serializer.encodeListenRequestLabels(targetData);
     assertEquals(map("goog-listen-tags", "existence-filter-mismatch"), result);
+
+    targetData =
+        new TargetData(query.toTarget(), 2, 3, QueryPurpose.EXISTENCE_FILTER_MISMATCH_BLOOM);
+    result = serializer.encodeListenRequestLabels(targetData);
+    assertEquals(map("goog-listen-tags", "existence-filter-mismatch-bloom"), result);
   }
 
   @Test
@@ -1146,6 +1151,96 @@ public final class RemoteSerializerTest {
             .setQuery(queryBuilder)
             .setTargetId(1)
             .setReadTime(Timestamp.newBuilder().setSeconds(4))
+            .build();
+
+    assertEquals(expected, actual);
+    assertEquals(
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
+  }
+
+  @Test
+  public void encodesExpectedCountWhenResumeTokenIsPresent() {
+    Query q = Query.atPath(ResourcePath.fromString("docs"));
+    TargetData targetData =
+        new TargetData(q.toTarget(), 1, 2, QueryPurpose.LISTEN)
+            .withResumeToken(TestUtil.resumeToken(1000), SnapshotVersion.NONE)
+            .withExpectedCount(42);
+    Target actual = serializer.encodeTarget(targetData);
+
+    StructuredQuery.Builder structuredQueryBuilder =
+        StructuredQuery.newBuilder()
+            .addFrom(CollectionSelector.newBuilder().setCollectionId("docs"))
+            .addOrderBy(defaultKeyOrder());
+
+    QueryTarget.Builder queryBuilder =
+        QueryTarget.newBuilder()
+            .setParent("projects/p/databases/d/documents")
+            .setStructuredQuery(structuredQueryBuilder);
+    Target expected =
+        Target.newBuilder()
+            .setQuery(queryBuilder)
+            .setTargetId(1)
+            .setResumeToken(TestUtil.resumeToken(1000))
+            .setExpectedCount(Int32Value.newBuilder().setValue(42))
+            .build();
+
+    assertEquals(expected, actual);
+    assertEquals(
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
+  }
+
+  @Test
+  public void encodesExpectedCountWhenReadTimeIsPresent() {
+    Query q = Query.atPath(ResourcePath.fromString("docs"));
+    TargetData targetData =
+        new TargetData(q.toTarget(), 1, 2, QueryPurpose.LISTEN)
+            .withResumeToken(ByteString.EMPTY, version(4000000))
+            .withExpectedCount(42);
+    Target actual = serializer.encodeTarget(targetData);
+
+    StructuredQuery.Builder structuredQueryBuilder =
+        StructuredQuery.newBuilder()
+            .addFrom(CollectionSelector.newBuilder().setCollectionId("docs"))
+            .addOrderBy(defaultKeyOrder());
+
+    QueryTarget.Builder queryBuilder =
+        QueryTarget.newBuilder()
+            .setParent("projects/p/databases/d/documents")
+            .setStructuredQuery(structuredQueryBuilder);
+    Target expected =
+        Target.newBuilder()
+            .setQuery(queryBuilder)
+            .setTargetId(1)
+            .setReadTime(Timestamp.newBuilder().setSeconds(4))
+            .setExpectedCount(Int32Value.newBuilder().setValue(42))
+            .build();
+
+    assertEquals(expected, actual);
+    assertEquals(
+        serializer.decodeQueryTarget(serializer.encodeQueryTarget(q.toTarget())), q.toTarget());
+  }
+
+  @Test
+  public void shouldIgnoreExpectedCountWithoutResumeTokenOrReadTime() {
+    Query q = Query.atPath(ResourcePath.fromString("docs"));
+    TargetData targetData =
+        new TargetData(q.toTarget(), 1, 2, QueryPurpose.LISTEN).withExpectedCount(42);
+    Target actual = serializer.encodeTarget(targetData);
+
+    StructuredQuery.Builder structuredQueryBuilder =
+        StructuredQuery.newBuilder()
+            .addFrom(CollectionSelector.newBuilder().setCollectionId("docs"))
+            .addOrderBy(defaultKeyOrder());
+
+    QueryTarget.Builder queryBuilder =
+        QueryTarget.newBuilder()
+            .setParent("projects/p/databases/d/documents")
+            .setStructuredQuery(structuredQueryBuilder);
+    Target expected =
+        Target.newBuilder()
+            .setQuery(queryBuilder)
+            .setTargetId(1)
+            .setResumeToken(ByteString.EMPTY)
             .build();
 
     assertEquals(expected, actual);

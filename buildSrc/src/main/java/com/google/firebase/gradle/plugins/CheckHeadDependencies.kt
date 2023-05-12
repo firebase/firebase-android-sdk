@@ -20,43 +20,45 @@ import org.gradle.api.provider.ListProperty
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 
+/**
+ * Validates that all project level dependencies are in the release.
+ *
+ * Any releasing library that has a project level dependency on another library invokes the release
+ * of said dependent libary. This is checked via the [artifactId]
+ * [FirebaseLibraryExtension.artifactId], so that the check is version agnostic.
+ *
+ * @throws GradleException if any project level dependencies are found that are not included in the
+ * release
+ */
 abstract class CheckHeadDependencies : DefaultTask() {
   @get:Input abstract val projectsToPublish: ListProperty<FirebaseLibraryExtension>
 
-  @get:Input abstract val allFirebaseProjects: ListProperty<String>
-
   @TaskAction
   fun run() {
-    val projectsReleasing: Set<String> = projectsToPublish.get().map { it.artifactId.get() }.toSet()
+    val projectsReleasing = computeProjectsReleasing()
+
     val errors =
       projectsToPublish
         .get()
-        .associate {
-          it.artifactId.get() to
-            it
-              .projectDependenciesByName()
-              .intersect(allFirebaseProjects.get())
-              .subtract(projectsReleasing)
-              .subtract(DEPENDENCIES_TO_IGNORE)
-        }
+        .associate { it.artifactId.get() to it.projectLevelDepsAsArtifactIds() - projectsReleasing }
         .filterValues { it.isNotEmpty() }
         .map { "${it.key} requires: ${it.value.joinToString(", ") }" }
 
     if (errors.isNotEmpty()) {
       throw GradleException(
-        "Project-level dependency errors found. Please update the release config.\n${
-                errors.joinToString(
-                    "\n"
-                )
-            }"
+        "Project-level dependency errors found. Please update the release config.\n" +
+          "${errors.joinToString("\n")}"
       )
     }
   }
 
-  private fun FirebaseLibraryExtension.projectDependenciesByName() =
+  private fun FirebaseLibraryExtension.projectLevelDepsAsArtifactIds() =
     resolveProjectLevelDependencies().map { it.artifactId.get() }
 
+  private fun computeProjectsReleasing() =
+    projectsToPublish.get().map { it.artifactId.get() } + DEPENDENCIES_TO_IGNORE
+
   companion object {
-    val DEPENDENCIES_TO_IGNORE: List<String> = listOf("protolite-well-known-types")
+    val DEPENDENCIES_TO_IGNORE = listOf("protolite-well-known-types")
   }
 }

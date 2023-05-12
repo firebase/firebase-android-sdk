@@ -17,15 +17,35 @@
 package com.google.firebase.sessions.settings
 
 import android.content.Context
-import android.net.Uri
+import android.os.Build
+import android.util.Log
 import androidx.datastore.preferences.preferencesDataStore
-import java.net.URL
+import com.google.firebase.installations.FirebaseInstallationsApi
+import com.google.firebase.sessions.ApplicationInfo
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.tasks.await
+import org.json.JSONException
+import org.json.JSONObject
 
-internal class RemoteSettings(val context: Context) : SettingsProvider {
-  private val Context.dataStore by preferencesDataStore(name = SESSION_CONFIGS_NAME)
+internal class RemoteSettings(
+  val context: Context,
+  val blockingDispatcher: CoroutineContext,
+  val backgroundDispatcher: CoroutineContext,
+  val firebaseInstallationsApi: FirebaseInstallationsApi,
+  val appInfo: ApplicationInfo,
+  private val configsFetcher: CrashlyticsSettingsFetcher = RemoteSettingsFetcher(appInfo),
+  dataStoreName: String = SESSION_CONFIGS_NAME
+) : SettingsProvider {
+  private val Context.dataStore by preferencesDataStore(name = dataStoreName)
   private val settingsCache = SettingsCache(context.dataStore)
+  private var fetchInProgress = AtomicBoolean(false)
 
   override val sessionEnabled: Boolean?
     get() {
@@ -47,45 +67,110 @@ internal class RemoteSettings(val context: Context) : SettingsProvider {
     }
 
   override fun updateSettings() {
-    fetchConfigs()
+    // TODO: Move to blocking coroutine dispatcher.
+    runBlocking(Dispatchers.Default) { launch { fetchConfigs() } }
   }
 
   override fun isSettingsStale(): Boolean {
     return settingsCache.hasCacheExpired()
   }
 
-  companion object SettingsFetcher {
-    private const val SESSION_CONFIGS_NAME = "firebase_session_settings"
-    private const val FIREBASE_SESSIONS_BASE_URL_STRING =
-      "https://firebase-settings.crashlytics.com"
-    private const val FIREBASE_PLATFORM = "android"
-    private const val fetchInProgress = false
-    private val settingsUrl: URL = run {
-      var uri =
-        Uri.Builder()
-          .scheme("https")
-          .authority(FIREBASE_SESSIONS_BASE_URL_STRING)
-          .appendPath("spi/v2/platforms")
-          .appendPath(FIREBASE_PLATFORM)
-          .appendPath("gmp")
-          // TODO(visum) Replace below with the GMP APPId
-          .appendPath("GMP_APP_ID")
-          .appendPath("settings")
-          .appendQueryParameter("build_version", "")
-          .appendQueryParameter("display_version", "")
+  internal fun clearCachedSettings() {
+    val scope = CoroutineScope(backgroundDispatcher)
+    scope.launch { settingsCache.removeConfigs() }
+  }
 
-      URL(uri.build().toString())
+  suspend private fun fetchConfigs() {
+    // Check if a fetch is in progress. If yes, return
+    if (fetchInProgress.get()) {
+      return
     }
 
-    fun fetchConfigs() {
-      // Check if a fetch is in progress. If yes, return
-      if (fetchInProgress) {
-        return
+    // Check if cache is expired. If not, return
+    if (!settingsCache.hasCacheExpired()) {
+      return
+    }
+
+    fetchInProgress.set(true)
+
+    // Get the installations ID before making a remote config fetch
+    var installationId = firebaseInstallationsApi.id.await()
+    if (installationId == null) {
+      fetchInProgress.set(false)
+      return
+    }
+
+    // All the required fields are available, start making a network request.
+    val options =
+      mapOf(
+        "X-Crashlytics-Installation-ID" to installationId,
+        "X-Crashlytics-Device-Model" to
+          removeForwardSlashesIn(String.format("%s/%s", Build.MANUFACTURER, Build.MODEL)),
+        "X-Crashlytics-OS-Build-Version" to removeForwardSlashesIn(Build.VERSION.INCREMENTAL),
+        "X-Crashlytics-OS-Display-Version" to removeForwardSlashesIn(Build.VERSION.RELEASE),
+        "X-Crashlytics-API-Client-Version" to appInfo.sessionSdkVersion
+      )
+
+    configsFetcher.doConfigFetch(
+      headerOptions = options,
+      onSuccess = {
+        var sessionsEnabled: Boolean? = null
+        var sessionSamplingRate: Double? = null
+        var sessionTimeoutSeconds: Int? = null
+        var cacheDuration: Int? = null
+        if (it.has("app_quality")) {
+          val aqsSettings = it.get("app_quality") as JSONObject
+          try {
+            if (aqsSettings.has("sessions_enabled")) {
+              sessionsEnabled = aqsSettings.get("sessions_enabled") as Boolean?
+            }
+
+            if (aqsSettings.has("sampling_rate")) {
+              sessionSamplingRate = aqsSettings.get("sampling_rate") as Double?
+            }
+
+            if (aqsSettings.has("session_timeout_seconds")) {
+              sessionTimeoutSeconds = aqsSettings.get("session_timeout_seconds") as Int?
+            }
+
+            if (aqsSettings.has("cache_duration")) {
+              cacheDuration = aqsSettings.get("cache_duration") as Int?
+            }
+          } catch (exception: JSONException) {
+            Log.e(TAG, "Error parsing the configs remotely fetched: ", exception)
+          }
+        }
+
+        val scope = CoroutineScope(backgroundDispatcher)
+        sessionsEnabled?.let { settingsCache.updateSettingsEnabled(sessionsEnabled) }
+
+        sessionTimeoutSeconds?.let {
+          settingsCache.updateSessionRestartTimeout(sessionTimeoutSeconds)
+        }
+
+        sessionSamplingRate?.let { settingsCache.updateSamplingRate(sessionSamplingRate) }
+
+        cacheDuration?.let { settingsCache.updateSessionCacheDuration(cacheDuration) }
+          ?: let { settingsCache.updateSessionCacheDuration(86400) }
+
+        settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
+        fetchInProgress.set(false)
+      },
+      onFailure = {
+        // Network request failed here.
+        Log.e(TAG, "Error failing to fetch the remote configs")
+        fetchInProgress.set(false)
       }
+    )
+  }
 
-      // Check if cache is expired. If not, return
-      // Initiate a fetch. On successful response cache the fetched values
+  private fun removeForwardSlashesIn(s: String): String {
+    return s.replace(FORWARD_SLASH_STRING.toRegex(), "")
+  }
 
-    }
+  companion object {
+    private const val SESSION_CONFIGS_NAME = "firebase_session_settings"
+    private const val TAG = "SessionConfigFetcher"
+    private const val FORWARD_SLASH_STRING: String = "/"
   }
 }

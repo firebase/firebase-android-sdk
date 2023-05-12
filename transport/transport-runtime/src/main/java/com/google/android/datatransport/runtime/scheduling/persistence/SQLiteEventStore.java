@@ -680,13 +680,15 @@ public class SQLiteEventStore
                                 .build());
                   }
                   populateLogSourcesMetrics(clientMetricsBuilder, metricsMap);
-                  clientMetricsBuilder.setWindow(getTimeWindow());
-                  clientMetricsBuilder.setGlobalMetrics(getGlobalMetrics());
-                  clientMetricsBuilder.setAppNamespace(packageName.get());
-                  return clientMetricsBuilder.build();
+                  return clientMetricsBuilder
+                      .setWindow(getTimeWindow())
+                      .setGlobalMetrics(getGlobalMetrics())
+                      .setAppNamespace(packageName.get())
+                      .build();
                 }));
   }
 
+  @SuppressWarnings("CheckReturnValue")
   private void populateLogSourcesMetrics(
       ClientMetrics.Builder clientMetricsBuilder, Map<String, List<LogEventDropped>> metricsMap) {
     for (Map.Entry<String, List<LogEventDropped>> entry : metricsMap.entrySet()) {
