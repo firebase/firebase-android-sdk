@@ -172,7 +172,9 @@ enum class DeltaType {
       ((publicBeforeMethods.keys intersect nonPublicMethods.keys) union
           (protectedBeforeMethods.keys intersect privateMethods.keys))
         .forEach {
-          val method = allAfterMethods.get(it)
+          val method =
+            if (allAfterMethods.get(it) != null) allAfterMethods.get(it)
+            else allBeforeMethods.get(it)
           apiDeltas.add(
             Delta(
               after.name,
@@ -191,7 +193,8 @@ enum class DeltaType {
       ((publicBeforeFields.keys intersect nonPublicFields.keys) union
           (protectedBeforeFields.keys intersect privateFields.keys))
         .forEach {
-          val field = allAfterFields.get(it)
+          val field =
+            if (allAfterFields.get(it) != null) allAfterFields.get(it) else allBeforeFields.get(it)
           apiDeltas.add(
             Delta(
               after.name,
@@ -604,8 +607,9 @@ enum class DeltaType {
             allBeforeMethods.containsKey(key) &&
             access.isStatic()
         }
+
       return (beforeStaticMethods.keys subtract afterStaticMethods.keys).map {
-        val method = allAfterMethods.get(it)
+        val method = beforeStaticMethods.get(it)
         Delta(
           after!!.name,
           method!!.name,

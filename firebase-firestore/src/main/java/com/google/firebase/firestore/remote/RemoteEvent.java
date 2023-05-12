@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.remote;
 
+import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
@@ -27,14 +28,14 @@ import java.util.Set;
 public final class RemoteEvent {
   private final SnapshotVersion snapshotVersion;
   private final Map<Integer, TargetChange> targetChanges;
-  private final Set<Integer> targetMismatches;
+  private final Map<Integer, QueryPurpose> targetMismatches;
   private final Map<DocumentKey, MutableDocument> documentUpdates;
   private final Set<DocumentKey> resolvedLimboDocuments;
 
   public RemoteEvent(
       SnapshotVersion snapshotVersion,
       Map<Integer, TargetChange> targetChanges,
-      Set<Integer> targetMismatches,
+      Map<Integer, QueryPurpose> targetMismatches,
       Map<DocumentKey, MutableDocument> documentUpdates,
       Set<DocumentKey> resolvedLimboDocuments) {
     this.snapshotVersion = snapshotVersion;
@@ -55,10 +56,10 @@ public final class RemoteEvent {
   }
 
   /**
-   * Returns a set of targets that is known to be inconsistent. Listens for these targets should be
-   * re-established without resume tokens.
+   * Returns a map of targets that is known to be inconsistent, and the purpose for re-listening.
+   * Listens for these targets should be re-established without resume tokens.
    */
-  public Set<Integer> getTargetMismatches() {
+  public Map<Integer, QueryPurpose> getTargetMismatches() {
     return targetMismatches;
   }
 

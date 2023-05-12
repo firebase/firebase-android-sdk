@@ -18,10 +18,11 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.AnyThread;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.auto.value.AutoValue;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.util.Executors;
+import com.google.firestore.v1.BloomFilter;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -50,7 +51,7 @@ final class TestingHooks {
   }
 
   /**
-   * Asynchronously notifies all registered {@link ExistenceFilterMismatchListener}` listeners
+   * Synchronously notifies all registered {@link ExistenceFilterMismatchListener}` listeners
    * registered via {@link #addExistenceFilterMismatchListener}.
    *
    * @param info Information about the existence filter mismatch to deliver to the listeners.
@@ -58,13 +59,10 @@ final class TestingHooks {
   void notifyOnExistenceFilterMismatch(@NonNull ExistenceFilterMismatchInfo info) {
     for (AtomicReference<ExistenceFilterMismatchListener> listenerRef :
         existenceFilterMismatchListeners) {
-      Executors.BACKGROUND_EXECUTOR.execute(
-          () -> {
-            ExistenceFilterMismatchListener listener = listenerRef.get();
-            if (listener != null) {
-              listener.onExistenceFilterMismatch(info);
-            }
-          });
+      ExistenceFilterMismatchListener listener = listenerRef.get();
+      if (listener != null) {
+        listener.onExistenceFilterMismatch(info);
+      }
     }
   }
 
@@ -76,15 +74,17 @@ final class TestingHooks {
    * particular ordering. If a given callback is registered multiple times then it will be notified
    * multiple times, once per registration.
    *
-   * <p>The thread on which the callback occurs is unspecified; listeners should perform their work
-   * as quickly as possible and return to avoid blocking any critical work. In particular, the
-   * listener callbacks should <em>not</em> block or perform long-running operations. Listener
-   * callbacks can occur concurrently with other callbacks on the same and other listeners.
+   * <p>The listener callbacks are performed synchronously in `NotifyOnExistenceFilterMismatch()`;
+   * therefore, listeners should perform their work as quickly as possible and return to avoid
+   * blocking any critical work. In particular, the listener callbacks should <em>not</em> block or
+   * perform long-running operations.
    *
    * @param listener the listener to register.
    * @return an object that unregisters the given listener via its {@link
    *     ListenerRegistration#remove} method; only the first unregistration request does anything;
-   *     all subsequent requests do nothing.
+   *     all subsequent requests do nothing. Note that due to inherent race conditions it is
+   *     technically possible, although unlikely, that callbacks could still occur <em>after</em>
+   *     unregistering.
    */
   ListenerRegistration addExistenceFilterMismatchListener(
       @NonNull ExistenceFilterMismatchListener listener) {
@@ -125,9 +125,12 @@ final class TestingHooks {
      * Creates and returns a new instance of {@link ExistenceFilterMismatchInfo} with the given
      * values.
      */
-    static ExistenceFilterMismatchInfo create(int localCacheCount, int existenceFilterCount) {
+    static ExistenceFilterMismatchInfo create(
+        int localCacheCount,
+        int existenceFilterCount,
+        @Nullable ExistenceFilterBloomFilterInfo bloomFilter) {
       return new AutoValue_TestingHooks_ExistenceFilterMismatchInfo(
-          localCacheCount, existenceFilterCount);
+          localCacheCount, existenceFilterCount, bloomFilter);
     }
 
     /** Returns the number of documents that matched the query in the local cache. */
@@ -140,11 +143,62 @@ final class TestingHooks {
     abstract int existenceFilterCount();
 
     /**
+     * Returns information about the bloom filter provided by Watch in the ExistenceFilter message's
+     * `unchangedNames` field. A `null` return value means that Watch did _not_ provide a bloom
+     * filter.
+     */
+    @Nullable
+    abstract ExistenceFilterBloomFilterInfo bloomFilter();
+
+    /**
      * Convenience method to create and return a new instance of {@link ExistenceFilterMismatchInfo}
      * with the values taken from the given arguments.
      */
-    static ExistenceFilterMismatchInfo from(int localCacheCount, ExistenceFilter existenceFilter) {
-      return create(localCacheCount, existenceFilter.getCount());
+    static ExistenceFilterMismatchInfo from(
+        boolean bloomFilterApplied, int localCacheCount, ExistenceFilter existenceFilter) {
+      return create(
+          localCacheCount,
+          existenceFilter.getCount(),
+          ExistenceFilterBloomFilterInfo.from(bloomFilterApplied, existenceFilter));
+    }
+  }
+
+  @AutoValue
+  abstract static class ExistenceFilterBloomFilterInfo {
+
+    static ExistenceFilterBloomFilterInfo create(
+        boolean applied, int hashCount, int bitmapLength, int padding) {
+      return new AutoValue_TestingHooks_ExistenceFilterBloomFilterInfo(
+          applied, hashCount, bitmapLength, padding);
+    }
+
+    /**
+     * Returns whether a full requery was averted by using the bloom filter. If false, then
+     * something happened, such as a false positive, to prevent using the bloom filter to avoid a
+     * full requery.
+     */
+    abstract boolean applied();
+
+    /** Returns the number of hash functions used in the bloom filter. */
+    abstract int hashCount();
+
+    /** Returns the number of bytes in the bloom filter's bitmask. */
+    abstract int bitmapLength();
+
+    /** Returns the number of bits of padding in the last byte of the bloom filter. */
+    abstract int padding();
+
+    static ExistenceFilterBloomFilterInfo from(
+        boolean bloomFilterApplied, ExistenceFilter existenceFilter) {
+      BloomFilter unchangedNames = existenceFilter.getUnchangedNames();
+      if (unchangedNames == null) {
+        return null;
+      }
+      return create(
+          bloomFilterApplied,
+          unchangedNames.getHashCount(),
+          unchangedNames.getBits().getBitmap().size(),
+          unchangedNames.getBits().getPadding());
     }
   }
 }
