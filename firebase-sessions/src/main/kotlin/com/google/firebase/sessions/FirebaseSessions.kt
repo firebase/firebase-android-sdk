@@ -84,7 +84,7 @@ internal constructor(
     val sessionDetails = sessionGenerator.generateNewSession()
 
     sessionStartScope.launch {
-      val subscribers = FirebaseSessionsDependencies.getSubscribers()
+      val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
 
       if (subscribers.isEmpty()) {
         Log.d(
@@ -94,7 +94,7 @@ internal constructor(
         return@launch
       }
 
-      if (subscribers.values.none() { it.isDataCollectionEnabled }) {
+      if (subscribers.values.none { it.isDataCollectionEnabled }) {
         Log.d(TAG, "Data Collection is disabled for all subscribers. Skipping this Session Event")
         return@launch
       }
