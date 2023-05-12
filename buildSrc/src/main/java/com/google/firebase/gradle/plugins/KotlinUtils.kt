@@ -59,6 +59,27 @@ fun Element.toArtifactString() =
   "${textByTag("groupId")}:${textByTag("artifactId")}:${textByTag("version")}"
 
 /**
+ * Converts an [Element] to a Maven name
+ *
+ * A Maven name can be defined as a dependency with the following format:
+ * ```
+ * groupId:artifactId
+ * ```
+ *
+ * For example, the following would be a valid [Element]:
+ * ```
+ * <mySuperCoolElement>
+ *   <groupId>com.google.firebase</groupId>
+ *   <artifactId>firebase-common</artifactId>
+ * </mySuperCoolElement>
+ * ```
+ *
+ * @throws NoSuchElementException if the [Element] does not have descendant [Element]s with tags
+ * that match the components of an Artifact string; groupId, artifactId, version.
+ */
+fun Element.toMavenName() = "${textByTag("groupId")}:${textByTag("artifactId")}"
+
+/**
  * Finds a descendant [Element] by a given [tag], and returns the [textContent]
  * [Element.getTextContent] of it.
  *

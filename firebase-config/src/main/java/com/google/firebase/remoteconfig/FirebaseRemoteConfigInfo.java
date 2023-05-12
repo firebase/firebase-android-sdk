@@ -16,7 +16,7 @@ package com.google.firebase.remoteconfig;
 
 import androidx.annotation.NonNull;
 
-/** Wraps the current state of the FirebaseRemoteConfig singleton object. */
+/** Wraps the current state of the {@link FirebaseRemoteConfig} singleton object. */
 public interface FirebaseRemoteConfigInfo {
   /**
    * Gets the timestamp (milliseconds since epoch) of the last successful fetch, regardless of
@@ -38,7 +38,7 @@ public interface FirebaseRemoteConfigInfo {
   int getLastFetchStatus();
 
   /**
-   * Gets the current settings of the FirebaseRemoteConfig singleton object.
+   * Gets the current settings of the {@link FirebaseRemoteConfig} singleton object.
    *
    * @return A {@link FirebaseRemoteConfigSettings} object indicating the current settings.
    */

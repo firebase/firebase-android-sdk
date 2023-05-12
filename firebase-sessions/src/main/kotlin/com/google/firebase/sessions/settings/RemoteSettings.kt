@@ -17,6 +17,7 @@
 package com.google.firebase.sessions.settings
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.firebase.installations.FirebaseInstallationsApi
@@ -102,11 +103,11 @@ internal class RemoteSettings(
     // All the required fields are available, start making a network request.
     val options =
       mapOf(
-        "X-Crashlytics-Installation-ID" to installationId as String,
-        "X-Crashlytics-Device-Model" to appInfo.deviceModel,
-        // TODO(visum) Add OS version parameters
-        // "X-Crashlytics-OS-Build-Version" to "",
-        // "X-Crashlytics-OS-Display-Version" to "",
+        "X-Crashlytics-Installation-ID" to installationId,
+        "X-Crashlytics-Device-Model" to
+          removeForwardSlashesIn(String.format("%s/%s", Build.MANUFACTURER, Build.MODEL)),
+        "X-Crashlytics-OS-Build-Version" to removeForwardSlashesIn(Build.VERSION.INCREMENTAL),
+        "X-Crashlytics-OS-Display-Version" to removeForwardSlashesIn(Build.VERSION.RELEASE),
         "X-Crashlytics-API-Client-Version" to appInfo.sessionSdkVersion
       )
 
@@ -163,8 +164,13 @@ internal class RemoteSettings(
     )
   }
 
+  private fun removeForwardSlashesIn(s: String): String {
+    return s.replace(FORWARD_SLASH_STRING.toRegex(), "")
+  }
+
   companion object {
     private const val SESSION_CONFIGS_NAME = "firebase_session_settings"
     private const val TAG = "SessionConfigFetcher"
+    private const val FORWARD_SLASH_STRING: String = "/"
   }
 }

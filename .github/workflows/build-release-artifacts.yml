@@ -24,7 +24,7 @@ jobs:
 
       - name: Perform gradle build
         run: |
-          ./gradlew firebasePublish -PpublishConfigFilePath=release.cfg -PpublishMode=RELEASE
+          ./gradlew firebasePublish
 
       - name: Generate release notes
         run: |

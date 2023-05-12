@@ -1228,4 +1228,30 @@ public class AggregationTest {
     Truth.assertThat(cause).hasMessageThat().ignoringCase().contains("index");
     Truth.assertThat(cause).hasMessageThat().contains("https://console.firebase.google.com");
   }
+
+  @Test
+  public void allowsAliasesLongerThan1500Bytes() {
+    assumeTrue(
+        "Skip this test if running against production because sum/avg is only support "
+            + "in emulator currently.",
+        isRunningAgainstEmulator());
+    // The longest field name allowed is 1500. The alias chosen by the client is <op>_<fieldName>.
+    // If the field name is
+    // 1500 bytes, the alias will be longer than 1500, which is the limit for aliases. This is to
+    // make sure the client
+    // can handle this corner case correctly.
+
+    StringBuilder builder = new StringBuilder(1500);
+    for (int i = 0; i < 1500; i++) {
+      builder.append("a");
+    }
+    String longField = builder.toString();
+    Map<String, Map<String, Object>> testDocs = map("a", map(longField, 1), "b", map(longField, 2));
+    CollectionReference collection = testCollectionWithDocs(testDocs);
+
+    AggregateQuerySnapshot snapshot =
+        waitFor(collection.aggregate(sum(longField)).get(AggregateSource.SERVER));
+
+    assertEquals(snapshot.get(sum(longField)), 3L);
+  }
 }

@@ -135,8 +135,9 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
     try {
       ContentResolver resolver =
           mStorageRef.getStorage().getApp().getApplicationContext().getContentResolver();
+      ParcelFileDescriptor fd = null;
       try {
-        ParcelFileDescriptor fd = resolver.openFileDescriptor(mUri, "r");
+        fd = resolver.openFileDescriptor(mUri, "r");
         if (fd != null) {
           size = fd.getStatSize();
           fd.close();

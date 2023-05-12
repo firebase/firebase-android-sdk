@@ -108,6 +108,8 @@ public class TestUtil {
 
   public static final long ARBITRARY_SEQUENCE_NUMBER = 2;
 
+  private static final DatabaseId TEST_PROJECT = DatabaseId.forProject("project");
+
   @SuppressWarnings("unchecked")
   public static <T> Map<String, T> map(Object... entries) {
     Map<String, T> res = new LinkedHashMap<>();
@@ -140,8 +142,7 @@ public class TestUtil {
   public static final Map<String, Object> EMPTY_MAP = new HashMap<>();
 
   public static Value wrap(Object value) {
-    DatabaseId databaseId = DatabaseId.forProject("project");
-    UserDataReader dataReader = new UserDataReader(databaseId);
+    UserDataReader dataReader = new UserDataReader(TEST_PROJECT);
     // HACK: We use parseQueryValue() since it accepts scalars as well as arrays / objects, and
     // our tests currently use wrap() pretty generically so we don't know the intent.
     return dataReader.parseQueryValue(value);
@@ -488,6 +489,11 @@ public class TestUtil {
                 ResourcePath collectionPath = docs.get(0).getKey().getCollectionPath();
                 return targetData(targetId, QueryPurpose.LISTEN, collectionPath.toString());
               }
+
+              @Override
+              public DatabaseId getDatabaseId() {
+                return TEST_PROJECT;
+              }
             });
 
     SnapshotVersion version = SnapshotVersion.NONE;
@@ -535,13 +541,18 @@ public class TestUtil {
                     ? targetData(targetId, QueryPurpose.LISTEN, doc.getKey().toString())
                     : null;
               }
+
+              @Override
+              public DatabaseId getDatabaseId() {
+                return TEST_PROJECT;
+              }
             });
     aggregator.handleDocumentChange(change);
     return aggregator.createRemoteEvent(doc.getVersion());
   }
 
   public static SetMutation setMutation(String path, Map<String, Object> values) {
-    UserDataReader dataReader = new UserDataReader(DatabaseId.forProject("project"));
+    UserDataReader dataReader = new UserDataReader(TEST_PROJECT);
     ParsedSetData parsed = dataReader.parseSetData(values);
 
     // The order of the transforms doesn't matter, but we sort them so tests can assume a particular
@@ -574,7 +585,7 @@ public class TestUtil {
       }
     }
 
-    UserDataReader dataReader = new UserDataReader(DatabaseId.forProject("project"));
+    UserDataReader dataReader = new UserDataReader(TEST_PROJECT);
     ParsedUpdateData parsed = dataReader.parseUpdateData(values);
 
     // `mergeMutation()` provides an update mask for the merged fields, whereas `patchMutation()`
