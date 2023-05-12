@@ -215,6 +215,28 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
 
   @NonNull
   @Override
+  public Task<AppCheckTokenResult> getLimitedUseToken() {
+    return getLimitedUseAppCheckToken()
+        .continueWithTask(
+            liteExecutor,
+            appCheckTokenTask -> {
+              if (appCheckTokenTask.isSuccessful()) {
+                return Tasks.forResult(
+                    DefaultAppCheckTokenResult.constructFromAppCheckToken(
+                        appCheckTokenTask.getResult()));
+              }
+              // If the token exchange failed, return a dummy token for integrators to attach
+              // in their headers.
+              return Tasks.forResult(
+                  DefaultAppCheckTokenResult.constructFromError(
+                      new FirebaseException(
+                          appCheckTokenTask.getException().getMessage(),
+                          appCheckTokenTask.getException())));
+            });
+  }
+
+  @NonNull
+  @Override
   public Task<AppCheckToken> getAppCheckToken(boolean forceRefresh) {
     return retrieveStoredTokenTask.continueWithTask(
         liteExecutor,
