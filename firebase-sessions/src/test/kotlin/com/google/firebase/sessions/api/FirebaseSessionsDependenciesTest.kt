@@ -104,14 +104,14 @@ class FirebaseSessionsDependenciesTest {
     }
 
     // Block until the register happens.
-    val subscribers = FirebaseSessionsDependencies.getSubscribers()
+    val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
 
     assertThat(subscribers).containsExactly(CRASHLYTICS, crashlyticsSubscriber)
   }
 
   @Test
   fun getSubscribers_noDependencies() = runTest {
-    val subscribers = FirebaseSessionsDependencies.getSubscribers()
+    val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
 
     assertThat(subscribers).isEmpty()
   }
@@ -121,6 +121,6 @@ class FirebaseSessionsDependenciesTest {
     FirebaseSessionsDependencies.addDependency(CRASHLYTICS)
 
     // The register never happens, wait until the timeout.
-    withTimeout(2.seconds) { FirebaseSessionsDependencies.getSubscribers() }
+    withTimeout(2.seconds) { FirebaseSessionsDependencies.getRegisteredSubscribers() }
   }
 }
