@@ -35,7 +35,7 @@ public class HttpsCallableReference {
   private final URL url;
 
   // Options for how to do the HTTPS call.
-  HttpsCallOptions options;
+  final HttpsCallOptions options;
 
   /** Creates a new reference with the given options. */
   HttpsCallableReference(FirebaseFunctions functionsClient, String name, HttpsCallOptions options) {

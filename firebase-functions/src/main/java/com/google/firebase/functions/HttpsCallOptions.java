@@ -28,7 +28,7 @@ class HttpsCallOptions {
   private long timeout = DEFAULT_TIMEOUT;
   private TimeUnit timeoutUnits = DEFAULT_TIMEOUT_UNITS;
 
-  private boolean limitedUseAppCheckTokens;
+  private final boolean limitedUseAppCheckTokens;
 
   /** Creates an (internal) HttpsCallOptions from the (external) {@link HttpsCallableOptions}. */
   HttpsCallOptions(HttpsCallableOptions publicCallableOptions) {
