@@ -15,6 +15,7 @@
 package com.google.firebase.remoteconfig.internal;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -35,6 +36,10 @@ public class ConfigContainer {
   static final String ABT_EXPERIMENTS_KEY = "abt_experiments_key";
   static final String PERSONALIZATION_METADATA_KEY = "personalization_metadata_key";
   static final String TEMPLATE_VERSION_NUMBER_KEY = "template_version_number_key";
+
+  // Keys present int ABT Experiments.
+  static final String ABT_EXPERIMENT_ID_KEY = "experiment_id";
+  static final String ABT_EXPERIMENT_PARAM_KEY = "affected_parameter_key";
 
   private static final Date DEFAULTS_FETCH_TIME = new Date(0L);
 
@@ -168,6 +173,143 @@ public class ConfigContainer {
     return containerJson.toString().equals(that.toString());
   }
 
+  // Map experiments to their experiment IDs.
+  private Map<String, JSONObject> getExperimentsMap(JSONArray experiments) throws JSONException {
+    Map<String, JSONObject> experimentsMap = new HashMap<>();
+    for (int i = 0; i < experiments.length(); i++) {
+      JSONObject experiment = experiments.getJSONObject(i);
+      String experimentID = experiment.getString(ABT_EXPERIMENT_ID_KEY);
+      experimentsMap.put(experimentID, experiment);
+    }
+
+    return experimentsMap;
+  }
+
+  private boolean hasExperimentsMetadataChanged(
+      JSONObject activeExperiment, JSONObject fetchedExperiment) throws JSONException {
+    Iterator<String> activeExperimentIter = activeExperiment.keys();
+    while (activeExperimentIter.hasNext()) {
+      String experimentKey = activeExperimentIter.next();
+      // Skip config keys b/c order changes between responses and needs to be checked separately.
+      if (experimentKey.equals(ABT_EXPERIMENT_PARAM_KEY)) {
+        continue;
+      } else if (!fetchedExperiment.has(experimentKey)
+          || !fetchedExperiment
+              .getJSONObject(experimentKey)
+              .toString()
+              .equals(activeExperiment.getJSONObject(experimentKey).toString())) {
+        // Fetched experiment doesn't have experimentKey or it's value is different.
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private void compareExperimentConfigKeys(JSONArray active, JSONArray fetched, Set<String> changed)
+      throws JSONException {
+    Set<String> allKeys = new HashSet<>();
+    Set<String> activeKeys = new HashSet<>();
+    Set<String> fetchedKeys = new HashSet<>();
+
+    // Iterate through the active experiments config keys and add it to the sets.
+    for (int i = 0; i < active.length(); i++) {
+      String activeKey = active.getString(i);
+      allKeys.add(activeKey);
+      activeKeys.add(activeKey);
+    }
+    // Iterate through the fetched experiments config keys and add it to the sets.
+    for (int i = 0; i < fetched.length(); i++) {
+      String fetchedKey = fetched.getString(i);
+      allKeys.add(fetchedKey);
+      fetchedKeys.add(fetchedKey);
+    }
+
+    // Iterate through all possible keys.
+    for (String key : allKeys) {
+      // If fetchedKeys or activeKeys does not contain the config key, add it to changed.
+      if (!activeKeys.contains(key) || !fetchedKeys.contains(key)) {
+        changed.add(key);
+      }
+    }
+  }
+
+  private void getChangedABTExperiments(Set<String> changed, JSONObject otherConfig)
+      throws JSONException {
+    Set<String> allExperimentIds = new HashSet<>();
+    Map<String, JSONObject> fetchedExperimentsMap = new HashMap<>();
+    Map<String, JSONObject> activeExperimentsMap = new HashMap<>();
+
+    if (this.abtExperiments != null) {
+      // Put active experiments metadata into a map.
+      activeExperimentsMap = getExperimentsMap(this.abtExperiments);
+      // Store experiment IDs for later iteration.
+      allExperimentIds.addAll(activeExperimentsMap.keySet());
+    }
+    if (otherConfig.has(ABT_EXPERIMENTS_KEY)) {
+      // Put fetched experiments metadata into map.
+      fetchedExperimentsMap = getExperimentsMap(otherConfig.getJSONArray(ABT_EXPERIMENTS_KEY));
+      // Store experiment IDs for later iteration.
+      allExperimentIds.addAll(fetchedExperimentsMap.keySet());
+    }
+
+    // Iterate through all experiment IDs
+    for (String experimentId : allExperimentIds) {
+      // If one of the maps does not contain the experiment ID, add that experiments' config keys to
+      // changed.
+      if (!activeExperimentsMap.containsKey(experimentId)
+          || !fetchedExperimentsMap.containsKey(experimentId)) {
+        // Get the experiment that was added/removed.
+        JSONObject changedExperiment = null;
+        if (activeExperimentsMap.containsKey(experimentId)) {
+          changedExperiment = activeExperimentsMap.get(experimentId);
+        } else {
+          changedExperiment = fetchedExperimentsMap.get(experimentId);
+        }
+        // Check if changed experiment has param keys.
+        if (changedExperiment.has(ABT_EXPERIMENT_PARAM_KEY)) {
+          JSONArray experimentKeys = changedExperiment.getJSONArray(ABT_EXPERIMENT_PARAM_KEY);
+          for (int i = 0; i < experimentKeys.length(); i++) {
+            changed.add(experimentKeys.getString(i));
+          }
+        }
+      } else {
+        // Fetched and Active contain the experiment ID. The metadata needs to be compared to see if
+        // anything has changed.
+        JSONObject activeExperiment = activeExperimentsMap.get(experimentId);
+        JSONObject fetchedExperiment = fetchedExperimentsMap.get(experimentId);
+        boolean experimentsMetadataChanged =
+            hasExperimentsMetadataChanged(activeExperiment, fetchedExperiment);
+
+        // Get config keys from fetched and active experiments if they exist.
+        JSONArray activeExperimentConfigKeys = new JSONArray();
+        JSONArray fetchedExperimentConfigKeys = new JSONArray();
+        if (activeExperimentsMap.get(experimentId).has(ABT_EXPERIMENT_PARAM_KEY)) {
+          activeExperimentConfigKeys =
+              activeExperimentsMap.get(experimentId).getJSONArray(ABT_EXPERIMENT_PARAM_KEY);
+        }
+        if (fetchedExperimentsMap.get(experimentId).has(ABT_EXPERIMENT_PARAM_KEY)) {
+          fetchedExperimentConfigKeys =
+              fetchedExperimentsMap.get(experimentId).getJSONArray(ABT_EXPERIMENT_PARAM_KEY);
+        }
+
+        if (experimentsMetadataChanged) {
+          // Add in all keys from both sides if the experiments metadata has changed.
+          for (int i = 0; i < activeExperimentConfigKeys.length(); i++) {
+            changed.add(activeExperimentConfigKeys.getString(i));
+          }
+          for (int i = 0; i < fetchedExperimentConfigKeys.length(); i++) {
+            changed.add(fetchedExperimentConfigKeys.getString(i));
+          }
+        } else {
+          // Compare config keys from either experiment.
+          compareExperimentConfigKeys(
+              activeExperimentConfigKeys, fetchedExperimentConfigKeys, changed);
+        }
+      }
+    }
+  }
+
   /**
    * @param other The other {@link ConfigContainer} against which to compute the diff
    * @return The set of config keys that have changed between the this config and {@code other}
@@ -222,6 +364,7 @@ public class ConfigContainer {
     while (remainingOtherKeys.hasNext()) {
       changed.add(remainingOtherKeys.next());
     }
+    getChangedABTExperiments(changed, otherConfig);
 
     return changed;
   }
