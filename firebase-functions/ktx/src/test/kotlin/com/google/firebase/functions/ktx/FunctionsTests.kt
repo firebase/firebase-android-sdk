@@ -19,6 +19,8 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.functions.FirebaseFunctions
+import com.google.firebase.functions.HttpsCallableReference
+import com.google.firebase.functions.TestVisibilityUtil
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
@@ -28,6 +30,8 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import java.lang.reflect.Field
+import java.net.URL
 
 const val APP_ID = "APP_ID"
 const val API_KEY = "API_KEY"
@@ -99,4 +103,39 @@ class LibraryVersionTest : BaseTestCase() {
     val publisher = Firebase.app.get(UserAgentPublisher::class.java)
     assertThat(publisher.userAgent).contains(LIBRARY_NAME)
   }
+}
+
+@RunWith(RobolectricTestRunner::class)
+class AppCheckLimitedUseTest : BaseTestCase() {
+  @Test
+  fun `FirebaseFunctions#getHttpsCallable should build callable with FAC settings (when true)`() {
+    val callable = Firebase.functions.getHttpsCallable("function") {
+      limitedUseAppCheckTokens = true
+    };
+    assertThat(TestVisibilityUtil.refUsesLimitedUseFacTokens(callable)).isEqualTo(true)
+  }
+
+//  @Test
+//  fun `FirebaseFunctions#getHttpsCallable should build callable with FAC settings (when false)`() {
+//    val callable = Firebase.functions.getHttpsCallable("function") {
+//      limitedUseAppCheckTokens = false
+//    };
+//    assertLimitedUseFACTokens(callable, false)
+//  }
+//
+//  @Test
+//  fun `FirebaseFunctions#getHttpsCallableFromUrl callable with FAC settings (when true)`() {
+//    val callable = Firebase.functions.getHttpsCallableFromUrl(URL()) {
+//      limitedUseAppCheckTokens = true
+//    };
+//    assertLimitedUseFACTokens(callable, true)
+//  }
+//
+//  @Test
+//  fun `FirebaseFunctions#getHttpsCallable should build callable with FAC settings (when false)`() {
+//    val callable = Firebase.functions.getHttpsCallable("function") {
+//      limitedUseAppCheckTokens = false
+//    };
+//    assertLimitedUseFACTokens(callable, false)
+//  }
 }
