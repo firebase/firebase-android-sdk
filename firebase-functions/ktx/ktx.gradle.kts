@@ -59,5 +59,4 @@ dependencies {
   testImplementation(libs.junit)
   testImplementation(libs.truth)
   testImplementation(libs.androidx.test.core)
-  testImplementation(project(":firebase-functions"))
 }
