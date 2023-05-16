@@ -19,10 +19,12 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.functions.FirebaseFunctions
+import com.google.firebase.functions.usesLimitedUseFacTokens
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import com.google.firebase.platforminfo.UserAgentPublisher
+import java.net.URL
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -98,5 +100,52 @@ class LibraryVersionTest : BaseTestCase() {
   fun `library version should be registered with runtime`() {
     val publisher = Firebase.app.get(UserAgentPublisher::class.java)
     assertThat(publisher.userAgent).contains(LIBRARY_NAME)
+  }
+}
+
+@RunWith(RobolectricTestRunner::class)
+class AppCheckLimitedUseTest : BaseTestCase() {
+  @Test
+  fun `FirebaseFunctions#getHttpsCallable should not use limited-use tokens by default`() {
+    val callable = Firebase.functions.getHttpsCallable("function")
+    assertThat(callable.usesLimitedUseFacTokens()).isFalse()
+  }
+
+  @Test
+  fun `FirebaseFunctions#getHttpsCallable should build callable with FAC settings (when true)`() {
+    val callable =
+      Firebase.functions.getHttpsCallable("function") { limitedUseAppCheckTokens = true }
+    assertThat(callable.usesLimitedUseFacTokens()).isTrue()
+  }
+
+  @Test
+  fun `FirebaseFunctions#getHttpsCallable should build callable with FAC settings (when false)`() {
+    val callable =
+      Firebase.functions.getHttpsCallable("function") { limitedUseAppCheckTokens = false }
+    assertThat(callable.usesLimitedUseFacTokens()).isFalse()
+  }
+
+  @Test
+  fun `FirebaseFunctions#getHttpsCallableFromUrl should not use limited-use tokens by default`() {
+    val callable = Firebase.functions.getHttpsCallableFromUrl(URL("https://functions.test"))
+    assertThat(callable.usesLimitedUseFacTokens()).isFalse()
+  }
+
+  @Test
+  fun `FirebaseFunctions#getHttpsCallableFromUrl callable with FAC settings (when true)`() {
+    val callable =
+      Firebase.functions.getHttpsCallableFromUrl(URL("https://functions.test")) {
+        limitedUseAppCheckTokens = true
+      }
+    assertThat(callable.usesLimitedUseFacTokens()).isTrue()
+  }
+
+  @Test
+  fun `FirebaseFunctions#getHttpsCallableFromUrl callable with FAC settings (when false)`() {
+    val callable =
+      Firebase.functions.getHttpsCallableFromUrl(URL("https://functions.test")) {
+        limitedUseAppCheckTokens = false
+      }
+    assertThat(callable.usesLimitedUseFacTokens()).isFalse()
   }
 }
