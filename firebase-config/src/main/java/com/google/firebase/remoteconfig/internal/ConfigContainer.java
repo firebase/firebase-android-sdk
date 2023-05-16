@@ -16,11 +16,6 @@ package com.google.firebase.remoteconfig.internal;
 
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.AFFECTED_PARAMETER_KEY;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.EXPERIMENT_ID;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.EXPERIMENT_START_TIME;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.TIME_TO_LIVE_MILLIS;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.TRIGGER_EVENT;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.TRIGGER_TIMEOUT_MILLIS;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.VARIANT_ID;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -191,17 +186,17 @@ public class ConfigContainer {
 
   private boolean isExperimentMetadataSame(
       JSONObject activeExperiment, JSONObject fetchedExperiment) throws JSONException {
-    return activeExperiment.getString(VARIANT_ID).equals(fetchedExperiment.getString(VARIANT_ID))
-        && activeExperiment
-            .getString(TRIGGER_EVENT)
-            .equals(fetchedExperiment.getString(TRIGGER_EVENT))
-        && activeExperiment
-            .getString(EXPERIMENT_START_TIME)
-            .equals(fetchedExperiment.getString(EXPERIMENT_START_TIME))
-        && activeExperiment.getLong(TRIGGER_TIMEOUT_MILLIS)
-            == fetchedExperiment.getLong(TRIGGER_TIMEOUT_MILLIS)
-        && activeExperiment.getLong(TIME_TO_LIVE_MILLIS)
-            == fetchedExperiment.getLong(TIME_TO_LIVE_MILLIS);
+    JSONObject activeExperimentCopy = new JSONObject(activeExperiment.toString());
+    JSONObject fetchedExperimentCopy = new JSONObject(fetchedExperiment.toString());
+
+    if (activeExperimentCopy.has(AFFECTED_PARAMETER_KEY)) {
+      activeExperimentCopy.remove(AFFECTED_PARAMETER_KEY);
+    }
+    if (fetchedExperimentCopy.has(AFFECTED_PARAMETER_KEY)) {
+      fetchedExperimentCopy.remove(AFFECTED_PARAMETER_KEY);
+    }
+
+    return activeExperimentCopy.toString().equals(fetchedExperimentCopy.toString());
   }
 
   private void compareExperimentConfigKeys(JSONArray active, JSONArray fetched, Set<String> changed)

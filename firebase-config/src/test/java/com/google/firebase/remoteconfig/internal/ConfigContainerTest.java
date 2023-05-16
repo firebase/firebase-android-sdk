@@ -282,6 +282,33 @@ public class ConfigContainerTest {
   }
 
   @Test
+  public void getChangedParams_changedExperimentsNoTriggerEvent_returnsUpdatedKey()
+      throws Exception {
+    JSONArray activeExperiments = generateAbtExperiments(1);
+    JSONArray fetchedExperiments = generateAbtExperiments(1);
+
+    fetchedExperiments.getJSONObject(0).remove(TRIGGER_EVENT);
+
+    fetchedExperiments.getJSONObject(0).put(EXPERIMENT_START_TIME, new Date(2089));
+
+    ConfigContainer config =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .withAbtExperiments(activeExperiments)
+            .build();
+
+    ConfigContainer other =
+        ConfigContainer.newBuilder()
+            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .withAbtExperiments(fetchedExperiments)
+            .build();
+
+    Set<String> changedParams = config.getChangedParams(other);
+
+    assertThat(changedParams).containsExactly("abt_test_key_1");
+  }
+
+  @Test
   public void getChangedParams_noChanges_returnsEmptySet() throws Exception {
     ConfigContainer config =
         ConfigContainer.newBuilder()
