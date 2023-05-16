@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.functions;
+package com.google.firebase.functions
 
 /**
  * Returns true if the {@link HttpsCallableReference} is configured to use FAC limited-use tokens.
