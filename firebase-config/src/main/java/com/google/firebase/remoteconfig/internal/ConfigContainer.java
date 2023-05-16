@@ -16,6 +16,7 @@ package com.google.firebase.remoteconfig.internal;
 
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.AFFECTED_PARAMETER_KEY;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.EXPERIMENT_ID;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.EXPERIMENT_START_TIME;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.TIME_TO_LIVE_MILLIS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.TRIGGER_EVENT;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.TRIGGER_TIMEOUT_MILLIS;
@@ -194,6 +195,9 @@ public class ConfigContainer {
         && activeExperiment
             .getString(TRIGGER_EVENT)
             .equals(fetchedExperiment.getString(TRIGGER_EVENT))
+        && activeExperiment
+            .getString(EXPERIMENT_START_TIME)
+            .equals(fetchedExperiment.getString(EXPERIMENT_START_TIME))
         && activeExperiment.getLong(TRIGGER_TIMEOUT_MILLIS)
             == fetchedExperiment.getLong(TRIGGER_TIMEOUT_MILLIS)
         && activeExperiment.getLong(TIME_TO_LIVE_MILLIS)
