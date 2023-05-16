@@ -172,12 +172,12 @@ public class ConfigContainer {
     return containerJson.toString().equals(that.toString());
   }
 
-  // Map experiments to their experiment IDs.
   private Map<String, JSONObject> getExperimentsMap(JSONArray experiments) throws JSONException {
     Map<String, JSONObject> experimentsMap = new HashMap<>();
     for (int i = 0; i < experiments.length(); i++) {
       JSONObject experiment = experiments.getJSONObject(i);
       String experimentID = experiment.getString(EXPERIMENT_ID);
+      // Map experiments to their experiment IDs.
       experimentsMap.put(experimentID, experiment);
     }
 
@@ -186,9 +186,11 @@ public class ConfigContainer {
 
   private boolean isExperimentMetadataSame(
       JSONObject activeExperiment, JSONObject fetchedExperiment) throws JSONException {
+    // Create copies of active and fetched experiments.
     JSONObject activeExperimentCopy = new JSONObject(activeExperiment.toString());
     JSONObject fetchedExperimentCopy = new JSONObject(fetchedExperiment.toString());
 
+    // Remove config parameter keys from object since they don't show up in consistent order.
     if (activeExperimentCopy.has(AFFECTED_PARAMETER_KEY)) {
       activeExperimentCopy.remove(AFFECTED_PARAMETER_KEY);
     }
@@ -249,8 +251,7 @@ public class ConfigContainer {
     // Iterate through all experiment IDs
     for (String experimentId : allExperimentIds) {
       // If one of the maps does not contain the experiment ID, it must have been added or removed.
-      // Add that experiments' config keys to
-      // `changed`.
+      // Add that experiments' config keys to `changed`.
       if (!activeExperimentsMap.containsKey(experimentId)
           || !fetchedExperimentsMap.containsKey(experimentId)) {
         // Get the experiment that was added/removed.
@@ -260,7 +261,8 @@ public class ConfigContainer {
         } else {
           changedExperiment = fetchedExperimentsMap.get(experimentId);
         }
-        // Check if changed experiment has param keys.
+
+        // Check if changed experiment has param keys and add them to `changed` if present.
         if (changedExperiment.has(AFFECTED_PARAMETER_KEY)) {
           JSONArray experimentKeys = changedExperiment.getJSONArray(AFFECTED_PARAMETER_KEY);
           for (int i = 0; i < experimentKeys.length(); i++) {
