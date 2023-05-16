@@ -49,12 +49,14 @@ class FirebaseFunctionsKtxRegistrar : ComponentRegistrar {
     listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 }
 
+/** Returns a reference to the Callable HTTPS trigger with the given name and call options. */
 fun FirebaseFunctions.getHttpsCallable(name: String, init: HttpsCallableOptions.Builder.() -> Unit) : HttpsCallableReference {
   val builder = HttpsCallableOptions.Builder()
   builder.init()
   return getHttpsCallable(name, builder.build())
 }
 
+/** Returns a reference to the Callable HTTPS trigger with the given URL and call options. */
 fun FirebaseFunctions.getHttpsCallableFromUrl(url: URL, init: HttpsCallableOptions.Builder.() -> Unit) : HttpsCallableReference {
   val builder = HttpsCallableOptions.Builder()
   builder.init()
