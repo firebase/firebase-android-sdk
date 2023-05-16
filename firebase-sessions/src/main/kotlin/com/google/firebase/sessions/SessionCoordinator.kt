@@ -18,9 +18,6 @@ package com.google.firebase.sessions
 
 import android.util.Log
 import com.google.firebase.installations.FirebaseInstallationsApi
-import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -31,30 +28,26 @@ import kotlinx.coroutines.tasks.await
  */
 internal class SessionCoordinator(
   private val firebaseInstallations: FirebaseInstallationsApi,
-  context: CoroutineContext,
   private val eventGDTLogger: EventGDTLoggerInterface,
 ) {
-  private val scope = CoroutineScope(context)
-
-  fun attemptLoggingSessionEvent(sessionEvent: SessionEvent) =
-    scope.launch {
-      sessionEvent.sessionData.firebaseInstallationId =
-        try {
-          firebaseInstallations.id.await()
-        } catch (ex: Exception) {
-          Log.e(TAG, "Error getting Firebase Installation ID: ${ex}. Using an empty ID")
-          // Use an empty fid if there is any failure.
-          ""
-        }
-
+  suspend fun attemptLoggingSessionEvent(sessionEvent: SessionEvent) {
+    sessionEvent.sessionData.firebaseInstallationId =
       try {
-        eventGDTLogger.log(sessionEvent)
-
-        Log.i(TAG, "Successfully logged Session Start event: ${sessionEvent.sessionData.sessionId}")
-      } catch (e: RuntimeException) {
-        Log.e(TAG, "Error logging Session Start event to DataTransport: ", e)
+        firebaseInstallations.id.await()
+      } catch (ex: Exception) {
+        Log.e(TAG, "Error getting Firebase Installation ID: ${ex}. Using an empty ID")
+        // Use an empty fid if there is any failure.
+        ""
       }
+
+    try {
+      eventGDTLogger.log(sessionEvent)
+
+      Log.i(TAG, "Successfully logged Session Start event: ${sessionEvent.sessionData.sessionId}")
+    } catch (ex: RuntimeException) {
+      Log.e(TAG, "Error logging Session Start event to DataTransport: ", ex)
     }
+  }
 
   companion object {
     private const val TAG = "SessionCoordinator"

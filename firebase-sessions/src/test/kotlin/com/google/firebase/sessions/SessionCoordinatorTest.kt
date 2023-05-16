@@ -44,7 +44,6 @@ class SessionCoordinatorTest {
     val sessionCoordinator =
       SessionCoordinator(
         firebaseInstallations,
-        context = TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         eventGDTLogger = fakeEventGDTLogger,
       )
 

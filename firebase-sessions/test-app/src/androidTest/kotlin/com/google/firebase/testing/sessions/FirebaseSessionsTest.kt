@@ -23,6 +23,8 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import com.google.firebase.sessions.FirebaseSessions
+import com.google.firebase.sessions.api.FirebaseSessionsDependencies
+import com.google.firebase.sessions.api.SessionSubscriber
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -41,16 +43,38 @@ class FirebaseSessionsTest {
   }
 
   @Test
-  fun initializeSession() {
+  fun initializeSessions_generatesSessionEvent() {
     // Force the Firebase Sessions SDK to initialize.
-    assertThat(FirebaseSessions.instance.greeting()).isEqualTo("Matt says hi!")
+    assertThat(FirebaseSessions.instance).isNotNull()
+
+    // Add a fake dependency and register it, otherwise sessions will never send.
+    val fakeSessionSubscriber = FakeSessionSubscriber()
+    FirebaseSessions.instance.register(fakeSessionSubscriber)
 
     // Wait for the session start event to send.
-    // TODO(mrober): Setup logger we can access from tests.
     Thread.sleep(TIME_TO_LOG_SESSION)
+
+    // Assert that some session was generated and sent to the subscriber.
+    assertThat(fakeSessionSubscriber.sessionDetails).isNotNull()
   }
 
   companion object {
     private const val TIME_TO_LOG_SESSION = 60_000L
+
+    init {
+      FirebaseSessionsDependencies.addDependency(SessionSubscriber.Name.MATT_SAYS_HI)
+    }
+  }
+
+  private class FakeSessionSubscriber(
+    override val isDataCollectionEnabled: Boolean = true,
+    override val sessionSubscriberName: SessionSubscriber.Name = SessionSubscriber.Name.MATT_SAYS_HI
+  ) : SessionSubscriber {
+    var sessionDetails: SessionSubscriber.SessionDetails? = null
+      private set
+
+    override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
+      this.sessionDetails = sessionDetails
+    }
   }
 }
