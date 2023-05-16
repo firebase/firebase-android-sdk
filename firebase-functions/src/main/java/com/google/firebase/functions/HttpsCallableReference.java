@@ -35,20 +35,22 @@ public class HttpsCallableReference {
   private final URL url;
 
   // Options for how to do the HTTPS call.
-  HttpsCallOptions options = new HttpsCallOptions();
+  final HttpsCallOptions options;
 
   /** Creates a new reference with the given options. */
-  HttpsCallableReference(FirebaseFunctions functionsClient, String name) {
+  HttpsCallableReference(FirebaseFunctions functionsClient, String name, HttpsCallOptions options) {
     this.functionsClient = functionsClient;
     this.name = name;
     this.url = null;
+    this.options = options;
   }
 
   /** Creates a new reference with the given options. */
-  HttpsCallableReference(FirebaseFunctions functionsClient, URL url) {
+  HttpsCallableReference(FirebaseFunctions functionsClient, URL url, HttpsCallOptions options) {
     this.functionsClient = functionsClient;
     this.name = null;
     this.url = url;
+    this.options = options;
   }
 
   /**
@@ -151,7 +153,7 @@ public class HttpsCallableReference {
    */
   @NonNull
   public HttpsCallableReference withTimeout(long timeout, @NonNull TimeUnit units) {
-    HttpsCallableReference other = new HttpsCallableReference(functionsClient, name);
+    HttpsCallableReference other = new HttpsCallableReference(functionsClient, name, options);
     other.setTimeout(timeout, units);
     return other;
   }

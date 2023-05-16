@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Added support for App Check limited-use tokens in HTTPS Callable Functions.
 
 # 20.3.0
 * [changed] Internal changes to ensure alignment with other SDK releases.

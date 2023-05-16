@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Internal updates to allow Firebase SDKs to obtain limited-use tokens.
 
 # 17.0.0
 * [feature] Added [`getLimitedUseAppCheckToken()`](/docs/reference/android/com/google/firebase/appcheck/FirebaseAppCheck#getLimitedUseAppCheckToken())
