@@ -220,7 +220,7 @@ public class ConfigContainer {
 
     // Iterate through all possible keys.
     for (String key : allKeys) {
-      // If fetchedKeys or activeKeys does not contain the config key, add it to changed.
+      // If fetchedKeys or activeKeys does not contain the config key, add it to `changed`.
       if (!activeKeys.contains(key) || !fetchedKeys.contains(key)) {
         changed.add(key);
       }
@@ -248,8 +248,9 @@ public class ConfigContainer {
 
     // Iterate through all experiment IDs
     for (String experimentId : allExperimentIds) {
-      // If one of the maps does not contain the experiment ID, add that experiments' config keys to
-      // changed.
+      // If one of the maps does not contain the experiment ID, it must have been added or removed.
+      // Add that experiments' config keys to
+      // `changed`.
       if (!activeExperimentsMap.containsKey(experimentId)
           || !fetchedExperimentsMap.containsKey(experimentId)) {
         // Get the experiment that was added/removed.
@@ -268,7 +269,7 @@ public class ConfigContainer {
         }
       } else {
         // Fetched and Active contain the experiment ID. The metadata needs to be compared to see if
-        // anything has changed.
+        // they're still the same.
         JSONObject activeExperiment = activeExperimentsMap.get(experimentId);
         JSONObject fetchedExperiment = fetchedExperimentsMap.get(experimentId);
         boolean experimentsMetadataSame =
