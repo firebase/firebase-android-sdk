@@ -25,8 +25,9 @@ import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 
 public class TestInteropAppCheckTokenProvider implements InteropAppCheckTokenProvider {
   private final AppCheckTokenResult testToken;
+  private final AppCheckTokenResult testLimitedUseToken;
 
-  public TestInteropAppCheckTokenProvider(String testToken) {
+  public TestInteropAppCheckTokenProvider(String testToken, String testLimitedUseToken) {
     this.testToken =
         new AppCheckTokenResult() {
           @NonNull
@@ -41,15 +42,45 @@ public class TestInteropAppCheckTokenProvider implements InteropAppCheckTokenPro
             return null;
           }
         };
+
+    this.testLimitedUseToken =
+        new AppCheckTokenResult() {
+          @NonNull
+          @Override
+          public String getToken() {
+            return testLimitedUseToken;
+          }
+
+          @Nullable
+          @Override
+          public Exception getError() {
+            return null;
+          }
+        };
   }
 
-  public TestInteropAppCheckTokenProvider(String testToken, String error) {
+  public TestInteropAppCheckTokenProvider(
+      String testToken, String testLimitedUseToken, String error) {
     this.testToken =
         new AppCheckTokenResult() {
           @NonNull
           @Override
           public String getToken() {
             return testToken;
+          }
+
+          @Nullable
+          @Override
+          public Exception getError() {
+            return new FirebaseException(error);
+          }
+        };
+    this.testLimitedUseToken =
+        new AppCheckTokenResult() {
+          @NonNull
+          @Override
+          public String getToken() {
+            return testLimitedUseToken;
           }
 
           @Nullable
@@ -69,7 +100,7 @@ public class TestInteropAppCheckTokenProvider implements InteropAppCheckTokenPro
   @NonNull
   @Override
   public Task<AppCheckTokenResult> getLimitedUseToken() {
-    return Tasks.forResult(testToken);
+    return Tasks.forResult(testLimitedUseToken);
   }
 
   @Override
