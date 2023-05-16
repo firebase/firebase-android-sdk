@@ -214,14 +214,14 @@ public class FirebaseFunctions {
     return new HttpsCallableReference(this, url, new HttpsCallOptions());
   }
 
-  /** Returns a reference to the Callable HTTPS trigger with the given name. */
+  /** Returns a reference to the Callable HTTPS trigger with the given name and call options. */
   @NonNull
   public HttpsCallableReference getHttpsCallable(
       @NonNull String name, @NonNull HttpsCallableOptions options) {
     return new HttpsCallableReference(this, name, new HttpsCallOptions(options));
   }
 
-  /** Returns a reference to the Callable HTTPS trigger with the provided url. */
+  /** Returns a reference to the Callable HTTPS trigger with the provided url and call options. */
   @NonNull
   public HttpsCallableReference getHttpsCallableFromUrl(
       @NonNull URL url, @NonNull HttpsCallableOptions options) {
