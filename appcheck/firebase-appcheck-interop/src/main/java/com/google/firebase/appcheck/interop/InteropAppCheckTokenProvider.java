@@ -30,6 +30,15 @@ public interface InteropAppCheckTokenProvider {
   Task<AppCheckTokenResult> getToken(boolean forceRefresh);
 
   /**
+   * Requests an {@link AppCheckTokenResult} from the installed {@code AppCheckFactory}. This will
+   * always return a successful task, with an {@link AppCheckTokenResult} that contains either a
+   * valid token, or a dummy token and an error string. The token returned from this method will be
+   * a one-time use token.
+   */
+  @NonNull
+  Task<AppCheckTokenResult> getLimitedUseToken();
+
+  /**
    * Registers a listener to changes in the token state. There can be more than one listener
    * registered at the same time for one or more FirebaseAppAuth instances. The listeners call back
    * on the UI thread whenever the current token associated with this FirebaseAppCheck changes.

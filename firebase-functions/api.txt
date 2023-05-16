@@ -3,7 +3,9 @@ package com.google.firebase.functions {
 
   public class FirebaseFunctions {
     method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallable(@NonNull String);
+    method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallable(@NonNull String, @NonNull com.google.firebase.functions.HttpsCallableOptions);
     method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(@NonNull java.net.URL);
+    method @NonNull public com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(@NonNull java.net.URL, @NonNull com.google.firebase.functions.HttpsCallableOptions);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull com.google.firebase.FirebaseApp, @NonNull String);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull com.google.firebase.FirebaseApp);
     method @NonNull public static com.google.firebase.functions.FirebaseFunctions getInstance(@NonNull String);
@@ -35,6 +37,17 @@ package com.google.firebase.functions {
     enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code UNAVAILABLE;
     enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code UNIMPLEMENTED;
     enum_constant public static final com.google.firebase.functions.FirebaseFunctionsException.Code UNKNOWN;
+  }
+
+  public class HttpsCallableOptions {
+    method public boolean getLimitedUseAppCheckTokens();
+  }
+
+  public static class HttpsCallableOptions.Builder {
+    ctor public HttpsCallableOptions.Builder();
+    method @NonNull public com.google.firebase.functions.HttpsCallableOptions build();
+    method public boolean getLimitedUseAppCheckTokens();
+    method @NonNull public com.google.firebase.functions.HttpsCallableOptions.Builder setLimitedUseAppCheckTokens(boolean);
   }
 
   public class HttpsCallableReference {

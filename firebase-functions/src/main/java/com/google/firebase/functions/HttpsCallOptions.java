@@ -28,6 +28,17 @@ class HttpsCallOptions {
   private long timeout = DEFAULT_TIMEOUT;
   private TimeUnit timeoutUnits = DEFAULT_TIMEOUT_UNITS;
 
+  private final boolean limitedUseAppCheckTokens;
+
+  /** Creates an (internal) HttpsCallOptions from the (external) {@link HttpsCallableOptions}. */
+  HttpsCallOptions(HttpsCallableOptions publicCallableOptions) {
+    this.limitedUseAppCheckTokens = publicCallableOptions.getLimitedUseAppCheckTokens();
+  }
+
+  HttpsCallOptions() {
+    this.limitedUseAppCheckTokens = false;
+  }
+
   /**
    * Changes the timeout for calls from this instance of Functions. The default is 60 seconds.
    *
@@ -44,8 +55,12 @@ class HttpsCallOptions {
    *
    * @return The timeout, in milliseconds.
    */
-  public long getTimeout() {
+  long getTimeout() {
     return timeoutUnits.toMillis(timeout);
+  }
+
+  boolean getLimitedUseAppCheckTokens() {
+    return limitedUseAppCheckTokens;
   }
 
   /** Creates a new OkHttpClient with these options applied to it. */
