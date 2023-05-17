@@ -19,8 +19,11 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.functions.FirebaseFunctions
+import com.google.firebase.functions.HttpsCallableOptions
+import com.google.firebase.functions.HttpsCallableReference
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import java.net.URL
 
 /** Returns the [FirebaseFunctions] instance of the default [FirebaseApp]. */
 val Firebase.functions: FirebaseFunctions
@@ -44,4 +47,24 @@ internal const val LIBRARY_NAME: String = "fire-fun-ktx"
 class FirebaseFunctionsKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> =
     listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+}
+
+/** Returns a reference to the Callable HTTPS trigger with the given name and call options. */
+fun FirebaseFunctions.getHttpsCallable(
+  name: String,
+  init: HttpsCallableOptions.Builder.() -> Unit
+): HttpsCallableReference {
+  val builder = HttpsCallableOptions.Builder()
+  builder.init()
+  return getHttpsCallable(name, builder.build())
+}
+
+/** Returns a reference to the Callable HTTPS trigger with the given URL and call options. */
+fun FirebaseFunctions.getHttpsCallableFromUrl(
+  url: URL,
+  init: HttpsCallableOptions.Builder.() -> Unit
+): HttpsCallableReference {
+  val builder = HttpsCallableOptions.Builder()
+  builder.init()
+  return getHttpsCallableFromUrl(url, builder.build())
 }
