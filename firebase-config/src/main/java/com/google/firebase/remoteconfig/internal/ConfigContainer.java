@@ -278,7 +278,7 @@ public class ConfigContainer {
           changed.addAll(fetchedExperimentKeys);
         } else {
           // Compare config keys from either experiment.
-          return getChangedExperimentConfigKeys(activeExperimentKeys, fetchedExperimentKeys);
+          changed.addAll(getChangedExperimentConfigKeys(activeExperimentKeys, fetchedExperimentKeys));
         }
       }
     }
