@@ -84,6 +84,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
       projectPath.set(project.projectDir.absolutePath)
       currentJar.set(currentJarFile)
       dependsOn("extractCurrentClasses")
+      dependsOn("generateApiTxtFile")
     }
   }
 
