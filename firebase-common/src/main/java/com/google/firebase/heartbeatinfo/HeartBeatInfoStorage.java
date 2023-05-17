@@ -75,12 +75,28 @@ class HeartBeatInfoStorage {
 
   synchronized void deleteAllHeartBeats() {
     SharedPreferences.Editor editor = firebaseSharedPreferences.edit();
+    int counter = 0;
     for (Map.Entry<String, ?> entry : this.firebaseSharedPreferences.getAll().entrySet()) {
       if (entry.getValue() instanceof Set) {
-        editor.remove(entry.getKey());
+        Set<String> dates = (Set<String>) entry.getValue();
+        String today = getFormattedDate(System.currentTimeMillis());
+        String key = entry.getKey();
+        if (dates.contains(today)) {
+          Set<String> userAgentDateSet = new HashSet<>();
+          userAgentDateSet.add(today);
+          counter += 1;
+          editor.putStringSet(key, userAgentDateSet);
+        } else {
+          editor.remove(key);
+        }
       }
     }
-    editor.remove(HEART_BEAT_COUNT_TAG);
+    if (counter == 0) {
+      editor.remove(HEART_BEAT_COUNT_TAG);
+    } else {
+      editor.putLong(HEART_BEAT_COUNT_TAG, counter);
+    }
+
     editor.commit();
   }
 
@@ -88,9 +104,13 @@ class HeartBeatInfoStorage {
     ArrayList<HeartBeatResult> heartBeatResults = new ArrayList<>();
     for (Map.Entry<String, ?> entry : this.firebaseSharedPreferences.getAll().entrySet()) {
       if (entry.getValue() instanceof Set) {
-        heartBeatResults.add(
-            HeartBeatResult.create(
-                entry.getKey(), new ArrayList<String>((Set<String>) entry.getValue())));
+        Set<String> dates = new HashSet<>((Set<String>) entry.getValue());
+        String today = getFormattedDate(System.currentTimeMillis());
+        dates.remove(today);
+        if (!dates.isEmpty()) {
+          heartBeatResults.add(
+              HeartBeatResult.create(entry.getKey(), new ArrayList<String>(dates)));
+        }
       }
     }
     updateGlobalHeartBeat(System.currentTimeMillis());
