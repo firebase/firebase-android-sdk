@@ -107,11 +107,17 @@ final class SQLiteIndexManager implements IndexManager {
   private boolean started = false;
   private int memoizedMaxIndexId = -1;
   private long memoizedMaxSequenceNumber = -1;
+  private boolean autoClientIndexingEnabled;
 
-  SQLiteIndexManager(SQLitePersistence persistence, LocalSerializer serializer, User user) {
+  SQLiteIndexManager(
+      SQLitePersistence persistence,
+      LocalSerializer serializer,
+      User user,
+      boolean autoClientIndexingEnabled) {
     this.db = persistence;
     this.serializer = serializer;
     this.uid = user.isAuthenticated() ? user.getUid() : "";
+    this.autoClientIndexingEnabled = autoClientIndexingEnabled;
   }
 
   @Override
@@ -230,6 +236,21 @@ final class SQLiteIndexManager implements IndexManager {
     Map<Integer, FieldIndex> collectionIndices = memoizedIndexes.get(index.getCollectionGroup());
     if (collectionIndices != null) {
       collectionIndices.remove(index.getIndexId());
+    }
+  }
+
+  @Override
+  public void createTargetIndices(Target target) {
+    hardAssert(started, "IndexManager not started");
+
+    if (!autoClientIndexingEnabled) return;
+
+    for (Target subTarget : getSubTargets(target)) {
+      IndexType type = getIndexType(subTarget);
+      if (type == IndexType.NONE) {
+        TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(subTarget);
+        addFieldIndex(targetIndexMatcher.BuildTargetIndex());
+      }
     }
   }
 

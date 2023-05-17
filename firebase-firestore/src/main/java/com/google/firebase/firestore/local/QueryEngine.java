@@ -85,10 +85,17 @@ public class QueryEngine {
     QueryContext counter = new QueryContext();
     result = performQueryUsingRemoteKeys(query, remoteKeys, lastLimboFreeSnapshotVersion, counter);
     if (result != null) {
+      if (counter.fullScanCount > 2 * result.size()) {
+        indexManager.createTargetIndices(query.toTarget());
+      }
       return result;
     }
     counter = new QueryContext();
-    return executeFullCollectionScan(query, counter);
+    result = executeFullCollectionScan(query, counter);
+    if (counter.fullScanCount > 2 * result.size()) {
+      indexManager.createTargetIndices(query.toTarget());
+    }
+    return result;
   }
 
   /**

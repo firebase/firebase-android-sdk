@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
+import com.google.firebase.firestore.PersistentCacheSettings;
 import com.google.firebase.firestore.local.IndexBackfiller;
 import com.google.firebase.firestore.local.LocalSerializer;
 import com.google.firebase.firestore.local.LruDelegate;
@@ -50,6 +51,9 @@ public class SQLiteComponentProvider extends MemoryComponentProvider {
         configuration.getDatabaseInfo().getPersistenceKey(),
         configuration.getDatabaseInfo().getDatabaseId(),
         serializer,
-        params);
+        params,
+        configuration.getSettings().getCacheSettings() != null
+            && ((PersistentCacheSettings) configuration.getSettings().getCacheSettings())
+                .autoClientIndexingEnabled());
   }
 }

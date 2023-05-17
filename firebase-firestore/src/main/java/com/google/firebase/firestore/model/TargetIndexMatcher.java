@@ -192,6 +192,34 @@ public class TargetIndexMatcher {
     return true;
   }
 
+  public FieldIndex BuildTargetIndex() {
+    List<FieldIndex.Segment> segments = new ArrayList<>();
+
+    for (FieldFilter filter : equalityFilters) {
+      boolean isArrayOperator =
+          filter.getOperator().equals(FieldFilter.Operator.ARRAY_CONTAINS)
+              || filter.getOperator().equals(FieldFilter.Operator.ARRAY_CONTAINS_ANY);
+      segments.add(
+          FieldIndex.Segment.create(
+              filter.getField(),
+              isArrayOperator
+                  ? FieldIndex.Segment.Kind.CONTAINS
+                  : FieldIndex.Segment.Kind.ASCENDING));
+    }
+
+    for (OrderBy orderBy : orderBys) {
+      segments.add(
+          FieldIndex.Segment.create(
+              orderBy.getField(),
+              orderBy.getDirection() == OrderBy.Direction.ASCENDING
+                  ? FieldIndex.Segment.Kind.ASCENDING
+                  : FieldIndex.Segment.Kind.DESCENDING));
+    }
+
+    return FieldIndex.create(
+        FieldIndex.UNKNOWN_ID, collectionId, segments, FieldIndex.INITIAL_STATE);
+  }
+
   private boolean hasMatchingEqualityFilter(FieldIndex.Segment segment) {
     for (FieldFilter filter : equalityFilters) {
       if (matchesFilter(filter, segment)) {
