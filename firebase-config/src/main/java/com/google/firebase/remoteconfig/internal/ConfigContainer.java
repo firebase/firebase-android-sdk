@@ -228,7 +228,7 @@ public class ConfigContainer {
     Set<String> allKeys = new HashSet<>(changed);
     // Iterate through all possible keys.
     for (String key : allKeys) {
-      // If fetchedKeys or activeKeys does not contain the config key, add it to `changed`.
+      // If fetchedKeys and activeKeys contains the config key, remove it from `changed`.
       if (activeKeys.contains(key) && fetchedKeys.contains(key)) {
         changed.remove(key);
       }
