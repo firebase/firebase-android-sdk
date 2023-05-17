@@ -1,8 +1,6 @@
 {
     "name": "M132",
     "libraries": [
-        ":firebase-config:ktx",
-        ":firebase-config",
         ":firebase-database",
         ":firebase-database:ktx",
         ":firebase-firestore:ktx",
