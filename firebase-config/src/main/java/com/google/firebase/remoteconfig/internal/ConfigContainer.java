@@ -219,8 +219,8 @@ public class ConfigContainer {
     return keys;
   }
 
-  private Set<String> compareExperimentConfigKeys(Set<String> activeKeys, Set<String> fetchedKeys)
-      throws JSONException {
+  private Set<String> getChangedExperimentConfigKeys(
+      Set<String> activeKeys, Set<String> fetchedKeys) throws JSONException {
     Set<String> changed = new HashSet<>();
     changed.addAll(activeKeys);
     changed.addAll(fetchedKeys);
@@ -278,7 +278,7 @@ public class ConfigContainer {
           changed.addAll(fetchedExperimentKeys);
         } else {
           // Compare config keys from either experiment.
-          return compareExperimentConfigKeys(activeExperimentKeys, fetchedExperimentKeys);
+          return getChangedExperimentConfigKeys(activeExperimentKeys, fetchedExperimentKeys);
         }
       }
     }
