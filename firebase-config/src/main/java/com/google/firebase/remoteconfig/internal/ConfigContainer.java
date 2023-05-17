@@ -174,6 +174,10 @@ public class ConfigContainer {
 
   private Map<String, JSONObject> getExperimentsMap(JSONArray experiments) throws JSONException {
     Map<String, JSONObject> experimentsMap = new HashMap<>();
+    if (experiments == null) {
+      return experimentsMap;
+    }
+
     for (int i = 0; i < experiments.length(); i++) {
       JSONObject experiment = experiments.getJSONObject(i);
       String experimentID = experiment.getString(EXPERIMENT_ID);
@@ -201,52 +205,46 @@ public class ConfigContainer {
     return activeExperimentCopy.toString().equals(fetchedExperimentCopy.toString());
   }
 
-  private void compareExperimentConfigKeys(JSONArray active, JSONArray fetched, Set<String> changed)
+  private Set<String> extractConfigKeysFromExperiment(JSONObject experiment) throws JSONException {
+    Set<String> keys = new HashSet<>();
+    if (!experiment.has(AFFECTED_PARAMETER_KEY)) {
+      return keys;
+    }
+
+    JSONArray experimentKeys = experiment.getJSONArray(AFFECTED_PARAMETER_KEY);
+    for (int i = 0; i < experimentKeys.length(); i++) {
+      keys.add(experimentKeys.getString(i));
+    }
+
+    return keys;
+  }
+
+  private Set<String> compareExperimentConfigKeys(Set<String> activeKeys, Set<String> fetchedKeys)
       throws JSONException {
-    Set<String> allKeys = new HashSet<>();
-    Set<String> activeKeys = new HashSet<>();
-    Set<String> fetchedKeys = new HashSet<>();
+    Set<String> changed = new HashSet<>();
+    changed.addAll(activeKeys);
+    changed.addAll(fetchedKeys);
 
-    // Iterate through the active experiments config keys and add it to the sets.
-    for (int i = 0; i < active.length(); i++) {
-      String activeKey = active.getString(i);
-      allKeys.add(activeKey);
-      activeKeys.add(activeKey);
-    }
-    // Iterate through the fetched experiments config keys and add it to the sets.
-    for (int i = 0; i < fetched.length(); i++) {
-      String fetchedKey = fetched.getString(i);
-      allKeys.add(fetchedKey);
-      fetchedKeys.add(fetchedKey);
-    }
-
+    Set<String> allKeys = new HashSet<>(changed);
     // Iterate through all possible keys.
     for (String key : allKeys) {
       // If fetchedKeys or activeKeys does not contain the config key, add it to `changed`.
-      if (!activeKeys.contains(key) || !fetchedKeys.contains(key)) {
-        changed.add(key);
+      if (activeKeys.contains(key) && fetchedKeys.contains(key)) {
+        changed.remove(key);
       }
     }
+
+    return changed;
   }
 
-  private void getChangedABTExperiments(Set<String> changed, JSONArray otherExperiment)
-      throws JSONException {
-    Set<String> allExperimentIds = new HashSet<>();
-    Map<String, JSONObject> fetchedExperimentsMap = new HashMap<>();
-    Map<String, JSONObject> activeExperimentsMap = new HashMap<>();
+  private Set<String> getChangedABTExperiments(JSONArray otherExperiment) throws JSONException {
+    Set<String> changed = new HashSet<>();
+    Map<String, JSONObject> fetchedExperimentsMap = getExperimentsMap(this.abtExperiments);
+    Map<String, JSONObject> activeExperimentsMap = getExperimentsMap(otherExperiment);
 
-    if (this.abtExperiments != null) {
-      // Put active experiments metadata into a map.
-      activeExperimentsMap = getExperimentsMap(this.abtExperiments);
-      // Store experiment IDs for later iteration.
-      allExperimentIds.addAll(activeExperimentsMap.keySet());
-    }
-    if (otherExperiment != null) {
-      // Put fetched experiments metadata into map.
-      fetchedExperimentsMap = getExperimentsMap(otherExperiment);
-      // Store experiment IDs for later iteration.
-      allExperimentIds.addAll(fetchedExperimentsMap.keySet());
-    }
+    Set<String> allExperimentIds = new HashSet<>();
+    allExperimentIds.addAll(fetchedExperimentsMap.keySet());
+    allExperimentIds.addAll(activeExperimentsMap.keySet());
 
     // Iterate through all experiment IDs
     for (String experimentId : allExperimentIds) {
@@ -262,48 +260,30 @@ public class ConfigContainer {
           changedExperiment = fetchedExperimentsMap.get(experimentId);
         }
 
-        // Check if changed experiment has param keys and add them to `changed` if present.
-        if (changedExperiment.has(AFFECTED_PARAMETER_KEY)) {
-          JSONArray experimentKeys = changedExperiment.getJSONArray(AFFECTED_PARAMETER_KEY);
-          for (int i = 0; i < experimentKeys.length(); i++) {
-            changed.add(experimentKeys.getString(i));
-          }
-        }
+        // Add all keys from `changedExperiment` to `changed`.
+        changed.addAll(extractConfigKeysFromExperiment(changedExperiment));
       } else {
         // Fetched and Active contain the experiment ID. The metadata needs to be compared to see if
         // they're still the same.
         JSONObject activeExperiment = activeExperimentsMap.get(experimentId);
         JSONObject fetchedExperiment = fetchedExperimentsMap.get(experimentId);
-        boolean experimentsMetadataSame =
-            isExperimentMetadataSame(activeExperiment, fetchedExperiment);
 
-        // Get config keys from fetched and active experiments if they exist.
-        JSONArray activeExperimentConfigKeys = new JSONArray();
-        JSONArray fetchedExperimentConfigKeys = new JSONArray();
-        if (activeExperimentsMap.get(experimentId).has(AFFECTED_PARAMETER_KEY)) {
-          activeExperimentConfigKeys =
-              activeExperimentsMap.get(experimentId).getJSONArray(AFFECTED_PARAMETER_KEY);
-        }
-        if (fetchedExperimentsMap.get(experimentId).has(AFFECTED_PARAMETER_KEY)) {
-          fetchedExperimentConfigKeys =
-              fetchedExperimentsMap.get(experimentId).getJSONArray(AFFECTED_PARAMETER_KEY);
-        }
+        // Extract keys from active and fetched experiments.
+        Set<String> activeExperimentKeys = extractConfigKeysFromExperiment(activeExperiment);
+        Set<String> fetchedExperimentKeys = extractConfigKeysFromExperiment(fetchedExperiment);
 
-        if (!experimentsMetadataSame) {
+        if (!isExperimentMetadataSame(activeExperiment, fetchedExperiment)) {
           // Add in all keys from both sides if the experiments metadata has changed.
-          for (int i = 0; i < activeExperimentConfigKeys.length(); i++) {
-            changed.add(activeExperimentConfigKeys.getString(i));
-          }
-          for (int i = 0; i < fetchedExperimentConfigKeys.length(); i++) {
-            changed.add(fetchedExperimentConfigKeys.getString(i));
-          }
+          changed.addAll(activeExperimentKeys);
+          changed.addAll(fetchedExperimentKeys);
         } else {
           // Compare config keys from either experiment.
-          compareExperimentConfigKeys(
-              activeExperimentConfigKeys, fetchedExperimentConfigKeys, changed);
+          return compareExperimentConfigKeys(activeExperimentKeys, fetchedExperimentKeys);
         }
       }
     }
+
+    return changed;
   }
 
   /**
@@ -360,7 +340,7 @@ public class ConfigContainer {
     while (remainingOtherKeys.hasNext()) {
       changed.add(remainingOtherKeys.next());
     }
-    getChangedABTExperiments(changed, other.getAbtExperiments());
+    changed.addAll(getChangedABTExperiments(other.getAbtExperiments()));
 
     return changed;
   }
