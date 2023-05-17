@@ -18,6 +18,7 @@
 
 import argparse
 import configparser
+import json
 import re
 import os
 import string
@@ -219,15 +220,15 @@ updates.
 
 
 def read_release_cfg(release_cfg_path):
-    config = configparser.ConfigParser(allow_no_value=True, delimiters=('=',))
-    config.read(release_cfg_path)
+    with open(release_cfg_path) as fd:
+        config = json.load(fd)
     return config
 
 
 def main():
     parser = argparse.ArgumentParser(description='Create release notes.')
     parser.add_argument('--releasecfg',
-                        default='release.cfg',
+                        default='release.json',
                         required=False,
                         help='Path to the release.cfg file to use')
     parser.add_argument('--products',
@@ -246,12 +247,12 @@ def main():
     if args.products:
         products = args.products.split(',')
     else:
-        products = list(release_cfg['modules'])
+        products = list(release_cfg['libraries'])
 
     if args.generated_name:
         generated_name = args.generated_name
     else:
-        generated_name = release_cfg['release']['name'].lower().strip()
+        generated_name = release_cfg['name'].lower().strip()
 
     for product in products:
         if product.startswith(':'):
