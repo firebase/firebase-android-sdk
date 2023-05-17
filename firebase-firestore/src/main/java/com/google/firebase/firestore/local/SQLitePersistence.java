@@ -85,6 +85,7 @@ public final class SQLitePersistence extends Persistence {
 
   private final OpenHelper opener;
   private final LocalSerializer serializer;
+  private final boolean autoClientIndexingEnabled;
   private final SQLiteTargetCache targetCache;
   private final SQLiteBundleCache bundleCache;
   private final SQLiteRemoteDocumentCache remoteDocumentCache;
@@ -113,17 +114,23 @@ public final class SQLitePersistence extends Persistence {
       String persistenceKey,
       DatabaseId databaseId,
       LocalSerializer serializer,
-      LruGarbageCollector.Params params) {
+      LruGarbageCollector.Params params,
+      Boolean autoClientIndexingEnabled) {
     this(
         serializer,
         params,
-        new OpenHelper(context, serializer, databaseName(persistenceKey, databaseId)));
+        new OpenHelper(context, serializer, databaseName(persistenceKey, databaseId)),
+        autoClientIndexingEnabled);
   }
 
   public SQLitePersistence(
-      LocalSerializer serializer, LruGarbageCollector.Params params, OpenHelper openHelper) {
+      LocalSerializer serializer,
+      LruGarbageCollector.Params params,
+      OpenHelper openHelper,
+      Boolean autoClientIndexingEnabled) {
     this.opener = openHelper;
     this.serializer = serializer;
+    this.autoClientIndexingEnabled = autoClientIndexingEnabled;
     this.targetCache = new SQLiteTargetCache(this, this.serializer);
     this.bundleCache = new SQLiteBundleCache(this, this.serializer);
     this.remoteDocumentCache = new SQLiteRemoteDocumentCache(this, this.serializer);
@@ -182,7 +189,7 @@ public final class SQLitePersistence extends Persistence {
 
   @Override
   IndexManager getIndexManager(User user) {
-    return new SQLiteIndexManager(this, serializer, user);
+    return new SQLiteIndexManager(this, serializer, user, autoClientIndexingEnabled);
   }
 
   @Override

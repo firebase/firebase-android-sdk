@@ -37,8 +37,11 @@ public final class PersistentCacheSettings implements LocalCacheSettings {
 
   private final long sizeBytes;
 
-  private PersistentCacheSettings(long sizeBytes) {
+  private final boolean autoClientIndexingEnabled;
+
+  private PersistentCacheSettings(long sizeBytes, boolean autoClientIndexingEnabled) {
     this.sizeBytes = sizeBytes;
+    this.autoClientIndexingEnabled = autoClientIndexingEnabled;
   }
 
   @Override
@@ -74,10 +77,16 @@ public final class PersistentCacheSettings implements LocalCacheSettings {
     return sizeBytes;
   }
 
+  public boolean autoClientIndexingEnabled() {
+    return autoClientIndexingEnabled;
+  }
+
   /** A Builder for creating {@code PersistentCacheSettings} instance. */
   public static class Builder {
 
     private long sizeBytes = FirebaseFirestoreSettings.DEFAULT_CACHE_SIZE_BYTES;
+
+    private boolean autoClientIndexingEnabled = false;
 
     private Builder() {}
 
@@ -98,10 +107,16 @@ public final class PersistentCacheSettings implements LocalCacheSettings {
       return this;
     }
 
+    @NonNull
+    public Builder enableAutoClientIndexing(boolean value) {
+      this.autoClientIndexingEnabled = value;
+      return this;
+    }
+
     /** Creates a {@code PersistentCacheSettings} instance from this builder instance. */
     @NonNull
     public PersistentCacheSettings build() {
-      return new PersistentCacheSettings(sizeBytes);
+      return new PersistentCacheSettings(sizeBytes, autoClientIndexingEnabled);
     }
   }
 }
