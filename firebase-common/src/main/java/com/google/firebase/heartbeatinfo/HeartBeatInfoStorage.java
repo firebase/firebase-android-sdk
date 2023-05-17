@@ -78,6 +78,7 @@ class HeartBeatInfoStorage {
     int counter = 0;
     for (Map.Entry<String, ?> entry : this.firebaseSharedPreferences.getAll().entrySet()) {
       if (entry.getValue() instanceof Set) {
+        // All other heartbeats other than the heartbeats stored today will be deleted.
         Set<String> dates = (Set<String>) entry.getValue();
         String today = getFormattedDate(System.currentTimeMillis());
         String key = entry.getKey();
