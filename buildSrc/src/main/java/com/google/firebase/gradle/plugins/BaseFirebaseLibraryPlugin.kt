@@ -32,6 +32,16 @@ import org.gradle.kotlin.dsl.register
 import org.w3c.dom.Element
 
 abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
+  protected fun registerMakeReleaseNotesTask(project: Project) =
+    project.tasks.register<MakeReleaseNotesTask>("makeReleaseNotes") {
+      val changelog = project.file("CHANGELOG.MD")
+      val releaseNotes by tempFile("release_notes.md")
+
+      onlyIf("Changelog file not found.") { changelog.exists() }
+
+      changelogFile.set(changelog)
+      releaseNotesFile.set(releaseNotes)
+    }
 
   protected fun kotlinModuleName(project: Project): String {
     val fullyQualifiedProjectPath = project.path.replace(":".toRegex(), "-")
