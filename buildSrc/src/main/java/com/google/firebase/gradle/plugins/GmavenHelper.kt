@@ -20,6 +20,7 @@ import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Document
 
+/** TODO(b/279466888) - Make GmavenHelper testable */
 class GmavenHelper(val groupId: String, val artifactId: String) {
   val GMAVEN_ROOT = "https://dl.google.com/dl/android/maven2"
 
@@ -27,6 +28,13 @@ class GmavenHelper(val groupId: String, val artifactId: String) {
     val pomFileName = "${artifactId}-${version}.pom"
     val groupIdAsPath = groupId.replace(".", "/")
     return "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/${version}/${pomFileName}"
+  }
+
+  fun getArtifactForVersion(version: String, isJar: Boolean): String {
+    val fileName =
+      if (isJar == true) "${artifactId}-${version}.jar" else "${artifactId}-${version}.aar"
+    val groupIdAsPath = groupId.replace(".", "/")
+    return "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/${version}/${fileName}"
   }
 
   fun getLatestReleasedVersion(): String {

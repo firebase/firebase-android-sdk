@@ -18,6 +18,11 @@ plugins {
 }
 
 firebaseLibrary {
+    libraryGroup "crashlytics"
+    testLab {
+        enabled = true
+        device 'model=panther,version=33' // Pixel7
+    }
     testLab.enabled = true
     publishJavadoc = false
 }
@@ -28,10 +33,10 @@ android {
     }
 
     ndkVersion "25.1.8937393"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion 33
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion project.targetSdkVersion
+        targetSdkVersion 33
         versionName version
 
         externalNativeBuild {
@@ -100,8 +105,8 @@ thirdPartyLicenses {
 }
 
 dependencies {
-    implementation project(':firebase-common')
-    implementation project(':firebase-components')
+    implementation 'com.google.firebase:firebase-common:20.3.1'
+    implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation project(':firebase-crashlytics')
     implementation 'com.google.android.gms:play-services-basement:18.1.0'
 

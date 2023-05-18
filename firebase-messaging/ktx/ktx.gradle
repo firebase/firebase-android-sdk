@@ -18,7 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
-    releaseWith project(':firebase-messaging')
+    libraryGroup "messaging"
     publishJavadoc = true
     publishSources = true
 }
@@ -43,9 +43,9 @@ android {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 
-    implementation project(':firebase-common')
-    implementation project(':firebase-common:ktx')
-    implementation project(':firebase-components')
+    implementation 'com.google.firebase:firebase-common:20.3.1'
+    implementation 'com.google.firebase:firebase-common-ktx:20.3.1'
+    implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation project(':firebase-messaging')
     implementation "com.google.android.gms:play-services-basement:18.1.0"
 

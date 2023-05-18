@@ -15,7 +15,9 @@
 package com.google.firebase.gradle.plugins
 
 import java.io.File
+import org.gradle.api.DefaultTask
 import org.gradle.api.Project
+import org.gradle.api.artifacts.Dependency
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.AttributeContainer
 import org.gradle.api.provider.Provider
@@ -23,6 +25,7 @@ import org.gradle.kotlin.dsl.apply
 import org.gradle.workers.WorkAction
 import org.gradle.workers.WorkParameters
 import org.gradle.workers.WorkQueue
+import org.jetbrains.kotlin.gradle.utils.provider
 
 /**
  * Creates a file at the buildDir for the given [Project].
@@ -43,6 +46,25 @@ fun Project.fileFromBuildDir(path: String) = file("$buildDir/$path")
  * ```
  */
 fun Provider<File>.childFile(path: String) = map { File("${it.path}/$path") }
+
+/**
+ * Returns a new [File] under the given sub directory.
+ *
+ * Syntax sugar for:
+ * ```
+ * File("$path/$childPath")
+ * ```
+ */
+fun File.childFile(childPath: String) = File("$path/$childPath")
+
+/**
+ * Provides a temporary file for use during the task.
+ *
+ * Creates a file under the [temporaryDir][DefaultTask.getTemporaryDir] of the task, and should be
+ * preferred to defining an explicit [File]. This will allow Gradle to make better optimizations on
+ * our part, and helps us avoid edge-case scenarios like conflicting file names.
+ */
+fun DefaultTask.tempFile(path: String) = provider { temporaryDir.childFile(path) }
 
 /**
  * Returns a list of children files, or an empty list if this [File] doesn't exist or doesn't have
@@ -102,3 +124,14 @@ inline fun <reified T> AttributeContainer.attribute(name: String, value: T) =
  */
 inline fun <reified T : Any> org.gradle.api.plugins.PluginManager.`apply`(): Unit =
   `apply`(T::class)
+
+/**
+ * The name provided to this artifact when published.
+ *
+ * For example, the following could be an artifact name:
+ * ```
+ * "com.google.firebase:firebase-common:16.0.5"
+ * ```
+ */
+val Dependency.artifactName: String
+  get() = listOf(group, name, version).filterNotNull().joinToString(":")

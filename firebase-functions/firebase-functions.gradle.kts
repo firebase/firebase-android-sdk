@@ -18,6 +18,7 @@ plugins {
 }
 
 firebaseLibrary {
+    libraryGroup("functions")
     testLab.enabled = true
     publishSources = true
 }
@@ -44,9 +45,9 @@ android {
 }
 
 dependencies {
-  implementation(project(":firebase-annotations"))
-  implementation(project(":firebase-common"))
-  implementation(project(":firebase-components"))
+  implementation("com.google.firebase:firebase-annotations:16.2.0")
+  implementation("com.google.firebase:firebase-common:20.3.1")
+  implementation("com.google.firebase:firebase-components:17.1.0")
   implementation(project(":appcheck:firebase-appcheck-interop"))
   implementation(libs.playservices.base)
   implementation(libs.playservices.basement)

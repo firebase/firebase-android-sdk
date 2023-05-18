@@ -18,15 +18,7 @@ import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldPath
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreSettings
-import com.google.firebase.firestore.MetadataChanges
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.QueryDocumentSnapshot
-import com.google.firebase.firestore.QuerySnapshot
+import com.google.firebase.firestore.*
 import com.google.firebase.firestore.util.Executors.BACKGROUND_EXECUTOR
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
@@ -35,6 +27,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.map
 
 /** Returns the [FirebaseFirestore] instance of the default [FirebaseApp]. */
 val Firebase.firestore: FirebaseFirestore
@@ -183,6 +176,32 @@ fun firestoreSettings(
   return builder.build()
 }
 
+fun memoryCacheSettings(init: MemoryCacheSettings.Builder.() -> Unit): MemoryCacheSettings {
+  val builder = MemoryCacheSettings.newBuilder()
+  builder.init()
+  return builder.build()
+}
+
+fun memoryEagerGcSettings(init: MemoryEagerGcSettings.Builder.() -> Unit): MemoryEagerGcSettings {
+  val builder = MemoryEagerGcSettings.newBuilder()
+  builder.init()
+  return builder.build()
+}
+
+fun memoryLruGcSettings(init: MemoryLruGcSettings.Builder.() -> Unit): MemoryLruGcSettings {
+  val builder = MemoryLruGcSettings.newBuilder()
+  builder.init()
+  return builder.build()
+}
+
+fun persistentCacheSettings(
+  init: PersistentCacheSettings.Builder.() -> Unit
+): PersistentCacheSettings {
+  val builder = PersistentCacheSettings.newBuilder()
+  builder.init()
+  return builder.build()
+}
+
 internal const val LIBRARY_NAME: String = "fire-fst-ktx"
 
 /** @suppress */
@@ -240,3 +259,31 @@ fun Query.snapshots(
     awaitClose { registration.remove() }
   }
 }
+
+/**
+ * Starts listening to this query with the given options and emits its values converted to a POJO
+ * via a [Flow].
+ *
+ * - When the returned flow starts being collected, an [EventListener] will be attached.
+ * - When the flow completes, the listener will be removed.
+ *
+ * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
+ * @param T The type of the object to convert to.
+ */
+inline fun <reified T : Any> Query.dataObjects(
+  metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
+): Flow<List<T>> = snapshots(metadataChanges).map { it.toObjects(T::class.java) }
+
+/**
+ * Starts listening to the document referenced by this `DocumentReference` with the given options
+ * and emits its values converted to a POJO via a [Flow].
+ *
+ * - When the returned flow starts being collected, an [EventListener] will be attached.
+ * - When the flow completes, the listener will be removed.
+ *
+ * @param metadataChanges controls metadata-only changes. Default: [MetadataChanges.EXCLUDE]
+ * @param T The type of the object to convert to.
+ */
+inline fun <reified T : Any> DocumentReference.dataObjects(
+  metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
+): Flow<T?> = snapshots(metadataChanges).map { it.toObject(T::class.java) }

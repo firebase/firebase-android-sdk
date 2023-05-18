@@ -22,6 +22,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.PropertyName
 import com.google.firebase.firestore.TestUtil
 import com.google.firebase.firestore.model.ObjectValue
 import com.google.firebase.firestore.testutil.TestUtil.wrap
@@ -100,6 +101,57 @@ class FirestoreTests : BaseTestCase() {
     assertThat(isSslEnabled).isEqualTo(settings.isSslEnabled)
     assertThat(isPersistenceEnabled).isEqualTo(settings.isPersistenceEnabled)
   }
+
+  @Test
+  fun `LocalCacheSettings builder works`() {
+    val host = "http://10.0.2.2:8080"
+    val isSslEnabled = false
+
+    val settings = firestoreSettings {
+      this.host = host
+      this.isSslEnabled = isSslEnabled
+      this.setLocalCacheSettings(persistentCacheSettings { setSizeBytes(1_000_000) })
+    }
+
+    assertThat(host).isEqualTo(settings.host)
+    assertThat(isSslEnabled).isEqualTo(settings.isSslEnabled)
+    assertThat(settings.isPersistenceEnabled).isTrue()
+    assertThat(settings.cacheSizeBytes).isEqualTo(1_000_000)
+
+    val otherSettings = firestoreSettings { this.setLocalCacheSettings(memoryCacheSettings {}) }
+
+    assertThat(otherSettings.host).isEqualTo(FirebaseFirestoreSettings.DEFAULT_HOST)
+    assertThat(otherSettings.isSslEnabled).isEqualTo(true)
+    assertThat(otherSettings.isPersistenceEnabled).isFalse()
+  }
+
+  @Test
+  fun `MemoryCacheSettings Garbage Collector builder works`() {
+    val host = "http://10.0.2.2:8080"
+    val isSslEnabled = false
+
+    val settings = firestoreSettings {
+      this.host = host
+      this.isSslEnabled = isSslEnabled
+      this.setLocalCacheSettings(memoryCacheSettings {})
+    }
+
+    assertThat(host).isEqualTo(settings.host)
+    assertThat(isSslEnabled).isEqualTo(settings.isSslEnabled)
+    assertThat(settings.isPersistenceEnabled).isFalse()
+    assertThat(settings.cacheSettings)
+      .isEqualTo(memoryCacheSettings { setGcSettings(memoryEagerGcSettings {}) })
+
+    val otherSettings = firestoreSettings {
+      this.setLocalCacheSettings(
+        memoryCacheSettings { setGcSettings(memoryLruGcSettings { setSizeBytes(1_000) }) }
+      )
+    }
+
+    assertThat(otherSettings.host).isEqualTo(FirebaseFirestoreSettings.DEFAULT_HOST)
+    assertThat(otherSettings.isPersistenceEnabled).isFalse()
+    assertThat(otherSettings.cacheSizeBytes).isEqualTo(1_000)
+  }
 }
 
 @RunWith(RobolectricTestRunner::class)
@@ -112,6 +164,13 @@ class LibraryVersionTest : BaseTestCase() {
 }
 
 data class Room(var a: Int = 0, var b: Int = 0)
+
+// NOTE: When Kotlin properties are annotated with `PropertyName` they need to use @get and @set.
+// Also, the properties need to be mutable; that is, declared with `var` and not `val`.
+// See https://github.com/firebase/firebase-android-sdk/issues/4822
+data class DataClassWithPropertyName(
+  @get:PropertyName("dbName") @set:PropertyName("dbName") var objName: String = "DefaultObjName"
+)
 
 @RunWith(RobolectricTestRunner::class)
 class DocumentSnapshotTests {
@@ -154,6 +213,15 @@ class DocumentSnapshotTests {
     assertThat(room).isEqualTo(Room(1, 2))
     assertThat(room)
       .isEqualTo(ds.toObject(Room::class.java, DocumentSnapshot.ServerTimestampBehavior.ESTIMATE))
+  }
+
+  @Test
+  fun `PropertyName annotation works on data classes`() {
+    val ds = TestUtil.documentSnapshot("foo/bar", mapOf("dbName" to "CustomValue"), false)
+
+    val toObjectReturnValue = ds.toObject<DataClassWithPropertyName>()
+
+    assertThat(toObjectReturnValue).isEqualTo(DataClassWithPropertyName("CustomValue"))
   }
 }
 

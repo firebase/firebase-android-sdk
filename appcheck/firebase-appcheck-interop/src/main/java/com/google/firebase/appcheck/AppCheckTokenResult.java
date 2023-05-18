@@ -16,13 +16,12 @@ package com.google.firebase.appcheck;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.FirebaseException;
 
 /**
  * Class to hold the result emitted by a Firebase App Check service application verification
  * attempt. The result will always contain a token, which will either be a valid raw JWT attesting
- * application identity, or a dummy value. The result may optionally contain a {@link
- * FirebaseException} if application verification does not succeed.
+ * application identity, or a dummy value. The result may optionally contain an {@link Exception} if
+ * application verification does not succeed.
  */
 public abstract class AppCheckTokenResult {
 
@@ -34,9 +33,9 @@ public abstract class AppCheckTokenResult {
   public abstract String getToken();
 
   /**
-   * Returns the {@link FirebaseException} if the {@link
-   * com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider} failed to obtain a token.
+   * Returns the {@link Exception} if the {@link
+   * com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider} failed to obtain a token.
    */
   @Nullable
-  public abstract FirebaseException getError();
+  public abstract Exception getError();
 }

@@ -1,5 +1,25 @@
 # Unreleased
 
+
+# 20.2.1
+* [changed] Internal changes to ensure alignment with other SDK releases.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-database` library. The Kotlin extensions library has no additional
+updates.
+
+# 20.2.0
+* [unchanged] Updated to accommodate the release of the updated
+  [database] Kotlin extensions library.
+
+
+## Kotlin
+* [feature] Added
+  [`Query.values<T>()`](/docs/reference/kotlin/com/google/firebase/database/ktx/package-summary#values)
+  Kotlin Flows to listen for realtime updates and convert its values to a
+  specific type.
 # 20.1.0
 * [unchanged] Updated to accommodate the release of the updated
 [database] Kotlin extensions library.

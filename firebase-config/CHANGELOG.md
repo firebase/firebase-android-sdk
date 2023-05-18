@@ -1,5 +1,30 @@
 # Unreleased
 
+
+# 21.4.0
+* [unchanged] Updated to accommodate the release of the updated
+  [remote_config] Kotlin extensions library.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-config` library. The Kotlin extensions library has the following
+additional updates.
+
+* [feature] Added the
+  [`FirebaseRemoteConfig.configUpdates`](/docs/reference/kotlin/com/google/firebase/remoteconfig/ktx/package-summary#(com.google.firebase.remoteconfig.FirebaseRemoteConfig).configUpdates())
+  Kotlin Flow to listen for real-time config updates.
+
+# 21.3.0
+* [feature] Added support for real-time config updates. To learn more, see
+  [Get started with [firebase_remote_config]](/docs/remote-config/get-started?platform=android#add-real-time-listener).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-config` library. The Kotlin extensions library has no additional
+updates.
+
 # 21.2.1
 * [changed] Migrated [remote_config] to use standard Firebase executors.
 

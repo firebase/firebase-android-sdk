@@ -1,5 +1,14 @@
 # Unreleased
+* [changed] Added support for App Check limited-use tokens in HTTPS Callable Functions.
 
+# 20.3.0
+* [changed] Internal changes to ensure alignment with other SDK releases.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-functions` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.2.2
 * [changed] Moved Task continuations off the main thread.

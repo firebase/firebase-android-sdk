@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.core.Bound;
 import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.Filter;
@@ -64,6 +65,7 @@ import com.google.firestore.v1.DocumentRemove;
 import com.google.firestore.v1.DocumentTransform;
 import com.google.firestore.v1.ListenResponse;
 import com.google.firestore.v1.ListenResponse.ResponseTypeCase;
+import com.google.firestore.v1.StructuredAggregationQuery;
 import com.google.firestore.v1.StructuredQuery;
 import com.google.firestore.v1.StructuredQuery.CollectionSelector;
 import com.google.firestore.v1.StructuredQuery.CompositeFilter;
@@ -471,6 +473,8 @@ public final class RemoteSerializer {
         return null;
       case EXISTENCE_FILTER_MISMATCH:
         return "existence-filter-mismatch";
+      case EXISTENCE_FILTER_MISMATCH_BLOOM:
+        return "existence-filter-mismatch-bloom";
       case LIMBO_RESOLUTION:
         return "limbo-document";
       default:
@@ -497,6 +501,12 @@ public final class RemoteSerializer {
       builder.setReadTime(encodeTimestamp(targetData.getSnapshotVersion().getTimestamp()));
     } else {
       builder.setResumeToken(targetData.getResumeToken());
+    }
+
+    if (targetData.getExpectedCount() != null
+        && (!targetData.getResumeToken().isEmpty()
+            || targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0)) {
+      builder.setExpectedCount(Int32Value.newBuilder().setValue(targetData.getExpectedCount()));
     }
 
     return builder.build();
@@ -628,6 +638,57 @@ public final class RemoteSerializer {
 
   public com.google.firebase.firestore.core.Target decodeQueryTarget(QueryTarget target) {
     return decodeQueryTarget(target.getParent(), target.getStructuredQuery());
+  }
+
+  StructuredAggregationQuery encodeStructuredAggregationQuery(
+      QueryTarget encodedQueryTarget,
+      List<AggregateField> aggregateFields,
+      HashMap<String, String> aliasMap) {
+    StructuredAggregationQuery.Builder structuredAggregationQuery =
+        StructuredAggregationQuery.newBuilder();
+    structuredAggregationQuery.setStructuredQuery(encodedQueryTarget.getStructuredQuery());
+
+    List<StructuredAggregationQuery.Aggregation> aggregations = new ArrayList<>();
+
+    HashSet<String> uniqueFields = new HashSet<>();
+    int aliasID = 1;
+    for (AggregateField aggregateField : aggregateFields) {
+      // The code block below is used to deduplicate the same aggregate fields.
+      // If two aggregateFields are identical, their aliases would be the same.
+      // Therefore, when adding duplicated alias into uniqueFields, the size of uniqueFields
+      // won't increase, and we can skip this aggregateField processing.
+      final int count = uniqueFields.size();
+      uniqueFields.add(aggregateField.getAlias());
+      if (count == uniqueFields.size()) {
+        continue;
+      }
+      String serverAlias = "aggregate_" + aliasID++;
+      aliasMap.put(serverAlias, aggregateField.getAlias());
+
+      StructuredAggregationQuery.Aggregation.Builder aggregation =
+          StructuredAggregationQuery.Aggregation.newBuilder();
+      StructuredQuery.FieldReference fieldPath =
+          StructuredQuery.FieldReference.newBuilder()
+              .setFieldPath(aggregateField.getFieldPath())
+              .build();
+
+      if (aggregateField instanceof AggregateField.CountAggregateField) {
+        aggregation.setCount(StructuredAggregationQuery.Aggregation.Count.getDefaultInstance());
+      } else if (aggregateField instanceof AggregateField.SumAggregateField) {
+        aggregation.setSum(
+            StructuredAggregationQuery.Aggregation.Sum.newBuilder().setField(fieldPath).build());
+      } else if (aggregateField instanceof AggregateField.AverageAggregateField) {
+        aggregation.setAvg(
+            StructuredAggregationQuery.Aggregation.Avg.newBuilder().setField(fieldPath).build());
+      } else {
+        throw new RuntimeException("Unsupported aggregation");
+      }
+
+      aggregation.setAlias(serverAlias);
+      aggregations.add(aggregation.build());
+    }
+    structuredAggregationQuery.addAllAggregations(aggregations);
+    return structuredAggregationQuery.build();
   }
 
   // Filters
@@ -938,8 +999,8 @@ public final class RemoteSerializer {
         break;
       case FILTER:
         com.google.firestore.v1.ExistenceFilter protoFilter = protoChange.getFilter();
-        // TODO: implement existence filter parsing (see b/33076578)
-        ExistenceFilter filter = new ExistenceFilter(protoFilter.getCount());
+        ExistenceFilter filter =
+            new ExistenceFilter(protoFilter.getCount(), protoFilter.getUnchangedNames());
         int targetId = protoFilter.getTargetId();
         watchChange = new ExistenceFilterWatchChange(targetId, filter);
         break;

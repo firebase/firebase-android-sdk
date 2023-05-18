@@ -215,6 +215,28 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
 
   @NonNull
   @Override
+  public Task<AppCheckTokenResult> getLimitedUseToken() {
+    return getLimitedUseAppCheckToken()
+        .continueWithTask(
+            liteExecutor,
+            appCheckTokenTask -> {
+              if (appCheckTokenTask.isSuccessful()) {
+                return Tasks.forResult(
+                    DefaultAppCheckTokenResult.constructFromAppCheckToken(
+                        appCheckTokenTask.getResult()));
+              }
+              // If the token exchange failed, return a dummy token for integrators to attach
+              // in their headers.
+              return Tasks.forResult(
+                  DefaultAppCheckTokenResult.constructFromError(
+                      new FirebaseException(
+                          appCheckTokenTask.getException().getMessage(),
+                          appCheckTokenTask.getException())));
+            });
+  }
+
+  @NonNull
+  @Override
   public Task<AppCheckToken> getAppCheckToken(boolean forceRefresh) {
     return retrieveStoredTokenTask.continueWithTask(
         liteExecutor,
@@ -227,6 +249,19 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
           }
           return fetchTokenFromProvider();
         });
+  }
+
+  @NonNull
+  @Override
+  public Task<AppCheckToken> getLimitedUseAppCheckToken() {
+    if (appCheckProvider == null) {
+      return Tasks.forException(new FirebaseException("No AppCheckProvider installed."));
+    }
+
+    // We explicitly do not call the fetchTokenFromProvider helper method, as that method includes
+    // side effects such as notifying listeners, updating the cached token, and scheduling token
+    // refresh.
+    return appCheckProvider.getToken();
   }
 
   /** Fetches an {@link AppCheckToken} via the installed {@link AppCheckProvider}. */

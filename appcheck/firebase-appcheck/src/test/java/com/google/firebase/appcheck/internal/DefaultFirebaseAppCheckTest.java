@@ -229,6 +229,22 @@ public class DefaultFirebaseAppCheckTest {
   }
 
   @Test
+  public void testGetLimitedUseAppCheckToken_noFactoryInstalled_taskFails() throws Exception {
+    Task<AppCheckToken> tokenTask = defaultFirebaseAppCheck.getLimitedUseAppCheckToken();
+    assertThat(tokenTask.isComplete()).isTrue();
+    assertThat(tokenTask.isSuccessful()).isFalse();
+  }
+
+  @Test
+  public void testGetLimitedUseToken_noFactoryInstalled_returnResultWithError() throws Exception {
+    Task<AppCheckTokenResult> tokenTask = defaultFirebaseAppCheck.getLimitedUseToken();
+    assertThat(tokenTask.isComplete()).isTrue();
+    assertThat(tokenTask.isSuccessful()).isTrue();
+    assertThat(tokenTask.getResult().getToken()).isNotNull();
+    assertThat(tokenTask.getResult().getError()).isNotNull();
+  }
+
+  @Test
   public void testGetToken_factoryInstalled_proxiesToAppCheckFactory() {
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
 
@@ -393,6 +409,44 @@ public class DefaultFirebaseAppCheckTest {
     defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
 
     defaultFirebaseAppCheck.getAppCheckToken(/* forceRefresh= */ false);
+
+    verify(mockAppCheckProvider).getToken();
+  }
+
+  @Test
+  public void testGetLimitedUseAppCheckToken_noExistingToken_requestsNewToken() {
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+
+    defaultFirebaseAppCheck.getLimitedUseAppCheckToken();
+
+    verify(mockAppCheckProvider).getToken();
+  }
+
+  @Test
+  public void testGetLimitedUseAppCheckToken_existingToken_requestsNewToken() {
+    defaultFirebaseAppCheck.setCachedToken(validDefaultAppCheckToken);
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+
+    defaultFirebaseAppCheck.getLimitedUseAppCheckToken();
+
+    verify(mockAppCheckProvider).getToken();
+  }
+
+  @Test
+  public void testGetLimitedUseToken_noExistingToken_requestsNewToken() {
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+
+    defaultFirebaseAppCheck.getLimitedUseToken();
+
+    verify(mockAppCheckProvider).getToken();
+  }
+
+  @Test
+  public void testGetLimitedUseToken_existingToken_requestsNewToken() {
+    defaultFirebaseAppCheck.setCachedToken(validDefaultAppCheckToken);
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+
+    defaultFirebaseAppCheck.getLimitedUseToken();
 
     verify(mockAppCheckProvider).getToken();
   }

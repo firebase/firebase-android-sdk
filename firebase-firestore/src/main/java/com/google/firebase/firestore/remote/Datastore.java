@@ -22,6 +22,7 @@ import android.os.Build;
 import androidx.annotation.Nullable;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
@@ -33,7 +34,6 @@ import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationResult;
 import com.google.firebase.firestore.util.AsyncQueue;
-import com.google.firestore.v1.AggregationResult;
 import com.google.firestore.v1.BatchGetDocumentsRequest;
 import com.google.firestore.v1.BatchGetDocumentsResponse;
 import com.google.firestore.v1.CommitRequest;
@@ -222,19 +222,13 @@ public class Datastore {
     return completionSource.getTask();
   }
 
-  public Task<Long> runCountQuery(Query query) {
+  public Task<Map<String, Value>> runAggregateQuery(
+      Query query, List<AggregateField> aggregateFields) {
     com.google.firestore.v1.Target.QueryTarget encodedQueryTarget =
         serializer.encodeQueryTarget(query.toTarget());
-
-    StructuredAggregationQuery.Builder structuredAggregationQuery =
-        StructuredAggregationQuery.newBuilder();
-    structuredAggregationQuery.setStructuredQuery(encodedQueryTarget.getStructuredQuery());
-
-    StructuredAggregationQuery.Aggregation.Builder aggregation =
-        StructuredAggregationQuery.Aggregation.newBuilder();
-    aggregation.setCount(StructuredAggregationQuery.Aggregation.Count.getDefaultInstance());
-    aggregation.setAlias("count_alias");
-    structuredAggregationQuery.addAggregations(aggregation);
+    HashMap<String, String> aliasMap = new HashMap<>();
+    StructuredAggregationQuery structuredAggregationQuery =
+        serializer.encodeStructuredAggregationQuery(encodedQueryTarget, aggregateFields, aliasMap);
 
     RunAggregationQueryRequest.Builder request = RunAggregationQueryRequest.newBuilder();
     request.setParent(encodedQueryTarget.getParent());
@@ -254,19 +248,20 @@ public class Datastore {
                 throw task.getException();
               }
 
+              Map<String, Value> result = new HashMap<>();
               RunAggregationQueryResponse response = task.getResult();
 
-              AggregationResult aggregationResult = response.getResult();
-              Map<String, Value> aggregateFieldsByAlias = aggregationResult.getAggregateFieldsMap();
-              hardAssert(
-                  aggregateFieldsByAlias.size() == 1,
-                  "aggregateFieldsByAlias.size()==" + aggregateFieldsByAlias.size());
-              Value countValue = aggregateFieldsByAlias.get("count_alias");
-              hardAssert(countValue != null, "countValue == null");
-              hardAssert(
-                  countValue.getValueTypeCase() == Value.ValueTypeCase.INTEGER_VALUE,
-                  "countValue.getValueTypeCase() == " + countValue.getValueTypeCase());
-              return countValue.getIntegerValue();
+              // Remap the short-form aliases that were sent to the server to the client-side
+              // aliases. Users will access the results using the client-side alias.
+              for (Map.Entry<String, Value> entry :
+                  response.getResult().getAggregateFieldsMap().entrySet()) {
+                hardAssert(
+                    aliasMap.containsKey(entry.getKey()),
+                    "%s not present in aliasMap",
+                    entry.getKey());
+                result.put(aliasMap.get(entry.getKey()), entry.getValue());
+              }
+              return result;
             });
   }
 

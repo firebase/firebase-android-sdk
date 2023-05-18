@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal;
 
 import androidx.annotation.NonNull;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.inject.Deferred;
 import java.io.File;
@@ -82,6 +83,11 @@ public final class CrashlyticsNativeComponentDeferredProxy implements Crashlytic
 
     @Override
     public File getMinidumpFile() {
+      return null;
+    }
+
+    @Override
+    public CrashlyticsReport.ApplicationExitInfo getApplicationExitInto() {
       return null;
     }
 

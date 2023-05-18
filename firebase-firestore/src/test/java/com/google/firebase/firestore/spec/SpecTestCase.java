@@ -31,6 +31,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import android.util.Base64;
 import android.util.Pair;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
@@ -38,6 +39,7 @@ import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.common.collect.Sets;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.LoadBundleTask;
@@ -54,6 +56,9 @@ import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.SyncEngine;
+import com.google.firebase.firestore.local.LocalStore;
+import com.google.firebase.firestore.local.LruDelegate;
+import com.google.firebase.firestore.local.LruGarbageCollector;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.PersistenceTestHelpers;
 import com.google.firebase.firestore.local.QueryPurpose;
@@ -81,6 +86,8 @@ import com.google.firebase.firestore.testutil.TestUtil;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
+import com.google.firestore.v1.BitSequence;
+import com.google.firestore.v1.BloomFilter;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import java.io.BufferedReader;
@@ -158,7 +165,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           ? Sets.newHashSet("no-android", "multi-client")
           : Sets.newHashSet("no-android", BENCHMARK_TAG, "multi-client");
 
-  private boolean garbageCollectionEnabled;
+  private boolean useEagerGcForMemory;
   private int maxConcurrentLimboResolutions;
   private boolean networkEnabled = true;
 
@@ -170,7 +177,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private AsyncQueue queue;
   private MockDatastore datastore;
   private RemoteStore remoteStore;
+  private LocalStore localStore;
   private SyncEngine syncEngine;
+  private LruGarbageCollector lruGarbageCollector;
   private EventManager eventManager;
   private DatabaseInfo databaseInfo;
 
@@ -268,7 +277,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
     outstandingWrites = new HashMap<>();
 
-    this.garbageCollectionEnabled = config.optBoolean("useGarbageCollection", false);
+    this.useEagerGcForMemory = config.optBoolean("useEagerGCForMemory", true);
     this.maxConcurrentLimboResolutions =
         config.optInt("maxConcurrentLimboResolutions", Integer.MAX_VALUE);
 
@@ -317,10 +326,14 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             maxConcurrentLimboResolutions,
             new FirebaseFirestoreSettings.Builder().build());
 
-    ComponentProvider provider =
-        initializeComponentProvider(configuration, garbageCollectionEnabled);
+    ComponentProvider provider = initializeComponentProvider(configuration, useEagerGcForMemory);
     localPersistence = provider.getPersistence();
+    if (localPersistence.getReferenceDelegate() instanceof LruDelegate) {
+      lruGarbageCollector =
+          ((LruDelegate) localPersistence.getReferenceDelegate()).getGarbageCollector();
+    }
     remoteStore = provider.getRemoteStore();
+    localStore = provider.getLocalStore();
     syncEngine = provider.getSyncEngine();
     eventManager = provider.getEventManager();
   }
@@ -410,6 +423,24 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
   }
 
+  private static QueryPurpose parseQueryPurpose(Object value) {
+    if (!(value instanceof String)) {
+      throw new IllegalArgumentException("invalid query purpose: " + value);
+    }
+    switch ((String) value) {
+      case "TargetPurposeListen":
+        return QueryPurpose.LISTEN;
+      case "TargetPurposeExistenceFilterMismatch":
+        return QueryPurpose.EXISTENCE_FILTER_MISMATCH;
+      case "TargetPurposeExistenceFilterMismatchBloom":
+        return QueryPurpose.EXISTENCE_FILTER_MISMATCH_BLOOM;
+      case "TargetPurposeLimboResolution":
+        return QueryPurpose.LIMBO_RESOLUTION;
+      default:
+        throw new IllegalArgumentException("unknown query purpose value: " + value);
+    }
+  }
+
   private DocumentViewChange parseChange(JSONObject jsonDoc, DocumentViewChange.Type type)
       throws JSONException {
     long version = jsonDoc.getLong("version");
@@ -468,11 +499,42 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     return result;
   }
 
+  /** Deeply parses a JSONArray into a List<String>. */
+  private List<String> parseStringList(@Nullable JSONArray arr) throws JSONException {
+    List<String> result = new ArrayList<>();
+    if (arr == null) {
+      return result;
+    }
+    for (int i = 0; i < arr.length(); ++i) {
+      result.add(arr.getString(i));
+    }
+    return result;
+  }
+
+  /** Deeply parses a JSONObject into a bloom filter proto type. */
+  private BloomFilter parseBloomFilter(JSONObject obj) throws JSONException {
+    BitSequence.Builder bitSequence = BitSequence.newBuilder();
+    JSONObject bits = obj.getJSONObject("bits");
+    if (bits.has("padding")) {
+      bitSequence.setPadding(bits.getInt("padding"));
+    }
+    bitSequence.setBitmap(
+        ByteString.copyFrom(Base64.decode(bits.getString("bitmap"), Base64.DEFAULT)));
+
+    BloomFilter.Builder bloomFilter = BloomFilter.newBuilder();
+    bloomFilter.setBits(bitSequence);
+    if (obj.has("hashCount")) {
+      bloomFilter.setHashCount(obj.getInt("hashCount"));
+    }
+    return bloomFilter.build();
+  }
+
   //
   // Methods for doing the steps of the spec test.
   //
 
   private void doListen(JSONObject listenSpec) throws Exception {
+    FirebaseFirestore.setLoggingEnabled(true);
     int expectedId = listenSpec.getInt("targetId");
     Query query = parseQuery(listenSpec.getJSONObject("query"));
     // TODO: Allow customizing listen options in spec tests
@@ -654,15 +716,18 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
   }
 
-  private void doWatchFilter(JSONArray watchFilter) throws Exception {
-    List<Integer> targets = parseIntList(watchFilter.getJSONArray(0));
+  private void doWatchFilter(JSONObject watchFilter) throws Exception {
+    List<String> keys = parseStringList(watchFilter.getJSONArray("keys"));
+    List<Integer> targets = parseIntList(watchFilter.getJSONArray("targetIds"));
     Assert.hardAssert(
         targets.size() == 1, "ExistenceFilters currently support exactly one target only.");
 
-    int keyCount = watchFilter.length() == 0 ? 0 : watchFilter.length() - 1;
+    BloomFilter bloomFilterProto =
+        watchFilter.has("bloomFilter")
+            ? parseBloomFilter(watchFilter.getJSONObject("bloomFilter"))
+            : null;
 
-    // TODO: extend this with different existence filters over time.
-    ExistenceFilter filter = new ExistenceFilter(keyCount);
+    ExistenceFilter filter = new ExistenceFilter(keys.size(), bloomFilterProto);
     ExistenceFilterWatchChange change = new ExistenceFilterWatchChange(targets.get(0), filter);
     writeWatchChange(change, SnapshotVersion.NONE);
   }
@@ -713,7 +778,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     validateNextWriteSent(write.first);
 
     MutationResult mutationResult =
-        new MutationResult(version(version), /*transformResults=*/ Collections.emptyList());
+        new MutationResult(version(version), /* transformResults= */ Collections.emptyList());
     queue.runSync(() -> datastore.ackWrite(version(version), singletonList(mutationResult)));
   }
 
@@ -789,6 +854,15 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     queue.runSync(() -> syncEngine.handleCredentialChange(currentUser));
   }
 
+  private void doTriggerLruGc(long cacheThreshold) throws Exception {
+    queue.runSync(
+        () -> {
+          if (lruGarbageCollector != null) {
+            localStore.collectGarbage(lruGarbageCollector.withNewThreshold(cacheThreshold));
+          }
+        });
+  }
+
   private void doRestart() throws Exception {
     queue.runSync(
         () -> {
@@ -830,7 +904,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     } else if (step.has("watchEntity")) {
       doWatchEntity(step.getJSONObject("watchEntity"));
     } else if (step.has("watchFilter")) {
-      doWatchFilter(step.getJSONArray("watchFilter"));
+      doWatchFilter(step.getJSONObject("watchFilter"));
     } else if (step.has("watchReset")) {
       doWatchReset(step.getJSONArray("watchReset"));
     } else if (step.has("watchSnapshot")) {
@@ -861,6 +935,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       // "changeUser".
       String uid = step.isNull("changeUser") ? null : step.getString("changeUser");
       doChangeUser(uid);
+    } else if (step.has("triggerLruGC")) {
+      long cacheThreshold = step.getLong("triggerLruGC");
+      doTriggerLruGc(cacheThreshold);
     } else if (step.has("restart")) {
       doRestart();
     } else if (step.has("applyClientState")) {
@@ -899,7 +976,17 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       for (int i = 0; metadata != null && i < metadata.length(); ++i) {
         expectedChanges.add(parseChange(metadata.getJSONObject(i), Type.METADATA));
       }
-      assertEquals(expectedChanges, actual.view.getChanges());
+
+      List<DocumentViewChange> sortedActualChanges =
+          actual.view.getChanges().stream()
+              .sorted((a, b) -> a.getDocument().getKey().compareTo(b.getDocument().getKey()))
+              .collect(Collectors.toList());
+      List<DocumentViewChange> sortedExpectedChanges =
+          expectedChanges.stream()
+              .sorted((a, b) -> a.getDocument().getKey().compareTo(b.getDocument().getKey()))
+              .collect(Collectors.toList());
+
+      assertEquals(sortedExpectedChanges, sortedActualChanges);
 
       boolean expectedHasPendingWrites = expected.optBoolean("hasPendingWrites", false);
       boolean expectedFromCache = expected.optBoolean("fromCache", false);
@@ -990,12 +1077,14 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           expectedActiveTargets.put(targetId, new ArrayList<>());
           for (int i = 0; i < queryArrayJson.length(); i++) {
             Query query = parseQuery(queryArrayJson.getJSONObject(i));
-            // TODO: populate the purpose of the target once it's possible to encode that in the
-            // spec tests. For now, hard-code that it's a listen despite the fact that it's not
-            // always the right value.
+
+            QueryPurpose purpose = QueryPurpose.LISTEN;
+            if (queryDataJson.has("targetPurpose")) {
+              purpose = parseQueryPurpose(queryDataJson.get("targetPurpose"));
+            }
+
             TargetData targetData =
-                new TargetData(
-                    query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN);
+                new TargetData(query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, purpose);
             if (queryDataJson.has("resumeToken")) {
               targetData =
                   targetData.withResumeToken(
@@ -1005,6 +1094,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
               targetData =
                   targetData.withResumeToken(
                       ByteString.EMPTY, version(queryDataJson.getInt("readTime")));
+            }
+            if (queryDataJson.has("expectedCount")) {
+              targetData = targetData.withExpectedCount(queryDataJson.getInt("expectedCount"));
             }
 
             expectedActiveTargets.get(targetId).add(targetData);
@@ -1134,15 +1226,22 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       TargetData expectedTarget = expectedQueries.get(0);
       TargetData actualTarget = actualTargets.get(expected.getKey());
 
-      // TODO: validate the purpose of the target once it's possible to encode that in the
-      // spec tests. For now, only validate properties that can be validated.
+      // TODO: Replace the assertEquals() checks on the individual properties of TargetData below
+      // with the single assertEquals on the TargetData objects themselves if the sequenceNumber is
+      // ever made to be consistent.
       // assertEquals(expectedTarget, actualTarget);
+
+      assertEquals(expectedTarget.getPurpose(), actualTarget.getPurpose());
       assertEquals(expectedTarget.getTarget(), actualTarget.getTarget());
       assertEquals(expectedTarget.getTargetId(), actualTarget.getTargetId());
       assertEquals(expectedTarget.getSnapshotVersion(), actualTarget.getSnapshotVersion());
       assertEquals(
           expectedTarget.getResumeToken().toStringUtf8(),
           actualTarget.getResumeToken().toStringUtf8());
+
+      if (expectedTarget.getExpectedCount() != null) {
+        assertEquals(expectedTarget.getExpectedCount(), actualTarget.getExpectedCount());
+      }
 
       actualTargets.remove(expected.getKey());
     }
@@ -1185,8 +1284,6 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         acknowledgedDocs.clear();
         rejectedDocs.clear();
       }
-    } catch (Exception e) {
-      throw Assert.fail("Spec test failed with %s", e);
     } finally {
       // Ensure that Persistence is torn down even if the test is failing due to a thrown exception
       // so that any open databases are closed. This is important when the LocalStore is backed by

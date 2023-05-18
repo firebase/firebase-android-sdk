@@ -334,6 +334,9 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
             add(fieldTransform);
           }
         };
+    // The purpose of this test is to ensure that deeply nested server timestamps do not result in
+    // a stack overflow error. Below we use a `Thread` object to create a large number of mutations
+    // because the `Thread` class allows us to specify the maximum stack size.
     AtomicReference<Throwable> error = new AtomicReference<>();
     Thread thread =
         new Thread(
@@ -353,8 +356,8 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
                 error.set(e);
               }
             },
-            "test",
-            1024 * 1024);
+            /* name */ "test",
+            /* stackSize */ 1024 * 1024);
     try {
       thread.start();
       thread.join();

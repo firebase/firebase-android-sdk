@@ -23,12 +23,15 @@ import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
+import com.google.firebase.firestore.util.Logger;
+import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -56,6 +59,9 @@ public class WatchChangeAggregator {
      */
     @Nullable
     TargetData getTargetDataForTarget(int targetId);
+
+    /** Returns the database ID of the Firestore instance. */
+    DatabaseId getDatabaseId();
   }
 
   private final TargetMetadataProvider targetMetadataProvider;
@@ -70,10 +76,20 @@ public class WatchChangeAggregator {
   private Map<DocumentKey, Set<Integer>> pendingDocumentTargetMapping = new HashMap<>();
 
   /**
-   * A list of targets with existence filter mismatches. These targets are known to be inconsistent
+   * A map of targets with existence filter mismatches. These targets are known to be inconsistent
    * and their listens needs to be re-established by RemoteStore.
    */
-  private Set<Integer> pendingTargetResets = new HashSet<>();
+  private Map<Integer, QueryPurpose> pendingTargetResets = new HashMap<>();
+
+  /** The log tag to use for this class. */
+  private static final String LOG_TAG = "WatchChangeAggregator";
+
+  /** The bloom filter application status while handling existence filter mismatch. */
+  private enum BloomFilterApplicationStatus {
+    SUCCESS,
+    SKIPPED,
+    FALSE_POSITIVE
+  }
 
   public WatchChangeAggregator(TargetMetadataProvider targetMetadataProvider) {
     this.targetMetadataProvider = targetMetadataProvider;
@@ -196,17 +212,100 @@ public class WatchChangeAggregator {
               expectedCount == 1, "Single document existence filter with count: %d", expectedCount);
         }
       } else {
-        long currentSize = getCurrentDocumentCountForTarget(targetId);
+        int currentSize = getCurrentDocumentCountForTarget(targetId);
         if (currentSize != expectedCount) {
-          // Existence filter mismatch: We reset the mapping and raise a new snapshot with
-          // `isFromCache:true`.
-          resetTarget(targetId);
-          pendingTargetResets.add(targetId);
+
+          // Apply bloom filter to identify and mark removed documents.
+          BloomFilterApplicationStatus status = this.applyBloomFilter(watchChange, currentSize);
+
+          if (status != BloomFilterApplicationStatus.SUCCESS) {
+            // If bloom filter application fails, we reset the mapping and
+            // trigger re-run of the query.
+            resetTarget(targetId);
+
+            QueryPurpose purpose =
+                status == BloomFilterApplicationStatus.FALSE_POSITIVE
+                    ? QueryPurpose.EXISTENCE_FILTER_MISMATCH_BLOOM
+                    : QueryPurpose.EXISTENCE_FILTER_MISMATCH;
+
+            pendingTargetResets.put(targetId, purpose);
+          }
+
+          TestingHooks.getInstance()
+              .notifyOnExistenceFilterMismatch(
+                  TestingHooks.ExistenceFilterMismatchInfo.from(
+                      status == BloomFilterApplicationStatus.SUCCESS,
+                      currentSize,
+                      watchChange.getExistenceFilter()));
         }
       }
     }
   }
 
+  /** Apply bloom filter to remove the deleted documents, and return the application status. */
+  private BloomFilterApplicationStatus applyBloomFilter(
+      ExistenceFilterWatchChange watchChange, int currentCount) {
+    int expectedCount = watchChange.getExistenceFilter().getCount();
+    com.google.firestore.v1.BloomFilter unchangedNames =
+        watchChange.getExistenceFilter().getUnchangedNames();
+
+    if (unchangedNames == null || !unchangedNames.hasBits()) {
+      return BloomFilterApplicationStatus.SKIPPED;
+    }
+
+    ByteString bitmap = unchangedNames.getBits().getBitmap();
+    BloomFilter bloomFilter;
+
+    try {
+      bloomFilter =
+          BloomFilter.create(
+              bitmap, unchangedNames.getBits().getPadding(), unchangedNames.getHashCount());
+    } catch (BloomFilter.BloomFilterCreateException e) {
+      Logger.warn(
+          LOG_TAG,
+          "Applying bloom filter failed: ("
+              + e.getMessage()
+              + "); ignoring the bloom filter and falling back to full re-query.");
+      return BloomFilterApplicationStatus.SKIPPED;
+    }
+
+    if (bloomFilter.getBitCount() == 0) {
+      return BloomFilterApplicationStatus.SKIPPED;
+    }
+
+    int removedDocumentCount = this.filterRemovedDocuments(bloomFilter, watchChange.getTargetId());
+
+    if (expectedCount != (currentCount - removedDocumentCount)) {
+      return BloomFilterApplicationStatus.FALSE_POSITIVE;
+    }
+
+    return BloomFilterApplicationStatus.SUCCESS;
+  }
+
+  /**
+   * Filter out removed documents based on bloom filter membership result and return number of
+   * documents removed.
+   */
+  private int filterRemovedDocuments(BloomFilter bloomFilter, int targetId) {
+    ImmutableSortedSet<DocumentKey> existingKeys =
+        targetMetadataProvider.getRemoteKeysForTarget(targetId);
+    int removalCount = 0;
+    for (DocumentKey key : existingKeys) {
+      DatabaseId databaseId = targetMetadataProvider.getDatabaseId();
+      String documentPath =
+          "projects/"
+              + databaseId.getProjectId()
+              + "/databases/"
+              + databaseId.getDatabaseId()
+              + "/documents/"
+              + key.getPath().canonicalString();
+      if (!bloomFilter.mightContain(documentPath)) {
+        this.removeDocumentFromTarget(targetId, key, /*updatedDocument=*/ null);
+        removalCount++;
+      }
+    }
+    return removalCount;
+  }
   /**
    * Converts the currently accumulated state into a remote event at the provided snapshot version.
    * Resets the accumulated changes before returning.
@@ -272,14 +371,14 @@ public class WatchChangeAggregator {
         new RemoteEvent(
             snapshotVersion,
             Collections.unmodifiableMap(targetChanges),
-            Collections.unmodifiableSet(pendingTargetResets),
+            Collections.unmodifiableMap(pendingTargetResets),
             Collections.unmodifiableMap(pendingDocumentUpdates),
             Collections.unmodifiableSet(resolvedLimboDocuments));
 
     // Re-initialize the current state to ensure that we do not modify the generated RemoteEvent.
     pendingDocumentUpdates = new HashMap<>();
     pendingDocumentTargetMapping = new HashMap<>();
-    pendingTargetResets = new HashSet<>();
+    pendingTargetResets = new HashMap<>();
 
     return remoteEvent;
   }

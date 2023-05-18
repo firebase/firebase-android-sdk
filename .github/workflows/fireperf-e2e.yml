@@ -28,7 +28,7 @@ jobs:
           token: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}
           path: firebase-android-buildtools
       - name: Set up JDK 11
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           java-version: 11
           distribution: temurin
@@ -93,7 +93,7 @@ jobs:
                 title: 'FirePerf E2E Test Failures',
                 body: text,
                 labels: ['fireperf-e2e-tests'],
-                assignees: ['jeremyjiang-dev', 'leotianlizhan', 'raymondlam', 'visumickey']
+                assignees: ['raymondlam', 'visumickey']
               });
             }
       - name: Upload test artifacts

@@ -1,0 +1,17 @@
+name: Semver Check
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - 'releases/**'
+
+jobs:
+  build-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Perform gradle build
+        run: |
+          ./gradlew semverCheckForRelease

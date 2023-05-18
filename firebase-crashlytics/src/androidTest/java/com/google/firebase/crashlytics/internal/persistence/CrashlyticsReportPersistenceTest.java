@@ -350,11 +350,11 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
             fileStore, createSettingsProviderMock(4, VERY_LARGE_UPPER_LIMIT));
 
     persistReportWithEvent(reportPersistence, "testSession1", true);
-    reportPersistence.finalizeSessionWithNativeEvent("testSession1", filesPayload);
+    reportPersistence.finalizeSessionWithNativeEvent("testSession1", filesPayload, null);
     persistReportWithEvent(reportPersistence, "testSession2low", false);
     persistReportWithEvent(reportPersistence, "testSession3low", false);
     persistReportWithEvent(reportPersistence, "testSession4", true);
-    reportPersistence.finalizeSessionWithNativeEvent("testSession4", filesPayload);
+    reportPersistence.finalizeSessionWithNativeEvent("testSession4", filesPayload, null);
     reportPersistence.finalizeReports("skippedSession", 0L);
 
     List<CrashlyticsReportWithSessionId> finalizedReports =
@@ -453,7 +453,7 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
     assertEquals(0, finalizedReports.size());
 
-    reportPersistence.finalizeSessionWithNativeEvent("sessionId", filesPayload);
+    reportPersistence.finalizeSessionWithNativeEvent("sessionId", filesPayload, null);
 
     finalizedReports = reportPersistence.loadFinalizedReports();
     assertEquals(1, finalizedReports.size());

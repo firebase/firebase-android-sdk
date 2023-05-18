@@ -1,10 +1,66 @@
 # Unreleased
-* [feature] Add support for disjunctions in queries (`OR` queries).
-* [fixed] Fixed stack overflow caused by deeply nested server timestamps (#4702).
+- [feature] Implemented an optimization in the local cache synchronization logic that reduces the number of billed document reads when documents were deleted on the server while the client was not actively listening to the query (e.g. while the client was offline). (GitHub [#4982](//github.com/firebase/firebase-android-sdk/pull/4982){: .external})
+
+# 24.6.0
+* [fixed] Fixed stack overflow caused by deeply nested server timestamps.
+  (GitHub [#4702](//github.com/firebase/firebase-android-sdk/issues/4702){: .external})
+
+* [feature] Added new
+  [cache config APIs](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestoreSettings.Builder#setLocalCacheSettings(com.google.firebase.firestore.LocalCacheSettings))
+  to customize the SDK's cache setup.
+
+* [feature] Added
+  [LRU garbage collector](/docs/reference/android/com/google/firebase/firestore/MemoryLruGcSettings)
+  to the SDK's memory cache.
+
+* [deprecated] Deprecated the following APIs from
+  [`FirebaseFirestoreSettings`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestoreSettings):<br>
+  `isPersistenceEnabled` and `getCacheSizeBytes`.
+
+* [deprecated] Deprecated the following APIs from
+  [`FirebaseFirestoreSettings.Builder`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestoreSettings.Builder#setLocalCacheSettings(com.google.firebase.firestore.LocalCacheSettings)):<br>
+  `isPersistenceEnabled`, `getCacheSizeBytes`, `setPersistenceEnabled`,
+  and `setCacheSizeBytes`.
+
+* [changed] Internal changes to ensure alignment with other SDK releases.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
+# 24.5.0
+* [fixed] Fixed stack overflow caused by deeply nested server timestamps.
+  (GitHub [#4702](//github.com/firebase/firebase-android-sdk/issues/4702){: .external})
+
+
+## Kotlin
+* [feature] Added
+  [`Query.dataObjects<T>()`](/docs/reference/kotlin/com/google/firebase/firestore/ktx/package-summary#dataObjects)
+  and
+  [`DocumentReference.dataObjects<T>()`](/docs/reference/kotlin/com/google/firebase/firestore/ktx/package-summary#dataObjects_1)
+  Kotlin Flows to listen for realtime updates and convert its values to a
+  specific type.
+# 24.4.5
+* [feature] Added support for disjunctions in queries (`OR` queries).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.4.4
-* [changed] Relaxed certain query validations performed by the SDK (#4231).
-* [changed] Updated grpc to 1.52.1 and javalite, protoc, protobufjavautil to 3.21.11.
+* [changed] Relaxed certain query validations performed by the SDK
+  ([GitHub Issue #4231](//github.com/firebase/firebase-android-sdk/issues/4231)).
+* [changed] Updated gRPC to 1.52.1, and updated JavaLite, protoc, and
+  protobuf-java-util to 3.21.11.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.4.3
 * [fixed] Fixed a potential high-memory usage issue.
@@ -354,7 +410,7 @@ updates.
   and
   [`Query.whereNotEqualTo()`](/docs/reference/android/com/google/firebase/firestore/Query#whereNotEqualTo(java.lang.String,%20java.lang.Object))
   query operators.
-
+  
   * `Query.whereNotIn()` finds documents where a specified field's value is
     not in a specified array.
   * `Query.whereNotEqualTo()` finds documents where a specified field's value
@@ -466,7 +522,7 @@ updates.
   is IN a specified array. `Query.whereArrayContainsAny()` finds documents
   where a specified field is an array and contains ANY element of a specified
   array.
-
+  
 - [changed] Improved the performance of repeatedly executed queries. Recently
   executed queries should see dramatic improvements. This benefit is reduced
   if changes accumulate while the query is inactive. Queries that use the
@@ -724,7 +780,7 @@ updates.
   https://github.com/firebase/firebase-android-sdk/issues/134
 
 # 17.1.4
-* [fixed] Fixed a SQLite transaction-handling issue that occasionally masked
+* [fixed] Fixed a SQLite transaction-handling issue that occasionally masked 
   exceptions when Firestore closed a transaction that was never started. For
   more information, see the [issue report in GitHub](https://github.com/firebase/firebase-android-sdk/issues/115).
 * [fixed] Fixed a race condition that caused a `SQLiteDatabaseLockedException`
@@ -772,3 +828,4 @@ updates.
   or
   [`FieldValue.serverTimestamp()`](/docs/reference/android/com/google/firebase/firestore/FieldValue.html#serverTimestamp())
   values.
+

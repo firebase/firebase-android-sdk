@@ -1,8 +1,18 @@
 # Unreleased
-* [feature] Adds support for in-app tester feedback. To learn more, see
+
+# 16.0.0-beta08
+* [fixed] Fixed an issue where a crash happened whenever a feedback
+  notification was shown on devices running Android 4.4 and lower.
+
+# 16.0.0-beta07
+* [feature] Added support for testers to attach JPEG screenshots to their
+  feedback.
+
+# 16.0.0-beta06
+* [feature] Added support for in-app tester feedback. To learn more, see
   [Collect feedback from testers](/docs/app-distribution/collect-feedback-from-testers).
-* [fixed] Fixed a bug where only the last listener added to an `UpdateTask` using
-  `addOnProgressListener()` would receive updates.
+* [fixed] Fixed a bug where only the last listener added to an `UpdateTask`
+  using `addOnProgressListener()` would receive updates.
 
 # 16.0.0-beta05
 * [unchanged] Updated to accommodate the release of the updated

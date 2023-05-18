@@ -36,6 +36,7 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.MetadataChanges;
 import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.WriteBatch;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.core.DatabaseInfo;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -178,7 +179,6 @@ public class IntegrationTestUtil {
     FirebaseFirestoreSettings.Builder settings = new FirebaseFirestoreSettings.Builder();
     settings.setHost(getFirestoreHost());
     settings.setSslEnabled(getSslEnabled());
-    settings.setPersistenceEnabled(true);
     return settings.build();
   }
 
@@ -347,8 +347,27 @@ public class IntegrationTestUtil {
 
   public static void writeAllDocs(
       CollectionReference collection, Map<String, Map<String, Object>> docs) {
+    WriteBatch writeBatch = null;
+    int writeBatchSize = 0;
+
     for (Map.Entry<String, Map<String, Object>> doc : docs.entrySet()) {
-      waitFor(collection.document(doc.getKey()).set(doc.getValue()));
+      if (writeBatch == null) {
+        writeBatch = collection.getFirestore().batch();
+      }
+
+      writeBatch.set(collection.document(doc.getKey()), doc.getValue());
+      writeBatchSize++;
+
+      // Write batches are capped at 500 writes. Use 400 just to be safe.
+      if (writeBatchSize == 400) {
+        waitFor(writeBatch.commit());
+        writeBatch = null;
+        writeBatchSize = 0;
+      }
+    }
+
+    if (writeBatch != null) {
+      waitFor(writeBatch.commit());
     }
   }
 

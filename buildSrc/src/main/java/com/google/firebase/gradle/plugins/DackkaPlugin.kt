@@ -134,6 +134,8 @@ abstract class DackkaPlugin : Plugin<Project> {
 
         kotlinDoc.configure {
           dependsOn(generateDocumentation, firesiteTransform, copyDocsToCommonDirectory)
+
+          outputs.dir(copyDocsToCommonDirectory.map { it.destinationDir })
         }
       }
     }
@@ -174,7 +176,9 @@ abstract class DackkaPlugin : Plugin<Project> {
             val classpath =
               compileConfiguration.jars + project.javadocConfig.jars + project.files(bootClasspath)
 
-            val sourceDirectories = sourceSets.flatMap { it.javaDirectories }
+            val sourceDirectories =
+              sourceSets.flatMap { it.javaDirectories } +
+                sourceSets.flatMap { it.kotlinDirectories }
 
             val packageLists = fetchPackageLists(project)
             val excludedFiles = projectSpecificSuppressedFiles(project)

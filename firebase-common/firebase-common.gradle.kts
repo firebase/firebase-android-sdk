@@ -17,6 +17,7 @@ plugins {
 }
 
 firebaseLibrary {
+    libraryGroup("common")
     testLab.enabled = true
     publishSources = true
 }
@@ -49,8 +50,8 @@ android {
 }
 
 dependencies {
-    implementation(project(":firebase-annotations"))
-    implementation(project(":firebase-components"))
+    implementation("com.google.firebase:firebase-annotations:16.2.0")
+    implementation("com.google.firebase:firebase-components:17.1.0")
     implementation(libs.androidx.futures)
     implementation(libs.playservices.basement)
     implementation(libs.playservices.tasks)
@@ -62,9 +63,7 @@ dependencies {
     // needed for Kotlin detection to compile, but not necessarily present at runtime.
     compileOnly(libs.kotlin.stdlib)
 
-    // FirebaseApp references storage, so storage needs to be on classpath when dokka runs.
-    javadocClasspath(project(":firebase-storage"))
-
+    testImplementation("com.google.guava:guava-testlib:12.0-rc2")
     testImplementation(libs.androidx.test.junit)
     testImplementation(libs.androidx.test.junit)
     testImplementation(libs.androidx.test.runner)

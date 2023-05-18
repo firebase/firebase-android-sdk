@@ -35,6 +35,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -1240,5 +1241,100 @@ public class FirestoreTest {
     waitFor(awaitsPendingWrites);
 
     assertTrue(awaitsPendingWrites.isComplete() && awaitsPendingWrites.isSuccessful());
+  }
+
+  @Test
+  public void testLegacyCacheConfigForMemoryCache() {
+    FirebaseFirestore instance = testFirestore();
+    instance.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(newTestSettings())
+            .setPersistenceEnabled(false)
+            .build());
+
+    waitFor(instance.document("coll/doc").set(map("foo", "bar")));
+
+    assertThrows(
+        RuntimeException.class, () -> waitFor(instance.document("coll/doc").get(Source.CACHE)));
+  }
+
+  @Test
+  public void testLegacyCacheConfigForPersistentCache() {
+    FirebaseFirestore instance = testFirestore();
+    instance.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(newTestSettings())
+            .setPersistenceEnabled(true)
+            .build());
+
+    waitFor(instance.document("coll/doc").set(map("foo", "bar")));
+
+    DocumentSnapshot snap = waitFor(instance.document("coll/doc").get(Source.CACHE));
+    assertEquals(map("foo", "bar"), snap.getData());
+  }
+
+  @Test
+  public void testNewCacheConfigForMemoryCache() {
+    FirebaseFirestore instance = testFirestore();
+    instance.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(newTestSettings())
+            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+            .build());
+
+    waitFor(instance.document("coll/doc").set(map("foo", "bar")));
+
+    assertThrows(
+        RuntimeException.class, () -> waitFor(instance.document("coll/doc").get(Source.CACHE)));
+  }
+
+  @Test
+  public void testNewCacheConfigForPersistentCache() {
+    FirebaseFirestore instance = testFirestore();
+    instance.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(newTestSettings())
+            .setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
+            .build());
+
+    waitFor(instance.document("coll/doc").set(map("foo", "bar")));
+
+    DocumentSnapshot snap = waitFor(instance.document("coll/doc").get(Source.CACHE));
+    assertEquals(map("foo", "bar"), snap.getData());
+  }
+
+  @Test
+  public void testCanGetDocumentWithMemoryLruGCEnabled() {
+    FirebaseFirestore db = testFirestore();
+    db.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())
+            .setLocalCacheSettings(
+                MemoryCacheSettings.newBuilder()
+                    .setGcSettings(MemoryLruGcSettings.newBuilder().build())
+                    .build())
+            .build());
+
+    DocumentReference doc = db.collection("abc").document("123");
+    waitFor(doc.set(map("key", "value")));
+
+    DocumentSnapshot snapshot = waitFor(doc.get(Source.CACHE));
+    assertTrue(snapshot.exists());
+    assertTrue(snapshot.getMetadata().isFromCache());
+    assertEquals(snapshot.getData(), map("key", "value"));
+  }
+
+  @Test
+  public void testCannotGetDocumentWithMemoryEagerGcEnabled() {
+    FirebaseFirestore db = testFirestore();
+    db.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())
+            .setLocalCacheSettings(
+                MemoryCacheSettings.newBuilder()
+                    .setGcSettings(MemoryEagerGcSettings.newBuilder().build())
+                    .build())
+            .build());
+
+    DocumentReference doc = db.collection("abc").document("123");
+    waitFor(doc.set(map("key", "value")));
+
+    Exception e = waitForException(doc.get(Source.CACHE));
+    assertTrue(e instanceof FirebaseFirestoreException);
+    assertEquals(((FirebaseFirestoreException) e).getCode(), Code.UNAVAILABLE);
   }
 }

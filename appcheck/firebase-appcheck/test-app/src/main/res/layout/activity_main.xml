@@ -27,6 +27,11 @@
       android:layout_height="wrap_content"
       android:text="@string/exchange_app_check_button_text"/>
   <Button
+      android:id="@+id/limited_use_app_check_button"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/limited_use_app_check_button_text"/>
+  <Button
       android:id="@+id/storage_list_files_button"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"

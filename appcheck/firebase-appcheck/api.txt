@@ -15,12 +15,13 @@ package com.google.firebase.appcheck {
     method @NonNull public abstract String getToken();
   }
 
-  public abstract class FirebaseAppCheck implements com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider {
+  public abstract class FirebaseAppCheck implements com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider {
     ctor public FirebaseAppCheck();
     method public abstract void addAppCheckListener(@NonNull com.google.firebase.appcheck.FirebaseAppCheck.AppCheckListener);
     method @NonNull public abstract com.google.android.gms.tasks.Task<com.google.firebase.appcheck.AppCheckToken> getAppCheckToken(boolean);
     method @NonNull public static com.google.firebase.appcheck.FirebaseAppCheck getInstance();
     method @NonNull public static com.google.firebase.appcheck.FirebaseAppCheck getInstance(@NonNull com.google.firebase.FirebaseApp);
+    method @NonNull public abstract com.google.android.gms.tasks.Task<com.google.firebase.appcheck.AppCheckToken> getLimitedUseAppCheckToken();
     method public abstract void installAppCheckProviderFactory(@NonNull com.google.firebase.appcheck.AppCheckProviderFactory);
     method public abstract void installAppCheckProviderFactory(@NonNull com.google.firebase.appcheck.AppCheckProviderFactory, boolean);
     method public abstract void removeAppCheckListener(@NonNull com.google.firebase.appcheck.FirebaseAppCheck.AppCheckListener);

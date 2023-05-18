@@ -17,7 +17,13 @@ package com.google.firebase.firestore;
 import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
+import com.google.firestore.v1.Value;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Objects;
+import javax.annotation.Nonnull;
 
 /**
  * The results of executing an {@link AggregateQuery}.
@@ -28,13 +34,24 @@ import java.util.Objects;
  */
 public class AggregateQuerySnapshot {
 
-  private final long count;
-  private final AggregateQuery query;
+  @Nonnull private final AggregateQuery query;
 
-  AggregateQuerySnapshot(@NonNull AggregateQuery query, long count) {
+  @Nonnull private final Map<String, Value> data;
+
+  AggregateQuerySnapshot(@NonNull AggregateQuery query, @NonNull Map<String, Value> data) {
     checkNotNull(query);
     this.query = query;
-    this.count = count;
+    this.data = data;
+  }
+
+  // Convenience function to create an AggregateQuerySnapshot instance whose only aggregation is a
+  // "count" with the given value. This method only exists for use by the CPP SDK; when the CPP SDK
+  // implements generic aggregations and migrates away from this method then it can be removed.
+  static AggregateQuerySnapshot createWithCount(@NonNull AggregateQuery query, long count) {
+    return new AggregateQuerySnapshot(
+        query,
+        Collections.singletonMap(
+            AggregateField.count().getAlias(), Value.newBuilder().setIntegerValue(count).build()));
   }
 
   /** Returns the query that was executed to produce this result. */
@@ -45,7 +62,129 @@ public class AggregateQuerySnapshot {
 
   /** Returns the number of documents in the result set of the underlying query. */
   public long getCount() {
-    return count;
+    return get(AggregateField.count());
+  }
+
+  /**
+   * Returns the result of the given aggregation from the server without coercion of data types.
+   * Throws java.lang.RuntimeException if the `aggregateField` was not requested when calling
+   * `query.aggregate(...)`.
+   *
+   * @param aggregateField The aggregation for which the value is requested.
+   * @return The result of the given aggregation.
+   */
+  // TODO(sumavg): Remove the `hide` and scope annotations.
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @Nullable
+  public Object get(@Nonnull AggregateField aggregateField) {
+    return getInternal(aggregateField);
+  }
+
+  /**
+   * Returns the number of documents in the result set of the underlying query.
+   *
+   * @param countAggregateField The count aggregation for which the value is requested.
+   * @return The result of the given count aggregation.
+   */
+  // TODO(sumavg): Remove the `hide` and scope annotations.
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  public long get(@Nonnull AggregateField.CountAggregateField countAggregateField) {
+    Long value = getLong(countAggregateField);
+    if (value == null) {
+      throw new IllegalArgumentException(
+          "RunAggregationQueryResponse alias " + countAggregateField.getAlias() + " is null");
+    }
+    return value;
+  }
+
+  /**
+   * Returns the result of the given average aggregation. Since the result of an average aggregation
+   * performed by the server is always a double, this convenience overload can be used in lieu of
+   * the above `get` method. Throws java.lang.RuntimeException if the `aggregateField` was not
+   * requested when calling `query.aggregate(...)`.
+   *
+   * @param averageAggregateField The average aggregation for which the value is requested.
+   * @return The result of the given average aggregation.
+   */
+  // TODO(sumavg): Remove the `hide` and scope annotations.
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @Nullable
+  public Double get(@Nonnull AggregateField.AverageAggregateField averageAggregateField) {
+    return getDouble(averageAggregateField);
+  }
+
+  /**
+   * Returns the result of the given aggregation as a double. Coerces all numeric values and throws
+   * a RuntimeException if the result of the aggregate is non-numeric. In the case of coercion of
+   * long to double, uses java.lang.Long.doubleValue to perform the conversion, and may result in a
+   * loss of precision.
+   *
+   * @param aggregateField The aggregation for which the value is requested.
+   * @return The result of the given average aggregation as a double.
+   */
+  // TODO(sumavg): Remove the `hide` and scope annotations.
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @Nullable
+  public Double getDouble(@Nonnull AggregateField aggregateField) {
+    Number val = getTypedValue(aggregateField, Number.class);
+    return val != null ? val.doubleValue() : null;
+  }
+
+  /**
+   * Returns the result of the given aggregation as a long. Coerces all numeric values and throws a
+   * RuntimeException if the result of the aggregate is non-numeric. In case of coercion of double
+   * to long, uses java.lang.Double.longValue to perform the conversion.
+   *
+   * @param aggregateField The aggregation for which the value is requested.
+   * @return The result of the given average aggregation as a long.
+   */
+  // TODO(sumavg): Remove the `hide` and scope annotations.
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @Nullable
+  public Long getLong(@Nonnull AggregateField aggregateField) {
+    Number val = getTypedValue(aggregateField, Number.class);
+    return val != null ? val.longValue() : null;
+  }
+
+  @Nullable
+  private Object getInternal(@Nonnull AggregateField aggregateField) {
+    if (!data.containsKey(aggregateField.getAlias())) {
+      throw new IllegalArgumentException(
+          "'"
+              + aggregateField.getOperator()
+              + "("
+              + aggregateField.getFieldPath()
+              + ")"
+              + "' was not requested in the aggregation query.");
+    }
+    Value value = data.get(aggregateField.getAlias());
+    UserDataWriter userDataWriter =
+        new UserDataWriter(
+            query.getQuery().firestore, DocumentSnapshot.ServerTimestampBehavior.DEFAULT);
+    return userDataWriter.convertValue(value);
+  }
+
+  @Nullable
+  private <T> T getTypedValue(@Nonnull AggregateField aggregateField, Class<T> clazz) {
+    Object value = getInternal(aggregateField);
+    return castTypedValue(value, aggregateField, clazz);
+  }
+
+  @Nullable
+  private <T> T castTypedValue(
+      Object value, @Nonnull AggregateField aggregateField, Class<T> clazz) {
+    if (value == null) {
+      return null;
+    } else if (!clazz.isInstance(value)) {
+      throw new RuntimeException(
+          "AggregateField '" + aggregateField.getAlias() + "' is not a " + clazz.getName());
+    }
+    return clazz.cast(value);
   }
 
   /**
@@ -69,7 +208,7 @@ public class AggregateQuerySnapshot {
     if (this == object) return true;
     if (!(object instanceof AggregateQuerySnapshot)) return false;
     AggregateQuerySnapshot other = (AggregateQuerySnapshot) object;
-    return count == other.count && query.equals(other.query);
+    return query.equals(other.query) && data.equals(other.data);
   }
 
   /**
@@ -79,6 +218,6 @@ public class AggregateQuerySnapshot {
    */
   @Override
   public int hashCode() {
-    return Objects.hash(count, query);
+    return Objects.hash(query, data);
   }
 }
