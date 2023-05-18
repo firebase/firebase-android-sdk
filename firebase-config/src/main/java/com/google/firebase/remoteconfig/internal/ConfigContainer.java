@@ -188,7 +188,7 @@ public class ConfigContainer {
     return experimentsMap;
   }
 
-  private boolean isExperimentMetadataSame(
+  private boolean isExperimentMetadataUnchanged(
       JSONObject activeExperiment, JSONObject fetchedExperiment) throws JSONException {
     // Create copies of active and fetched experiments.
     JSONObject activeExperimentCopy = new JSONObject(activeExperiment.toString());
@@ -237,7 +237,8 @@ public class ConfigContainer {
     return changed;
   }
 
-  private Set<String> getChangedABTExperiments(JSONArray otherExperiment) throws JSONException {
+  private Set<String> getKeysAffectedByChangedExperiments(JSONArray otherExperiment)
+      throws JSONException {
     Set<String> changed = new HashSet<>();
     Map<String, JSONObject> fetchedExperimentsMap = getExperimentsMap(this.abtExperiments);
     Map<String, JSONObject> activeExperimentsMap = getExperimentsMap(otherExperiment);
@@ -272,7 +273,7 @@ public class ConfigContainer {
         Set<String> activeExperimentKeys = extractConfigKeysFromExperiment(activeExperiment);
         Set<String> fetchedExperimentKeys = extractConfigKeysFromExperiment(fetchedExperiment);
 
-        if (!isExperimentMetadataSame(activeExperiment, fetchedExperiment)) {
+        if (!isExperimentMetadataUnchanged(activeExperiment, fetchedExperiment)) {
           // Add in all keys from both sides if the experiments metadata has changed.
           changed.addAll(activeExperimentKeys);
           changed.addAll(fetchedExperimentKeys);
@@ -341,7 +342,7 @@ public class ConfigContainer {
     while (remainingOtherKeys.hasNext()) {
       changed.add(remainingOtherKeys.next());
     }
-    changed.addAll(getChangedABTExperiments(other.getAbtExperiments()));
+    changed.addAll(getKeysAffectedByChangedExperiments(other.getAbtExperiments()));
 
     return changed;
   }
