@@ -126,3 +126,69 @@ fun NodeList.children() = sequence {
     yield(item(index))
   }
 }
+
+/**
+ * Joins a variable amount of [strings][Any.toString] to a single [String] split by newlines (`\n`).
+ *
+ * For example:
+ * ```kotlin
+ * println(multiLine("Hello", "World", "!")) // "Hello\nWorld\n!"
+ * ```
+ */
+fun multiLine(vararg strings: Any?) = strings.joinToString("\n")
+
+/**
+ * Returns the first match of a regular expression in the [input], beginning at the specified
+ * [startIndex].
+ *
+ * @param input the string to search through
+ * @param startIndex an index to start search with, by default zero. Must be not less than zero and
+ * not greater than `input.length()`
+ * @throws RuntimeException if a match is not found
+ */
+fun Regex.findOrThrow(input: CharSequence, startIndex: Int = 0) =
+  find(input, startIndex)
+    ?: throw RuntimeException(multiLine("No match found for the given input:", input.toString()))
+
+/**
+ * Creates a [Pair] out of an [Iterable] with only two elements.
+ *
+ * If the [Iterable] has more or less than two elements, the [second element][Pair.second] will be
+ * null.
+ *
+ * For example:
+ * ```kotlin
+ * listOf(1,2).toPairOrNull() // (1,2)
+ * listOf(1).toPairOrNull() // (1, null)
+ * listOf(1,2,3).toPairOrNull() // (1, null)
+ * ```
+ */
+fun <T : Any?> Iterable<T>.toPairOrNull(): Pair<T, T?> = first() to last().takeIf { count() == 2 }
+
+/**
+ * Splits a list at the given [index].
+ *
+ * A [Pair] will be returned that contains the first and second part of the list respectively.
+ *
+ * The [second list][Pair.second] will be the one that contains the element at the split.
+ *
+ * For example:
+ * ```kotlin
+ * listOf("a","b","c","d","e").seperateAt(3) // (["a", "b", "c"], ["d", "e"])
+ * listOf("a","b","c","d","e").seperateAt(2) // (["a", "b"], ["c", "d", "e"])
+ * listOf("a","b").seperateAt(1) // (["a"],["b"])
+ * listOf("a").seperateAt(1) // (["a"],[])
+ * listOf("a").seperateAt(0) // ([],["a"])
+ * ```
+ *
+ * @param index the index to split the list at; zero being the first element
+ */
+fun <T> List<T>.seperateAt(index: Int) = slice(0 until index) to slice(index..lastIndex)
+
+/**
+ * Returns the value of the first capture group.
+ *
+ * Intended to be used in [MatchResult] that are only supposed to capture a single entry.
+ */
+val MatchResult.capturedValue: String
+  get() = groupValues[1]
