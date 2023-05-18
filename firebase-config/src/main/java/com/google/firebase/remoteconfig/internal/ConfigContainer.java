@@ -221,11 +221,11 @@ public class ConfigContainer {
 
   private Set<String> getChangedExperimentConfigKeys(
       Set<String> activeKeys, Set<String> fetchedKeys) throws JSONException {
-    Set<String> changed = new HashSet<>();
-    changed.addAll(activeKeys);
-    changed.addAll(fetchedKeys);
+    Set<String> allKeys = new HashSet<>();
+    allKeys.addAll(activeKeys);
+    allKeys.addAll(fetchedKeys);
 
-    Set<String> allKeys = new HashSet<>(changed);
+    Set<String> changed = new HashSet<>(allKeys);
     // Iterate through all possible keys.
     for (String key : allKeys) {
       // If fetchedKeys and activeKeys contains the config key, remove it from `changed`.
