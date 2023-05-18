@@ -2,7 +2,7 @@
 
 # 21.1.0
 * [unchanged] Updated to accommodate the release of the updated
-[ddls] Kotlin extensions library.
+  [ddls] Kotlin extensions library.
 
 
 ## Kotlin
@@ -119,8 +119,7 @@ The Kotlin extensions library transitively includes the updated
 * [changed] Updated minSdkVersion to API level 16.
 
 # 16.1.7
-* Internal refactor.
-
+* [changed] Internal refactor.
 
 # 16.1.3
 * [fixed] Fixed an issue that caused short link creation to fail when creating
