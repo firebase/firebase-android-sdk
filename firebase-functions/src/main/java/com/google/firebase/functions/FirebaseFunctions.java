@@ -202,26 +202,26 @@ public class FirebaseFunctions {
     return getInstance(FirebaseApp.getInstance(), "us-central1");
   }
 
-  /** Returns a reference to the Callable HTTPS trigger with the given name. */
+  /** Returns a reference to the callable HTTPS trigger with the given name. */
   @NonNull
   public HttpsCallableReference getHttpsCallable(@NonNull String name) {
     return new HttpsCallableReference(this, name, new HttpsCallOptions());
   }
 
-  /** Returns a reference to the Callable HTTPS trigger with the provided url. */
+  /** Returns a reference to the callable HTTPS trigger with the provided URL. */
   @NonNull
   public HttpsCallableReference getHttpsCallableFromUrl(@NonNull URL url) {
     return new HttpsCallableReference(this, url, new HttpsCallOptions());
   }
 
-  /** Returns a reference to the Callable HTTPS trigger with the given name and call options. */
+  /** Returns a reference to the callable HTTPS trigger with the given name and call options. */
   @NonNull
   public HttpsCallableReference getHttpsCallable(
       @NonNull String name, @NonNull HttpsCallableOptions options) {
     return new HttpsCallableReference(this, name, new HttpsCallOptions(options));
   }
 
-  /** Returns a reference to the Callable HTTPS trigger with the provided url and call options. */
+  /** Returns a reference to the callable HTTPS trigger with the provided URL and call options. */
   @NonNull
   public HttpsCallableReference getHttpsCallableFromUrl(
       @NonNull URL url, @NonNull HttpsCallableOptions options) {
