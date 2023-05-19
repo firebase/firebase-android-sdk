@@ -79,7 +79,7 @@ public abstract class FirebaseAppCheck implements InteropAppCheckTokenProvider {
    * <p>If your non-Firebase backend exposes sensitive or expensive endpoints that has low traffic
    * volume, consider protecting it with <a
    * href=https://firebase.google.com/docs/app-check/custom-resource-backend#replay-protection>Replay
-   * Protection</a>. In this case, use the #getLimitedUseAppCheckToken() instead to obtain a
+   * Protection</a>. In this case, use {@link #getLimitedUseAppCheckToken()} instead to obtain a
    * limited-use token.
    */
   @NonNull
@@ -92,8 +92,8 @@ public abstract class FirebaseAppCheck implements InteropAppCheckTokenProvider {
    * <p>Returns limited-use tokens that are intended for use with your non-Firebase backend
    * endpoints that are protected with <a
    * href=https://firebase.google.com/docs/app-check/custom-resource-backend#replay-protection>Replay
-   * Protection</a>. This method does not affect the token generation behavior of the
-   * #getAppCheckToken() method.
+   * Protection</a>. This method does not affect the token generation behavior of the {@link
+   * #getAppCheckToken(boolean forceRefresh)} method.
    */
   @NonNull
   public abstract Task<AppCheckToken> getLimitedUseAppCheckToken();
