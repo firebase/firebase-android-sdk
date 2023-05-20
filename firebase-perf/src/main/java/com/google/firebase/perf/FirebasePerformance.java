@@ -42,6 +42,7 @@ import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+import com.google.firebase.sessions.FirebaseSessions;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.URL;
@@ -140,6 +141,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   private final Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
   private final Provider<TransportFactory> transportFactoryProvider;
+  private final FirebaseSessions firebaseSessions;
 
   /**
    * Constructs the FirebasePerformance class and allows injecting dependencies.
@@ -163,6 +165,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       FirebaseInstallationsApi firebaseInstallationsApi,
       Provider<TransportFactory> transportFactoryProvider,
       RemoteConfigManager remoteConfigManager,
+      FirebaseSessions firebaseSessions,
       ConfigResolver configResolver,
       SessionManager sessionManager) {
 
@@ -170,6 +173,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.transportFactoryProvider = transportFactoryProvider;
+    this.firebaseSessions = firebaseSessions;
 
     if (firebaseApp == null) {
       this.mPerformanceCollectionForceEnabledState = false;
