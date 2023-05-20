@@ -31,7 +31,6 @@ import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.firebase.sessions.FirebaseSessions;
-import com.google.firebase.sessions.FirebaseSessionsRegistrar;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import com.google.firebase.sessions.api.SessionSubscriber;
 import java.util.Arrays;
