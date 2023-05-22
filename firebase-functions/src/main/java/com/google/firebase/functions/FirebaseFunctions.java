@@ -60,10 +60,10 @@ public class FirebaseFunctions {
    * Whether the ProviderInstaller async task has been started. This is guarded by the
    * providerInstalled lock.
    */
-  private static boolean providerInstallStarted = false;
+  public static boolean providerInstallStarted = false;
 
   // The network client to use for HTTPS requests.
-  private final OkHttpClient client;
+  public final OkHttpClient client;
 
   // A serializer to encode/decode parameters and return values.
   private final Serializer serializer;
@@ -83,7 +83,7 @@ public class FirebaseFunctions {
   @Nullable private final String customDomain;
 
   // The format to use for constructing urls from region, projectId, and name.
-  private String urlFormat = "https://%1$s-%2$s.cloudfunctions.net/%3$s";
+  public String urlFormat = "https://%1$s-%2$s.cloudfunctions.net/%3$s";
 
   // Emulator settings
   @Nullable private EmulatedServiceSettings emulatorSettings;

@@ -80,6 +80,7 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     setupApiInformationAnalysis(project, android)
     android.testServer(FirebaseTestServer(project, firebaseLibrary.testLab, android))
     setupStaticAnalysis(project, firebaseLibrary)
+    getTransformToKotlin(project, firebaseLibrary)
     getIsPomValidTask(project, firebaseLibrary)
     getSemverTaskAar(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary, android)

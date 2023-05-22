@@ -85,6 +85,17 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
     }
   }
 
+  protected fun getTransformToKotlin(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+    val currentJarFile = project.file("semver/current-version/classes.jar").absolutePath
+    project.tasks.register<KotlinTransform>("kotlinTransform") {
+      groupId.set(firebaseLibrary.groupId.get())
+      artifactId.set(firebaseLibrary.artifactId.get())
+      projectPath.set(project.projectDir.absolutePath)
+      currentJar.set(currentJarFile)
+      dependsOn("extractCurrentClasses")
+    }
+  }
+
   protected fun getGenerateApiTxt(project: Project, srcDirs: Set<File>) =
     project.tasks.register<GenerateApiTxtTask>("generateApiTxtFile") {
       sources.value(project.provider { srcDirs })

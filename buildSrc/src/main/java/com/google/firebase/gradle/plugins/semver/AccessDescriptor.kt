@@ -35,6 +35,8 @@ class AccessDescriptor(private val access: Int) {
 
   fun isFinal(): Boolean = accessIs(Opcodes.ACC_FINAL)
 
+  fun isInterface(): Boolean = accessIs(Opcodes.ACC_INTERFACE)
+
   fun isPrivate(): Boolean = !this.isProtected() && !this.isPublic()
 
   fun getVerboseDescription(): String {
