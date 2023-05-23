@@ -71,7 +71,7 @@ fun getUnqualifiedClassname(classNodeName: String): String {
   return withoutPackage.substring(withoutPackage.lastIndexOf('$') + 1)
 }
 
-fun MethodNode.transformToKotlin(clsName: String): String {
+fun MethodNode.transformToKotlin(clsName: String, pkgName: String): String {
   val descriptor = AccessDescriptor(this.access)
   val parameterTypes = Type.getArgumentTypes(this.desc)
   var counter = 1
@@ -85,19 +85,33 @@ fun MethodNode.transformToKotlin(clsName: String): String {
       counter += 1
     }
   }
+  val returnType = Type.getReturnType(this.desc).className
+  var returnPart =
+    if (descriptor.isStatic())
+      "return ${clsName}Object.${this.name}(${callStringList.joinToString(", ")})"
+    else "return instance${clsName}.${this.name}(${callStringList.joinToString(", ")})"
+
   var def =
     "fun ${this.name} (${parameterClasses.joinToString(", ")}) : ${Type.getReturnType(this.desc).className}"
   if (descriptor.isStatic()) {
+    if (returnType.contains(pkgName)) {
+      returnPart =
+        "return ${returnType.replace(pkgName+".", "")}(${clsName}Object.${this.name}(${callStringList.joinToString(", ")}))"
+    }
     return """
           ${def} {
-            return ${clsName}Object.${this.name}(${callStringList.joinToString(", ")})
+           ${returnPart}
           }
       """
       .trimIndent()
   } else {
+    if (returnType.contains(pkgName)) {
+      returnPart =
+        "return ${returnType.replace(pkgName+".", "")}(instance${clsName}.${this.name}(${callStringList.joinToString(", ")}))"
+    }
     return """
           ${def} {
-            return instance${clsName}.${this.name}(${callStringList.joinToString(", ")})
+            ${returnPart}
           }
       """
       .trimIndent()
@@ -117,6 +131,7 @@ fun FieldNode.transformToKotlin(clsName: String): String {
 fun ClassInfo.transformToKotlin(): String {
   val classDescriptor = AccessDescriptor(this.node.access)
   val classType = if (classDescriptor.isInterface()) "interface" else "class"
+  val pkgName = this.name.substringBeforeLast("/").replace("/", ".")
   val className = this.name.substringAfterLast("/").replace("$", ".")
   val varClassName = className.replace("$", "")
   val staticCode =
@@ -136,7 +151,7 @@ fun ClassInfo.transformToKotlin(): String {
               !accessDescriptor.isPrivate() &&
               accessDescriptor.isStatic()
           }
-          .map { (key, field) -> field.transformToKotlin(varClassName) }
+          .map { (key, field) -> field.transformToKotlin(varClassName, pkgName) }
       )
   val nonStaticCode =
     this.fields
@@ -155,7 +170,7 @@ fun ClassInfo.transformToKotlin(): String {
               !accessDescriptor.isPrivate() &&
               !accessDescriptor.isStatic()
           }
-          .map { (key, field) -> field.transformToKotlin(varClassName) }
+          .map { (key, field) -> field.transformToKotlin(varClassName, pkgName) }
       )
   return """
     ${classType} ${className} (val instance${varClassName}: Java${varClassName} ) {
@@ -204,7 +219,10 @@ abstract class KotlinTransform : DefaultTask() {
           ${classesJar.get(key)!!.transformToKotlin()}
       """
           .trimIndent()
-      println(classContent)
+
+      val javaPath = "${projectPath.get()}/src/main/java"
+
+      File("${javaPath}/${key}.kt").writeText(classContent)
       return
 
       //      val classInfo: ClassInfo = classesJar.get(it)!!
