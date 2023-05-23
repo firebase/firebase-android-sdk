@@ -184,6 +184,7 @@ public class FirebaseCrashlytics {
       @Override
       public void onSessionChanged(@NonNull SessionDetails sessionDetails) {
         Logger.getLogger().d("onSessionChanged: " + sessionDetails);
+        // TODO(mrober): Set new field in report and remove this.
         core.setInternalKey("sessionId", sessionDetails.getSessionId());
       }
 
