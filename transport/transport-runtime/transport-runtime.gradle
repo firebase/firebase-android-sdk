@@ -54,9 +54,7 @@ firebaseLibrary {
     testLab {
         enabled = true
 
-        // TODO(yifany): Blueline-28 was added in #4558, but has never passed.
-        //               Disabling for now. Re-enable later if needed.
-        // device 'model=blueline,version=28' // Pixel3
+        device 'model=blueline,version=28' // Pixel3
         device 'model=walleye,version=27' // Pixel2
         device 'model=Nexus4,version=22'
         device 'model=Nexus7,version=21'

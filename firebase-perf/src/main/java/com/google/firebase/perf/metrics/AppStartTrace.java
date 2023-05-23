@@ -411,19 +411,22 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
             .setDurationUs(getClassLoadTimeCompat().getDurationMicros(onCreateTime));
     subtraces.add(traceMetricBuilder.build());
 
-    traceMetricBuilder = TraceMetric.newBuilder();
-    traceMetricBuilder
-        .setName(Constants.TraceNames.ON_START_TRACE_NAME.toString())
-        .setClientStartTimeUs(onCreateTime.getMicros())
-        .setDurationUs(onCreateTime.getDurationMicros(onStartTime));
-    subtraces.add(traceMetricBuilder.build());
+    // OnStartTime is not captured in all situations, so checking for valid value before using it.
+    if (onStartTime != null) {
+      traceMetricBuilder = TraceMetric.newBuilder();
+      traceMetricBuilder
+          .setName(Constants.TraceNames.ON_START_TRACE_NAME.toString())
+          .setClientStartTimeUs(onCreateTime.getMicros())
+          .setDurationUs(onCreateTime.getDurationMicros(onStartTime));
+      subtraces.add(traceMetricBuilder.build());
 
-    traceMetricBuilder = TraceMetric.newBuilder();
-    traceMetricBuilder
-        .setName(Constants.TraceNames.ON_RESUME_TRACE_NAME.toString())
-        .setClientStartTimeUs(onStartTime.getMicros())
-        .setDurationUs(onStartTime.getDurationMicros(onResumeTime));
-    subtraces.add(traceMetricBuilder.build());
+      traceMetricBuilder = TraceMetric.newBuilder();
+      traceMetricBuilder
+          .setName(Constants.TraceNames.ON_RESUME_TRACE_NAME.toString())
+          .setClientStartTimeUs(onStartTime.getMicros())
+          .setDurationUs(onStartTime.getDurationMicros(onResumeTime));
+      subtraces.add(traceMetricBuilder.build());
+    }
 
     metric.addAllSubtraces(subtraces).addPerfSessions(this.startSession.build());
 
