@@ -193,21 +193,35 @@ public class TargetIndexMatcher {
   }
 
   public FieldIndex BuildTargetIndex() {
+    Set<FieldPath> uniqueFields = new HashSet<>();
     List<FieldIndex.Segment> segments = new ArrayList<>();
 
     for (FieldFilter filter : equalityFilters) {
+      if (filter.getField().isKeyField()) {
+        continue;
+      }
       boolean isArrayOperator =
           filter.getOperator().equals(FieldFilter.Operator.ARRAY_CONTAINS)
               || filter.getOperator().equals(FieldFilter.Operator.ARRAY_CONTAINS_ANY);
-      segments.add(
-          FieldIndex.Segment.create(
-              filter.getField(),
-              isArrayOperator
-                  ? FieldIndex.Segment.Kind.CONTAINS
-                  : FieldIndex.Segment.Kind.ASCENDING));
+      if (isArrayOperator) {
+        segments.add(
+            FieldIndex.Segment.create(filter.getField(), FieldIndex.Segment.Kind.CONTAINS));
+      } else {
+        if (uniqueFields.contains(filter.getField())) {
+          continue;
+        }
+        uniqueFields.add(filter.getField());
+        segments.add(
+            FieldIndex.Segment.create(filter.getField(), FieldIndex.Segment.Kind.ASCENDING));
+      }
     }
 
     for (OrderBy orderBy : orderBys) {
+      if (uniqueFields.contains(orderBy.getField())) {
+        continue;
+      }
+      uniqueFields.add(orderBy.getField());
+
       segments.add(
           FieldIndex.Segment.create(
               orderBy.getField(),

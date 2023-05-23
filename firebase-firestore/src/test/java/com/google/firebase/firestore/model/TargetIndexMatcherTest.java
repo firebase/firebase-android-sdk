@@ -441,6 +441,163 @@ public class TargetIndexMatcherTest {
   }
 
   @Test
+  public void buildTargetIndex() {
+    Query q =
+        query("collId")
+            .filter(filter("a", "==", 1))
+            .filter(filter("b", "==", 2))
+            .orderBy(orderBy("__name__", "desc"));
+    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    FieldIndex expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").orderBy(orderBy("a"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").orderBy(orderBy("a")).orderBy(orderBy("b"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").filter(filter("a", "array-contains", "a")).orderBy(orderBy("b"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").orderBy(orderBy("b"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").orderBy(orderBy("a"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").filter(filter("a", ">", 1)).filter(filter("a", "<", 10));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").filter(filter("a", "in", Arrays.asList(1, 2))).filter(filter("b", "==", 5));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").filter(filter("value", "array-contains", "foo")).orderBy(orderBy("value"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q =
+        query("collId")
+            .filter(filter("a", "array-contains", "a"))
+            .filter(filter("a", ">", "b"))
+            .orderBy(orderBy("a", "asc"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").filter(filter("a", "==", 1)).orderBy(orderBy("__name__", "desc"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").filter(filter("a1", "==", "a")).filter(filter("a2", "==", "b"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q =
+        query("collId")
+            .filter(filter("equality1", "==", "a"))
+            .filter(filter("equality2", "==", "b"))
+            .filter(filter("inequality", ">=", "c"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q =
+        query("collId")
+            .filter(filter("equality1", "==", "a"))
+            .filter(filter("inequality", ">=", "c"))
+            .filter(filter("equality2", "==", "b"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").orderBy(orderBy("a"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").orderBy(orderBy("a", "desc"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").orderBy(orderBy("a")).orderBy(orderBy("__name__"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").filter(filter("a", "!=", 1));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").filter(filter("a", "!=", 1)).orderBy(orderBy("a")).orderBy(orderBy("b"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q = query("collId").filter(filter("a", "==", "a")).filter(filter("b", ">", "b"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q =
+        query("collId")
+            .filter(filter("a1", "==", "a"))
+            .filter(filter("a2", ">", "b"))
+            .orderBy(orderBy("a2", "asc"));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q =
+        query("collId")
+            .filter(filter("a", ">=", 1))
+            .filter(filter("a", "==", 5))
+            .filter(filter("a", "<=", 10));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    // assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+
+    q =
+        query("collId")
+            .filter(filter("a", "not-in", Arrays.asList(1, 2, 3)))
+            .filter(filter("a", ">=", 2));
+    targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+  }
+
+  @Test
+  public void failedTest() {
+    Query q =
+        query("collId")
+            .filter(filter("a", ">=", 1))
+            .filter(filter("a", "==", 5))
+            .filter(filter("a", "<=", 10));
+    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(q.toTarget());
+    FieldIndex expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+  }
+
+  @Test
   public void withMultipleOrderBys() {
     Query q =
         query("collId")
