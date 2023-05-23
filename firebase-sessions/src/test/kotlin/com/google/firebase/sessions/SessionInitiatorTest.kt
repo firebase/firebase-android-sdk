@@ -24,20 +24,23 @@ import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.FakeTimeProvider
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class SessionInitiatorTest {
-  class SessionStartCounter {
+  class SessionStartCounter : SessionStartListener {
     var count = 0
       private set
 
-    fun initiateSessionStart() {
+    override suspend fun onSessionStart() {
       count++
     }
   }
@@ -58,8 +61,17 @@ class SessionInitiatorTest {
       )
 
     // Simulate a cold start by simply constructing the SessionInitiator object
-    SessionInitiator(FakeTimeProvider(), sessionStartCounter::initiateSessionStart, settings)
+    SessionInitiator(
+      FakeTimeProvider(),
+      TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+      sessionStartListener = sessionStartCounter,
+      settings,
+    )
 
+    // Run pending tasks
+    runCurrent()
+
+    // Session on cold start
     assertThat(sessionStartCounter.count).isEqualTo(1)
   }
 
@@ -80,7 +92,14 @@ class SessionInitiatorTest {
       )
 
     val sessionInitiator =
-      SessionInitiator(fakeTimeProvider, sessionStartCounter::initiateSessionStart, settings)
+      SessionInitiator(
+        fakeTimeProvider,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+        sessionStartListener = sessionStartCounter,
+        settings,
+      )
+
+    runCurrent()
 
     // First session on cold start
     assertThat(sessionStartCounter.count).isEqualTo(1)
@@ -88,6 +107,8 @@ class SessionInitiatorTest {
     // Enough tome to initiate a new session, and then foreground
     fakeTimeProvider.addInterval(LARGE_INTERVAL)
     sessionInitiator.appForegrounded()
+
+    runCurrent()
 
     // Another session initiated
     assertThat(sessionStartCounter.count).isEqualTo(2)
@@ -110,7 +131,14 @@ class SessionInitiatorTest {
       )
 
     val sessionInitiator =
-      SessionInitiator(fakeTimeProvider, sessionStartCounter::initiateSessionStart, settings)
+      SessionInitiator(
+        fakeTimeProvider,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+        sessionStartListener = sessionStartCounter,
+        settings,
+      )
+
+    runCurrent()
 
     // First session on cold start
     assertThat(sessionStartCounter.count).isEqualTo(1)
@@ -118,6 +146,8 @@ class SessionInitiatorTest {
     // Not enough time to initiate a new session, and then foreground
     fakeTimeProvider.addInterval(SMALL_INTERVAL)
     sessionInitiator.appForegrounded()
+
+    runCurrent()
 
     // No new session
     assertThat(sessionStartCounter.count).isEqualTo(1)
@@ -140,18 +170,29 @@ class SessionInitiatorTest {
       )
 
     val sessionInitiator =
-      SessionInitiator(fakeTimeProvider, sessionStartCounter::initiateSessionStart, settings)
+      SessionInitiator(
+        fakeTimeProvider,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+        sessionStartListener = sessionStartCounter,
+        settings,
+      )
+
+    runCurrent()
 
     assertThat(sessionStartCounter.count).isEqualTo(1)
 
     fakeTimeProvider.addInterval(LARGE_INTERVAL)
     sessionInitiator.appForegrounded()
 
+    runCurrent()
+
     assertThat(sessionStartCounter.count).isEqualTo(2)
 
     sessionInitiator.appBackgrounded()
     fakeTimeProvider.addInterval(LARGE_INTERVAL)
     sessionInitiator.appForegrounded()
+
+    runCurrent()
 
     assertThat(sessionStartCounter.count).isEqualTo(3)
   }
@@ -173,7 +214,14 @@ class SessionInitiatorTest {
       )
 
     val sessionInitiator =
-      SessionInitiator(fakeTimeProvider, sessionStartCounter::initiateSessionStart, settings)
+      SessionInitiator(
+        fakeTimeProvider,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+        sessionStartListener = sessionStartCounter,
+        settings,
+      )
+
+    runCurrent()
 
     // First session on cold start
     assertThat(sessionStartCounter.count).isEqualTo(1)
@@ -181,13 +229,15 @@ class SessionInitiatorTest {
     fakeTimeProvider.addInterval(SMALL_INTERVAL)
     sessionInitiator.appForegrounded()
 
+    runCurrent()
+
     assertThat(sessionStartCounter.count).isEqualTo(1)
 
     sessionInitiator.appBackgrounded()
     fakeTimeProvider.addInterval(SMALL_INTERVAL)
     sessionInitiator.appForegrounded()
 
-    assertThat(sessionStartCounter.count).isEqualTo(1)
+    runCurrent()
 
     assertThat(sessionStartCounter.count).isEqualTo(1)
   }

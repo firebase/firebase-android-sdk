@@ -20,23 +20,27 @@ import android.app.Activity
 import android.app.Application.ActivityLifecycleCallbacks
 import android.os.Bundle
 import com.google.firebase.sessions.settings.SessionsSettings
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /**
- * The [SessionInitiator] is responsible for calling the [initiateSessionStart] callback whenever a
- * session starts. This will happen at a cold start of the app, and when the app has been in the
+ * The [SessionInitiator] is responsible for calling [SessionStartListener.onSessionStart] whenever
+ * a session starts. This will happen at a cold start of the app, and when the app has been in the
  * background for a period of time (default 30 min) and then comes back to the foreground.
  *
  * @hide
  */
 internal class SessionInitiator(
   private val timeProvider: TimeProvider,
-  private val initiateSessionStart: () -> Unit,
-  private val sessionsSettings: SessionsSettings
+  private val backgroundDispatcher: CoroutineContext,
+  private val sessionStartListener: SessionStartListener,
+  private val sessionsSettings: SessionsSettings,
 ) {
   private var backgroundTime = timeProvider.elapsedRealtime()
 
   init {
-    initiateSessionStart()
+    CoroutineScope(backgroundDispatcher).launch { sessionStartListener.onSessionStart() }
   }
 
   fun appBackgrounded() {
@@ -47,7 +51,7 @@ internal class SessionInitiator(
     val interval = timeProvider.elapsedRealtime() - backgroundTime
     val sessionTimeout = sessionsSettings.sessionRestartTimeout
     if (interval > sessionTimeout) {
-      initiateSessionStart()
+      CoroutineScope(backgroundDispatcher).launch { sessionStartListener.onSessionStart() }
     }
   }
 
