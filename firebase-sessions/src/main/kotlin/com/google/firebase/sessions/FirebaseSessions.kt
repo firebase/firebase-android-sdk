@@ -58,6 +58,7 @@ internal constructor(
         timeProvider,
         backgroundDispatcher,
         object : SessionStartListener {
+          // Avoid making a public function in FirebaseSessions for onSessionStart.
           override suspend fun onSessionStart() = initiateSessionStart()
         },
         sessionSettings,
@@ -97,18 +98,17 @@ internal constructor(
       return
     }
 
+    subscribers.values.forEach { subscriber ->
+      // Notify subscribers, regardless of sampling and data collection state.
+      subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionDetails.sessionId))
+    }
+
     if (subscribers.values.none { it.isDataCollectionEnabled }) {
       Log.d(TAG, "Data Collection is disabled for all subscribers. Skipping this Session Event")
       return
     }
 
     Log.d(TAG, "Data Collection is enabled for at least one Subscriber")
-
-    subscribers.values.forEach { subscriber ->
-      if (subscriber.isDataCollectionEnabled) {
-        subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionDetails.sessionId))
-      }
-    }
 
     if (!sessionGenerator.collectEvents) {
       Log.d(TAG, "Sessions SDK has sampled this session")
