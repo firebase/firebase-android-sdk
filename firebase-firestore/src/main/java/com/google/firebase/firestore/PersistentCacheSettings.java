@@ -14,6 +14,7 @@
 package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RestrictTo;
 
 /**
  * Configures the SDK to use a persistent cache. Firestore documents and mutations are persisted
@@ -77,6 +78,7 @@ public final class PersistentCacheSettings implements LocalCacheSettings {
     return sizeBytes;
   }
 
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   public boolean autoClientIndexingEnabled() {
     return autoClientIndexingEnabled;
   }
