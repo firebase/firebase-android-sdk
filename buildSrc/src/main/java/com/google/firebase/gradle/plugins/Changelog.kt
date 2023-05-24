@@ -83,10 +83,7 @@ data class Changelog(val releases: List<ReleaseEntry>) {
      * @see ReleaseEntry
      */
     fun fromString(string: String): Changelog {
-      val content =
-        RELEASE_VERSION_REGEX.split(string)
-          .map { it.trim('\n') }
-          .drop(1) // TODO() - is drop 1 still needed?
+      val content = RELEASE_VERSION_REGEX.split(string).map { it.trim('\n', ' ') }.drop(1)
       val releaseNames = RELEASE_VERSION_REGEX.findAll(string).map { it.capturedValue }.toList()
 
       val releases = releaseNames.zip(content).map { ReleaseEntry.fromString(it.first, it.second) }
