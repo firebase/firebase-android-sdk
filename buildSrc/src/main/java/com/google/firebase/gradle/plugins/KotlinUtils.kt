@@ -176,16 +176,16 @@ fun <T : Any?> Iterable<T>.toPairOrFirst(): Pair<T, T?> = first() to last().take
  *
  * For example:
  * ```kotlin
- * listOf("a","b","c","d","e").seperateAt(3) // (["a", "b", "c"], ["d", "e"])
- * listOf("a","b","c","d","e").seperateAt(2) // (["a", "b"], ["c", "d", "e"])
- * listOf("a","b").seperateAt(1) // (["a"],["b"])
- * listOf("a").seperateAt(1) // (["a"],[])
- * listOf("a").seperateAt(0) // ([],["a"])
+ * listOf("a","b","c","d","e").separateAt(3) // (["a", "b", "c"], ["d", "e"])
+ * listOf("a","b","c","d","e").separateAt(2) // (["a", "b"], ["c", "d", "e"])
+ * listOf("a","b").separateAt(1) // (["a"],["b"])
+ * listOf("a").separateAt(1) // (["a"],[])
+ * listOf("a").separateAt(0) // ([],["a"])
  * ```
  *
  * @param index the index to split the list at; zero being the first element
  */
-fun <T> List<T>.seperateAt(index: Int) = slice(0 until index) to slice(index..lastIndex)
+fun <T> List<T>.separateAt(index: Int) = slice(0 until index) to slice(index..lastIndex)
 
 /**
  * Returns the value of the first capture group.
