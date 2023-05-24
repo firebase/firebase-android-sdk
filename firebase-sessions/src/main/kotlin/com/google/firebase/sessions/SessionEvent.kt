@@ -16,6 +16,7 @@
 
 package com.google.firebase.sessions
 
+import com.google.firebase.encoders.annotations.Encodable
 import com.google.firebase.encoders.json.NumberedEnum
 
 /**
@@ -24,7 +25,7 @@ import com.google.firebase.encoders.json.NumberedEnum
  * See go/app-quality-unified-session-definition for more details. Keep in sync with
  * https://github.com/firebase/firebase-ios-sdk/blob/master/FirebaseSessions/ProtoSupport/Protos/sessions.proto
  */
-// TODO(mrober): Add and populate all fields from sessions.proto
+@Encodable
 internal data class SessionEvent(
   /** The type of event being reported. */
   val eventType: EventType,
