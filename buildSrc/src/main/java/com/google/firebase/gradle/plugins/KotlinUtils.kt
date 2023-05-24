@@ -192,5 +192,5 @@ fun <T> List<T>.separateAt(index: Int) = slice(0 until index) to slice(index..la
  *
  * Intended to be used in [MatchResult] that are only supposed to capture a single entry.
  */
-val MatchResult.capturedValue: String
+val MatchResult.firstCapturedValue: String
   get() = groupValues[1]

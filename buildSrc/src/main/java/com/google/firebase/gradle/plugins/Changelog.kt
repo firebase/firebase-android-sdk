@@ -84,7 +84,8 @@ data class Changelog(val releases: List<ReleaseEntry>) {
      */
     fun fromString(string: String): Changelog {
       val content = RELEASE_VERSION_REGEX.split(string).map { it.trim('\n', ' ') }.drop(1)
-      val releaseNames = RELEASE_VERSION_REGEX.findAll(string).map { it.capturedValue }.toList()
+      val releaseNames =
+        RELEASE_VERSION_REGEX.findAll(string).map { it.firstCapturedValue }.toList()
 
       val releases = releaseNames.zip(content).map { ReleaseEntry.fromString(it.first, it.second) }
 
@@ -254,7 +255,7 @@ data class ReleaseContent(val subtext: String, val changes: List<Change>) {
      */
     fun fromString(string: String): ReleaseContent {
       val subtext = SUBTEXT_REGEX.find(string)?.value.orEmpty().trim()
-      val changes = CHANGE_REGEX.findAll(string).map { Change.fromString(it.capturedValue) }
+      val changes = CHANGE_REGEX.findAll(string).map { Change.fromString(it.firstCapturedValue) }
 
       return ReleaseContent(subtext, changes.toList())
     }
