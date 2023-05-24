@@ -11,6 +11,13 @@ Note: We did some super cool stuff here!
   [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin
   coroutine.
 
+* [fixed] An issue on GitHub [#123](//github.com/firebase/firebase-android-sdk/issues/number)
+
+* [removed] Removed some old stuff (#562)
+
+* [feature] Added this thing we wanted
+  [#444](//github.com/firebase/firebase-android-sdk/issues/number){: .external}
+
 * [feature] Added
   [`Query.snapshots()`](/docs/reference/kotlin/com/google/firebase/firestore/ktx/package-summary#snapshots_1)
   and

@@ -15,8 +15,8 @@
 package com.google.firebase.gradle.plugins
 
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.beEmpty
 import io.kotest.matchers.file.exist
-import io.kotest.matchers.file.shouldHaveSameStructureAndContentAs
 import io.kotest.matchers.should
 import java.io.File
 import org.gradle.testkit.runner.GradleRunner
@@ -38,7 +38,8 @@ class MakeReleaseNotesTests : FunSpec() {
       )
 
     releaseNoteFile should exist()
-    releaseNoteFile shouldHaveSameStructureAndContentAs expectedReleaseNoteFile
+
+    releaseNoteFile.readLines() diff expectedReleaseNoteFile.readLines() should beEmpty()
   }
 
   private fun buildReleaseNotes() =

@@ -145,15 +145,32 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
    * Converts a [ReleaseContent] to a [String] to be used in a release note.
    *
    * @see [MakeReleaseNotesTask]
+   * @see [Change.toReleaseNote]
    */
   private fun ReleaseContent.toReleaseNotes() =
     """
       |$subtext
       |
-      |${changes.joinToString("\n\n") { "* {{${it.type.name.toLowerCase()}}} ${it.message}" }}
+      |${changes.joinToString("\n\n") { it.toReleaseNote() }}
     """
       .trimMargin()
       .trim()
+
+  /**
+   * Converts a [Change] to a [String] to be used in a release note.
+   *
+   * @see [MakeReleaseNotesTask]
+   * @see [LINK_REGEX]
+   */
+  private fun Change.toReleaseNote(): String {
+    val fixedMessage =
+      LINK_REGEX.replace(message) {
+        val id = it.firstCapturedValue
+        "GitHub [#$id](//github.com/firebase/firebase-android-sdk/issues/$id){: .external}"
+      }
+
+    return "* {{${type.name.toLowerCase()}}} $fixedMessage"
+  }
 
   /**
    * Maps the name of a project to its potential [ReleaseNotesMetadata].
@@ -203,6 +220,51 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
         ReleaseNotesMetadata("{{app_check}} SafetyNet", "appcheck-safetynet", false)
       else -> throw StopActionException("No metadata mapping found for project: $string")
     }
+
+  companion object {
+    /**
+     * Regex for GitHub issue links in change messages.
+     *
+     * The regex can be described as such:
+     * - Look for numbers that will be surrounded by either brackets or parentheses
+     * - These numbers might be preceded by `GitHub `
+     * - These numbers might also be followed by parentheses with `//` followed by some text (a
+     * link)
+     * - At the end there might be `{: .external}`
+     *
+     * For example:
+     * ```markdown
+     * We added (#123) and some
+     * other cool stuff: [#321]
+     * alongside [#5678](//github.com/firebase-firebase-android-sdk/issues/number)
+     * ```
+     *
+     * Will find the following groups:
+     * ```kotlin
+     * [
+     *   123,
+     *   321,
+     *   5678
+     * ]
+     * ```
+     *
+     * But will *match* the following:
+     * ```kotlin
+     * [
+     *  "(#123)",
+     *  "[#321]",
+     *  "[#5678](//github.com/firebase-firebase-android-sdk/issues/number)"
+     * ]
+     * ```
+     *
+     * @see [Change.toReleaseNote]
+     */
+    private val LINK_REGEX =
+      Regex(
+        "(?:GitHub )?(?:\\[|\\()#(\\d+)(?:\\]|\\))(?:\\(.+?\\))?(?:\\{: \\.external\\})?",
+        RegexOption.MULTILINE
+      )
+  }
 }
 
 /**

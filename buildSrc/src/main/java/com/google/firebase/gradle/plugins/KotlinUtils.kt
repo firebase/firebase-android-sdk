@@ -194,3 +194,34 @@ fun <T> List<T>.separateAt(index: Int) = slice(0 until index) to slice(index..la
  */
 val MatchResult.firstCapturedValue: String
   get() = groupValues[1]
+
+/**
+ * Creates a diff between two lists.
+ *
+ * For example:
+ * ```kotlin
+ * listOf(1,2,3,7,8) diff listOf(1,3,2,6) // [(2, 3), (3, 2), (7, 6), (8, null)]
+ * ```
+ */
+infix fun <T> List<T>.diff(other: List<T>): List<Pair<T?, T?>> {
+  val largestList = maxOf(size, other.size)
+
+  val firstList = coerceToSize(largestList)
+  val secondList = other.coerceToSize(largestList)
+
+  return firstList.zip(secondList).filter { it.first != it.second }
+}
+
+/**
+ * Creates a list that is forced to certain size.
+ *
+ * If the list is longer than the specified size, the extra elements will be cut. If the list is
+ * shorter than the specified size, null will be padded to the end
+ *
+ * For example:
+ * ```kotlin
+ * listOf(1,2,3).coerceToSize(5) // [1,2,3,null,null,null]
+ * listOf(1,2,3).coerceToSize(2) // [1,2]
+ * ```
+ */
+fun <T> List<T>.coerceToSize(targetSize: Int) = List(targetSize) { getOrNull(it) }
