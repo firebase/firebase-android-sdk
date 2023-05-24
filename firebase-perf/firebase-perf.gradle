@@ -42,7 +42,7 @@ protobuf {
 }
 
 android {
-    compileSdkVersion 30
+    compileSdk 30
 
     lintOptions {
         abortOnError true
