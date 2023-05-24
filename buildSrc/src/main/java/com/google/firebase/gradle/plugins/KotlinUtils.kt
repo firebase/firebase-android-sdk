@@ -162,8 +162,10 @@ fun Regex.findOrThrow(input: CharSequence, startIndex: Int = 0) =
  * listOf(1).toPairOrNull() // (1, null)
  * listOf(1,2,3).toPairOrNull() // (1, null)
  * ```
+ *
+ * @throws NoSuchElementException if the [Iterable] is empty
  */
-fun <T : Any?> Iterable<T>.toPairOrNull(): Pair<T, T?> = first() to last().takeIf { count() == 2 }
+fun <T : Any?> Iterable<T>.toPairOrFirst(): Pair<T, T?> = first() to last().takeIf { count() == 2 }
 
 /**
  * Splits a list at the given [index].

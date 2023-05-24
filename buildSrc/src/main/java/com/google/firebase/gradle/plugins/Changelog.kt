@@ -157,7 +157,7 @@ data class ReleaseEntry(
      * @see ReleaseContent
      */
     fun fromString(versionString: String, string: String): ReleaseEntry {
-      val (contentString, ktxString) = KOTLIN_TITLE_REGEX.split(string).toPairOrNull()
+      val (contentString, ktxString) = KOTLIN_TITLE_REGEX.split(string).toPairOrFirst()
 
       val content = ReleaseContent.fromString(contentString)
       val ktx = ktxString?.let { ReleaseContent.fromString(it) }
