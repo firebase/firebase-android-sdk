@@ -93,9 +93,8 @@ public class FirebasePerformanceTest {
     packageInfo.applicationInfo.metaData.clear();
 
     FirebaseApp.initializeApp(context, options);
-    FirebasePerformance performance = FirebasePerformance.getInstance();
     for (int i = 0; i <= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES; i++) {
-      performance.removeAttribute("dim" + i);
+      FirebasePerformance.getInstance().removeAttribute("dim" + i);
     }
     FirebaseApp.getInstance().setDataCollectionDefaultEnabled(true);
     SharedPreferences sharedPreferences = getSharedPreferences();
@@ -551,9 +550,9 @@ public class FirebasePerformanceTest {
       Boolean sharedPreferencesEnabledDisabledKey,
       Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
       Provider<TransportFactory> transportFactoryProvider) {
-    Context applicationContext = ApplicationProvider.getApplicationContext();
+    Context context = ApplicationProvider.getApplicationContext();
     DeviceCacheManager deviceCacheManager = new DeviceCacheManager(fakeDirectExecutorService);
-    deviceCacheManager.setContext(applicationContext);
+    deviceCacheManager.setContext(context);
     if (sharedPreferencesEnabledDisabledKey != null) {
       deviceCacheManager.setValue(Constants.ENABLE_DISABLE, sharedPreferencesEnabledDisabledKey);
     }
@@ -568,7 +567,6 @@ public class FirebasePerformanceTest {
       bundle.putBoolean(FIREPERF_FORCE_DEACTIVATED_KEY, metadataFireperfForceDeactivatedKey);
     }
 
-    Context context = ApplicationProvider.getApplicationContext();
     shadowOf(context.getPackageManager())
         .getInternalMutablePackageInfo(context.getPackageName())
         .applicationInfo
