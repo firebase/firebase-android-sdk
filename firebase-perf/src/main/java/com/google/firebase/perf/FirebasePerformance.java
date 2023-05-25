@@ -43,6 +43,7 @@ import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import com.google.firebase.sessions.FirebaseSessions;
+import com.google.firebase.sessions.api.SessionSubscriber;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.URL;
@@ -203,6 +204,26 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
               ConsoleUrlGenerator.generateDashboardUrl(
                   firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
     }
+
+    // Register with Firebase sessions to receive updates about session changes.
+    this.firebaseSessions.register(
+        new SessionSubscriber() {
+          @Override
+          public void onSessionChanged(@NonNull SessionDetails sessionDetails) {
+            // TODO(visum) Handle sessionID change by updating the sessionID in the sessionManager
+          }
+
+          @Override
+          public boolean isDataCollectionEnabled() {
+            return isDataCollectionEnabled();
+          }
+
+          @NonNull
+          @Override
+          public Name getSessionSubscriberName() {
+            return SessionSubscriber.Name.PERFORMANCE;
+          }
+        });
   }
 
   /**
