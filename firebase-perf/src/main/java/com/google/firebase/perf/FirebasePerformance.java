@@ -215,7 +215,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
 
           @Override
           public boolean isDataCollectionEnabled() {
-            return isDataCollectionEnabled();
+            return configResolver.isPerformanceMonitoringEnabled();
           }
 
           @NonNull
