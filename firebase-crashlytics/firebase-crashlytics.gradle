@@ -30,7 +30,7 @@ android {
         timeOutInMs 60 * 1000
     }
 
-    compileSdk 33
+    compileSdkVersion 33
     testOptions.unitTests.includeAndroidResources = true
     defaultConfig {
         minSdkVersion 16
