@@ -47,6 +47,22 @@ class SessionGeneratorTest {
   }
 
   @Test
+  fun hasGenerateSession_beforeGenerate_returnsFalse() {
+    val sessionGenerator = SessionGenerator(collectEvents = false)
+
+    assertThat(sessionGenerator.hasGenerateSession).isFalse()
+  }
+
+  @Test
+  fun hasGenerateSession_afterGenerate_returnsTrue() {
+    val sessionGenerator = SessionGenerator(collectEvents = false)
+
+    sessionGenerator.generateNewSession()
+
+    assertThat(sessionGenerator.hasGenerateSession).isTrue()
+  }
+
+  @Test
   fun generateNewSession_generatesValidSessionIds() {
     val sessionGenerator = SessionGenerator(collectEvents = true, timeProvider = FakeTimeProvider())
 

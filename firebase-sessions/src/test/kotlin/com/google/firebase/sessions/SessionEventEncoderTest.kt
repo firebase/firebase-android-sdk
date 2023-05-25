@@ -65,30 +65,30 @@ class SessionEventEncoderTest {
       .isEqualTo(
         """
           {
-            "event_type":1,
-            "session_data":{
-              "session_id":"a1b2c3",
-              "first_session_id":"a1a1a1",
-              "session_index":3,
-              "firebase_installation_id":"",
-              "event_timestamp_us":12340000,
-              "data_collection_status":{
+            "eventType":1,
+            "sessionData":{
+              "sessionId":"a1b2c3",
+              "firstSessionId":"a1a1a1",
+              "sessionIndex":3,
+              "eventTimestampUs":12340000,
+              "dataCollectionStatus":{
                 "performance":2,
                 "crashlytics":2,
-                "session_sampling_rate":1.0
-              }
+                "sessionSamplingRate":1.0
+              },
+              "firebaseInstallationId":""
             },
-            "application_info":{
-              "app_id":"1:12345:android:app",
-              "device_model":"${Build.MODEL}",
-              "session_sdk_version":"0.1.0",
-              "os_version":"${Build.VERSION.RELEASE}",
-              "log_environment":3,
-              "android_app_info":{
-                "package_name":"com.google.firebase.sessions.test",
-                "version_name":"1.0.0",
-                "app_build_version":"0",
-                "device_manufacturer":"${Build.MANUFACTURER}"
+            "applicationInfo":{
+              "appId":"1:12345:android:app",
+              "deviceModel":"${Build.MODEL}",
+              "sessionSdkVersion":"0.1.0",
+              "osVersion":"${Build.VERSION.RELEASE}",
+              "logEnvironment":3,
+              "androidAppInfo":{
+                "packageName":"com.google.firebase.sessions.test",
+                "versionName":"1.0.0",
+                "appBuildVersion":"0",
+                "deviceManufacturer":"${Build.MANUFACTURER}"
               }
             }
           }
@@ -132,30 +132,30 @@ class SessionEventEncoderTest {
       .isEqualTo(
         """
           {
-            "event_type":0,
-            "session_data":{
-              "session_id":"",
-              "first_session_id":"",
-              "session_index":0,
-              "firebase_installation_id":"",
-              "event_timestamp_us":0,
-              "data_collection_status":{
+            "eventType":0,
+            "sessionData":{
+              "sessionId":"",
+              "firstSessionId":"",
+              "sessionIndex":0,
+              "eventTimestampUs":0,
+              "dataCollectionStatus":{
                 "performance":2,
                 "crashlytics":2,
-                "session_sampling_rate":1.0
-              }
+                "sessionSamplingRate":1.0
+              },
+              "firebaseInstallationId":""
             },
-            "application_info":{
-              "app_id":"",
-              "device_model":"",
-              "session_sdk_version":"",
-              "os_version":"",
-              "log_environment":3,
-              "android_app_info":{
-                "package_name":"",
-                "version_name":"",
-                "app_build_version":"",
-                "device_manufacturer":""
+            "applicationInfo":{
+              "appId":"",
+              "deviceModel":"",
+              "sessionSdkVersion":"",
+              "osVersion":"",
+              "logEnvironment":3,
+              "androidAppInfo":{
+                "packageName":"",
+                "versionName":"",
+                "appBuildVersion":"",
+                "deviceManufacturer":""
               }
             }
           }

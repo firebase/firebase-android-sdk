@@ -17,7 +17,8 @@
 package com.google.firebase.sessions
 
 import android.util.Log
-import com.google.android.datatransport.*
+import com.google.android.datatransport.Encoding
+import com.google.android.datatransport.Event
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.inject.Provider
 

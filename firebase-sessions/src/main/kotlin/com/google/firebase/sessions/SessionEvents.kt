@@ -19,81 +19,16 @@ package com.google.firebase.sessions
 import android.os.Build
 import com.google.firebase.FirebaseApp
 import com.google.firebase.encoders.DataEncoder
-import com.google.firebase.encoders.FieldDescriptor
-import com.google.firebase.encoders.ObjectEncoderContext
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder
 import com.google.firebase.sessions.settings.SessionsSettings
 
 /** Contains functions for [SessionEvent]s. */
 internal object SessionEvents {
   /** JSON [DataEncoder] for [SessionEvent]s. */
-  // TODO(mrober): Replace with firebase-encoders-processor when it can encode Kotlin data classes.
   internal val SESSION_EVENT_ENCODER: DataEncoder =
     JsonDataEncoderBuilder()
-      .configureWith {
-        it.registerEncoder(SessionEvent::class.java) {
-          sessionEvent: SessionEvent,
-          ctx: ObjectEncoderContext ->
-          run {
-            ctx.add(FieldDescriptor.of("event_type"), sessionEvent.eventType)
-            ctx.add(FieldDescriptor.of("session_data"), sessionEvent.sessionData)
-            ctx.add(FieldDescriptor.of("application_info"), sessionEvent.applicationInfo)
-          }
-        }
-
-        it.registerEncoder(SessionInfo::class.java) {
-          sessionInfo: SessionInfo,
-          ctx: ObjectEncoderContext ->
-          run {
-            ctx.add(FieldDescriptor.of("session_id"), sessionInfo.sessionId)
-            ctx.add(FieldDescriptor.of("first_session_id"), sessionInfo.firstSessionId)
-            ctx.add(FieldDescriptor.of("session_index"), sessionInfo.sessionIndex)
-            ctx.add(
-              FieldDescriptor.of("firebase_installation_id"),
-              sessionInfo.firebaseInstallationId
-            )
-            ctx.add(FieldDescriptor.of("event_timestamp_us"), sessionInfo.eventTimestampUs)
-            ctx.add(FieldDescriptor.of("data_collection_status"), sessionInfo.dataCollectionStatus)
-          }
-        }
-
-        it.registerEncoder(DataCollectionStatus::class.java) {
-          dataCollectionStatus: DataCollectionStatus,
-          ctx: ObjectEncoderContext ->
-          run {
-            ctx.add(FieldDescriptor.of("performance"), dataCollectionStatus.performance)
-            ctx.add(FieldDescriptor.of("crashlytics"), dataCollectionStatus.crashlytics)
-            ctx.add(
-              FieldDescriptor.of("session_sampling_rate"),
-              dataCollectionStatus.sessionSamplingRate
-            )
-          }
-        }
-
-        it.registerEncoder(ApplicationInfo::class.java) {
-          applicationInfo: ApplicationInfo,
-          ctx: ObjectEncoderContext ->
-          run {
-            ctx.add(FieldDescriptor.of("app_id"), applicationInfo.appId)
-            ctx.add(FieldDescriptor.of("device_model"), applicationInfo.deviceModel)
-            ctx.add(FieldDescriptor.of("session_sdk_version"), applicationInfo.sessionSdkVersion)
-            ctx.add(FieldDescriptor.of("os_version"), applicationInfo.osVersion)
-            ctx.add(FieldDescriptor.of("log_environment"), applicationInfo.logEnvironment)
-            ctx.add(FieldDescriptor.of("android_app_info"), applicationInfo.androidAppInfo)
-          }
-        }
-
-        it.registerEncoder(AndroidApplicationInfo::class.java) {
-          androidAppInfo: AndroidApplicationInfo,
-          ctx: ObjectEncoderContext ->
-          run {
-            ctx.add(FieldDescriptor.of("package_name"), androidAppInfo.packageName)
-            ctx.add(FieldDescriptor.of("version_name"), androidAppInfo.versionName)
-            ctx.add(FieldDescriptor.of("app_build_version"), androidAppInfo.appBuildVersion)
-            ctx.add(FieldDescriptor.of("device_manufacturer"), androidAppInfo.deviceManufacturer)
-          }
-        }
-      }
+      .configureWith(AutoSessionEventEncoder.CONFIG)
+      .ignoreNullValues(true)
       .build()
 
   /**

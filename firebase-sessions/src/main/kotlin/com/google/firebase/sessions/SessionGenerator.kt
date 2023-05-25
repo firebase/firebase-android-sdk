@@ -44,6 +44,10 @@ internal class SessionGenerator(
   lateinit var currentSession: SessionDetails
     private set
 
+  /** Returns if a session has been generated. */
+  val hasGenerateSession: Boolean
+    get() = ::currentSession.isInitialized
+
   /** Generates a new session. The first session's sessionId will match firstSessionId. */
   fun generateNewSession(): SessionDetails {
     sessionIndex++
