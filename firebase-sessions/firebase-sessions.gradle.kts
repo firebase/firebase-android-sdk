@@ -17,6 +17,7 @@
 plugins {
   id("firebase-library")
   id("kotlin-android")
+  id("kotlin-kapt")
 }
 
 firebaseLibrary {
@@ -50,10 +51,11 @@ dependencies {
   implementation("com.google.firebase:firebase-encoders:17.0.0")
   implementation("com.google.firebase:firebase-installations-interop:17.1.0")
   implementation(libs.androidx.annotation)
-  testImplementation(project(mapOf("path" to ":integ-testing")))
 
   runtimeOnly("com.google.firebase:firebase-installations:17.1.3")
   runtimeOnly(project(":firebase-datatransport"))
+
+  kapt(project(":encoders:firebase-encoders-processor"))
 
   testImplementation(libs.androidx.test.junit)
   testImplementation(libs.androidx.test.runner)
