@@ -23,10 +23,13 @@ import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
+import androidx.test.core.content.pm.PackageInfoBuilder;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -51,6 +54,8 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.Shadows;
+import org.robolectric.shadows.ShadowPackageManager;
 
 /** Unit tests for {@link FirebasePerformance}. */
 @RunWith(RobolectricTestRunner.class)
@@ -82,20 +87,27 @@ public class FirebasePerformanceTest {
     FirebaseApp.clearInstancesForTest();
 
     Context context = ApplicationProvider.getApplicationContext();
+    ShadowPackageManager shadowPackageManager = shadowOf(context.getPackageManager());
+
+    PackageInfo packageInfo = shadowPackageManager
+        .getInternalMutablePackageInfo(context.getPackageName());
+    packageInfo.versionName = "1.0.0";
+
+    packageInfo
+        .applicationInfo
+        .metaData
+        .clear();
+
     FirebaseApp.initializeApp(context, options);
+    FirebasePerformance performance = FirebasePerformance.getInstance();
     for (int i = 0; i <= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES; i++) {
-      FirebasePerformance.getInstance().removeAttribute("dim" + i);
+      performance.removeAttribute("dim" + i);
     }
     FirebaseApp.getInstance().setDataCollectionDefaultEnabled(true);
     SharedPreferences sharedPreferences = getSharedPreferences();
     sharedPreferences.edit().clear().commit();
     DeviceCacheManager.clearInstance();
 
-    shadowOf(context.getPackageManager())
-        .getInternalMutablePackageInfo(context.getPackageName())
-        .applicationInfo
-        .metaData
-        .clear();
     spyRemoteConfigManager = spy(RemoteConfigManager.getInstance());
     ConfigResolver.clearInstance();
     spyConfigResolver = spy(ConfigResolver.getInstance());
@@ -545,8 +557,9 @@ public class FirebasePerformanceTest {
       Boolean sharedPreferencesEnabledDisabledKey,
       Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
       Provider<TransportFactory> transportFactoryProvider) {
+    Context applicationContext = ApplicationProvider.getApplicationContext();
     DeviceCacheManager deviceCacheManager = new DeviceCacheManager(fakeDirectExecutorService);
-    deviceCacheManager.setContext(ApplicationProvider.getApplicationContext());
+    deviceCacheManager.setContext(applicationContext);
     if (sharedPreferencesEnabledDisabledKey != null) {
       deviceCacheManager.setValue(Constants.ENABLE_DISABLE, sharedPreferencesEnabledDisabledKey);
     }
