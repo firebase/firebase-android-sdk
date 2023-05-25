@@ -14,6 +14,7 @@
 
 package com.google.firebase.perf.ktx
 
+import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
@@ -49,15 +50,21 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations.initMocks
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows
 
-const val APP_ID = "APP_ID"
-const val API_KEY = "API_KEY"
+const val APP_ID = "1:149208680807:android:0000000000000000"
+const val API_KEY = "AIzaSyBcE-OOIbhjyR83gm4r2MFCu4MJmprNXsw"
 
 const val EXISTING_APP = "existing"
 
 abstract class BaseTestCase {
   @Before
   open fun setUp() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
+    val shadowPackageManager = Shadows.shadowOf(context.packageManager)
+    val packageInfo = shadowPackageManager.getInternalMutablePackageInfo(context.packageName)
+    packageInfo.versionName = "1.0.0"
+
     Firebase.initialize(
       ApplicationProvider.getApplicationContext(),
       FirebaseOptions.Builder()
