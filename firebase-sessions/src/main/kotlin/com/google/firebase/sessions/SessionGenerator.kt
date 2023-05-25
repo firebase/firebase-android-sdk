@@ -20,23 +20,21 @@ import java.util.UUID
 
 /**
  * [SessionDetails] is a data class responsible for storing information about the current Session.
- *
- * @hide
  */
 internal data class SessionDetails(
   val sessionId: String,
   val firstSessionId: String,
   val sessionIndex: Int,
+  val sessionTimestampUs: Long,
 )
 
 /**
  * The [SessionGenerator] is responsible for generating the Session ID, and keeping the
  * [SessionDetails] up to date with the latest values.
- *
- * @hide
  */
 internal class SessionGenerator(
   val collectEvents: Boolean,
+  private val timeProvider: TimeProvider,
   private val uuidGenerator: () -> UUID = UUID::randomUUID
 ) {
   private val firstSessionId = generateSessionId()
@@ -54,6 +52,7 @@ internal class SessionGenerator(
         sessionId = if (sessionIndex == 0) firstSessionId else generateSessionId(),
         firstSessionId,
         sessionIndex,
+        sessionTimestampUs = timeProvider.currentTimeUs()
       )
     return currentSession
   }

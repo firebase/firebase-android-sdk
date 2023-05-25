@@ -29,6 +29,7 @@ import com.google.firebase.sessions.api.SessionSubscriber
 import com.google.firebase.sessions.settings.SessionsSettings
 import kotlinx.coroutines.CoroutineDispatcher
 
+/** The [FirebaseSessions] API provides methods to register a [SessionSubscriber]. */
 class FirebaseSessions
 internal constructor(
   private val firebaseApp: FirebaseApp,
@@ -46,10 +47,11 @@ internal constructor(
       firebaseInstallations,
       applicationInfo,
     )
-  private val sessionGenerator = SessionGenerator(collectEvents = shouldCollectEvents())
+  private val timeProvider: TimeProvider = Time()
+  private val sessionGenerator =
+    SessionGenerator(collectEvents = shouldCollectEvents(), timeProvider)
   private val eventGDTLogger = EventGDTLogger(transportFactoryProvider)
   private val sessionCoordinator = SessionCoordinator(firebaseInstallations, eventGDTLogger)
-  private val timeProvider: TimeProvider = Time()
 
   init {
     sessionSettings.updateSettings()
@@ -116,7 +118,7 @@ internal constructor(
     }
 
     sessionCoordinator.attemptLoggingSessionEvent(
-      SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings, timeProvider)
+      SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings)
     )
   }
 
