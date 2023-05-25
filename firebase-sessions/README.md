@@ -6,7 +6,7 @@ The Firebase Sessions SDK is used by Crashlytics and Performance internally to m
 
 All Gradle commands should be run from the root of this repository.
 
-`./gradlew -PprojectsToPublish=":firebase-sessions" publishProjectsToMavenLocal`
+`./gradlew :firebase-sessions:publishToMavenLocal`
 
 ## Running Tests
 
