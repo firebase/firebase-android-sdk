@@ -698,7 +698,7 @@ public class SQLiteSchemaTest {
 
   private SQLiteRemoteDocumentCache createRemoteDocumentCache() {
     SQLitePersistence persistence =
-        new SQLitePersistence(serializer, LruGarbageCollector.Params.Default(), opener, false);
+        new SQLitePersistence(serializer, LruGarbageCollector.Params.Default(), opener);
     persistence.start();
     return new SQLiteRemoteDocumentCache(persistence, serializer);
   }

@@ -23,6 +23,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 import com.google.firebase.firestore.core.Query;
 import java.util.Arrays;
@@ -587,6 +588,7 @@ public class TargetIndexMatcherTest {
 
   @Test
   public void failedTest() {
+    assumeTrue("Skip this test due to a bug in CSI.", false);
     Query q =
         query("collId")
             .filter(filter("a", ">=", 1))

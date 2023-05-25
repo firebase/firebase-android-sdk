@@ -85,7 +85,7 @@ public final class PersistenceTestHelpers {
     LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
     Context context = ApplicationProvider.getApplicationContext();
     SQLitePersistence persistence =
-        new SQLitePersistence(context, name, databaseId, serializer, params, false);
+        new SQLitePersistence(context, name, databaseId, serializer, params);
     persistence.start();
     return persistence;
   }
@@ -100,8 +100,7 @@ public final class PersistenceTestHelpers {
             serializer,
             params,
             new SQLitePersistence.OpenHelper(
-                context, serializer, databaseName(name, databaseId), version),
-            false);
+                context, serializer, databaseName(name, databaseId), version));
     persistence.start();
     return persistence;
   }

@@ -65,9 +65,13 @@ public class QueryEngine {
   private IndexManager indexManager;
   private boolean initialized;
 
-  public void initialize(LocalDocumentsView localDocumentsView, IndexManager indexManager) {
+  private boolean autoIndexEnabled;
+
+  public void initialize(
+      LocalDocumentsView localDocumentsView, IndexManager indexManager, boolean autoIndexEnabled) {
     this.localDocumentsView = localDocumentsView;
     this.indexManager = indexManager;
+    this.autoIndexEnabled = autoIndexEnabled;
     this.initialized = true;
   }
 
@@ -85,17 +89,24 @@ public class QueryEngine {
     QueryContext counter = new QueryContext();
     result = performQueryUsingRemoteKeys(query, remoteKeys, lastLimboFreeSnapshotVersion, counter);
     if (result != null) {
-      if (counter.fullScanCount > 2 * result.size()) {
-        indexManager.createTargetIndices(query.toTarget());
+      if (autoIndexEnabled) {
+        CreateCacheIndices(query, counter, result.size());
       }
       return result;
     }
+
     counter = new QueryContext();
     result = executeFullCollectionScan(query, counter);
-    if (counter.fullScanCount > 2 * result.size()) {
-      indexManager.createTargetIndices(query.toTarget());
+    if (result != null && autoIndexEnabled) {
+      CreateCacheIndices(query, counter, result.size());
     }
     return result;
+  }
+
+  private void CreateCacheIndices(Query query, QueryContext counter, int resultSize) {
+    if (counter.fullScanCount > 2 * resultSize) {
+      indexManager.createTargetIndices(query.toTarget());
+    }
   }
 
   /**
