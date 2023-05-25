@@ -53,7 +53,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
 
 const val APP_ID = "1:149208680807:android:0000000000000000"
-const val API_KEY = "AIzaSyBcE-OOIbhjyR83gm4r2MFCu4MJmprNXsw"
+const val API_KEY = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 
 const val EXISTING_APP = "existing"
 
