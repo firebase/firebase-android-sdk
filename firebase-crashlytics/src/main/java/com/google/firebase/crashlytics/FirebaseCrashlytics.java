@@ -180,25 +180,26 @@ public class FirebaseCrashlytics {
         });
 
     // TODO(mrober): Replace with a real session implementation.
-    firebaseSessions.register(new SessionSubscriber() {
-      @Override
-      public void onSessionChanged(@NonNull SessionDetails sessionDetails) {
-        Logger.getLogger().d("onSessionChanged: " + sessionDetails);
-        // TODO(mrober): Set new field in report and remove this.
-        core.setInternalKey("sessionId", sessionDetails.getSessionId());
-      }
+    firebaseSessions.register(
+        new SessionSubscriber() {
+          @Override
+          public void onSessionChanged(@NonNull SessionDetails sessionDetails) {
+            Logger.getLogger().d("onSessionChanged: " + sessionDetails);
+            // TODO(mrober): Set new field in report and remove this.
+            core.setInternalKey("sessionId", sessionDetails.getSessionId());
+          }
 
-      @Override
-      public boolean isDataCollectionEnabled() {
-        return arbiter.isAutomaticDataCollectionEnabled();
-      }
+          @Override
+          public boolean isDataCollectionEnabled() {
+            return arbiter.isAutomaticDataCollectionEnabled();
+          }
 
-      @NonNull
-      @Override
-      public SessionSubscriber.Name getSessionSubscriberName() {
-        return SessionSubscriber.Name.CRASHLYTICS;
-      }
-    });
+          @NonNull
+          @Override
+          public SessionSubscriber.Name getSessionSubscriberName() {
+            return SessionSubscriber.Name.CRASHLYTICS;
+          }
+        });
 
     return new FirebaseCrashlytics(core);
   }
