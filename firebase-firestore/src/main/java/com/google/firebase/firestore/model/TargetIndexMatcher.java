@@ -22,8 +22,10 @@ import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.Target;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A light query planner for Firestore.
@@ -144,14 +146,14 @@ public class TargetIndexMatcher {
     List<FieldIndex.Segment> segments = index.getDirectionalSegments();
     int segmentIndex = 0;
 
+    Set<String> equalitySegments = new HashSet<>();
     // Process all equalities first. Equalities can appear out of order.
     for (; segmentIndex < segments.size(); ++segmentIndex) {
       // We attempt to greedily match all segments to equality filters. If a filter matches an
-      // index segment, we can mark the segment as used. Since it is not possible to use the same
-      // field path in both an equality and inequality/oderBy clause, we do not have to consider the
-      // possibility that a matching equality segment should instead be used to map to an inequality
-      // filter or orderBy clause.
-      if (!hasMatchingEqualityFilter(segments.get(segmentIndex))) {
+      // index segment, we can mark the segment as used.
+      if (hasMatchingEqualityFilter(segments.get(segmentIndex))) {
+        equalitySegments.add(segments.get(segmentIndex).getFieldPath().canonicalString());
+      } else {
         // If we cannot find a matching filter, we need to verify whether the remaining segments map
         // to the target's inequality and its orderBy clauses.
         break;
@@ -165,13 +167,17 @@ public class TargetIndexMatcher {
       return true;
     }
 
-    // If there is an inequality filter, the next segment must match both the filter and the first
-    // orderBy clause.
     if (inequalityFilter != null) {
-      FieldIndex.Segment segment = segments.get(segmentIndex);
-      if (!matchesFilter(inequalityFilter, segment) || !matchesOrderBy(orderBys.next(), segment)) {
-        return false;
+      // If there is an inequality filter and the field was not in one of the equality filters
+      // above, the next segment must match both the filter and the first orderBy clause.
+      if (!equalitySegments.contains(inequalityFilter.getField().canonicalString())) {
+        FieldIndex.Segment segment = segments.get(segmentIndex);
+        if (!matchesFilter(inequalityFilter, segment)
+            || !matchesOrderBy(orderBys.next(), segment)) {
+          return false;
+        }
       }
+
       ++segmentIndex;
     }
 
