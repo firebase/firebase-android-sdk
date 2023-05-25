@@ -1402,14 +1402,11 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
       Context context = ApplicationProvider.getApplicationContext();
       ShadowPackageManager shadowPackageManager = shadowOf(context.getPackageManager());
 
-      PackageInfo packageInfo = shadowPackageManager
-          .getInternalMutablePackageInfo(context.getPackageName());
+      PackageInfo packageInfo =
+          shadowPackageManager.getInternalMutablePackageInfo(context.getPackageName());
       packageInfo.versionName = "1.0.0";
 
-      packageInfo
-          .applicationInfo
-          .metaData
-          .clear();
+      packageInfo.applicationInfo.metaData.clear();
 
       testTransportManager = TransportManager.getInstance();
       testTransportManager.initializeForTest(

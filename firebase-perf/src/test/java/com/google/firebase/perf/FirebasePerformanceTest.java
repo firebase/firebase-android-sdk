@@ -24,12 +24,10 @@ import static org.robolectric.Shadows.shadowOf;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
-import androidx.test.core.content.pm.PackageInfoBuilder;
 import com.google.android.datatransport.TransportFactory;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -54,7 +52,6 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
-import org.robolectric.Shadows;
 import org.robolectric.shadows.ShadowPackageManager;
 
 /** Unit tests for {@link FirebasePerformance}. */
@@ -89,14 +86,11 @@ public class FirebasePerformanceTest {
     Context context = ApplicationProvider.getApplicationContext();
     ShadowPackageManager shadowPackageManager = shadowOf(context.getPackageManager());
 
-    PackageInfo packageInfo = shadowPackageManager
-        .getInternalMutablePackageInfo(context.getPackageName());
+    PackageInfo packageInfo =
+        shadowPackageManager.getInternalMutablePackageInfo(context.getPackageName());
     packageInfo.versionName = "1.0.0";
 
-    packageInfo
-        .applicationInfo
-        .metaData
-        .clear();
+    packageInfo.applicationInfo.metaData.clear();
 
     FirebaseApp.initializeApp(context, options);
     FirebasePerformance performance = FirebasePerformance.getInstance();
