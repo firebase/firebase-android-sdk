@@ -55,16 +55,24 @@ internal constructor(
 
   init {
     sessionSettings.updateSettings()
+
+    val sessionInitiateListener =
+      object : SessionInitiateListener {
+        // Avoid making a public function in FirebaseSessions for onInitiateSession.
+        override suspend fun onInitiateSession(sessionDetails: SessionDetails) {
+          initiateSessionStart(sessionDetails)
+        }
+      }
+
     val sessionInitiator =
       SessionInitiator(
         timeProvider,
         backgroundDispatcher,
-        object : SessionStartListener {
-          // Avoid making a public function in FirebaseSessions for onSessionStart.
-          override suspend fun onSessionStart() = initiateSessionStart()
-        },
+        sessionInitiateListener,
         sessionSettings,
+        sessionGenerator,
       )
+
     val appContext = firebaseApp.applicationContext.applicationContext
     if (appContext is Application) {
       appContext.registerActivityLifecycleCallbacks(sessionInitiator.activityLifecycleCallbacks)
@@ -87,9 +95,7 @@ internal constructor(
     )
   }
 
-  private suspend fun initiateSessionStart() {
-    val sessionDetails = sessionGenerator.generateNewSession()
-
+  private suspend fun initiateSessionStart(sessionDetails: SessionDetails) {
     val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
 
     if (subscribers.isEmpty()) {
