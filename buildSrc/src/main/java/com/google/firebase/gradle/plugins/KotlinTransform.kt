@@ -71,32 +71,46 @@ fun getUnqualifiedClassname(classNodeName: String): String {
   return withoutPackage.substring(withoutPackage.lastIndexOf('$') + 1)
 }
 
+fun transformTypeToKotlin(typeName: String): String {
+  return when (typeName) {
+    "int" -> "Int"
+    "java.lang.String" -> "String"
+    "boolean" -> "Boolean"
+    "long" -> "Long"
+    "void" -> ""
+    else -> typeName
+  }
+}
+
 fun MethodNode.transformToKotlin(clsName: String, pkgName: String): String {
   val descriptor = AccessDescriptor(this.access)
   val parameterTypes = Type.getArgumentTypes(this.desc)
   var counter = 1
   var parameterClasses = mutableListOf<String>()
   var callStringList = mutableListOf<String>()
-
   parameterTypes.forEach { type ->
-    for (type in parameterTypes) {
-      parameterClasses.add("param${counter}: ${type.getClassName()}")
+    val typeName = transformTypeToKotlin(type.getClassName())
+    parameterClasses.add("param${counter}: ${typeName}")
+    if (typeName.contains(pkgName)) {
+      callStringList.add("param${counter}.instance${typeName.replace(pkgName+".", "")}")
+    } else {
       callStringList.add("param${counter}")
-      counter += 1
     }
+    counter += 1
   }
-  val returnType = Type.getReturnType(this.desc).className
+  var returnType = transformTypeToKotlin(Type.getReturnType(this.desc).className)
   var returnPart =
     if (descriptor.isStatic())
-      "return ${clsName}Object.${this.name}(${callStringList.joinToString(", ")})"
-    else "return instance${clsName}.${this.name}(${callStringList.joinToString(", ")})"
+      "${if(returnType.isNotEmpty()) "return" else ""} ${clsName}Object.${this.name}(${callStringList.joinToString(", ")})"
+    else
+      "${if(returnType.isNotEmpty()) "return" else ""} instance${clsName}.${this.name}(${callStringList.joinToString(", ")})"
 
   var def =
-    "fun ${this.name} (${parameterClasses.joinToString(", ")}) : ${Type.getReturnType(this.desc).className}"
+    "fun ${this.name} (${parameterClasses.joinToString(", ")}) ${if(returnType.isNotEmpty()) ": ${returnType}" else "" }"
   if (descriptor.isStatic()) {
     if (returnType.contains(pkgName)) {
       returnPart =
-        "return ${returnType.replace(pkgName+".", "")}(${clsName}Object.${this.name}(${callStringList.joinToString(", ")}))"
+        "${if(returnType.isNotEmpty()) "return" else ""} ${returnType.replace(pkgName+".", "")}(${clsName}Object.${this.name}(${callStringList.joinToString(", ")}))"
     }
     return """
           ${def} {
@@ -107,7 +121,7 @@ fun MethodNode.transformToKotlin(clsName: String, pkgName: String): String {
   } else {
     if (returnType.contains(pkgName)) {
       returnPart =
-        "return ${returnType.replace(pkgName+".", "")}(instance${clsName}.${this.name}(${callStringList.joinToString(", ")}))"
+        "${if(returnType.isNotEmpty()) "return" else ""} ${returnType.replace(pkgName+".", "")}(instance${clsName}.${this.name}(${callStringList.joinToString(", ")}))"
     }
     return """
           ${def} {
@@ -221,15 +235,13 @@ abstract class KotlinTransform : DefaultTask() {
           .trimIndent()
 
       val javaPath = "${projectPath.get()}/src/main/java"
-
       File("${javaPath}/${key}.kt").writeText(classContent)
-      return
 
       //      val classInfo: ClassInfo = classesJar.get(it)!!
 
     }
 
-    //   transformJavaFiles()
+    transformJavaFiles()
   }
 
   private fun isValidClass(className: String): Boolean {
