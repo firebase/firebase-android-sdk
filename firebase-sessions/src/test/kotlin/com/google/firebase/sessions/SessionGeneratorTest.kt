@@ -41,21 +41,32 @@ class SessionGeneratorTest {
   @Test(expected = UninitializedPropertyAccessException::class)
   fun currentSession_beforeGenerate_throwsUninitialized() {
     val sessionGenerator =
-      SessionGenerator(collectEvents = false, timeProvider = FakeTimeProvider())
+      SessionGenerator(
+        collectEvents = false,
+        timeProvider = FakeTimeProvider(),
+      )
 
     sessionGenerator.currentSession
   }
 
   @Test
   fun hasGenerateSession_beforeGenerate_returnsFalse() {
-    val sessionGenerator = SessionGenerator(collectEvents = false)
+    val sessionGenerator =
+      SessionGenerator(
+        collectEvents = false,
+        timeProvider = FakeTimeProvider(),
+      )
 
     assertThat(sessionGenerator.hasGenerateSession).isFalse()
   }
 
   @Test
   fun hasGenerateSession_afterGenerate_returnsTrue() {
-    val sessionGenerator = SessionGenerator(collectEvents = false)
+    val sessionGenerator =
+      SessionGenerator(
+        collectEvents = false,
+        timeProvider = FakeTimeProvider(),
+      )
 
     sessionGenerator.generateNewSession()
 
@@ -64,7 +75,11 @@ class SessionGeneratorTest {
 
   @Test
   fun generateNewSession_generatesValidSessionIds() {
-    val sessionGenerator = SessionGenerator(collectEvents = true, timeProvider = FakeTimeProvider())
+    val sessionGenerator =
+      SessionGenerator(
+        collectEvents = true,
+        timeProvider = FakeTimeProvider(),
+      )
 
     sessionGenerator.generateNewSession()
 
@@ -83,7 +98,7 @@ class SessionGeneratorTest {
       SessionGenerator(
         collectEvents = true,
         timeProvider = FakeTimeProvider(),
-        uuidGenerator = UUIDs()::next
+        uuidGenerator = UUIDs()::next,
       )
 
     sessionGenerator.generateNewSession()
@@ -110,7 +125,7 @@ class SessionGeneratorTest {
       SessionGenerator(
         collectEvents = true,
         timeProvider = FakeTimeProvider(),
-        uuidGenerator = UUIDs()::next
+        uuidGenerator = UUIDs()::next,
       )
 
     val firstSessionDetails = sessionGenerator.generateNewSession()
