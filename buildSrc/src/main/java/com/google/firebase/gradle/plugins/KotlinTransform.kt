@@ -71,25 +71,31 @@ fun getUnqualifiedClassname(classNodeName: String): String {
   return withoutPackage.substring(withoutPackage.lastIndexOf('$') + 1)
 }
 
-fun transformTypeToKotlin(typeName: String): String {
+fun transformTypeToKotlin(typeArg: Type): String {
+  var typeName = typeArg.className
+  if (typeName.contains("[]")) {
+    typeName = "List<${typeName.replace("[]","")}>"
+  }
   return when (typeName) {
     "int" -> "Int"
     "java.lang.String" -> "String"
+    "java.lang.Object" -> "Any?"
     "boolean" -> "Boolean"
     "long" -> "Long"
     "void" -> ""
-    else -> typeName
+    else -> typeName.replace("$", ".")
   }
 }
 
 fun MethodNode.transformToKotlin(clsName: String, pkgName: String): String {
   val descriptor = AccessDescriptor(this.access)
   val parameterTypes = Type.getArgumentTypes(this.desc)
+  println(this.signature)
   var counter = 1
   var parameterClasses = mutableListOf<String>()
   var callStringList = mutableListOf<String>()
   parameterTypes.forEach { type ->
-    val typeName = transformTypeToKotlin(type.getClassName())
+    val typeName = transformTypeToKotlin(type)
     parameterClasses.add("param${counter}: ${typeName}")
     if (typeName.contains(pkgName)) {
       callStringList.add("param${counter}.instance${typeName.replace(pkgName+".", "")}")
@@ -98,7 +104,7 @@ fun MethodNode.transformToKotlin(clsName: String, pkgName: String): String {
     }
     counter += 1
   }
-  var returnType = transformTypeToKotlin(Type.getReturnType(this.desc).className)
+  var returnType = transformTypeToKotlin(Type.getReturnType(this.desc))
   var returnPart =
     if (descriptor.isStatic())
       "${if(returnType.isNotEmpty()) "return" else ""} ${clsName}Object.${this.name}(${callStringList.joinToString(", ")})"
@@ -134,7 +140,7 @@ fun MethodNode.transformToKotlin(clsName: String, pkgName: String): String {
 
 fun FieldNode.transformToKotlin(clsName: String): String {
   val descriptor = AccessDescriptor(this.access)
-  val type = Type.getType(this.desc).className
+  val type = transformTypeToKotlin(Type.getType(this.desc))
   if (descriptor.isStatic()) {
     return "val ${this.name}: ${type} = ${clsName}Object.${this.name}"
   } else {
@@ -142,12 +148,18 @@ fun FieldNode.transformToKotlin(clsName: String): String {
   }
 }
 
-fun ClassInfo.transformToKotlin(): String {
+fun ClassInfo.transformToKotlin(classesJar: Map<String, ClassInfo>): String {
   val classDescriptor = AccessDescriptor(this.node.access)
   val classType = if (classDescriptor.isInterface()) "interface" else "class"
   val pkgName = this.name.substringBeforeLast("/").replace("/", ".")
   val className = this.name.substringAfterLast("/").replace("$", ".")
-  val varClassName = className.replace("$", "")
+  val varClassName = className.replace(".", "")
+  val innerClassesString =
+    this.node.innerClasses
+      .map { x -> classesJar.get(x.name) }
+      .filter { it != null && it.name != this.name }
+      .map { x -> x!!.transformToKotlin(classesJar) }
+      .joinToString("\n")
   val staticCode =
     this.fields
       .filter { (key, value) ->
@@ -188,6 +200,7 @@ fun ClassInfo.transformToKotlin(): String {
       )
   return """
     ${classType} ${className} (val instance${varClassName}: Java${varClassName} ) {
+      ${innerClassesString}
       ${if(staticCode.isNotEmpty()) "companion object {\n ${staticCode.joinToString("\n")}}" else ""}
       ${nonStaticCode.joinToString("\n")}
     }
@@ -210,7 +223,6 @@ abstract class KotlinTransform : DefaultTask() {
         .map { arrayOf(it.split("$").get(0), it) }
         .groupBy({ it[0] }, { it[1] })
         .filter { AccessDescriptor(classesJar.get(it.key)!!.node.access).isPublic() }
-
     allValidClasses.forEach { (key, value) ->
       val packageName = key.substringBeforeLast("/").replace("/", ".")
       val importList =
@@ -223,19 +235,22 @@ abstract class KotlinTransform : DefaultTask() {
         value.map { x ->
           val pkgName = x.substringBeforeLast("/").replace("/", ".")
           val clsName = x.substringAfterLast("/").replace("$", "")
-          "typealias ${clsName}Object = ${pkgName}.java.${clsName}"
+          val clsNameWithDot = x.substringAfterLast("/").replace("$", ".")
+          "typealias ${clsName}Object = ${pkgName}.java.${clsNameWithDot}"
         }
       val classContent =
         """
           package ${packageName}
           ${importList.joinToString("\n")}
           ${typedefList.joinToString("\n")}
-          ${classesJar.get(key)!!.transformToKotlin()}
+          ${classesJar.get(key)!!.transformToKotlin(classesJar)}
       """
           .trimIndent()
 
       val javaPath = "${projectPath.get()}/src/main/java"
-      File("${javaPath}/${key}.kt").writeText(classContent)
+      println(classContent)
+      return
+      //      File("${javaPath}/${key}.kt").writeText(classContent)
 
       //      val classInfo: ClassInfo = classesJar.get(it)!!
 
@@ -245,6 +260,7 @@ abstract class KotlinTransform : DefaultTask() {
   }
 
   private fun isValidClass(className: String): Boolean {
+    if (!className.contains("HttpsCallableReference")) return false
     val modifiedClass = className.split("$").get(0)
     val javaPath = "${projectPath.get()}/src/main/java/${modifiedClass}.java"
     return File(javaPath).exists()
