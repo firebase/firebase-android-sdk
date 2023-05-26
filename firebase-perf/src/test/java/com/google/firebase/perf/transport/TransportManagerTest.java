@@ -24,7 +24,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
+import static org.robolectric.Shadows.shadowOf;
 
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -64,6 +68,7 @@ import org.mockito.Mock;
 import org.mockito.verification.VerificationMode;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowPackageManager;
 
 /** Unit tests for {@link TransportManager}. */
 @Config(shadows = ShadowPreconditions.class)
@@ -1393,6 +1398,16 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     clearLastLoggedEvents();
 
     if (shouldInitialize) {
+      // Set the version name since Firebase sessions needs it.
+      Context context = ApplicationProvider.getApplicationContext();
+      ShadowPackageManager shadowPackageManager = shadowOf(context.getPackageManager());
+
+      PackageInfo packageInfo =
+          shadowPackageManager.getInternalMutablePackageInfo(context.getPackageName());
+      packageInfo.versionName = "1.0.0";
+
+      packageInfo.applicationInfo.metaData.clear();
+
       testTransportManager = TransportManager.getInstance();
       testTransportManager.initializeForTest(
           FirebaseApp.getInstance(),

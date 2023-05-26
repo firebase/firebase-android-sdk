@@ -25,6 +25,7 @@ import com.google.firebase.components.Dependency;
 import com.google.firebase.components.Qualified;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+import com.google.firebase.sessions.FirebaseSessions;
 import java.util.List;
 import java.util.concurrent.Executor;
 import org.junit.Test;
@@ -49,6 +50,7 @@ public class FirebasePerfRegistrarTest {
             Dependency.requiredProvider(RemoteConfigComponent.class),
             Dependency.required(FirebaseInstallationsApi.class),
             Dependency.requiredProvider(TransportFactory.class),
+            Dependency.required(FirebaseSessions.class),
             Dependency.required(FirebasePerfEarly.class));
 
     assertThat(firebasePerfComponent.isLazy()).isTrue();
