@@ -1,0 +1,23 @@
+name: Changelog Format
+
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Try to make release notes
+      run: |
+        ./gradlew makeReleaseNotes
+
+    - name: Add PR Comment
+      if: ${{ failure() }}
+      uses: mshick/add-pr-comment@a65df5f64fc741e91c59b8359a4bc56e57aaf5b1
+      with:
+        message: |
+          A `CHANGELOG.md` file seems to not match the expected format.
+          Please ensure your changelog files are following the format as
+          defined in [our documentation](#).
