@@ -16,7 +16,8 @@ jobs:
       uses: tj-actions/changed-files@36.0.6
       with:
         since_last_remote_commit: true
-        files: **/CHANGELOG.md
+        files: |
+          **/CHANGELOG.md
 
     - name: Try to make release notes
       id: make-release-notes
