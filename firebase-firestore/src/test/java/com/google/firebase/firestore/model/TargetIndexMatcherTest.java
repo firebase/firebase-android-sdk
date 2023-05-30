@@ -602,9 +602,8 @@ public class TargetIndexMatcherTest {
         query("collId")
             .filter(filter("a", ">=", 5))
             .filter(filter("a", "==", 0))
-            .filter(filter("b", "==", 0))
-            .orderBy(orderBy("a", "desc"))
-            .orderBy(orderBy(DocumentKey.KEY_FIELD_NAME, "desc")),
+            .orderBy(orderBy("a", "asc"))
+            .orderBy(orderBy("b", "asc")),
         "a",
         FieldIndex.Segment.Kind.ASCENDING,
         "b",
