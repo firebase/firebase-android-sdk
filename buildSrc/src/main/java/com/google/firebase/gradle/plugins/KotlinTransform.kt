@@ -71,29 +71,109 @@ fun getUnqualifiedClassname(classNodeName: String): String {
   return withoutPackage.substring(withoutPackage.lastIndexOf('$') + 1)
 }
 
-fun transformTypeToKotlin(typeArg: Type): String {
-  var typeName = typeArg.className
+fun transformInnerType(typeArg: String): String {
+  var typeName = typeArg
   if (typeName.contains("[]")) {
     typeName = "List<${typeName.replace("[]","")}>"
   }
   return when (typeName) {
     "int" -> "Int"
+    "java.util.List" -> "List"
+    "java.util.ist" -> "List"
     "java.lang.String" -> "String"
     "java.lang.Object" -> "Any?"
     "boolean" -> "Boolean"
     "long" -> "Long"
     "void" -> ""
-    else -> typeName.replace("$", ".")
+    else -> typeName
   }
+}
+
+fun transformTypeToKotlin(typeArg: String): String {
+  val typeName = typeArg.replace("$", ".")
+
+  var cur = ""
+  var output = ""
+  for (p in typeName) {
+    if (p == '<' || p == '>') {
+      output += transformInnerType(cur)
+      output += p
+      cur = ""
+    } else {
+      cur += p
+    }
+  }
+  if (cur.isNotEmpty()) {
+    output += transformInnerType(cur)
+  }
+  return output
+}
+
+fun getParameterListFromSignature(bytecodeSignature: String): Pair<List<String>, String> {
+  val parts: List<String> =
+    bytecodeSignature.split(")").map { x ->
+      x.replace("(", "").replace("V", "Unit").replace("/", ".")
+    }
+  val params = parts[0]
+  val paramList = mutableListOf<String>()
+  var cur = ""
+  var ctr: Int = 0
+  for (c in params) {
+    if (c == '<') ctr += 1
+    if (c == '>') ctr -= 1
+    if (c == 'L') continue
+    if (c == ';') {
+      if (ctr == 0) {
+        paramList.add(cur)
+        cur = ""
+      }
+      continue
+    }
+    cur += c
+  }
+  return Pair(
+    paramList,
+    if (parts.size == 1) "" else parts.get(1).replace("L", "").replace(";", "")
+  )
+}
+
+fun getMethodBody(returnType: String, returnPart: String, pkgName: String): String {
+  val returnString = if (returnType.isNotEmpty()) "return" else ""
+  if (!returnType.contains(pkgName)) return "${returnString} ${returnPart}"
+  // Is it a task?
+  val regexTask = "com.google.android.gms.tasks.Task<(.*)>".toRegex().find(returnType)
+  if (regexTask != null) {
+    val clsName = regexTask.groupValues.get(1).replace(pkgName + ".", "")
+    return """
+      val task = ${returnPart}
+      if (!task.isSuccessful()) {
+         return com.google.android.gms.tasks.Tasks.forException(task.getException()!!);
+       }
+      else return com.google.android.gms.tasks.Tasks.forResult(${clsName}(task.result))
+    """
+      .trimIndent()
+  }
+  val regexList = "List<(.*)>".toRegex().find(returnType)
+  if (regexList != null) {
+    val clsName = regexList.groupValues.get(1).replace(pkgName + ".", "")
+    return "${returnString} ${returnPart}.map{x->${clsName}(x)}"
+  }
+  return "${returnString} ${returnType.replace(pkgName+".", "")}(${returnPart})"
 }
 
 fun MethodNode.transformToKotlin(clsName: String, pkgName: String): String {
   val descriptor = AccessDescriptor(this.access)
-  val parameterTypes = Type.getArgumentTypes(this.desc)
-  println(this.signature)
+
   var counter = 1
-  var parameterClasses = mutableListOf<String>()
-  var callStringList = mutableListOf<String>()
+  val parameterClasses = mutableListOf<String>()
+  val callStringList = mutableListOf<String>()
+  var (parameterTypes, returnType) =
+    if (this.signature != null) getParameterListFromSignature(this.signature!!)
+    else
+      Pair(
+        Type.getArgumentTypes(this.desc).map { x -> x.className },
+        Type.getReturnType(this.desc).className
+      )
   parameterTypes.forEach { type ->
     val typeName = transformTypeToKotlin(type)
     parameterClasses.add("param${counter}: ${typeName}")
@@ -104,51 +184,35 @@ fun MethodNode.transformToKotlin(clsName: String, pkgName: String): String {
     }
     counter += 1
   }
-  var returnType = transformTypeToKotlin(Type.getReturnType(this.desc))
-  var returnPart =
-    if (descriptor.isStatic())
-      "${if(returnType.isNotEmpty()) "return" else ""} ${clsName}Object.${this.name}(${callStringList.joinToString(", ")})"
-    else
-      "${if(returnType.isNotEmpty()) "return" else ""} instance${clsName}.${this.name}(${callStringList.joinToString(", ")})"
+  if (this.name == "<init>" && parameterTypes.size == 0) return ""
+  returnType = transformTypeToKotlin(returnType)
+  val returnPart =
+    if (descriptor.isStatic()) "${clsName}Object.${this.name}(${callStringList.joinToString(", ")})"
+    else "instance${clsName}.${this.name}(${callStringList.joinToString(", ")})"
 
-  var def =
+  val def =
     "fun ${this.name} (${parameterClasses.joinToString(", ")}) ${if(returnType.isNotEmpty()) ": ${returnType}" else "" }"
-  if (descriptor.isStatic()) {
-    if (returnType.contains(pkgName)) {
-      returnPart =
-        "${if(returnType.isNotEmpty()) "return" else ""} ${returnType.replace(pkgName+".", "")}(${clsName}Object.${this.name}(${callStringList.joinToString(", ")}))"
-    }
-    return """
+  return """
           ${def} {
-           ${returnPart}
+           ${getMethodBody(returnType, returnPart, pkgName)}
           }
       """
-      .trimIndent()
-  } else {
-    if (returnType.contains(pkgName)) {
-      returnPart =
-        "${if(returnType.isNotEmpty()) "return" else ""} ${returnType.replace(pkgName+".", "")}(instance${clsName}.${this.name}(${callStringList.joinToString(", ")}))"
-    }
-    return """
-          ${def} {
-            ${returnPart}
-          }
-      """
-      .trimIndent()
-  }
 }
 
-fun FieldNode.transformToKotlin(clsName: String): String {
+fun FieldNode.transformToKotlin(clsName: String, pkgName: String): String {
   val descriptor = AccessDescriptor(this.access)
-  val type = transformTypeToKotlin(Type.getType(this.desc))
-  if (descriptor.isStatic()) {
-    return "val ${this.name}: ${type} = ${clsName}Object.${this.name}"
-  } else {
-    return "val ${this.name}: ${type} = instance${clsName}.${this.name}"
+  val type = transformTypeToKotlin(Type.getType(this.desc).className)
+  val fieldBodyPart =
+    if (descriptor.isStatic()) "${clsName}Object.${this.name}"
+    else "instance${clsName}.${this.name}"
+  if (type.contains(pkgName)) {
+    val returnName = type.replace(pkgName + ".", "")
+    return "val ${this.name}: ${type} = ${returnName}(${fieldBodyPart})"
   }
+  return "val ${this.name}: ${type} = ${fieldBodyPart}"
 }
 
-fun ClassInfo.transformToKotlin(classesJar: Map<String, ClassInfo>): String {
+fun ClassInfo.transformToKotlin(classesJar: Map<String, ClassInfo>, parentClass: String): String {
   val classDescriptor = AccessDescriptor(this.node.access)
   val classType = if (classDescriptor.isInterface()) "interface" else "class"
   val pkgName = this.name.substringBeforeLast("/").replace("/", ".")
@@ -158,7 +222,7 @@ fun ClassInfo.transformToKotlin(classesJar: Map<String, ClassInfo>): String {
     this.node.innerClasses
       .map { x -> classesJar.get(x.name) }
       .filter { it != null && it.name != this.name }
-      .map { x -> x!!.transformToKotlin(classesJar) }
+      .map { x -> x!!.transformToKotlin(classesJar, className) }
       .joinToString("\n")
   val staticCode =
     this.fields
@@ -168,7 +232,7 @@ fun ClassInfo.transformToKotlin(classesJar: Map<String, ClassInfo>): String {
           !accessDescriptor.isPrivate() &&
           accessDescriptor.isStatic()
       }
-      .map { (key, field) -> field.transformToKotlin(varClassName) }
+      .map { (key, field) -> field.transformToKotlin(varClassName, pkgName) }
       .plus(
         this.methods
           .filter { (key, value) ->
@@ -187,7 +251,7 @@ fun ClassInfo.transformToKotlin(classesJar: Map<String, ClassInfo>): String {
           !accessDescriptor.isPrivate() &&
           !accessDescriptor.isStatic()
       }
-      .map { (key, field) -> field.transformToKotlin(varClassName) }
+      .map { (key, field) -> field.transformToKotlin(varClassName, pkgName) }
       .plus(
         this.methods
           .filter { (key, value) ->
@@ -199,7 +263,7 @@ fun ClassInfo.transformToKotlin(classesJar: Map<String, ClassInfo>): String {
           .map { (key, field) -> field.transformToKotlin(varClassName, pkgName) }
       )
   return """
-    ${classType} ${className} (val instance${varClassName}: Java${varClassName} ) {
+    ${classType} ${className.replace(parentClass + ".", "")} (internal val instance${varClassName}: Java${varClassName} ) {
       ${innerClassesString}
       ${if(staticCode.isNotEmpty()) "companion object {\n ${staticCode.joinToString("\n")}}" else ""}
       ${nonStaticCode.joinToString("\n")}
@@ -216,10 +280,10 @@ abstract class KotlinTransform : DefaultTask() {
 
   @TaskAction
   fun run() {
-    val classesJar = UtilityClass.readApi(currentJar.get())
+    val classesJar =
+      UtilityClass.readApi(currentJar.get()).filter { (key, value) -> isValidClass(key) }
     val allValidClasses =
       classesJar.keys
-        .filter { isValidClass(it) }
         .map { arrayOf(it.split("$").get(0), it) }
         .groupBy({ it[0] }, { it[1] })
         .filter { AccessDescriptor(classesJar.get(it.key)!!.node.access).isPublic() }
@@ -243,14 +307,12 @@ abstract class KotlinTransform : DefaultTask() {
           package ${packageName}
           ${importList.joinToString("\n")}
           ${typedefList.joinToString("\n")}
-          ${classesJar.get(key)!!.transformToKotlin(classesJar)}
+          ${classesJar.get(key)!!.transformToKotlin(classesJar.filter{(k, _)->value.contains(k)}, "")}
       """
           .trimIndent()
 
       val javaPath = "${projectPath.get()}/src/main/java"
-      println(classContent)
-      return
-      //      File("${javaPath}/${key}.kt").writeText(classContent)
+      File("${javaPath}/${key}.kt").writeText(classContent)
 
       //      val classInfo: ClassInfo = classesJar.get(it)!!
 
@@ -260,7 +322,6 @@ abstract class KotlinTransform : DefaultTask() {
   }
 
   private fun isValidClass(className: String): Boolean {
-    if (!className.contains("HttpsCallableReference")) return false
     val modifiedClass = className.split("$").get(0)
     val javaPath = "${projectPath.get()}/src/main/java/${modifiedClass}.java"
     return File(javaPath).exists()
