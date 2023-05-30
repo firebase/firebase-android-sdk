@@ -28,7 +28,19 @@ jobs:
       if: ${{ steps.make-release-notes.outcome == 'success' }}
       run: |
         for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-          echo "The following file was changed: ${file}"
+          SDKName=$file | sed ".*(?=/)"s
+          ReleaseNotes="${SDKName}/build/tmp/makeReleaseNotes/release_notes.md"
+          Text=cat $ReleaseNotes
+          read -r -d '' formatted <<-EOF
+            <details>
+            <summary>${SDKName}</summary>
+  
+            ```markdown
+            ${Text}
+            ```
+            </details>
+          EOF
+          echo $formatted >> $GITHUB_OUTPUT
         done
 
     - name: Add PR Comment
