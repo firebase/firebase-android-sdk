@@ -18,40 +18,21 @@ jobs:
         since_last_remote_commit: true
         files: |
           **/CHANGELOG.md
+          
+    - name: Set up fireci
+      id: install-fireci
+      if: ${{ steps.changed-files.outputs.any_changed == 'true' }}
+      run: pip3 install -e ci/fireci
 
-    - name: Try to make release notes
-      id: make-release-notes
-      if: ${{steps.changed-files.outputs.any_changed == 'true'}}
-      run: ./gradlew makeReleaseNotes
-        
-    - name: Generate release note diffs
-      if: ${{ steps.make-release-notes.outcome == 'success' }}
+    - name: Generate comment
+      if: ${{ steps.install-fireci.outcome == 'success' }}
       run: |
-        for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
-          SDKName=$file | sed ".*(?=/)"s
-          ReleaseNotes="${SDKName}/build/tmp/makeReleaseNotes/release_notes.md"
-          Text=cat $ReleaseNotes
-          read -r -d '' formatted <<-TXT
-            <details>
-            <summary>${SDKName}</summary>
-  
-            ```markdown
-            ${Text}
-            ```
-            </details>
-          TXT
-          echo $formatted >> $GITHUB_OUTPUT
-        done
+        fireci changelog_comment --c="${{ steps.changed-files.outputs.all_changed_files }}" --o=~/changelog_comment.md
 
     - name: Add PR Comment
       uses: mshick/add-pr-comment@a65df5f64fc741e91c59b8359a4bc56e57aaf5b1
       with:
-        message-success: |
-          The following release notes were modified. Please ensure they look correct.
-          <details>
-          <summary>Release Notes</summary>
-          
-          </details>
+        message-path: ~/changelog_comment.md
         message-failure: |
           A `CHANGELOG.md` file seems to not match the expected format.
           Please ensure your changelog files are following the format as
