@@ -31,7 +31,7 @@ jobs:
           SDKName=$file | sed ".*(?=/)"s
           ReleaseNotes="${SDKName}/build/tmp/makeReleaseNotes/release_notes.md"
           Text=cat $ReleaseNotes
-          read -r -d '' formatted <<-EOF
+          read -r -d '' formatted <<-TXT
             <details>
             <summary>${SDKName}</summary>
   
@@ -39,7 +39,7 @@ jobs:
             ${Text}
             ```
             </details>
-EOF
+          TXT
           echo $formatted >> $GITHUB_OUTPUT
         done
 
