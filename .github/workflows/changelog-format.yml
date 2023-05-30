@@ -13,7 +13,7 @@ jobs:
 
     - name: Get changed changelog files
       id: changed-files
-      uses: tj-actions/changed-files@36.0.6
+      uses: tj-actions/changed-files@v36.0.10
       with:
         since_last_remote_commit: true
         files: |
