@@ -39,7 +39,7 @@ jobs:
             ${Text}
             ```
             </details>
-          EOF
+EOF
           echo $formatted >> $GITHUB_OUTPUT
         done
 
