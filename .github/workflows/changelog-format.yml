@@ -8,16 +8,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 2
+
+    - name: Get changed changelog files
+      id: changed-files
+      uses: tj-actions/changed-files@36.0.6
+      with:
+        since_last_remote_commit: true
+        files: **/CHANGELOG.md
 
     - name: Try to make release notes
+      id: make-release-notes
+      if: ${{steps.changed-files.outputs.any_changed == 'true'}}
+      run: ./gradlew makeReleaseNotes
+        
+    - name: Generate release note diffs
+      if: ${{ steps.make-release-notes.outcome == 'success' }}
       run: |
-        ./gradlew makeReleaseNotes
+        for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+          echo "The following file was changed: ${file}"
+        done
 
     - name: Add PR Comment
-      if: ${{ failure() }}
       uses: mshick/add-pr-comment@a65df5f64fc741e91c59b8359a4bc56e57aaf5b1
       with:
-        message: |
+        message-success: |
+          The following release notes were modified. Please ensure they look correct.
+          <details>
+          <summary>Release Notes</summary>
+          
+          </details>
+        message-failure: |
           A `CHANGELOG.md` file seems to not match the expected format.
           Please ensure your changelog files are following the format as
           defined in [our documentation](#).
