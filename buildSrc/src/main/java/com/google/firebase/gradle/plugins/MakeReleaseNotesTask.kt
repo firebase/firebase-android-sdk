@@ -137,7 +137,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
   private fun ProjectNameToKTXPlaceholder(projectName: String) =
     when (projectName) {
       "firebase-perf" -> "firebase-performance"
-      "appcheck:firebase-appcheck" -> "firebase-appcheck"
+      "firebase-appcheck" -> "firebase-appcheck"
       else -> projectName
     }
 
@@ -163,6 +163,8 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
    * @see [LINK_REGEX]
    */
   private fun Change.toReleaseNote(): String {
+    if (message.isBlank()) throw RuntimeException("A changelog entry message can not be blank.")
+
     val fixedMessage =
       LINK_REGEX.replace(message) {
         val id = it.firstCapturedValue
@@ -209,14 +211,14 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
         ReleaseNotesMetadata("{{firebase_ml}}", "firebaseml-modeldownloader")
       "firebase-perf" -> ReleaseNotesMetadata("{{perfmon}}", "performance")
       "firebase-storage" -> ReleaseNotesMetadata("{{firebase_storage_full}}", "storage")
-      "appcheck:firebase-appcheck" -> ReleaseNotesMetadata("{{app_check}}", "appcheck")
-      "appcheck:firebase-appcheck-debug" ->
+      "firebase-appcheck" -> ReleaseNotesMetadata("{{app_check}}", "appcheck")
+      "firebase-appcheck-debug" ->
         ReleaseNotesMetadata("{{app_check}} Debug", "appcheck-debug", false)
-      "appcheck:firebase-appcheck-debug-testing" ->
+      "firebase-appcheck-debug-testing" ->
         ReleaseNotesMetadata("{{app_check}} Debug Testing", "appcheck-debug-testing", false)
-      "appcheck:firebase-appcheck-playintegrity" ->
+      "firebase-appcheck-playintegrity" ->
         ReleaseNotesMetadata("{{app_check}} Play integrity", "appcheck-playintegrity", false)
-      "appcheck:firebase-appcheck-safetynet" ->
+      "firebase-appcheck-safetynet" ->
         ReleaseNotesMetadata("{{app_check}} SafetyNet", "appcheck-safetynet", false)
       else -> throw StopActionException("No metadata mapping found for project: $string")
     }
