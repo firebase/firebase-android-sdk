@@ -31,7 +31,7 @@ jobs:
       run: pip3 install -e ci/fireci
 
     - name: Generate comment
-      id: generate-comment
+      id: generate-comment'
       if: ${{ steps.install-fireci.outcome == 'success' }}
       run: |
         fireci changelog_comment -c "${{ steps.changed-files.outputs.all_changed_files }}" -o ./changelog_comment.md
@@ -40,7 +40,7 @@ jobs:
     - name: Add PR Comment
       uses: mshick/add-pr-comment@v2.8.1
       with:
-        status: ${{ steps.generate-comment.status }}
+        status: ${{ steps.generate-comment.outcome }}
         message: |
           ${{ steps.generate-comment.outputs.comment }}
         message-skipped: |
