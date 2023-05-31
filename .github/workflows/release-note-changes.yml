@@ -18,7 +18,6 @@ jobs:
       id: changed-files
       uses: tj-actions/changed-files@v36.0.10
       with:
-        since_last_remote_commit: true
         files: |
           **/CHANGELOG.md
 
