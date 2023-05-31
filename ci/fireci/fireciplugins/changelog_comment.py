@@ -49,7 +49,7 @@ def changelog_comment(changelogs, output):
   with open(output, 'w') as f:
     f.write(comment_string.strip())
 
-  exit(1)
+  exit(0)
 
 def convert_release_note(changelogFile):
   path = changelogFile.rsplit("/", 1)[0]
