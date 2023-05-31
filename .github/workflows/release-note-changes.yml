@@ -37,7 +37,7 @@ jobs:
         fireci changelog_comment -c "${{ steps.changed-files.outputs.all_changed_files }}" -o ./changelog_comment.md
 
     - name: Add PR Comment
-      uses: mshick/add-pr-comment@a65df5f64fc741e91c59b8359a4bc56e57aaf5b1
+      uses: mshick/add-pr-comment@v2.8.1
       with:
         message-path: ./changelog_comment.md
         message-skipped: |
