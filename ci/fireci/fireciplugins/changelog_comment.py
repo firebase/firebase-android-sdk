@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import click
-import os
 
 from textwrap import dedent
+from pathlib import Path
 from fireci import gradle
 from fireci import ci_command
 
@@ -36,25 +36,50 @@ def changelog_comment(changelogs, output):
   """Generates and formats release notes to a pretty comment for GitHub."""
 
   gradle.run('makeReleaseNotes')
+  release_notes = []
+  missing_release_notes = []
+  for changelog in changelogs.rsplit(" "):
+    directory = changelog.rsplit("/", 1)[0]
+    name = directory.replace("/", ":")
+    path = Path(directory, "build/tmp/makeReleaseNotes/release_notes.md")
 
-  release_notes = [*map(convert_release_note, changelogs.rsplit(" "))]
-  comment_string = dedent("""
-  ## Release note changes
-  The following release notes were modified. Please ensure they look correct.
-  <details>
-  <summary>Release Notes</summary>
-  {0}
-  </details>
-  """).format(''.join(release_notes))
+    if path.exists():
+      release_notes.append(convert_release_note(name, path))
+    else:
+      missing_release_notes.append(name)
+
+  comment_string = "## Release note changes"
+
+  if release_notes:
+    comment_string += dedent("""
+    The following release notes were modified. Please ensure they look correct.
+    <details>
+    <summary>Release Notes</summary>
+    {0}
+    </details>
+    """).format(''.join(release_notes))
+
+  if missing_release_notes:
+    comment_string += dedent("""
+    The following had changelogs that were modified, but did not have any unreleased entries for release notes to generate from.
+    <details>
+    <summary>Changelogs</summary>
+    
+    {0}
+    </details>
+    """).format('\n'.join(missing_release_notes))
+
+  if not release_notes and not missing_release_notes:
+    print("The changelogs argument was invalid.")
+    exit(1)
 
   with open(output, 'w') as f:
     f.write(comment_string.strip())
 
   exit(0)
 
-def convert_release_note(changelogFile):
-  path = changelogFile.rsplit("/", 1)[0]
-  with open(os.path.join(path, "build/tmp/makeReleaseNotes/release_notes.md"), 'r') as f:
+def convert_release_note(name, path):
+  with open(path, 'r') as f:
     return dedent("""
     <details>
     <summary>{0}</summary>
@@ -63,4 +88,4 @@ def convert_release_note(changelogFile):
     {1}
     ```
     </details>
-    """).format(path.replace("/", ":"), f.read())
+    """).format(name, f.read())
