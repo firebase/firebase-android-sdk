@@ -25,11 +25,11 @@ firebaseLibrary {
 }
 
 android {
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion 33
     defaultConfig {
-        minSdkVersion 16
+        minSdk 16
         multiDexEnabled true
-        targetSdkVersion project.targetSdkVersion
+        targetSdk 33
         versionName version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -69,4 +69,3 @@ dependencies {
 // ==========================================================================
 ext.packageName = "com.google.firebase.crashlytics.ktx"
 apply from: '../../gradle/googleServices.gradle'
-
