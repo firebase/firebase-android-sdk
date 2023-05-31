@@ -41,6 +41,7 @@ jobs:
       uses: mshick/add-pr-comment@v2.8.1
       with:
         message: |
+          :
           ${{ steps.generate-comment.outputs.comment }}
         message-skipped: |
           No release note changes were detected. If you made changes that should be
