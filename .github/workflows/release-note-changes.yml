@@ -39,7 +39,7 @@ jobs:
 
     - name: Add PR Comment
       uses: mshick/add-pr-comment@v2.8.1
-      if: ${{ steps.generate-comment.outcome != 'skipped' }}
+      status: ${{ steps.generate-comment.status }}
       with:
         message: |
           ${{ steps.generate-comment.outputs.comment }}
