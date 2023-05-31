@@ -34,13 +34,13 @@ jobs:
       id: generate-comment
       if: ${{ steps.install-fireci.outcome == 'success' }}
       run: |
-        fireci changelog_comment -c "${{ steps.changed-files.outputs.all_changed_files }}" -o ~/changelog_comment.md
+        fireci changelog_comment -c "${{ steps.changed-files.outputs.all_changed_files }}" -o ./changelog_comment.md
 
     - name: Add PR Comment
       uses: mshick/add-pr-comment@a65df5f64fc741e91c59b8359a4bc56e57aaf5b1
       if: ${{ steps.generate-comment.outcome != 'skipped' }}
       with:
-        message-path: ~/changelog_comment.md
+        message-path: ./changelog_comment.md
         message-failure: |
           A `CHANGELOG.md` file seems to not match the expected format.
           Please ensure your changelog files are following the format as
