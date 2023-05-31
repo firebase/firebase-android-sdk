@@ -1,4 +1,4 @@
-name: Changelog Format
+name: Release note changes
 
 on:
   pull_request:
