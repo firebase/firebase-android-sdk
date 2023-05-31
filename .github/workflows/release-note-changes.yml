@@ -35,11 +35,13 @@ jobs:
       if: ${{ steps.install-fireci.outcome == 'success' }}
       run: |
         fireci changelog_comment -c "${{ steps.changed-files.outputs.all_changed_files }}" -o ./changelog_comment.md
+        echo "comment=$(cat ./changelog_comment.md)" >> $GITHUB_OUTPUT
 
     - name: Add PR Comment
       uses: mshick/add-pr-comment@v2.8.1
       with:
-        message-path: ./changelog_comment.md
+        message: |
+          ${{ steps.generate-comment.outputs.comment }}
         message-skipped: |
           No release note changes were detected. If you made changes that should be
           present in the next release, ensure you've added an entry in the appropriate
