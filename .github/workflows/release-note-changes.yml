@@ -11,6 +11,9 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Create output file
+      run: touch changelog_comment.md
+
     - name: Get changed changelog files
       id: changed-files
       uses: tj-actions/changed-files@v36.0.10
@@ -35,19 +38,19 @@ jobs:
       if: ${{ steps.install-fireci.outcome == 'success' }}
       run: |
         fireci changelog_comment -c "${{ steps.changed-files.outputs.all_changed_files }}" -o ./changelog_comment.md
-        echo "comment=$(cat ./changelog_comment.md)" >> $GITHUB_OUTPUT
 
     - name: Add PR Comment
       uses: mshick/add-pr-comment@v2.8.1
       with:
         status: ${{ steps.generate-comment.outcome }}
-        message: |
-          ${{ steps.generate-comment.outputs.comment }}
+        message-path: ./changelog_comment.md
         message-skipped: |
+          ## Release note changes
           No release note changes were detected. If you made changes that should be
           present in the next release, ensure you've added an entry in the appropriate
           `CHANGELOG.md` file(s).
         message-failure: |
+          ## Release note changes
           A `CHANGELOG.md` file seems to not match the expected format.
           Please ensure your changelog files are following the format as
           defined in [our documentation](#).

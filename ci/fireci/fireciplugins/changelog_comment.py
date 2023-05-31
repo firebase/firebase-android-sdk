@@ -39,6 +39,7 @@ def changelog_comment(changelogs, output):
 
   release_notes = [*map(convert_release_note, changelogs.rsplit(" "))]
   comment_string = dedent("""
+  ## Release note changes
   The following release notes were modified. Please ensure they look correct.
   <details>
   <summary>Release Notes</summary>
