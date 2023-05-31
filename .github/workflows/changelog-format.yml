@@ -38,9 +38,12 @@ jobs:
 
     - name: Add PR Comment
       uses: mshick/add-pr-comment@a65df5f64fc741e91c59b8359a4bc56e57aaf5b1
-      if: ${{ steps.generate-comment.outcome != 'skipped' }}
       with:
         message-path: ./changelog_comment.md
+        message-skipped: |
+          No release note changes were detected. If you made changes that should be
+          present in the next release, ensure you've added an entry in the appropriate
+          `CHANGELOG.md` file(s).
         message-failure: |
           A `CHANGELOG.md` file seems to not match the expected format.
           Please ensure your changelog files are following the format as
