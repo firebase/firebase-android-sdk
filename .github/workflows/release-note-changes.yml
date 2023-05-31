@@ -42,6 +42,7 @@ jobs:
 
     - name: Add PR Comment
       uses: mshick/add-pr-comment@v2.8.1
+      continue-on-error: true
       with:
         status: ${{ steps.generate-comment.outcome }}
         message-path: ./changelog_comment.md
