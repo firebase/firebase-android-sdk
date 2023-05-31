@@ -48,7 +48,7 @@ internal object SessionEvents {
           sessionDetails.sessionId,
           sessionDetails.firstSessionId,
           sessionDetails.sessionIndex,
-          eventTimestampUs = sessionDetails.sessionTimestampUs,
+          eventTimestampUs = sessionDetails.sessionStartTimestampUs,
           DataCollectionStatus(sessionSamplingRate = sessionsSettings.samplingRate),
         ),
       applicationInfo = getApplicationInfo(firebaseApp)

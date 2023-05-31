@@ -38,7 +38,7 @@ internal object TestSessionEventData {
       sessionId = "a1b2c3",
       firstSessionId = "a1a1a1",
       sessionIndex = 3,
-      sessionTimestampUs = TEST_SESSION_TIMESTAMP_US
+      sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US
     )
 
   val TEST_DATA_COLLECTION_STATUS =

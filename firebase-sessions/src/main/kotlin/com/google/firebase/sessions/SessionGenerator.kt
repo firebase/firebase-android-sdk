@@ -25,7 +25,7 @@ internal data class SessionDetails(
   val sessionId: String,
   val firstSessionId: String,
   val sessionIndex: Int,
-  val sessionTimestampUs: Long,
+  val sessionStartTimestampUs: Long,
 )
 
 /**
@@ -56,7 +56,7 @@ internal class SessionGenerator(
         sessionId = if (sessionIndex == 0) firstSessionId else generateSessionId(),
         firstSessionId,
         sessionIndex,
-        sessionTimestampUs = timeProvider.currentTimeUs()
+        sessionStartTimestampUs = timeProvider.currentTimeUs()
       )
     return currentSession
   }

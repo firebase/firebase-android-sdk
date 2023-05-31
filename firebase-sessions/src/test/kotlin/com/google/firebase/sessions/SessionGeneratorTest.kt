@@ -112,7 +112,7 @@ class SessionGeneratorTest {
           sessionId = SESSION_ID_1,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 0,
-          sessionTimestampUs = TEST_SESSION_TIMESTAMP_US,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
         )
       )
   }
@@ -139,7 +139,7 @@ class SessionGeneratorTest {
           sessionId = SESSION_ID_1,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 0,
-          sessionTimestampUs = TEST_SESSION_TIMESTAMP_US,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
         )
       )
 
@@ -155,7 +155,7 @@ class SessionGeneratorTest {
           sessionId = SESSION_ID_2,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 1,
-          sessionTimestampUs = TEST_SESSION_TIMESTAMP_US,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
         )
       )
 
@@ -171,7 +171,7 @@ class SessionGeneratorTest {
           sessionId = SESSION_ID_3,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 2,
-          sessionTimestampUs = TEST_SESSION_TIMESTAMP_US,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
         )
       )
   }
