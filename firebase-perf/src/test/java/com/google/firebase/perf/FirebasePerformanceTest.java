@@ -23,6 +23,7 @@ import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
@@ -39,6 +40,7 @@ import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+import com.google.firebase.sessions.FirebaseSessions;
 import com.google.testing.timing.FakeDirectExecutorService;
 import java.util.Map;
 import org.junit.After;
@@ -50,6 +52,7 @@ import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.shadows.ShadowPackageManager;
 
 /** Unit tests for {@link FirebasePerformance}. */
 @RunWith(RobolectricTestRunner.class)
@@ -81,6 +84,14 @@ public class FirebasePerformanceTest {
     FirebaseApp.clearInstancesForTest();
 
     Context context = ApplicationProvider.getApplicationContext();
+    ShadowPackageManager shadowPackageManager = shadowOf(context.getPackageManager());
+
+    PackageInfo packageInfo =
+        shadowPackageManager.getInternalMutablePackageInfo(context.getPackageName());
+    packageInfo.versionName = "1.0.0";
+
+    packageInfo.applicationInfo.metaData.clear();
+
     FirebaseApp.initializeApp(context, options);
     for (int i = 0; i <= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES; i++) {
       FirebasePerformance.getInstance().removeAttribute("dim" + i);
@@ -90,11 +101,6 @@ public class FirebasePerformanceTest {
     sharedPreferences.edit().clear().commit();
     DeviceCacheManager.clearInstance();
 
-    shadowOf(context.getPackageManager())
-        .getInternalMutablePackageInfo(context.getPackageName())
-        .applicationInfo
-        .metaData
-        .clear();
     spyRemoteConfigManager = spy(RemoteConfigManager.getInstance());
     ConfigResolver.clearInstance();
     spyConfigResolver = spy(ConfigResolver.getInstance());
@@ -544,8 +550,9 @@ public class FirebasePerformanceTest {
       Boolean sharedPreferencesEnabledDisabledKey,
       Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
       Provider<TransportFactory> transportFactoryProvider) {
+    Context context = ApplicationProvider.getApplicationContext();
     DeviceCacheManager deviceCacheManager = new DeviceCacheManager(fakeDirectExecutorService);
-    deviceCacheManager.setContext(ApplicationProvider.getApplicationContext());
+    deviceCacheManager.setContext(context);
     if (sharedPreferencesEnabledDisabledKey != null) {
       deviceCacheManager.setValue(Constants.ENABLE_DISABLE, sharedPreferencesEnabledDisabledKey);
     }
@@ -560,7 +567,6 @@ public class FirebasePerformanceTest {
       bundle.putBoolean(FIREPERF_FORCE_DEACTIVATED_KEY, metadataFireperfForceDeactivatedKey);
     }
 
-    Context context = ApplicationProvider.getApplicationContext();
     shadowOf(context.getPackageManager())
         .getInternalMutablePackageInfo(context.getPackageName())
         .applicationInfo
@@ -573,6 +579,7 @@ public class FirebasePerformanceTest {
         mock(FirebaseInstallationsApi.class),
         transportFactoryProvider,
         spyRemoteConfigManager,
+        mock(FirebaseSessions.class),
         spyConfigResolver,
         spySessionManager);
   }

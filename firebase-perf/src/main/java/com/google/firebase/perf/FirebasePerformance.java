@@ -42,6 +42,8 @@ import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
+import com.google.firebase.sessions.FirebaseSessions;
+import com.google.firebase.sessions.api.SessionSubscriber;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.URL;
@@ -140,6 +142,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   private final Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
   private final Provider<TransportFactory> transportFactoryProvider;
+  private final FirebaseSessions firebaseSessions;
 
   /**
    * Constructs the FirebasePerformance class and allows injecting dependencies.
@@ -163,6 +166,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       FirebaseInstallationsApi firebaseInstallationsApi,
       Provider<TransportFactory> transportFactoryProvider,
       RemoteConfigManager remoteConfigManager,
+      FirebaseSessions firebaseSessions,
       ConfigResolver configResolver,
       SessionManager sessionManager) {
 
@@ -170,6 +174,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.transportFactoryProvider = transportFactoryProvider;
+    this.firebaseSessions = firebaseSessions;
 
     if (firebaseApp == null) {
       this.mPerformanceCollectionForceEnabledState = false;
@@ -199,6 +204,26 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
               ConsoleUrlGenerator.generateDashboardUrl(
                   firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
     }
+
+    // Register with Firebase sessions to receive updates about session changes.
+    this.firebaseSessions.register(
+        new SessionSubscriber() {
+          @Override
+          public void onSessionChanged(@NonNull SessionDetails sessionDetails) {
+            // TODO(visum) Handle sessionID change by updating the sessionID in the sessionManager
+          }
+
+          @Override
+          public boolean isDataCollectionEnabled() {
+            return configResolver.isPerformanceMonitoringEnabled();
+          }
+
+          @NonNull
+          @Override
+          public Name getSessionSubscriberName() {
+            return SessionSubscriber.Name.PERFORMANCE;
+          }
+        });
   }
 
   /**
