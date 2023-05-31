@@ -136,7 +136,8 @@ public class CrashlyticsCoreInitializationTest extends CrashlyticsTestCase {
           new DisabledBreadcrumbSource(),
           new UnavailableAnalyticsEventLogger(),
           fileStore,
-          crashHandlerExecutor);
+          crashHandlerExecutor,
+          mock(CrashlyticsAppQualitySessionsSubscriber.class));
     }
   }
 

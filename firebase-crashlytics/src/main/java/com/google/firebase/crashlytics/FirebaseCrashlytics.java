@@ -31,6 +31,7 @@ import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.AppData;
 import com.google.firebase.crashlytics.internal.common.BuildIdInfo;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
+import com.google.firebase.crashlytics.internal.common.CrashlyticsAppQualitySessionsSubscriber;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
@@ -41,7 +42,6 @@ import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.sessions.FirebaseSessions;
-import com.google.firebase.sessions.api.SessionSubscriber;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -91,6 +91,10 @@ public class FirebaseCrashlytics {
     final ExecutorService crashHandlerExecutor =
         ExecutorUtils.buildSingleThreadExecutorService("Crashlytics Exception Handler");
 
+    CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber =
+        new CrashlyticsAppQualitySessionsSubscriber(arbiter);
+    firebaseSessions.register(sessionsSubscriber);
+
     final CrashlyticsCore core =
         new CrashlyticsCore(
             app,
@@ -100,7 +104,8 @@ public class FirebaseCrashlytics {
             analyticsDeferredProxy.getDeferredBreadcrumbSource(),
             analyticsDeferredProxy.getAnalyticsEventLogger(),
             fileStore,
-            crashHandlerExecutor);
+            crashHandlerExecutor,
+            sessionsSubscriber);
 
     final String googleAppId = app.getOptions().getApplicationId();
     final String mappingFileId = CommonUtils.getMappingFileId(context);
@@ -176,28 +181,6 @@ public class FirebaseCrashlytics {
               core.doBackgroundInitializationAsync(settingsController);
             }
             return null;
-          }
-        });
-
-    // TODO(mrober): Replace with a real session implementation.
-    firebaseSessions.register(
-        new SessionSubscriber() {
-          @Override
-          public void onSessionChanged(@NonNull SessionDetails sessionDetails) {
-            Logger.getLogger().d("onSessionChanged: " + sessionDetails);
-            // TODO(mrober): Set new field in report and remove this.
-            core.setInternalKey("sessionId", sessionDetails.getSessionId());
-          }
-
-          @Override
-          public boolean isDataCollectionEnabled() {
-            return arbiter.isAutomaticDataCollectionEnabled();
-          }
-
-          @NonNull
-          @Override
-          public SessionSubscriber.Name getSessionSubscriberName() {
-            return SessionSubscriber.Name.CRASHLYTICS;
           }
         });
 

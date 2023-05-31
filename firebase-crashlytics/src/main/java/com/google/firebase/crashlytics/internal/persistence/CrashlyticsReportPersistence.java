@@ -17,6 +17,7 @@ package com.google.firebase.crashlytics.internal.persistence;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.common.CrashlyticsAppQualitySessionsSubscriber;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -58,6 +59,7 @@ public class CrashlyticsReportPersistence {
   // We use the lastModified timestamp of this file to quickly store and access the startTime in ms
   // of a session.
   private static final String SESSION_START_TIMESTAMP_FILE_NAME = "start-time";
+  private static final String AQS_SESSION_ID_FILENAME = "app-quality-session-id";
   private static final String EVENT_FILE_NAME_PREFIX = "event";
   private static final int EVENT_COUNTER_WIDTH = 10; // String width of maximum positive int value
   private static final String EVENT_COUNTER_FORMAT = "%0" + EVENT_COUNTER_WIDTH + "d";
@@ -78,12 +80,16 @@ public class CrashlyticsReportPersistence {
   private final AtomicInteger eventCounter = new AtomicInteger(0);
 
   private final FileStore fileStore;
+  private final SettingsProvider settingsProvider;
+  private final CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber;
 
-  @NonNull private final SettingsProvider settingsProvider;
-
-  public CrashlyticsReportPersistence(FileStore fileStore, SettingsProvider settingsProvider) {
+  public CrashlyticsReportPersistence(
+      FileStore fileStore,
+      SettingsProvider settingsProvider,
+      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
     this.fileStore = fileStore;
     this.settingsProvider = settingsProvider;
+    this.sessionsSubscriber = sessionsSubscriber;
   }
 
   public void persistReport(@NonNull CrashlyticsReport report) {
@@ -122,6 +128,8 @@ public class CrashlyticsReportPersistence {
    *
    * <p>Only a certain number of normal priority events are stored per-session. When this maximum is
    * reached, the oldest events will be dropped. High priority events are not subject to this limit.
+   *
+   * <p>Also persists the current app quality sessions session id.
    */
   public void persistEvent(
       @NonNull CrashlyticsReport.Session.Event event,
@@ -132,8 +140,14 @@ public class CrashlyticsReportPersistence {
     final String fileName = generateEventFilename(eventCounter.getAndIncrement(), isHighPriority);
     try {
       writeTextFile(fileStore.getSessionFile(sessionId, fileName), json);
-    } catch (IOException e) {
-      Logger.getLogger().w("Could not persist event for session " + sessionId, e);
+
+      String appQualitySessionId = sessionsSubscriber.getAppQualitySessionId();
+      if (appQualitySessionId != null) {
+        writeTextFile(
+            fileStore.getSessionFile(sessionId, AQS_SESSION_ID_FILENAME), appQualitySessionId);
+      }
+    } catch (IOException ex) {
+      Logger.getLogger().w("Could not persist event for session " + sessionId, ex);
     }
     trimEvents(sessionId, maxEventsToKeep);
   }
@@ -310,9 +324,12 @@ public class CrashlyticsReportPersistence {
     }
 
     String userId = UserMetadata.readUserId(sessionId, fileStore);
+    String appQualitySessionId =
+        tryReadTextFile(fileStore.getSessionFile(sessionId, AQS_SESSION_ID_FILENAME));
 
-    final File reportFile = fileStore.getSessionFile(sessionId, REPORT_FILE_NAME);
-    synthesizeReportFile(reportFile, events, sessionEndTime, isHighPriorityReport, userId);
+    File reportFile = fileStore.getSessionFile(sessionId, REPORT_FILE_NAME);
+    synthesizeReportFile(
+        reportFile, events, sessionEndTime, isHighPriorityReport, userId, appQualitySessionId);
   }
 
   private void synthesizeNativeReportFile(
@@ -338,12 +355,14 @@ public class CrashlyticsReportPersistence {
       @NonNull List<Event> events,
       long sessionEndTime,
       boolean isHighPriorityReport,
-      @Nullable String userId) {
+      @Nullable String userId,
+      @Nullable String appQualitySessionId) {
     try {
       CrashlyticsReport report =
           TRANSFORM
               .reportFromJson(readTextFile(reportFile))
               .withSessionEndFields(sessionEndTime, isHighPriorityReport, userId)
+              .withAppQualitySessionId(appQualitySessionId)
               .withEvents(ImmutableList.from(events));
       final Session session = report.getSession();
 
@@ -351,6 +370,8 @@ public class CrashlyticsReportPersistence {
         // This shouldn't happen, but is a valid state for NDK-based reports
         return;
       }
+
+      Logger.getLogger().d("appQualitySessionId: " + appQualitySessionId);
 
       File finalizedReportFile =
           isHighPriorityReport
@@ -420,6 +441,16 @@ public class CrashlyticsReportPersistence {
         bos.write(readBuffer, 0, read);
       }
       return new String(bos.toByteArray(), UTF_8);
+    }
+  }
+
+  /** Tries to read the given text file. Returns null on any io exception, e.g., file not found. */
+  @Nullable
+  private static String tryReadTextFile(@NonNull File file) {
+    try {
+      return readTextFile(file);
+    } catch (IOException ex) {
+      return null;
     }
   }
 
