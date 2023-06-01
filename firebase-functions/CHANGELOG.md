@@ -62,7 +62,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 20.1.0
-- [feature] Added a new method
+* [feature] Added a new method
   [`getHttpsCallableFromUrl(java.net.URL)`](/docs/reference/android/com/google/firebase/functions/FirebaseFunctions#public-httpscallablereference-gethttpscallablefromurl-url-url)
   to create callables with URLs.
 
@@ -73,7 +73,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 20.0.2
-- [changed] Updated dependencies of `play-services-basement`,
+* [changed] Updated dependencies of `play-services-basement`,
   `play-services-base`, and `play-services-tasks` to their latest versions
   (v18.0.0, v18.0.1, and v18.0.1, respectively). For more information, see the
   [note](#basement18-0-0_base18-0-1_tasks18-0-1) at the top of this release
@@ -86,7 +86,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 20.0.1
-- [fixed] Fixed an issue that prevented functions from proceeding after
+* [fixed] Fixed an issue that prevented functions from proceeding after
   [app_check] failures.
 
 
@@ -96,8 +96,8 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 20.0.0
-- [feature] Added abuse reduction features.
-- [changed] Internal changes to support dynamic feature modules.
+* [feature] Added abuse reduction features.
+* [changed] Internal changes to support dynamic feature modules.
 
 
 ## Kotlin
@@ -128,7 +128,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.0.2
-- [changed] Internal changes to ensure functionality alignment with other SDK releases.
+* [changed] Internal changes to ensure functionality alignment with other SDK releases.
 
 
 
