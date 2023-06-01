@@ -1,5 +1,7 @@
 # Unreleased
 
+# 20.2.2
+* [changed] Internal changes to ensure alignment with other SDK releases.
 
 # 20.2.1
 * [changed] Internal changes to ensure alignment with other SDK releases.
