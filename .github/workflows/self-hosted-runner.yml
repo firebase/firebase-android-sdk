@@ -11,9 +11,17 @@ jobs:
     steps:
       - name: Count Down
         run: |
-          for i in {1..120}
+          for i in {1..30}
           do
             date
             sleep 1
           done
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+          submodules: true
+      - name: Remote Config Bandwagoner UI Test
+        run: |
+          ./gradlew :firebase-config:bandwagoner:connectedCheck
+          
 
