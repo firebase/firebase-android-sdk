@@ -20,6 +20,11 @@ jobs:
         with:
           fetch-depth: 2
           submodules: true
+      - name: Add google-services.json
+        env:
+          INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
+        run: |
+          echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
       - name: Remote Config Bandwagoner UI Test
         run: |
           ./gradlew :firebase-config:bandwagoner:connectedCheck
