@@ -7,7 +7,7 @@ on:
   
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: app-check
     steps:
       - name: Count Down
         run: |
