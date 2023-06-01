@@ -1,0 +1,19 @@
+name: Self-hosted Runner Test
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+  
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Count Down
+        run: |
+          for i in {1..60}
+          do
+            date
+            sleep 1
+          done
+
