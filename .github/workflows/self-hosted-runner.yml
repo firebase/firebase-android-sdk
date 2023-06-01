@@ -27,6 +27,6 @@ jobs:
           echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
       - name: Remote Config Bandwagoner UI Test
         run: |
-          ./gradlew :firebase-config:bandwagoner:connectedCheck
+          ./gradlew :firebase-inappmessaging-display:connectedCheck
           
 
