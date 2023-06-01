@@ -76,10 +76,10 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
   fun make() {
     val changelog = Changelog.fromFile(changelogFile.asFile.get())
     val metadata = convertToMetadata(project.name)
-    val release = changelog.releases.first()
+    val unreleased = changelog.releases.first()
     val version = project.version.toString()
 
-    if (!release.hasContent())
+    if (!unreleased.hasContent())
       throw StopActionException("No changes to release for project: ${project.name}")
 
     val versionClassifier = version.replace(".", "-")
@@ -88,7 +88,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
       """
         |### ${metadata.name} version $version {: #${metadata.versionName}_v$versionClassifier}
         |
-        |${release.content.toReleaseNotes()}
+        |${unreleased.content.toReleaseNotes()}
       """
         .trimMargin()
         .trim()
@@ -97,7 +97,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
       """
           |#### ${metadata.name} Kotlin extensions version $version {: #${metadata.versionName}-ktx_v$versionClassifier}
           |
-          |${release.ktx?.toReleaseNotes() ?: KotlinTransitiveRelease(project.name)}
+          |${unreleased.ktx?.toReleaseNotes() ?: KotlinTransitiveRelease(project.name)}
         """
         .trimMargin()
         .trim()
