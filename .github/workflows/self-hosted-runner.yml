@@ -9,7 +9,7 @@ jobs:
   test:
     runs-on: app-check
     steps:
-      - name: Count Down
+      - name: Count Down (10 seconds)
         run: |
           for i in {1..10}
           do
@@ -25,7 +25,7 @@ jobs:
           INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
         run: |
           echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
-      - name: Remote Config Bandwagoner UI Test
+      - name: In-App Messaging Display UI test
         run: |
           ./gradlew :firebase-inappmessaging-display:connectedCheck
           
