@@ -1,5 +1,6 @@
 # Unreleased
-* [changed] Replaced custom Thread implementation with Firebase Core executors.
+* [changed] Migrated {{storage}} SDK to use standard Firebase executors.
+  (GitHub [#4830](//github.com/firebase/firebase-android-sdk/pull/4830){: .external})
 
 # 20.2.0
 * [changed] Internal changes to ensure alignment with other SDK releases.
