@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Count Down
         run: |
-          for i in {1..30}
+          for i in {1..10}
           do
             date
             sleep 1
