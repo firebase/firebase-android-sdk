@@ -142,7 +142,9 @@ public class CrashlyticsReportPersistence {
       writeTextFile(fileStore.getSessionFile(sessionId, fileName), json);
 
       String appQualitySessionId = sessionsSubscriber.getAppQualitySessionId();
-      if (appQualitySessionId != null) {
+      if (appQualitySessionId == null) {
+        Logger.getLogger().w("Missing AQS session id for Crashlytics session " + sessionId);
+      } else {
         writeTextFile(
             fileStore.getSessionFile(sessionId, AQS_SESSION_ID_FILENAME), appQualitySessionId);
       }
