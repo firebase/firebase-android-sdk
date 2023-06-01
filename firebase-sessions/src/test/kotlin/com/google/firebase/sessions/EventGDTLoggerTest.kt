@@ -26,9 +26,9 @@ import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.FakeProvider
-import com.google.firebase.sessions.testing.FakeTimeProvider
 import com.google.firebase.sessions.testing.FakeTransportFactory
 import com.google.firebase.sessions.testing.TestSessionEventData
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -36,6 +36,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class EventGDTLoggerTest {
 
@@ -54,7 +55,6 @@ class EventGDTLoggerTest {
           firebaseInstallations,
           SessionEvents.getApplicationInfo(fakeFirebaseApp.firebaseApp)
         ),
-        FakeTimeProvider(),
       )
     val fakeTransportFactory = FakeTransportFactory()
     val fakeTransportFactoryProvider = FakeProvider(fakeTransportFactory as TransportFactory)

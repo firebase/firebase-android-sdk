@@ -25,7 +25,6 @@ import com.google.firebase.sessions.SessionEvents.SESSION_EVENT_ENCODER
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
-import com.google.firebase.sessions.testing.FakeTimeProvider
 import com.google.firebase.sessions.testing.TestSessionEventData
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -58,7 +57,6 @@ class SessionEventEncoderTest {
           firebaseInstallations,
           SessionEvents.getApplicationInfo(fakeFirebaseApp.firebaseApp)
         ),
-        FakeTimeProvider(),
       )
 
     val json = SESSION_EVENT_ENCODER.encode(sessionEvent)

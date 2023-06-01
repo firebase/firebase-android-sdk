@@ -17,6 +17,8 @@
 package com.google.firebase.sessions
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.sessions.testing.FakeTimeProvider
+import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_TIMESTAMP_US
 import java.util.UUID
 import org.junit.Test
 
@@ -38,21 +40,33 @@ class SessionGeneratorTest {
   // currentSession before generateNewSession has been called.
   @Test(expected = UninitializedPropertyAccessException::class)
   fun currentSession_beforeGenerate_throwsUninitialized() {
-    val sessionGenerator = SessionGenerator(collectEvents = false)
+    val sessionGenerator =
+      SessionGenerator(
+        collectEvents = false,
+        timeProvider = FakeTimeProvider(),
+      )
 
     sessionGenerator.currentSession
   }
 
   @Test
   fun hasGenerateSession_beforeGenerate_returnsFalse() {
-    val sessionGenerator = SessionGenerator(collectEvents = false)
+    val sessionGenerator =
+      SessionGenerator(
+        collectEvents = false,
+        timeProvider = FakeTimeProvider(),
+      )
 
     assertThat(sessionGenerator.hasGenerateSession).isFalse()
   }
 
   @Test
   fun hasGenerateSession_afterGenerate_returnsTrue() {
-    val sessionGenerator = SessionGenerator(collectEvents = false)
+    val sessionGenerator =
+      SessionGenerator(
+        collectEvents = false,
+        timeProvider = FakeTimeProvider(),
+      )
 
     sessionGenerator.generateNewSession()
 
@@ -61,7 +75,11 @@ class SessionGeneratorTest {
 
   @Test
   fun generateNewSession_generatesValidSessionIds() {
-    val sessionGenerator = SessionGenerator(collectEvents = true) // defaults to UUID::randomUUID
+    val sessionGenerator =
+      SessionGenerator(
+        collectEvents = true,
+        timeProvider = FakeTimeProvider(),
+      )
 
     sessionGenerator.generateNewSession()
 
@@ -76,7 +94,12 @@ class SessionGeneratorTest {
 
   @Test
   fun generateNewSession_generatesValidSessionDetails() {
-    val sessionGenerator = SessionGenerator(collectEvents = true, uuidGenerator = UUIDs()::next)
+    val sessionGenerator =
+      SessionGenerator(
+        collectEvents = true,
+        timeProvider = FakeTimeProvider(),
+        uuidGenerator = UUIDs()::next,
+      )
 
     sessionGenerator.generateNewSession()
 
@@ -89,6 +112,7 @@ class SessionGeneratorTest {
           sessionId = SESSION_ID_1,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 0,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
         )
       )
   }
@@ -97,7 +121,12 @@ class SessionGeneratorTest {
   // Session ID being set in the firstSessionId field
   @Test
   fun generateNewSession_incrementsSessionIndex_keepsFirstSessionId() {
-    val sessionGenerator = SessionGenerator(collectEvents = true, uuidGenerator = UUIDs()::next)
+    val sessionGenerator =
+      SessionGenerator(
+        collectEvents = true,
+        timeProvider = FakeTimeProvider(),
+        uuidGenerator = UUIDs()::next,
+      )
 
     val firstSessionDetails = sessionGenerator.generateNewSession()
 
@@ -110,6 +139,7 @@ class SessionGeneratorTest {
           sessionId = SESSION_ID_1,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 0,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
         )
       )
 
@@ -125,6 +155,7 @@ class SessionGeneratorTest {
           sessionId = SESSION_ID_2,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 1,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
         )
       )
 
@@ -140,6 +171,7 @@ class SessionGeneratorTest {
           sessionId = SESSION_ID_3,
           firstSessionId = SESSION_ID_1,
           sessionIndex = 2,
+          sessionStartTimestampUs = TEST_SESSION_TIMESTAMP_US,
         )
       )
   }

@@ -24,29 +24,33 @@ import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.FakeTimeProvider
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class SessionInitiatorTest {
-  class SessionStartCounter {
+  private class SessionInitiateCounter : SessionInitiateListener {
     var count = 0
       private set
 
-    fun initiateSessionStart() {
+    override suspend fun onInitiateSession(sessionDetails: SessionDetails) {
       count++
     }
   }
 
   @Test
   fun coldStart_initiatesSession() = runTest {
-    val sessionStartCounter = SessionStartCounter()
+    val sessionInitiateCounter = SessionInitiateCounter()
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
     val firebaseApp = FakeFirebaseApp().firebaseApp
+    val fakeTimeProvider = FakeTimeProvider()
     val context = firebaseApp.applicationContext
     val settings =
       SessionsSettings(
@@ -58,15 +62,25 @@ class SessionInitiatorTest {
       )
 
     // Simulate a cold start by simply constructing the SessionInitiator object
-    SessionInitiator(FakeTimeProvider(), sessionStartCounter::initiateSessionStart, settings)
+    SessionInitiator(
+      fakeTimeProvider,
+      TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+      sessionInitiateListener = sessionInitiateCounter,
+      settings,
+      SessionGenerator(collectEvents = false, fakeTimeProvider),
+    )
 
-    assertThat(sessionStartCounter.count).isEqualTo(1)
+    // Run onInitiateSession suspend function.
+    runCurrent()
+
+    // Session on cold start
+    assertThat(sessionInitiateCounter.count).isEqualTo(1)
   }
 
   @Test
   fun appForegrounded_largeInterval_initiatesSession() = runTest {
     val fakeTimeProvider = FakeTimeProvider()
-    val sessionStartCounter = SessionStartCounter()
+    val sessionInitiateCounter = SessionInitiateCounter()
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
     val firebaseApp = FakeFirebaseApp().firebaseApp
     val context = firebaseApp.applicationContext
@@ -80,23 +94,34 @@ class SessionInitiatorTest {
       )
 
     val sessionInitiator =
-      SessionInitiator(fakeTimeProvider, sessionStartCounter::initiateSessionStart, settings)
+      SessionInitiator(
+        fakeTimeProvider,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+        sessionInitiateListener = sessionInitiateCounter,
+        settings,
+        SessionGenerator(collectEvents = false, fakeTimeProvider),
+      )
+
+    // Run onInitiateSession suspend function.
+    runCurrent()
 
     // First session on cold start
-    assertThat(sessionStartCounter.count).isEqualTo(1)
+    assertThat(sessionInitiateCounter.count).isEqualTo(1)
 
     // Enough tome to initiate a new session, and then foreground
     fakeTimeProvider.addInterval(LARGE_INTERVAL)
     sessionInitiator.appForegrounded()
 
+    runCurrent()
+
     // Another session initiated
-    assertThat(sessionStartCounter.count).isEqualTo(2)
+    assertThat(sessionInitiateCounter.count).isEqualTo(2)
   }
 
   @Test
   fun appForegrounded_smallInterval_doesNotInitiatesSession() = runTest {
     val fakeTimeProvider = FakeTimeProvider()
-    val sessionStartCounter = SessionStartCounter()
+    val sessionInitiateCounter = SessionInitiateCounter()
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
     val firebaseApp = FakeFirebaseApp().firebaseApp
     val context = firebaseApp.applicationContext
@@ -110,23 +135,34 @@ class SessionInitiatorTest {
       )
 
     val sessionInitiator =
-      SessionInitiator(fakeTimeProvider, sessionStartCounter::initiateSessionStart, settings)
+      SessionInitiator(
+        fakeTimeProvider,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+        sessionInitiateListener = sessionInitiateCounter,
+        settings,
+        SessionGenerator(collectEvents = false, fakeTimeProvider),
+      )
+
+    // Run onInitiateSession suspend function.
+    runCurrent()
 
     // First session on cold start
-    assertThat(sessionStartCounter.count).isEqualTo(1)
+    assertThat(sessionInitiateCounter.count).isEqualTo(1)
 
     // Not enough time to initiate a new session, and then foreground
     fakeTimeProvider.addInterval(SMALL_INTERVAL)
     sessionInitiator.appForegrounded()
 
+    runCurrent()
+
     // No new session
-    assertThat(sessionStartCounter.count).isEqualTo(1)
+    assertThat(sessionInitiateCounter.count).isEqualTo(1)
   }
 
   @Test
   fun appForegrounded_background_foreground_largeIntervals_initiatesSessions() = runTest {
     val fakeTimeProvider = FakeTimeProvider()
-    val sessionStartCounter = SessionStartCounter()
+    val sessionInitiateCounter = SessionInitiateCounter()
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
     val firebaseApp = FakeFirebaseApp().firebaseApp
     val context = firebaseApp.applicationContext
@@ -140,26 +176,39 @@ class SessionInitiatorTest {
       )
 
     val sessionInitiator =
-      SessionInitiator(fakeTimeProvider, sessionStartCounter::initiateSessionStart, settings)
+      SessionInitiator(
+        fakeTimeProvider,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+        sessionInitiateListener = sessionInitiateCounter,
+        settings,
+        SessionGenerator(collectEvents = false, fakeTimeProvider),
+      )
 
-    assertThat(sessionStartCounter.count).isEqualTo(1)
+    // Run onInitiateSession suspend function.
+    runCurrent()
+
+    assertThat(sessionInitiateCounter.count).isEqualTo(1)
 
     fakeTimeProvider.addInterval(LARGE_INTERVAL)
     sessionInitiator.appForegrounded()
 
-    assertThat(sessionStartCounter.count).isEqualTo(2)
+    runCurrent()
+
+    assertThat(sessionInitiateCounter.count).isEqualTo(2)
 
     sessionInitiator.appBackgrounded()
     fakeTimeProvider.addInterval(LARGE_INTERVAL)
     sessionInitiator.appForegrounded()
 
-    assertThat(sessionStartCounter.count).isEqualTo(3)
+    runCurrent()
+
+    assertThat(sessionInitiateCounter.count).isEqualTo(3)
   }
 
   @Test
   fun appForegrounded_background_foreground_smallIntervals_doesNotInitiateNewSessions() = runTest {
     val fakeTimeProvider = FakeTimeProvider()
-    val sessionStartCounter = SessionStartCounter()
+    val sessionInitiateCounter = SessionInitiateCounter()
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
     val firebaseApp = FakeFirebaseApp().firebaseApp
     val context = firebaseApp.applicationContext
@@ -173,23 +222,34 @@ class SessionInitiatorTest {
       )
 
     val sessionInitiator =
-      SessionInitiator(fakeTimeProvider, sessionStartCounter::initiateSessionStart, settings)
+      SessionInitiator(
+        fakeTimeProvider,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
+        sessionInitiateListener = sessionInitiateCounter,
+        settings,
+        SessionGenerator(collectEvents = false, fakeTimeProvider),
+      )
+
+    // Run onInitiateSession suspend function.
+    runCurrent()
 
     // First session on cold start
-    assertThat(sessionStartCounter.count).isEqualTo(1)
+    assertThat(sessionInitiateCounter.count).isEqualTo(1)
 
     fakeTimeProvider.addInterval(SMALL_INTERVAL)
     sessionInitiator.appForegrounded()
 
-    assertThat(sessionStartCounter.count).isEqualTo(1)
+    runCurrent()
+
+    assertThat(sessionInitiateCounter.count).isEqualTo(1)
 
     sessionInitiator.appBackgrounded()
     fakeTimeProvider.addInterval(SMALL_INTERVAL)
     sessionInitiator.appForegrounded()
 
-    assertThat(sessionStartCounter.count).isEqualTo(1)
+    runCurrent()
 
-    assertThat(sessionStartCounter.count).isEqualTo(1)
+    assertThat(sessionInitiateCounter.count).isEqualTo(1)
   }
 
   @After

@@ -22,11 +22,7 @@ import com.google.firebase.encoders.DataEncoder
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder
 import com.google.firebase.sessions.settings.SessionsSettings
 
-/**
- * Contains functions for [SessionEvent]s.
- *
- * @hide
- */
+/** Contains functions for [SessionEvent]s. */
 internal object SessionEvents {
   /** JSON [DataEncoder] for [SessionEvent]s. */
   internal val SESSION_EVENT_ENCODER: DataEncoder =
@@ -44,7 +40,6 @@ internal object SessionEvents {
     firebaseApp: FirebaseApp,
     sessionDetails: SessionDetails,
     sessionsSettings: SessionsSettings,
-    timeProvider: TimeProvider
   ) =
     SessionEvent(
       eventType = EventType.SESSION_START,
@@ -53,7 +48,7 @@ internal object SessionEvents {
           sessionDetails.sessionId,
           sessionDetails.firstSessionId,
           sessionDetails.sessionIndex,
-          eventTimestampUs = timeProvider.currentTimeUs(),
+          eventTimestampUs = sessionDetails.sessionStartTimestampUs,
           DataCollectionStatus(sessionSamplingRate = sessionsSettings.samplingRate),
         ),
       applicationInfo = getApplicationInfo(firebaseApp)

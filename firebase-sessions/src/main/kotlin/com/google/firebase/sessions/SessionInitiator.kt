@@ -20,23 +20,27 @@ import android.app.Activity
 import android.app.Application.ActivityLifecycleCallbacks
 import android.os.Bundle
 import com.google.firebase.sessions.settings.SessionsSettings
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /**
- * The [SessionInitiator] is responsible for calling the [initiateSessionStart] callback whenever a
- * session starts. This will happen at a cold start of the app, and when the app has been in the
- * background for a period of time (default 30 min) and then comes back to the foreground.
- *
- * @hide
+ * The [SessionInitiator] is responsible for calling [SessionInitiateListener.onInitiateSession]
+ * with a generated [SessionDetails] on the [backgroundDispatcher] whenever a new session initiates.
+ * This will happen at a cold start of the app, and when the app has been in the background for a
+ * period of time (default 30 min) and then comes back to the foreground.
  */
 internal class SessionInitiator(
   private val timeProvider: TimeProvider,
-  private val initiateSessionStart: () -> Unit,
-  private val sessionsSettings: SessionsSettings
+  private val backgroundDispatcher: CoroutineContext,
+  private val sessionInitiateListener: SessionInitiateListener,
+  private val sessionsSettings: SessionsSettings,
+  private val sessionGenerator: SessionGenerator,
 ) {
   private var backgroundTime = timeProvider.elapsedRealtime()
 
   init {
-    initiateSessionStart()
+    initiateSession()
   }
 
   fun appBackgrounded() {
@@ -47,7 +51,16 @@ internal class SessionInitiator(
     val interval = timeProvider.elapsedRealtime() - backgroundTime
     val sessionTimeout = sessionsSettings.sessionRestartTimeout
     if (interval > sessionTimeout) {
-      initiateSessionStart()
+      initiateSession()
+    }
+  }
+
+  private fun initiateSession() {
+    // Generate the session details on main thread so the timestamp is as current as possible.
+    val sessionDetails = sessionGenerator.generateNewSession()
+
+    CoroutineScope(backgroundDispatcher).launch {
+      sessionInitiateListener.onInitiateSession(sessionDetails)
     }
   }
 
