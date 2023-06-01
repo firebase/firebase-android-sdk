@@ -239,6 +239,15 @@ public class TestUtil {
     return map;
   }
 
+  public static <T extends Document> ImmutableSortedMap<DocumentKey, T> docMap(List<T> documents) {
+    ImmutableSortedMap<DocumentKey, T> map =
+        (ImmutableSortedMap<DocumentKey, T>) emptyDocumentMap();
+    for (T maybeDocument : documents) {
+      map = map.insert(maybeDocument.getKey(), maybeDocument);
+    }
+    return map;
+  }
+
   public static DocumentSet docSet(Comparator<Document> comparator, MutableDocument... documents) {
     DocumentSet set = DocumentSet.emptySet(comparator);
     for (MutableDocument document : documents) {
