@@ -304,6 +304,7 @@ class PublishingPluginTests {
       .withProjectDir(testProjectDir.root)
       .withArguments(
         "-PprojectsToPublish=${projects.joinToString(",") { it.name }}",
+        "-PreleaseName=m123",
         "firebasePublish"
       )
       .withPluginClasspath()

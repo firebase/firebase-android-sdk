@@ -1,7 +1,7 @@
 # Unreleased
 
 # 24.6.1
-- [feature] Implemented an optimization in the local cache synchronization logic that reduces the number of billed document reads when documents were deleted on the server while the client was not actively listening to the query (e.g. while the client was offline). (GitHub [#4982](//github.com/firebase/firebase-android-sdk/pull/4982){: .external})
+* [feature] Implemented an optimization in the local cache synchronization logic that reduces the number of billed document reads when documents were deleted on the server while the client was not actively listening to the query (e.g. while the client was offline). (GitHub [#4982](//github.com/firebase/firebase-android-sdk/pull/4982){: .external})
 
 
 ## Kotlin
@@ -158,7 +158,7 @@ following additional updates:
   Kotlin Flows to listen for realtime updates.
 
 # 24.2.2
-- [fixed] Fixed an issue in `waitForPendingWrites()` that could lead to a
+* [fixed] Fixed an issue in `waitForPendingWrites()` that could lead to a
   `NullPointerException`.
 
 
@@ -167,7 +167,7 @@ The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
 updates.
 # 24.2.1
-- [changed] Internal refactor and test improvements.
+* [changed] Internal refactor and test improvements.
 
 
 ## Kotlin
@@ -176,7 +176,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 24.2.0
-- [feature] Added customization support for
+* [feature] Added customization support for
   [`FirebaseFirestore.runTransaction`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestore#runTransaction(com.google.firebase.firestore.Transaction.Function%3CTResult%3E)).
 
 
@@ -186,7 +186,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 24.1.2
-- [fixed] Fixed an issue where patching multiple fields shadows each other.
+* [fixed] Fixed an issue where patching multiple fields shadows each other.
   (#3528).
 
 
@@ -196,11 +196,11 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 24.1.1
-- [fixed] Fixed an issue in the beta version of the index engine that might
+* [fixed] Fixed an issue in the beta version of the index engine that might
   cause [firestore] to exclude document results for limit queries with local
   modifications.
 
-- [changed] [firestore] can now serialize objects with `android.net.Uri`s.
+* [changed] [firestore] can now serialize objects with `android.net.Uri`s.
 
 
 ## Kotlin
@@ -209,13 +209,13 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 24.1.0
-- [feature] Added beta support for indexed query execution. You can
+* [feature] Added beta support for indexed query execution. You can
   enable indexes by invoking `FirebaseFirestore.setIndexConfiguration()` with
   the JSON index definition exported by the [firebase_cli]. Queries against
   the cache are executed using an index once the asynchronous index generation
   completes.
 
-- [fixed] Fixed missing document fields issue with offline overlays.
+* [fixed] Fixed missing document fields issue with offline overlays.
   (#3528).
 
 
@@ -226,22 +226,22 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 24.0.2
-- [fixed] Fixed a [firebase_app_check] issue that caused [firestore]
+* [fixed] Fixed a [firebase_app_check] issue that caused [firestore]
   listeners to stop working and receive a `Permission Denied` error. This issue
   only occurred if the [app_check] expiration time was set to under an hour.
 
-- [fixed] Fixed a potential problem during the shutdown of [firestore] that
+* [fixed] Fixed a potential problem during the shutdown of [firestore] that
   prevented the shutdown from proceeding if a network connection was opened
   right before.
 
-- [fixed] Fixed an NPE issue where mutations with multiple documents were not
+* [fixed] Fixed an NPE issue where mutations with multiple documents were not
   handled correctly during previous mutation acknowledgement.
   (#3490).
 
-- [changed] Queries are now sent to the backend before the SDK starts local
+* [changed] Queries are now sent to the backend before the SDK starts local
   processing, which reduces overall query latency.
 
-- [changed] Updated dependencies of `play-services-basement`,
+* [changed] Updated dependencies of `play-services-basement`,
   `play-services-base`, and `play-services-tasks` to their latest versions
   (v18.0.0, v18.0.1, and v18.0.1, respectively). For more information, see the
   [note](#basement18-0-0_base18-0-1_tasks18-0-1) at the top of this release
@@ -254,9 +254,9 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 24.0.1
-- [changed] Optimized performance for offline usage.
+* [changed] Optimized performance for offline usage.
 
-- [changed] Optimized performance for queries with collections that contain
+* [changed] Optimized performance for queries with collections that contain
   subcollections.
 
 
@@ -266,12 +266,12 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 24.0.0
-- [changed] This SDK now requires devices and emulators to target API level
+* [changed] This SDK now requires devices and emulators to target API level
   19 (KitKat) or higher and to use Android 4.4 or higher. This is due to an
   update in its gRPC dependency version and to align with requirements of other
   Firebase libraries.
 
-- [feature] Added support for [firebase_app_check].
+* [feature] Added support for [firebase_app_check].
 
 
 ## Kotlin
@@ -280,7 +280,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 23.0.4
-- [fixed] Fixed an issue where some fields were missed when copying in the
+* [fixed] Fixed an issue where some fields were missed when copying in the
   `FirebaseFirestoreSettings.Builder` copy constructor.
 
 
@@ -290,7 +290,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 23.0.3
-- [fixed] Fixed an issue that was causing failures when a data bundle with
+* [fixed] Fixed an issue that was causing failures when a data bundle with
   multi-byte Unicode characters was loaded.
 
 
@@ -300,7 +300,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 23.0.2
-- [changed] Improved Firestore's network condition detection.
+* [changed] Improved Firestore's network condition detection.
 
 
 ## Kotlin
@@ -309,7 +309,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 23.0.1
-- [changed] The SDK now tries to immediately establish a connection to the
+* [changed] The SDK now tries to immediately establish a connection to the
   backend when the app enters the foreground.
 
 
@@ -319,9 +319,9 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 23.0.0
-- [changed] Internal infrastructure improvements.
+* [changed] Internal infrastructure improvements.
 
-- [changed] Internal changes to support dynamic feature modules.
+* [changed] Internal changes to support dynamic feature modules.
 
 
 ## Kotlin
@@ -467,7 +467,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 21.4.3
-- [changed] [firestore] now limits the number of concurrent document lookups
+* [changed] [firestore] now limits the number of concurrent document lookups
   it will perform when resolving inconsistencies in the local cache.
 
 
@@ -477,7 +477,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 21.4.2
-- [changed] Removed Guava dependency from the SDK. This change is the first
+* [changed] Removed Guava dependency from the SDK. This change is the first
   step in eliminating crashes caused by apps that depend on the wrong flavor of
   Guava. ([Issue #1125](//github.com/firebase/firebase-android-sdk/issues/1125))
 
@@ -488,9 +488,9 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 21.4.1
-- [fixed] Fixed a performance regression introduced by the addition of
+* [fixed] Fixed a performance regression introduced by the addition of
   `Query.limitToLast(n: long)` in [firestore] v21.3.1.
-- [changed] Changed the in-memory representation of [firestore] documents to
+* [changed] Changed the in-memory representation of [firestore] documents to
   reduce memory allocations and improve performance. Calls to
   `DocumentSnapshot.getData()` and `DocumentSnapshot.toObject()` will see
   the biggest improvement.
@@ -502,10 +502,10 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 21.4.0
-- [feature] Cloud Firestore previously required that every document read in a
+* [feature] Cloud Firestore previously required that every document read in a
   transaction must also be written. This requirement has been removed, and
   you can now read a document in a transaction without writing to it.
-- [changed] Cloud Firestore now recovers more quickly when connections
+* [changed] Cloud Firestore now recovers more quickly when connections
   suffering packet loss return to normal.
 
 
@@ -515,7 +515,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 21.3.1
-- [feature] Added `Query.limitToLast(n: long)`, which returns the last `n`
+* [feature] Added `Query.limitToLast(n: long)`, which returns the last `n`
   documents as the result.
 
 
@@ -525,13 +525,13 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 21.3.0
-- [feature] Added `Query.whereIn()` and `Query.whereArrayContainsAny()` query
+* [feature] Added `Query.whereIn()` and `Query.whereArrayContainsAny()` query
   operators. `Query.whereIn()` finds documents where a specified field’s value
   is IN a specified array. `Query.whereArrayContainsAny()` finds documents
   where a specified field is an array and contains ANY element of a specified
   array.
   
-- [changed] Improved the performance of repeatedly executed queries. Recently
+* [changed] Improved the performance of repeatedly executed queries. Recently
   executed queries should see dramatic improvements. This benefit is reduced
   if changes accumulate while the query is inactive. Queries that use the
   `limit()` API may not always benefit, depending on the accumulated changes.
@@ -543,14 +543,14 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 21.2.1
-- [fixed] Fixed an issue where devices targeting Android API level 19 or
+* [fixed] Fixed an issue where devices targeting Android API level 19 or
   earlier would crash when they were unable to connect to [firestore].
 
-- [fixed] Fixed a race condition in Documents where access to `getData` and
+* [fixed] Fixed a race condition in Documents where access to `getData` and
   `getField` on the same document in different threads could cause a
   `NullPointerException`.
 
-- [fixed] Fixed a race condition that could cause a `NullPointerException`
+* [fixed] Fixed a race condition that could cause a `NullPointerException`
   during client initialization.
 
 
@@ -560,7 +560,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 21.2.0
-- [feature] Added an [`addSnapshotsInSyncListener()`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestore#addSnapshotsInSyncListener(java.lang.Runnable)) method to
+* [feature] Added an [`addSnapshotsInSyncListener()`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestore#addSnapshotsInSyncListener(java.lang.Runnable)) method to
   `FirebaseFirestore` that notifies you when all your snapshot listeners are
   in sync with each other.
 
@@ -571,7 +571,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 21.1.1
-- [fixed] Addressed a regression in v21.1.0 that caused the crash: "Cannot add
+* [fixed] Addressed a regression in v21.1.0 that caused the crash: "Cannot add
   document to the RemoteDocumentCache with a read time of zero".
 
 
@@ -585,18 +585,18 @@ Warning: We have received reports that this **v21.1.0 release** of the Firebase
 Android SDK for [firestore] can trigger an uncaught exception. Make sure to
 update to the next version of the Cloud Firestore SDK to get the fix.
 
-- [feature] Added a
+* [feature] Added a
   [`FirebaseFirestore.terminate()`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestore#terminate())
   method which terminates the instance, releasing any held resources. Once it
   completes, you can optionally call `clearPersistence()` to wipe persisted
   [firestore] data from disk.
 
-- [feature] Added a
+* [feature] Added a
   [`FirebaseFirestore.waitForPendingWrites()`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestore#waitForPendingWrites())
   method which allows users to wait on a promise that resolves when all pending
   writes are acknowledged by the [firestore] backend.
 
-- [changed] Transactions now perform exponential backoff before retrying.
+* [changed] Transactions now perform exponential backoff before retrying.
   This means transactions on highly contended documents are more likely to
   succeed.
 
@@ -607,12 +607,12 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 21.0.0
-- [changed] Transactions are now more flexible. Some sequences of operations
+* [changed] Transactions are now more flexible. Some sequences of operations
   that were previously incorrectly disallowed are now allowed. For example,
   after reading a document that doesn't exist, you can now set it multiple
   times successfully in a transaction.
 
-- [fixed] Fixed an issue where query results were temporarily missing
+* [fixed] Fixed an issue where query results were temporarily missing
   documents that previously had not matched but had been updated to now match
   the query. Refer to this
   [GitHub issue](https://github.com/firebase/firebase-android-sdk/issues/155)
@@ -628,22 +628,22 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 20.2.0
-- [feature] Added a `@DocumentId` annotation which can be used on a
+* [feature] Added a `@DocumentId` annotation which can be used on a
   `DocumentReference` or `String` property in a POJO to indicate that the SDK
   should automatically populate it with the document's ID.
 
-- [fixed] Fixed an internal assertion that was triggered when an update with
+* [fixed] Fixed an internal assertion that was triggered when an update with
   a `FieldValue.serverTimestamp()` and an update with a
   `FieldValue.increment()` were pending for the same document. Refer to this
   [GitHub issue](https://github.com/firebase/firebase-android-sdk/issues/491)
   for more details.
 
-- [changed] Improved performance of queries with large result sets.
+* [changed] Improved performance of queries with large result sets.
 
-- [changed] Improved performance for queries with filters that only return a
+* [changed] Improved performance for queries with filters that only return a
   small subset of the documents in a collection.
 
-- [changed] Instead of failing silently, [firestore] now crashes the client
+* [changed] Instead of failing silently, [firestore] now crashes the client
   app if it fails to load SSL Ciphers. To avoid these crashes, you must bundle
   Conscrypt to support non-GMSCore devices on Android API level 19 (KitKat) or
   earlier (for more information, refer to
@@ -717,7 +717,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 18.2.0
-- [unchanged] No changes to the base `firebase-firestore` library.
+* [unchanged] No changes to the base `firebase-firestore` library.
 
 
 ## Kotlin

@@ -30,7 +30,7 @@
   [inappmessaging] v19.1.2 or later.
 
 # 19.0.1
-- [changed] Internal changes to ensure functionality alignment with other SDK releases.
+* [changed] Internal changes to ensure functionality alignment with other SDK releases.
 
 # 17.1.1
 * [changed] Updated API to support the latest [remote_config] update.
