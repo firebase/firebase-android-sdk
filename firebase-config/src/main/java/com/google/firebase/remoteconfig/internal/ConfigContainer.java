@@ -178,16 +178,21 @@ public class ConfigContainer {
       return experimentsMap;
     }
 
+    // Iterate through all experiments and see if it has affectedParameterKeys field.
     for (int i = 0; i < allExperiments.length(); i++) {
       JSONObject experiment = allExperiments.getJSONObject(i);
-      if (experiment.has(AFFECTED_PARAMETER_KEY)) {
-        JSONArray affectedKeys = experiment.getJSONArray(AFFECTED_PARAMETER_KEY);
-        for (int j = 0; j < affectedKeys.length(); j++) {
-          String key = affectedKeys.getString(j);
-          JSONObject experimentsCopy = new JSONObject(experiment.toString());
-          experimentsCopy.remove(AFFECTED_PARAMETER_KEY);
-          experimentsMap.put(key, experimentsCopy);
-        }
+      if (!experiment.has(AFFECTED_PARAMETER_KEY)) {
+        continue;
+      }
+
+      // Since a config key can only have one experiment associated with it, map the key to the
+      // experiment.
+      JSONArray affectedKeys = experiment.getJSONArray(AFFECTED_PARAMETER_KEY);
+      for (int j = 0; j < affectedKeys.length(); j++) {
+        String key = affectedKeys.getString(j);
+        JSONObject experimentsCopy = new JSONObject(experiment.toString());
+        experimentsCopy.remove(AFFECTED_PARAMETER_KEY);
+        experimentsMap.put(key, experimentsCopy);
       }
     }
 
