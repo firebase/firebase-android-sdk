@@ -150,13 +150,13 @@ public class ConfigContainerTest {
 
     ConfigContainer config =
         ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
             .withAbtExperiments(activeExperiments)
             .build();
 
     ConfigContainer other =
         ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
             .withAbtExperiments(fetchedExperiments)
             .build();
 
@@ -174,35 +174,13 @@ public class ConfigContainerTest {
 
     ConfigContainer config =
         ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
             .withAbtExperiments(activeExperiments)
             .build();
 
     ConfigContainer other =
         ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
-            .withAbtExperiments(fetchedExperiments)
-            .build();
-
-    Set<String> changedParams = config.getChangedParams(other);
-
-    assertThat(changedParams).containsExactly("abt_test_key_1");
-  }
-
-  @Test
-  public void getChangedParams_newExperiments_returnsUpdatedKey() throws Exception {
-    JSONArray activeExperiments = generateAbtExperiments(1);
-    JSONArray fetchedExperiments = generateAbtExperiments(2);
-
-    ConfigContainer config =
-        ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
-            .withAbtExperiments(activeExperiments)
-            .build();
-
-    ConfigContainer other =
-        ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
             .withAbtExperiments(fetchedExperiments)
             .build();
 
@@ -218,13 +196,13 @@ public class ConfigContainerTest {
 
     ConfigContainer config =
         ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
             .withAbtExperiments(activeExperiments)
             .build();
 
     ConfigContainer other =
         ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
             .withAbtExperiments(fetchedExperiments)
             .build();
 
@@ -242,13 +220,15 @@ public class ConfigContainerTest {
 
     ConfigContainer config =
         ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .replaceConfigsWith(
+                ImmutableMap.of("abt_test_key_1", "value_1", "abt_test_key_2", "value_2"))
             .withAbtExperiments(activeExperiments)
             .build();
 
     ConfigContainer other =
         ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .replaceConfigsWith(
+                ImmutableMap.of("abt_test_key_1", "value_1", "abt_test_key_2", "value_2"))
             .withAbtExperiments(fetchedExperiments)
             .build();
 
@@ -266,13 +246,13 @@ public class ConfigContainerTest {
 
     ConfigContainer config =
         ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
             .withAbtExperiments(activeExperiments)
             .build();
 
     ConfigContainer other =
         ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
             .withAbtExperiments(fetchedExperiments)
             .build();
 
@@ -293,13 +273,13 @@ public class ConfigContainerTest {
 
     ConfigContainer config =
         ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
             .withAbtExperiments(activeExperiments)
             .build();
 
     ConfigContainer other =
         ConfigContainer.newBuilder()
-            .replaceConfigsWith(ImmutableMap.of("string_param", "value_1"))
+            .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
             .withAbtExperiments(fetchedExperiments)
             .build();
 
