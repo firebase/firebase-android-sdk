@@ -91,6 +91,9 @@ public abstract class CrashlyticsReport {
   @NonNull
   public abstract String getInstallationUuid();
 
+  @Nullable
+  public abstract String getFirebaseInstallationId();
+
   @NonNull
   public abstract String getBuildVersion();
 
@@ -187,6 +190,12 @@ public abstract class CrashlyticsReport {
       builder.setSession(getSession().withAppQualitySessionId(appQualitySessionId));
     }
     return builder.build();
+  }
+
+  /** Update an existing {@link CrashlyticsReport} with the given firebaseInstallationId. */
+  @NonNull
+  public CrashlyticsReport withFirebaseInstallationId(@Nullable String firebaseInstallationId) {
+    return toBuilder().setFirebaseInstallationId(firebaseInstallationId).build();
   }
 
   @AutoValue
@@ -1182,6 +1191,9 @@ public abstract class CrashlyticsReport {
 
     @NonNull
     public abstract Builder setInstallationUuid(@NonNull String value);
+
+    @NonNull
+    public abstract Builder setFirebaseInstallationId(@Nullable String value);
 
     @NonNull
     public abstract Builder setBuildVersion(@NonNull String value);
