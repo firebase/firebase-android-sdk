@@ -14,7 +14,7 @@
 
 package com.google.firebase.remoteconfig.internal;
 
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.AFFECTED_PARAMETER_KEY;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.AFFECTED_PARAMETER_KEYS;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -171,6 +171,7 @@ public class ConfigContainer {
     return containerJson.toString().equals(that.toString());
   }
 
+  /** Creates a map where the key is the config key and the value if the experiment description. */
   private Map<String, JSONObject> createExperimentsMap(JSONArray allExperiments)
       throws JSONException {
     Map<String, JSONObject> experimentsMap = new HashMap<>();
@@ -178,20 +179,22 @@ public class ConfigContainer {
       return experimentsMap;
     }
 
-    // Iterate through all experiments and see if it has affectedParameterKeys field.
+    // Iterate through all experiments to check if it has the `affectedParameterKeys` field.
     for (int i = 0; i < allExperiments.length(); i++) {
       JSONObject experiment = allExperiments.getJSONObject(i);
-      if (!experiment.has(AFFECTED_PARAMETER_KEY)) {
+      if (!experiment.has(AFFECTED_PARAMETER_KEYS)) {
         continue;
       }
 
       // Since a config key can only have one experiment associated with it, map the key to the
       // experiment.
-      JSONArray affectedKeys = experiment.getJSONArray(AFFECTED_PARAMETER_KEY);
+      JSONArray affectedKeys = experiment.getJSONArray(AFFECTED_PARAMETER_KEYS);
       for (int j = 0; j < affectedKeys.length(); j++) {
         String key = affectedKeys.getString(j);
         JSONObject experimentsCopy = new JSONObject(experiment.toString());
-        experimentsCopy.remove(AFFECTED_PARAMETER_KEY);
+        // Removing `affectedParameterKeys` because it's values never come in the same order which
+        // would affect the diffing.
+        experimentsCopy.remove(AFFECTED_PARAMETER_KEYS);
         experimentsMap.put(key, experimentsCopy);
       }
     }
@@ -209,8 +212,8 @@ public class ConfigContainer {
     JSONObject otherConfig = ConfigContainer.deepCopyOf(other.containerJson).getConfigs();
 
     // Config key to experiments map.
-    Map<String, JSONObject> activeExperiments = createExperimentsMap(this.getAbtExperiments());
-    Map<String, JSONObject> fetchedExperiments = createExperimentsMap(other.getAbtExperiments());
+    Map<String, JSONObject> thisExperiments = createExperimentsMap(this.getAbtExperiments());
+    Map<String, JSONObject> otherExperiments = createExperimentsMap(other.getAbtExperiments());
 
     Set<String> changed = new HashSet<>();
     Iterator<String> keys = this.getConfigs().keys();
@@ -249,18 +252,15 @@ public class ConfigContainer {
       }
 
       // If only one of the active or fetched experiments contains the key, add it to changed.
-      if (activeExperiments.containsKey(key) ^ fetchedExperiments.containsKey(key)) {
+      if (thisExperiments.containsKey(key) ^ otherExperiments.containsKey(key)) {
         changed.add(key);
         continue;
       }
 
       // If both experiment maps contains the key, compare the experiments to see if it's different.
-      if (fetchedExperiments.containsKey(key)
-          && activeExperiments.containsKey(key)
-          && !fetchedExperiments
-              .get(key)
-              .toString()
-              .equals(activeExperiments.get(key).toString())) {
+      if (otherExperiments.containsKey(key)
+          && thisExperiments.containsKey(key)
+          && !otherExperiments.get(key).toString().equals(thisExperiments.get(key).toString())) {
         changed.add(key);
         continue;
       }

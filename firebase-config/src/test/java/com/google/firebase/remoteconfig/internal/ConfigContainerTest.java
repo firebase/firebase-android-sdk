@@ -15,7 +15,7 @@
 package com.google.firebase.remoteconfig.internal;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.AFFECTED_PARAMETER_KEY;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.AFFECTED_PARAMETER_KEYS;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.EXPERIMENT_ID;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.EXPERIMENT_START_TIME;
 import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.TIME_TO_LIVE_MILLIS;
@@ -216,7 +216,7 @@ public class ConfigContainerTest {
     JSONArray activeExperiments = generateAbtExperiments(1);
     JSONArray fetchedExperiments = generateAbtExperiments(1);
 
-    fetchedExperiments.getJSONObject(0).getJSONArray(AFFECTED_PARAMETER_KEY).put("abt_test_key_2");
+    fetchedExperiments.getJSONObject(0).getJSONArray(AFFECTED_PARAMETER_KEYS).put("abt_test_key_2");
 
     ConfigContainer config =
         ConfigContainer.newBuilder()
@@ -416,7 +416,7 @@ public class ConfigContainerTest {
               .put(EXPERIMENT_START_TIME, new Date(1))
               .put(TRIGGER_TIMEOUT_MILLIS, 1L)
               .put(TIME_TO_LIVE_MILLIS, 1L)
-              .put(AFFECTED_PARAMETER_KEY, experimentKeys));
+              .put(AFFECTED_PARAMETER_KEYS, experimentKeys));
     }
     return experiments;
   }
