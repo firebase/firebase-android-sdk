@@ -37,6 +37,7 @@ additional updates:
 * [feature] Added a
   [`trace(String, Trace.() -> T)`](/docs/reference/kotlin/com/google/firebase/perf/ktx/package-summary#trace(kotlin.String,kotlin.Function1))
   extension function to create a custom trace with the specified name.
+
 # 20.2.0
 * [unchanged] Updated to accommodate the release of the updated
   [perfmon] Kotlin extensions library.
@@ -44,8 +45,8 @@ additional updates:
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
-  `firebase-performance` library. The Kotlin extensions library has the following
-  additional updates:
+`firebase-performance` library. The Kotlin extensions library has the following
+additional updates:
 
 * [feature] Firebase now supports Kotlin coroutines.
   With this release, we added
@@ -104,6 +105,7 @@ updates.
 
 # 20.0.5
 * [feature] Enabled global custom attributes for network request traces.
+
 * [fixed] Updated log statement to differentiate an event being dropped due to
   rate limiting and sampling.
 
@@ -124,10 +126,11 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 20.0.3
-*   [changed] [perfmon] now has a random delay of 5 to 30 seconds before
-    fetching [remote_config] upon app startup.
-*   [fixed] Added a validation to stop screen traces with 0 total frames from
-    being sent to the backend.
+* [changed] [perfmon] now has a random delay of 5 to 30 seconds before
+  fetching [remote_config] upon app startup.
+
+* [fixed] Added a validation to stop screen traces with 0 total frames from
+  being sent to the backend.
 
 
 ## Kotlin
@@ -136,15 +139,14 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 20.0.2
-*   [fixed] Fixed inaccurate calculation of screen activity metrics for
-    multi-activity apps.
-    (#2672)
+* [fixed] Fixed inaccurate calculation of screen activity metrics for
+  multi-activity apps.
+  (#2672)
+  Note: You may see some changes in data for frozen frames and slow rendering
+  metrics.
 
-    Note: You may see some changes in data for frozen frames and slow rendering
-    metrics.
-
-*   [fixed] Fixed issue where screen traces were not being tracked for Android
-    API levels 23 and below.
+* [fixed] Fixed issue where screen traces were not being tracked for Android
+  API levels 23 and below.
 
 
 ## Kotlin
@@ -153,9 +155,10 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 20.0.1
-*   [feature] Logs for [firebase_perfmon] now contain URLs to view
-    performance data in the [name_appmanager].
-*   [fixed] Fixed `RateLimiter` replenishment logic and unit alignment.
+* [feature] Logs for [firebase_perfmon] now contain URLs to view
+  performance data in the [name_appmanager].
+
+* [fixed] Fixed `RateLimiter` replenishment logic and unit alignment.
 
 
 ## Kotlin
@@ -164,11 +167,13 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 20.0.0
-*   [feature] Introduce Dagger as a dependency injection framework for some
-    parts of the code.
-*   [changed] Improved the code organization of the SDK (package restructure,
-    code conventions, remove unncessary annotations).
-*   [changed] Improve the launch time of the SDK.
+* [feature] Introduce Dagger as a dependency injection framework for some
+  parts of the code.
+
+* [changed] Improved the code organization of the SDK (package restructure,
+  code conventions, remove unncessary annotations).
+
+* [changed] Improve the launch time of the SDK.
 
 
 ## Kotlin
@@ -177,9 +182,10 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.1.1
-*   [feature] The [firebase_perfmon] SDK is now
-    [open sourced](//github.com/firebase/firebase-android-sdk/tree/master/firebase-perf){: .external}.
-*   [fixed] Fixed issue on the console logger to avoid throwing
+* [feature] The [firebase_perfmon] SDK is now
+  [open sourced](//github.com/firebase/firebase-android-sdk/tree/master/firebase-perf){: .external}.
+
+* [fixed] Fixed issue on the console logger to avoid throwing
     `UnknownFormatConversionException`.
 
 
@@ -189,11 +195,11 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.1.0
-*   [changed] Removed GMS dependency from [perfmon]. Google Play services
-    installation is no longer required to use [perfmon].
+* [changed] Removed GMS dependency from [perfmon]. Google Play services
+  installation is no longer required to use [perfmon].
 
-*   [changed] Improved performance event dispatch wait time from 2 hours to
-    30 seconds.
+* [changed] Improved performance event dispatch wait time from 2 hours to
+  30 seconds.
 
 
 ## Kotlin
@@ -202,8 +208,8 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.0.11
-*   [fixed] Upgraded protobuf dependency to the latest released version
-    (#2158)
+* [fixed] Upgraded protobuf dependency to the latest released version
+  (#2158)
 
 
 ## Kotlin
@@ -215,12 +221,12 @@ updates.
 Note: We recommend using [perfmon] Gradle plugin v1.3.4+ with this version of
 the [perfmon] SDK and above.
 
-*   [changed] Integrated with the `firebase-datatransport` library for
-    performance log dispatch mechanism.
+* [changed] Integrated with the `firebase-datatransport` library for
+  performance log dispatch mechanism.
 
-*   [fixed] Synchronized the access to fix a race condition that was causing a
-    `NullPointerException` when making network requests.
-    (#2096)
+* [fixed] Synchronized the access to fix a race condition that was causing a
+  `NullPointerException` when making network requests.
+  (#2096)
 
 
 ## Kotlin
@@ -229,21 +235,21 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.0.9
-*   [fixed] Created lazy dependency on [firebase_remote_config] to avoid
-    main thread contention issue.
-    (#1810)
+* [fixed] Created lazy dependency on [firebase_remote_config] to avoid
+  main thread contention issue.
+  (#1810)
 
-*   [changed] Updated the protocol buffer dependency to the
-    `protobuf-javalite` artifact to allow for backward compatibility.
+* [changed] Updated the protocol buffer dependency to the
+  `protobuf-javalite` artifact to allow for backward compatibility.
 
-*   [changed] Removed Guava dependency from the SDK to avoid symbol collision
-    with any other SDKs.
+* [changed] Removed Guava dependency from the SDK to avoid symbol collision
+  with any other SDKs.
 
-*   [changed] Removed proguarding for SDK; logcat messages will show original
-    class paths for debugging.
+* [changed] Removed proguarding for SDK; logcat messages will show original
+  class paths for debugging.
 
-*   [changed] Improved build configurations and dependencies to reduce SDK
-    size.
+* [changed] Improved build configurations and dependencies to reduce SDK
+  size.
 
 
 ## Kotlin
@@ -287,10 +293,12 @@ updates.
 
 # 19.0.5
 * [fixed] Muted logcat logging for [firebase_perfmon] when
-`firebase_performance_logcat_enabled` is not set or set to false.
-([#403](//github.com/firebase/firebase-android-sdk/issues/403))
+  `firebase_performance_logcat_enabled` is not set or set to false.
+  ([#403](//github.com/firebase/firebase-android-sdk/issues/403))
+
 * [fixed] Skipped automatic performance event creation when
-`firebase_performance_collection_enabled` is set to false.
+  `firebase_performance_collection_enabled` is set to false.
+
 * [changed] Internal infrastructure improvements.
 
 # 19.0.4
@@ -316,6 +324,7 @@ updates.
 
 # 17.0.2
 * [fixed] Fixed a `Null Pointer Exception` that was being observed on certain Android 7.0 devices.
+
 * [fixed] Updates to make [perfmon] work better with the latest version of
   [firebase_remote_config].
 
@@ -329,8 +338,10 @@ updates.
 # 16.2.4
 * [fixed] Fixed a bug that was causing a `NoClassDefFoundError` to be thrown
   which resulted in intermittent app crashes.
+
 * [fixed] Updates to make [perfmon] work better with the latest version of
   [firebase_remote_config].
+
 * [changed] [firebase_perfmon] no longer depends on [firebase_analytics].
 
 # 16.2.3

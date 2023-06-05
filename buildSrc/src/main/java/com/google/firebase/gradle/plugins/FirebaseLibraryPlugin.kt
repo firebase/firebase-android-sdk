@@ -29,7 +29,11 @@ import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.Copy
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
@@ -41,6 +45,7 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     project.extensions.getByType<GoogleJavaFormatExtension>().toolVersion = "1.10.0"
 
     setupAndroidLibraryExtension(project)
+    registerMakeReleaseNotesTask(project)
 
     // reduce the likelihood of kotlin module files colliding.
     project.tasks.withType<KotlinCompile> {

@@ -82,7 +82,7 @@ The Kotlin extensions library transitively includes the updated
 additional updates.
 
 # 20.1.1
-- [changed] Updated the gRPC dependency version.
+* [changed] Updated the gRPC dependency version.
 
 
 ## Kotlin
