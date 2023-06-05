@@ -192,7 +192,7 @@ public class ConfigContainer {
       for (int j = 0; j < affectedKeys.length(); j++) {
         String key = affectedKeys.getString(j);
         JSONObject experimentsCopy = new JSONObject(experiment.toString());
-        // Removing `affectedParameterKeys` because it's values never come in the same order which
+        // Removing `affectedParameterKeys` because its values never come in the same order which
         // would affect the diffing.
         experimentsCopy.remove(AFFECTED_PARAMETER_KEYS);
         experimentsMap.put(key, experimentsCopy);
@@ -252,7 +252,7 @@ public class ConfigContainer {
       }
 
       // If one and only one of the experiments map contains the key, add it to changed.
-      if (thisExperiments.containsKey(key) ^ otherExperiments.containsKey(key)) {
+      if (thisExperiments.containsKey(key) != otherExperiments.containsKey(key)) {
         changed.add(key);
         continue;
       }

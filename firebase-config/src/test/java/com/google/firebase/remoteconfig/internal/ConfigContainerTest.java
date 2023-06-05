@@ -269,8 +269,6 @@ public class ConfigContainerTest {
 
     fetchedExperiments.getJSONObject(0).remove(TRIGGER_EVENT);
 
-    fetchedExperiments.getJSONObject(0).put(EXPERIMENT_START_TIME, new Date(2089));
-
     ConfigContainer config =
         ConfigContainer.newBuilder()
             .replaceConfigsWith(ImmutableMap.of("abt_test_key_1", "value_1"))
