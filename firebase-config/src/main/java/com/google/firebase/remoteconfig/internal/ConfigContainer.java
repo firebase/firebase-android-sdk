@@ -251,7 +251,7 @@ public class ConfigContainer {
         continue;
       }
 
-      // If only one of the active or fetched experiments contains the key, add it to changed.
+      // If one and only one of the experiments map contains the key, add it to changed.
       if (thisExperiments.containsKey(key) ^ otherExperiments.containsKey(key)) {
         changed.add(key);
         continue;
