@@ -1,0 +1,9 @@
+{
+    "name": "test_m133_1",
+    "libraries": [
+        ":firebase-perf:ktx",
+        ":firebase-perf",
+        ":firebase-storage",
+        ":firebase-storage:ktx"
+    ]
+}
