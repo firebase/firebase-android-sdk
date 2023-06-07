@@ -1,6 +1,7 @@
 # Unreleased
 
 * [fixed] Fixed app start trace creation where some measured time could be NULL (#4730).
+* [changed] Adjusted default behavior when remote config fetch fails. 
 
 
 # 20.3.2
@@ -357,4 +358,3 @@ updates.
 
 # 16.1.0
 * [fixed] Fixed a `SecurityException` crash on certain devices that do not have Google Play Services on them.
-
