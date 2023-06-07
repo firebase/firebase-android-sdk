@@ -232,6 +232,7 @@ final class ConfigurationConstants {
 
     @Override
     protected Long getDefaultOnRcFetchFail() {
+      // Increase the typical default by factor of 3.
       return getDefault() * 3;
     }
 
@@ -313,6 +314,7 @@ final class ConfigurationConstants {
 
     @Override
     protected Long getDefaultOnRcFetchFail() {
+      // Increase the typical default by factor of 3.
       return getDefault() * 3;
     }
 
