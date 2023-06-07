@@ -231,6 +231,11 @@ final class ConfigurationConstants {
     }
 
     @Override
+    protected Long getDefaultOnRcFetchFail() {
+      return getDefault() * 3;
+    }
+
+    @Override
     protected String getRemoteConfigFlag() {
       return "fpr_session_gauge_cpu_capture_frequency_fg_ms";
     }
@@ -304,6 +309,11 @@ final class ConfigurationConstants {
       // Capture frequency range is [0, 1000]. By default, capture frequency when the app is in
       // foreground is 100, which is 100ms.
       return 100L;
+    }
+
+    @Override
+    protected Long getDefaultOnRcFetchFail() {
+      return getDefault() * 3;
     }
 
     @Override

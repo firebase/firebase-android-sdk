@@ -399,7 +399,8 @@ public class ConfigResolver {
     // 1. If the value exists in Android Manifest, return this value.
     // 2. If the value exists through Firebase Remote Config, cache and return this value.
     // 3. If the value exists in device cache, return this value.
-    // 4. Otherwise, return default value.
+    // 4. If the Firebase Remote Config fetch failed, return default failure value.
+    // 5. Otherwise, return default value.
     SessionsCpuCaptureFrequencyForegroundMs config =
         SessionsCpuCaptureFrequencyForegroundMs.getInstance();
 
@@ -422,7 +423,12 @@ public class ConfigResolver {
       return deviceCacheValue.get();
     }
 
-    // 4. Returns default value if there is no valid value from above approaches.
+    // 4. Check if RC fetch failed.
+    if (remoteConfigManager.isLastFetchFailed()) {
+      return config.getDefaultOnRcFetchFail();
+    }
+
+    // 5. Returns default value if there is no valid value from above approaches.
     return config.getDefault();
   }
 
@@ -471,7 +477,8 @@ public class ConfigResolver {
     // 1. If the value exists in Android Manifest, return this value.
     // 2. If the value exists through Firebase Remote Config, cache and return this value.
     // 3. If the value exists in device cache, return this value.
-    // 4. Otherwise, return default value.
+    // 4. If the Firebase Remote Config fetch failed, return default failure value.
+    // 5. Otherwise, return default value.
     SessionsMemoryCaptureFrequencyForegroundMs config =
         SessionsMemoryCaptureFrequencyForegroundMs.getInstance();
 
@@ -494,7 +501,12 @@ public class ConfigResolver {
       return deviceCacheValue.get();
     }
 
-    // 4. Returns default value if there is no valid value from above approaches.
+    // 4. Check if RC fetch failed.
+    if (remoteConfigManager.isLastFetchFailed()) {
+      return config.getDefaultOnRcFetchFail();
+    }
+
+    // 5. Returns default value if there is no valid value from above approaches.
     return config.getDefault();
   }
 

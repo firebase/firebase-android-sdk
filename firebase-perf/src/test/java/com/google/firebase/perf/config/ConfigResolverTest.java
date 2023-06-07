@@ -649,6 +649,18 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
 
   @Test
   public void
+      getSessionsCpuCaptureFrequencyForegroundMs_remoteConfigFetchFailed_returnDefaultRCValue() {
+    when(mockRemoteConfigManager.getLong(SESSIONS_CPU_CAPTURE_FREQUENCY_FG_MS_FRC_KEY))
+        .thenReturn(Optional.absent());
+    when(mockDeviceCacheManager.getLong(SESSIONS_CPU_CAPTURE_FREQUENCY_FG_MS_CACHE_KEY))
+        .thenReturn(Optional.absent());
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(true);
+
+    assertThat(testConfigResolver.getSessionsCpuCaptureFrequencyForegroundMs()).isEqualTo(300L);
+  }
+
+  @Test
+  public void
       getSessionsCpuCaptureFrequencyForegroundMs_invalidAndroidMetadataBundle_returnRemoteConfigValue() {
     when(mockRemoteConfigManager.getLong(SESSIONS_CPU_CAPTURE_FREQUENCY_FG_MS_FRC_KEY))
         .thenReturn(Optional.of(200L));
@@ -1049,6 +1061,18 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
     testConfigResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
     assertThat(testConfigResolver.getSessionsMemoryCaptureFrequencyForegroundMs()).isEqualTo(100L);
+  }
+
+  @Test
+  public void
+      getSessionsMemoryCaptureFrequencyForegroundMs_remoteConfigFetchFailed_returnDefaultRCValue() {
+    when(mockRemoteConfigManager.getLong(SESSIONS_MEMORY_CAPTURE_FREQUENCY_FG_MS_FRC_KEY))
+        .thenReturn(Optional.absent());
+    when(mockDeviceCacheManager.getLong(SESSIONS_MEMORY_CAPTURE_FREQUENCY_FG_MS_CACHE_KEY))
+        .thenReturn(Optional.absent());
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(true);
+
+    assertThat(testConfigResolver.getSessionsMemoryCaptureFrequencyForegroundMs()).isEqualTo(300L);
   }
 
   @Test
