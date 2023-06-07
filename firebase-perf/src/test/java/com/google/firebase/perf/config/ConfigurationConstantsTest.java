@@ -91,6 +91,7 @@ public class ConfigurationConstantsTest {
         SessionsCpuCaptureFrequencyForegroundMs.getInstance();
 
     assertThat(configFlag.getDefault()).isEqualTo(100L);
+    assertThat(configFlag.getDefaultOnRcFetchFail()).isEqualTo(300L);
     assertThat(configFlag.getDeviceCacheFlag())
         .isEqualTo("com.google.firebase.perf.SessionsCpuCaptureFrequencyForegroundMs");
     assertThat(configFlag.getRemoteConfigFlag())
@@ -117,6 +118,7 @@ public class ConfigurationConstantsTest {
         SessionsMemoryCaptureFrequencyForegroundMs.getInstance();
 
     assertThat(configFlag.getDefault()).isEqualTo(100L);
+    assertThat(configFlag.getDefaultOnRcFetchFail()).isEqualTo(300L);
     assertThat(configFlag.getDeviceCacheFlag())
         .isEqualTo("com.google.firebase.perf.SessionsMemoryCaptureFrequencyForegroundMs");
     assertThat(configFlag.getRemoteConfigFlag())

@@ -313,7 +313,9 @@ public class RemoteConfigManager {
   public boolean isLastFetchFailed() {
     return firebaseRemoteConfig == null
         || (firebaseRemoteConfig.getInfo().getLastFetchStatus()
-            == FirebaseRemoteConfig.LAST_FETCH_STATUS_FAILURE);
+            == FirebaseRemoteConfig.LAST_FETCH_STATUS_FAILURE)
+        || (firebaseRemoteConfig.getInfo().getLastFetchStatus()
+            == FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED);
   }
 
   /**
@@ -344,7 +346,8 @@ public class RemoteConfigManager {
         .addOnSuccessListener(executor, result -> syncConfigValues(firebaseRemoteConfig.getAll()))
         .addOnFailureListener(
             executor,
-            task -> {
+            ex -> {
+              logger.debug("Remote config fetch failed: %s", ex);
               firebaseRemoteConfigLastFetchTimestampMs = FETCH_NEVER_HAPPENED_TIMESTAMP_MS;
             });
   }
