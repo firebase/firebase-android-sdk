@@ -36,6 +36,7 @@ import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.logging.ConsoleUrlGenerator;
 import com.google.firebase.perf.metrics.HttpMetric;
 import com.google.firebase.perf.metrics.Trace;
+import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
@@ -194,6 +195,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     this.configResolver = configResolver;
     this.configResolver.setMetadataBundle(mMetadataBundle);
     this.configResolver.setApplicationContext(appContext);
+    // TODO (Should this be done after the register call to firebase sessions?)
     sessionManager.setApplicationContext(appContext);
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
@@ -210,7 +212,8 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
         new SessionSubscriber() {
           @Override
           public void onSessionChanged(@NonNull SessionDetails sessionDetails) {
-            // TODO(visum) Handle sessionID change by updating the sessionID in the sessionManager
+            PerfSession perfSession = PerfSession.createWithId(sessionDetails.getSessionId());
+            sessionManager.updatePerfSession(perfSession);
           }
 
           @Override
