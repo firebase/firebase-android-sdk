@@ -313,7 +313,9 @@ public class RemoteConfigManager {
   public boolean isLastFetchFailed() {
     return firebaseRemoteConfig == null
         || (firebaseRemoteConfig.getInfo().getLastFetchStatus()
-            == FirebaseRemoteConfig.LAST_FETCH_STATUS_FAILURE);
+            == FirebaseRemoteConfig.LAST_FETCH_STATUS_FAILURE)
+        || (firebaseRemoteConfig.getInfo().getLastFetchStatus()
+            == FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED);
   }
 
   /**
