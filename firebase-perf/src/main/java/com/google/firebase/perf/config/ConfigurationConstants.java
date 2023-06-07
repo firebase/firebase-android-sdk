@@ -153,6 +153,12 @@ final class ConfigurationConstants {
     }
 
     @Override
+    protected Double getDefaultOnRcFetchFail() {
+      // Reduce the typical default by 2 orders of magnitude.
+      return getDefault() / 100;
+    }
+
+    @Override
     protected String getRemoteConfigFlag() {
       return "fpr_vc_trace_sampling_rate";
     }
@@ -186,6 +192,12 @@ final class ConfigurationConstants {
     }
 
     @Override
+    protected Double getDefaultOnRcFetchFail() {
+      // Reduce the typical default by 2 orders of magnitude.
+      return getDefault() / 100;
+    }
+
+    @Override
     protected String getRemoteConfigFlag() {
       return "fpr_vc_network_request_sampling_rate";
     }
@@ -216,6 +228,11 @@ final class ConfigurationConstants {
       // Capture frequency range is [0, 1000]. By default, capture frequency when the app is in
       // foreground is 100, which is 100ms.
       return 100L;
+    }
+
+    @Override
+    protected Long getDefaultOnRcFetchFail() {
+      return getDefault() * 3;
     }
 
     @Override
@@ -292,6 +309,11 @@ final class ConfigurationConstants {
       // Capture frequency range is [0, 1000]. By default, capture frequency when the app is in
       // foreground is 100, which is 100ms.
       return 100L;
+    }
+
+    @Override
+    protected Long getDefaultOnRcFetchFail() {
+      return getDefault() * 3;
     }
 
     @Override
@@ -551,6 +573,12 @@ final class ConfigurationConstants {
     @Override
     protected Double getDefault() {
       return 0.01;
+    }
+
+    @Override
+    protected Double getDefaultOnRcFetchFail() {
+      // Reduce the typical default by 2 orders of magnitude.
+      return getDefault() / 100;
     }
 
     @Override
