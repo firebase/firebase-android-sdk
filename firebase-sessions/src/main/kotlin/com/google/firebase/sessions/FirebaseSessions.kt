@@ -104,6 +104,11 @@ internal constructor(
   }
 
   private suspend fun initiateSessionStart(sessionDetails: SessionDetails) {
+    if (!sessionSettings.sessionsEnabled) {
+      Log.d(TAG, "Sessions SDK disabled. Events will not be sent.")
+      return
+    }
+
     val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
 
     if (subscribers.isEmpty()) {
