@@ -344,7 +344,8 @@ public class RemoteConfigManager {
         .addOnSuccessListener(executor, result -> syncConfigValues(firebaseRemoteConfig.getAll()))
         .addOnFailureListener(
             executor,
-            task -> {
+            ex -> {
+              logger.debug("Remote config fetch failed: %s", ex);
               firebaseRemoteConfigLastFetchTimestampMs = FETCH_NEVER_HAPPENED_TIMESTAMP_MS;
             });
   }

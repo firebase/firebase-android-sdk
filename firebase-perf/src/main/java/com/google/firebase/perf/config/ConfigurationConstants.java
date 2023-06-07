@@ -153,6 +153,12 @@ final class ConfigurationConstants {
     }
 
     @Override
+    protected Double getDefaultOnRcFetchFail() {
+      // Reduce the typical default by 2 orders of magnitude.
+      return getDefault() / 100;
+    }
+
+    @Override
     protected String getRemoteConfigFlag() {
       return "fpr_vc_trace_sampling_rate";
     }
@@ -183,6 +189,12 @@ final class ConfigurationConstants {
       // 0.00f means 0%, Fireperf will not capture any event for trace from the device,
       // 1.00f means 100%, Fireperf will capture all events for trace from the device.
       return 1.0;
+    }
+
+    @Override
+    protected Double getDefaultOnRcFetchFail() {
+      // Reduce the typical default by 2 orders of magnitude.
+      return getDefault() / 100;
     }
 
     @Override
@@ -551,6 +563,12 @@ final class ConfigurationConstants {
     @Override
     protected Double getDefault() {
       return 0.01;
+    }
+
+    @Override
+    protected Double getDefaultOnRcFetchFail() {
+      // Reduce the typical default by 2 orders of magnitude.
+      return getDefault() / 100;
     }
 
     @Override

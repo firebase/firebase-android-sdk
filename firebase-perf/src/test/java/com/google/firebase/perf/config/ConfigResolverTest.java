@@ -1654,6 +1654,17 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
   }
 
   @Test
+  public void getTraceSamplingRate_remoteConfigFetchFailed_returnsRCFailureDefault() {
+    when(mockRemoteConfigManager.getDouble(TRACE_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.absent());
+    when(mockDeviceCacheManager.getDouble(TRACE_SAMPLING_RATE_CACHE_KEY))
+        .thenReturn(Optional.absent());
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(true);
+
+    assertThat(testConfigResolver.getTraceSamplingRate()).isEqualTo(1.00 / 100);
+  }
+
+  @Test
   public void getTraceSamplingRate_noRemoteConfigHasCache_returnsCache() {
     when(mockRemoteConfigManager.getDouble(TRACE_SAMPLING_RATE_FRC_KEY))
         .thenReturn(Optional.absent());
@@ -1712,6 +1723,17 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
         .thenReturn(Optional.absent());
 
     assertThat(testConfigResolver.getNetworkRequestSamplingRate()).isEqualTo(1.00);
+  }
+
+  @Test
+  public void getNetworkRequestSamplingRate_remoteConfigFetchFailed_returnsRCFailureDefault() {
+    when(mockRemoteConfigManager.getDouble(NETWORK_REQUEST_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.absent());
+    when(mockDeviceCacheManager.getDouble(NETWORK_REQUEST_SAMPLING_RATE_CACHE_KEY))
+        .thenReturn(Optional.absent());
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(true);
+
+    assertThat(testConfigResolver.getNetworkRequestSamplingRate()).isEqualTo(1.00 / 100);
   }
 
   @Test
@@ -1933,6 +1955,18 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
 
     assertThat(testConfigResolver.getSessionsSamplingRate()).isEqualTo(0.25);
     verify(mockDeviceCacheManager, never()).setValue(any(), any());
+  }
+
+
+  @Test
+  public void getSessionsSamplingRate_remoteConfigFetchFailed_returnsRCFailureDefault() {
+    when(mockDeviceCacheManager.getDouble(SESSION_SAMPLING_RATE_CACHE_KEY))
+        .thenReturn(Optional.absent());
+    when(mockRemoteConfigManager.getDouble(SESSION_SAMPLING_RATE_FRC_KEY))
+        .thenReturn(Optional.absent());
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(true);
+
+    assertThat(testConfigResolver.getSessionsSamplingRate()).isEqualTo(0.01 / 100);
   }
 
   @Test
