@@ -1957,7 +1957,6 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
     verify(mockDeviceCacheManager, never()).setValue(any(), any());
   }
 
-
   @Test
   public void getSessionsSamplingRate_remoteConfigFetchFailed_returnsRCFailureDefault() {
     when(mockDeviceCacheManager.getDouble(SESSION_SAMPLING_RATE_CACHE_KEY))
