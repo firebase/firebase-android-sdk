@@ -27,8 +27,8 @@ updates.
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
-  `firebase-messaging` library. The Kotlin extensions library has the following
-  additional updates:
+`firebase-messaging` library. The Kotlin extensions library has the following
+additional updates:
 
 * [feature] Firebase now supports Kotlin coroutines.
   With this release, we added
@@ -139,17 +139,17 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 23.0.0
-*   [changed] Due to its
-    [dependency on Google Play services](/docs/android/android-play-services),
-    this SDK now requires devices and emulators to target API level 19 (KitKat)
-    or higher and to use Android 4.4 or higher.
+* [changed] Due to its
+  [dependency on Google Play services](/docs/android/android-play-services),
+  this SDK now requires devices and emulators to target API level 19 (KitKat)
+  or higher and to use Android 4.4 or higher.
 
-*   [feature] Added methods for determining and controlling whether Google
-    Play services is set as the app’s notification delegate. By default, FCM
-    will now set Google Play services as the app’s notification delegate so
-    that it is allowed to display notifications for the app. This could be used
-    in the future to show an app’s notifications without needing to start the
-    app, which may improve message reliability and timeliness.
+* [feature] Added methods for determining and controlling whether Google
+  Play services is set as the app’s notification delegate. By default, FCM
+  will now set Google Play services as the app’s notification delegate so
+  that it is allowed to display notifications for the app. This could be used
+  in the future to show an app’s notifications without needing to start the
+  app, which may improve message reliability and timeliness.
 
 
 ## Kotlin
@@ -158,24 +158,23 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 22.0.0
-*   [changed] Removed dependency on the deprecated Firebase Instance ID SDK.
+* [changed] Removed dependency on the deprecated Firebase Instance ID SDK.
+  Caution: **This is a breaking change for apps that use [messaging] and the
+  deprecated Firebase Instance ID API to manage registration tokens.**<br>We
+  strongly recommend
+  [migrating to [messaging]'s token APIs](/docs/projects/manage-installations#fid-iid).
+  If you're unable to migrate to the replacement APIs, add a direct dependency
+  on the `firebase-iid` library to your `build.gradle` file.
 
-    Caution: **This is a breaking change for apps that use [messaging] and the
-    deprecated Firebase Instance ID API to manage registration tokens.**<br>We
-    strongly recommend
-    [migrating to [messaging]'s token APIs](/docs/projects/manage-installations#fid-iid).
-    If you're unable to migrate to the replacement APIs, add a direct dependency
-    on the `firebase-iid` library to your `build.gradle` file.
+* [feature] Changed to open an `Activity` directly when a notification is
+  tapped instead of passing it through `FirebaseMessagingService`. This change
+  is to comply with Android 12 notification trampoline restrictions.
 
-*   [feature] Changed to open an `Activity` directly when a notification is
-    tapped instead of passing it through `FirebaseMessagingService`. This change
-    is to comply with Android 12 notification trampoline restrictions.
+* [feature] Internal changes to use proto instead of JSON for logging.
 
-*   [feature] Internal changes to use proto instead of JSON for logging.
+* [changed] Internal changes to support dynamic feature modules.
 
-*   [changed] Internal changes to support dynamic feature modules.
-
-*   [changed] Internal infrastructure improvements.
+* [changed] Internal infrastructure improvements.
 
 
 ## Kotlin
@@ -184,13 +183,13 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 21.1.0
-*   [feature] Migrated internal handling of new token callbacks and
-    notification actions from Firebase Instance ID to [firebase_messaging].
+* [feature] Migrated internal handling of new token callbacks and
+  notification actions from Firebase Instance ID to [firebase_messaging].
 
-*   [feature] Added functionality to generate [messaging] tokens from
-    `FirebaseMessaging.getToken`, while continuing to call through to Firebase
-    Instance ID if it is present. This will allow [firebase_messaging] to
-    remove its dependency on Firebase Instance ID in the future.
+* [feature] Added functionality to generate [messaging] tokens from
+  `FirebaseMessaging.getToken`, while continuing to call through to Firebase
+  Instance ID if it is present. This will allow [firebase_messaging] to
+  remove its dependency on Firebase Instance ID in the future.
 
 
 ## Kotlin
@@ -210,14 +209,14 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 21.0.0
-*   [feature] Migrated auto-initialization from Firebase Instance ID to
-    [firebase_messaging].
+* [feature] Migrated auto-initialization from Firebase Instance ID to
+  [firebase_messaging].
 
-*   [feature] Added a check for incompatible versions of Firebase Instance ID.
-    An exception is thrown during instantiation if one is found.
+* [feature] Added a check for incompatible versions of Firebase Instance ID.
+  An exception is thrown during instantiation if one is found.
 
-*   [fixed] Fixed an issue where events were erronously logged to
-    [firebase_analytics] twice.
+* [fixed] Fixed an issue where events were erronously logged to
+  [firebase_analytics] twice.
 
 
 ## Kotlin

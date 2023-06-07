@@ -654,14 +654,11 @@ public final class RemoteSerializer {
     int aliasID = 1;
     for (AggregateField aggregateField : aggregateFields) {
       // The code block below is used to deduplicate the same aggregate fields.
-      // If two aggregateFields are identical, their aliases would be the same.
-      // Therefore, when adding duplicated alias into uniqueFields, the size of uniqueFields
-      // won't increase, and we can skip this aggregateField processing.
-      final int count = uniqueFields.size();
-      uniqueFields.add(aggregateField.getAlias());
-      if (count == uniqueFields.size()) {
+      if (uniqueFields.contains(aggregateField.getAlias())) {
         continue;
       }
+      uniqueFields.add(aggregateField.getAlias());
+
       String serverAlias = "aggregate_" + aliasID++;
       aliasMap.put(serverAlias, aggregateField.getAlias());
 

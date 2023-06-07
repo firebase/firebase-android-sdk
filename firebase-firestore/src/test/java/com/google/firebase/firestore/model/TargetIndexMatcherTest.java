@@ -565,6 +565,60 @@ public class TargetIndexMatcherTest {
     validateServesTarget(q, "a", FieldIndex.Segment.Kind.ASCENDING);
   }
 
+  @Test
+  public void withEqualityAndInequalityOnTheSameField() {
+    validateServesTarget(
+        query("collId").filter(filter("a", ">=", 5)).filter(filter("a", "==", 0)),
+        "a",
+        FieldIndex.Segment.Kind.ASCENDING);
+
+    validateServesTarget(
+        query("collId")
+            .filter(filter("a", ">=", 5))
+            .filter(filter("a", "==", 0))
+            .orderBy(orderBy("a")),
+        "a",
+        FieldIndex.Segment.Kind.ASCENDING);
+
+    validateServesTarget(
+        query("collId")
+            .filter(filter("a", ">=", 5))
+            .filter(filter("a", "==", 0))
+            .orderBy(orderBy("a"))
+            .orderBy(orderBy(DocumentKey.KEY_FIELD_NAME)),
+        "a",
+        FieldIndex.Segment.Kind.ASCENDING);
+
+    validateServesTarget(
+        query("collId")
+            .filter(filter("a", ">=", 5))
+            .filter(filter("a", "==", 0))
+            .orderBy(orderBy("a"))
+            .orderBy(orderBy(DocumentKey.KEY_FIELD_NAME, "desc")),
+        "a",
+        FieldIndex.Segment.Kind.ASCENDING);
+
+    validateServesTarget(
+        query("collId")
+            .filter(filter("a", ">=", 5))
+            .filter(filter("a", "==", 0))
+            .orderBy(orderBy("a", "asc"))
+            .orderBy(orderBy("b", "asc")),
+        "a",
+        FieldIndex.Segment.Kind.ASCENDING,
+        "b",
+        FieldIndex.Segment.Kind.ASCENDING);
+
+    validateServesTarget(
+        query("collId")
+            .filter(filter("a", ">=", 5))
+            .filter(filter("a", "==", 0))
+            .orderBy(orderBy("a", "desc"))
+            .orderBy(orderBy(DocumentKey.KEY_FIELD_NAME, "desc")),
+        "a",
+        FieldIndex.Segment.Kind.DESCENDING);
+  }
+
   private void validateServesTarget(
       Query query, String field, FieldIndex.Segment.Kind kind, Object... fieldsAndKind) {
     FieldIndex expectedIndex = fieldIndex("collId", field, kind, fieldsAndKind);

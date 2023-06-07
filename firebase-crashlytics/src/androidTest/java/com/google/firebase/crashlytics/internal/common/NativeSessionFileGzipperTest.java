@@ -14,17 +14,19 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static java.util.Arrays.stream;
+
 import android.content.Context;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
 import org.mockito.internal.util.collections.Sets;
 
+@SuppressWarnings("ResultOfMethodCallIgnored") // Convenient use of files.
 public class NativeSessionFileGzipperTest extends CrashlyticsTestCase {
   byte[] testContents = {0, 2, 20, 10};
   File testFile;
@@ -47,8 +49,17 @@ public class NativeSessionFileGzipperTest extends CrashlyticsTestCase {
     gzipDir.mkdirs();
   }
 
+  @Override
+  protected void tearDown() throws Exception {
+    super.tearDown();
+    File[] gzipFiles = gzipDir.listFiles();
+    if (gzipFiles != null) {
+      stream(gzipFiles).forEach(File::delete);
+    }
+  }
+
   @Test
-  public void testProcessNativeSessions_putsFilesInCorrectLocation() throws IOException {
+  public void testProcessNativeSessions_putsFilesInCorrectLocation() {
     String fileBackedSessionName = "file";
     String byteBackedSessionName = "byte";
     FileBackedNativeSessionFile fileSession =
@@ -58,10 +69,12 @@ public class NativeSessionFileGzipperTest extends CrashlyticsTestCase {
     List<NativeSessionFile> files = Arrays.asList(fileSession, byteSession);
     NativeSessionFileGzipper.processNativeSessions(gzipDir, files);
 
+    File[] gzipFiles = gzipDir.listFiles();
+    assertNotNull(gzipFiles);
     assertEquals(
         Sets.newSet(
             new File(gzipDir, fileBackedSessionName), new File(gzipDir, byteBackedSessionName)),
-        Sets.newSet(gzipDir.listFiles()));
+        Sets.newSet(gzipFiles));
   }
 
   @Test
@@ -75,7 +88,8 @@ public class NativeSessionFileGzipperTest extends CrashlyticsTestCase {
     List<NativeSessionFile> files = Arrays.asList(fileSession, byteSession);
     NativeSessionFileGzipper.processNativeSessions(gzipDir, files);
 
-    assertEquals(
-        Sets.newSet(new File(gzipDir, byteBackedSessionName)), Sets.newSet(gzipDir.listFiles()));
+    File[] gzipFiles = gzipDir.listFiles();
+    assertNotNull(gzipFiles);
+    assertEquals(Sets.newSet(new File(gzipDir, byteBackedSessionName)), Sets.newSet(gzipFiles));
   }
 }
