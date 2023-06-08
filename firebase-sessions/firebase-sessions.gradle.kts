@@ -53,7 +53,7 @@ dependencies {
   implementation(libs.androidx.annotation)
 
   runtimeOnly("com.google.firebase:firebase-installations:17.1.3")
-  runtimeOnly(project(":firebase-datatransport"))
+  runtimeOnly("com.google.firebase:firebase-datatransport:18.1.8")
 
   kapt(project(":encoders:firebase-encoders-processor"))
 
