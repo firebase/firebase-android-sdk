@@ -347,7 +347,9 @@ public class RemoteConfigManager {
         .addOnFailureListener(
             executor,
             ex -> {
-              logger.debug("Remote config fetch failed: %s", ex);
+              logger.warn(
+                  "Call to Remote Config failed: %s. This may cause a degraded experience with Firebase Performance. Please reach out to Firebase Support https://firebase.google.com/support/",
+                  ex);
               firebaseRemoteConfigLastFetchTimestampMs = FETCH_NEVER_HAPPENED_TIMESTAMP_MS;
             });
   }
