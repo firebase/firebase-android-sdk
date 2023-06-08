@@ -1,0 +1,11 @@
+{
+    "name": "M133",
+    "libraries": [
+        ":firebase-common",
+        ":firebase-common:ktx",
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":firebase-storage",
+        ":firebase-storage:ktx"
+    ]
+}
