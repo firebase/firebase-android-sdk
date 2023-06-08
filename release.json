@@ -1,6 +1,7 @@
 {
     "name": "firebase-sessions-bugbash",
     "libraries": [
-        ":firebase-sessions"
+        ":firebase-sessions",
+        ":firebase-datatransport"
     ]
 }
