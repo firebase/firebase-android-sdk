@@ -32,11 +32,13 @@ fun FirebaseCrashlytics.setCustomKeys(init: KeyValueBuilder.() -> Unit) {
   builder.init()
 }
 
-internal const val LIBRARY_NAME: String = "fire-cls-ktx"
-
 /** @suppress */
 @Keep
 class FirebaseCrashlyticsKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> =
     listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+
+  companion object {
+    internal const val LIBRARY_NAME: String = "fire-cls-ktx"
+  }
 }
