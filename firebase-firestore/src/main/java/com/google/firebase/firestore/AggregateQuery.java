@@ -14,6 +14,10 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
+
+import android.app.Activity;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import com.google.android.gms.tasks.Task;
@@ -22,6 +26,9 @@ import com.google.firebase.firestore.util.Executors;
 import com.google.firebase.firestore.util.Preconditions;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Executor;
+
+import kotlin.NotImplementedError;
 
 /**
  * A query that calculates aggregations over an underlying query.
@@ -57,7 +64,17 @@ public class AggregateQuery {
   }
 
   /**
-   * Executes this query.
+   * Executes this aggregate query.
+   *
+   * @return A Task that will be resolved with the results of the {@code Query}.
+   */
+  @NonNull
+  public Task<AggregateQuerySnapshot> get() {
+    return get(AggregateSource.DEFAULT);
+  }
+
+  /**
+   * Executes this aggregate query.
    *
    * @param source The source from which to acquire the aggregate results.
    * @return A {@link Task} that will be resolved with the results of the query.
@@ -116,5 +133,106 @@ public class AggregateQuery {
   @Override
   public int hashCode() {
     return Objects.hash(query, aggregateFieldList);
+  }
+
+  /**
+   * Starts listening to this aggregate query.
+   *
+   * @param listener The event listener that will be called with the snapshots.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+          @NonNull EventListener<DocumentSnapshot> listener) {
+    return addSnapshotListener(MetadataChanges.EXCLUDE, listener);
+  }
+
+  /**
+   * Starts listening to this aggregate query.
+   *
+   * @param executor The executor to use to call the listener.
+   * @param listener The event listener that will be called with the snapshots.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+          @NonNull Executor executor, @NonNull EventListener<DocumentSnapshot> listener) {
+    return addSnapshotListener(executor, MetadataChanges.EXCLUDE, listener);
+  }
+
+  /**
+   * Starts listening to this aggregate query using an Activity-scoped listener.
+   *
+   * <p>The listener will be automatically removed during {@link Activity#onStop}.
+   *
+   * @param activity The activity to scope the listener to.
+   * @param listener The event listener that will be called with the snapshots.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+          @NonNull Activity activity, @NonNull EventListener<DocumentSnapshot> listener) {
+    return addSnapshotListener(activity, MetadataChanges.EXCLUDE, listener);
+  }
+
+  /**
+   * Starts listening to this aggregatequery with the given options.
+   *
+   * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
+   *     AggregateQuerySnapshot.getMetadata()} changed) should trigger snapshot events.
+   * @param listener The event listener that will be called with the snapshots.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+          @NonNull MetadataChanges metadataChanges, @NonNull EventListener<DocumentSnapshot> listener) {
+    return addSnapshotListener(Executors.DEFAULT_CALLBACK_EXECUTOR, metadataChanges, listener);
+  }
+
+  /**
+   * Starts listening to this aggregate query with the given options.
+   *
+   * @param executor The executor to use to call the listener.
+   * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
+   *     QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
+   * @param listener The event listener that will be called with the snapshots.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+          @NonNull Executor executor,
+          @NonNull MetadataChanges metadataChanges,
+          @NonNull EventListener<DocumentSnapshot> listener) {
+    checkNotNull(executor, "Provided executor must not be null.");
+    checkNotNull(metadataChanges, "Provided MetadataChanges value must not be null.");
+    checkNotNull(listener, "Provided EventListener must not be null.");
+
+    // TODO (streaming-count) implement method
+    throw new NotImplementedError("TODO streaming count");
+  }
+
+  /**
+   * Starts listening to this aggregate query with the given options, using an Activity-scoped
+   * listener.
+   *
+   * <p>The listener will be automatically removed during {@link Activity#onStop}.
+   *
+   * @param activity The activity to scope the listener to.
+   * @param metadataChanges Indicates whether metadata-only changes (i.e. only {@code
+   *     QuerySnapshot.getMetadata()} changed) should trigger snapshot events.
+   * @param listener The event listener that will be called with the snapshots.
+   * @return A registration object that can be used to remove the listener.
+   */
+  @NonNull
+  public ListenerRegistration addSnapshotListener(
+          @NonNull Activity activity,
+          @NonNull MetadataChanges metadataChanges,
+          @NonNull EventListener<DocumentSnapshot> listener) {
+    checkNotNull(activity, "Provided activity must not be null.");
+    checkNotNull(metadataChanges, "Provided MetadataChanges value must not be null.");
+    checkNotNull(listener, "Provided EventListener must not be null.");
+
+    // TODO (streaming-count) implement method
+    throw new NotImplementedError("TODO streaming count");
   }
 }

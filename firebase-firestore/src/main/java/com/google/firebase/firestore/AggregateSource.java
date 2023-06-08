@@ -33,4 +33,40 @@ public enum AggregateSource {
    * is offline.
    */
   SERVER,
+
+  /**
+   * Perform or estimate the aggregations over the documents in the result set, based on data in
+   * the SDK's cache.
+   *
+   * <p>If there IS NOT a cached aggregation result for the specified
+   * query and AggregateField from a previous AggregateQuery sent
+   * to the server, then the returned aggregation value will be computed against
+   * documents in the SDK's local cache.
+   *
+   * <p>If there IS a cached aggregation result for the specified
+   * query and AggregateField from a previous AggregateQuery sent
+   * to the server, then the returned aggregation value will be computed by
+   * augmenting the cached aggregation value against document mutations in the
+   * SDK's local cache. The SDK attempts to compute the most accurate aggregation
+   * values from these two sources by utilizing timestamps on the cached
+   * aggregation values and the cached document mutations.
+   *
+   * <p>If cached aggregation values are not available for all of the requested
+   * AggregateFields, or if cached aggregation values do not have the same timestamp
+   * for all of the requested aggregate fields, then TODO?
+   *   - The SDK computes aggregations based on the most recent cached aggregation
+   *     value it has in the cache.
+   *   - The SDK ignore cached aggregation values and computes each aggregation
+   *     based on the documents in the cache.
+   */
+  CACHE,
+
+
+  /**
+   * Perform the aggregation on the server and download the result, but fall
+   * back to computing the aggregation base on cached data if the server can't be reached.
+   *
+   * TODO Will DEFAULT mode apply pending writes to the Aggregation result?
+   */
+  DEFAULT,
 }

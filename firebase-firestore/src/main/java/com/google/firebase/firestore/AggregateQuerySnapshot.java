@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nonnull;
 
+import kotlin.NotImplementedError;
+
 /**
  * The results of executing an {@link AggregateQuery}.
  *
@@ -58,6 +60,13 @@ public class AggregateQuerySnapshot {
   @NonNull
   public AggregateQuery getQuery() {
     return query;
+  }
+
+  /** @return The metadata for this aggregate query snapshot. */
+  @NonNull
+  public SnapshotMetadata getMetadata() {
+    // TODO (streaming-count) implement method
+    throw new NotImplementedError("TODO streaming count");
   }
 
   /** Returns the number of documents in the result set of the underlying query. */
