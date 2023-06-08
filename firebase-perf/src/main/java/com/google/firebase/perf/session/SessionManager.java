@@ -110,6 +110,11 @@ public class SessionManager {
    * @see PerfSession#isVerbose()
    */
   public void updatePerfSession(PerfSession perfSession) {
+    // Do not update the perf session if it is the exact same sessionId.
+    if (perfSession.sessionId() == this.perfSession.sessionId()) {
+      return;
+    }
+
     this.perfSession = perfSession;
 
     synchronized (clients) {
