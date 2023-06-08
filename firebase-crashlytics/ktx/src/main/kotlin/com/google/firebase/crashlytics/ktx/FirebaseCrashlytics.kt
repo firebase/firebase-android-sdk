@@ -34,7 +34,7 @@ fun FirebaseCrashlytics.setCustomKeys(init: KeyValueBuilder.() -> Unit) {
 
 /** @suppress */
 @Keep
-class FirebaseCrashlyticsKtxRegistrar : ComponentRegistrar {
+internal class FirebaseCrashlyticsKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> =
     listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 
