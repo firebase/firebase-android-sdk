@@ -80,23 +80,24 @@ class FirestoreTests : BaseTestCase() {
   }
 
   @Test
-    fun `Database#firestore should delegate to FirebaseFirestore#getInstance(Database)`() {
-        assertThat(Firebase.firestore("name")).isSameInstanceAs(FirebaseFirestore.getInstance("name"))
-    }
+  fun `Database#firestore should delegate to FirebaseFirestore#getInstance(Database)`() {
+    assertThat(Firebase.firestore("name")).isSameInstanceAs(FirebaseFirestore.getInstance("name"))
+  }
 
-    @Test
+  @Test
   fun `FirebaseApp#firestore should delegate to FirebaseFirestore#getInstance(FirebaseApp)`() {
     val app = Firebase.app(EXISTING_APP)
     assertThat(Firebase.firestore(app)).isSameInstanceAs(FirebaseFirestore.getInstance(app))
   }
 
   @Test
-    fun `FirebaseApp#Database#firestore should delegate to FirebaseFirestore#getInstance(FirebaseApp,Database)`() {
-        val app = Firebase.app(EXISTING_APP)
-        assertThat(Firebase.firestore(app, "name")).isSameInstanceAs(FirebaseFirestore.getInstance(app, "name"))
-    }
+  fun `FirebaseApp#Database#firestore should delegate to FirebaseFirestore#getInstance(FirebaseApp,Database)`() {
+    val app = Firebase.app(EXISTING_APP)
+    assertThat(Firebase.firestore(app, "name"))
+      .isSameInstanceAs(FirebaseFirestore.getInstance(app, "name"))
+  }
 
-    @Test
+  @Test
   fun `FirebaseFirestoreSettings builder works`() {
     val host = "http://10.0.2.2:8080"
     val isSslEnabled = false
