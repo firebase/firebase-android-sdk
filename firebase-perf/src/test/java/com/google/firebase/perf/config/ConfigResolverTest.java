@@ -1685,7 +1685,7 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
         .thenReturn(Optional.absent());
     when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(true);
 
-    assertThat(testConfigResolver.getTraceSamplingRate()).isEqualTo(1.00 / 100);
+    assertThat(testConfigResolver.getTraceSamplingRate()).isEqualTo(1.00 / 1000);
   }
 
   @Test
@@ -1757,7 +1757,7 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
         .thenReturn(Optional.absent());
     when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(true);
 
-    assertThat(testConfigResolver.getNetworkRequestSamplingRate()).isEqualTo(1.00 / 100);
+    assertThat(testConfigResolver.getNetworkRequestSamplingRate()).isEqualTo(1.00 / 1000);
   }
 
   @Test
@@ -1989,7 +1989,7 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
         .thenReturn(Optional.absent());
     when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(true);
 
-    assertThat(testConfigResolver.getSessionsSamplingRate()).isEqualTo(0.01 / 100);
+    assertThat(testConfigResolver.getSessionsSamplingRate()).isEqualTo(0.01 / 1000);
   }
 
   @Test

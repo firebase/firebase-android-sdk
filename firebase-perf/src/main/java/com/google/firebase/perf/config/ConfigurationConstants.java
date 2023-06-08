@@ -154,8 +154,8 @@ final class ConfigurationConstants {
 
     @Override
     protected Double getDefaultOnRcFetchFail() {
-      // Reduce the typical default by 2 orders of magnitude.
-      return getDefault() / 100;
+      // Reduce the typical default by 3 orders of magnitude.
+      return getDefault() / 1000;
     }
 
     @Override
@@ -193,8 +193,8 @@ final class ConfigurationConstants {
 
     @Override
     protected Double getDefaultOnRcFetchFail() {
-      // Reduce the typical default by 2 orders of magnitude.
-      return getDefault() / 100;
+      // Reduce the typical default by 3 orders of magnitude.
+      return getDefault() / 1000;
     }
 
     @Override
@@ -579,8 +579,8 @@ final class ConfigurationConstants {
 
     @Override
     protected Double getDefaultOnRcFetchFail() {
-      // Reduce the typical default by 2 orders of magnitude.
-      return getDefault() / 100;
+      // Reduce the typical default by 3 orders of magnitude.
+      return getDefault() / 1000;
     }
 
     @Override
