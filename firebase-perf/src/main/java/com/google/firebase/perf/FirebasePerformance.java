@@ -36,15 +36,12 @@ import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.logging.ConsoleUrlGenerator;
 import com.google.firebase.perf.metrics.HttpMetric;
 import com.google.firebase.perf.metrics.Trace;
-import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
-import com.google.firebase.sessions.FirebaseSessions;
-import com.google.firebase.sessions.api.SessionSubscriber;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.URL;
@@ -192,7 +189,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     this.configResolver = configResolver;
     this.configResolver.setMetadataBundle(mMetadataBundle);
     this.configResolver.setApplicationContext(appContext);
-    // TODO (Should this be done after the register call to firebase sessions?)
     sessionManager.setApplicationContext(appContext);
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();

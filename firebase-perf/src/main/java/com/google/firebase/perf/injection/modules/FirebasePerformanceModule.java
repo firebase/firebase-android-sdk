@@ -24,7 +24,6 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.RemoteConfigManager;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
-import com.google.firebase.sessions.FirebaseSessions;
 import dagger.Module;
 import dagger.Provides;
 
