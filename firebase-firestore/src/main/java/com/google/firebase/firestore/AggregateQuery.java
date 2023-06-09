@@ -143,7 +143,7 @@ public class AggregateQuery {
    */
   @NonNull
   public ListenerRegistration addSnapshotListener(
-          @NonNull EventListener<DocumentSnapshot> listener) {
+          @NonNull EventListener<AggregateQuerySnapshot> listener) {
     return addSnapshotListener(MetadataChanges.EXCLUDE, listener);
   }
 
@@ -156,7 +156,7 @@ public class AggregateQuery {
    */
   @NonNull
   public ListenerRegistration addSnapshotListener(
-          @NonNull Executor executor, @NonNull EventListener<DocumentSnapshot> listener) {
+          @NonNull Executor executor, @NonNull EventListener<AggregateQuerySnapshot> listener) {
     return addSnapshotListener(executor, MetadataChanges.EXCLUDE, listener);
   }
 
@@ -171,7 +171,7 @@ public class AggregateQuery {
    */
   @NonNull
   public ListenerRegistration addSnapshotListener(
-          @NonNull Activity activity, @NonNull EventListener<DocumentSnapshot> listener) {
+          @NonNull Activity activity, @NonNull EventListener<AggregateQuerySnapshot> listener) {
     return addSnapshotListener(activity, MetadataChanges.EXCLUDE, listener);
   }
 
@@ -185,7 +185,7 @@ public class AggregateQuery {
    */
   @NonNull
   public ListenerRegistration addSnapshotListener(
-          @NonNull MetadataChanges metadataChanges, @NonNull EventListener<DocumentSnapshot> listener) {
+          @NonNull MetadataChanges metadataChanges, @NonNull EventListener<AggregateQuerySnapshot> listener) {
     return addSnapshotListener(Executors.DEFAULT_CALLBACK_EXECUTOR, metadataChanges, listener);
   }
 
@@ -202,7 +202,7 @@ public class AggregateQuery {
   public ListenerRegistration addSnapshotListener(
           @NonNull Executor executor,
           @NonNull MetadataChanges metadataChanges,
-          @NonNull EventListener<DocumentSnapshot> listener) {
+          @NonNull EventListener<AggregateQuerySnapshot> listener) {
     checkNotNull(executor, "Provided executor must not be null.");
     checkNotNull(metadataChanges, "Provided MetadataChanges value must not be null.");
     checkNotNull(listener, "Provided EventListener must not be null.");
@@ -227,7 +227,7 @@ public class AggregateQuery {
   public ListenerRegistration addSnapshotListener(
           @NonNull Activity activity,
           @NonNull MetadataChanges metadataChanges,
-          @NonNull EventListener<DocumentSnapshot> listener) {
+          @NonNull EventListener<AggregateQuerySnapshot> listener) {
     checkNotNull(activity, "Provided activity must not be null.");
     checkNotNull(metadataChanges, "Provided MetadataChanges value must not be null.");
     checkNotNull(listener, "Provided EventListener must not be null.");
