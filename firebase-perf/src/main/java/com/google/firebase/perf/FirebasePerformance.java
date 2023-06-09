@@ -143,7 +143,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   private final Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
   private final Provider<TransportFactory> transportFactoryProvider;
-  private final FirebaseSessions firebaseSessions;
 
   /**
    * Constructs the FirebasePerformance class and allows injecting dependencies.
@@ -167,7 +166,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       FirebaseInstallationsApi firebaseInstallationsApi,
       Provider<TransportFactory> transportFactoryProvider,
       RemoteConfigManager remoteConfigManager,
-      FirebaseSessions firebaseSessions,
       ConfigResolver configResolver,
       SessionManager sessionManager) {
 
@@ -175,7 +173,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.transportFactoryProvider = transportFactoryProvider;
-    this.firebaseSessions = firebaseSessions;
 
     if (firebaseApp == null) {
       this.mPerformanceCollectionForceEnabledState = false;
@@ -206,27 +203,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
               ConsoleUrlGenerator.generateDashboardUrl(
                   firebaseApp.getOptions().getProjectId(), appContext.getPackageName())));
     }
-
-    // Register with Firebase sessions to receive updates about session changes.
-    this.firebaseSessions.register(
-        new SessionSubscriber() {
-          @Override
-          public void onSessionChanged(@NonNull SessionDetails sessionDetails) {
-            PerfSession perfSession = PerfSession.createWithId(sessionDetails.getSessionId());
-            sessionManager.updatePerfSession(perfSession);
-          }
-
-          @Override
-          public boolean isDataCollectionEnabled() {
-            return configResolver.isPerformanceMonitoringEnabled();
-          }
-
-          @NonNull
-          @Override
-          public Name getSessionSubscriberName() {
-            return SessionSubscriber.Name.PERFORMANCE;
-          }
-        });
   }
 
   /**

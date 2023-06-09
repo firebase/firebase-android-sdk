@@ -579,7 +579,6 @@ public class FirebasePerformanceTest {
         mock(FirebaseInstallationsApi.class),
         transportFactoryProvider,
         spyRemoteConfigManager,
-        mock(FirebaseSessions.class),
         spyConfigResolver,
         spySessionManager);
   }

@@ -35,19 +35,16 @@ public class FirebasePerformanceModule {
   private final FirebaseInstallationsApi firebaseInstallations;
   private final Provider<RemoteConfigComponent> remoteConfigComponentProvider;
   private final Provider<TransportFactory> transportFactoryProvider;
-  private final FirebaseSessions firebaseSessions;
 
   public FirebasePerformanceModule(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallations,
       @NonNull Provider<RemoteConfigComponent> remoteConfigComponentProvider,
-      @NonNull Provider<TransportFactory> transportFactoryProvider,
-      @NonNull FirebaseSessions firebaseSessions) {
+      @NonNull Provider<TransportFactory> transportFactoryProvider) {
     this.firebaseApp = firebaseApp;
     this.firebaseInstallations = firebaseInstallations;
     this.remoteConfigComponentProvider = remoteConfigComponentProvider;
     this.transportFactoryProvider = transportFactoryProvider;
-    this.firebaseSessions = firebaseSessions;
   }
 
   @Provides
@@ -83,10 +80,5 @@ public class FirebasePerformanceModule {
   @Provides
   SessionManager providesSessionManager() {
     return SessionManager.getInstance();
-  }
-
-  @Provides
-  FirebaseSessions providesFirebaseSessions() {
-    return firebaseSessions;
   }
 }
