@@ -95,7 +95,15 @@ public class ValidationTest {
   @Test
   public void firestoreGetInstanceWithNullAppFails() {
     expectError(
-        () -> FirebaseFirestore.getInstance(null), "Provided FirebaseApp must not be null.");
+        () -> FirebaseFirestore.getInstance((FirebaseApp) null),
+        "Provided FirebaseApp must not be null.");
+  }
+
+  @Test
+  public void firestoreGetInstanceWithNullDbNamepFails() {
+    expectError(
+        () -> FirebaseFirestore.getInstance((String) null),
+        "Provided database name must not be null.");
   }
 
   @Test
