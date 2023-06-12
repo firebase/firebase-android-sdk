@@ -65,13 +65,13 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
             .add(Dependency.requiredProvider(RemoteConfigComponent.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
             .add(Dependency.requiredProvider(TransportFactory.class))
-            .add(Dependency.required(FirebaseSessions.class))
             .add(Dependency.required(FirebasePerfEarly.class))
             .factory(FirebasePerfRegistrar::providesFirebasePerformance)
             .build(),
         Component.builder(FirebasePerfEarly.class)
             .name(EARLY_LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
+            .add(Dependency.required(FirebaseSessions.class))
             .add(Dependency.optionalProvider(StartupTime.class))
             .add(Dependency.required(uiExecutor))
             .eagerInDefaultApp()
@@ -79,6 +79,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
                 container ->
                     new FirebasePerfEarly(
                         container.get(FirebaseApp.class),
+                        container.get(FirebaseSessions.class),
                         container.getProvider(StartupTime.class).get(),
                         container.get(uiExecutor)))
             .build(),
@@ -102,8 +103,7 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
                     container.get(FirebaseApp.class),
                     container.get(FirebaseInstallationsApi.class),
                     container.getProvider(RemoteConfigComponent.class),
-                    container.getProvider(TransportFactory.class),
-                    container.get(FirebaseSessions.class)))
+                    container.getProvider(TransportFactory.class)))
             .build();
 
     return component.getFirebasePerformance();

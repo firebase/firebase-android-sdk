@@ -50,7 +50,6 @@ public class FirebasePerfRegistrarTest {
             Dependency.requiredProvider(RemoteConfigComponent.class),
             Dependency.required(FirebaseInstallationsApi.class),
             Dependency.requiredProvider(TransportFactory.class),
-            Dependency.required(FirebaseSessions.class),
             Dependency.required(FirebasePerfEarly.class));
 
     assertThat(firebasePerfComponent.isLazy()).isTrue();
@@ -61,6 +60,7 @@ public class FirebasePerfRegistrarTest {
         .containsExactly(
             Dependency.required(Qualified.qualified(UiThread.class, Executor.class)),
             Dependency.required(FirebaseApp.class),
+            Dependency.required(FirebaseSessions.class),
             Dependency.optionalProvider(StartupTime.class));
 
     assertThat(firebasePerfEarlyComponent.isLazy()).isFalse();

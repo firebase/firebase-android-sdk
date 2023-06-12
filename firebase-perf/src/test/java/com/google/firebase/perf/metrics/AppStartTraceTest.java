@@ -34,6 +34,7 @@ import android.view.View;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.config.ConfigResolver;
+import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
@@ -95,8 +96,7 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
 
   @After
   public void reset() {
-    SessionManager.getInstance()
-        .setPerfSession(com.google.firebase.perf.session.PerfSession.create());
+    SessionManager.getInstance().updatePerfSession(PerfSession.createWithId("randomSessionId"));
   }
 
   /** Test activity sequentially goes through onCreate()->onStart()->onResume() state change. */
