@@ -40,7 +40,6 @@ import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
-import com.google.firebase.sessions.FirebaseSessions;
 import com.google.testing.timing.FakeDirectExecutorService;
 import java.util.Map;
 import org.junit.After;
@@ -579,7 +578,6 @@ public class FirebasePerformanceTest {
         mock(FirebaseInstallationsApi.class),
         transportFactoryProvider,
         spyRemoteConfigManager,
-        mock(FirebaseSessions.class),
         spyConfigResolver,
         spySessionManager);
   }
