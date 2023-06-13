@@ -15,8 +15,6 @@ package com.google.firebase.gradle.plugins
 
 import com.google.common.collect.ImmutableList
 import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import java.io.File
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand
 import org.eclipse.jgit.api.errors.GitAPIException

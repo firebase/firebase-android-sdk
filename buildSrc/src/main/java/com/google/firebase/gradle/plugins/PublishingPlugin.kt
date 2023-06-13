@@ -374,7 +374,9 @@ abstract class PublishingPlugin : Plugin<Project> {
 
       releaseConfigFile.convention(project.layout.projectDirectory.file(RELEASE_CONFIG_FILE))
       releaseReportMdFile.convention(project.layout.projectDirectory.file(RELEASE_REPORT_MD_FILE))
-      releaseReportJsonFile.convention(project.layout.projectDirectory.file(RELEASE_REPORT_JSON_FILE))
+      releaseReportJsonFile.convention(
+        project.layout.projectDirectory.file(RELEASE_REPORT_JSON_FILE)
+      )
     }
 
   /**
