@@ -373,7 +373,8 @@ abstract class PublishingPlugin : Plugin<Project> {
       printReleaseConfig.convention(project.provideProperty("printOutput"))
 
       releaseConfigFile.convention(project.layout.projectDirectory.file(RELEASE_CONFIG_FILE))
-      releaseReportFile.convention(project.layout.projectDirectory.file(RELEASE_REPORT_FILE))
+      releaseReportMdFile.convention(project.layout.projectDirectory.file(RELEASE_REPORT_MD_FILE))
+      releaseReportJsonFile.convention(project.layout.projectDirectory.file(RELEASE_REPORT_JSON_FILE))
     }
 
   /**
@@ -441,7 +442,8 @@ abstract class PublishingPlugin : Plugin<Project> {
 
   companion object {
     const val RELEASE_CONFIG_FILE = "release.json"
-    const val RELEASE_REPORT_FILE = "release_report.md"
+    const val RELEASE_REPORT_MD_FILE = "release_report.md"
+    const val RELEASE_REPORT_JSON_FILE = "release_report.json"
 
     const val GENERATE_BOM_TASK = "generateBom"
     const val VALIDATE_PROJECTS_TO_PUBLISH_TASK = "validateProjectsToPublish"

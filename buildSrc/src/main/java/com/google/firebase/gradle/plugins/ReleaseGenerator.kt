@@ -14,6 +14,8 @@
 package com.google.firebase.gradle.plugins
 
 import com.google.common.collect.ImmutableList
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import java.io.File
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand
@@ -31,25 +33,69 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.findByType
 
+data class ReleaseReport(
+  val changes: Map<String, List<CommitDiff>>,
+  val changedLibrariesWithNoChangelog: Set<String>
+) {
+  override fun toString() =
+    """
+      |# Release Report
+      |${
+    changes.entries.joinToString("\n") {
+      """
+      |## ${it.key}
+      
+      |${it.value.joinToString("\n") { it.toString() }}
+      """.trimMargin()
+    }
+  }
+      |
+      |## SDKs with changes, but no changelogs
+      |${changedLibrariesWithNoChangelog.joinToString("  \n")}
+    """
+      .trimMargin()
+}
+
 data class CommitDiff(
   val commitId: String,
+  val prId: String,
   val author: String,
   val message: String,
+  val commitLink: String,
+  val prLink: String,
 ) {
-  constructor(
-    revCommit: RevCommit
-  ) : this(revCommit.id.name, revCommit.authorIdent.name, revCommit.fullMessage) {}
+  companion object {
+    private val PR_ID_EXTRACTOR = Regex(".*\\(#(\\d+)\\).*")
+
+    public fun fromRevCommit(commit: RevCommit): CommitDiff {
+      val commitId = commit.id.name
+      val prId =
+        PR_ID_EXTRACTOR.find(commit.fullMessage.split("\n").first())?.groupValues?.get(1) ?: ""
+      return CommitDiff(
+        commitId,
+        prId,
+        commit.authorIdent.name,
+        commit.fullMessage,
+        "https://github.com/firebase/firebase-android-sdk/commit/$commitId ",
+        "https://github.com/firebase/firebase-android-sdk/pull/$prId"
+      )
+    }
+  }
 
   override fun toString(): String =
     """
       |* ${message.split("\n").first()}   
-      |  https://github.com/firebase/firebase-android-sdk/commit/${commitId}  [${author}]
+      |  [pr]($prLink) [commit]($commitLink)  [$author]
 
     """
       .trimMargin()
 }
 
 abstract class ReleaseGenerator : DefaultTask() {
+  companion object {
+    private val RELEASE_CHANGE_FILTER = "NO_RELEASE_CHANGE"
+    private val GSON = Gson()
+  }
 
   @get:Input abstract val currentRelease: Property<String>
 
@@ -59,7 +105,9 @@ abstract class ReleaseGenerator : DefaultTask() {
 
   @get:OutputFile abstract val releaseConfigFile: RegularFileProperty
 
-  @get:OutputFile abstract val releaseReportFile: RegularFileProperty
+  @get:OutputFile abstract val releaseReportMdFile: RegularFileProperty
+
+  @get:OutputFile abstract val releaseReportJsonFile: RegularFileProperty
 
   @TaskAction
   @Throws(Exception::class)
@@ -81,33 +129,13 @@ abstract class ReleaseGenerator : DefaultTask() {
     val releaseConfig = ReleaseConfig(currentRelease.get(), libsToRelease.map { it.path })
     releaseConfig.toFile(releaseConfigFile.get().asFile)
 
-    val releaseReport = generateReleaseReport(changes, changedLibsWithNoChangelog)
+    val releaseReport = ReleaseReport(changes, changedLibsWithNoChangelog)
     if (printReleaseConfig.orNull.toBoolean()) {
-      project.logger.info(releaseReport)
+      project.logger.info(releaseReport.toString())
     }
-    writeReleaseReport(releaseReportFile.get().asFile, releaseReport)
+    releaseReportMdFile.get().asFile.writeText(releaseReport.toString())
+    releaseReportJsonFile.get().asFile.writeText(GSON.toJson(GSON))
   }
-
-  private fun generateReleaseReport(
-    changes: Map<String, List<CommitDiff>>,
-    changedLibrariesWithNoChangelog: Set<String>
-  ) =
-    """
-      |# Release Report
-      |${
-            changes.entries.joinToString("\n") {
-                """
-      |## ${it.key}
-      
-      |${it.value.joinToString("\n") { it.toString() }}
-      """.trimMargin()
-            }
-        }
-      |
-      |## SDKs with changes, but no changelogs
-      |${changedLibrariesWithNoChangelog.joinToString("  \n")}
-    """
-      .trimMargin()
 
   private fun getChangesForLibraries(
     repo: Git,
@@ -179,7 +207,7 @@ abstract class ReleaseGenerator : DefaultTask() {
       .addRange(previousReleaseRef, currentReleaseRef)
       .setMaxCount(10)
       .call()
-      .filter { !it.fullMessage.contains("NO_RELEASE_CHANGE") }
+      .filter { !it.fullMessage.contains(RELEASE_CHANGE_FILTER) }
       .isNotEmpty()
 
   private fun getDirChanges(
@@ -188,11 +216,13 @@ abstract class ReleaseGenerator : DefaultTask() {
     currentReleaseRef: ObjectId,
     directory: String
   ) =
-    repo.log().addPath(directory).addRange(previousReleaseRef, currentReleaseRef).call().map {
-      CommitDiff(it)
-    }
-
-  private fun writeReleaseReport(file: File, report: String) = file.writeText(report)
+    repo
+      .log()
+      .addPath(directory)
+      .addRange(previousReleaseRef, currentReleaseRef)
+      .call()
+      .filter { !it.fullMessage.contains(RELEASE_CHANGE_FILTER) }
+      .map { CommitDiff.fromRevCommit(it) }
 
   private fun getRelativeDir(project: Project) = project.path.substring(1).replace(':', '/')
 }
