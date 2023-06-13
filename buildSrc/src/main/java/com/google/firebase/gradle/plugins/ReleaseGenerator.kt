@@ -74,7 +74,7 @@ data class CommitDiff(
         prId,
         commit.authorIdent.name,
         commit.fullMessage,
-        "https://github.com/firebase/firebase-android-sdk/commit/$commitId ",
+        "https://github.com/firebase/firebase-android-sdk/commit/$commitId",
         "https://github.com/firebase/firebase-android-sdk/pull/$prId"
       )
     }
