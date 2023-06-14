@@ -132,7 +132,7 @@ abstract class ReleaseGenerator : DefaultTask() {
       project.logger.info(releaseReport.toString())
     }
     releaseReportMdFile.get().asFile.writeText(releaseReport.toString())
-    releaseReportJsonFile.get().asFile.writeText(GSON.toJson(GSON))
+    releaseReportJsonFile.get().asFile.writeText(GSON.toJson(releaseReport))
   }
 
   private fun getChangesForLibraries(
