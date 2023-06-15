@@ -105,23 +105,68 @@ public class FirebaseFirestore {
   private final GrpcMetadataProvider metadataProvider;
 
   @NonNull
-  public static FirebaseFirestore getInstance() {
+  private static FirebaseApp getDefaultFirebaseApp() {
     FirebaseApp app = FirebaseApp.getInstance();
     if (app == null) {
       throw new IllegalStateException("You must call FirebaseApp.initializeApp first.");
     }
-    return getInstance(app, DatabaseId.DEFAULT_DATABASE_ID);
+    return app;
   }
 
+  /**
+   * Returns the default {@link FirebaseFirestore} instance associated with the default {@link
+   * FirebaseApp}. Returns the same instance for all invocations. If no instance exists, initializes
+   * a new instance with default settings.
+   *
+   * @returns The {@link FirebaseFirestore} instance.
+   */
+  @NonNull
+  public static FirebaseFirestore getInstance() {
+    return getInstance(getDefaultFirebaseApp(), DatabaseId.DEFAULT_DATABASE_ID);
+  }
+
+  /**
+   * Returns the default {@link FirebaseFirestore} instance that is associated with the provided
+   * {@link FirebaseApp}. For a given {@link FirebaseApp}, invocation always returns the same
+   * instance. If no instance exists, initializes a new instance with default settings.
+   *
+   * @param app - The {@link FirebaseApp} instance that the returned {@link FirebaseFirestore}
+   *     instance is associated with.
+   * @returns The {@link FirebaseFirestore} instance.
+   */
   @NonNull
   public static FirebaseFirestore getInstance(@NonNull FirebaseApp app) {
     return getInstance(app, DatabaseId.DEFAULT_DATABASE_ID);
   }
 
-  // TODO: make this public
+  /**
+   * Returns the {@link FirebaseFirestore} instance that is associated with the default {@link
+   * FirebaseApp}. Returns the same instance for all invocations given the same database parameter.
+   * If no instance exists, initializes a new instance with default settings.
+   *
+   * @param database - The name of database.
+   * @returns The {@link FirebaseFirestore} instance.
+   */
   @NonNull
-  private static FirebaseFirestore getInstance(@NonNull FirebaseApp app, @NonNull String database) {
+  public static FirebaseFirestore getInstance(@NonNull String database) {
+    return getInstance(getDefaultFirebaseApp(), database);
+  }
+
+  /**
+   * Returns the {@link FirebaseFirestore} instance that is associated with the provided {@link
+   * FirebaseApp}. Returns the same instance for all invocations given the same {@link FirebaseApp}
+   * and database parameter. If no instance exists, initializes a new instance with default
+   * settings.
+   *
+   * @param app - The {@link FirebaseApp} instance that the returned {@link FirebaseFirestore}
+   *     instance is associated with.
+   * @param database - The name of database.
+   * @returns The {@link FirebaseFirestore} instance.
+   */
+  @NonNull
+  public static FirebaseFirestore getInstance(@NonNull FirebaseApp app, @NonNull String database) {
     checkNotNull(app, "Provided FirebaseApp must not be null.");
+    checkNotNull(database, "Provided database name must not be null.");
     FirestoreMultiDbComponent component = app.get(FirestoreMultiDbComponent.class);
     checkNotNull(component, "Firestore component is not present.");
     return component.get(database);
