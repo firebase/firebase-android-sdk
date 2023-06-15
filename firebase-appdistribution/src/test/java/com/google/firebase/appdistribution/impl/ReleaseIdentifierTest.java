@@ -20,6 +20,7 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -68,6 +69,7 @@ public class ReleaseIdentifierTest {
   private FirebaseApp firebaseApp;
   private ShadowPackageManager shadowPackageManager;
   @Mock private FirebaseAppDistributionTesterApiClient mockTesterApiClient;
+  @Mock private DevModeDetector mockDevModeDetector;
 
   private ReleaseIdentifier releaseIdentifier;
 
@@ -93,8 +95,11 @@ public class ReleaseIdentifierTest {
             new ReleaseIdentifier(
                 firebaseApp.getApplicationContext(),
                 mockTesterApiClient,
+                mockDevModeDetector,
                 backgroundExecutor,
                 lightweightExecutor));
+
+    when(mockDevModeDetector.isDevModeEnabled()).thenReturn(false);
   }
 
   @Test
@@ -172,6 +177,17 @@ public class ReleaseIdentifierTest {
             () -> releaseIdentifier.extractInternalAppSharingArtifactId());
 
     assertThat(e.getMessage()).contains("Missing package info");
+  }
+
+  @Test
+  public void identifyRelease_devModeEnabled_returnsNull()
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
+    when(mockDevModeDetector.isDevModeEnabled()).thenReturn(true);
+
+    String releaseId = awaitTask(releaseIdentifier.identifyRelease());
+
+    assertThat(releaseId).isEqualTo(null);
+    verifyNoInteractions(mockTesterApiClient);
   }
 
   private void installTestApk() {
