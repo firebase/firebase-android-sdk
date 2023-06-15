@@ -91,6 +91,7 @@ public class ConfigurationConstantsTest {
         SessionsCpuCaptureFrequencyForegroundMs.getInstance();
 
     assertThat(configFlag.getDefault()).isEqualTo(100L);
+    assertThat(configFlag.getDefaultOnRcFetchFail()).isEqualTo(300L);
     assertThat(configFlag.getDeviceCacheFlag())
         .isEqualTo("com.google.firebase.perf.SessionsCpuCaptureFrequencyForegroundMs");
     assertThat(configFlag.getRemoteConfigFlag())
@@ -117,6 +118,7 @@ public class ConfigurationConstantsTest {
         SessionsMemoryCaptureFrequencyForegroundMs.getInstance();
 
     assertThat(configFlag.getDefault()).isEqualTo(100L);
+    assertThat(configFlag.getDefaultOnRcFetchFail()).isEqualTo(300L);
     assertThat(configFlag.getDeviceCacheFlag())
         .isEqualTo("com.google.firebase.perf.SessionsMemoryCaptureFrequencyForegroundMs");
     assertThat(configFlag.getRemoteConfigFlag())
@@ -153,6 +155,7 @@ public class ConfigurationConstantsTest {
     TraceSamplingRate configFlag = TraceSamplingRate.getInstance();
 
     assertThat(configFlag.getDefault()).isEqualTo(1.00);
+    assertThat(configFlag.getDefaultOnRcFetchFail()).isEqualTo(0.001);
     assertThat(configFlag.getDeviceCacheFlag())
         .isEqualTo("com.google.firebase.perf.TraceSamplingRate");
     assertThat(configFlag.getRemoteConfigFlag()).isEqualTo("fpr_vc_trace_sampling_rate");
@@ -164,6 +167,7 @@ public class ConfigurationConstantsTest {
     NetworkRequestSamplingRate configFlag = NetworkRequestSamplingRate.getInstance();
 
     assertThat(configFlag.getDefault()).isEqualTo(1.00);
+    assertThat(configFlag.getDefaultOnRcFetchFail()).isEqualTo(0.001);
     assertThat(configFlag.getDeviceCacheFlag())
         .isEqualTo("com.google.firebase.perf.NetworkRequestSamplingRate");
     assertThat(configFlag.getRemoteConfigFlag()).isEqualTo("fpr_vc_network_request_sampling_rate");
@@ -175,6 +179,7 @@ public class ConfigurationConstantsTest {
     SessionsSamplingRate configFlag = SessionsSamplingRate.getInstance();
 
     assertThat(configFlag.getDefault()).isEqualTo(0.01);
+    assertThat(configFlag.getDefaultOnRcFetchFail()).isEqualTo(0.00001);
     assertThat(configFlag.getDeviceCacheFlag())
         .isEqualTo("com.google.firebase.perf.SessionSamplingRate");
     assertThat(configFlag.getRemoteConfigFlag()).isEqualTo("fpr_vc_session_sampling_rate");
