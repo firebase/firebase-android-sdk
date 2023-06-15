@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -64,6 +65,7 @@ public class NewReleaseFetcherTest {
 
   @Mock private FirebaseAppDistributionTesterApiClient mockFirebaseAppDistributionTesterApiClient;
   @Mock private ReleaseIdentifier mockReleaseIdentifier;
+  @Mock private DevModeDetector mockDevModeDetector;
 
   @Lightweight ExecutorService lightweightExecutor = TestOnlyExecutors.lite();
 
@@ -85,6 +87,7 @@ public class NewReleaseFetcherTest {
     when(mockReleaseIdentifier.extractApkHash()).thenReturn(Tasks.forResult(CURRENT_APK_HASH));
     when(mockReleaseIdentifier.extractInternalAppSharingArtifactId())
         .thenReturn(TEST_IAS_ARTIFACT_ID);
+    when(mockDevModeDetector.isDevModeEnabled()).thenReturn(false);
 
     newReleaseFetcher =
         spy(
@@ -92,6 +95,7 @@ public class NewReleaseFetcherTest {
                 ApplicationProvider.getApplicationContext(),
                 mockFirebaseAppDistributionTesterApiClient,
                 mockReleaseIdentifier,
+                mockDevModeDetector,
                 lightweightExecutor));
   }
 
@@ -121,10 +125,19 @@ public class NewReleaseFetcherTest {
     when(mockFirebaseAppDistributionTesterApiClient.fetchNewRelease())
         .thenReturn(Tasks.forResult(getTestNewRelease().build()));
 
-    Task<AppDistributionReleaseInternal> task = newReleaseFetcher.checkForNewRelease();
-    AppDistributionReleaseInternal appDistributionReleaseInternal = awaitTask(task);
+    AppDistributionReleaseInternal release = awaitTask(newReleaseFetcher.checkForNewRelease());
 
-    assertEquals(getTestNewRelease().build(), appDistributionReleaseInternal);
+    assertThat(release).isEqualTo(getTestNewRelease().build());
+  }
+
+  @Test
+  public void checkForNewRelease_devModeEnabled_returnsNull() throws Exception {
+    when(mockDevModeDetector.isDevModeEnabled()).thenReturn(true);
+
+    AppDistributionReleaseInternal release = awaitTask(newReleaseFetcher.checkForNewRelease());
+
+    assertThat(release).isNull();
+    verifyNoInteractions(mockFirebaseAppDistributionTesterApiClient);
   }
 
   @Test

@@ -23,6 +23,7 @@ import static com.google.firebase.appdistribution.impl.TestUtils.awaitTaskFailur
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -96,6 +97,7 @@ public class TesterSignInManagerTest {
   @Mock private InstallationTokenResult mockInstallationTokenResult;
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
   @Mock private SignInResultActivity mockSignInResultActivity;
+  @Mock private DevModeDetector devModeDetector;
 
   @Before
   public void setUp() {
@@ -116,11 +118,13 @@ public class TesterSignInManagerTest {
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(TEST_FID_1));
     when(mockFirebaseInstallations.getToken(false))
         .thenReturn(Tasks.forResult(mockInstallationTokenResult));
-
     when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
+    when(devModeDetector.isDevModeEnabled()).thenReturn(false);
 
     signInStorage =
-        spy(new SignInStorage(ApplicationProvider.getApplicationContext(), backgroundExecutor));
+        spy(
+            new SignInStorage(
+                ApplicationProvider.getApplicationContext(), devModeDetector, backgroundExecutor));
 
     shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
@@ -251,8 +255,9 @@ public class TesterSignInManagerTest {
   public void signInTester_whenStorageFailsToRecordSignInStatus_taskFails()
       throws InterruptedException {
     Exception expectedException = new RuntimeException("Error");
-    when(signInStorage.setSignInStatus(anyBoolean()))
-        .thenReturn(Tasks.forException(expectedException));
+    doReturn(Tasks.forException(expectedException))
+        .when(signInStorage)
+        .setSignInStatus(anyBoolean());
     Task signInTask = testerSignInManager.signInTester();
     awaitAsyncOperations(backgroundExecutor);
     awaitAsyncOperations(lightweightExecutor);
@@ -273,5 +278,16 @@ public class TesterSignInManagerTest {
     testerSignInManager.onActivityResumed(activity);
 
     awaitTaskFailure(signInTask, AUTHENTICATION_CANCELED, ErrorMessages.AUTHENTICATION_CANCELED);
+  }
+
+  @Test
+  public void signInTester_devModeEnabled_doesNothing()
+      throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
+    when(devModeDetector.isDevModeEnabled()).thenReturn(true);
+
+    awaitTask(testerSignInManager.signInTester());
+
+    verifyNoInteractions(mockFirebaseInstallationsProvider);
+    verifyNoInteractions(mockFirebaseInstallations);
   }
 }

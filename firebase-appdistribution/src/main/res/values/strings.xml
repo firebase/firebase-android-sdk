@@ -23,6 +23,7 @@
   <string name="update_release_notes" translation_description="Text prefixing release notes">Release notes:</string>
   <string name="update_yes_button" translation_description="Text on button to start update">Update</string>
   <string name="update_no_button" translation_description="Text on button to cancel update">Cancel</string>
+  <string name="update_dev_mode_enabled" translation_description="Toast explaining that the SDK did not check for a new release since development mode was active">Not checking for update due to development mode.</string>
   <string name="downloading_app_update" translation_description="Title of the notification showing during download of update">Downloading in-app update…</string>
   <string name="download_completed" translation_description="Title of notification when download of update has completed">Download complete</string>
   <string name="download_failed" translation_description="Title of notification when download of update has failed">Download failed</string>
