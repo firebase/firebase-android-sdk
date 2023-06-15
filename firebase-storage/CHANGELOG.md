@@ -1,6 +1,13 @@
 # Unreleased
+
+# 20.2.1
 * [changed] Migrated `firebase-storage` SDK to use standard Firebase executors.
   (GitHub [#4830](//github.com/firebase/firebase-android-sdk/pull/4830){: .external})
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-storage` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.2.0
 * [changed] Internal changes to ensure alignment with other SDK releases.
