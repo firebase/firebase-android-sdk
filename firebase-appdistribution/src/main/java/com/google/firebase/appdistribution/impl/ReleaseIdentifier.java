@@ -76,8 +76,8 @@ class ReleaseIdentifier {
   /**
    * Identify the currently installed release, returning the release name.
    *
-   * <p>Will return {@code Task} with a {@code null} result in "development mode" which allows the UI
-   * to be used, but no actual feedback to be submitted.
+   * <p>Will return {@code Task} with a {@code null} result in "development mode" which allows the
+   * UI to be used, but no actual feedback to be submitted.
    */
   Task<String> identifyRelease() {
     if (devModeDetector.isDevModeEnabled()) {

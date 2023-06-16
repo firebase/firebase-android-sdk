@@ -30,6 +30,7 @@ import javax.inject.Singleton;
 @Singleton
 class SignInStorage {
   static final String TAG = "SignInStorage";
+
   @VisibleForTesting
   static final String SIGNIN_PREFERENCES_NAME = "FirebaseAppDistributionSignInStorage";
 
@@ -68,7 +69,8 @@ class SignInStorage {
 
   Task<Boolean> getSignInStatus() {
     if (devModeDetector.isDevModeEnabled()) {
-      LogWrapper.w(TAG, "Returning tester sign in status 'true' because development mode is enabled");
+      LogWrapper.w(
+          TAG, "Returning tester sign in status 'true' because development mode is enabled");
       return Tasks.forResult(true);
     }
     return applyToSharedPreferences(
@@ -77,7 +79,8 @@ class SignInStorage {
 
   boolean getSignInStatusBlocking() {
     if (devModeDetector.isDevModeEnabled()) {
-      LogWrapper.w(TAG, "Returning tester sign in status 'true' because development mode is enabled");
+      LogWrapper.w(
+          TAG, "Returning tester sign in status 'true' because development mode is enabled");
       return true;
     }
     return getAndCacheSharedPreferences().getBoolean(SIGNIN_TAG, false);
