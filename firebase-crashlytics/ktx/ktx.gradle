@@ -30,6 +30,7 @@ android {
     minSdk 16
     multiDexEnabled true
     targetSdk 33
+    versionName version
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
   }
   compileOptions {
