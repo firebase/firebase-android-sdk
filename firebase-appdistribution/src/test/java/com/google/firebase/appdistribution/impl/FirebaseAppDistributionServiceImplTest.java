@@ -240,7 +240,6 @@ public class FirebaseAppDistributionServiceImplTest {
     activityController = Robolectric.buildActivity(TestActivity.class).setup();
     activity = spy(activityController.get());
     mockForegroundActivity(mockLifecycleNotifier, activity);
-
   }
 
   @After

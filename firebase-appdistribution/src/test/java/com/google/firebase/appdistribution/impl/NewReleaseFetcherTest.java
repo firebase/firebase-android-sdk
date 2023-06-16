@@ -20,7 +20,6 @@ import static com.google.firebase.appdistribution.BinaryType.APK;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitAsyncOperations;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTask;
 import static com.google.firebase.appdistribution.impl.TestUtils.awaitTaskFailure;
-import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
