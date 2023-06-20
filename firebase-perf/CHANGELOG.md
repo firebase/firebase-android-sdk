@@ -1,8 +1,14 @@
 # Unreleased
 
+# 20.3.3
 * [fixed] Fixed app start trace creation where some measured time could be NULL (#4730).
 * [changed] Adjusted default behavior when remote config fetch fails. 
 
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.3.2
 * [changed] Updated JavaLite, protoc, protobuf-java-util to 3.21.11.
