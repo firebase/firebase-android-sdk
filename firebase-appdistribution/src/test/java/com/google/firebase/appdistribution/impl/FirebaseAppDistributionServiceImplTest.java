@@ -905,6 +905,6 @@ public class FirebaseAppDistributionServiceImplTest {
     SharedPreferences sharedPreferences =
         ApplicationProvider.getApplicationContext()
             .getSharedPreferences(SignInStorage.SIGNIN_PREFERENCES_NAME, MODE_PRIVATE);
-    sharedPreferences.edit().putBoolean(SignInStorage.SIGNIN_TAG, testerSignedIn).commit();
+    sharedPreferences.edit().putBoolean(SignInStorage.SIGN_IN_KEY, testerSignedIn).commit();
   }
 }

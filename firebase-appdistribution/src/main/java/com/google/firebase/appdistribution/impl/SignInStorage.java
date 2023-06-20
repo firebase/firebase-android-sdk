@@ -34,7 +34,10 @@ class SignInStorage {
   @VisibleForTesting
   static final String SIGNIN_PREFERENCES_NAME = "FirebaseAppDistributionSignInStorage";
 
-  @VisibleForTesting static final String SIGNIN_TAG = "firebase_app_distribution_signin";
+  @VisibleForTesting static final String SIGN_IN_KEY = "firebase_app_distribution_signin";
+
+  @VisibleForTesting
+  static final String DEV_MODE_SIGN_IN_KEY = "firebase_app_distribution_signin_dev_mode";
 
   private final Context applicationContext;
   private final DevModeDetector devModeDetector;
@@ -56,34 +59,20 @@ class SignInStorage {
   }
 
   Task<Void> setSignInStatus(boolean testerSignedIn) {
-    if (devModeDetector.isDevModeEnabled()) {
-      LogWrapper.w(TAG, "Not signing out tester because development mode is enabled");
-      return Tasks.forResult(null);
-    }
     return applyToSharedPreferences(
         sharedPreferences -> {
-          sharedPreferences.edit().putBoolean(SIGNIN_TAG, testerSignedIn).apply();
+          sharedPreferences.edit().putBoolean(storageKey(), testerSignedIn).apply();
           return null;
         });
   }
 
   Task<Boolean> getSignInStatus() {
-    if (devModeDetector.isDevModeEnabled()) {
-      LogWrapper.w(
-          TAG, "Returning tester sign in status 'true' because development mode is enabled");
-      return Tasks.forResult(true);
-    }
     return applyToSharedPreferences(
-        sharedPreferences -> sharedPreferences.getBoolean(SIGNIN_TAG, false));
+        sharedPreferences -> sharedPreferences.getBoolean(storageKey(), false));
   }
 
   boolean getSignInStatusBlocking() {
-    if (devModeDetector.isDevModeEnabled()) {
-      LogWrapper.w(
-          TAG, "Returning tester sign in status 'true' because development mode is enabled");
-      return true;
-    }
-    return getAndCacheSharedPreferences().getBoolean(SIGNIN_TAG, false);
+    return getAndCacheSharedPreferences().getBoolean(storageKey(), false);
   }
 
   private SharedPreferences getAndCacheSharedPreferences() {
@@ -105,5 +94,9 @@ class SignInStorage {
     backgroundExecutor.execute(
         () -> taskCompletionSource.setResult(func.apply(getAndCacheSharedPreferences())));
     return taskCompletionSource.getTask();
+  }
+
+  private String storageKey() {
+    return devModeDetector.isDevModeEnabled() ? DEV_MODE_SIGN_IN_KEY : SIGN_IN_KEY;
   }
 }

@@ -56,6 +56,7 @@ class TesterSignInManager {
   private final SignInStorage signInStorage;
   private final FirebaseAppDistributionLifecycleNotifier lifecycleNotifier;
 
+  private final DevModeDetector devModeDetector;
   @Lightweight private final Executor lightweightExecutor;
   private final TaskCompletionSourceCache<Void> signInTaskCompletionSourceCache;
 
@@ -68,12 +69,14 @@ class TesterSignInManager {
       Provider<FirebaseInstallationsApi> firebaseInstallationsApiProvider,
       SignInStorage signInStorage,
       FirebaseAppDistributionLifecycleNotifier lifecycleNotifier,
+      DevModeDetector devModeDetector,
       @Lightweight Executor lightweightExecutor) {
     this.applicationContext = applicationContext;
     this.firebaseOptions = firebaseOptions;
     this.firebaseInstallationsApiProvider = firebaseInstallationsApiProvider;
     this.signInStorage = signInStorage;
     this.lifecycleNotifier = lifecycleNotifier;
+    this.devModeDetector = devModeDetector;
     this.lightweightExecutor = lightweightExecutor;
     this.signInTaskCompletionSourceCache = new TaskCompletionSourceCache<>(lightweightExecutor);
 
@@ -133,6 +136,11 @@ class TesterSignInManager {
   }
 
   private Task<Void> doSignInTester() {
+    if (devModeDetector.isDevModeEnabled()) {
+      LogWrapper.w(TAG, "Skipping actual tester sign in because dev mode is enabled");
+      signInStorage.setSignInStatus(true);
+      return Tasks.forResult(null);
+    }
     return signInTaskCompletionSourceCache.getOrCreateTaskFromCompletionSource(
         () -> {
           TaskCompletionSource<Void> signInTaskCompletionSource = new TaskCompletionSource<>();
