@@ -126,6 +126,11 @@ internal constructor(
 
     Log.d(TAG, "Data Collection is enabled for at least one Subscriber")
 
+    if (!sessionSettings.sessionsEnabled) {
+      Log.d(TAG, "Sessions SDK disabled. Events will not be sent.")
+      return
+    }
+
     if (!sessionGenerator.collectEvents) {
       Log.d(TAG, "Sessions SDK has sampled this session")
       return
