@@ -18,6 +18,7 @@ import com.google.firebase.gradle.bomgenerator.BomGeneratorTask
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.BUILD_BOM_ZIP_TASK
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.BUILD_KOTLINDOC_ZIP_TASK
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.BUILD_MAVEN_ZIP_TASK
+import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.BUILD_RELEASE_NOTES_ZIP_TASK
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.FIREBASE_PUBLISH_TASK
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.GENERATE_BOM_TASK
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.GENERATE_KOTLINDOC_FOR_RELEASE_TASK
@@ -27,6 +28,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
+import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
@@ -45,6 +47,8 @@ import org.gradle.kotlin.dsl.register
  * [PUBLISH_RELEASING_LIBS_TO_BUILD_TASK] [registerPublishReleasingLibrariesToBuildDirTask]
  * - [BUILD_KOTLINDOC_ZIP_TASK] -> Creates a zip file of the contents of
  * [GENERATE_KOTLINDOC_FOR_RELEASE_TASK] [registerGenerateKotlindocForReleaseTask]
+ * - [BUILD_RELEASE_NOTES_ZIP_TASK] -> Creates a zip file of the contents of
+ * [PREPARE_RELEASE_NOTES_FOR_DROP][registerPrepareReleaseNotesForDropTask]
  * - [FIREBASE_PUBLISH_TASK] -> Runs all the tasks above
  *
  * The following are additional tasks provided- that are either for convenience sake, or are used
@@ -61,7 +65,9 @@ abstract class PublishingPlugin : Plugin<Project> {
   override fun apply(project: Project) {
     project.gradle.projectsEvaluated {
       val allFirebaseLibraries = project.subprojects.mapNotNull { it.firebaseLibraryOrNull }
-      val releasingFirebaseLibraries = computeReleasingLibraries(project, allFirebaseLibraries)
+      val releaseMetadata = computeReleaseMetadata(project, allFirebaseLibraries)
+
+      val releasingFirebaseLibraries = releaseMetadata?.releasingLibraries.orEmpty()
       val releasingProjects = releasingFirebaseLibraries.map { it.project }
 
       val generateBom = registerGenerateBomTask(project)
@@ -74,6 +80,12 @@ abstract class PublishingPlugin : Plugin<Project> {
         registerPublishReleasingLibrariesToBuildDirTask(project, releasingProjects)
       val generateKotlindocsForRelease =
         registerGenerateKotlindocForReleaseTask(project, releasingFirebaseLibraries)
+      val prepareReleaseNotesForDrop =
+        registerPrepareReleaseNotesForDropTask(
+          project,
+          releasingProjects,
+          releaseMetadata?.name.orEmpty()
+        )
 
       registerGenerateReleaseConfigFilesTask(project)
       registerPublishReleasingLibrariesToMavenLocalTask(project, releasingProjects)
@@ -94,6 +106,13 @@ abstract class PublishingPlugin : Plugin<Project> {
           destinationDirectory.set(project.layout.buildDirectory)
         }
 
+      val buildReleaseNotesZip =
+        project.tasks.register<Zip>(BUILD_RELEASE_NOTES_ZIP_TASK) {
+          from(prepareReleaseNotesForDrop.map { it.destinationDir })
+          archiveFileName.set("release-notes.zip")
+          destinationDirectory.set(project.layout.buildDirectory)
+        }
+
       project.tasks.register<Zip>(BUILD_BOM_ZIP_TASK) {
         from(generateBom)
         archiveFileName.set("bom.zip")
@@ -106,7 +125,8 @@ abstract class PublishingPlugin : Plugin<Project> {
           checkHeadDependencies,
           // validatePomForRelease, TODO(b/279466888) - Make GmavenHelper testable
           buildMavenZip,
-          buildKotlindocZip
+          buildKotlindocZip,
+          buildReleaseNotesZip
         )
 
         doLast {
@@ -120,15 +140,17 @@ abstract class PublishingPlugin : Plugin<Project> {
   }
 
   /**
-   * Figures out what libraries are intended to release.
+   * Figures out the [ReleaseMetadata] for with this release.
    *
-   * Libraries can be provided either via the `projectsToPublish` property, or a [ReleaseConfig]
-   * file.
+   * Metadata can be provided either via the project properties or a [ReleaseConfig] file.
    *
-   * The `projectsToPublish` property takes priority over the [ReleaseConfig]. It expects a comma
-   * separated list of the publishing project(s) `artifactId`. It also takes into account
-   * [librariesToRelease][FirebaseLibraryExtension.getLibrariesToRelease] -> so there's no need to
-   * specify multiple of the same co-releasing libs.
+   * The expected project properties can be defined as such:
+   * - `projectsToPublish` -> A comma seperated list of the publishing project(s) `artifactId`.
+   * - `releaseName` -> The name of the release (such as `m123`)
+   *
+   * When using project properties, this method will take into account [librariesToRelease]
+   * [FirebaseLibraryExtension.getLibrariesToRelease] -> so there's no need to specify multiple of
+   * the same co-releasing libs.
    *
    * The [ReleaseConfig] is a pre-defined set of data for a release. It expects a valid [file]
    * [ReleaseConfig.fromFile], which provides a list of libraries via their [path]
@@ -137,45 +159,58 @@ abstract class PublishingPlugin : Plugin<Project> {
    * need to be individually specified in the [ReleaseConfig], otherwise it will likely cause an
    * error during the release process.
    *
-   * Example usage of `projectsToPublish`:
+   * **Project properties take priority over a [ReleaseConfig].**
+   *
+   * Example usage of project properties:
    * ```
-   * ./gradlew firebasePublish -PprojectsToPublish="firebase-firestore,firebase-common"
+   * ./gradlew firebasePublish -PprojectsToPublish="firebase-firestore,firebase-common" -PreleaseName="m131"
    * ```
    *
    * See [ReleaseConfig.toFile] for example usage of [ReleaseConfig].
    *
-   * If both `projectsToPublish` and [ReleaseConfig] are empty, or do not exist- this method will
-   * return an empty list.
+   * If either project property is not provided, and a [ReleaseConfig] is either not found or is
+   * empty- this method will return null.
    */
-  private fun computeReleasingLibraries(
+  private fun computeReleaseMetadata(
     project: Project,
     allFirebaseLibraries: List<FirebaseLibraryExtension>
-  ): List<FirebaseLibraryExtension> {
-    val releasingLibrariesFromProperty = releasingLibsFromProperty(project)
-    if (releasingLibrariesFromProperty != null) {
-      return allFirebaseLibraries
-        .filter { it.artifactId.get() in releasingLibrariesFromProperty }
+  ): ReleaseMetadata? =
+    releaseMetadataFromProperties(project, allFirebaseLibraries)
+      ?: releaseMetadataFromReleaseConfig(project, allFirebaseLibraries)
+
+  private fun releaseMetadataFromProperties(
+    project: Project,
+    allFirebaseLibraries: List<FirebaseLibraryExtension>
+  ): ReleaseMetadata? {
+    val projectsToPublish = project.provideProperty<String>("projectsToPublish").orNull
+    val releaseName = project.provideProperty<String>("releaseName").orNull
+
+    if (projectsToPublish == null || releaseName == null) return null
+
+    val projectNames = projectsToPublish.split(",")
+    val librariesToRelease =
+      allFirebaseLibraries
+        .filter { it.artifactId.get() in projectNames }
         .flatMap { it.librariesToRelease }
         .distinctBy { it.artifactId.get() }
-    }
 
-    val releasingLibrariesFromReleseConfig = releasingLibsFromReleaseConfig(project)
-    if (releasingLibrariesFromReleseConfig != null) {
-      return allFirebaseLibraries.filter { it.path in releasingLibrariesFromReleseConfig }
-    }
-
-    return emptyList()
+    return ReleaseMetadata(librariesToRelease, releaseName)
   }
 
-  private fun releasingLibsFromProperty(project: Project) =
-    project.provideProperty<String>("projectsToPublish").orNull?.split(",")
+  private fun releaseMetadataFromReleaseConfig(
+    project: Project,
+    allFirebaseLibraries: List<FirebaseLibraryExtension>
+  ): ReleaseMetadata? {
+    val releaseConfigFile =
+      project.layout.projectDirectory.file(RELEASE_CONFIG_FILE).asFile.takeIf { it.exists() }
 
-  private fun releasingLibsFromReleaseConfig(project: Project) =
-    project.layout.projectDirectory
-      .file(RELEASE_CONFIG_FILE)
-      .asFile
-      .takeIf { it.exists() }
-      ?.let { ReleaseConfig.fromFile(it).libraries }
+    return releaseConfigFile?.let {
+      val releaseConfig = ReleaseConfig.fromFile(it)
+      val librariesToRelease = allFirebaseLibraries.filter { it.path in releaseConfig.libraries }
+
+      ReleaseMetadata(librariesToRelease, releaseConfig.name)
+    }
+  }
 
   /**
    * Registers the [GENERATE_BOM_TASK] task.
@@ -291,10 +326,36 @@ abstract class PublishingPlugin : Plugin<Project> {
 
         dependsOn(kotlindocTask)
 
-        if (releasingLibrary.publishJavadoc) {
-          outputs.dir(kotlindocTask.map { it.outputs.files }).optional()
+        outputs.dirs(kotlindocTask).optional()
+      }
+    }
+
+  /**
+   * Registers the [PREPARE_RELEASE_NOTES_FOR_DROP] task.
+   *
+   * A collection of [makeReleaseNotes][MakeReleaseNotesTask] for each releasing project, that are
+   * arranged in a common directly such that they can be properly dropped in G3.
+   *
+   * The artifacts are provided in a folder under the [buildDir][Project.getBuildDir] of the
+   * provided [project].
+   */
+  private fun registerPrepareReleaseNotesForDropTask(
+    project: Project,
+    releasingProjects: List<Project>,
+    releaseName: String
+  ) =
+    project.tasks.register<Copy>(PREPARE_RELEASE_NOTES_FOR_DROP) {
+      for (releasingProject in releasingProjects) {
+        with(releasingProject) {
+          val directory = if (name == "firebase-storage") "$name-api" else name
+          val releaseNotesTask = tasks.named("makeReleaseNotes")
+
+          from(releaseNotesTask) { into("android/client/$directory/_releases") }
+          rename { "$releaseName.md" }
         }
       }
+
+      destinationDir = project.fileFromBuildDir("release-notes")
     }
 
   /**
@@ -390,9 +451,11 @@ abstract class PublishingPlugin : Plugin<Project> {
     const val PUBLISH_RELEASING_LIBS_TO_BUILD_TASK = "publishReleasingLibrariesToBuildDir"
     const val PUBLISH_RELEASING_LIBS_TO_LOCAL_TASK = "publishReleasingLibrariesToMavenLocal"
     const val GENERATE_KOTLINDOC_FOR_RELEASE_TASK = "generateKotlindocForRelease"
+    const val PREPARE_RELEASE_NOTES_FOR_DROP = "prepareReleaseNotesForDrop"
     const val CHECK_HEAD_DEPS_TASK = "checkHeadDependencies"
     const val BUILD_MAVEN_ZIP_TASK = "buildMavenZip"
     const val BUILD_KOTLINDOC_ZIP_TASK = "buildKotlindocZip"
+    const val BUILD_RELEASE_NOTES_ZIP_TASK = "buildReleaseNotesZip"
     const val BUILD_BOM_ZIP_TASK = "buildBomZip"
     const val FIREBASE_PUBLISH_TASK = "firebasePublish"
     const val PUBLISH_ALL_TO_BUILD_TASK = "publishAllToBuildDir"
@@ -400,3 +463,16 @@ abstract class PublishingPlugin : Plugin<Project> {
     const val BUILD_DIR_REPOSITORY_DIR = "m2repository"
   }
 }
+
+/**
+ * Data needed to understand a Release.
+ *
+ * @property releasingLibraries A list of libraries that should be released
+ * @property name The name of the release (such as `m123`)
+ *
+ * @see computeReleaseMetadata
+ */
+data class ReleaseMetadata(
+  val releasingLibraries: List<FirebaseLibraryExtension>,
+  val name: String
+)

@@ -88,7 +88,7 @@ additional updates.
 * [fixed] Added support for Android API key restrictions.
 
 # 24.0.0
-- [changed] Internal infrastructure improvements.
+* [changed] Internal infrastructure improvements.
 
 
 ## Kotlin

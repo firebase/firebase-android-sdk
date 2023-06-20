@@ -625,6 +625,47 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
+  public void testFiltersOnTheSameField() {
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.ASCENDING));
+    indexManager.addFieldIndex(fieldIndex("coll", "a", Kind.ASCENDING, "b", Kind.ASCENDING));
+
+    addDoc("coll/val1", map("a", 1, "b", 1));
+    addDoc("coll/val2", map("a", 2, "b", 2));
+    addDoc("coll/val3", map("a", 3, "b", 3));
+    addDoc("coll/val4", map("a", 4, "b", 4));
+
+    Query query = query("coll").filter(filter("a", ">", 1)).filter(filter("a", "==", 2));
+    verifyResults(query, "coll/val2");
+
+    query = query("coll").filter(filter("a", "<=", 1)).filter(filter("a", "==", 2));
+    verifyResults(query);
+
+    query =
+        query("coll")
+            .filter(filter("a", ">", 1))
+            .filter(filter("a", "==", 2))
+            .orderBy(orderBy("a"))
+            .orderBy(orderBy(DocumentKey.KEY_FIELD_NAME));
+    verifyResults(query, "coll/val2");
+
+    query =
+        query("coll")
+            .filter(filter("a", ">", 1))
+            .filter(filter("a", "==", 2))
+            .orderBy(orderBy("a"))
+            .orderBy(orderBy(DocumentKey.KEY_FIELD_NAME, "desc"));
+    verifyResults(query, "coll/val2");
+
+    query =
+        query("coll")
+            .filter(filter("a", ">", 1))
+            .filter(filter("a", "==", 3))
+            .orderBy(orderBy("a"))
+            .orderBy(orderBy("b"));
+    verifyResults(query, "coll/val3");
+  }
+
+  @Test
   public void testAdvancedQueries() {
     // This test compares local query results with those received from the Java Server SDK.
 

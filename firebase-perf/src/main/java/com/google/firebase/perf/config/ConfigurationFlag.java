@@ -27,6 +27,12 @@ abstract class ConfigurationFlag<T> {
   /* Default value for this flag. */
   protected abstract T getDefault();
 
+  /* Default value for this flag in the case that RC fetch explicitly failed. */
+  protected T getDefaultOnRcFetchFail() {
+    // Same as typical default unless overridden.
+    return getDefault();
+  }
+
   /* Configuration flag ID for Firebase Remote Config. */
   @Nullable
   String getRemoteConfigFlag() {

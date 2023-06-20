@@ -203,9 +203,9 @@ change. The following release notes describe changes in the new SDK.
   </ul>
 </aside>
 
- - [changed] [crashlytics] NDK crash reporting will now start automatically
+ * [changed] [crashlytics] NDK crash reporting will now start automatically
  when the [crashlytics] NDK dependency is included in your app.
- - [changed] The [crashlytics] Gradle plugin has new tasks to support
+ * [changed] The [crashlytics] Gradle plugin has new tasks to support
  uploading symbol files to [crashlytics] servers. See the
  [[crashlytics] Gradle plugin documentation](/docs/crashlytics/ndk-reports-new-sdk)
  for more information.
