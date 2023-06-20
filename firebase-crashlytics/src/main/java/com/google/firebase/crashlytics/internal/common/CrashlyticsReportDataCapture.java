@@ -164,7 +164,8 @@ public class CrashlyticsReportDataCapture {
     return CrashlyticsReport.builder()
         .setSdkVersion(BuildConfig.VERSION_NAME)
         .setGmpAppId(appData.googleAppId)
-        .setInstallationUuid(idManager.getCrashlyticsInstallId())
+        .setInstallationUuid(idManager.getInstallIds().getCrashlyticsInstallId())
+        .setFirebaseInstallationId(idManager.getInstallIds().getFirebaseInstallationId())
         .setBuildVersion(appData.versionCode)
         .setDisplayVersion(appData.versionName)
         .setPlatform(REPORT_ANDROID_PLATFORM);
@@ -188,7 +189,7 @@ public class CrashlyticsReportDataCapture {
             .setIdentifier(idManager.getAppIdentifier())
             .setVersion(appData.versionCode)
             .setDisplayVersion(appData.versionName)
-            .setInstallationUuid(idManager.getCrashlyticsInstallId())
+            .setInstallationUuid(idManager.getInstallIds().getCrashlyticsInstallId())
             .setDevelopmentPlatform(appData.developmentPlatformProvider.getDevelopmentPlatform())
             .setDevelopmentPlatformVersion(
                 appData.developmentPlatformProvider.getDevelopmentPlatformVersion());

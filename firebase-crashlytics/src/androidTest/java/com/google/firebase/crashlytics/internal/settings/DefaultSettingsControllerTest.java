@@ -31,6 +31,7 @@ import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
 import com.google.firebase.crashlytics.internal.common.DeliveryMechanism;
 import com.google.firebase.crashlytics.internal.common.ExecutorUtils;
 import com.google.firebase.crashlytics.internal.common.InstallIdProvider;
+import com.google.firebase.crashlytics.internal.common.InstallIdProvider.InstallIds;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONObject;
@@ -380,13 +381,7 @@ public class DefaultSettingsControllerTest extends CrashlyticsTestCase {
   }
 
   private SettingsRequest buildSettingsRequest() {
-    InstallIdProvider installIdProvider =
-        new InstallIdProvider() {
-          @Override
-          public String getCrashlyticsInstallId() {
-            return installationId;
-          }
-        };
+    InstallIdProvider installIdProvider = () -> InstallIds.createWithoutFid(installationId);
 
     return new SettingsRequest(
         googleAppId,
