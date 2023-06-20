@@ -180,7 +180,9 @@ class DefaultSettingsSpiCall implements SettingsSpiCall {
     applyNonNullHeader(request, HEADER_OS_BUILD_VERSION, requestData.osBuildVersion);
     applyNonNullHeader(request, HEADER_OS_DISPLAY_VERSION, requestData.osDisplayVersion);
     applyNonNullHeader(
-        request, HEADER_INSTALLATION_ID, requestData.installIdProvider.getCrashlyticsInstallId());
+        request,
+        HEADER_INSTALLATION_ID,
+        requestData.installIdProvider.getInstallIds().getCrashlyticsInstallId());
 
     return request;
   }

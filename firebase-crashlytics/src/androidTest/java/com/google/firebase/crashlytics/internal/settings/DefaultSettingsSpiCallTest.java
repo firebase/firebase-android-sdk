@@ -20,6 +20,7 @@ import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.InstallIdProvider;
+import com.google.firebase.crashlytics.internal.common.InstallIdProvider.InstallIds;
 import com.google.firebase.crashlytics.internal.network.HttpGetRequest;
 import com.google.firebase.crashlytics.internal.network.HttpRequestFactory;
 import com.google.firebase.crashlytics.internal.network.HttpResponse;
@@ -230,13 +231,7 @@ public class DefaultSettingsSpiCallTest extends CrashlyticsTestCase {
   }
 
   private SettingsRequest buildSettingsRequest(String instanceId) {
-    final InstallIdProvider installIdProvider =
-        new InstallIdProvider() {
-          @Override
-          public String getCrashlyticsInstallId() {
-            return INSTALLATION_ID;
-          }
-        };
+    final InstallIdProvider installIdProvider = () -> InstallIds.createWithoutFid(INSTALLATION_ID);
     return new SettingsRequest(
         GOOGLE_APP_ID,
         DEVICE_MODEL,
