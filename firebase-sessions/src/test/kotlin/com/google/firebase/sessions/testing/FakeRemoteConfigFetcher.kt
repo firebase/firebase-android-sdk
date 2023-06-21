@@ -24,7 +24,7 @@ internal class FakeRemoteConfigFetcher(var responseJSONObject: JSONObject = JSON
   override suspend fun doConfigFetch(
     headerOptions: Map<String, String>,
     onSuccess: suspend (JSONObject) -> Unit,
-    onFailure: suspend () -> Unit
+    onFailure: suspend (String) -> Unit
   ) {
     onSuccess(responseJSONObject)
   }

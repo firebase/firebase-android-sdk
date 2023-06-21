@@ -19,6 +19,7 @@ package com.google.firebase.sessions.settings
 import android.net.Uri
 import com.google.firebase.sessions.ApplicationInfo
 import java.io.BufferedReader
+import java.io.IOException
 import java.io.InputStreamReader
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
@@ -27,43 +28,48 @@ import org.json.JSONObject
 internal interface CrashlyticsSettingsFetcher {
   suspend fun doConfigFetch(
     headerOptions: Map<String, String>,
-    onSuccess: suspend ((JSONObject)) -> Unit,
-    onFailure: suspend () -> Unit
+    onSuccess: suspend (JSONObject) -> Unit,
+    onFailure: suspend (msg: String) -> Unit
   )
 }
 
-internal class RemoteSettingsFetcher(val appInfo: ApplicationInfo) : CrashlyticsSettingsFetcher {
+internal class RemoteSettingsFetcher(private val appInfo: ApplicationInfo) :
+  CrashlyticsSettingsFetcher {
   override suspend fun doConfigFetch(
     headerOptions: Map<String, String>,
-    onSuccess: suspend ((JSONObject)) -> Unit,
-    onFailure: suspend () -> Unit
+    onSuccess: suspend (JSONObject) -> Unit,
+    onFailure: suspend (String) -> Unit
   ) {
     val connection = settingsUrl().openConnection() as HttpsURLConnection
     connection.requestMethod = "GET"
     connection.setRequestProperty("Accept", "application/json")
     headerOptions.forEach { connection.setRequestProperty(it.key, it.value) }
 
-    val responseCode = connection.responseCode
-    if (responseCode == HttpsURLConnection.HTTP_OK) {
-      val inputStream = connection.inputStream
-      val bufferedReader = BufferedReader(InputStreamReader(inputStream))
-      val response = StringBuilder()
-      var inputLine: String?
-      while (bufferedReader.readLine().also { inputLine = it } != null) {
-        response.append(inputLine)
-      }
-      bufferedReader.close()
-      inputStream.close()
+    try {
+      val responseCode = connection.responseCode
+      if (responseCode == HttpsURLConnection.HTTP_OK) {
+        val inputStream = connection.inputStream
+        val bufferedReader = BufferedReader(InputStreamReader(inputStream))
+        val response = StringBuilder()
+        var inputLine: String?
+        while (bufferedReader.readLine().also { inputLine = it } != null) {
+          response.append(inputLine)
+        }
+        bufferedReader.close()
+        inputStream.close()
 
-      val responseJson = JSONObject(response.toString())
-      onSuccess(responseJson)
-    } else {
-      onFailure()
+        val responseJson = JSONObject(response.toString())
+        onSuccess(responseJson)
+      } else {
+        onFailure("Bad response code: $responseCode")
+      }
+    } catch (ex: IOException) {
+      onFailure(ex.message ?: ex.toString())
     }
   }
 
-  fun settingsUrl(): URL {
-    var uri =
+  private fun settingsUrl(): URL {
+    val uri =
       Uri.Builder()
         .scheme("https")
         .authority(FIREBASE_SESSIONS_BASE_URL_STRING)
