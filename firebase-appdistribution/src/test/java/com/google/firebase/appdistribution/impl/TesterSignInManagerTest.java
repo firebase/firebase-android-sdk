@@ -154,6 +154,7 @@ public class TesterSignInManagerTest {
             mockFirebaseInstallationsProvider,
             signInStorage,
             mockLifecycleNotifier,
+            devModeDetector,
             lightweightExecutor);
   }
 
@@ -281,12 +282,13 @@ public class TesterSignInManagerTest {
   }
 
   @Test
-  public void signInTester_devModeEnabled_doesNothing()
+  public void signInTester_devModeEnabled_immediatelySignsIn()
       throws FirebaseAppDistributionException, ExecutionException, InterruptedException {
     when(devModeDetector.isDevModeEnabled()).thenReturn(true);
 
     awaitTask(testerSignInManager.signInTester());
 
+    assertThat(awaitTask(signInStorage.getSignInStatus())).isTrue();
     verifyNoInteractions(mockFirebaseInstallationsProvider);
     verifyNoInteractions(mockFirebaseInstallations);
   }
