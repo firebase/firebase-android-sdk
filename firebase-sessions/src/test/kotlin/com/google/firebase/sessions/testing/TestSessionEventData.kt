@@ -58,23 +58,25 @@ internal object TestSessionEventData {
       firebaseInstallationId = "",
     )
 
+  val TEST_APPLICATION_INFO =
+    ApplicationInfo(
+      appId = FakeFirebaseApp.MOCK_APP_ID,
+      deviceModel = Build.MODEL,
+      sessionSdkVersion = BuildConfig.VERSION_NAME,
+      osVersion = Build.VERSION.RELEASE,
+      logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
+      AndroidApplicationInfo(
+        packageName = ApplicationProvider.getApplicationContext<Context>().packageName,
+        versionName = FakeFirebaseApp.MOCK_APP_VERSION,
+        appBuildVersion = FakeFirebaseApp.MOCK_APP_BUILD_VERSION,
+        deviceManufacturer = Build.MANUFACTURER,
+      ),
+    )
+
   val TEST_SESSION_EVENT =
     SessionEvent(
       eventType = EventType.SESSION_START,
       sessionData = TEST_SESSION_DATA,
-      applicationInfo =
-        ApplicationInfo(
-          appId = FakeFirebaseApp.MOCK_APP_ID,
-          deviceModel = Build.MODEL,
-          sessionSdkVersion = BuildConfig.VERSION_NAME,
-          osVersion = Build.VERSION.RELEASE,
-          logEnvironment = LogEnvironment.LOG_ENVIRONMENT_PROD,
-          AndroidApplicationInfo(
-            packageName = ApplicationProvider.getApplicationContext<Context>().packageName,
-            versionName = FakeFirebaseApp.MOCK_APP_VERSION,
-            appBuildVersion = FakeFirebaseApp.MOCK_APP_BUILD_VERSION,
-            deviceManufacturer = Build.MANUFACTURER,
-          ),
-        )
+      applicationInfo = TEST_APPLICATION_INFO
     )
 }

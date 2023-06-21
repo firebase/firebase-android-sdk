@@ -35,11 +35,11 @@ import org.json.JSONException
 import org.json.JSONObject
 
 internal class RemoteSettings(
-  val context: Context,
-  val blockingDispatcher: CoroutineContext,
-  val backgroundDispatcher: CoroutineContext,
-  val firebaseInstallationsApi: FirebaseInstallationsApi,
-  val appInfo: ApplicationInfo,
+  context: Context,
+  private val blockingDispatcher: CoroutineContext,
+  private val backgroundDispatcher: CoroutineContext,
+  private val firebaseInstallationsApi: FirebaseInstallationsApi,
+  private val appInfo: ApplicationInfo,
   private val configsFetcher: CrashlyticsSettingsFetcher = RemoteSettingsFetcher(appInfo),
   dataStoreName: String = SESSION_CONFIGS_NAME
 ) : SettingsProvider {
@@ -80,7 +80,7 @@ internal class RemoteSettings(
     scope.launch { settingsCache.removeConfigs() }
   }
 
-  suspend private fun fetchConfigs() {
+  private suspend fun fetchConfigs() {
     // Check if a fetch is in progress. If yes, return
     if (fetchInProgress.get()) {
       return
@@ -94,7 +94,7 @@ internal class RemoteSettings(
     fetchInProgress.set(true)
 
     // Get the installations ID before making a remote config fetch
-    var installationId = firebaseInstallationsApi.id.await()
+    val installationId = firebaseInstallationsApi.id.await()
     if (installationId == null) {
       fetchInProgress.set(false)
       return
@@ -141,7 +141,6 @@ internal class RemoteSettings(
           }
         }
 
-        val scope = CoroutineScope(backgroundDispatcher)
         sessionsEnabled?.let { settingsCache.updateSettingsEnabled(sessionsEnabled) }
 
         sessionTimeoutSeconds?.let {
@@ -156,9 +155,9 @@ internal class RemoteSettings(
         settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
         fetchInProgress.set(false)
       },
-      onFailure = {
+      onFailure = { msg ->
         // Network request failed here.
-        Log.e(TAG, "Error failing to fetch the remote configs")
+        Log.e(TAG, "Error failing to fetch the remote configs: $msg")
         fetchInProgress.set(false)
       }
     )
