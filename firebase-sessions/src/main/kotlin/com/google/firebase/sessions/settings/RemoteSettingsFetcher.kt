@@ -33,8 +33,10 @@ internal interface CrashlyticsSettingsFetcher {
   )
 }
 
-internal class RemoteSettingsFetcher(private val appInfo: ApplicationInfo) :
-  CrashlyticsSettingsFetcher {
+internal class RemoteSettingsFetcher(
+  private val appInfo: ApplicationInfo,
+  private val baseUrl: String = FIREBASE_SESSIONS_BASE_URL_STRING
+) : CrashlyticsSettingsFetcher {
   override suspend fun doConfigFetch(
     headerOptions: Map<String, String>,
     onSuccess: suspend (JSONObject) -> Unit,
@@ -72,7 +74,7 @@ internal class RemoteSettingsFetcher(private val appInfo: ApplicationInfo) :
     val uri =
       Uri.Builder()
         .scheme("https")
-        .authority(FIREBASE_SESSIONS_BASE_URL_STRING)
+        .authority(baseUrl)
         .appendPath("spi")
         .appendPath("v2")
         .appendPath("platforms")

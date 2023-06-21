@@ -21,10 +21,13 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.concurrent.TestOnlyExecutors
 import com.google.firebase.sessions.settings.RemoteSettings
+import com.google.firebase.sessions.settings.RemoteSettingsFetcher
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.FakeRemoteConfigFetcher
+import com.google.firebase.sessions.testing.TestSessionEventData.TEST_APPLICATION_INFO
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
@@ -32,11 +35,12 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class RemoteSettingsTest {
 
   @Test
-  fun RemoteSettings_successfulFetchCachesValues() = runTest {
+  fun remoteSettings_successfulFetchCachesValues() = runTest {
     val firebaseApp = FakeFirebaseApp().firebaseApp
     val context = firebaseApp.applicationContext
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
@@ -67,7 +71,7 @@ class RemoteSettingsTest {
   }
 
   @Test
-  fun RemoteSettings_successfulFetchWithLessConfigsCachesOnlyReceivedValues() = runTest {
+  fun remoteSettings_successfulFetchWithLessConfigsCachesOnlyReceivedValues() = runTest {
     val firebaseApp = FakeFirebaseApp().firebaseApp
     val context = firebaseApp.applicationContext
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
@@ -100,7 +104,7 @@ class RemoteSettingsTest {
   }
 
   @Test
-  fun RemoteSettings_successfulRefetchUpdatesCache() = runTest {
+  fun remoteSettings_successfulReFetchUpdatesCache() = runTest {
     val firebaseApp = FakeFirebaseApp().firebaseApp
     val context = firebaseApp.applicationContext
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
@@ -146,7 +150,7 @@ class RemoteSettingsTest {
   }
 
   @Test
-  fun RemoteSettings_successfulFetchWithEmptyConfigRetainsOldConfigs() = runTest {
+  fun remoteSettings_successfulFetchWithEmptyConfigRetainsOldConfigs() = runTest {
     val firebaseApp = FakeFirebaseApp().firebaseApp
     val context = firebaseApp.applicationContext
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
@@ -184,6 +188,20 @@ class RemoteSettingsTest {
     assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
 
     remoteSettings.clearCachedSettings()
+  }
+
+  @Test
+  fun remoteSettingsFetcher_badFetch_callsOnFailure() = runTest {
+    var failure: String? = null
+
+    RemoteSettingsFetcher(TEST_APPLICATION_INFO, baseUrl = "this.url.is.invalid")
+      .doConfigFetch(
+        headerOptions = emptyMap(),
+        onSuccess = {},
+        onFailure = { failure = it },
+      )
+
+    assertThat(failure).isNotNull()
   }
 
   @After
