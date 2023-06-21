@@ -172,7 +172,10 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  private void setCommonRequestHeaders(HttpURLConnection httpURLConnection) {
+  private void setCommonRequestHeaders(HttpURLConnection httpURLConnection, String authToken) {
+    // Auth token
+    httpURLConnection.setRequestProperty(INSTALLATIONS_AUTH_TOKEN_HEADER, authToken);
+
     // API Key
     httpURLConnection.setRequestProperty(API_KEY_HEADER, this.firebaseApp.getOptions().getApiKey());
 
@@ -302,7 +305,9 @@ public class ConfigRealtimeHttpClient {
   /** Create HTTP connection and set headers. */
   @SuppressLint("VisibleForTests")
   public Task<HttpURLConnection> createRealtimeConnection() {
+    // Make async call to get auth token.
     Task<InstallationTokenResult> installationAuthTokenTask = firebaseInstallations.getToken(false);
+    // When the auth token task has finished, set up HTTP connection with headers and params.
     return Tasks.whenAllComplete(installationAuthTokenTask)
         .continueWithTask(
             this.scheduledExecutorService,
@@ -310,7 +315,7 @@ public class ConfigRealtimeHttpClient {
               if (!installationAuthTokenTask.isSuccessful()) {
                 return Tasks.forException(
                     new FirebaseRemoteConfigClientException(
-                        "Firebase Installations failed to get installation ID for fetch.",
+                        "Firebase Installations failed to get installation ID for real-time.",
                         installationAuthTokenTask.getException()));
               }
 
@@ -320,13 +325,12 @@ public class ConfigRealtimeHttpClient {
                 httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
 
                 String installationAuthToken = installationAuthTokenTask.getResult().getToken();
-                httpURLConnection.setRequestProperty(
-                    INSTALLATIONS_AUTH_TOKEN_HEADER, installationAuthToken);
-                setCommonRequestHeaders(httpURLConnection);
+                setCommonRequestHeaders(httpURLConnection, installationAuthToken);
                 setRequestParams(httpURLConnection);
               } catch (IOException ex) {
                 return Tasks.forException(
-                    new FirebaseRemoteConfigClientException("Failed to open HTTP Connection", ex));
+                    new FirebaseRemoteConfigClientException(
+                        "Failed to open HTTP stream connection", ex));
               }
 
               return Tasks.forResult(httpURLConnection);
@@ -464,7 +468,9 @@ public class ConfigRealtimeHttpClient {
       return;
     }
 
+    // Make async call to create and setup HTTP connection.
     Task<HttpURLConnection> httpURLConnectionTask = createRealtimeConnection();
+    // When the connection task has finished, begin real-time actions.
     Tasks.whenAllComplete(httpURLConnectionTask)
         .continueWith(
             this.scheduledExecutorService,
