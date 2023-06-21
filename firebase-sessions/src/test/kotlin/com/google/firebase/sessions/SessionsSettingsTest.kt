@@ -26,9 +26,10 @@ import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.FakeRemoteConfigFetcher
-import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
 import org.junit.After
@@ -36,6 +37,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class SessionsSettingsTest {
 
@@ -53,6 +55,9 @@ class SessionsSettingsTest {
         firebaseInstallations,
         SessionEvents.getApplicationInfo(firebaseApp)
       )
+
+    runCurrent()
+
     assertThat(sessionsSettings.sessionsEnabled).isTrue()
     assertThat(sessionsSettings.samplingRate).isEqualTo(1.0)
     assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(30.minutes)
@@ -76,6 +81,9 @@ class SessionsSettingsTest {
         firebaseInstallations,
         SessionEvents.getApplicationInfo(firebaseApp)
       )
+
+    runCurrent()
+
     assertThat(sessionsSettings.sessionsEnabled).isFalse()
     assertThat(sessionsSettings.samplingRate).isEqualTo(0.5)
     assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(3.minutes)
@@ -98,13 +106,16 @@ class SessionsSettingsTest {
         firebaseInstallations,
         SessionEvents.getApplicationInfo(firebaseApp)
       )
+
+    runCurrent()
+
     assertThat(sessionsSettings.sessionsEnabled).isFalse()
     assertThat(sessionsSettings.samplingRate).isEqualTo(0.5)
     assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(30.minutes)
   }
 
   @Test
-  fun sessionSettings_RemoteSettingsOverrideDefaultsWhenPresent() = runTest {
+  fun sessionSettings_remoteSettingsOverrideDefaultsWhenPresent() = runTest {
     val firebaseApp = FakeFirebaseApp().firebaseApp
     val context = firebaseApp.applicationContext
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
@@ -133,6 +144,9 @@ class SessionsSettingsTest {
         localOverrideSettings = LocalOverrideSettings(context),
         remoteSettings = remoteSettings
       )
+
+    runCurrent()
+
     assertThat(sessionsSettings.sessionsEnabled).isFalse()
     assertThat(sessionsSettings.samplingRate).isEqualTo(0.75)
     assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(40.minutes)
@@ -141,7 +155,7 @@ class SessionsSettingsTest {
   }
 
   @Test
-  fun sessionSettings_ManifestOverridesRemoteSettingsAndDefaultsWhenPresent() = runTest {
+  fun sessionSettings_manifestOverridesRemoteSettingsAndDefaultsWhenPresent() = runTest {
     val metadata = Bundle()
     metadata.putBoolean("firebase_sessions_enabled", true)
     metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
@@ -174,6 +188,9 @@ class SessionsSettingsTest {
         localOverrideSettings = LocalOverrideSettings(context),
         remoteSettings = remoteSettings
       )
+
+    runCurrent()
+
     assertThat(sessionsSettings.sessionsEnabled).isTrue()
     assertThat(sessionsSettings.samplingRate).isEqualTo(0.5)
     assertThat(sessionsSettings.sessionRestartTimeout).isEqualTo(3.minutes)

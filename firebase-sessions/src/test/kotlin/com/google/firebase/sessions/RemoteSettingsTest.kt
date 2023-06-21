@@ -29,6 +29,7 @@ import com.google.firebase.sessions.testing.TestSessionEventData.TEST_APPLICATIO
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
 import org.junit.After
@@ -63,6 +64,8 @@ class RemoteSettingsTest {
     fakeFetcher.responseJSONObject = JSONObject(validResponse)
     remoteSettings.updateSettings()
 
+    runCurrent()
+
     assertThat(remoteSettings.sessionEnabled).isFalse()
     assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
     assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
@@ -96,6 +99,8 @@ class RemoteSettingsTest {
     fakeFetcher.responseJSONObject = fetchedResponse
     remoteSettings.updateSettings()
 
+    runCurrent()
+
     assertThat(remoteSettings.sessionEnabled).isNull()
     assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
     assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
@@ -128,6 +133,8 @@ class RemoteSettingsTest {
     fakeFetcher.responseJSONObject = fetchedResponse
     remoteSettings.updateSettings()
 
+    runCurrent()
+
     assertThat(remoteSettings.sessionEnabled).isFalse()
     assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
     assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
@@ -141,6 +148,8 @@ class RemoteSettingsTest {
 
     fakeFetcher.responseJSONObject = fetchedResponse
     remoteSettings.updateSettings()
+
+    runCurrent()
 
     assertThat(remoteSettings.sessionEnabled).isTrue()
     assertThat(remoteSettings.samplingRate).isEqualTo(0.25)
@@ -171,6 +180,8 @@ class RemoteSettingsTest {
     fakeFetcher.responseJSONObject = fetchedResponse
     remoteSettings.updateSettings()
 
+    runCurrent()
+
     assertThat(remoteSettings.sessionEnabled).isFalse()
     assertThat(remoteSettings.samplingRate).isEqualTo(0.75)
     assertThat(remoteSettings.sessionRestartTimeout).isEqualTo(40.minutes)
@@ -194,7 +205,11 @@ class RemoteSettingsTest {
   fun remoteSettingsFetcher_badFetch_callsOnFailure() = runTest {
     var failure: String? = null
 
-    RemoteSettingsFetcher(TEST_APPLICATION_INFO, baseUrl = "this.url.is.invalid")
+    RemoteSettingsFetcher(
+        TEST_APPLICATION_INFO,
+        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
+        baseUrl = "this.url.is.invalid",
+      )
       .doConfigFetch(
         headerOptions = emptyMap(),
         onSuccess = {},

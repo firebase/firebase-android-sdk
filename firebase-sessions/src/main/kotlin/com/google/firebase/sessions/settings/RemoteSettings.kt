@@ -27,53 +27,41 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import org.json.JSONException
 import org.json.JSONObject
 
 internal class RemoteSettings(
   context: Context,
-  private val blockingDispatcher: CoroutineContext,
+  blockingDispatcher: CoroutineContext,
   private val backgroundDispatcher: CoroutineContext,
   private val firebaseInstallationsApi: FirebaseInstallationsApi,
   private val appInfo: ApplicationInfo,
-  private val configsFetcher: CrashlyticsSettingsFetcher = RemoteSettingsFetcher(appInfo),
-  dataStoreName: String = SESSION_CONFIGS_NAME
+  private val configsFetcher: CrashlyticsSettingsFetcher =
+    RemoteSettingsFetcher(appInfo, blockingDispatcher),
+  dataStoreName: String = SESSION_CONFIGS_NAME,
 ) : SettingsProvider {
-  private val Context.dataStore by preferencesDataStore(name = dataStoreName)
+  private val Context.dataStore by
+    preferencesDataStore(name = dataStoreName, scope = CoroutineScope(backgroundDispatcher))
   private val settingsCache = SettingsCache(context.dataStore)
   private var fetchInProgress = AtomicBoolean(false)
 
   override val sessionEnabled: Boolean?
-    get() {
-      return settingsCache.sessionsEnabled()
-    }
+    get() = settingsCache.sessionsEnabled()
 
   override val sessionRestartTimeout: Duration?
-    get() {
-      val durationInSeconds = settingsCache.sessionRestartTimeout()
-      if (durationInSeconds != null) {
-        return durationInSeconds.toLong().seconds
-      }
-      return null
-    }
+    get() = settingsCache.sessionRestartTimeout()?.seconds
 
   override val samplingRate: Double?
-    get() {
-      return settingsCache.sessionSamplingRate()
-    }
+    get() = settingsCache.sessionSamplingRate()
 
   override fun updateSettings() {
-    // TODO: Move to blocking coroutine dispatcher.
-    runBlocking(Dispatchers.Default) { launch { fetchConfigs() } }
+    val scope = CoroutineScope(backgroundDispatcher)
+    scope.launch { fetchConfigs() }
   }
 
-  override fun isSettingsStale(): Boolean {
-    return settingsCache.hasCacheExpired()
-  }
+  override fun isSettingsStale(): Boolean = settingsCache.hasCacheExpired()
 
   internal fun clearCachedSettings() {
     val scope = CoroutineScope(backgroundDispatcher)

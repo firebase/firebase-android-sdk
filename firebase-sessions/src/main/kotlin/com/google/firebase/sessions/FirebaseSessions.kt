@@ -48,13 +48,13 @@ internal constructor(
       applicationInfo,
     )
   private val timeProvider: TimeProvider = Time()
-  private val sessionGenerator =
-    SessionGenerator(collectEvents = shouldCollectEvents(), timeProvider)
+  private val sessionGenerator: SessionGenerator
   private val eventGDTLogger = EventGDTLogger(transportFactoryProvider)
   private val sessionCoordinator = SessionCoordinator(firebaseInstallations, eventGDTLogger)
 
   init {
     sessionSettings.updateSettings()
+    sessionGenerator = SessionGenerator(collectEvents = shouldCollectEvents(), timeProvider)
 
     val sessionInitiateListener =
       object : SessionInitiateListener {
