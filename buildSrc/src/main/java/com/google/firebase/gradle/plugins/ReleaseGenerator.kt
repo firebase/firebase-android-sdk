@@ -14,7 +14,10 @@
 package com.google.firebase.gradle.plugins
 
 import com.google.common.collect.ImmutableList
-import com.google.gson.Gson
+import java.io.File
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.ListBranchCommand
 import org.eclipse.jgit.api.errors.GitAPIException
@@ -31,15 +34,24 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.findByType
 
+@Serializable
 data class ReleaseReport(
-  val changes: Map<String, List<CommitDiff>>,
+  // This map contains libraries which have been opted into the release, and their changes.
+  val changesByLibraryName: Map<String, List<CommitDiff>>,
+  // This list contains libraries not opted into the release, despite having changes.
   val changedLibrariesWithNoChangelog: Set<String>
 ) {
+  companion object {
+    val formatter = Json { prettyPrint = true }
+  }
+
+  fun toFile(file: File) = file.also { it.writeText(formatter.encodeToString(this)) }
+
   override fun toString() =
     """
       |# Release Report
       |${
-    changes.entries.joinToString("\n") {
+      changesByLibraryName.entries.joinToString("\n") {
       """
       |## ${it.key}
       
@@ -54,6 +66,7 @@ data class ReleaseReport(
       .trimMargin()
 }
 
+@Serializable
 data class CommitDiff(
   val commitId: String,
   val prId: String,
@@ -63,6 +76,8 @@ data class CommitDiff(
   val prLink: String,
 ) {
   companion object {
+    // This is a meant to capture the PR number from PR Titles
+    // ex: "Fix a problem (#1234)" -> "1234"
     private val PR_ID_EXTRACTOR = Regex(".*\\(#(\\d+)\\).*")
 
     public fun fromRevCommit(commit: RevCommit): CommitDiff {
@@ -92,7 +107,6 @@ data class CommitDiff(
 abstract class ReleaseGenerator : DefaultTask() {
   companion object {
     private val RELEASE_CHANGE_FILTER = "NO_RELEASE_CHANGE"
-    private val GSON = Gson()
   }
 
   @get:Input abstract val currentRelease: Property<String>
@@ -132,7 +146,7 @@ abstract class ReleaseGenerator : DefaultTask() {
       project.logger.info(releaseReport.toString())
     }
     releaseReportMdFile.get().asFile.writeText(releaseReport.toString())
-    releaseReportJsonFile.get().asFile.writeText(GSON.toJson(releaseReport))
+    releaseReportJsonFile.get().asFile.let { releaseReport.toFile(it) }
   }
 
   private fun getChangesForLibraries(
