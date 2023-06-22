@@ -94,7 +94,7 @@ public final class MemoryPersistence extends Persistence {
   }
 
   @Override
-  MutationQueue getMutationQueue(User user, IndexManager indexManager) {
+  public MutationQueue getMutationQueue(User user, IndexManager indexManager) {
     MemoryMutationQueue queue = mutationQueues.get(user);
     if (queue == null) {
       queue = new MemoryMutationQueue(this, user);
@@ -113,12 +113,12 @@ public final class MemoryPersistence extends Persistence {
   }
 
   @Override
-  MemoryRemoteDocumentCache getRemoteDocumentCache() {
+  public MemoryRemoteDocumentCache getRemoteDocumentCache() {
     return remoteDocumentCache;
   }
 
   @Override
-  MemoryIndexManager getIndexManager(User user) {
+  public MemoryIndexManager getIndexManager(User user) {
     // We do not currently support indices for memory persistence, so we can return the same shared
     // instance of the memory index manager.
     return indexManager;
@@ -130,7 +130,7 @@ public final class MemoryPersistence extends Persistence {
   }
 
   @Override
-  DocumentOverlayCache getDocumentOverlayCache(User user) {
+  public DocumentOverlayCache getDocumentOverlayCache(User user) {
     MemoryDocumentOverlayCache overlay = overlays.get(user);
     if (overlay == null) {
       overlay = new MemoryDocumentOverlayCache();
@@ -145,7 +145,7 @@ public final class MemoryPersistence extends Persistence {
   }
 
   @Override
-  void runTransaction(String action, Runnable operation) {
+  public void runTransaction(String action, Runnable operation) {
     referenceDelegate.onTransactionStarted();
     try {
       operation.run();

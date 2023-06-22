@@ -24,7 +24,7 @@ import com.google.protobuf.ByteString;
 import java.util.List;
 
 /** A queue of mutations to apply to the remote store. */
-interface MutationQueue {
+public interface MutationQueue {
   /**
    * Starts the mutation queue, performing any initial reads that might be required to establish
    * invariants, etc.

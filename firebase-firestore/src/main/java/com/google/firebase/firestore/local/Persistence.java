@@ -78,22 +78,22 @@ public abstract class Persistence {
    * implementation to the extent possible (e.g. in the case of uid switching from
    * sally=>jack=>sally, sally's mutation queue will be preserved).
    */
-  abstract MutationQueue getMutationQueue(User user, IndexManager indexManager);
+  public abstract MutationQueue getMutationQueue(User user, IndexManager indexManager);
 
   /** Creates a TargetCache representing the persisted cache of queries. */
   abstract TargetCache getTargetCache();
 
   /** Creates a RemoteDocumentCache representing the persisted cache of remote documents. */
-  abstract RemoteDocumentCache getRemoteDocumentCache();
+  public abstract RemoteDocumentCache getRemoteDocumentCache();
 
   /** Creates an IndexManager that manages our persisted query indexes. */
-  abstract IndexManager getIndexManager(User user);
+  public abstract IndexManager getIndexManager(User user);
 
   /** Returns a BundleCache representing the persisted cache of loaded bundles. */
   abstract BundleCache getBundleCache();
 
   /** Returns a DocumentOverlayCache representing the documents that are mutated locally. */
-  abstract DocumentOverlayCache getDocumentOverlayCache(User user);
+  public abstract DocumentOverlayCache getDocumentOverlayCache(User user);
 
   /** Returns a OverlayMigrationManager that runs any pending data migration required by SDK. */
   abstract OverlayMigrationManager getOverlayMigrationManager();
@@ -106,7 +106,7 @@ public abstract class Persistence {
    * @param action A description of the action performed by this transaction, used for logging.
    * @param operation The operation to run inside a transaction.
    */
-  abstract void runTransaction(String action, Runnable operation);
+  public abstract void runTransaction(String action, Runnable operation);
 
   /**
    * Performs an operation inside a persistence transaction. Any reads or writes against persistence

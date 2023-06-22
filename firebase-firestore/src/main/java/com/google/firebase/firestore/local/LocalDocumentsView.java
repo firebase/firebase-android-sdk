@@ -48,14 +48,14 @@ import java.util.TreeSet;
  * in remoteDocumentCache or local mutations for the document). The view is computed by applying the
  * mutations in the MutationQueue to the RemoteDocumentCache.
  */
-class LocalDocumentsView {
+public class LocalDocumentsView {
 
   private final RemoteDocumentCache remoteDocumentCache;
   private final MutationQueue mutationQueue;
   private final DocumentOverlayCache documentOverlayCache;
   private final IndexManager indexManager;
 
-  LocalDocumentsView(
+  protected LocalDocumentsView(
       RemoteDocumentCache remoteDocumentCache,
       MutationQueue mutationQueue,
       DocumentOverlayCache documentOverlayCache,
@@ -279,7 +279,7 @@ class LocalDocumentsView {
    * @param query The query to match documents against.
    * @param offset Read time and key to start scanning by (exclusive).
    */
-  ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
+  protected ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query, IndexOffset offset) {
     return getDocumentsMatchingQuery(query, offset, /*context*/ null);
   }
