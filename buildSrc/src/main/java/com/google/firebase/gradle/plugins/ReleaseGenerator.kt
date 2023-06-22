@@ -34,11 +34,16 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.findByType
 
+/**
+ * Contains output data from the Release Generator, published as release_report.json
+ *
+ * @property changesByLibraryName contains libs which have opted into the release, and their changes
+ * @property changedLibrariesWithNoChangelog contains libs not opted into the release, despite having
+ * changes
+ */
 @Serializable
 data class ReleaseReport(
-  // This map contains libraries which have been opted into the release, and their changes.
   val changesByLibraryName: Map<String, List<CommitDiff>>,
-  // This list contains libraries not opted into the release, despite having changes.
   val changedLibrariesWithNoChangelog: Set<String>
 ) {
   companion object {
