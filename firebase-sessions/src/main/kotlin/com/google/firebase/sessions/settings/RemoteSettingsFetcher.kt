@@ -19,10 +19,11 @@ package com.google.firebase.sessions.settings
 import android.net.Uri
 import com.google.firebase.sessions.ApplicationInfo
 import java.io.BufferedReader
-import java.io.IOException
 import java.io.InputStreamReader
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
 internal interface CrashlyticsSettingsFetcher {
@@ -35,40 +36,43 @@ internal interface CrashlyticsSettingsFetcher {
 
 internal class RemoteSettingsFetcher(
   private val appInfo: ApplicationInfo,
-  private val baseUrl: String = FIREBASE_SESSIONS_BASE_URL_STRING
+  private val blockingDispatcher: CoroutineContext,
+  private val baseUrl: String = FIREBASE_SESSIONS_BASE_URL_STRING,
 ) : CrashlyticsSettingsFetcher {
+  @Suppress("BlockingMethodInNonBlockingContext") // blockingDispatcher is safe for blocking calls.
   override suspend fun doConfigFetch(
     headerOptions: Map<String, String>,
     onSuccess: suspend (JSONObject) -> Unit,
     onFailure: suspend (String) -> Unit
-  ) {
-    val connection = settingsUrl().openConnection() as HttpsURLConnection
-    connection.requestMethod = "GET"
-    connection.setRequestProperty("Accept", "application/json")
-    headerOptions.forEach { connection.setRequestProperty(it.key, it.value) }
+  ) =
+    withContext(blockingDispatcher) {
+      val connection = settingsUrl().openConnection() as HttpsURLConnection
+      connection.requestMethod = "GET"
+      connection.setRequestProperty("Accept", "application/json")
+      headerOptions.forEach { connection.setRequestProperty(it.key, it.value) }
 
-    try {
-      val responseCode = connection.responseCode
-      if (responseCode == HttpsURLConnection.HTTP_OK) {
-        val inputStream = connection.inputStream
-        val bufferedReader = BufferedReader(InputStreamReader(inputStream))
-        val response = StringBuilder()
-        var inputLine: String?
-        while (bufferedReader.readLine().also { inputLine = it } != null) {
-          response.append(inputLine)
+      try {
+        val responseCode = connection.responseCode
+        if (responseCode == HttpsURLConnection.HTTP_OK) {
+          val inputStream = connection.inputStream
+          val bufferedReader = BufferedReader(InputStreamReader(inputStream))
+          val response = StringBuilder()
+          var inputLine: String?
+          while (bufferedReader.readLine().also { inputLine = it } != null) {
+            response.append(inputLine)
+          }
+          bufferedReader.close()
+          inputStream.close()
+
+          val responseJson = JSONObject(response.toString())
+          onSuccess(responseJson)
+        } else {
+          onFailure("Bad response code: $responseCode")
         }
-        bufferedReader.close()
-        inputStream.close()
-
-        val responseJson = JSONObject(response.toString())
-        onSuccess(responseJson)
-      } else {
-        onFailure("Bad response code: $responseCode")
+      } catch (ex: Exception) {
+        onFailure(ex.message ?: ex.toString())
       }
-    } catch (ex: IOException) {
-      onFailure(ex.message ?: ex.toString())
     }
-  }
 
   private fun settingsUrl(): URL {
     val uri =

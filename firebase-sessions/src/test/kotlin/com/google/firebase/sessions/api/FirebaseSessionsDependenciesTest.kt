@@ -94,6 +94,8 @@ class FirebaseSessionsDependenciesTest {
 
   @Test
   fun getSubscribers_waitsForRegister(): Unit = runBlocking {
+    // This test uses runBlocking because runTest skips the delay.
+
     val crashlyticsSubscriber = FakeSessionSubscriber(sessionSubscriberName = CRASHLYTICS)
     FirebaseSessionsDependencies.addDependency(CRASHLYTICS)
 
