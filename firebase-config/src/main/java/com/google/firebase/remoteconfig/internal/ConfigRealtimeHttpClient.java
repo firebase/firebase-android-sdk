@@ -480,10 +480,12 @@ public class ConfigRealtimeHttpClient {
               setIsHttpConnectionRunning(true);
 
               try {
+                // If HTTP connection task failed throw exception to move to the catch block.
                 if (!httpURLConnectionTask.isSuccessful()) {
                   throw new IOException(httpURLConnectionTask.getException());
                 }
 
+                // Get HTTP connection and check response code.
                 httpURLConnection = httpURLConnectionTask.getResult();
                 responseCode = httpURLConnection.getResponseCode();
 
