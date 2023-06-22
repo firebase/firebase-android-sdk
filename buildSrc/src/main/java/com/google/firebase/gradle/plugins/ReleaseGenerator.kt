@@ -38,8 +38,8 @@ import org.gradle.kotlin.dsl.findByType
  * Contains output data from the Release Generator, published as release_report.json
  *
  * @property changesByLibraryName contains libs which have opted into the release, and their changes
- * @property changedLibrariesWithNoChangelog contains libs not opted into the release, despite having
- * changes
+ * @property changedLibrariesWithNoChangelog contains libs not opted into the release, despite
+ * having changes
  */
 @Serializable
 data class ReleaseReport(
