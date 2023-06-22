@@ -34,11 +34,22 @@ import static org.junit.Assert.assertTrue;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.GeoPoint;
+import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.testutil.ComparatorTester;
+import com.google.firebase.firestore.util.BackgroundQueue;
+import com.google.firebase.firestore.util.Executors;
+
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executor;
+
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -750,6 +761,119 @@ public class QueryTest {
         query5,
         /* match */ Arrays.asList(doc3),
         /* not match */ Arrays.asList(doc1, doc2, doc4, doc5));
+  }
+
+  @Test
+  public void testSynchronousMatchesOrderBy() {
+    List<MutableDocument> docs = new ArrayList<>();
+
+    // Add one hundred documents to the collection, each with many fields (26).
+    // These will match the query and order by
+    for (int i = 0; i < 100; i++) {
+      docs.add(doc("collection/" + i, 0, map(
+              "a", 2,
+              "b", 2,
+              "c", 2,
+              "d", 2,
+              "e", 2,
+              "f", 2,
+              "g", 2,
+              "h", 2,
+              "i", 2,
+              "j", 2,
+              "k", 2,
+              "l", 2,
+              "m", 2,
+              "n", 2,
+              "o", 2,
+              "p", 2,
+              "q", 2,
+              "r", 2,
+              "s", 2,
+              "t", 2,
+              "u", 2,
+              "v", 2,
+              "w", 2,
+              "x", 2,
+              "y", 2,
+              "z", 2)));
+    }
+
+    // Add the an additional document to the collection, which
+    // will match the query but not the order by.
+    docs.add(doc("collection/100", 0, map(
+            "a", 2)));
+
+    // Create a query that orders by many fields (26).
+    // We are testing matching on order by in parallel
+    // and we want to have a large set of order bys to
+    // force more concurrency.
+    Query query =
+            query("collection").filter(filter("a", ">", 1))
+                    .orderBy(orderBy("a"))
+                    .orderBy(orderBy("b"))
+                    .orderBy(orderBy("c"))
+                    .orderBy(orderBy("d"))
+                    .orderBy(orderBy("e"))
+                    .orderBy(orderBy("f"))
+                    .orderBy(orderBy("g"))
+                    .orderBy(orderBy("h"))
+                    .orderBy(orderBy("i"))
+                    .orderBy(orderBy("j"))
+                    .orderBy(orderBy("k"))
+                    .orderBy(orderBy("l"))
+                    .orderBy(orderBy("m"))
+                    .orderBy(orderBy("n"))
+                    .orderBy(orderBy("o"))
+                    .orderBy(orderBy("p"))
+                    .orderBy(orderBy("q"))
+                    .orderBy(orderBy("r"))
+                    .orderBy(orderBy("s"))
+                    .orderBy(orderBy("t"))
+                    .orderBy(orderBy("u"))
+                    .orderBy(orderBy("v"))
+                    .orderBy(orderBy("w"))
+                    .orderBy(orderBy("x"))
+                    .orderBy(orderBy("y"))
+                    .orderBy(orderBy("z"));
+
+    // We're going to emulate the multi-threaded document matching performed in
+    // SQLiteRemoteDocumentCache.getAll(...), where `query.matches(doc)` is performed
+    // for many different docs concurrently on the BackgroundQueue.
+    Iterator<MutableDocument> iterator = docs.iterator();
+    BackgroundQueue backgroundQueue = new BackgroundQueue();
+    Map<DocumentKey, Boolean> results = new HashMap<>();
+
+    while (iterator.hasNext()) {
+      MutableDocument doc = iterator.next();
+      // Only put the processing in the backgroundQueue if there are more documents
+      // in the list. This behavior matches SQLiteRemoteDocumentCache.getAll(...)
+      Executor executor = iterator.hasNext() ? backgroundQueue : Executors.DIRECT_EXECUTOR;
+      executor.execute(
+              () -> {
+                // We call query.matches() to indirectly test query.matchesOrderBy()
+                boolean result = query.matches(doc);
+
+                // We will include a synchronized block in our command to simulate
+                // the implementation in SQLiteRemoteDocumentCache.getAll(...)
+                synchronized (results) {
+                  results.put(doc.getKey(), result);
+                }
+              });
+    }
+
+    backgroundQueue.drain();
+
+    Assert.assertEquals(101, results.keySet().size());
+    for (DocumentKey key : results.keySet()) {
+      // Only for document 100 do we expect the match to be false
+      // otherwise it will be true.
+      if (key.compareTo(DocumentKey.fromPathString("collection/100")) == 0) {
+        Assert.assertEquals(false, results.get(key));
+      } else {
+        Assert.assertEquals(true, results.get(key));
+      }
+    }
   }
 
   private void assertQueryMatches(
