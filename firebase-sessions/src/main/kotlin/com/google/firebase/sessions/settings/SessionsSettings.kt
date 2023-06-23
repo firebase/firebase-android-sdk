@@ -51,7 +51,10 @@ internal class SessionsSettings(
           ),
         dataStore = context.dataStore,
       ),
-  )
+  ) {
+    // This is a load-bearing empty block.
+    // See go/load-bearing-empty-block for more details.
+  }
 
   // Order of preference for all the configs below:
   // 1. Honor local overrides
