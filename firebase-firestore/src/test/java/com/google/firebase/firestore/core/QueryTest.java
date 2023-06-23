@@ -29,6 +29,7 @@ import static com.google.firebase.firestore.testutil.TestUtil.testEquality;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.Timestamp;
@@ -874,6 +875,22 @@ public class QueryTest {
         Assert.assertEquals(true, results.get(key));
       }
     }
+  }
+
+  @Test
+  public void testGetOrderByReturnsUnmodifiableList() {
+    Query query =
+            query("collection").filter(filter("a", ">", 1))
+                    .orderBy(orderBy("a"))
+                    .orderBy(orderBy("b"))
+                    .orderBy(orderBy("c"))
+                    .orderBy(orderBy("d"))
+                    .orderBy(orderBy("e"))
+                    .orderBy(orderBy("f"));
+
+    List<OrderBy> orderByList = query.getOrderBy();
+
+    assertThrows(UnsupportedOperationException.class, () -> orderByList.add(orderBy("g")));
   }
 
   private void assertQueryMatches(

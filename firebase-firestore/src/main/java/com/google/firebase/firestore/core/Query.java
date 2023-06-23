@@ -328,8 +328,7 @@ public final class Query {
    * Returns the full list of ordering constraints on the query. This might include additional
    * sort orders added implicitly to match the backend behavior.
    *
-   * This method is marked as synchronized to prevent the memoizedOrderBy from being
-   * created in multiple threads.
+   * This method is marked as synchronized because it modifies the internal state in some cases.
    *
    * The returned list is unmodifiable, to prevent ConcurrentModificationExceptions,
    * if one thread is iterating the list and one thread is modifying the list.
@@ -465,8 +464,7 @@ public final class Query {
   }
 
   /**
-   * This method is marked as synchronized to prevent the memoizedTarget from being
-   * created in multiple threads.
+   * This method is marked as synchronized because it modifies the internal state in some cases.
    *
    * @return A {@code Target} instance this query will be mapped to in backend and local store.
    * */
