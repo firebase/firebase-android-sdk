@@ -325,13 +325,13 @@ public final class Query {
   }
 
   /**
-   * Returns the full list of ordering constraints on the query. This might include additional
-   * sort orders added implicitly to match the backend behavior.
+   * Returns the full list of ordering constraints on the query. This might include additional sort
+   * orders added implicitly to match the backend behavior.
    *
-   * This method is marked as synchronized because it modifies the internal state in some cases.
+   * <p>This method is marked as synchronized because it modifies the internal state in some cases.
    *
-   * The returned list is unmodifiable, to prevent ConcurrentModificationExceptions,
-   * if one thread is iterating the list and one thread is modifying the list.
+   * <p>The returned list is unmodifiable, to prevent ConcurrentModificationExceptions, if one
+   * thread is iterating the list and one thread is modifying the list.
    */
   public synchronized List<OrderBy> getOrderBy() {
     if (memoizedOrderBy == null) {
@@ -345,9 +345,9 @@ public final class Query {
           this.memoizedOrderBy = Collections.singletonList(KEY_ORDERING_ASC);
         } else {
           memoizedOrderBy =
-                  Collections.unmodifiableList(
-                          Arrays.asList(
-                                  OrderBy.getInstance(Direction.ASCENDING, inequalityField), KEY_ORDERING_ASC));
+              Collections.unmodifiableList(
+                  Arrays.asList(
+                      OrderBy.getInstance(Direction.ASCENDING, inequalityField), KEY_ORDERING_ASC));
         }
       } else {
         List<OrderBy> res = new ArrayList<>();
@@ -467,7 +467,7 @@ public final class Query {
    * This method is marked as synchronized because it modifies the internal state in some cases.
    *
    * @return A {@code Target} instance this query will be mapped to in backend and local store.
-   * */
+   */
   public synchronized Target toTarget() {
     if (this.memoizedTarget == null) {
       if (this.limitType == LimitType.LIMIT_TO_FIRST) {
