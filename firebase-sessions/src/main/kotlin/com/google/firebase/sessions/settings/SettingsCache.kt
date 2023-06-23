@@ -16,6 +16,8 @@
 
 package com.google.firebase.sessions.settings
 
+import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -23,56 +25,48 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import java.io.IOException
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 internal data class SessionConfigs(
-  val sessionEnabled: Boolean? = null,
-  val sessionSamplingRate: Double? = null,
-  val cacheDuration: Int? = null,
-  val sessionRestartTimeout: Int? = null,
-  val cacheUpdatedTime: Long? = null
+  val sessionEnabled: Boolean?,
+  val sessionSamplingRate: Double?,
+  val sessionRestartTimeout: Int?,
+  val cacheDuration: Int?,
+  val cacheUpdatedTime: Long?,
 )
 
-internal class SettingsCache(private val store: DataStore<Preferences>) {
-  private var sessionConfigs = SessionConfigs()
+internal class SettingsCache(private val dataStore: DataStore<Preferences>) {
+  private lateinit var sessionConfigs: SessionConfigs
 
-  private object SettingsCacheKeys {
-    val SETTINGS_CACHE_SESSIONS_ENABLED = booleanPreferencesKey("firebase_sessions_enabled")
-    val SETTINGS_CACHE_SAMPLING_RATE = doublePreferencesKey("firebase_sessions_sampling_rate")
-    val SETTINGS_CACHE_SESSIONS_RESTART_TIMEOUT_SECONDS =
-      intPreferencesKey("firebase_sessions_restart_timeout")
-    val SETTINGS_CACHE_SESSIONS_CACHE_DURATION_SECONDS =
-      intPreferencesKey("firebase_sessions_cache_duration")
-    val SETTINGS_CACHE_SESSIONS_CACHE_UPDATED_TIME =
-      longPreferencesKey("firebase_sessions_cache_updated_time")
+  init {
+    // Block until the cache is loaded from disk to ensure cache
+    // values are valid and readable from the main thread on init.
+    runBlocking { updateSessionConfigs(dataStore.data.first().toPreferences()) }
   }
 
-  private suspend fun updateSessionConfigs() = mapSessionConfigs(store.data.first().toPreferences())
-
-  private fun mapSessionConfigs(settings: Preferences): SessionConfigs {
-    val sessionEnabled = settings[SettingsCacheKeys.SETTINGS_CACHE_SESSIONS_ENABLED]
-    val sessionSamplingRate = settings[SettingsCacheKeys.SETTINGS_CACHE_SAMPLING_RATE]
-    val sessionRestartTimeout =
-      settings[SettingsCacheKeys.SETTINGS_CACHE_SESSIONS_RESTART_TIMEOUT_SECONDS]
-    val cacheDuration = settings[SettingsCacheKeys.SETTINGS_CACHE_SESSIONS_CACHE_DURATION_SECONDS]
-    val cacheUpdatedTime = settings[SettingsCacheKeys.SETTINGS_CACHE_SESSIONS_CACHE_UPDATED_TIME]
-
+  /** Update session configs from the given [preferences]. */
+  private fun updateSessionConfigs(preferences: Preferences) {
     sessionConfigs =
       SessionConfigs(
-        sessionEnabled = sessionEnabled,
-        sessionSamplingRate = sessionSamplingRate,
-        sessionRestartTimeout = sessionRestartTimeout,
-        cacheDuration = cacheDuration,
-        cacheUpdatedTime = cacheUpdatedTime
+        sessionEnabled = preferences[SESSIONS_ENABLED],
+        sessionSamplingRate = preferences[SAMPLING_RATE],
+        sessionRestartTimeout = preferences[RESTART_TIMEOUT_SECONDS],
+        cacheDuration = preferences[CACHE_DURATION_SECONDS],
+        cacheUpdatedTime = preferences[CACHE_UPDATED_TIME]
       )
-    return sessionConfigs
   }
 
   internal fun hasCacheExpired(): Boolean {
-    if (sessionConfigs.cacheUpdatedTime != null && sessionConfigs.cacheDuration != null) {
-      val currentTimestamp = System.currentTimeMillis()
-      val timeDifferenceSeconds = (currentTimestamp - sessionConfigs.cacheUpdatedTime!!) / 1000
-      if (timeDifferenceSeconds < sessionConfigs.cacheDuration!!) return false
+    val cacheUpdatedTime = sessionConfigs.cacheUpdatedTime
+    val cacheDuration = sessionConfigs.cacheDuration
+
+    if (cacheUpdatedTime != null && cacheDuration != null) {
+      val timeDifferenceSeconds = (System.currentTimeMillis() - cacheUpdatedTime) / 1000
+      if (timeDifferenceSeconds < cacheDuration) {
+        return false
+      }
     }
     return true
   }
@@ -84,61 +78,57 @@ internal class SettingsCache(private val store: DataStore<Preferences>) {
   fun sessionRestartTimeout(): Int? = sessionConfigs.sessionRestartTimeout
 
   suspend fun updateSettingsEnabled(enabled: Boolean?) {
-    store.edit { preferences ->
-      enabled?.run { preferences[SettingsCacheKeys.SETTINGS_CACHE_SESSIONS_ENABLED] = enabled }
-        ?: run { preferences.remove(SettingsCacheKeys.SETTINGS_CACHE_SESSIONS_ENABLED) }
-    }
-    updateSessionConfigs()
+    updateConfigValue(SESSIONS_ENABLED, enabled)
   }
 
   suspend fun updateSamplingRate(rate: Double?) {
-    store.edit { preferences ->
-      rate?.run { preferences[SettingsCacheKeys.SETTINGS_CACHE_SAMPLING_RATE] = rate }
-        ?: run { preferences.remove(SettingsCacheKeys.SETTINGS_CACHE_SAMPLING_RATE) }
-    }
-    updateSessionConfigs()
+    updateConfigValue(SAMPLING_RATE, rate)
   }
 
   suspend fun updateSessionRestartTimeout(timeoutInSeconds: Int?) {
-    store.edit { preferences ->
-      timeoutInSeconds?.run {
-        preferences[SettingsCacheKeys.SETTINGS_CACHE_SESSIONS_RESTART_TIMEOUT_SECONDS] =
-          timeoutInSeconds
-      }
-        ?: run {
-          preferences.remove(SettingsCacheKeys.SETTINGS_CACHE_SESSIONS_RESTART_TIMEOUT_SECONDS)
-        }
-    }
-    updateSessionConfigs()
+    updateConfigValue(RESTART_TIMEOUT_SECONDS, timeoutInSeconds)
   }
 
   suspend fun updateSessionCacheDuration(cacheDurationInSeconds: Int?) {
-    store.edit { preferences ->
-      cacheDurationInSeconds?.run {
-        preferences[SettingsCacheKeys.SETTINGS_CACHE_SESSIONS_CACHE_DURATION_SECONDS] =
-          cacheDurationInSeconds
-      }
-        ?: run {
-          preferences.remove(SettingsCacheKeys.SETTINGS_CACHE_SESSIONS_CACHE_DURATION_SECONDS)
-        }
-    }
-    updateSessionConfigs()
+    updateConfigValue(CACHE_DURATION_SECONDS, cacheDurationInSeconds)
   }
 
   suspend fun updateSessionCacheUpdatedTime(cacheUpdatedTime: Long?) {
-    store.edit { preferences ->
-      cacheUpdatedTime?.run {
-        preferences[SettingsCacheKeys.SETTINGS_CACHE_SESSIONS_CACHE_UPDATED_TIME] = cacheUpdatedTime
-      }
-        ?: run { preferences.remove(SettingsCacheKeys.SETTINGS_CACHE_SESSIONS_CACHE_UPDATED_TIME) }
-    }
-    updateSessionConfigs()
+    updateConfigValue(CACHE_UPDATED_TIME, cacheUpdatedTime)
   }
 
-  suspend fun removeConfigs() {
-    store.edit { preferences ->
+  @VisibleForTesting
+  internal suspend fun removeConfigs() {
+    dataStore.edit { preferences ->
       preferences.clear()
-      updateSessionConfigs()
+      updateSessionConfigs(preferences)
     }
+  }
+
+  /** Updated the config value, or remove the key if the value is null. */
+  private suspend fun <T> updateConfigValue(key: Preferences.Key<T>, value: T?) {
+    // TODO(mrober): Refactor these to update all the values in one transaction.
+    try {
+      dataStore.edit { preferences ->
+        if (value != null) {
+          preferences[key] = value
+        } else {
+          preferences.remove(key)
+        }
+        updateSessionConfigs(preferences)
+      }
+    } catch (ex: IOException) {
+      Log.w(TAG, "Failed to update cache config value: $ex")
+    }
+  }
+
+  private companion object {
+    const val TAG = "SettingsCache"
+
+    val SESSIONS_ENABLED = booleanPreferencesKey("firebase_sessions_enabled")
+    val SAMPLING_RATE = doublePreferencesKey("firebase_sessions_sampling_rate")
+    val RESTART_TIMEOUT_SECONDS = intPreferencesKey("firebase_sessions_restart_timeout")
+    val CACHE_DURATION_SECONDS = intPreferencesKey("firebase_sessions_cache_duration")
+    val CACHE_UPDATED_TIME = longPreferencesKey("firebase_sessions_cache_updated_time")
   }
 }

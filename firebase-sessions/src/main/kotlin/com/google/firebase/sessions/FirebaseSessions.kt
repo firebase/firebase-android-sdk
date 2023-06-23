@@ -143,7 +143,7 @@ internal constructor(
 
   /** Calculate whether we should sample events using [sessionSettings] data. */
   private fun shouldCollectEvents(): Boolean {
-    // Sampling rate of 1 means we do not sample.
+    // Sampling rate of 1 means the SDK will send every event.
     val randomValue = Math.random()
     return randomValue <= sessionSettings.samplingRate
   }

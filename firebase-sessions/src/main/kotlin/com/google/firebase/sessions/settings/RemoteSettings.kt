@@ -16,10 +16,11 @@
 
 package com.google.firebase.sessions.settings
 
-import android.content.Context
 import android.os.Build
 import android.util.Log
-import androidx.datastore.preferences.preferencesDataStore
+import androidx.annotation.VisibleForTesting
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
 import java.util.concurrent.atomic.AtomicBoolean
@@ -33,19 +34,14 @@ import org.json.JSONException
 import org.json.JSONObject
 
 internal class RemoteSettings(
-  context: Context,
-  blockingDispatcher: CoroutineContext,
   private val backgroundDispatcher: CoroutineContext,
   private val firebaseInstallationsApi: FirebaseInstallationsApi,
   private val appInfo: ApplicationInfo,
-  private val configsFetcher: CrashlyticsSettingsFetcher =
-    RemoteSettingsFetcher(appInfo, blockingDispatcher),
-  dataStoreName: String = SESSION_CONFIGS_NAME,
+  private val configsFetcher: CrashlyticsSettingsFetcher,
+  dataStore: DataStore<Preferences>,
 ) : SettingsProvider {
-  private val Context.dataStore by
-    preferencesDataStore(name = dataStoreName, scope = CoroutineScope(backgroundDispatcher))
-  private val settingsCache = SettingsCache(context.dataStore)
-  private var fetchInProgress = AtomicBoolean(false)
+  private val settingsCache = SettingsCache(dataStore)
+  private val fetchInProgress = AtomicBoolean(false)
 
   override val sessionEnabled: Boolean?
     get() = settingsCache.sessionsEnabled()
@@ -63,6 +59,7 @@ internal class RemoteSettings(
 
   override fun isSettingsStale(): Boolean = settingsCache.hasCacheExpired()
 
+  @VisibleForTesting
   internal fun clearCachedSettings() {
     val scope = CoroutineScope(backgroundDispatcher)
     scope.launch { settingsCache.removeConfigs() }
@@ -81,6 +78,7 @@ internal class RemoteSettings(
 
     fetchInProgress.set(true)
 
+    // TODO(mrober): Avoid sending the fid here, and avoid fetching it when data collection is off.
     // Get the installations ID before making a remote config fetch
     val installationId = firebaseInstallationsApi.id.await()
     if (installationId == null) {
@@ -155,9 +153,9 @@ internal class RemoteSettings(
     return s.replace(FORWARD_SLASH_STRING.toRegex(), "")
   }
 
-  companion object {
-    private const val SESSION_CONFIGS_NAME = "firebase_session_settings"
-    private const val TAG = "SessionConfigFetcher"
-    private const val FORWARD_SLASH_STRING: String = "/"
+  private companion object {
+    const val TAG = "SessionConfigFetcher"
+
+    const val FORWARD_SLASH_STRING: String = "/"
   }
 }
