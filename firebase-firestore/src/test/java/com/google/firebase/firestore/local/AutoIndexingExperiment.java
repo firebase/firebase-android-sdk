@@ -4,10 +4,12 @@ import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.docMap;
 import static com.google.firebase.firestore.testutil.TestUtil.filter;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
+import static com.google.firebase.firestore.testutil.TestUtil.patchMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.query;
 import static org.junit.Assert.assertEquals;
 
 import com.google.android.gms.common.internal.Preconditions;
+import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.auth.User;
@@ -18,6 +20,8 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.mutation.Mutation;
+import com.google.firebase.firestore.model.mutation.MutationBatch;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -99,6 +103,19 @@ public class AutoIndexingExperiment {
         });
   }
 
+  protected void addMutation(Mutation mutation) {
+    persistence.runTransaction(
+        "addMutation",
+        () -> {
+          MutationBatch batch =
+              mutationQueue.addMutationBatch(
+                  Timestamp.now(), Collections.emptyList(), Collections.singletonList(mutation));
+          Map<DocumentKey, Mutation> overlayMap =
+              Collections.singletonMap(mutation.getKey(), mutation);
+          documentOverlayCache.saveOverlays(batch.getBatchId(), overlayMap);
+        });
+  }
+
   protected <T> T expectOptimizedCollectionScan(Callable<T> c) throws Exception {
     try {
       expectFullCollectionScan = false;
@@ -169,6 +186,18 @@ public class AutoIndexingExperiment {
     }
   }
 
+  private void createMutationForCollection(String basePath, int totalSetCount) {
+    ArrayList<Integer> indexes = new ArrayList<>();
+    for (int index = 0; index < totalSetCount * 10; index++) {
+      indexes.add(index);
+    }
+    Collections.shuffle(indexes);
+
+    for (int i = 0; i < totalSetCount; i++) {
+      addMutation(patchMutation(basePath + "/" + indexes.get(i), map("a", 5)));
+    }
+  }
+
   @Test
   public void testCombinesIndexedWithNonIndexedResults() throws Exception {
     // Every set contains 10 documents
@@ -192,6 +221,7 @@ public class AutoIndexingExperiment {
           Query query = query(basePath).filter(filter("match", "==", true));
           indexManager.createTargetIndices(query.toTarget());
           createTestingCollection(basePath, totalSetCount, portion, numOfFields);
+          createMutationForCollection(basePath, totalSetCount);
 
           QueryContext counterWithoutIndex = new QueryContext();
           long beforeAutoStart = System.nanoTime();
