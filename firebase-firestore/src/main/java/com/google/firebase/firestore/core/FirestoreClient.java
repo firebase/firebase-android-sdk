@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -137,6 +138,11 @@ public final class FirestoreClient {
           // Register an empty credentials change listener to activate token
           // refresh.
         });
+  }
+
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  public LocalStore getLocalStore() {
+    return localStore;
   }
 
   public Task<Void> disableNetwork() {
@@ -351,6 +357,11 @@ public final class FirestoreClient {
   public Task<Void> configureFieldIndexes(List<FieldIndex> fieldIndices) {
     verifyNotTerminated();
     return asyncQueue.enqueue(() -> localStore.configureFieldIndexes(fieldIndices));
+  }
+
+  public Task<Void> setAutomaticIndexingEnabled(boolean isEnabled) {
+    verifyNotTerminated();
+    return asyncQueue.enqueue(() -> localStore.setAutomaticIndexingEnabled(isEnabled));
   }
 
   public void removeSnapshotsInSyncListener(EventListener<Void> listener) {

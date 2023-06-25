@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.RestrictTo;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
@@ -65,14 +66,21 @@ public class QueryEngine {
   private IndexManager indexManager;
   private boolean initialized;
 
-  private boolean autoIndexEnabled;
+  private boolean automaticIndexingEnabled = false;
 
-  public void initialize(
-      LocalDocumentsView localDocumentsView, IndexManager indexManager, boolean autoIndexEnabled) {
+  public void initialize(LocalDocumentsView localDocumentsView, IndexManager indexManager) {
     this.localDocumentsView = localDocumentsView;
     this.indexManager = indexManager;
-    this.autoIndexEnabled = autoIndexEnabled;
     this.initialized = true;
+  }
+
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  public boolean getAutomaticIndexingEnabled() {
+    return this.automaticIndexingEnabled;
+  }
+
+  public void setAutomaticIndexingEnabled(boolean isEnabled) {
+    this.automaticIndexingEnabled = isEnabled;
   }
 
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
@@ -93,7 +101,7 @@ public class QueryEngine {
 
     QueryContext counter = new QueryContext();
     result = executeFullCollectionScan(query, counter);
-    if (result != null && autoIndexEnabled) {
+    if (result != null && automaticIndexingEnabled) {
       CreateCacheIndices(query, counter, result.size());
     }
     return result;

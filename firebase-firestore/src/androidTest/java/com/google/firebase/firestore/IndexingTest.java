@@ -15,6 +15,8 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -100,5 +102,22 @@ public class IndexingTest {
                     + "  ],\n"
                     + "  \"fieldOverrides\": []\n"
                     + "}"));
+  }
+
+  @Test
+  public void testAutomaticIndexingSetSuccessfully()
+      throws ExecutionException, InterruptedException {
+    // Use persistent disk cache (default)
+    FirebaseFirestore db = testFirestore();
+    FirebaseFirestoreSettings settings =
+        new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())
+            // Use persistent disk cache (default)
+            .setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
+            .build();
+    db.setFirestoreSettings(settings);
+    Tasks.await(db.getPersistentCacheIndexManager().setAutomaticIndexingEnabled(true));
+    assertTrue(db.getClient().getLocalStore().getQueryEngine().getAutomaticIndexingEnabled());
+    Tasks.await(db.getPersistentCacheIndexManager().setAutomaticIndexingEnabled(false));
+    assertFalse(db.getClient().getLocalStore().getQueryEngine().getAutomaticIndexingEnabled());
   }
 }

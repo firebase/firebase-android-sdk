@@ -21,6 +21,7 @@ import static java.util.Arrays.asList;
 import android.util.SparseArray;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -147,22 +148,11 @@ public final class LocalStore implements BundleCallback {
   /** Used to generate targetIds for queries tracked locally. */
   private final TargetIdGenerator targetIdGenerator;
 
-  private boolean autoIndexEnabled;
-
   public LocalStore(Persistence persistence, QueryEngine queryEngine, User initialUser) {
-    this(persistence, queryEngine, initialUser, false);
-  }
-
-  public LocalStore(
-      Persistence persistence,
-      QueryEngine queryEngine,
-      User initialUser,
-      boolean autoIndexEnabled) {
     hardAssert(
         persistence.isStarted(), "LocalStore was passed an unstarted persistence implementation");
     this.persistence = persistence;
     this.queryEngine = queryEngine;
-    this.autoIndexEnabled = autoIndexEnabled;
 
     targetCache = persistence.getTargetCache();
     bundleCache = persistence.getBundleCache();
@@ -186,7 +176,7 @@ public final class LocalStore implements BundleCallback {
         new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlayCache, indexManager);
 
     remoteDocuments.setIndexManager(indexManager);
-    queryEngine.initialize(localDocuments, indexManager, autoIndexEnabled);
+    queryEngine.initialize(localDocuments, indexManager);
   }
 
   public void start() {
@@ -209,6 +199,11 @@ public final class LocalStore implements BundleCallback {
 
   public LocalDocumentsView getLocalDocumentsForCurrentUser() {
     return localDocuments;
+  }
+
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  public QueryEngine getQueryEngine() {
+    return queryEngine;
   }
 
   // PORTING NOTE: no shutdown for LocalStore or persistence components on Android.
@@ -811,6 +806,10 @@ public final class LocalStore implements BundleCallback {
               indexManager::addFieldIndex,
               indexManager::deleteFieldIndex);
         });
+  }
+
+  public void setAutomaticIndexingEnabled(boolean isEnabled) {
+    queryEngine.setAutomaticIndexingEnabled(isEnabled);
   }
 
   /** Mutable state for the transaction in allocateQuery. */

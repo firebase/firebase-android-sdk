@@ -125,7 +125,7 @@ public abstract class QueryEngineTestCase {
             return super.getDocumentsMatchingQuery(query, offset);
           }
         };
-    queryEngine.initialize(localDocuments, indexManager, false);
+    queryEngine.initialize(localDocuments, indexManager);
   }
 
   abstract Persistence getPersistence();

@@ -23,6 +23,7 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -103,6 +104,8 @@ public class FirebaseFirestore {
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
   private final GrpcMetadataProvider metadataProvider;
+
+  @Nullable private PersistentCacheManager persistentCacheManager;
 
   @NonNull
   private static FirebaseApp getDefaultFirebaseApp() {
@@ -401,6 +404,19 @@ public class FirebaseFirestore {
     }
 
     return client.configureFieldIndexes(parsedIndexes);
+  }
+
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @Nullable
+  public PersistentCacheManager getPersistentCacheIndexManager() {
+    ensureClientConfigured();
+    if (persistentCacheManager != null) {
+      return persistentCacheManager;
+    }
+    if (settings.getCacheSettings() instanceof PersistentCacheSettings) {
+      persistentCacheManager = new PersistentCacheManager(client);
+    }
+    return persistentCacheManager;
   }
 
   /**

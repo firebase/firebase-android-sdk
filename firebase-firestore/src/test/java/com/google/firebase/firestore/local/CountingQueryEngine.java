@@ -69,15 +69,14 @@ class CountingQueryEngine extends QueryEngine {
   }
 
   @Override
-  public void initialize(
-      LocalDocumentsView localDocuments, IndexManager indexManager, boolean autoIndexEnabled) {
+  public void initialize(LocalDocumentsView localDocuments, IndexManager indexManager) {
     LocalDocumentsView wrappedView =
         new LocalDocumentsView(
             wrapRemoteDocumentCache(localDocuments.getRemoteDocumentCache()),
             localDocuments.getMutationQueue(),
             wrapOverlayCache(localDocuments.getDocumentOverlayCache()),
             indexManager);
-    queryEngine.initialize(wrappedView, indexManager, autoIndexEnabled);
+    queryEngine.initialize(wrappedView, indexManager);
   }
 
   @Override
