@@ -15,7 +15,15 @@
 package com.google.firebase.firestore.local;
 
 public class QueryContext {
-  QueryContext() {}
+  public QueryContext() {}
 
-  int fullScanCount = 0;
+  private int documentCount = 0;
+
+  public int getDocumentCount() {
+    return documentCount;
+  }
+
+  public void increaseDocumentCount() {
+    documentCount++;
+  }
 }

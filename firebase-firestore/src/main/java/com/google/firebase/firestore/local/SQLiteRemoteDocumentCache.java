@@ -144,7 +144,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
           .forEach(
               row -> {
                 processRowInBackground(backgroundQueue, results, row, /*filter*/ null);
-                counter.fullScanCount++;
+                counter.increaseDocumentCount();
               });
     }
     backgroundQueue.drain();
@@ -233,7 +233,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             row -> {
               QueryContext singleCounter = new QueryContext();
               processRowInBackground(backgroundQueue, results, row, filter);
-              counter.fullScanCount++;
+              counter.increaseDocumentCount();
             });
     backgroundQueue.drain();
     return results;

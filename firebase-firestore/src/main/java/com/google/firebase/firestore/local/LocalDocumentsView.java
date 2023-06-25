@@ -284,7 +284,7 @@ class LocalDocumentsView {
   /** Performs a simple document lookup for the given path. */
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingDocumentQuery(
       ResourcePath path, QueryContext counter) {
-    counter.fullScanCount++;
+    counter.increaseDocumentCount();
     ImmutableSortedMap<DocumentKey, Document> result = emptyDocumentMap();
     // Just do a simple document lookup.
     Document doc = getDocument(DocumentKey.fromPath(path));

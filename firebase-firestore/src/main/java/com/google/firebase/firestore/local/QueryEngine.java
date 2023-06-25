@@ -86,16 +86,12 @@ public class QueryEngine {
       return result;
     }
 
-    QueryContext counter = new QueryContext();
-    result = performQueryUsingRemoteKeys(query, remoteKeys, lastLimboFreeSnapshotVersion, counter);
+    result = performQueryUsingRemoteKeys(query, remoteKeys, lastLimboFreeSnapshotVersion);
     if (result != null) {
-      if (autoIndexEnabled) {
-        CreateCacheIndices(query, counter, result.size());
-      }
       return result;
     }
 
-    counter = new QueryContext();
+    QueryContext counter = new QueryContext();
     result = executeFullCollectionScan(query, counter);
     if (result != null && autoIndexEnabled) {
       CreateCacheIndices(query, counter, result.size());
@@ -104,7 +100,7 @@ public class QueryEngine {
   }
 
   private void CreateCacheIndices(Query query, QueryContext counter, int resultSize) {
-    if (counter.fullScanCount > 2 * resultSize) {
+    if (counter.getDocumentCount() > 2 * resultSize) {
       indexManager.createTargetIndices(query.toTarget());
     }
   }
@@ -163,8 +159,7 @@ public class QueryEngine {
   private @Nullable ImmutableSortedMap<DocumentKey, Document> performQueryUsingRemoteKeys(
       Query query,
       ImmutableSortedSet<DocumentKey> remoteKeys,
-      SnapshotVersion lastLimboFreeSnapshotVersion,
-      QueryContext counter) {
+      SnapshotVersion lastLimboFreeSnapshotVersion) {
     if (query.matchesAllDocuments()) {
       // Don't use indexes for queries that can be executed by scanning the collection.
       return null;
@@ -177,7 +172,7 @@ public class QueryEngine {
     }
 
     ImmutableSortedMap<DocumentKey, Document> documents =
-        localDocumentsView.getDocuments(remoteKeys, counter);
+        localDocumentsView.getDocuments(remoteKeys);
     ImmutableSortedSet<Document> previousResults = applyQuery(query, documents);
 
     if (needsRefill(query, remoteKeys.size(), previousResults, lastLimboFreeSnapshotVersion)) {
@@ -196,8 +191,7 @@ public class QueryEngine {
         previousResults,
         query,
         IndexOffset.createSuccessor(
-            lastLimboFreeSnapshotVersion, FieldIndex.INITIAL_LARGEST_BATCH_ID),
-        counter);
+            lastLimboFreeSnapshotVersion, FieldIndex.INITIAL_LARGEST_BATCH_ID));
   }
 
   /** Applies the query filter and sorting to the provided documents. */
@@ -278,7 +272,7 @@ public class QueryEngine {
       Iterable<Document> indexedResults, Query query, IndexOffset offset, QueryContext counter) {
     // Retrieve all results for documents that were updated since the offset.
     ImmutableSortedMap<DocumentKey, Document> remainingResults =
-        localDocumentsView.getDocumentsMatchingQuery(query, offset, counter);
+        localDocumentsView.getDocumentsMatchingQuery(query, offset);
     for (Document entry : indexedResults) {
       remainingResults = remainingResults.insert(entry.getKey(), entry);
     }

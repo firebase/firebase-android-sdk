@@ -217,6 +217,14 @@ public class TargetIndexMatcher {
     }
 
     for (OrderBy orderBy : orderBys) {
+      // Stop adding more segments if we see a order-by on key. Typically this is the default
+      // implicit order-by which is covered in the index_entry table as a separate column.
+      // If it is not the default order-by, the generated index will be missing some segments
+      // optimized for order-bys, which is probably fine.
+      if (orderBy.getField().isKeyField()) {
+        continue;
+      }
+
       if (uniqueFields.contains(orderBy.getField())) {
         continue;
       }
