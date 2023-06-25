@@ -19,7 +19,6 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.MemoryCacheSettings;
 import com.google.firebase.firestore.MemoryLruGcSettings;
-import com.google.firebase.firestore.PersistentCacheSettings;
 import com.google.firebase.firestore.local.IndexBackfiller;
 import com.google.firebase.firestore.local.LocalSerializer;
 import com.google.firebase.firestore.local.LocalStore;
@@ -61,12 +60,7 @@ public class MemoryComponentProvider extends ComponentProvider {
 
   @Override
   protected LocalStore createLocalStore(Configuration configuration) {
-    boolean autoIndexEnabled =
-        configuration.getSettings().getCacheSettings() != null
-            && ((PersistentCacheSettings) configuration.getSettings().getCacheSettings())
-                .autoClientIndexingEnabled();
-    return new LocalStore(
-        getPersistence(), new QueryEngine(), configuration.getInitialUser(), autoIndexEnabled);
+    return new LocalStore(getPersistence(), new QueryEngine(), configuration.getInitialUser());
   }
 
   @Override
