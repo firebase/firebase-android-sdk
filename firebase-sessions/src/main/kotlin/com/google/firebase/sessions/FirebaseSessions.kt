@@ -53,7 +53,6 @@ internal constructor(
   private val sessionCoordinator = SessionCoordinator(firebaseInstallations, eventGDTLogger)
 
   init {
-    sessionSettings.updateSettings()
     sessionGenerator = SessionGenerator(collectEvents = shouldCollectEvents(), timeProvider)
 
     val sessionInitiateListener =
@@ -126,13 +125,16 @@ internal constructor(
 
     Log.d(TAG, "Data Collection is enabled for at least one Subscriber")
 
+    // This will cause remote settings to be fetched if the cache is expired.
+    sessionSettings.updateSettings()
+
     if (!sessionSettings.sessionsEnabled) {
       Log.d(TAG, "Sessions SDK disabled. Events will not be sent.")
       return
     }
 
     if (!sessionGenerator.collectEvents) {
-      Log.d(TAG, "Sessions SDK has sampled this session")
+      Log.d(TAG, "Sessions SDK has dropped this session due to sampling.")
       return
     }
 

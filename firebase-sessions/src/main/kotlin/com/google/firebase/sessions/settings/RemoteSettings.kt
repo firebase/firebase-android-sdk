@@ -23,12 +23,13 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
 import org.json.JSONException
 import org.json.JSONObject
@@ -41,7 +42,7 @@ internal class RemoteSettings(
   dataStore: DataStore<Preferences>,
 ) : SettingsProvider {
   private val settingsCache = SettingsCache(dataStore)
-  private val fetchInProgress = AtomicBoolean(false)
+  private val fetchInProgress = Mutex()
 
   override val sessionEnabled: Boolean?
     get() = settingsCache.sessionsEnabled()
@@ -52,9 +53,91 @@ internal class RemoteSettings(
   override val samplingRate: Double?
     get() = settingsCache.sessionSamplingRate()
 
-  override fun updateSettings() {
-    val scope = CoroutineScope(backgroundDispatcher)
-    scope.launch { fetchConfigs() }
+  /**
+   * Fetch remote settings. This should only be called if data collection is enabled.
+   *
+   * This will exit early if the cache is not expired. Otherwise it will block while fetching, even
+   * if called multiple times. This may fetch the FID, so only call if data collection is enabled.
+   */
+  override suspend fun updateSettings() {
+    // Check if cache is expired. If not, return early.
+    if (!fetchInProgress.isLocked && !settingsCache.hasCacheExpired()) {
+      return
+    }
+
+    fetchInProgress.withLock {
+      // Double check if cache is expired. If not, return.
+      if (!settingsCache.hasCacheExpired()) {
+        return
+      }
+
+      // Get the installations ID before making a remote config fetch.
+      val installationId = firebaseInstallationsApi.id.await()
+      if (installationId == null) {
+        Log.w(TAG, "Error getting Firebase Installation ID. Skipping this Session Event.")
+        return
+      }
+
+      // All the required fields are available, start making a network request.
+      val options =
+        mapOf(
+          "X-Crashlytics-Installation-ID" to installationId,
+          "X-Crashlytics-Device-Model" to
+            removeForwardSlashesIn(String.format("%s/%s", Build.MANUFACTURER, Build.MODEL)),
+          "X-Crashlytics-OS-Build-Version" to removeForwardSlashesIn(Build.VERSION.INCREMENTAL),
+          "X-Crashlytics-OS-Display-Version" to removeForwardSlashesIn(Build.VERSION.RELEASE),
+          "X-Crashlytics-API-Client-Version" to appInfo.sessionSdkVersion
+        )
+
+      configsFetcher.doConfigFetch(
+        headerOptions = options,
+        onSuccess = {
+          var sessionsEnabled: Boolean? = null
+          var sessionSamplingRate: Double? = null
+          var sessionTimeoutSeconds: Int? = null
+          var cacheDuration: Int? = null
+          if (it.has("app_quality")) {
+            val aqsSettings = it.get("app_quality") as JSONObject
+            try {
+              if (aqsSettings.has("sessions_enabled")) {
+                sessionsEnabled = aqsSettings.get("sessions_enabled") as Boolean?
+              }
+
+              if (aqsSettings.has("sampling_rate")) {
+                sessionSamplingRate = aqsSettings.get("sampling_rate") as Double?
+              }
+
+              if (aqsSettings.has("session_timeout_seconds")) {
+                sessionTimeoutSeconds = aqsSettings.get("session_timeout_seconds") as Int?
+              }
+
+              if (aqsSettings.has("cache_duration")) {
+                cacheDuration = aqsSettings.get("cache_duration") as Int?
+              }
+            } catch (exception: JSONException) {
+              Log.e(TAG, "Error parsing the configs remotely fetched: ", exception)
+            }
+          }
+
+          sessionsEnabled?.let { settingsCache.updateSettingsEnabled(sessionsEnabled) }
+
+          sessionTimeoutSeconds?.let {
+            settingsCache.updateSessionRestartTimeout(sessionTimeoutSeconds)
+          }
+
+          sessionSamplingRate?.let { settingsCache.updateSamplingRate(sessionSamplingRate) }
+
+          cacheDuration?.let { settingsCache.updateSessionCacheDuration(cacheDuration) }
+            ?: let { settingsCache.updateSessionCacheDuration(86400) }
+
+          settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
+        },
+        onFailure = { msg ->
+          // Network request failed here.
+          Log.e(TAG, "Error failing to fetch the remote configs: $msg")
+        }
+      )
+    }
   }
 
   override fun isSettingsStale(): Boolean = settingsCache.hasCacheExpired()
@@ -63,90 +146,6 @@ internal class RemoteSettings(
   internal fun clearCachedSettings() {
     val scope = CoroutineScope(backgroundDispatcher)
     scope.launch { settingsCache.removeConfigs() }
-  }
-
-  private suspend fun fetchConfigs() {
-    // Check if a fetch is in progress. If yes, return
-    if (fetchInProgress.get()) {
-      return
-    }
-
-    // Check if cache is expired. If not, return
-    if (!settingsCache.hasCacheExpired()) {
-      return
-    }
-
-    fetchInProgress.set(true)
-
-    // TODO(mrober): Avoid sending the fid here, and avoid fetching it when data collection is off.
-    // Get the installations ID before making a remote config fetch
-    val installationId = firebaseInstallationsApi.id.await()
-    if (installationId == null) {
-      fetchInProgress.set(false)
-      return
-    }
-
-    // All the required fields are available, start making a network request.
-    val options =
-      mapOf(
-        "X-Crashlytics-Installation-ID" to installationId,
-        "X-Crashlytics-Device-Model" to
-          removeForwardSlashesIn(String.format("%s/%s", Build.MANUFACTURER, Build.MODEL)),
-        "X-Crashlytics-OS-Build-Version" to removeForwardSlashesIn(Build.VERSION.INCREMENTAL),
-        "X-Crashlytics-OS-Display-Version" to removeForwardSlashesIn(Build.VERSION.RELEASE),
-        "X-Crashlytics-API-Client-Version" to appInfo.sessionSdkVersion
-      )
-
-    configsFetcher.doConfigFetch(
-      headerOptions = options,
-      onSuccess = {
-        var sessionsEnabled: Boolean? = null
-        var sessionSamplingRate: Double? = null
-        var sessionTimeoutSeconds: Int? = null
-        var cacheDuration: Int? = null
-        if (it.has("app_quality")) {
-          val aqsSettings = it.get("app_quality") as JSONObject
-          try {
-            if (aqsSettings.has("sessions_enabled")) {
-              sessionsEnabled = aqsSettings.get("sessions_enabled") as Boolean?
-            }
-
-            if (aqsSettings.has("sampling_rate")) {
-              sessionSamplingRate = aqsSettings.get("sampling_rate") as Double?
-            }
-
-            if (aqsSettings.has("session_timeout_seconds")) {
-              sessionTimeoutSeconds = aqsSettings.get("session_timeout_seconds") as Int?
-            }
-
-            if (aqsSettings.has("cache_duration")) {
-              cacheDuration = aqsSettings.get("cache_duration") as Int?
-            }
-          } catch (exception: JSONException) {
-            Log.e(TAG, "Error parsing the configs remotely fetched: ", exception)
-          }
-        }
-
-        sessionsEnabled?.let { settingsCache.updateSettingsEnabled(sessionsEnabled) }
-
-        sessionTimeoutSeconds?.let {
-          settingsCache.updateSessionRestartTimeout(sessionTimeoutSeconds)
-        }
-
-        sessionSamplingRate?.let { settingsCache.updateSamplingRate(sessionSamplingRate) }
-
-        cacheDuration?.let { settingsCache.updateSessionCacheDuration(cacheDuration) }
-          ?: let { settingsCache.updateSessionCacheDuration(86400) }
-
-        settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
-        fetchInProgress.set(false)
-      },
-      onFailure = { msg ->
-        // Network request failed here.
-        Log.e(TAG, "Error failing to fetch the remote configs: $msg")
-        fetchInProgress.set(false)
-      }
-    )
   }
 
   private fun removeForwardSlashesIn(s: String): String {

@@ -22,11 +22,11 @@ import com.google.firebase.sessions.api.SessionSubscriber.Name.CRASHLYTICS
 import com.google.firebase.sessions.api.SessionSubscriber.Name.PERFORMANCE
 import com.google.firebase.sessions.testing.FakeSessionSubscriber
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import org.junit.After
@@ -93,14 +93,12 @@ class FirebaseSessionsDependenciesTest {
   }
 
   @Test
-  fun getSubscribers_waitsForRegister(): Unit = runBlocking {
-    // This test uses runBlocking because runTest skips the delay.
-
+  fun getSubscribers_waitsForRegister() = runTest {
     val crashlyticsSubscriber = FakeSessionSubscriber(sessionSubscriberName = CRASHLYTICS)
     FirebaseSessionsDependencies.addDependency(CRASHLYTICS)
 
     // Wait a few seconds and then register.
-    launch {
+    launch(Dispatchers.Default) {
       delay(2.seconds)
       FirebaseSessionsDependencies.register(crashlyticsSubscriber)
     }

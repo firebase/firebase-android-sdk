@@ -112,7 +112,7 @@ internal class SessionsSettings(
   }
 
   /** Update the settings for all the settings providers. */
-  fun updateSettings() {
+  suspend fun updateSettings() {
     localOverrideSettings.updateSettings()
     remoteSettings.updateSettings()
   }
