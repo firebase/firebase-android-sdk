@@ -413,7 +413,8 @@ public class FirebaseFirestore {
     if (persistentCacheManager != null) {
       return persistentCacheManager;
     }
-    if (settings.getCacheSettings() instanceof PersistentCacheSettings) {
+    if (settings.isPersistenceEnabled()
+        || settings.getCacheSettings() instanceof PersistentCacheSettings) {
       persistentCacheManager = new PersistentCacheManager(client);
     }
     return persistentCacheManager;

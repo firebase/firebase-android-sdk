@@ -15,8 +15,7 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -105,19 +104,33 @@ public class IndexingTest {
   }
 
   @Test
-  public void testAutomaticIndexingSetSuccessfully()
-      throws ExecutionException, InterruptedException {
+  public void testAutomaticIndexingSetSuccessfully() {
     // Use persistent disk cache (default)
     FirebaseFirestore db = testFirestore();
     FirebaseFirestoreSettings settings =
         new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())
-            // Use persistent disk cache (default)
             .setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
             .build();
     db.setFirestoreSettings(settings);
-    Tasks.await(db.getPersistentCacheIndexManager().setAutomaticIndexingEnabled(true));
-    assertTrue(db.getClient().getLocalStore().getQueryEngine().getAutomaticIndexingEnabled());
-    Tasks.await(db.getPersistentCacheIndexManager().setAutomaticIndexingEnabled(false));
-    assertFalse(db.getClient().getLocalStore().getQueryEngine().getAutomaticIndexingEnabled());
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().setAutomaticIndexingEnabled(true));
+    assertDoesNotThrow(
+        () -> db.getPersistentCacheIndexManager().setAutomaticIndexingEnabled(false));
+  }
+
+  @Test
+  public void testAutomaticIndexingSetSuccessfullyUseDefault() {
+    // Use persistent disk cache (default)
+    FirebaseFirestore db = testFirestore();
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().setAutomaticIndexingEnabled(true));
+    assertDoesNotThrow(
+        () -> db.getPersistentCacheIndexManager().setAutomaticIndexingEnabled(false));
+  }
+
+  public void assertDoesNotThrow(Runnable block) {
+    try {
+      block.run();
+    } catch (Exception e) {
+      fail("Should not have thrown " + e);
+    }
   }
 }

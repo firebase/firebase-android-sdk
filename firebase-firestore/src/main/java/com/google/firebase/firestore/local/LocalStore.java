@@ -21,7 +21,6 @@ import static java.util.Arrays.asList;
 import android.util.SparseArray;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
@@ -199,11 +198,6 @@ public final class LocalStore implements BundleCallback {
 
   public LocalDocumentsView getLocalDocumentsForCurrentUser() {
     return localDocuments;
-  }
-
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
-  public QueryEngine getQueryEngine() {
-    return queryEngine;
   }
 
   // PORTING NOTE: no shutdown for LocalStore or persistence components on Android.
