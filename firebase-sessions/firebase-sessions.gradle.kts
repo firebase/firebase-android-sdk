@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:Suppress("UnstableApiUsage")
+
 plugins {
   id("firebase-library")
   id("kotlin-android")
@@ -45,7 +47,7 @@ android {
 dependencies {
   implementation("androidx.datastore:datastore-preferences:1.0.0")
   implementation("com.google.android.datatransport:transport-api:3.0.0")
-  implementation("com.google.firebase:firebase-common-ktx:20.3.2")
+  implementation("com.google.firebase:firebase-common-ktx:20.3.3")
   implementation("com.google.firebase:firebase-components:17.1.0")
   implementation("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation("com.google.firebase:firebase-encoders:17.0.0")

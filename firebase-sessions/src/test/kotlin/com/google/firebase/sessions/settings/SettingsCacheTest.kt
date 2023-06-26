@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.sessions
+package com.google.firebase.sessions.settings
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -22,7 +22,6 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
-import com.google.firebase.sessions.settings.SettingsCache
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -38,7 +37,7 @@ class SettingsCacheTest {
     preferencesDataStore(name = SESSION_TEST_CONFIGS_NAME)
 
   @Test
-  fun sessionCache_returnsEmptyCache() {
+  fun sessionCache_returnsEmptyCache() = runTest {
     val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settingsCache = SettingsCache(context.dataStore)
 
@@ -49,7 +48,7 @@ class SettingsCacheTest {
   }
 
   @Test
-  fun sessionCache_SettingConfigsReturnsCachedValue() = runTest {
+  fun settingConfigsReturnsCachedValue() = runTest {
     val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settingsCache = SettingsCache(context.dataStore)
 
@@ -59,6 +58,7 @@ class SettingsCacheTest {
     settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
     settingsCache.updateSessionCacheDuration(1000)
 
+    assertThat(settingsCache.sessionsEnabled()).isFalse()
     assertThat(settingsCache.sessionSamplingRate()).isEqualTo(0.25)
     assertThat(settingsCache.sessionsEnabled()).isFalse()
     assertThat(settingsCache.sessionRestartTimeout()).isEqualTo(600)
@@ -68,7 +68,31 @@ class SettingsCacheTest {
   }
 
   @Test
-  fun sessionCache_SettingConfigsReturnsCacheExpiredWithShortCacheDuration() = runTest {
+  fun settingConfigsReturnsPreviouslyStoredValue() = runTest {
+    val context = FakeFirebaseApp().firebaseApp.applicationContext
+    val settingsCache = SettingsCache(context.dataStore)
+
+    settingsCache.updateSettingsEnabled(false)
+    settingsCache.updateSamplingRate(0.25)
+    settingsCache.updateSessionRestartTimeout(600)
+    settingsCache.updateSessionCacheUpdatedTime(System.currentTimeMillis())
+    settingsCache.updateSessionCacheDuration(1000)
+
+    // Create a new instance to imitate a second app launch.
+    val newSettingsCache = SettingsCache(context.dataStore)
+
+    assertThat(newSettingsCache.sessionsEnabled()).isFalse()
+    assertThat(newSettingsCache.sessionSamplingRate()).isEqualTo(0.25)
+    assertThat(newSettingsCache.sessionsEnabled()).isFalse()
+    assertThat(newSettingsCache.sessionRestartTimeout()).isEqualTo(600)
+    assertThat(newSettingsCache.hasCacheExpired()).isFalse()
+
+    settingsCache.removeConfigs()
+    newSettingsCache.removeConfigs()
+  }
+
+  @Test
+  fun settingConfigsReturnsCacheExpiredWithShortCacheDuration() = runTest {
     val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settingsCache = SettingsCache(context.dataStore)
 
@@ -87,7 +111,7 @@ class SettingsCacheTest {
   }
 
   @Test
-  fun sessionCache_SettingConfigsReturnsCachedValueWithPartialConfigs() = runTest {
+  fun settingConfigsReturnsCachedValueWithPartialConfigs() = runTest {
     val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settingsCache = SettingsCache(context.dataStore)
 
@@ -105,7 +129,7 @@ class SettingsCacheTest {
   }
 
   @Test
-  fun sessionCache_SettingConfigsAllowsUpdateConfigsAndCachesValues() = runTest {
+  fun settingConfigsAllowsUpdateConfigsAndCachesValues() = runTest {
     val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settingsCache = SettingsCache(context.dataStore)
 
@@ -135,7 +159,7 @@ class SettingsCacheTest {
   }
 
   @Test
-  fun sessionCache_SettingConfigsCleansCacheForNullValues() = runTest {
+  fun settingConfigsCleansCacheForNullValues() = runTest {
     val context = FakeFirebaseApp().firebaseApp.applicationContext
     val settingsCache = SettingsCache(context.dataStore)
 
@@ -169,7 +193,7 @@ class SettingsCacheTest {
     FirebaseApp.clearInstancesForTest()
   }
 
-  companion object {
-    private const val SESSION_TEST_CONFIGS_NAME = "firebase_test_session_settings"
+  private companion object {
+    const val SESSION_TEST_CONFIGS_NAME = "firebase_test_session_settings"
   }
 }

@@ -20,8 +20,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.concurrent.TestOnlyExecutors
 import com.google.firebase.sessions.settings.SessionsSettings
-import com.google.firebase.sessions.testing.FakeFirebaseApp
-import com.google.firebase.sessions.testing.FakeFirebaseInstallations
+import com.google.firebase.sessions.testing.FakeSettingsProvider
 import com.google.firebase.sessions.testing.FakeTimeProvider
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -48,17 +47,11 @@ class SessionInitiatorTest {
   @Test
   fun coldStart_initiatesSession() = runTest {
     val sessionInitiateCounter = SessionInitiateCounter()
-    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
-    val firebaseApp = FakeFirebaseApp().firebaseApp
     val fakeTimeProvider = FakeTimeProvider()
-    val context = firebaseApp.applicationContext
     val settings =
       SessionsSettings(
-        context,
-        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
-        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
-        firebaseInstallations,
-        SessionEvents.getApplicationInfo(firebaseApp)
+        localOverrideSettings = FakeSettingsProvider(),
+        remoteSettings = FakeSettingsProvider(),
       )
 
     // Simulate a cold start by simply constructing the SessionInitiator object
@@ -81,16 +74,10 @@ class SessionInitiatorTest {
   fun appForegrounded_largeInterval_initiatesSession() = runTest {
     val fakeTimeProvider = FakeTimeProvider()
     val sessionInitiateCounter = SessionInitiateCounter()
-    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
-    val firebaseApp = FakeFirebaseApp().firebaseApp
-    val context = firebaseApp.applicationContext
     val settings =
       SessionsSettings(
-        context,
-        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
-        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
-        firebaseInstallations,
-        SessionEvents.getApplicationInfo(firebaseApp)
+        localOverrideSettings = FakeSettingsProvider(),
+        remoteSettings = FakeSettingsProvider(),
       )
 
     val sessionInitiator =
@@ -122,16 +109,10 @@ class SessionInitiatorTest {
   fun appForegrounded_smallInterval_doesNotInitiatesSession() = runTest {
     val fakeTimeProvider = FakeTimeProvider()
     val sessionInitiateCounter = SessionInitiateCounter()
-    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
-    val firebaseApp = FakeFirebaseApp().firebaseApp
-    val context = firebaseApp.applicationContext
     val settings =
       SessionsSettings(
-        context,
-        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
-        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
-        firebaseInstallations,
-        SessionEvents.getApplicationInfo(firebaseApp)
+        localOverrideSettings = FakeSettingsProvider(),
+        remoteSettings = FakeSettingsProvider(),
       )
 
     val sessionInitiator =
@@ -163,16 +144,10 @@ class SessionInitiatorTest {
   fun appForegrounded_background_foreground_largeIntervals_initiatesSessions() = runTest {
     val fakeTimeProvider = FakeTimeProvider()
     val sessionInitiateCounter = SessionInitiateCounter()
-    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
-    val firebaseApp = FakeFirebaseApp().firebaseApp
-    val context = firebaseApp.applicationContext
     val settings =
       SessionsSettings(
-        context,
-        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
-        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
-        firebaseInstallations,
-        SessionEvents.getApplicationInfo(firebaseApp)
+        localOverrideSettings = FakeSettingsProvider(),
+        remoteSettings = FakeSettingsProvider(),
       )
 
     val sessionInitiator =
@@ -209,16 +184,10 @@ class SessionInitiatorTest {
   fun appForegrounded_background_foreground_smallIntervals_doesNotInitiateNewSessions() = runTest {
     val fakeTimeProvider = FakeTimeProvider()
     val sessionInitiateCounter = SessionInitiateCounter()
-    val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
-    val firebaseApp = FakeFirebaseApp().firebaseApp
-    val context = firebaseApp.applicationContext
     val settings =
       SessionsSettings(
-        context,
-        TestOnlyExecutors.blocking().asCoroutineDispatcher() + coroutineContext,
-        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
-        firebaseInstallations,
-        SessionEvents.getApplicationInfo(firebaseApp)
+        localOverrideSettings = FakeSettingsProvider(),
+        remoteSettings = FakeSettingsProvider(),
       )
 
     val sessionInitiator =

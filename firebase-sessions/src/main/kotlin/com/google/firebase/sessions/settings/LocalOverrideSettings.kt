@@ -18,59 +18,61 @@ package com.google.firebase.sessions.settings
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-internal class LocalOverrideSettings(val context: Context) : SettingsProvider {
-
-  private val sessions_metadata_flag_sessionsEnabled = "firebase_sessions_enabled"
-  private val sessions_metadata_flag_sessionRestartTimeout =
-    "firebase_sessions_sessions_restart_timeout"
-  private val sessions_metadata_flag_samplingRate = "firebase_sessions_sampling_rate"
+internal class LocalOverrideSettings(context: Context) : SettingsProvider {
   private val metadata =
-    context.packageManager
-      .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
-      .metaData
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      context.packageManager
+        .getApplicationInfo(
+          context.packageName,
+          PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA.toLong()),
+        )
+        .metaData
+    } else {
+      @Suppress("DEPRECATION") // For older API levels.
+      context.packageManager
+        .getApplicationInfo(
+          context.packageName,
+          PackageManager.GET_META_DATA,
+        )
+        .metaData
+    }
+    // Default to an empty bundle, meaning no cached values.
+    ?: Bundle.EMPTY
 
   override val sessionEnabled: Boolean?
-    get() {
-      metadata?.let {
-        if (it.containsKey(sessions_metadata_flag_sessionsEnabled)) {
-          return it.getBoolean(sessions_metadata_flag_sessionsEnabled)
-        }
+    get() =
+      if (metadata.containsKey(SESSIONS_ENABLED)) {
+        metadata.getBoolean(SESSIONS_ENABLED)
+      } else {
+        null
       }
-      return null
-    }
 
   override val sessionRestartTimeout: Duration?
-    get() {
-      metadata?.let {
-        if (it.containsKey(sessions_metadata_flag_sessionRestartTimeout)) {
-          val timeoutInSeconds = it.getInt(sessions_metadata_flag_sessionRestartTimeout)
-          val duration = timeoutInSeconds.toDuration(DurationUnit.SECONDS)
-          return duration
-        }
+    get() =
+      if (metadata.containsKey(SESSION_RESTART_TIMEOUT)) {
+        val timeoutInSeconds = metadata.getInt(SESSION_RESTART_TIMEOUT)
+        timeoutInSeconds.toDuration(DurationUnit.SECONDS)
+      } else {
+        null
       }
-      return null
-    }
 
   override val samplingRate: Double?
-    get() {
-      metadata?.let {
-        if (it.containsKey(sessions_metadata_flag_samplingRate)) {
-          return it.getDouble(sessions_metadata_flag_samplingRate)
-        }
+    get() =
+      if (metadata.containsKey(SAMPLING_RATE)) {
+        metadata.getDouble(SAMPLING_RATE)
+      } else {
+        null
       }
-      return null
-    }
 
-  override fun updateSettings() {
-    // Nothing to be done here since there is nothing to be updated.
-  }
-
-  override fun isSettingsStale(): Boolean {
-    // Settings are never stale since all of these are from Manifest file.
-    return false
+  private companion object {
+    const val SESSIONS_ENABLED = "firebase_sessions_enabled"
+    const val SESSION_RESTART_TIMEOUT = "firebase_sessions_sessions_restart_timeout"
+    const val SAMPLING_RATE = "firebase_sessions_sampling_rate"
   }
 }
