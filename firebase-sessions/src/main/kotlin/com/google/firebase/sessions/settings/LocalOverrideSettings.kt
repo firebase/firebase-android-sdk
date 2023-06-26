@@ -25,25 +25,21 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 internal class LocalOverrideSettings(context: Context) : SettingsProvider {
-  private val metadata: Bundle
-
-  init {
-    metadata =
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-          context.packageManager.getApplicationInfo(
-            context.packageName,
-            PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA.toLong()),
-          )
-        } else {
-          @Suppress("DEPRECATION") // For older API levels.
-          context.packageManager.getApplicationInfo(
-            context.packageName,
-            PackageManager.GET_META_DATA,
-          )
-        }
-        .metaData
-        ?: Bundle.EMPTY
-  }
+  private val metadata =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        context.packageManager.getApplicationInfo(
+          context.packageName,
+          PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA.toLong()),
+        )
+      } else {
+        @Suppress("DEPRECATION") // For older API levels.
+        context.packageManager.getApplicationInfo(
+          context.packageName,
+          PackageManager.GET_META_DATA,
+        )
+      }
+      .metaData
+      ?: Bundle.EMPTY
 
   override val sessionEnabled: Boolean?
     get() =
