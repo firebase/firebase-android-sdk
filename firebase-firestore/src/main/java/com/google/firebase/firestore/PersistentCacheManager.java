@@ -2,7 +2,6 @@ package com.google.firebase.firestore;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.firestore.core.FirestoreClient;
 
 // TODO(csi): Remove the `hide` and scope annotations.
@@ -16,7 +15,7 @@ public class PersistentCacheManager {
     this.client = client;
   }
 
-  public Task<Void> setAutomaticIndexingEnabled(boolean isEnabled) {
-    return client.setAutomaticIndexingEnabled(isEnabled);
+  public void setAutomaticIndexingEnabled(boolean isEnabled) {
+    client.setAutomaticIndexingEnabled(isEnabled);
   }
 }
