@@ -27,6 +27,7 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.toExperiment
 import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_ARM_VALUE_PARAM;
 import static com.google.firebase.remoteconfig.internal.Personalization.EXTERNAL_PERSONALIZATION_ID_PARAM;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertFalse;
+import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
 import static com.google.firebase.remoteconfig.testutil.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -1510,6 +1511,47 @@ public final class FirebaseRemoteConfigTest {
     flushScheduledTasks();
 
     verify(mockNotFetchedEventListener).onError(any(FirebaseRemoteConfigServerException.class));
+  }
+
+  @Test
+  public void realtimeTest_installationIDAndToken_tokenTaskFails() throws Exception {
+    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
+    when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTALLATION_ID));
+    when(mockFirebaseInstallations.getToken(false))
+        .thenReturn(Tasks.forException(new IOException("SERVICE_NOT_AVAILABLE")));
+
+    Task<HttpURLConnection> httpURLConnectionTask =
+        configRealtimeHttpClientSpy.createRealtimeConnection();
+    flushScheduledTasks();
+
+    FirebaseRemoteConfigClientException frcException =
+        assertThrows(
+            FirebaseRemoteConfigClientException.class,
+            () -> httpURLConnectionTask.getResult(FirebaseRemoteConfigClientException.class));
+    assertThat(frcException)
+        .hasMessageThat()
+        .contains("Firebase Installations failed to get installation auth token for real-time.");
+  }
+
+  @Test
+  public void realtimeTest_installationIDAndToken_idTaskFails() throws Exception {
+    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
+    when(mockFirebaseInstallations.getId())
+        .thenReturn(Tasks.forException(new IOException("SERVICE_NOT_AVAILABLE")));
+    when(mockFirebaseInstallations.getToken(false))
+        .thenReturn(Tasks.forResult(INSTALLATION_TOKEN_RESULT));
+
+    Task<HttpURLConnection> httpURLConnectionTask =
+        configRealtimeHttpClientSpy.createRealtimeConnection();
+    flushScheduledTasks();
+
+    FirebaseRemoteConfigClientException frcException =
+        assertThrows(
+            FirebaseRemoteConfigClientException.class,
+            () -> httpURLConnectionTask.getResult(FirebaseRemoteConfigClientException.class));
+    assertThat(frcException)
+        .hasMessageThat()
+        .contains("Firebase Installations failed to get installation ID for real-time.");
   }
 
   private static void loadCacheWithConfig(
