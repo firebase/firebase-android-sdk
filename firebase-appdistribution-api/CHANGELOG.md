@@ -1,6 +1,7 @@
 # Unreleased
 * [feature] Improved development mode to allow all API calls to be made without having to sign in.
 
+
 # 16.0.0-beta08
 * [fixed] Fixed an issue where a crash happened whenever a feedback
   notification was shown on devices running Android 4.4 and lower.
