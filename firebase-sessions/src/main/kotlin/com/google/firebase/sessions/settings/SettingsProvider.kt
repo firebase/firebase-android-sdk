@@ -29,7 +29,7 @@ internal interface SettingsProvider {
   val samplingRate: Double?
 
   /** Function to initiate refresh of the settings for the provider. */
-  fun updateSettings() = Unit // Default to no op.
+  suspend fun updateSettings() = Unit // Default to no op.
 
   /** Function representing if the settings are stale. */
   fun isSettingsStale(): Boolean = false // Default to false.

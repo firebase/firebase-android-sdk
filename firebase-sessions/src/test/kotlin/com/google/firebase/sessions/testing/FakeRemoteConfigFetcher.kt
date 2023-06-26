@@ -17,15 +17,31 @@
 package com.google.firebase.sessions.testing
 
 import com.google.firebase.sessions.settings.CrashlyticsSettingsFetcher
+import kotlin.time.Duration
 import org.json.JSONObject
 
-internal class FakeRemoteConfigFetcher(var responseJSONObject: JSONObject = JSONObject()) :
-  CrashlyticsSettingsFetcher {
+/**
+ * Fake [CrashlyticsSettingsFetcher] that, when fetched, will produce given [responseJSONObject]
+ * after simulating a [networkDelay], while keeping count of calls to [doConfigFetch].
+ */
+internal class FakeRemoteConfigFetcher(
+  var responseJSONObject: JSONObject = JSONObject(),
+  private val networkDelay: Duration = Duration.ZERO,
+) : CrashlyticsSettingsFetcher {
+  /** The number of times [doConfigFetch] was called on this instance. */
+  var timesCalled: Int = 0
+    private set
+
   override suspend fun doConfigFetch(
     headerOptions: Map<String, String>,
     onSuccess: suspend (JSONObject) -> Unit,
-    onFailure: suspend (String) -> Unit
+    onFailure: suspend (String) -> Unit,
   ) {
+    timesCalled++
+    if (networkDelay.isPositive()) {
+      @Suppress("BlockingMethodInNonBlockingContext") // Using sleep, not delay, for runTest.
+      Thread.sleep(networkDelay.inWholeMilliseconds)
+    }
     onSuccess(responseJSONObject)
   }
 }
