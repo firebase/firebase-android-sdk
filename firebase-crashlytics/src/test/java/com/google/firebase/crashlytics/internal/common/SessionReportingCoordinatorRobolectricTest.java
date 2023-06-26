@@ -51,6 +51,7 @@ public class SessionReportingCoordinatorRobolectricTest {
   @Mock private DataTransportCrashlyticsReportSender reportSender;
   @Mock private LogFileManager logFileManager;
   @Mock private UserMetadata reportMetadata;
+  @Mock private IdManager idManager;
   @Mock private CrashlyticsReport.Session.Event mockEvent;
   @Mock private CrashlyticsReport.Session.Event.Builder mockEventBuilder;
   @Mock private CrashlyticsReport.Session.Event.Application mockEventApp;
@@ -66,7 +67,12 @@ public class SessionReportingCoordinatorRobolectricTest {
 
     reportingCoordinator =
         new SessionReportingCoordinator(
-            dataCapture, reportPersistence, reportSender, logFileManager, reportMetadata);
+            dataCapture,
+            reportPersistence,
+            reportSender,
+            logFileManager,
+            reportMetadata,
+            idManager);
     mockEventInteractions();
   }
 

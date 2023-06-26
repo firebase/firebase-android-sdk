@@ -37,6 +37,7 @@ test-apps:
       - com.google.firebase:firebase-messaging
       - com.google.firebase:firebase-ml-modeldownloader
       - com.google.firebase:firebase-perf
+      - com.google.firebase:firebase-sessions
       - com.google.firebase:firebase-storage
     plugins:
       - com.google.firebase.crashlytics
@@ -60,3 +61,4 @@ test-apps:
       - fire-rc
       - fire-rtdb
       - fire-transport
+      - fire-sessions

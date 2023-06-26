@@ -91,6 +91,9 @@ public abstract class CrashlyticsReport {
   @NonNull
   public abstract String getInstallationUuid();
 
+  @Nullable
+  public abstract String getFirebaseInstallationId();
+
   @NonNull
   public abstract String getBuildVersion();
 
@@ -177,6 +180,22 @@ public abstract class CrashlyticsReport {
       builder.setSession(getSession().withSessionEndFields(endedAt, isCrashed, userId));
     }
     return builder.build();
+  }
+
+  /** Augment an existing {@link CrashlyticsReport} with the given app quality session id. */
+  @NonNull
+  public CrashlyticsReport withAppQualitySessionId(@Nullable String appQualitySessionId) {
+    Builder builder = toBuilder();
+    if (getSession() != null) {
+      builder.setSession(getSession().withAppQualitySessionId(appQualitySessionId));
+    }
+    return builder.build();
+  }
+
+  /** Update an existing {@link CrashlyticsReport} with the given firebaseInstallationId. */
+  @NonNull
+  public CrashlyticsReport withFirebaseInstallationId(@Nullable String firebaseInstallationId) {
+    return toBuilder().setFirebaseInstallationId(firebaseInstallationId).build();
   }
 
   @AutoValue
@@ -283,6 +302,10 @@ public abstract class CrashlyticsReport {
       return getIdentifier().getBytes(UTF_8);
     }
 
+    /** The last FirebaseSessions Session ID associated with the crash. */
+    @Nullable
+    public abstract String getAppQualitySessionId();
+
     public abstract long getStartedAt();
 
     @Nullable
@@ -332,6 +355,11 @@ public abstract class CrashlyticsReport {
       return builder.build();
     }
 
+    @NonNull
+    Session withAppQualitySessionId(@Nullable String appQualitySessionId) {
+      return toBuilder().setAppQualitySessionId(appQualitySessionId).build();
+    }
+
     /** Builder for {@link Session}. */
     @AutoValue.Builder
     public abstract static class Builder {
@@ -346,6 +374,9 @@ public abstract class CrashlyticsReport {
       public Builder setIdentifierFromUtf8Bytes(@NonNull byte[] utf8Bytes) {
         return setIdentifier(new String(utf8Bytes, UTF_8));
       }
+
+      @NonNull
+      public abstract Builder setAppQualitySessionId(@Nullable String appQualitySessionId);
 
       @NonNull
       public abstract Builder setStartedAt(long startedAt);
@@ -1160,6 +1191,9 @@ public abstract class CrashlyticsReport {
 
     @NonNull
     public abstract Builder setInstallationUuid(@NonNull String value);
+
+    @NonNull
+    public abstract Builder setFirebaseInstallationId(@Nullable String value);
 
     @NonNull
     public abstract Builder setBuildVersion(@NonNull String value);
