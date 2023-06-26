@@ -293,8 +293,7 @@ public class ConfigRealtimeHttpClient {
         namespace);
   }
 
-  @SuppressLint("VisibleForTests")
-  public URL getUrl() {
+  private URL getUrl() {
     URL realtimeURL = null;
     try {
       realtimeURL = new URL(getRealtimeURL(namespace));
