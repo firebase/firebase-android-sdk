@@ -152,17 +152,6 @@ public class ConfigRealtimeHttpClient {
     return matcher.matches() ? matcher.group(1) : null;
   }
 
-  private void getInstallationAuthToken(HttpURLConnection httpURLConnection) {
-    Task<InstallationTokenResult> installationAuthTokenTask = firebaseInstallations.getToken(false);
-    installationAuthTokenTask.onSuccessTask(
-        scheduledExecutorService,
-        unusedToken -> {
-          httpURLConnection.setRequestProperty(
-              INSTALLATIONS_AUTH_TOKEN_HEADER, unusedToken.getToken());
-          return Tasks.forResult(null);
-        });
-  }
-
   /** Gets the Android package's SHA-1 fingerprint. */
   private String getFingerprintHashForPackage() {
     byte[] hash;
@@ -183,9 +172,9 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  private void setCommonRequestHeaders(HttpURLConnection httpURLConnection) {
-    // Get Installation Token
-    getInstallationAuthToken(httpURLConnection);
+  private void setCommonRequestHeaders(HttpURLConnection httpURLConnection, String authToken) {
+    // Auth token
+    httpURLConnection.setRequestProperty(INSTALLATIONS_AUTH_TOKEN_HEADER, authToken);
 
     // API Key
     httpURLConnection.setRequestProperty(API_KEY_HEADER, this.firebaseApp.getOptions().getApiKey());
@@ -315,13 +304,37 @@ public class ConfigRealtimeHttpClient {
 
   /** Create HTTP connection and set headers. */
   @SuppressLint("VisibleForTests")
-  public HttpURLConnection createRealtimeConnection() throws IOException {
-    URL realtimeUrl = getUrl();
-    HttpURLConnection httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
-    setCommonRequestHeaders(httpURLConnection);
-    setRequestParams(httpURLConnection);
+  public Task<HttpURLConnection> createRealtimeConnection() {
+    // Make async call to get auth token.
+    Task<InstallationTokenResult> installationAuthTokenTask = firebaseInstallations.getToken(false);
+    // When the auth token task has finished, set up HTTP connection with headers and params.
+    return Tasks.whenAllComplete(installationAuthTokenTask)
+        .continueWithTask(
+            this.scheduledExecutorService,
+            (completedInstallationTask) -> {
+              if (!installationAuthTokenTask.isSuccessful()) {
+                return Tasks.forException(
+                    new FirebaseRemoteConfigClientException(
+                        "Firebase Installations failed to get installation auth token for real-time.",
+                        installationAuthTokenTask.getException()));
+              }
 
-    return httpURLConnection;
+              HttpURLConnection httpURLConnection;
+              try {
+                URL realtimeUrl = getUrl();
+                httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
+
+                String installationAuthToken = installationAuthTokenTask.getResult().getToken();
+                setCommonRequestHeaders(httpURLConnection, installationAuthToken);
+                setRequestParams(httpURLConnection);
+              } catch (IOException ex) {
+                return Tasks.forException(
+                    new FirebaseRemoteConfigClientException(
+                        "Failed to open HTTP stream connection", ex));
+              }
+
+              return Tasks.forResult(httpURLConnection);
+            });
   }
 
   /** Initial Http stream attempt that makes call without waiting. */
@@ -455,59 +468,83 @@ public class ConfigRealtimeHttpClient {
       return;
     }
 
-    Integer responseCode = null;
-    HttpURLConnection httpURLConnection = null;
-    setIsHttpConnectionRunning(true);
-    try {
-      // Create the open the connection.
-      httpURLConnection = createRealtimeConnection();
-      responseCode = httpURLConnection.getResponseCode();
+    // Make async call to create and setup HTTP connection.
+    Task<HttpURLConnection> httpURLConnectionTask = createRealtimeConnection();
+    // When the connection task has finished, begin real-time actions.
+    Tasks.whenAllComplete(httpURLConnectionTask)
+        .continueWith(
+            this.scheduledExecutorService,
+            (completedHttpUrlConnectionTask) -> {
+              Integer responseCode = null;
+              HttpURLConnection httpURLConnection = null;
 
-      // If the connection returned a 200 response code, start listening for messages.
-      if (responseCode == HttpURLConnection.HTTP_OK) {
-        // Reset the retries remaining if we opened the connection without an exception.
-        resetRetryCount();
-        metadataClient.resetRealtimeBackoff();
+              try {
+                // If HTTP connection task failed throw exception to move to the catch block.
+                if (!httpURLConnectionTask.isSuccessful()) {
+                  throw new IOException(httpURLConnectionTask.getException());
+                }
+                setIsHttpConnectionRunning(true);
 
-        // Start listening for realtime notifications.
-        ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
-        configAutoFetch.listenForNotifications();
-      }
-    } catch (IOException e) {
-      // Stream could not be open due to a transient issue and the system will retry the connection
-      // without user intervention.
-      Log.d(TAG, "Exception connecting to real-time RC backend. Retrying the connection...", e);
-    } finally {
-      closeRealtimeHttpStream(httpURLConnection);
-      setIsHttpConnectionRunning(false);
+                // Get HTTP connection and check response code.
+                httpURLConnection = httpURLConnectionTask.getResult();
+                responseCode = httpURLConnection.getResponseCode();
 
-      boolean connectionFailed = responseCode == null || isStatusCodeRetryable(responseCode);
-      if (connectionFailed) {
-        updateBackoffMetadataWithLastFailedStreamConnectionTime(
-            new Date(clock.currentTimeMillis()));
-      }
+                // If the connection returned a 200 response code, start listening for messages.
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                  // Reset the retries remaining if we opened the connection without an exception.
+                  resetRetryCount();
+                  metadataClient.resetRealtimeBackoff();
 
-      // If responseCode is null then no connection was made to server and the SDK should still
-      // retry.
-      if (connectionFailed || responseCode == HttpURLConnection.HTTP_OK) {
-        retryHttpConnectionWhenBackoffEnds();
-      } else {
-        String errorMessage =
-            String.format(
-                "Unable to connect to the server. Try again in a few minutes. HTTP status code: %d",
-                responseCode);
-        // Return server message for when the Firebase Remote Config Realtime API is disabled and
-        // the server returns a 403
-        if (responseCode == 403) {
-          errorMessage = parseForbiddenErrorResponseMessage(httpURLConnection.getErrorStream());
-        }
-        propagateErrors(
-            new FirebaseRemoteConfigServerException(
-                responseCode,
-                errorMessage,
-                FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
-      }
-    }
+                  // Start listening for realtime notifications.
+                  ConfigAutoFetch configAutoFetch = startAutoFetch(httpURLConnection);
+                  configAutoFetch.listenForNotifications();
+                }
+              } catch (IOException e) {
+                // Stream could not be open due to a transient issue and the system will retry the
+                // connection
+                // without user intervention.
+                Log.d(
+                    TAG,
+                    "Exception connecting to real-time RC backend. Retrying the connection...",
+                    e);
+              } finally {
+                closeRealtimeHttpStream(httpURLConnection);
+                setIsHttpConnectionRunning(false);
+
+                boolean connectionFailed =
+                    responseCode == null || isStatusCodeRetryable(responseCode);
+                if (connectionFailed) {
+                  updateBackoffMetadataWithLastFailedStreamConnectionTime(
+                      new Date(clock.currentTimeMillis()));
+                }
+
+                // If responseCode is null then no connection was made to server and the SDK should
+                // still
+                // retry.
+                if (connectionFailed || responseCode == HttpURLConnection.HTTP_OK) {
+                  retryHttpConnectionWhenBackoffEnds();
+                } else {
+                  String errorMessage =
+                      String.format(
+                          "Unable to connect to the server. Try again in a few minutes. HTTP status code: %d",
+                          responseCode);
+                  // Return server message for when the Firebase Remote Config Realtime API is
+                  // disabled and
+                  // the server returns a 403
+                  if (responseCode == 403) {
+                    errorMessage =
+                        parseForbiddenErrorResponseMessage(httpURLConnection.getErrorStream());
+                  }
+                  propagateErrors(
+                      new FirebaseRemoteConfigServerException(
+                          responseCode,
+                          errorMessage,
+                          FirebaseRemoteConfigException.Code.CONFIG_UPDATE_STREAM_ERROR));
+                }
+              }
+
+              return Tasks.forResult(null);
+            });
   }
 
   // Pauses Http stream listening
