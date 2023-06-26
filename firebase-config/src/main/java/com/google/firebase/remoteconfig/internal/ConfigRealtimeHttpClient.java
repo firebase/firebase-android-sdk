@@ -194,7 +194,7 @@ public class ConfigRealtimeHttpClient {
     httpURLConnection.setRequestProperty("Accept", "application/json");
   }
 
-  private JSONObject createRequestBody() {
+  private JSONObject createRequestBody(String installationId) {
     Map<String, String> body = new HashMap<>();
     body.put(
         "project", extractProjectNumberFromAppId(this.firebaseApp.getOptions().getApplicationId()));
@@ -203,13 +203,15 @@ public class ConfigRealtimeHttpClient {
         "lastKnownVersionNumber", Long.toString(configFetchHandler.getTemplateVersionNumber()));
     body.put("appId", firebaseApp.getOptions().getApplicationId());
     body.put("sdkVersion", BuildConfig.VERSION_NAME);
+    body.put("appInstanceId", installationId);
 
     return new JSONObject(body);
   }
 
-  private void setRequestParams(HttpURLConnection httpURLConnection) throws IOException {
+  private void setRequestParams(HttpURLConnection httpURLConnection, JSONObject requestBody)
+      throws IOException {
     httpURLConnection.setRequestMethod("POST");
-    byte[] body = createRequestBody().toString().getBytes("utf-8");
+    byte[] body = requestBody.toString().getBytes("utf-8");
     OutputStream outputStream = new BufferedOutputStream(httpURLConnection.getOutputStream());
     outputStream.write(body);
     outputStream.flush();
@@ -291,7 +293,8 @@ public class ConfigRealtimeHttpClient {
         namespace);
   }
 
-  private URL getUrl() {
+  @SuppressLint("VisibleForTests")
+  public URL getUrl() {
     URL realtimeURL = null;
     try {
       realtimeURL = new URL(getRealtimeURL(namespace));
@@ -307,8 +310,10 @@ public class ConfigRealtimeHttpClient {
   public Task<HttpURLConnection> createRealtimeConnection() {
     // Make async call to get auth token.
     Task<InstallationTokenResult> installationAuthTokenTask = firebaseInstallations.getToken(false);
+    // Make async call to get FID.
+    Task<String> installationIdTask = firebaseInstallations.getId();
     // When the auth token task has finished, set up HTTP connection with headers and params.
-    return Tasks.whenAllComplete(installationAuthTokenTask)
+    return Tasks.whenAllComplete(installationAuthTokenTask, installationIdTask)
         .continueWithTask(
             this.scheduledExecutorService,
             (completedInstallationTask) -> {
@@ -318,6 +323,12 @@ public class ConfigRealtimeHttpClient {
                         "Firebase Installations failed to get installation auth token for real-time.",
                         installationAuthTokenTask.getException()));
               }
+              if (!installationIdTask.isSuccessful()) {
+                return Tasks.forException(
+                    new FirebaseRemoteConfigClientException(
+                        "Firebase Installations failed to get installation ID for real-time.",
+                        installationIdTask.getException()));
+              }
 
               HttpURLConnection httpURLConnection;
               try {
@@ -326,7 +337,8 @@ public class ConfigRealtimeHttpClient {
 
                 String installationAuthToken = installationAuthTokenTask.getResult().getToken();
                 setCommonRequestHeaders(httpURLConnection, installationAuthToken);
-                setRequestParams(httpURLConnection);
+                JSONObject requestBody = createRequestBody(installationIdTask.getResult());
+                setRequestParams(httpURLConnection, requestBody);
               } catch (IOException ex) {
                 return Tasks.forException(
                     new FirebaseRemoteConfigClientException(
