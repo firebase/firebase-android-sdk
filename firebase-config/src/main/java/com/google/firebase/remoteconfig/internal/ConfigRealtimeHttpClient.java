@@ -315,7 +315,7 @@ public class ConfigRealtimeHttpClient {
               if (!installationAuthTokenTask.isSuccessful()) {
                 return Tasks.forException(
                     new FirebaseRemoteConfigClientException(
-                        "Firebase Installations failed to get installation ID for real-time.",
+                        "Firebase Installations failed to get installation auth token for real-time.",
                         installationAuthTokenTask.getException()));
               }
 
@@ -477,13 +477,13 @@ public class ConfigRealtimeHttpClient {
             (completedHttpUrlConnectionTask) -> {
               Integer responseCode = null;
               HttpURLConnection httpURLConnection = null;
-              setIsHttpConnectionRunning(true);
 
               try {
                 // If HTTP connection task failed throw exception to move to the catch block.
                 if (!httpURLConnectionTask.isSuccessful()) {
                   throw new IOException(httpURLConnectionTask.getException());
                 }
+                setIsHttpConnectionRunning(true);
 
                 // Get HTTP connection and check response code.
                 httpURLConnection = httpURLConnectionTask.getResult();
