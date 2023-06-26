@@ -30,7 +30,6 @@ import com.google.firebase.appdistribution.FirebaseAppDistributionException;
 import com.google.firebase.appdistribution.FirebaseAppDistributionException.Status;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -56,6 +55,7 @@ class ReleaseIdentifier {
   private final Context applicationContext;
   private final FirebaseAppDistributionTesterApiClient testerApiClient;
 
+  private final DevModeDetector devModeDetector;
   @Background private final Executor backgroundExecutor;
   @Lightweight private final Executor lightweightExecutor;
 
@@ -63,10 +63,12 @@ class ReleaseIdentifier {
   ReleaseIdentifier(
       Context applicationContext,
       FirebaseAppDistributionTesterApiClient testerApiClient,
+      DevModeDetector devModeDetector,
       @Background Executor backgroundExecutor,
       @Lightweight Executor lightweightExecutor) {
     this.applicationContext = applicationContext;
     this.testerApiClient = testerApiClient;
+    this.devModeDetector = devModeDetector;
     this.backgroundExecutor = backgroundExecutor;
     this.lightweightExecutor = lightweightExecutor;
   }
@@ -74,11 +76,11 @@ class ReleaseIdentifier {
   /**
    * Identify the currently installed release, returning the release name.
    *
-   * <p>Will return {@code Task} with a {@code null} result in "developer mode" which allows the UI
-   * to be used, but no actual feedback to be submitted.
+   * <p>Will return {@code Task} with a {@code null} result in "development mode" which allows the
+   * UI to be used, but no actual feedback to be submitted.
    */
   Task<String> identifyRelease() {
-    if (developmentModeEnabled()) {
+    if (devModeDetector.isDevModeEnabled()) {
       return Tasks.forResult(null);
     }
 
@@ -212,26 +214,5 @@ class ReleaseIdentifier {
       result[i] = list.get(i);
     }
     return result;
-  }
-
-  private static boolean developmentModeEnabled() {
-    return Boolean.valueOf(getSystemProperty("debug.firebase.appdistro.devmode"));
-  }
-
-  @Nullable
-  @SuppressWarnings({"unchecked", "PrivateApi"})
-  private static String getSystemProperty(String propertyName) {
-    String className = "android.os.SystemProperties";
-    try {
-      Class<?> sysProps = Class.forName(className);
-      Method method = sysProps.getDeclaredMethod("get", String.class);
-      Object result = method.invoke(null, propertyName);
-      if (result != null && String.class.isAssignableFrom(result.getClass())) {
-        return (String) result;
-      }
-    } catch (Exception e) {
-      // do nothing
-    }
-    return null;
   }
 }
