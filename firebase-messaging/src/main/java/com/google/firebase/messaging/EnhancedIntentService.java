@@ -36,6 +36,10 @@ import java.util.concurrent.ExecutorService;
  */
 @SuppressLint("UnwrappedWakefulBroadcastReceiver") // Not used within GmsCore
 public abstract class EnhancedIntentService extends Service {
+
+  // Allow apps 20 seconds to handle a message.
+  static final long MESSAGE_TIMEOUT_S = 20;
+
   private static final String TAG = "EnhancedIntentService";
 
   // Use a different thread per service instance, so it can be reclaimed once the service is done.

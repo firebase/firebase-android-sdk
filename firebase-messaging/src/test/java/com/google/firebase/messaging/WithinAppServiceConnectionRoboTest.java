@@ -44,10 +44,7 @@ public class WithinAppServiceConnectionRoboTest {
   private static final String TEST_BIND_ACTION = "testBindAction";
 
   // The amount of time that a broadcast receiver takes to time out
-  private static final long RECEIVER_TIMEOUT_S = 10;
-
-  // The amount of time to allow a foreground broadcast's service to run.
-  private static final long FOREGROUND_RECEIVER_TIMEOUT_S = 60;
+  private static final long RECEIVER_TIMEOUT_S = 20;
 
   private Application context;
   private FakeScheduledExecutorService fakeExecutor;
@@ -71,27 +68,7 @@ public class WithinAppServiceConnectionRoboTest {
 
     // Check the runnable doesn't run early, and that after it should have run the pending
     // result is finished.
-    fakeExecutor.simulateNormalOperationFor(RECEIVER_TIMEOUT_S - 2, TimeUnit.SECONDS);
-    assertThat(pendingResult.isComplete()).isFalse();
-    fakeExecutor.simulateNormalOperationFor(1, TimeUnit.SECONDS);
-    assertThat(pendingResult.isComplete()).isTrue();
-  }
-
-  @Test
-  public void testReceiverTimesOut_ForegroundBroadcast() {
-    WithinAppServiceConnection connection =
-        new WithinAppServiceConnection(context, TEST_BIND_ACTION, fakeExecutor);
-    setMockBinder(TEST_BIND_ACTION);
-
-    // Send a foreground broadcst intent, verify the pending result isn't finished
-    Intent foregroundBroadcastIntent = new Intent();
-    foregroundBroadcastIntent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
-    Task<Void> pendingResult = connection.sendIntent(foregroundBroadcastIntent);
-    assertThat(pendingResult.isComplete()).isFalse();
-
-    // Check the runnable doesn't run early, and that after it should have run the pending
-    // result is finished.
-    fakeExecutor.simulateNormalOperationFor(FOREGROUND_RECEIVER_TIMEOUT_S - 1, TimeUnit.SECONDS);
+    fakeExecutor.simulateNormalOperationFor(RECEIVER_TIMEOUT_S - 1, TimeUnit.SECONDS);
     assertThat(pendingResult.isComplete()).isFalse();
     fakeExecutor.simulateNormalOperationFor(1, TimeUnit.SECONDS);
     assertThat(pendingResult.isComplete()).isTrue();
