@@ -1,3 +1,17 @@
+// Copyright 2023 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
@@ -89,7 +103,7 @@ public class AutoIndexingExperiment {
             return super.getDocumentsMatchingQuery(query, offset);
           }
         };
-    queryEngine.initialize(localDocuments, indexManager, false);
+    queryEngine.initialize(localDocuments, indexManager);
   }
 
   /** Adds the provided documents to the remote document cache. */
@@ -232,7 +246,7 @@ public class AutoIndexingExperiment {
               TimeUnit.MILLISECONDS.convert(
                   (beforeAutoEnd - beforeAutoStart), TimeUnit.NANOSECONDS);
           totalBeforeIndex += (beforeAutoEnd - beforeAutoStart);
-          totalDocumentCount += counterWithoutIndex.fullScanCount;
+          totalDocumentCount += counterWithoutIndex.getDocumentCount();
           assertEquals(portion * totalSetCount, results.size());
 
           QueryContext counterWithIndex = new QueryContext();
@@ -254,7 +268,7 @@ public class AutoIndexingExperiment {
                     + numOfFields
                     + " fields.\n"
                     + "Weight result for without auto indexing is "
-                    + without * counterWithoutIndex.fullScanCount
+                    + without * counterWithoutIndex.getDocumentCount()
                     + ". And weight result for auto indexing is "
                     + with * results.size());
           }
