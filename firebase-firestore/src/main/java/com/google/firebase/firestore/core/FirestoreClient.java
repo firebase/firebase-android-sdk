@@ -355,7 +355,7 @@ public final class FirestoreClient {
 
   public void setAutomaticIndexingEnabled(boolean isEnabled) {
     verifyNotTerminated();
-    asyncQueue.enqueue(() -> localStore.setAutomaticIndexingEnabled(isEnabled));
+    asyncQueue.enqueueAndForget(() -> localStore.setAutomaticIndexingEnabled(isEnabled));
   }
 
   public void removeSnapshotsInSyncListener(EventListener<Void> listener) {
