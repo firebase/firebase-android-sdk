@@ -102,14 +102,9 @@ class LocalDocumentsView {
    * <p>If we don't have cached state for a document in {@code keys}, a NoDocument will be stored
    * for that key in the resulting set.
    */
-  ImmutableSortedMap<DocumentKey, Document> getDocuments(
-      Iterable<DocumentKey> keys, QueryContext counter) {
-    Map<DocumentKey, MutableDocument> docs = remoteDocumentCache.getAll(keys, counter);
-    return getLocalViewOfDocuments(docs, new HashSet<>());
-  }
-
   ImmutableSortedMap<DocumentKey, Document> getDocuments(Iterable<DocumentKey> keys) {
-    return getDocuments(keys, new QueryContext());
+    Map<DocumentKey, MutableDocument> docs = remoteDocumentCache.getAll(keys);
+    return getLocalViewOfDocuments(docs, new HashSet<>());
   }
 
   /**

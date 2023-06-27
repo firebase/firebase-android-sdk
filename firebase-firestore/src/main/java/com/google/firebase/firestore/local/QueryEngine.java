@@ -16,7 +16,6 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
-import androidx.annotation.RestrictTo;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
@@ -74,11 +73,6 @@ public class QueryEngine {
     this.initialized = true;
   }
 
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
-  public boolean getAutomaticIndexingEnabled() {
-    return this.automaticIndexingEnabled;
-  }
-
   public void setAutomaticIndexingEnabled(boolean isEnabled) {
     this.automaticIndexingEnabled = isEnabled;
   }
@@ -107,6 +101,7 @@ public class QueryEngine {
     return result;
   }
 
+  // TODO(csi): Auto experiment data.
   private void CreateCacheIndices(Query query, QueryContext counter, int resultSize) {
     if (counter.getDocumentCount() > 2 * resultSize) {
       indexManager.createTargetIndices(query.toTarget());
@@ -277,7 +272,7 @@ public class QueryEngine {
    * been indexed.
    */
   private ImmutableSortedMap<DocumentKey, Document> appendRemainingResults(
-      Iterable<Document> indexedResults, Query query, IndexOffset offset, QueryContext counter) {
+      Iterable<Document> indexedResults, Query query, IndexOffset offset) {
     // Retrieve all results for documents that were updated since the offset.
     ImmutableSortedMap<DocumentKey, Document> remainingResults =
         localDocumentsView.getDocumentsMatchingQuery(query, offset);
@@ -285,10 +280,5 @@ public class QueryEngine {
       remainingResults = remainingResults.insert(entry.getKey(), entry);
     }
     return remainingResults;
-  }
-
-  private ImmutableSortedMap<DocumentKey, Document> appendRemainingResults(
-      Iterable<Document> indexedResults, Query query, IndexOffset offset) {
-    return appendRemainingResults(indexedResults, query, offset, new QueryContext());
   }
 }
