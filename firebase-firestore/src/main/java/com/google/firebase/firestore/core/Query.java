@@ -325,11 +325,15 @@ public final class Query {
   }
 
   /**
-   * Returns the full list of ordering constraints on the query.
+   * Returns the full list of ordering constraints on the query. This might include additional sort
+   * orders added implicitly to match the backend behavior.
    *
-   * <p>This might include additional sort orders added implicitly to match the backend behavior.
+   * <p>This method is marked as synchronized because it modifies the internal state in some cases.
+   *
+   * <p>The returned list is unmodifiable, to prevent ConcurrentModificationExceptions, if one
+   * thread is iterating the list and one thread is modifying the list.
    */
-  public List<OrderBy> getOrderBy() {
+  public synchronized List<OrderBy> getOrderBy() {
     if (memoizedOrderBy == null) {
       FieldPath inequalityField = inequalityField();
       FieldPath firstOrderByField = getFirstOrderByField();
@@ -341,8 +345,9 @@ public final class Query {
           this.memoizedOrderBy = Collections.singletonList(KEY_ORDERING_ASC);
         } else {
           memoizedOrderBy =
-              Arrays.asList(
-                  OrderBy.getInstance(Direction.ASCENDING, inequalityField), KEY_ORDERING_ASC);
+              Collections.unmodifiableList(
+                  Arrays.asList(
+                      OrderBy.getInstance(Direction.ASCENDING, inequalityField), KEY_ORDERING_ASC));
         }
       } else {
         List<OrderBy> res = new ArrayList<>();
@@ -362,7 +367,7 @@ public final class Query {
                   : Direction.ASCENDING;
           res.add(lastDirection.equals(Direction.ASCENDING) ? KEY_ORDERING_ASC : KEY_ORDERING_DESC);
         }
-        memoizedOrderBy = res;
+        memoizedOrderBy = Collections.unmodifiableList(res);
       }
     }
     return memoizedOrderBy;
@@ -458,8 +463,12 @@ public final class Query {
     }
   }
 
-  /** @return A {@code Target} instance this query will be mapped to in backend and local store. */
-  public Target toTarget() {
+  /**
+   * This method is marked as synchronized because it modifies the internal state in some cases.
+   *
+   * @return A {@code Target} instance this query will be mapped to in backend and local store.
+   */
+  public synchronized Target toTarget() {
     if (this.memoizedTarget == null) {
       if (this.limitType == LimitType.LIMIT_TO_FIRST) {
         this.memoizedTarget =
