@@ -86,7 +86,7 @@ public class PomXmlWriter {
     transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
 
     DOMSource source = new DOMSource(document);
-    Path outputDir = rootDir.resolve("bom/com/google/firebase/firebase-bom/" + version + "/");
+    Path outputDir = rootDir.resolve("com/google/firebase/firebase-bom/" + version + "/");
     Files.createDirectories(outputDir);
     Path pom = outputDir.resolve("firebase-bom-" + version + ".pom");
     StreamResult file = new StreamResult(pom.toFile());

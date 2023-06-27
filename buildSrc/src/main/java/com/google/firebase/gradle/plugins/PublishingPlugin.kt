@@ -221,7 +221,9 @@ abstract class PublishingPlugin : Plugin<Project> {
    * @see BomGeneratorTask
    */
   private fun registerGenerateBomTask(project: Project) =
-    project.tasks.register<BomGeneratorTask>(GENERATE_BOM_TASK)
+    project.tasks.register<BomGeneratorTask>(GENERATE_BOM_TASK) {
+      bomDirectory.convention(project.layout.projectDirectory.dir(BOM_DIR_NAME))
+    }
 
   /**
    * Registers the [VALIDATE_POM_TASK] task.
@@ -446,6 +448,7 @@ abstract class PublishingPlugin : Plugin<Project> {
     const val RELEASE_CONFIG_FILE = "release.json"
     const val RELEASE_REPORT_MD_FILE = "release_report.md"
     const val RELEASE_REPORT_JSON_FILE = "release_report.json"
+    const val BOM_DIR_NAME = "bom"
 
     const val GENERATE_BOM_TASK = "generateBom"
     const val VALIDATE_PROJECTS_TO_PUBLISH_TASK = "validateProjectsToPublish"
