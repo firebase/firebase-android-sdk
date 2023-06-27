@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.crashlytics.android.core">
+    package="com.crashlytics.android.core.test">
 
     <application>
 

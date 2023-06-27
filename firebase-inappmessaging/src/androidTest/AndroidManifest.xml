@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.google.firebase.inappmessaging">
+    package="com.google.firebase.inappmessaging.test">
 
   <uses-sdk
       android:minSdkVersion="16"
