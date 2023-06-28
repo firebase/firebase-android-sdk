@@ -21,11 +21,11 @@ import com.google.firebase.firestore.core.FirestoreClient;
 // TODO(csi): Remove the `hide` and scope annotations.
 /** @hide */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
-public class PersistentCacheManager {
+public class PersistentCacheIndexManager {
   @NonNull private FirestoreClient client;
 
   @RestrictTo(RestrictTo.Scope.LIBRARY)
-  public PersistentCacheManager(FirestoreClient client) {
+  public PersistentCacheIndexManager(FirestoreClient client) {
     this.client = client;
   }
 

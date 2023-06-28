@@ -105,7 +105,7 @@ public class FirebaseFirestore {
   private volatile FirestoreClient client;
   private final GrpcMetadataProvider metadataProvider;
 
-  @Nullable private PersistentCacheManager persistentCacheManager;
+  @Nullable private PersistentCacheIndexManager persistentCacheIndexManager;
 
   @NonNull
   private static FirebaseApp getDefaultFirebaseApp() {
@@ -410,16 +410,16 @@ public class FirebaseFirestore {
   /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
-  public PersistentCacheManager getPersistentCacheIndexManager() {
+  public PersistentCacheIndexManager getPersistentCacheIndexManager() {
     ensureClientConfigured();
-    if (persistentCacheManager != null) {
-      return persistentCacheManager;
+    if (persistentCacheIndexManager != null) {
+      return persistentCacheIndexManager;
     }
     if (settings.isPersistenceEnabled()
         || settings.getCacheSettings() instanceof PersistentCacheSettings) {
-      persistentCacheManager = new PersistentCacheManager(client);
+      persistentCacheIndexManager = new PersistentCacheIndexManager(client);
     }
-    return persistentCacheManager;
+    return persistentCacheIndexManager;
   }
 
   /**
