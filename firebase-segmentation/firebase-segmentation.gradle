@@ -18,7 +18,7 @@ plugins {
 
 android {
     compileSdkVersion project.targetSdkVersion
-
+    namespace "com.google.firebase.segmentation"
     defaultConfig {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion

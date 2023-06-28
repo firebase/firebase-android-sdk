@@ -21,6 +21,7 @@ android {
         timeOutInMs 60 * 1000
     }
 
+    namespace "com.google.firebase.ml_data_collection_tests"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16

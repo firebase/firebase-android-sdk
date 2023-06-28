@@ -25,6 +25,7 @@ firebaseLibrary {
 
 android {
     compileSdk 30
+    namespace "com.google.firebase.perf.ktx"
     defaultConfig {
         minSdkVersion 16
         multiDexEnabled true

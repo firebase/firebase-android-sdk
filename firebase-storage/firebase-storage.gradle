@@ -29,6 +29,7 @@ android {
         timeOutInMs 60 * 1000
     }
 
+    namespace "com.google.firebase.storage"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion

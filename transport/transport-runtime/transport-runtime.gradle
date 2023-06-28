@@ -72,6 +72,7 @@ vendor {
 
 android {
     compileSdkVersion project.targetSdkVersion
+    namespace "com.google.android.datatransport.runtime"
     defaultConfig {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion

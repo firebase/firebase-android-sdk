@@ -55,6 +55,7 @@ android {
         timeOutInMs 60 * 1000
     }
 
+    namespace "com.google.firebase.firestore"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion

@@ -28,6 +28,7 @@ android {
         abortOnError false
     }
 
+    namespace "com.google.firebase.abt"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion

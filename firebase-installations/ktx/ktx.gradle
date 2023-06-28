@@ -25,6 +25,7 @@ firebaseLibrary {
 
 android {
     compileSdkVersion project.targetSdkVersion
+    namespace "com.google.firebase.installations.ktx"
     defaultConfig {
         minSdkVersion project.minSdkVersion
         multiDexEnabled true

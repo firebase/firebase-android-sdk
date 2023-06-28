@@ -23,6 +23,7 @@ firebaseLibrary {
 
 android {
     compileSdkVersion project.targetSdkVersion
+    namespace "com.google.firebase.installations"
     defaultConfig {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion

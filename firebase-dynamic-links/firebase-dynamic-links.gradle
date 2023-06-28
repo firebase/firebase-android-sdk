@@ -27,6 +27,7 @@ android {
         timeOutInMs 60 * 1000
     }
 
+    namespace "com.google.firebase.dynamiclinks"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
@@ -85,4 +86,3 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-dynamic-links'
     }
 }
-
