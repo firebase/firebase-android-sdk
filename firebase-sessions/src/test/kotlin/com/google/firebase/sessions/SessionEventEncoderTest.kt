@@ -75,7 +75,7 @@ class SessionEventEncoderTest {
             "applicationInfo":{
               "appId":"1:12345:android:app",
               "deviceModel":"${Build.MODEL}",
-              "sessionSdkVersion":"0.1.0",
+              "sessionSdkVersion":"${BuildConfig.VERSION_NAME}",
               "osVersion":"${Build.VERSION.RELEASE}",
               "logEnvironment":3,
               "androidAppInfo":{

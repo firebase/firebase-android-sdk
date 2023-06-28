@@ -486,7 +486,12 @@ public class FirebaseMessaging {
    *
    * <p>When there is an active connection the message will be sent immediately, otherwise the
    * message will be queued up to the time to live (TTL) set in the message.
+   *
+   * @deprecated FCM upstream is deprecated and will be decommissioned in June 2024. More details
+   *     can be found in <a
+   *     href="https://firebase.google.com/support/faq#fcm-23-deprecation">https://firebase.google.com/support/faq#fcm-23-deprecation</a>
    */
+  @Deprecated
   public void send(@NonNull RemoteMessage message) {
     if (TextUtils.isEmpty(message.getTo())) {
       throw new IllegalArgumentException("Missing 'to'");
