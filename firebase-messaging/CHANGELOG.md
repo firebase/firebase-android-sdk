@@ -1,4 +1,7 @@
 # Unreleased
+* [deprecated] Deprecated FCM upstream messaging. See the
+  [FAQ](https://firebase.google.com/support/faq#fcm-23-deprecation) for more
+  details.
 
 # 23.1.2
 * [fixed] Fixed a breakage related to Jetpack core library related to an

@@ -168,18 +168,21 @@ public class FirebaseAppDistributionServiceImplTest {
   @Mock private FirebaseAppDistributionLifecycleNotifier mockLifecycleNotifier;
   @Mock private ReleaseIdentifier mockReleaseIdentifier;
   @Mock private ScreenshotTaker mockScreenshotTaker;
+  @Mock private DevModeDetector mockDevModeDetector;
 
   static class TestActivity extends Activity {}
 
   @Before
   public void setup() throws FirebaseAppDistributionException {
-
     MockitoAnnotations.initMocks(this);
-
     FirebaseApp.clearInstancesForTest();
 
     signInStorage =
-        spy(new SignInStorage(ApplicationProvider.getApplicationContext(), backgroundExecutor));
+        spy(
+            new SignInStorage(
+                ApplicationProvider.getApplicationContext(),
+                mockDevModeDetector,
+                backgroundExecutor));
 
     FirebaseApp firebaseApp =
         FirebaseApp.initializeApp(
@@ -213,8 +216,9 @@ public class FirebaseAppDistributionServiceImplTest {
 
     when(mockTesterSignInManager.signInTester()).thenReturn(Tasks.forResult(null));
     setSignInStatusSharedPreference(true);
-
     when(mockInstallationTokenResult.getToken()).thenReturn(TEST_AUTH_TOKEN);
+    when(mockScreenshotTaker.takeScreenshot()).thenReturn(Tasks.forResult(TEST_SCREENSHOT_URI));
+    when(mockDevModeDetector.isDevModeEnabled()).thenReturn(false);
 
     ShadowPackageManager shadowPackageManager =
         shadowOf(ApplicationProvider.getApplicationContext().getPackageManager());
@@ -236,8 +240,6 @@ public class FirebaseAppDistributionServiceImplTest {
     activityController = Robolectric.buildActivity(TestActivity.class).setup();
     activity = spy(activityController.get());
     mockForegroundActivity(mockLifecycleNotifier, activity);
-
-    when(mockScreenshotTaker.takeScreenshot()).thenReturn(Tasks.forResult(TEST_SCREENSHOT_URI));
   }
 
   @After
@@ -903,6 +905,6 @@ public class FirebaseAppDistributionServiceImplTest {
     SharedPreferences sharedPreferences =
         ApplicationProvider.getApplicationContext()
             .getSharedPreferences(SignInStorage.SIGNIN_PREFERENCES_NAME, MODE_PRIVATE);
-    sharedPreferences.edit().putBoolean(SignInStorage.SIGNIN_TAG, testerSignedIn).commit();
+    sharedPreferences.edit().putBoolean(SignInStorage.SIGN_IN_KEY, testerSignedIn).commit();
   }
 }
