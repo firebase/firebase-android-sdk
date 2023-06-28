@@ -1532,7 +1532,8 @@ public final class FirebaseRemoteConfigTest {
             () -> httpURLConnectionTask.getResult(FirebaseRemoteConfigClientException.class));
     assertThat(frcException)
         .hasMessageThat()
-        .contains("Firebase Installations failed to get installation auth token for real-time.");
+        .contains(
+            "Firebase Installations failed to get installation auth token for config update listener connection.");
   }
 
   @Test
@@ -1553,7 +1554,8 @@ public final class FirebaseRemoteConfigTest {
             () -> httpURLConnectionTask.getResult(FirebaseRemoteConfigClientException.class));
     assertThat(frcException)
         .hasMessageThat()
-        .contains("Firebase Installations failed to get installation ID for real-time.");
+        .contains(
+            "Firebase Installations failed to get installation ID for config update listener connection.");
   }
 
   @Test
