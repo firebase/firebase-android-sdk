@@ -208,10 +208,13 @@ public class ConfigRealtimeHttpClient {
     return new JSONObject(body);
   }
 
-  private void setRequestParams(HttpURLConnection httpURLConnection, JSONObject requestBody)
+  @SuppressLint("VisibleForTests")
+  public void setRequestParams(
+      HttpURLConnection httpURLConnection, String installationId, String authtoken)
       throws IOException {
     httpURLConnection.setRequestMethod("POST");
-    byte[] body = requestBody.toString().getBytes("utf-8");
+    setCommonRequestHeaders(httpURLConnection, authtoken);
+    byte[] body = createRequestBody(installationId).toString().getBytes("utf-8");
     OutputStream outputStream = new BufferedOutputStream(httpURLConnection.getOutputStream());
     outputStream.write(body);
     outputStream.flush();
@@ -315,17 +318,17 @@ public class ConfigRealtimeHttpClient {
     return Tasks.whenAllComplete(installationAuthTokenTask, installationIdTask)
         .continueWithTask(
             this.scheduledExecutorService,
-            (completedInstallationTask) -> {
+            (unusedCompletedInstallationTasks) -> {
               if (!installationAuthTokenTask.isSuccessful()) {
                 return Tasks.forException(
                     new FirebaseRemoteConfigClientException(
-                        "Firebase Installations failed to get installation auth token for real-time.",
+                        "Firebase Installations failed to get installation auth token for config update listener connection.",
                         installationAuthTokenTask.getException()));
               }
               if (!installationIdTask.isSuccessful()) {
                 return Tasks.forException(
                     new FirebaseRemoteConfigClientException(
-                        "Firebase Installations failed to get installation ID for real-time.",
+                        "Firebase Installations failed to get installation ID for config update listener connection.",
                         installationIdTask.getException()));
               }
 
@@ -335,9 +338,8 @@ public class ConfigRealtimeHttpClient {
                 httpURLConnection = (HttpURLConnection) realtimeUrl.openConnection();
 
                 String installationAuthToken = installationAuthTokenTask.getResult().getToken();
-                setCommonRequestHeaders(httpURLConnection, installationAuthToken);
-                JSONObject requestBody = createRequestBody(installationIdTask.getResult());
-                setRequestParams(httpURLConnection, requestBody);
+                String installationId = installationIdTask.getResult();
+                setRequestParams(httpURLConnection, installationId, installationAuthToken);
               } catch (IOException ex) {
                 return Tasks.forException(
                     new FirebaseRemoteConfigClientException(

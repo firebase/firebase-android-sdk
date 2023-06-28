@@ -75,10 +75,12 @@ import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
+import com.google.firebase.remoteconfig.internal.FakeHttpURLConnection;
 import com.google.firebase.remoteconfig.internal.Personalization;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Date;
@@ -1514,7 +1516,7 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void realtimeTest_installationIDAndToken_tokenTaskFails() throws Exception {
+  public void realtimeStream_getInstallationToken_tokenTaskThrowsException() throws Exception {
     ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
     when(mockFirebaseInstallations.getId()).thenReturn(Tasks.forResult(INSTALLATION_ID));
     when(mockFirebaseInstallations.getToken(false))
@@ -1534,7 +1536,7 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
-  public void realtimeTest_installationIDAndToken_idTaskFails() throws Exception {
+  public void realtimeStream_getInstallationID_idTaskThrowsException() throws Exception {
     ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
     when(mockFirebaseInstallations.getId())
         .thenReturn(Tasks.forException(new IOException("SERVICE_NOT_AVAILABLE")));
@@ -1552,6 +1554,33 @@ public final class FirebaseRemoteConfigTest {
     assertThat(frcException)
         .hasMessageThat()
         .contains("Firebase Installations failed to get installation ID for real-time.");
+  }
+
+  @Test
+  public void realtimeRequest_setRequestParams_succeedsWithCorrectParams() throws Exception {
+    ConfigRealtimeHttpClient configRealtimeHttpClientSpy = spy(configRealtimeHttpClient);
+    when(mockFetchHandler.getTemplateVersionNumber()).thenReturn(1L);
+    FakeHttpURLConnection fakeConnection =
+        new FakeHttpURLConnection(new URL("https://firebase.google.com"));
+
+    configRealtimeHttpClientSpy.setRequestParams(
+        fakeConnection, "fid-is-over-iid", INSTALLATION_TOKEN);
+    String expectedBody = fakeConnection.getOutputStream().toString();
+    Map<String, String> headerFields = fakeConnection.getRequestHeaders();
+
+    Map<String, String> body = new HashMap<>();
+    body.put("project", "14368190084");
+    body.put("namespace", "firebase");
+    body.put("lastKnownVersionNumber", "1");
+    body.put("appId", APP_ID);
+    body.put("sdkVersion", BuildConfig.VERSION_NAME);
+    body.put("appInstanceId", "fid-is-over-iid");
+
+    assertThat(new JSONObject(body).toString()).isEqualTo(expectedBody);
+    assertThat(headerFields.get("X-Goog-Firebase-Installations-Auth"))
+        .isEqualTo(INSTALLATION_TOKEN);
+    assertThat(headerFields.get("X-Goog-Api-Key")).isEqualTo(API_KEY);
+    assertThat(fakeConnection.getRequestMethod()).isEqualTo("POST");
   }
 
   private static void loadCacheWithConfig(
