@@ -24,8 +24,8 @@ firebaseLibrary {
 }
 
 android {
+        namespace "com.google.firebase.dynamiclinks.ktx"
     compileSdkVersion project.targetSdkVersion
-    namespace "com.google.firebase.dynamiclinks.ktx"
     defaultConfig {
         minSdkVersion 19
         multiDexEnabled true

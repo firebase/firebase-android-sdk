@@ -39,8 +39,8 @@ protobuf {
     }
 }
 android {
+    namespace "firebase.com.protolitewrapper"    
     compileSdkVersion project.targetSdkVersion
-    namespace "firebase.com.protolitewrapper"
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion

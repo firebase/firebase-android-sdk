@@ -42,6 +42,7 @@ protobuf {
 }
 
 android {
+    namespace "com.google.firebase.perf"
     compileSdk 30
 
     lintOptions {
@@ -50,7 +51,6 @@ android {
     }
 
     defaultConfig {
-        namespace "com.google.firebase.perf"
         // Note: To control the values of the auto-generated BuildConfig.java file (or any static
         // final field) in the Unit Test (with ReflectionHelpers.setStaticField()) we need to avoid
         // Java compiler inlining the value of the static final field with a code that accesses the

@@ -24,8 +24,8 @@ firebaseLibrary {
 }
 
 android {
-    compileSdkVersion project.targetSdkVersion
     namespace "com.google.firebase.remoteconfig.ktx"
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16
         multiDexEnabled true

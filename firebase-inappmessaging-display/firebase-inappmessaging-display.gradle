@@ -23,8 +23,8 @@ firebaseLibrary {
 }
 
 android {
-    compileSdkVersion project.targetSdkVersion
     namespace "com.google.firebase.inappmessaging.display"
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion project.targetSdkVersion

@@ -25,8 +25,8 @@ firebaseLibrary {
 }
 
 android {
-    compileSdkVersion project.targetSdkVersion
     namespace "com.google.firebase.remoteconfig"
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
       minSdkVersion 16
       targetSdkVersion project.targetSdkVersion

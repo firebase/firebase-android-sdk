@@ -23,8 +23,8 @@ firebaseLibrary {
 }
 
 android {
-    compileSdkVersion project.targetSdkVersion
     namespace "com.google.firebase.encoders.json"
+    compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
