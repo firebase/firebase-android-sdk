@@ -2,7 +2,7 @@ name: Monthly Flakiness Report
 
 on:
   schedule:
-    - cron: 0 0 9 1 * ? *  # At 9am UTC (1am PST / 2am PDT), on the 1st day, every month
+    - cron: "0 0 9 1 * ? *""  # At 9am UTC (1am PST / 2am PDT), on the 1st day, every month
   workflow_dispatch:     # allow triggering the workflow manually
 
 
