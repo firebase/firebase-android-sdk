@@ -68,10 +68,17 @@ def get_workflow_summary(gh, args):
   token = args.token
   workflow_name = args.workflow_name
   # https://docs.github.com/en/search-github/getting-started-with-searching-on-github/understanding-the-search-syntax#query-for-dates
-  days = args.days
-  current_datetime = datetime.datetime.utcnow()
-  since_datetime = current_datetime - datetime.timedelta(days=days)
-  created = '>' + since_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
+  # days = args.days
+  # current_datetime = datetime.datetime.utcnow()
+  # since_datetime = current_datetime - datetime.timedelta(days=days)
+  # created = '>' + since_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+  first_day_last_month = datetime.date.today().replace(day=1) - datetime.timedelta(days=1)
+  last_day_last_month = first_day_last_month.replace(day=1)
+  first_day_last_month = first_day_last_month.replace(hour=0, minute=0, second=0)
+  last_day_last_month = last_day_last_month.replace(hour=23, minute=59, second=59)
+  created = first_day_last_month.strftime('%Y-%m-%dT%H:%M:%SZ') + '..' + last_day_last_month.strftime('%Y-%m-%dT%H:%M:%SZ')
+  logging.info('created:' + created)
 
   workflow_summary = {'workflow_name': workflow_name, 
                     'total_count': 0, 
