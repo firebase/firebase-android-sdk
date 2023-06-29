@@ -1,0 +1,102 @@
+{
+    "changesByLibraryName": {
+        "firebase-appdistribution": [
+            {
+                "commitId": "bacb414caadcc435afbe79c5f5e6a3a472badc24",
+                "prId": "5078",
+                "author": "Lee Kellogg",
+                "message": "Do not require sign in to use developer mode (#5078)\n\n* Do not require sign in to use developer mode\r\n\r\n* Remove unnecessary strings\r\n\r\n* Java format\r\n\r\n* Store dev mode sign in state separately (#5089)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bacb414caadcc435afbe79c5f5e6a3a472badc24",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5078"
+            }
+        ],
+        "firebase-appdistribution-api": [
+            {
+                "commitId": "68c7f0a88533467cd1347494af9787dcc4f9169a",
+                "prId": "5111",
+                "author": "Lee Kellogg",
+                "message": "Update App Distro API CHANGELOG.md (#5111)\n\n* Update App Distro API CHANGELOG.md\r\n\r\n* Update CHANGELOG.md",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/68c7f0a88533467cd1347494af9787dcc4f9169a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5111"
+            }
+        ],
+        "firebase-appdistribution-api/ktx": [
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "e3dc1ad7b1ac889e84300d4faea4f4afea990fd2",
+                "prId": "5099",
+                "author": "Mark Duckworth",
+                "message": "Making methods in core.Query that memoize results thread safe. (#5099)\n\n* Making methods in core.Query that memoize results thread safe.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e3dc1ad7b1ac889e84300d4faea4f4afea990fd2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5099"
+            },
+            {
+                "commitId": "dd710a7194195321e2407ca02ad383f42b73137f",
+                "prId": "5088",
+                "author": "Denver Coneybeare",
+                "message": "Sync spec tests with changes from https://github.com/firebase/firebase-js-sdk/pull/7372 (#5088)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/dd710a7194195321e2407ca02ad383f42b73137f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5088"
+            },
+            {
+                "commitId": "e9d0de9e2a54724d9d93528560fd269e4100b4cb",
+                "prId": "4015",
+                "author": "Tom Andersen",
+                "message": "Expose Multi-DB, and add tests. (#4015)\n\n* Expose Multi-DB, and add tests.\r\n\r\n* Undo\r\n\r\n* Add documentation and fix test.\r\n\r\n* Make pretty\r\n\r\n* Prevent public access by making multi-db methods package-private\r\n\r\n* Revert \"Prevent public access by making multi-db methods package-private\"\r\n\r\nThis reverts commit 8fbc22f8de5cc996e4eb59adf585c9ca3f0e3962.\r\n\r\n* Format\r\n\r\n* API\r\n\r\n* Fix method description\r\n\r\n* Changelog\r\n\r\n* Format",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e9d0de9e2a54724d9d93528560fd269e4100b4cb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/4015"
+            }
+        ],
+        "firebase-firestore/ktx": [
+            {
+                "commitId": "e9d0de9e2a54724d9d93528560fd269e4100b4cb",
+                "prId": "4015",
+                "author": "Tom Andersen",
+                "message": "Expose Multi-DB, and add tests. (#4015)\n\n* Expose Multi-DB, and add tests.\r\n\r\n* Undo\r\n\r\n* Add documentation and fix test.\r\n\r\n* Make pretty\r\n\r\n* Prevent public access by making multi-db methods package-private\r\n\r\n* Revert \"Prevent public access by making multi-db methods package-private\"\r\n\r\nThis reverts commit 8fbc22f8de5cc996e4eb59adf585c9ca3f0e3962.\r\n\r\n* Format\r\n\r\n* API\r\n\r\n* Fix method description\r\n\r\n* Changelog\r\n\r\n* Format",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e9d0de9e2a54724d9d93528560fd269e4100b4cb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/4015"
+            }
+        ],
+        "firebase-messaging-directboot": [
+        ],
+        "firebase-messaging/ktx": [
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "3f59750767b213ee1a0fc530763855c46d2fdb98",
+                "prId": "5116",
+                "author": "Greg Sakakihara",
+                "message": "Update deprecated @VisibleForTesting annotation. (#5116)\n\n* Copied internal update in cl/542673677.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3f59750767b213ee1a0fc530763855c46d2fdb98",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5116"
+            },
+            {
+                "commitId": "f2faf0607cfc4ce5022ceaec8be35cbb8d987215",
+                "prId": "5112",
+                "author": "Greg Sakakihara",
+                "message": "Deprecate send. (#5112)\n\n* Marked send as deprecated since upstream messaging is deprecated.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f2faf0607cfc4ce5022ceaec8be35cbb8d987215",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5112"
+            },
+            {
+                "commitId": "f76f6972c553be87349557c12acd0d948a2c315b",
+                "prId": "5074",
+                "author": "emilypgoogle",
+                "message": "Comment out failing messaging tests (#5074)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f76f6972c553be87349557c12acd0d948a2c315b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5074"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-config",
+        ":firebase-config:ktx",
+        ":firebase-crashlytics-ndk",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics:ktx",
+        ":firebase-perf:ktx",
+        ":firebase-perf",
+        ":firebase-sessions"
+    ]
+}
