@@ -9,6 +9,7 @@ on:
 
 jobs:
   monthly_flakiness_report:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
