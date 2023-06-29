@@ -75,8 +75,8 @@ def get_workflow_summary(gh, args):
 
   first_day_last_month = datetime.date.today().replace(day=1) - datetime.timedelta(days=1)
   last_day_last_month = first_day_last_month.replace(day=1)
-  first_day_last_month = first_day_last_month.replace(hour=0, minute=0, second=0)
-  last_day_last_month = last_day_last_month.replace(hour=23, minute=59, second=59)
+  first_day_last_month = datetime.combine(first_day_last_month, datetime.time.min)
+  last_day_last_month = datetime.combine(last_day_last_month, datetime.time.max)
   created = first_day_last_month.strftime('%Y-%m-%dT%H:%M:%SZ') + '..' + last_day_last_month.strftime('%Y-%m-%dT%H:%M:%SZ')
   logging.info('created:' + created)
 
