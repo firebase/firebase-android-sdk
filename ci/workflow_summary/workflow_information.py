@@ -48,6 +48,7 @@ def main():
   for i in range(6):
     last_day_last_month = first_day_this_month - datetime.timedelta(days=1)
     first_day_last_month = last_day_last_month.replace(day=1)
+    first_day_this_month = first_day_last_month
 
     from_time = datetime.datetime.combine(first_day_last_month, datetime.time.min)
     to_time = datetime.datetime.combine(last_day_last_month, datetime.time.max)
@@ -56,25 +57,24 @@ def main():
     logging.info('created:' + created)
 
     workflow_summary = get_workflow_summary(gh, args, created)
-    first_day_this_month = last_day_last_month
 
-  workflow_summary_file_path = os.path.join(file_folder, 'workflow_summary.json')
-  with open(workflow_summary_file_path, 'w') as f:
-    json.dump(workflow_summary, f)
-  logging.info(f'Workflow summary has been write to {workflow_summary_file_path}\n')
+    workflow_summary_file_path = os.path.join(file_folder, 'workflow_summary.json')
+    with open(workflow_summary_file_path, 'w') as f:
+      json.dump(workflow_summary, f)
+    logging.info(f'Workflow summary has been write to {workflow_summary_file_path}\n')
 
-  job_summary = get_job_summary(workflow_summary)
-  job_summary_file_path = os.path.join(file_folder, 'job_summary.json')
-  with open(job_summary_file_path, 'w') as f:
-    json.dump(job_summary, f)
-  logging.info(f'Job summary has been write to {job_summary_file_path}\n')
+    job_summary = get_job_summary(workflow_summary)
+    job_summary_file_path = os.path.join(file_folder, 'job_summary.json')
+    with open(job_summary_file_path, 'w') as f:
+      json.dump(job_summary, f)
+    logging.info(f'Job summary has been write to {job_summary_file_path}\n')
 
-  workflow_summary_report = f"{datetime.datetime.utcnow()}\n{args}\n\n"
-  workflow_summary_report += generate_summary_report(workflow_summary, job_summary)
-  report_file_path = os.path.join(file_folder, 'workflow_summary_report.txt')
-  with open(report_file_path, 'w') as f:
-    f.write(workflow_summary_report)
-  logging.info(f'Workflow summary report has been write to {report_file_path}\n')
+    workflow_summary_report = f"{datetime.datetime.utcnow()}\n{args}\n\n"
+    workflow_summary_report += generate_summary_report(workflow_summary, job_summary)
+    report_file_path = os.path.join(file_folder, 'workflow_summary_report.txt')
+    with open(report_file_path, 'w') as f:
+      f.write(workflow_summary_report)
+    logging.info(f'Workflow summary report has been write to {report_file_path}\n')
 
 
 def get_workflow_summary(gh, args, created):  
