@@ -53,6 +53,7 @@ android {
         timeOutInMs 60 * 1000
     }
 
+    namespace "com.google.firebase.inappmessaging"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
       minSdkVersion 16

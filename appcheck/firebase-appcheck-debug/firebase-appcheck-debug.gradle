@@ -26,6 +26,7 @@ android {
         timeOutInMs 60 * 1000
     }
 
+    namespace "com.google.firebase.appcheck.debug"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion

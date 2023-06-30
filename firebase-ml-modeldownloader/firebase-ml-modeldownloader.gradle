@@ -40,6 +40,7 @@ protobuf {
 }
 
 android {
+    namespace "com.google.firebase.ml.modeldownloader"    
     compileSdkVersion project.targetSdkVersion
 
     defaultConfig {

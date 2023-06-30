@@ -29,7 +29,7 @@ android {
     adbOptions {
         timeOutInMs 60 * 1000
     }
-
+    namespace "com.google.firebase.crashlytics"
     compileSdkVersion 33
     testOptions.unitTests.includeAndroidResources = true
     defaultConfig {

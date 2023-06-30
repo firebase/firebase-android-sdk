@@ -20,8 +20,7 @@
   ~
   ~
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.google.firebase.crashlytics.ndk" >
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <service android:name="com.google.firebase.components.ComponentDiscoveryService" android:exported="false">
             <meta-data android:name="com.google.firebase.components:com.google.firebase.crashlytics.ndk.CrashlyticsNdkRegistrar"
