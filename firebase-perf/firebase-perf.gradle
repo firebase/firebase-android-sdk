@@ -42,6 +42,7 @@ protobuf {
 }
 
 android {
+    namespace "com.google.firebase.perf"
     compileSdk 30
 
     lintOptions {

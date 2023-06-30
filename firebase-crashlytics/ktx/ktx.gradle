@@ -25,7 +25,8 @@ firebaseLibrary {
 }
 
 android {
-  compileSdk 33
+  namespace "com.google.firebase.crashlytics.ktx"
+  compileSdk 33  
   defaultConfig {
     minSdk 16
     multiDexEnabled true

@@ -24,6 +24,7 @@ firebaseLibrary {
 }
 
 android {
+    namespace "com.google.firebase.perf.ktx"    
     compileSdk 30
     defaultConfig {
         minSdkVersion 16

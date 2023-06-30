@@ -57,7 +57,7 @@ android {
     adbOptions {
         timeOutInMs 60 * 1000
     }
-
+    namespace "com.google.firebase.messaging"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 19

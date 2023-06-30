@@ -31,7 +31,7 @@ android {
     adbOptions {
         timeOutInMs 60 * 1000
     }
-
+    namespace "com.google.firebase.crashlytics.ndk"
     ndkVersion "25.1.8937393"
     compileSdkVersion 33
     defaultConfig {

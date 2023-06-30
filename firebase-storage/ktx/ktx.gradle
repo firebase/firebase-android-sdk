@@ -26,6 +26,7 @@ firebaseLibrary {
 }
 
 android {
+    namespace "com.google.firebase.storage.ktx"    
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16
