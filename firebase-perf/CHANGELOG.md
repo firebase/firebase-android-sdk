@@ -1,6 +1,6 @@
 # Unreleased
 
-* [added] Integrated with Firebase sessions library to enable upcoming features related to
+* [feature] Integrated with Firebase sessions library to enable upcoming features related to
   session-based performance metrics.
 
 # 20.3.3
