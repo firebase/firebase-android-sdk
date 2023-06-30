@@ -44,7 +44,20 @@ def main():
   if not os.path.exists(file_folder):
     os.makedirs(file_folder)
 
-  workflow_summary = get_workflow_summary(gh, args)
+  first_day_this_month = datetime.date.today().replace(day=1)
+  for i in range(6):
+    last_day_last_month = first_day_this_month - datetime.timedelta(days=1)
+    first_day_last_month = last_day_last_month.replace(day=1)
+
+    from_time = datetime.datetime.combine(first_day_last_month, datetime.time.min)
+    to_time = datetime.datetime.combine(last_day_last_month, datetime.time.max)
+
+    created = from_time.strftime('%Y-%m-%dT%H:%M:%SZ') + '..' + to_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+    logging.info('created:' + created)
+
+    workflow_summary = get_workflow_summary(gh, args, created)
+    first_day_this_month = last_day_last_month
+
   workflow_summary_file_path = os.path.join(file_folder, 'workflow_summary.json')
   with open(workflow_summary_file_path, 'w') as f:
     json.dump(workflow_summary, f)
@@ -64,7 +77,7 @@ def main():
   logging.info(f'Workflow summary report has been write to {report_file_path}\n')
 
 
-def get_workflow_summary(gh, args):  
+def get_workflow_summary(gh, args, created):  
   token = args.token
   workflow_name = args.workflow_name
   # https://docs.github.com/en/search-github/getting-started-with-searching-on-github/understanding-the-search-syntax#query-for-dates
@@ -72,15 +85,6 @@ def get_workflow_summary(gh, args):
   # current_datetime = datetime.datetime.utcnow()
   # since_datetime = current_datetime - datetime.timedelta(days=days)
   # created = '>' + since_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-  last_day_last_month = datetime.date.today().replace(day=1) - datetime.timedelta(days=1)
-  first_day_last_month = last_day_last_month.replace(day=1)
-
-  first_day_last_month = datetime.datetime.combine(first_day_last_month, datetime.time.min)
-  last_day_last_month = datetime.datetime.combine(last_day_last_month, datetime.time.max)
-  
-  created = first_day_last_month.strftime('%Y-%m-%dT%H:%M:%SZ') + '..' + last_day_last_month.strftime('%Y-%m-%dT%H:%M:%SZ')
-  logging.info('created:' + created)
 
   workflow_summary = {'workflow_name': workflow_name, 
                     'total_count': 0, 
