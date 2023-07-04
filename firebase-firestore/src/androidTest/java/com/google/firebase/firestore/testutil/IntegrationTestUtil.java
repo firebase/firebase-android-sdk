@@ -92,7 +92,7 @@ public class IntegrationTestUtil {
 
   // Set this to the desired enum value to change the target backend when running tests locally.
   // Note: DO NOT change this variable except for local testing.
-  private static final TargetBackend backendForLocalTesting = null;
+  private static final TargetBackend backendForLocalTesting = TargetBackend.PROD;
 
   private static final TargetBackend backend = getTargetBackend();
   private static final String EMULATOR_HOST = "10.0.2.2";

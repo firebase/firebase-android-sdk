@@ -244,6 +244,7 @@ public class GrpcCallProvider {
               FirestoreGrpc.FirestoreStub firestoreStub =
                   FirestoreGrpc.newStub(channel)
                       .withCallCredentials(firestoreHeaders)
+                      .withCompression("gzip")
                       // Ensure all callbacks are issued on the worker queue. If this call is
                       // removed, all calls need to be audited to make sure they are executed on the
                       // right thread.
