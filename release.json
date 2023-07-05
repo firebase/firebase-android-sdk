@@ -8,6 +8,14 @@
         ":firebase-firestore:ktx",
         ":firebase-messaging-directboot",
         ":firebase-messaging:ktx",
-        ":firebase-messaging"
+        ":firebase-messaging",
+        ":firebase-config",  
+        ":firebase-config:ktx",
+        ":firebase-crashlytics-ndk",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics:ktx",
+        ":firebase-perf:ktx",
+        ":firebase-perf",
+        ":firebase-sessions"
     ]
 }
