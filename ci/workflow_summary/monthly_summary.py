@@ -35,6 +35,7 @@ def main():
 
   gh = github.GitHub('firebase', 'firebase-android-sdk')
 
+  monthly_summary = {}
   first_day_this_month = datetime.date.today().replace(day=1)
   for i in range(6):
     last_day_last_month = first_day_this_month - datetime.timedelta(days=1)
@@ -46,8 +47,25 @@ def main():
     created = from_time.strftime('%Y-%m-%dT%H:%M:%SZ') + '..' + to_time.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     workflow_summary = workflow_information.get_workflow_summary(gh=gh, token=args.token, created=created, workflow_name='ci_tests.yml', event='push', branch='master')
-    logging.info("workflow_summary: " + str(workflow_summary))
+    monthly_summary[first_day_this_month] = {
+      'failure_rate': float(workflow_summary['failure_count']/workflow_summary['total_count']),
+      'total_count': workflow_summary['total_count'],
+      'success_count': workflow_summary['success_count'],
+      'failure_count': workflow_summary['failure_count'],
+      'failure_jobs':{}
+      }
+    job_summary = workflow_information.get_job_summary(workflow_summary)
+    for job_name in job_summary:
+      job = job_summary[job_name]
+      if job['failure_rate'] > 0:
+        monthly_summary[first_day_this_month]['failure_jobs'][job_name] = {
+            'failure_rate': job['failure_rate'],
+            'total_count': job['total_count'],
+            'success_count': job['success_count'],
+            'failure_count': job['failure_count'],
+        }
 
+  logging.info(monthly_summary)
 
 def parse_cmdline_args():
   parser = argparse.ArgumentParser()
