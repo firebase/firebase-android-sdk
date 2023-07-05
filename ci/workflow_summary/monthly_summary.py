@@ -37,13 +37,14 @@ def main():
 
   monthly_summary = {}
   first_day_this_month = datetime.date.today().replace(day=1)
+  first_day_in_month = first_day_this_month
   for i in range(6):
-    last_day_last_month = first_day_this_month - datetime.timedelta(days=1)
-    first_day_last_month = last_day_last_month.replace(day=1)
-    first_day_this_month = first_day_last_month
+    last_day_in_month = first_day_in_month - datetime.timedelta(days=1)
+    first_day_in_month = last_day_in_month.replace(day=1)
+    first_day_in_month = first_day_in_month
 
-    from_time = datetime.datetime.combine(first_day_last_month, datetime.time.min)
-    to_time = datetime.datetime.combine(last_day_last_month, datetime.time.max)
+    from_time = datetime.datetime.combine(first_day_in_month, datetime.time.min)
+    to_time = datetime.datetime.combine(last_day_in_month, datetime.time.max)
     created = from_time.strftime('%Y-%m-%dT%H:%M:%SZ') + '..' + to_time.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     workflow_summary = workflow_information.get_workflow_summary(gh=gh, token=args.token, created=created, workflow_name='ci_tests.yml', event='push', branch='master')
@@ -65,6 +66,7 @@ def main():
             'failure_count': job['failure_count'],
         }
 
+  monthly_summary = dict(sorted(monthly_summary.items(), reverse=True))
   logging.info(monthly_summary)
 
 def parse_cmdline_args():
