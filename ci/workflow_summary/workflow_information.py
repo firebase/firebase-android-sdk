@@ -72,7 +72,7 @@ def main():
   logging.info(f'Workflow summary report has been write to {report_file_path}\n')
 
 
-def get_workflow_summary(gh, token, workflow_name, created, event, actor, branch, jobs):  
+def get_workflow_summary(gh, token, workflow_name, created, event='', actor='', branch='', jobs='all'):  
   workflow_summary = {'workflow_name': workflow_name, 
                     'total_count': 0, 
                     'success_count': 0, 
