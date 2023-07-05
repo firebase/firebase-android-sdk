@@ -41,6 +41,11 @@ abstract class GmavenCopier : DefaultTask() {
         mavenHelper.getLatestReleasedVersion(),
         !aarAndroidFile.get()
       )
-    URL(gMavenPath).openStream().use { Files.copy(it, Paths.get(filePath.get())) }
+    try {
+      URL(gMavenPath).openStream().use { Files.copy(it, Paths.get(filePath.get())) }
+    } catch (_: java.io.FileNotFoundException) {
+      // Gmaven Artifact doesn't exist.
+      return
+    }
   }
 }
