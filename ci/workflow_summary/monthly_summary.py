@@ -17,7 +17,6 @@ import json
 import datetime
 import argparse
 import logging
-import os
 import workflow_information
 
 
@@ -30,6 +29,8 @@ Usage:
 '''
 
 def main(): 
+  logging.getLogger().setLevel(logging.INFO)
+
   args = parse_cmdline_args()
 
   gh = github.GitHub('firebase', 'firebase-android-sdk')
@@ -45,7 +46,7 @@ def main():
     created = from_time.strftime('%Y-%m-%dT%H:%M:%SZ') + '..' + to_time.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     workflow_summary = workflow_information.get_workflow_summary(gh=gh, token=args.token, created=created, workflow_name='ci_tests.yml', event='push', branch='master')
-    logging.info(workflow_summary)
+    logging.info("workflow_summary: " + str(workflow_summary))
 
 
 def parse_cmdline_args():
