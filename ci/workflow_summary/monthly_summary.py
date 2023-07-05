@@ -92,7 +92,7 @@ def main():
   # For each job, generate the failure rate for each month
   for job_name in sorted_jobs:
     job_data = []
-    for _, one_month_summary in monthly_summary:
+    for _, one_month_summary in monthly_summary.items():
       one_month_job_summary = one_month_summary['failure_jobs'].get(job_name)
       if one_month_job_summary:
         job_data.append(f"{one_month_job_summary['failure_rate']:.2%} ({one_month_job_summary['failure_count']}/{one_month_job_summary['total_count']})")
