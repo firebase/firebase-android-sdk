@@ -109,11 +109,13 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
       from(project.zipTree("build/outputs/aar/${releaseAar}"))
       into(project.file("semver/current-version"))
     }
+
     project.tasks.register<Copy>("extractPreviousClasses") {
       dependsOn("copyPreviousArtifacts")
-
-      from(project.zipTree("semver/previous.aar"))
-      into(project.file("semver/previous-version"))
+      if (project.file("semver/previous.aar").exists()) {
+        from(project.zipTree("semver/previous.aar"))
+        into(project.file("semver/previous-version"))
+      }
     }
 
     val currentJarFile = project.file("semver/current-version/classes.jar").absolutePath
