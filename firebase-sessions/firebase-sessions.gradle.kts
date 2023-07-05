@@ -25,6 +25,7 @@ plugins {
 firebaseLibrary {
   testLab.enabled = true
   publishSources = true
+  publishJavadoc = false
 }
 
 android {
