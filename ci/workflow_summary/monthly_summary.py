@@ -72,9 +72,8 @@ def main():
       for job_name, job in job_summary.items() if job['failure_rate'] > 0
     }
 
-  monthly_summary = dict(sorted(monthly_summary.items(), reverse=True))
-
   print(monthly_summary)
+  monthly_summary = dict(sorted(monthly_summary.items(), reverse=True))
 
   # List to hold all dates
   dates = [date.strftime('%b %Y') for date in sorted(monthly_summary.keys(), reverse=True)]
