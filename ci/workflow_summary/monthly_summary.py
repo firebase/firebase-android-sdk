@@ -38,8 +38,7 @@ def main():
 
   monthly_summary = {}
   first_day_in_month = datetime.date.today().replace(day=1)
-  last_day_last_month = first_day_in_month - datetime.timedelta(days=1)
-  for i in range(6):
+  for _ in range(6):
     last_day_in_month = first_day_in_month - datetime.timedelta(days=1)
     first_day_in_month = last_day_in_month.replace(day=1)
     first_day_in_month = first_day_in_month
@@ -71,8 +70,10 @@ def main():
 
   monthly_summary = dict(sorted(monthly_summary.items(), reverse=True))
 
+  print(monthly_summary)
+
   # List to hold all dates
-  dates = [date.strftime('%b') for date in sorted(monthly_summary.keys(), reverse=True)]
+  dates = [date.strftime('%b %Y') for date in sorted(monthly_summary.keys(), reverse=True)]
   print(f"| Workflow | {' | '.join(dates)} |")
   print("| --- |" + " --- |" * len(dates))
   # For the workflow, generate the failure rate for each month
@@ -82,17 +83,16 @@ def main():
   print(f"| Workflow | {' | '.join(workflow_data)} |")
 
   # List to hold all dates
-  dates = [date.strftime('%b') for date in sorted(monthly_summary.keys(), reverse=True)]
   print(f"| Job Name | {' | '.join(dates)} |")
   print("| --- |" + " --- |" * len(dates))
   # Generating a set of all unique job names
-  all_jobs = monthly_summary[sorted(monthly_summary.keys(), reverse=True)[0]]['failure_jobs'].keys()
+  failure_jobs_this_month = monthly_summary[sorted(monthly_summary.keys(), reverse=True)[0]]['failure_jobs'].keys()
   # Sorting jobs by last month's failure rate
-  sorted_jobs = sorted(all_jobs, key=lambda j: monthly_summary[sorted(monthly_summary.keys(), reverse=True)[0]]['failure_jobs'][j]['failure_rate'], reverse=True)
+  sorted_jobs = sorted(failure_jobs_this_month, key=lambda j: monthly_summary[sorted(monthly_summary.keys(), reverse=True)[0]]['failure_jobs'][j]['failure_rate'], reverse=True)
   # For each job, generate the failure rate for each month
   for job_name in sorted_jobs:
     job_data = []
-    for _, one_month_summary in sorted(monthly_summary.items(), reverse=True):
+    for _, one_month_summary in monthly_summary:
       one_month_job_summary = one_month_summary['failure_jobs'].get(job_name)
       if one_month_job_summary:
         job_data.append(f"{one_month_job_summary['failure_rate']:.2%} ({one_month_job_summary['failure_count']}/{one_month_job_summary['total_count']})")
