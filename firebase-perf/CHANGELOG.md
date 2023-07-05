@@ -1,5 +1,8 @@
 # Unreleased
 
+* [feature] Integrated with Firebase sessions library to enable upcoming features related to
+  session-based performance metrics.
+
 # 20.3.3
 * [fixed] Fixed app start trace creation where some measured time could be NULL (#4730).
 * [changed] Adjusted default behavior when remote config fetch fails. 
