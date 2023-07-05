@@ -51,7 +51,7 @@ def main():
   created = '>' + since_datetime.strftime('%Y-%m-%dT%H:%M:%SZ')
   logging.info('created:' + created)
 
-  workflow_summary = get_workflow_summary(gh, args.token, args.workflow_name, created, args.event, args.actor, args.branch)
+  workflow_summary = get_workflow_summary(gh, args.token, args.workflow_name, created, args.event, args.actor, args.branch, args.jobs)
 
   workflow_summary_file_path = os.path.join(file_folder, 'workflow_summary.json')
   with open(workflow_summary_file_path, 'w') as f:
