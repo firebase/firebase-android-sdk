@@ -50,7 +50,7 @@ abstract class PomValidator : DefaultTask() {
         throw GradleException("Dependency version errors found:\n${diff}")
       }
     } catch (_: java.io.FileNotFoundException) {
-      // New sdk gmaven artifact doesn't exist.
+      // Gmaven artifact doesn't exist.
       return
     }
   }
