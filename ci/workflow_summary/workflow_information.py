@@ -128,12 +128,12 @@ def get_workflow_jobs(gh, token, jobs, workflow_run):
   while True:
     job_page += 1
     list_jobs_params = {'filter': jobs, 'per_page': 100, 'page': job_page} # per_page: max 100
-    jobs = gh.list_jobs(token, workflow_run['workflow_id'], list_jobs_params)
+    job_list = gh.list_jobs(token, workflow_run['workflow_id'], list_jobs_params)
 
-    if 'jobs' not in jobs or jobs['total_count'] < job_page * 100:
+    if 'jobs' not in job_list or job_list['total_count'] < job_page * 100:
       break
 
-    for job in jobs['jobs']:
+    for job in job_list['jobs']:
       workflow_jobs['job_runs'].append({'job_id': job['id'], 'job_name': job['name'], 'conclusion': job['conclusion'], 
                                         'created_at': job['created_at'], 'started_at': job['started_at'], 'completed_at': job['completed_at'],
                                         'run_attempt': job['run_attempt'], 'html_url': job['html_url']})
