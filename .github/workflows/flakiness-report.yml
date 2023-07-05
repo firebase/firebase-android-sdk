@@ -20,4 +20,4 @@ jobs:
         run: pip install requests argparse
 
       - name: Collecting postsubmit Flakiness data
-        run: python ci/workflow_summary/workflow_information.py --token ${{github.token}} --branch master --event push --d 30
+        run: python ci/workflow_summary/monthly_summary.py --token ${{github.token}}
