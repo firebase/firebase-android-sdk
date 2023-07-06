@@ -122,7 +122,7 @@ def markdown_report(monthly_summary, run_id):
         job_data.append(f"{one_month_job_summary['failure_rate']:.2%} ({one_month_job_summary['failure_count']}/{one_month_job_summary['total_count']})")
       else:
         job_data.append('N/A')
-    markdown_report += f"| {job_name} | {' | '.join(job_data)} |\n"
+      markdown_report += f"| {job_name} | {' | '.join(job_data)} |\n"
 
     return markdown_report
   
