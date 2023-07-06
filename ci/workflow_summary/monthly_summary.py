@@ -96,7 +96,7 @@ def get_latest_monthly_summary(gh, token, monthly_summary, output_folder):
 
   monthly_summary_file_path = os.path.join(output_folder, 'monthly_summary.json')
   with open(monthly_summary_file_path, 'w') as f:
-    json.dump(monthly_summary, f)
+    json.dump({date_to_string(key): value for key, value in monthly_summary.items()}, f)
   logging.info(f'Job summary has been write to {monthly_summary_file_path}\n')
 
   return monthly_summary
@@ -170,6 +170,16 @@ def update_report(gh, token, issue_number, summary_report):
     gh.create_issue(token, REPORT_TITLE, REPORT_LABEL, summary_report)
   else:
     gh.update_issue_comment(token, issue_number, summary_report)
+
+
+# Function to convert date to string
+def date_to_string(date):
+    return date.strftime('%Y-%m-%d')
+
+
+# Function to convert string to date
+def string_to_date(date_string):
+    return datetime.datetime.strptime(date_string, '%Y-%m-%d')
 
 
 def parse_cmdline_args():
