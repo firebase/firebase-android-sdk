@@ -17,6 +17,7 @@
 import requests
 import logging
 import json
+import shutil
 
 RETRIES = 3
 BACKOFF = 5
@@ -111,7 +112,7 @@ class GitHub:
       logging.info("download_artifact: %s response: %s", url, response)
       if output_path:
         with open(output_path, 'wb') as file:
-            requests.copyfileobj(response.raw, file)
+            shutil.copyfileobj(response.raw, file)
       elif response.status_code == 200:
         return response.content
     return None
