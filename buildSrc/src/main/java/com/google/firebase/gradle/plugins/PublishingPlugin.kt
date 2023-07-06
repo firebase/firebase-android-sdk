@@ -357,7 +357,7 @@ abstract class PublishingPlugin : Plugin<Project> {
         }
       }
 
-      destinationDir = project.fileFromBuildDir("release-notes")
+      destinationDir = project.fileFromBuildDir("release_notes")
     }
 
   /**
