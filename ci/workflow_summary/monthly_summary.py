@@ -16,6 +16,7 @@ import github
 import os
 import re
 import json
+import zipfile
 import datetime
 import argparse
 import logging
@@ -177,11 +178,15 @@ def get_pervious_report(gh, token, issue_number):
       logging.info(artifacts)
       for artifact in artifacts:
         if artifact['name'] == 'output_logs':
-          gh.download_artifact(token, artifact['id'], 'artifact')
-          dir_list = os.listdir()
-          logging.info("Files in '", os.getcwd(), "' :")
-          for name in dir_list:
-            logging.info(name)
+          gh.download_artifact(token, artifact['id'], 'artifact.zip')
+          with zipfile.ZipFile('artifact.zip', 'r') as zip_ref:
+            # extract all the files
+            zip_ref.extractall('artifact')
+
+            dir_list = os.listdir('artifact')
+            logging.info("Files in 'artifact' :")
+            for name in dir_list:
+              print(name)
 
   return pervious_monthly_summary
 
