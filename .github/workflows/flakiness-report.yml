@@ -21,5 +21,16 @@ jobs:
       - name: Install prerequisites
         run: pip install requests argparse
 
-      - name: Collecting postsubmit Flakiness data
-        run: python ci/workflow_summary/monthly_summary.py --token ${{github.token}} --run_id ${{github.run_id}}
+      - name: Collect postsubmit Flakiness summary
+        run: python ci/workflow_summary/monthly_summary.py --token ${{github.token}} --run_id ${{github.run_id}} --folder output_logs
+
+      - name: Collect Monthly Test Flakiness logs
+        run: python ci/workflow_summary/collect_ci_test_logs.py --token ${{github.token}} --folder output_logs
+
+      - name: Upload Desktop Cmake
+        uses: actions/upload-artifact@v3
+        if: ${{ !cancelled() }}
+        with:
+          name: output_logs
+          path: output_logs
+          retention-days: 90
