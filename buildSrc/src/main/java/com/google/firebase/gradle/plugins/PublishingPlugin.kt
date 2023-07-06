@@ -353,7 +353,7 @@ abstract class PublishingPlugin : Plugin<Project> {
           val releaseNotesTask = tasks.named("makeReleaseNotes")
 
           from(releaseNotesTask) { into("android/client/$directory/_releases") }
-          rename { "$releaseName.md" }
+          rename { "${releaseName.toLowerCase()}.md" }
         }
       }
 
