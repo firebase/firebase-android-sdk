@@ -181,12 +181,6 @@ def get_pervious_report(gh, token, issue_number):
           dir_list = os.listdir()
           print("Files in '", os.getcwd(), "' :")
           for name in dir_list:
-            if os.path.isfile(os.path.join('artifact', name)):
-              print(name)
-          dir_list = os.listdir('artifact')
-          print("Files in '", 'artifact', "' :")
-          for name in dir_list:
-            if os.path.isfile(os.path.join('artifact', name)):
               print(name)
 
   return pervious_monthly_summary
