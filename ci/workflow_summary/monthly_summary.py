@@ -114,7 +114,6 @@ def markdown_report(monthly_summary, run_id):
   for job_name in all_jobs:
     if job_name in EXCLUDE_JOB_LIST:
       continue
-
     job_data = []
     for _, one_month_summary in sorted(monthly_summary.items(), reverse=True):
       one_month_job_summary = one_month_summary['failure_jobs'].get(job_name)
@@ -122,9 +121,9 @@ def markdown_report(monthly_summary, run_id):
         job_data.append(f"{one_month_job_summary['failure_rate']:.2%} ({one_month_job_summary['failure_count']}/{one_month_job_summary['total_count']})")
       else:
         job_data.append('N/A')
-      markdown_report += f"| {job_name} | {' | '.join(job_data)} |\n"
+    markdown_report += f"| {job_name} | {' | '.join(job_data)} |\n"
 
-    return markdown_report
+  return markdown_report
   
 
 def get_pervious_report():
