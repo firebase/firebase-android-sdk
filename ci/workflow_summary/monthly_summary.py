@@ -89,20 +89,27 @@ def get_latest_monthly_summary(gh, token, monthly_summary):
 def markdown_report(monthly_summary, run_id):
   monthly_summary = dict(sorted(monthly_summary.items(), reverse=True))
 
-  markdown_report = f"### {REPORT_TITLE} \n\n"
-  markdown_report += "**[View monthly flakiness logs & download artifacts](https://github.com/firebase/firebase-android-sdk/actions/runs/%s)**\n\n" % run_id
+  markdown_report = f"## {REPORT_TITLE} \n\n"
+  markdown_report += f"**[Click to View and Download the Artifacts for Last Month's Flakiness Logs](https://github.com/firebase/firebase-android-sdk/actions/runs/{run_id})**\n\n"
+  markdown_report += "*** \n\n"
 
   # List to hold all dates
   dates = [date.strftime('%b %Y') for date in sorted(monthly_summary.keys(), reverse=True)]
+  markdown_report = "#### Workflow Flakiness History \n\n"
   markdown_report += f"| Workflow | {' | '.join(dates)} |\n"
   markdown_report += "| --- |" + " --- |" * len(dates) + "\n"
   # For the workflow, generate the failure rate for each month
   workflow_data = []
   workflow_data = [f"{summary['failure_rate']:.2%} ({summary['failure_count']}/{summary['total_count']})" for summary in monthly_summary.values()]
-  markdown_report += f"| Workflow | {' | '.join(workflow_data)} |\n\n"
+  markdown_report += f"| ci_tests.yml | {' | '.join(workflow_data)} |\n\n"
+  markdown_report += "*** \n\n"
 
   # List to hold all dates
-  markdown_report += f"| Job Name | {' | '.join(dates)} |\n"
+  markdown_report += "#### Job Flakiness History \n\n"
+  markdown_report += "This table presents two categories of job failures: \n"
+  markdown_report += "1) jobs that failed in the last month \n"
+  markdown_report += "2) jobs that had a high failure rate (exceeding 10% on average) over the past six months \n\n"
+  markdown_report += f"| Job | {' | '.join(dates)} |\n"
   markdown_report += "| --- |" + " --- |" * len(dates) + "\n"
   # Sorted Jobs for the latest month
   latest_month = next(iter(monthly_summary.values()))
