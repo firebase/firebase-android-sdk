@@ -179,10 +179,16 @@ def get_pervious_report(gh, token, issue_number):
       for artifact in artifacts:
         if artifact['name'] == 'output_logs':
           gh.download_artifact(token, artifact['id'], 'artifact.zip')
+          logging.info("os.path.exists(artifact.zip): "+str(os.path.exists("artifact.zip")))
           with zipfile.ZipFile('artifact.zip', 'r') as zip_ref:
             # extract all the files
             zip_ref.extractall('artifact')
+            logging.info("os.path.exists(artifact): "+str(os.path.exists("artifact")))
 
+            dir_list = os.listdir()
+            logging.info("Files and directories in root :")
+            for name in dir_list:
+              print(name)
             dir_list = os.listdir('artifact')
             logging.info("Files in 'artifact' :")
             for name in dir_list:
