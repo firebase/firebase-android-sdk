@@ -31,7 +31,7 @@ class MakeReleaseNotesTests : FunSpec() {
   fun `Creates release notes that match the expected output`() {
     buildReleaseNotes()
 
-    val expectedReleaseNoteFile = resourcesDirectory.childFile("output/release-notes.md")
+    val expectedReleaseNoteFile = resourcesDirectory.childFile("output/release_notes.md")
     val releaseNoteFile =
       testProjectDirectory.root.childFile(
         "firebase-storage/build/tmp/makeReleaseNotes/release_notes.md"
