@@ -39,8 +39,15 @@ def main():
 
   gh = github.GitHub(REPO_OWNER, REPO_NAME)
 
+  monthly_summary = get_pervious_report()
+  monthly_summary = get_latest_monthly_summary(monthly_summary, gh, args.token)
+  print(monthly_summary)
+  summary_report = markdown_report(monthly_summary, args.run_id)
+  print(summary_report)
+  # update_report()
 
-  monthly_summary = {}
+
+def get_latest_monthly_summary(monthly_summary, gh, token):
   first_day_in_month = datetime.date.today().replace(day=1)
   for _ in range(6):
     last_day_in_month = first_day_in_month - datetime.timedelta(days=1)
@@ -51,7 +58,7 @@ def main():
     to_time = datetime.datetime.combine(last_day_in_month, datetime.time.max)
     created = from_time.strftime('%Y-%m-%dT%H:%M:%SZ') + '..' + to_time.strftime('%Y-%m-%dT%H:%M:%SZ')
 
-    workflow_summary = workflow_information.get_workflow_summary(gh=gh, token=args.token, created=created, workflow_name='ci_tests.yml', event='push', branch='master')
+    workflow_summary = workflow_information.get_workflow_summary(gh=gh, token=token, created=created, workflow_name='ci_tests.yml', event='push', branch='master')
     failure_rate = float(workflow_summary['failure_count']/workflow_summary['total_count'])
     monthly_summary[last_day_in_month] = {
       'failure_rate': failure_rate,
@@ -72,21 +79,27 @@ def main():
       for job_name, job in job_summary.items() if job['failure_rate'] > 0
     }
 
-  print(monthly_summary)
+  return monthly_summary
+
+
+def markdown_report(monthly_summary, run_id):
   monthly_summary = dict(sorted(monthly_summary.items(), reverse=True))
+
+  markdown_report = "### Monthly Flakiness History \n\n"
+  markdown_report += "**[View monthly flakiness logs & download artifacts](https://github.com/firebase/firebase-android-sdk/actions/runs/%s)**\n\n" % run_id
 
   # List to hold all dates
   dates = [date.strftime('%b %Y') for date in sorted(monthly_summary.keys(), reverse=True)]
-  print(f"| Workflow | {' | '.join(dates)} |")
-  print("| --- |" + " --- |" * len(dates))
+  markdown_report += f"| Workflow | {' | '.join(dates)} |\n"
+  markdown_report += "| --- |" + " --- |" * len(dates) + "\n"
   # For the workflow, generate the failure rate for each month
   workflow_data = []
   workflow_data = [f"{summary['failure_rate']:.2%} ({summary['failure_count']}/{summary['total_count']})" for summary in monthly_summary.values()]
-  print(f"| Workflow | {' | '.join(workflow_data)} |")
+  markdown_report += f"| Workflow | {' | '.join(workflow_data)} |\n\n"
 
   # List to hold all dates
-  print(f"| Job Name | {' | '.join(dates)} |")
-  print("| --- |" + " --- |" * len(dates))
+  markdown_report += f"| Job Name | {' | '.join(dates)} |\n"
+  markdown_report += "| --- |" + " --- |" * len(dates) + "\n"
   # Sorted Jobs for the latest month
   latest_month = next(iter(monthly_summary.values()))
   sorted_jobs = sorted(latest_month['failure_jobs'], key=lambda job: latest_month['failure_jobs'][job]['failure_rate'], reverse=True)
@@ -109,12 +122,19 @@ def main():
         job_data.append(f"{one_month_job_summary['failure_rate']:.2%} ({one_month_job_summary['failure_count']}/{one_month_job_summary['total_count']})")
       else:
         job_data.append('N/A')
-    print(f"| {job_name} | {' | '.join(job_data)} |")
+    markdown_report += f"| {job_name} | {' | '.join(job_data)} |\n"
 
+    return markdown_report
+  
 
+def get_pervious_report():
+  return {} 
+
+  
 def parse_cmdline_args():
   parser = argparse.ArgumentParser()
   parser.add_argument('-t', '--token', required=True, help='GitHub access token')
+  parser.add_argument('-i', '--run_id', required=True, help='Workflow run id')
 
   args = parser.parse_args()
   return args
