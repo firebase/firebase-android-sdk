@@ -60,7 +60,7 @@ def main():
       success_count = job['success_count'] 
       failure_count = job['failure_count']      
 
-      log_file_path = os.path.join(file_folder, f'{job_name}.log')
+      log_file_path = os.path.join(file_folder, f'{job_name.replace(":", "_")}.log')
       file_log = open(log_file_path, 'w')
       file_log.write(f'\n{job_name}:\nFailure rate:{failure_rate:.2%} \nTotal count: {total_count} (success: {success_count}, failure: {failure_count})\nFailed jobs:')
       logging.info(f'\n\n{job_name}:\nFailure rate:{failure_rate:.2%} \nTotal count: {total_count} (success: {success_count}, failure: {failure_count})\nFailed jobs:')
