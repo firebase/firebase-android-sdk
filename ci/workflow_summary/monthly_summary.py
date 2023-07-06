@@ -95,7 +95,7 @@ def markdown_report(monthly_summary, run_id):
 
   # List to hold all dates
   dates = [date.strftime('%b %Y') for date in sorted(monthly_summary.keys(), reverse=True)]
-  markdown_report = "#### Workflow Flakiness History \n\n"
+  markdown_report += "#### Workflow Flakiness History \n\n"
   markdown_report += f"| Workflow | {' | '.join(dates)} |\n"
   markdown_report += "| --- |" + " --- |" * len(dates) + "\n"
   # For the workflow, generate the failure rate for each month
