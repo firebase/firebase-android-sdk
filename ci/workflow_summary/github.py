@@ -86,7 +86,7 @@ class GitHub:
     with requests.patch(url, headers=headers, data=json.dumps({'body': comment}), timeout=TIMEOUT) as response:
       logging.info("update_issue: %s response: %s", url, response)
 
-  def search_issues_by_label(owner, repo, label):
+  def search_issues_by_label(self, owner, repo, label):
     """https://docs.github.com/en/rest/reference/search#search-issues-and-pull-requests"""
     url = f'https://api.github.com/search/issues?q=repo:{owner}/{repo}+label:"{label}"+is:issue'
     headers = {'Accept': 'application/vnd.github.v3+json'}
