@@ -114,9 +114,10 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Returns the default {@link FirebaseFirestore} instance associated with the default {@link
-   * FirebaseApp}. Returns the same instance for all invocations. If no instance exists, initializes
-   * a new instance with default settings.
+   * Returns the default {@link FirebaseFirestore} instance for the default {@link FirebaseApp}.
+   *
+   * <p>Returns the same instance for all invocations. If no instance exists, initializes a new
+   * instance with default settings.
    *
    * @returns The {@link FirebaseFirestore} instance.
    */
@@ -126,9 +127,10 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Returns the default {@link FirebaseFirestore} instance that is associated with the provided
-   * {@link FirebaseApp}. For a given {@link FirebaseApp}, invocation always returns the same
-   * instance. If no instance exists, initializes a new instance with default settings.
+   * Returns the default {@link FirebaseFirestore} instance for the provided {@link FirebaseApp}.
+   *
+   * <p>For a given {@link FirebaseApp}, invocation always returns the same instance. If no instance
+   * exists, initializes a new instance with default settings.
    *
    * @param app - The {@link FirebaseApp} instance that the returned {@link FirebaseFirestore}
    *     instance is associated with.
@@ -140,9 +142,10 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Returns the {@link FirebaseFirestore} instance that is associated with the default {@link
-   * FirebaseApp}. Returns the same instance for all invocations given the same database parameter.
-   * If no instance exists, initializes a new instance with default settings.
+   * Returns the {@link FirebaseFirestore} instance for the default {@link FirebaseApp}.
+   *
+   * <p>Returns the same instance for all invocations given the same database parameter. If no
+   * instance exists, initializes a new instance with default settings.
    *
    * @param database - The name of database.
    * @returns The {@link FirebaseFirestore} instance.
@@ -153,10 +156,10 @@ public class FirebaseFirestore {
   }
 
   /**
-   * Returns the {@link FirebaseFirestore} instance that is associated with the provided {@link
-   * FirebaseApp}. Returns the same instance for all invocations given the same {@link FirebaseApp}
-   * and database parameter. If no instance exists, initializes a new instance with default
-   * settings.
+   * Returns the {@link FirebaseFirestore} instance for the provided {@link FirebaseApp}.
+   *
+   * <p>Returns the same instance for all invocations given the same {@link FirebaseApp} and
+   * database parameter. If no instance exists, initializes a new instance with default settings.
    *
    * @param app - The {@link FirebaseApp} instance that the returned {@link FirebaseFirestore}
    *     instance is associated with.
