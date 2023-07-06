@@ -16,6 +16,7 @@
 
 import requests
 import logging
+import json
 
 RETRIES = 3
 BACKOFF = 5
@@ -60,3 +61,35 @@ class GitHub:
       else:
         logging.info('no log avaliable')
         return ''
+      
+  def create_issue(self, token, title, label, body):
+    """Create an issue: https://docs.github.com/en/rest/reference/issues#create-an-issue"""
+    url = f'{self.github_api_url}/issues'
+    headers = {'Accept': 'application/vnd.github.v3+json', 'Authorization': f'token {token}'}
+    data = {'title': title, 'labels': [label], 'body': body}
+    with requests.post(url, headers=headers, data=json.dumps(data), timeout=TIMEOUT) as response:
+      logging.info("create_issue: %s response: %s", url, response)
+      return response.json()
+
+  def get_issue_body(self, token, issue_number):
+    """https://docs.github.com/en/rest/reference/issues#get-an-issue-comment"""
+    url = f'{self.github_api_url}/issues/{issue_number}'
+    headers = {'Accept': 'application/vnd.github.v3+json', 'Authorization': f'token {token}'}
+    with requests.get(url, headers=headers, timeout=TIMEOUT) as response:
+      logging.info("get_issue_body: %s response: %s", url, response)
+      return response.json()["body"]
+      
+  def update_issue_comment(self, token, issue_number, comment):
+    """Update an issue: https://docs.github.com/en/rest/reference/issues#update-an-issue"""
+    url = f'{self.github_api_url}/issues/{issue_number}'
+    headers = {'Accept': 'application/vnd.github.v3+json', 'Authorization': f'token {token}'}
+    with requests.patch(url, headers=headers, data=json.dumps({'body': comment}), timeout=TIMEOUT) as response:
+      logging.info("update_issue: %s response: %s", url, response)
+
+  def search_issues_by_label(owner, repo, label):
+    """https://docs.github.com/en/rest/reference/search#search-issues-and-pull-requests"""
+    url = f'https://api.github.com/search/issues?q=repo:{owner}/{repo}+label:"{label}"+is:issue'
+    headers = {'Accept': 'application/vnd.github.v3+json'}
+    with requests.get(url, headers=headers, timeout=TIMEOUT) as response:
+      logging.info("search_issues_by_label: %s response: %s", url, response)
+      return response.json()["items"]

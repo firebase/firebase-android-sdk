@@ -32,22 +32,26 @@ REPO_OWNER = 'firebase'
 REPO_NAME = 'firebase-android-sdk'
 EXCLUDE_JOB_LIST = ['Determine changed modules','Unit Tests (matrix)','Publish Tests Results','Unit Test Results','Instrumentation Tests','Unit Tests']
 
+REPORT_LABEL = "flakiness-history"
+REPORT_TITLE = "Monthly Flakiness History"
+
 def main(): 
   logging.getLogger().setLevel(logging.INFO)
 
   args = parse_cmdline_args()
-
+  token = args.token
   gh = github.GitHub(REPO_OWNER, REPO_NAME)
 
-  monthly_summary = get_pervious_report()
-  monthly_summary = get_latest_monthly_summary(monthly_summary, gh, args.token)
+  issue_number = get_issue_number(gh)
+  monthly_summary = get_pervious_report(gh, token, issue_number)
+  monthly_summary = get_latest_monthly_summary(gh, token, monthly_summary)
   print(monthly_summary)
   summary_report = markdown_report(monthly_summary, args.run_id)
   print(summary_report)
-  # update_report()
+  update_report(gh, token, issue_number, summary_report)
 
 
-def get_latest_monthly_summary(monthly_summary, gh, token):
+def get_latest_monthly_summary(gh, token, monthly_summary):
   first_day_in_month = datetime.date.today().replace(day=1)
   for _ in range(6):
     last_day_in_month = first_day_in_month - datetime.timedelta(days=1)
@@ -85,7 +89,7 @@ def get_latest_monthly_summary(monthly_summary, gh, token):
 def markdown_report(monthly_summary, run_id):
   monthly_summary = dict(sorted(monthly_summary.items(), reverse=True))
 
-  markdown_report = "### Monthly Flakiness History \n\n"
+  markdown_report = f"### {REPORT_TITLE} \n\n"
   markdown_report += "**[View monthly flakiness logs & download artifacts](https://github.com/firebase/firebase-android-sdk/actions/runs/%s)**\n\n" % run_id
 
   # List to hold all dates
@@ -126,10 +130,25 @@ def markdown_report(monthly_summary, run_id):
   return markdown_report
   
 
-def get_pervious_report():
-  return {} 
+def get_issue_number(gh):
+  issues = gh.search_issues_by_label(REPO_OWNER, REPO_NAME, REPORT_LABEL)
+  for issue in issues:
+    if issue["title"] == REPORT_TITLE:
+      return issue["number"]
 
-  
+
+def get_pervious_report(gh, token, issue_number):
+  if not issue_number:
+    return {} 
+
+
+def update_report(gh, token, issue_number, summary_report):
+  if not issue_number:
+    gh.create_issue(token, REPORT_TITLE, REPORT_LABEL, summary_report)
+  else:
+    gh.update_issue_comment(token, issue_number, summary_report)
+
+
 def parse_cmdline_args():
   parser = argparse.ArgumentParser()
   parser.add_argument('-t', '--token', required=True, help='GitHub access token')
