@@ -145,8 +145,8 @@ def get_issue_number(gh):
 
 
 def get_pervious_report(gh, token, issue_number):
-  if not issue_number:
-    return {} 
+  # if not issue_number:
+  return {} 
 
 
 def update_report(gh, token, issue_number, summary_report):
