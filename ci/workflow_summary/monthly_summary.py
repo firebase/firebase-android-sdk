@@ -165,23 +165,23 @@ def get_pervious_report(gh, token, issue_number):
   pervious_monthly_summary = {}
   if issue_number:
     issue_body = gh.get_issue_body(token, issue_number)
-    print(issue_body)
+    logging.info(issue_body)
     # The regex pattern to match "run_id" in the URL
     pattern = r"https://github.com/firebase/firebase-android-sdk/actions/runs/(\d+)"
     # Use re.search() to search for the pattern
     match = re.search(pattern, issue_body)
     if match:
       run_id = match.group(1)
-      print(run_id)
+      logging.info(run_id)
       artifacts = gh.list_artifacts(token, run_id)
-      print(artifacts)
+      logging.info(artifacts)
       for artifact in artifacts:
         if artifact['name'] == 'output_logs':
           gh.download_artifact(token, artifact['id'], 'artifact')
           dir_list = os.listdir()
-          print("Files in '", os.getcwd(), "' :")
+          logging.info("Files in '", os.getcwd(), "' :")
           for name in dir_list:
-              print(name)
+            logging.info(name)
 
   return pervious_monthly_summary
 
