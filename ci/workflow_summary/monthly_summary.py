@@ -204,7 +204,7 @@ def date_to_string(date):
 
 # Function to convert string to date
 def string_to_date(date_string):
-    return datetime.datetime.strptime(date_string, '%Y-%m-%d')
+    return datetime.date.strptime(date_string, '%Y-%m-%d').date()
 
 
 def parse_cmdline_args():
