@@ -173,26 +173,19 @@ def get_pervious_report(gh, token, issue_number):
     match = re.search(pattern, issue_body)
     if match:
       run_id = match.group(1)
-      logging.info(run_id)
       artifacts = gh.list_artifacts(token, run_id)
-      logging.info(artifacts)
       for artifact in artifacts:
         if artifact['name'] == 'output_logs':
           gh.download_artifact(token, artifact['id'], 'artifact.zip')
-          logging.info("os.path.exists(artifact.zip): "+str(os.path.exists("artifact.zip")))
+          # extract all the files
           with zipfile.ZipFile('artifact.zip', 'r') as zip_ref:
-            # extract all the files
             zip_ref.extractall('artifact')
-            logging.info("os.path.exists(artifact): "+str(os.path.exists("artifact")))
-
-            dir_list = os.listdir()
-            logging.info("Files and directories in root :")
-            for name in dir_list:
-              print(name)
-            dir_list = os.listdir('artifact')
-            logging.info("Files in 'artifact' :")
-            for name in dir_list:
-              print(name)
+            pervious_summary_file = os.path.join(artifact, "monthly_summary.json")
+            if os.path.exists(pervious_summary_file):
+              with open(pervious_summary_file, 'r') as f:
+                loaded_data = json.load(f)
+                logging.info(loaded_data)
+                pervious_monthly_summary = {string_to_date(key): value for key, value in loaded_data.items()}
 
   return pervious_monthly_summary
 
