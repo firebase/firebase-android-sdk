@@ -80,7 +80,7 @@ def get_latest_monthly_summary(gh, token, monthly_summary, output_folder):
     }
 
     job_summary = workflow_information.get_job_summary(workflow_summary)
-    if i == 1:
+    if i == 0:
       job_summary_file_path = os.path.join(output_folder, 'job_summary.json')
       with open(job_summary_file_path, 'w') as f:
         json.dump(job_summary, f)
