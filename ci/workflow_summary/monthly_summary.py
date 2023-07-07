@@ -35,8 +35,8 @@ REPO_OWNER = 'firebase'
 REPO_NAME = 'firebase-android-sdk'
 EXCLUDE_JOB_LIST = ['Determine changed modules','Unit Tests (matrix)','Publish Tests Results','Unit Test Results','Instrumentation Tests','Unit Tests']
 
-REPORT_LABEL = "flakiness-history"
-REPORT_TITLE = "Monthly Flakiness History"
+REPORT_LABEL = 'flakiness-history'
+REPORT_TITLE = 'Monthly Flakiness History'
 
 def main(): 
   logging.getLogger().setLevel(logging.INFO)
@@ -158,8 +158,8 @@ def markdown_report(monthly_summary, run_id):
 def get_issue_number(gh):
   issues = gh.search_issues_by_label(REPO_OWNER, REPO_NAME, REPORT_LABEL)
   for issue in issues:
-    if issue["title"] == REPORT_TITLE:
-      return issue["number"]
+    if issue['title'] == REPORT_TITLE:
+      return issue['number']
 
 
 def get_pervious_report(gh, token, issue_number):
@@ -180,7 +180,7 @@ def get_pervious_report(gh, token, issue_number):
           # extract all the files
           with zipfile.ZipFile('artifact.zip', 'r') as zip_ref:
             zip_ref.extractall('artifact')
-            pervious_summary_file = os.path.join(artifact, "monthly_summary.json")
+            pervious_summary_file = os.path.join('artifact', 'monthly_summary.json')
             if os.path.exists(pervious_summary_file):
               with open(pervious_summary_file, 'r') as f:
                 loaded_data = json.load(f)
