@@ -18,7 +18,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Application;
 import android.content.Context;
@@ -26,6 +25,7 @@ import android.content.Intent;
 import android.os.Build.VERSION_CODES;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Task;
+import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.messaging.testing.FakeScheduledExecutorService;
 import org.junit.After;
 import org.junit.Before;
@@ -37,6 +37,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowLooper;
 import org.robolectric.shadows.ShadowPowerManager;
 
 /** Robolectric test for FcmBroadcastProcessor. */
@@ -51,6 +52,8 @@ public class FcmBroadcastProcessorRoboTest {
   private FcmBroadcastProcessor processor;
   private FakeScheduledExecutorService fakeExecutorService;
   @Mock private ServiceStarter serviceStarter;
+  @Mock private WithinAppServiceConnection mockConnection;
+  private TaskCompletionSource<Void> sendIntentTask;
 
   @Before
   public void setUp() {
@@ -58,6 +61,9 @@ public class FcmBroadcastProcessorRoboTest {
     ServiceStarter.setForTesting(serviceStarter);
     fakeExecutorService = new FakeScheduledExecutorService();
     processor = new FcmBroadcastProcessor(context, fakeExecutorService);
+    FcmBroadcastProcessor.setServiceConnection(mockConnection);
+    sendIntentTask = new TaskCompletionSource<>();
+    when(mockConnection.sendIntent(any(Intent.class))).thenReturn(sendIntentTask.getTask());
   }
 
   @After
@@ -70,37 +76,82 @@ public class FcmBroadcastProcessorRoboTest {
 
   @Test
   @Config(sdk = VERSION_CODES.O)
-  public void testStartMessagingService_NormalPriorityBackgroundCheck() {
-    // Subject to background check when run on Android O and targetSdkVersion set to O.
-    context.getApplicationInfo().targetSdkVersion = VERSION_CODES.O;
-    when(serviceStarter.hasWakeLockPermission(any(Context.class))).thenReturn(true);
+  public void testStartMessagingService_Background() {
+    setSubjectToBackgroundCheck();
+    setWakeLockPermission(true);
+    Intent intent = new Intent(ACTION_FCM_MESSAGE);
 
-    Task<Integer> startServiceTask =
-        processor.startMessagingService(context, new Intent(ACTION_FCM_MESSAGE));
+    Task<Integer> startServiceTask = processor.startMessagingService(context, intent);
 
-    // Should return immediately with SUCCESS, bind to the Service, and acquire a WakeLock.
-    assertThat(startServiceTask.getResult()).isEqualTo(ServiceStarter.SUCCESS);
+    // Should send the intent through the connection and not acquire a WakeLock.
+    assertThat(startServiceTask.isComplete()).isFalse();
     verify(serviceStarter, never()).startMessagingService(any(), any());
-    assertThat(shadowOf(context).getBoundServiceConnections()).hasSize(1);
-    assertThat(ShadowPowerManager.getLatestWakeLock()).isNotNull();
-    assertThat(ShadowPowerManager.getLatestWakeLock().isHeld()).isTrue();
+    verify(mockConnection).sendIntent(intent);
+    assertThat(ShadowPowerManager.getLatestWakeLock()).isNull();
+
+    // After the message has been handled, the task should be completed successfully.
+    sendIntentTask.setResult(null);
+    ShadowLooper.idleMainLooper();
+
+    assertThat(startServiceTask.getResult()).isEqualTo(ServiceStarter.SUCCESS);
   }
 
   @Test
   @Config(sdk = VERSION_CODES.O)
-  public void testStartMessagingService_bindNoWakeLockPermission() {
+  public void testStartMessagingService_ForegroundBindWithWakeLock() {
+    setWakeLockPermission(true);
+    setStartServiceFails();
+    Intent intent = new Intent(ACTION_FCM_MESSAGE);
+    intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+
+    Task<Integer> startServiceTask = processor.startMessagingService(context, intent);
+
+    // Should return immediately with SUCCESS, bind to the Service, and acquire a WakeLock.
+    fakeExecutorService.runAll();
+    assertThat(startServiceTask.isComplete()).isTrue();
+    assertThat(startServiceTask.getResult())
+        .isEqualTo(ServiceStarter.ERROR_ILLEGAL_STATE_EXCEPTION_FALLBACK_TO_BIND);
+    verify(mockConnection).sendIntent(any(Intent.class));
+    assertThat(ShadowPowerManager.getLatestWakeLock()).isNotNull();
+    assertThat(ShadowPowerManager.getLatestWakeLock().isHeld()).isTrue();
+
+    // After the message has been handled, the WakeLock should be released.
+    sendIntentTask.setResult(null);
+    ShadowLooper.idleMainLooper();
+
+    assertThat(ShadowPowerManager.getLatestWakeLock().isHeld()).isFalse();
+  }
+
+  @Test
+  @Config(sdk = VERSION_CODES.O)
+  public void testStartMessagingService_ForegroundBindNoWakeLock() {
+    setWakeLockPermission(false);
+    setStartServiceFails();
+    Intent intent = new Intent(ACTION_FCM_MESSAGE);
+    intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+
+    Task<Integer> startServiceTask = processor.startMessagingService(context, intent);
+
+    // Should return immediately with SUCCESS, bind to the Service, and not acquire a WakeLock.
+    fakeExecutorService.runAll();
+    assertThat(startServiceTask.isComplete()).isTrue();
+    assertThat(startServiceTask.getResult())
+        .isEqualTo(ServiceStarter.ERROR_ILLEGAL_STATE_EXCEPTION_FALLBACK_TO_BIND);
+    verify(mockConnection).sendIntent(any(Intent.class));
+    assertThat(ShadowPowerManager.getLatestWakeLock()).isNull();
+  }
+
+  private void setSubjectToBackgroundCheck() {
     // Subject to background check when run on Android O and targetSdkVersion set to O.
     context.getApplicationInfo().targetSdkVersion = VERSION_CODES.O;
-    when(serviceStarter.hasWakeLockPermission(any(Context.class))).thenReturn(false);
+  }
 
-    Task<Integer> startServiceTask =
-        processor.startMessagingService(context, new Intent(ACTION_FCM_MESSAGE));
+  private void setWakeLockPermission(boolean permission) {
+    when(serviceStarter.hasWakeLockPermission(any(Context.class))).thenReturn(permission);
+  }
 
-    // Should return immediately with SUCCESS and bind to the Service, but not try to acquire a
-    // WakeLock since it doesn't hold the permission.
-    assertThat(startServiceTask.getResult()).isEqualTo(ServiceStarter.SUCCESS);
-    verify(serviceStarter, never()).startMessagingService(any(), any());
-    assertThat(shadowOf(context).getBoundServiceConnections()).hasSize(1);
-    assertThat(ShadowPowerManager.getLatestWakeLock()).isNull();
+  private void setStartServiceFails() {
+    when(serviceStarter.startMessagingService(any(Context.class), any(Intent.class)))
+        .thenReturn(ServiceStarter.ERROR_ILLEGAL_STATE_EXCEPTION);
   }
 }
