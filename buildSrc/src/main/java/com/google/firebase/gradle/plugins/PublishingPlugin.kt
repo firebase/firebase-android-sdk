@@ -109,7 +109,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       val buildReleaseNotesZip =
         project.tasks.register<Zip>(BUILD_RELEASE_NOTES_ZIP_TASK) {
           from(prepareReleaseNotesForDrop.map { it.destinationDir })
-          archiveFileName.set("release-notes.zip")
+          archiveFileName.set("release_notes.zip")
           destinationDirectory.set(project.layout.buildDirectory)
         }
 
@@ -353,11 +353,11 @@ abstract class PublishingPlugin : Plugin<Project> {
           val releaseNotesTask = tasks.named("makeReleaseNotes")
 
           from(releaseNotesTask) { into("android/client/$directory/_releases") }
-          rename { "$releaseName.md" }
+          rename { "${releaseName.toLowerCase()}.md" }
         }
       }
 
-      destinationDir = project.fileFromBuildDir("release-notes")
+      destinationDir = project.fileFromBuildDir("release_notes")
     }
 
   /**
