@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Represents cached documents received from the remote backend.
@@ -67,9 +68,6 @@ interface RemoteDocumentCache {
    */
   Map<DocumentKey, MutableDocument> getAll(Iterable<DocumentKey> documentKeys);
 
-  Map<DocumentKey, MutableDocument> getAll(
-      Iterable<DocumentKey> documentKeys, QueryContext counter);
-
   /**
    * Looks up the next {@code limit} documents for a collection group based on the provided offset.
    * The ordering is based on the document's read time and key.
@@ -94,5 +92,8 @@ interface RemoteDocumentCache {
       Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys);
 
   Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys, QueryContext counter);
+      Query query,
+      IndexOffset offset,
+      @Nonnull Set<DocumentKey> mutatedKeys,
+      @Nullable QueryContext counter);
 }

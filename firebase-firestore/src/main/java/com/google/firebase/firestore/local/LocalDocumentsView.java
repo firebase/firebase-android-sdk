@@ -260,10 +260,10 @@ class LocalDocumentsView {
    * @param offset Read time and key to start scanning by (exclusive).
    */
   ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, QueryContext counter) {
+      Query query, IndexOffset offset, @Nullable QueryContext counter) {
     ResourcePath path = query.getPath();
     if (query.isDocumentQuery()) {
-      return getDocumentsMatchingDocumentQuery(path, counter);
+      return getDocumentsMatchingDocumentQuery(path);
     } else if (query.isCollectionGroupQuery()) {
       return getDocumentsMatchingCollectionGroupQuery(query, offset, counter);
     } else {
@@ -273,13 +273,12 @@ class LocalDocumentsView {
 
   ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query, IndexOffset offset) {
-    return getDocumentsMatchingQuery(query, offset, new QueryContext());
+    return getDocumentsMatchingQuery(query, offset, null);
   }
 
   /** Performs a simple document lookup for the given path. */
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingDocumentQuery(
-      ResourcePath path, QueryContext counter) {
-    counter.increaseDocumentCount();
+      ResourcePath path) {
     ImmutableSortedMap<DocumentKey, Document> result = emptyDocumentMap();
     // Just do a simple document lookup.
     Document doc = getDocument(DocumentKey.fromPath(path));
@@ -290,7 +289,7 @@ class LocalDocumentsView {
   }
 
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionGroupQuery(
-      Query query, IndexOffset offset, QueryContext counter) {
+      Query query, IndexOffset offset, @Nullable QueryContext counter) {
     hardAssert(
         query.getPath().isEmpty(),
         "Currently we only support collection group queries at the root.");
@@ -368,7 +367,7 @@ class LocalDocumentsView {
   }
 
   private ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingCollectionQuery(
-      Query query, IndexOffset offset, QueryContext counter) {
+      Query query, IndexOffset offset, @Nullable QueryContext counter) {
     Map<DocumentKey, Overlay> overlays =
         documentOverlayCache.getOverlays(query.getPath(), offset.getLargestBatchId());
     Map<DocumentKey, MutableDocument> remoteDocuments =
