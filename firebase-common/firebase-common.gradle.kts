@@ -76,6 +76,8 @@ dependencies {
     testImplementation(libs.org.json)
     testImplementation(libs.robolectric)
     testImplementation(libs.truth)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.kotlin.coroutines.test)
 
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)
