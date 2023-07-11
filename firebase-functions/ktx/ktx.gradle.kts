@@ -44,9 +44,9 @@ android {
 }
 
 dependencies {
-  implementation("com.google.firebase:firebase-common:20.3.1")
+  implementation(project(":firebase-common"))
   implementation("com.google.firebase:firebase-components:17.1.0")
-  implementation("com.google.firebase:firebase-common-ktx:20.3.1")
+  implementation(project(":firebase-common:ktx"))
   implementation(project(":firebase-functions"))
   implementation(libs.kotlin.stdlib)
   implementation(libs.androidx.annotation)
