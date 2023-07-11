@@ -15,56 +15,54 @@
 package com.google.firebase.functions
 
 import androidx.annotation.Keep
+import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-import com.google.firebase.functions.FirebaseFunctions
-import com.google.firebase.functions.HttpsCallableOptions
-import com.google.firebase.functions.HttpsCallableReference
-import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 import java.net.URL
 
 /** Returns the [FirebaseFunctions] instance of the default [FirebaseApp]. */
 val Firebase.functions: FirebaseFunctions
-    get() = com.google.firebase.functions.FirebaseFunctions.getInstance()
+  get() = com.google.firebase.functions.FirebaseFunctions.getInstance()
 
 /** Returns the [FirebaseFunctions] instance of a given [regionOrCustomDomain]. */
 fun Firebase.functions(regionOrCustomDomain: String): FirebaseFunctions =
-        com.google.firebase.functions.FirebaseFunctions.getInstance(regionOrCustomDomain)
+  com.google.firebase.functions.FirebaseFunctions.getInstance(regionOrCustomDomain)
 
 /** Returns the [FirebaseFunctions] instance of a given [FirebaseApp]. */
-fun Firebase.functions(app: FirebaseApp): FirebaseFunctions = com.google.firebase.functions.FirebaseFunctions.getInstance(app)
+fun Firebase.functions(app: FirebaseApp): FirebaseFunctions =
+  com.google.firebase.functions.FirebaseFunctions.getInstance(app)
 
 /** Returns the [FirebaseFunctions] instance of a given [FirebaseApp] and [regionOrCustomDomain]. */
 fun Firebase.functions(app: FirebaseApp, regionOrCustomDomain: String): FirebaseFunctions =
-        com.google.firebase.functions.FirebaseFunctions.getInstance(app, regionOrCustomDomain)
+  com.google.firebase.functions.FirebaseFunctions.getInstance(app, regionOrCustomDomain)
 
 internal const val LIBRARY_NAME: String = "fire-fun-ktx"
 
 /** @suppress */
 @Keep
 class FirebaseFunctionsKtxRegistrar : ComponentRegistrar {
-    override fun getComponents(): List<Component<*>> =
-            listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+  override fun getComponents(): List<Component<*>> =
+    listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
 }
 
 /** Returns a reference to the Callable HTTPS trigger with the given name and call options. */
 fun FirebaseFunctions.getHttpsCallable(
-        name: String,
-        init: HttpsCallableOptions.Builder.() -> Unit
+  name: String,
+  init: HttpsCallableOptions.Builder.() -> Unit
 ): HttpsCallableReference {
-    val builder = HttpsCallableOptions.Builder()
-    builder.init()
-    return getHttpsCallable(name, builder.build())
+  val builder = HttpsCallableOptions.Builder()
+  builder.init()
+  return getHttpsCallable(name, builder.build())
 }
 
 /** Returns a reference to the Callable HTTPS trigger with the given URL and call options. */
 fun FirebaseFunctions.getHttpsCallableFromUrl(
-        url: URL,
-        init: HttpsCallableOptions.Builder.() -> Unit
+  url: URL,
+  init: HttpsCallableOptions.Builder.() -> Unit
 ): HttpsCallableReference {
-    val builder = HttpsCallableOptions.Builder()
-    builder.init()
-    return getHttpsCallableFromUrl(url, builder.build())
+  val builder = HttpsCallableOptions.Builder()
+  builder.init()
+  return getHttpsCallableFromUrl(url, builder.build())
 }

@@ -57,6 +57,8 @@ dependencies {
     implementation(libs.androidx.futures)
     implementation(libs.playservices.basement)
     implementation(libs.playservices.tasks)
+    api(libs.kotlin.coroutines.tasks)
+    implementation(libs.kotlin.stdlib)
 
     annotationProcessor(libs.autovalue)
 
