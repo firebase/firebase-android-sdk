@@ -14,6 +14,7 @@
 
 plugins {
     id("firebase-library")
+    id("kotlin-android")
 }
 
 firebaseLibrary {
