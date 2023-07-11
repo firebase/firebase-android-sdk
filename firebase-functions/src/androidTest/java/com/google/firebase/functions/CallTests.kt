@@ -19,9 +19,9 @@ import androidx.test.runner.AndroidJUnit4
 import com.google.android.gms.tasks.Tasks
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.ktx.app
-import com.google.firebase.ktx.initialize
+import com.google.firebase.Firebase
+import com.google.firebase.app
+import com.google.firebase.initialize
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.Test
