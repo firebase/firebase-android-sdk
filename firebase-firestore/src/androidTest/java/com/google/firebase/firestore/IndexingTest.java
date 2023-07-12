@@ -15,7 +15,7 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
-import static org.junit.Assert.fail;
+import static com.google.firebase.firestore.testutil.TestUtil.assertDoesNotThrow;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -124,13 +124,5 @@ public class IndexingTest {
     assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().setAutomaticIndexingEnabled(true));
     assertDoesNotThrow(
         () -> db.getPersistentCacheIndexManager().setAutomaticIndexingEnabled(false));
-  }
-
-  public void assertDoesNotThrow(Runnable block) {
-    try {
-      block.run();
-    } catch (Exception e) {
-      fail("Should not have thrown " + e);
-    }
   }
 }

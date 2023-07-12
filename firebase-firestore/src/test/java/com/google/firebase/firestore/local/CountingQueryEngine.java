@@ -179,7 +179,7 @@ class CountingQueryEngine extends QueryEngine {
           Query query,
           IndexOffset offset,
           @NonNull Set<DocumentKey> mutatedKeys,
-          @Nullable QueryContext counter) {
+          @Nullable QueryContext context) {
         Map<DocumentKey, MutableDocument> result =
             subject.getDocumentsMatchingQuery(query, offset, mutatedKeys);
         documentsReadByCollection[0] += result.size();

@@ -93,18 +93,33 @@ public class QueryEngine {
       return result;
     }
 
-    QueryContext counter = new QueryContext();
-    result = executeFullCollectionScan(query, counter);
+    QueryContext context = new QueryContext();
+    result = executeFullCollectionScan(query, context);
     if (result != null && automaticIndexingEnabled) {
-      CreateCacheIndices(query, counter, result.size());
+      CreateCacheIndexes(query, context, result.size());
     }
     return result;
   }
 
   // TODO(csi): Auto experiment data.
-  private void CreateCacheIndices(Query query, QueryContext counter, int resultSize) {
-    if (counter.getDocumentCount() > 2 * resultSize) {
+  private void CreateCacheIndexes(Query query, QueryContext context, int resultSize) {
+    String decisionStr = "";
+    if (context.getDocumentReadCount() > 2 * resultSize) {
       indexManager.createTargetIndices(query.toTarget());
+    } else {
+      decisionStr = " not";
+    }
+
+    if (Logger.isDebugEnabled()) {
+      Logger.debug(
+          LOG_TAG,
+          "Query ran locally using a full collection scan, walking through %s documents in total "
+              + "and returning %s documents. The SDK has decided%s to create cache indexes "
+              + "for this query, as using cache indexes may%s help improve performance.",
+          context.getDocumentReadCount(),
+          resultSize,
+          decisionStr,
+          decisionStr);
     }
   }
 
@@ -260,11 +275,11 @@ public class QueryEngine {
   }
 
   private ImmutableSortedMap<DocumentKey, Document> executeFullCollectionScan(
-      Query query, QueryContext counter) {
+      Query query, QueryContext context) {
     if (Logger.isDebugEnabled()) {
       Logger.debug(LOG_TAG, "Using full collection scan to execute query: %s", query.toString());
     }
-    return localDocumentsView.getDocumentsMatchingQuery(query, IndexOffset.NONE, counter);
+    return localDocumentsView.getDocumentsMatchingQuery(query, IndexOffset.NONE, context);
   }
 
   /**

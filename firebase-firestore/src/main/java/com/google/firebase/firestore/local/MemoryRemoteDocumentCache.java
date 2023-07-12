@@ -101,7 +101,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
       Query query,
       IndexOffset offset,
       @Nonnull Set<DocumentKey> mutatedKeys,
-      @Nullable QueryContext counter) {
+      @Nullable QueryContext context) {
     Map<DocumentKey, MutableDocument> result = new HashMap<>();
 
     // Documents are ordered by key, so we can use a prefix scan to narrow down the documents

@@ -186,7 +186,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       IndexOffset offset,
       int count,
       @Nullable Function<MutableDocument, Boolean> filter,
-      @Nullable QueryContext counter) {
+      @Nullable QueryContext context) {
     Timestamp readTime = offset.getReadTime().getTimestamp();
     DocumentKey documentKey = offset.getDocumentKey();
 
@@ -225,8 +225,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
         .forEach(
             row -> {
               processRowInBackground(backgroundQueue, results, row, filter);
-              if (counter != null) {
-                counter.increaseDocumentCount();
+              if (context != null) {
+                context.increaseDocumentCount();
               }
             });
     backgroundQueue.drain();
@@ -276,13 +276,13 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       Query query,
       IndexOffset offset,
       @Nonnull Set<DocumentKey> mutatedKeys,
-      @Nullable QueryContext counter) {
+      @Nullable QueryContext context) {
     return getAll(
         Collections.singletonList(query.getPath()),
         offset,
         Integer.MAX_VALUE,
         (MutableDocument doc) -> query.matches(doc) || mutatedKeys.contains(doc.getKey()),
-        counter);
+        context);
   }
 
   private MutableDocument decodeMaybeDocument(

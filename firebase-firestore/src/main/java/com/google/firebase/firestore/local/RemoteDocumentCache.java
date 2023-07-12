@@ -95,5 +95,5 @@ interface RemoteDocumentCache {
       Query query,
       IndexOffset offset,
       @Nonnull Set<DocumentKey> mutatedKeys,
-      @Nullable QueryContext counter);
+      @Nullable QueryContext context);
 }

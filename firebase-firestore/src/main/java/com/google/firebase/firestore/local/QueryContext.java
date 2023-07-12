@@ -17,13 +17,13 @@ package com.google.firebase.firestore.local;
 public class QueryContext {
   public QueryContext() {}
 
-  private int documentCount = 0;
+  private int documentReadCount = 0;
 
-  public int getDocumentCount() {
-    return documentCount;
+  public int getDocumentReadCount() {
+    return documentReadCount;
   }
 
   public void increaseDocumentCount() {
-    documentCount++;
+    documentReadCount++;
   }
 }
