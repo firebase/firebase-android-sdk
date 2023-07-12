@@ -112,17 +112,15 @@ public class IndexingTest {
             .setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
             .build();
     db.setFirestoreSettings(settings);
-    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().setAutomaticIndexingEnabled(true));
-    assertDoesNotThrow(
-        () -> db.getPersistentCacheIndexManager().setAutomaticIndexingEnabled(false));
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().enableIndexAutoCreation());
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().disableIndexAutoCreation());
   }
 
   @Test
   public void testAutomaticIndexingSetSuccessfullyUseDefault() {
     // Use persistent disk cache (default)
     FirebaseFirestore db = testFirestore();
-    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().setAutomaticIndexingEnabled(true));
-    assertDoesNotThrow(
-        () -> db.getPersistentCacheIndexManager().setAutomaticIndexingEnabled(false));
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().enableIndexAutoCreation());
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().disableIndexAutoCreation());
   }
 }

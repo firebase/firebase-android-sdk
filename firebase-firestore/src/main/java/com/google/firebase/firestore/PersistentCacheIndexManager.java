@@ -29,7 +29,11 @@ public class PersistentCacheIndexManager {
     this.client = client;
   }
 
-  public void setAutomaticIndexingEnabled(boolean isEnabled) {
-    client.setAutomaticIndexingEnabled(isEnabled);
+  public void enableIndexAutoCreation() {
+    client.enableIndexAutoCreation();
+  }
+
+  public void disableIndexAutoCreation() {
+    client.disableIndexAutoCreation();
   }
 }

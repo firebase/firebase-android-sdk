@@ -73,8 +73,12 @@ public class QueryEngine {
     this.initialized = true;
   }
 
-  public void setAutomaticIndexingEnabled(boolean isEnabled) {
-    this.automaticIndexingEnabled = isEnabled;
+  public void enableIndexAutoCreation() {
+    this.automaticIndexingEnabled = true;
+  }
+
+  public void disableIndexAutoCreation() {
+    this.automaticIndexingEnabled = false;
   }
 
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
