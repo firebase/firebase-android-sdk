@@ -147,7 +147,7 @@ public class FirebaseFirestore {
    * <p>Returns the same instance for all invocations given the same database parameter. If no
    * instance exists, initializes a new instance.
    *
-   * @param database The name of database.
+   * @param database The database ID.
    * @returns The {@link FirebaseFirestore} instance.
    */
   @NonNull
@@ -163,7 +163,7 @@ public class FirebaseFirestore {
    *
    * @param app The {@link FirebaseApp} instance that the returned {@link FirebaseFirestore}
    *     instance is associated with.
-   * @param database The name of database.
+   * @param database The database ID.
    * @returns The {@link FirebaseFirestore} instance.
    */
   @NonNull
