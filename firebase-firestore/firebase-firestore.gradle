@@ -50,8 +50,6 @@ protobuf {
         }
     }
 }
-    // Acceptable values are: 'emulator', 'qa', 'nightly', and 'prod'.
-    ext.targetBackend = 'emulator'
 
 android {
     adbOptions {
@@ -74,7 +72,7 @@ android {
             buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "true")
         }
 
-        if (findProperty('targetBackend')) {
+        if (hasProperty('targetBackend')) {
             buildConfigField("String", "TARGET_BACKEND", "\"${property("targetBackend")}\"")
         } else {
             // By default set the target backend to 'emulator'
