@@ -66,18 +66,15 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'proguard.txt'
 
-        if (findProperty("useProdBackendForTests")) {
-            buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "false")
-        } else {
-            buildConfigField("boolean", "USE_EMULATOR_FOR_TESTS", "true")
-        }
+        buildConfigField(
+                "boolean",
+                "USE_EMULATOR_FOR_TESTS",
+                findProperty("useProdBackendForTests").asBoolean().toString()
+        )
 
-        if (hasProperty('targetBackend')) {
-            buildConfigField("String", "TARGET_BACKEND", "\"${property("targetBackend")}\"")
-        } else {
-            // By default set the target backend to 'emulator'
-            buildConfigField("String", "TARGET_BACKEND", "\"emulator\"")
-        }
+        def targetBackend = findProperty("targetBackend") ?: "emulator"
+        buildConfigField("String", "TARGET_BACKEND", "\"$targetBackend\"")
+
         def localProps = new Properties()
 
         try {
