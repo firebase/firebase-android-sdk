@@ -366,4 +366,140 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     }
     assertThat(error.get()).isNull();
   }
+
+  @Test
+  public void testIndexAutoCreationWorks() {
+    Query query = query("coll").filter(filter("matches", "==", true));
+    int targetId = allocateQuery(query);
+
+    enableIndexAutoCreation();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("matches", true)), targetId));
+
+    // First time query runs without indexes.
+    // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
+    // Full matched index should be created.
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    backfillIndexes();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/f", 20, map("matches", true)), targetId));
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 1);
+    assertQueryReturned("coll/a", "coll/e", "coll/f");
+  }
+
+  @Test
+  public void testIndexAutoCreationWorksWhenBackfillerRunsHalfway() {
+    Query query = query("coll").filter(filter("matches", "==", true));
+    int targetId = allocateQuery(query);
+
+    enableIndexAutoCreation();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("matches", true)), targetId));
+
+    // First time query is running without indexes.
+    // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
+    // Full matched index should be created.
+    executeQuery(query);
+    // Only document a matches the result
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    setBackfillerMaxDocumentsToProcess(2);
+    backfillIndexes();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/f", 20, map("matches", true)), targetId));
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 1, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e", "coll/f");
+  }
+
+  @Test
+  public void testIndexCreatedByIndexAutoCreationExistsAfterTurnOffAutoCreation() {
+    Query query = query("coll").filter(filter("matches", "==", true));
+    int targetId = allocateQuery(query);
+
+    enableIndexAutoCreation();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("matches", true)), targetId));
+
+    // First time query runs without indexes.
+    // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
+    // Full matched index should be created.
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    disableIndexAutoCreation();
+
+    backfillIndexes();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/f", 20, map("matches", true)), targetId));
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 1);
+    assertQueryReturned("coll/a", "coll/e", "coll/f");
+  }
+
+  @Test
+  public void testDisableIndexAutoCreationWorks() {
+    Query query1 = query("coll").filter(filter("matches", "==", true));
+    int targetId1 = allocateQuery(query1);
+
+    enableIndexAutoCreation();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId1));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", false)), targetId1));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("matches", false)), targetId1));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("matches", false)), targetId1));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("matches", true)), targetId1));
+
+    // First time query is running without indexes.
+    // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
+    // Full matched index should be created.
+    executeQuery(query1);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    disableIndexAutoCreation();
+
+    backfillIndexes();
+
+    executeQuery(query1);
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertQueryReturned("coll/a", "coll/e");
+
+    Query query2 = query("foo").filter(filter("matches", "==", true));
+    int targetId2 = allocateQuery(query2);
+
+    applyRemoteEvent(addedRemoteEvent(doc("foo/a", 10, map("matches", true)), targetId2));
+    applyRemoteEvent(addedRemoteEvent(doc("foo/b", 10, map("matches", false)), targetId2));
+    applyRemoteEvent(addedRemoteEvent(doc("foo/c", 10, map("matches", false)), targetId2));
+    applyRemoteEvent(addedRemoteEvent(doc("foo/d", 10, map("matches", false)), targetId2));
+    applyRemoteEvent(addedRemoteEvent(doc("foo/e", 10, map("matches", true)), targetId2));
+
+    executeQuery(query2);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+
+    // Run the query in second time, test index won't be created
+    executeQuery(query2);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+  }
 }

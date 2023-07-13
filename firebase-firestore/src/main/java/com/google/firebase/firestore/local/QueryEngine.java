@@ -108,6 +108,7 @@ public class QueryEngine {
   // TODO(csi): Auto experiment data.
   private void CreateCacheIndexes(Query query, QueryContext context, int resultSize) {
     String decisionStr = "";
+    // If evaluation is updated, please update tests in SQLiteLocalStoreTest.java
     if (context.getDocumentReadCount() > 2 * resultSize) {
       indexManager.createTargetIndices(query.toTarget());
     } else {

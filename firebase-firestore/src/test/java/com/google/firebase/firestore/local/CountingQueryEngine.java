@@ -87,6 +87,16 @@ class CountingQueryEngine extends QueryEngine {
     return queryEngine.getDocumentsMatchingQuery(query, lastLimboFreeSnapshotVersion, remoteKeys);
   }
 
+  @Override
+  public void enableIndexAutoCreation() {
+    queryEngine.enableIndexAutoCreation();
+  }
+
+  @Override
+  public void disableIndexAutoCreation() {
+    queryEngine.disableIndexAutoCreation();
+  }
+
   /**
    * Returns the number of documents returned by the RemoteDocumentCache's `getAll()` API (since the
    * last call to `resetCounts()`)
@@ -181,7 +191,7 @@ class CountingQueryEngine extends QueryEngine {
           @NonNull Set<DocumentKey> mutatedKeys,
           @Nullable QueryContext context) {
         Map<DocumentKey, MutableDocument> result =
-            subject.getDocumentsMatchingQuery(query, offset, mutatedKeys);
+            subject.getDocumentsMatchingQuery(query, offset, mutatedKeys, context);
         documentsReadByCollection[0] += result.size();
         return result;
       }

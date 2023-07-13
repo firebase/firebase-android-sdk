@@ -161,6 +161,10 @@ public abstract class LocalStoreTestCase {
     indexBackfiller.backfill();
   }
 
+  protected void setBackfillerMaxDocumentsToProcess(int newMax) {
+    indexBackfiller.setMaxDocumentsToProcess(newMax);
+  }
+
   private void updateViews(int targetId, boolean fromCache) {
     notifyLocalViewChanges(viewChanges(targetId, fromCache, asList(), asList()));
   }
@@ -211,6 +215,21 @@ public abstract class LocalStoreTestCase {
   protected void executeQuery(Query query) {
     resetPersistenceStats();
     lastQueryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
+  }
+
+  protected void enableIndexAutoCreation() {
+    // Noted: there are two queryEngines here, the first one is extended by CountingQueryEngine,
+    // which is set by localStore function; The second one a pointer inside CountingQueryEngine,
+    // which is set by queryEngine function.
+    // Only the second function takes effect in the tests. Adding first one here for compatibility.
+    localStore.enableIndexAutoCreation();
+    queryEngine.enableIndexAutoCreation();
+  }
+
+  protected void disableIndexAutoCreation() {
+    // Please refer to the notes in `enableIndexAutoCreation()`
+    localStore.disableIndexAutoCreation();
+    queryEngine.disableIndexAutoCreation();
   }
 
   private void releaseTarget(int targetId) {
