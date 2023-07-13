@@ -66,12 +66,6 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'proguard.txt'
 
-        buildConfigField(
-                "boolean",
-                "USE_EMULATOR_FOR_TESTS",
-                findProperty("useProdBackendForTests").asBoolean().toString()
-        )
-
         def targetBackend = findProperty("targetBackend") ?: "emulator"
         buildConfigField("String", "TARGET_BACKEND", "\"$targetBackend\"")
 
