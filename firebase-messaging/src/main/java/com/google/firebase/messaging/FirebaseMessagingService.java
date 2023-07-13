@@ -85,6 +85,9 @@ public class FirebaseMessagingService extends EnhancedIntentService {
   /**
    * Called when a message is received.
    *
+   * <p>This should complete within 20 seconds. Taking longer may interfere with your ability to
+   * complete your work and may affect pending messages.
+   *
    * <p>This is also called when a notification message is received while the app is in the
    * foreground. The notification parameters can be retrieved with {@link
    * RemoteMessage#getNotification()}.
@@ -143,7 +146,6 @@ public class FirebaseMessagingService extends EnhancedIntentService {
    */
   @WorkerThread
   public void onNewToken(@NonNull String token) {}
-  ;
 
   /** @hide */
   @Override
