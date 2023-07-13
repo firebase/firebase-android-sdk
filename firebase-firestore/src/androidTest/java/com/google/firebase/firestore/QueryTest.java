@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static com.google.firebase.firestore.remote.TestingHooksUtil.captureExistenceFilterMismatches;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
@@ -32,6 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -42,6 +44,7 @@ import com.google.firebase.firestore.remote.TestingHooksUtil.ExistenceFilterBloo
 import com.google.firebase.firestore.remote.TestingHooksUtil.ExistenceFilterMismatchInfo;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1156,6 +1159,160 @@ public class QueryTest {
       // are expected to happen occasionally. When a false positive _does_ happen, just retry the
       // test with a different set of documents. If that retry _also_ experiences a false positive,
       // then fail the test because that is so improbable that something must have gone wrong.
+      if (attemptNumber == 1 && !bloomFilter.applied()) {
+        continue;
+      }
+
+      assertWithMessage("bloom filter successfully applied with attemptNumber=" + attemptNumber)
+          .that(bloomFilter.applied())
+          .isTrue();
+
+      // Break out of the test loop now that the test passes.
+      break;
+    }
+  }
+
+  private static String unicodeNormalize(String s) {
+    return Normalizer.normalize(s, Normalizer.Form.NFC);
+  }
+
+  @Test
+  public void bloomFilterShouldCorrectlyEncodeComplexUnicodeCharacters() throws Exception {
+    assumeFalse(
+        "Skip this test when running against the Firestore emulator because the Firestore emulator "
+            + "fails to send existence filters when queries are resumed (b/270731363), and even "
+            + "if it did send an existence filter it probably wouldn't include a bloom filter.",
+        isRunningAgainstEmulator());
+
+    // Firestore does not do any Unicode normalization on the document IDs. Therefore, two document
+    // IDs that are canonically-equivalent (i.e. they visually appear identical) but are represented
+    // by a different sequence of Unicode code points are treated as distinct document IDs.
+    ArrayList<String> testDocIds = new ArrayList<>();
+    testDocIds.add("DocumentToDelete");
+    // The next two strings both end with "e" with an accent: the first uses the dedicated Unicode
+    // code point for this character, while the second uses the standard lowercase "e" followed by
+    // the accent combining character.
+    testDocIds.add("LowercaseEWithAcuteAccent_\u00E9");
+    testDocIds.add("LowercaseEWithAcuteAccent_\u0065\u0301");
+    // The next two strings both end with an "e" with two different accents applied via the
+    // following two combining characters. The combining characters are specified in a different
+    // order and Firestore treats these document IDs as unique, despite the order of the combining
+    // characters being irrelevant.
+    testDocIds.add("LowercaseEWithMultipleAccents_\u0065\u0301\u0327");
+    testDocIds.add("LowercaseEWithMultipleAccents_\u0065\u0327\u0301");
+    // The next string contains a character outside the BMP (the "basic multilingual plane"); that
+    // is, its code point is greater than 0xFFFF. Since "The Java programming language represents
+    // text in sequences of 16-bit code units, using the UTF-16 encoding" (according to the "Java
+    // Language Specification" at https://docs.oracle.com/javase/specs/jls/se11/html/index.html)
+    // this requires a surrogate pair, two 16-bit code units, to represent this character. Make sure
+    // that its presence is correctly tested in the bloom filter, which uses UTF-8 encoding.
+    testDocIds.add("Smiley_\uD83D\uDE00");
+
+    // Verify assumptions about the equivalence of strings in `testDocIds`.
+    assertThat(unicodeNormalize(testDocIds.get(1))).isEqualTo(unicodeNormalize(testDocIds.get(2)));
+    assertThat(unicodeNormalize(testDocIds.get(3))).isEqualTo(unicodeNormalize(testDocIds.get(4)));
+    assertThat(testDocIds.get(5).codePointAt(7)).isEqualTo(0x1F600);
+
+    // Create the mapping from document ID to document data for the document IDs specified in
+    // `testDocIds`.
+    Map<String, Map<String, Object>> testDocs = new HashMap<>();
+    for (String docId : testDocIds) {
+      testDocs.put(docId, map("foo", 42));
+    }
+
+    // Each iteration of the "while" loop below runs a single iteration of the test. The test will
+    // be run multiple times only if a bloom filter false positive occurs.
+    int attemptNumber = 0;
+    while (true) {
+      attemptNumber++;
+
+      // Create the documents whose names contain complex Unicode characters in a new collection.
+      CollectionReference collection = testCollectionWithDocs(testDocs);
+
+      // Run a query to populate the local cache with documents that have names with complex Unicode
+      // characters.
+      List<DocumentReference> createdDocuments = new ArrayList<>();
+      {
+        QuerySnapshot querySnapshot1 = waitFor(collection.get());
+        for (DocumentSnapshot documentSnapshot : querySnapshot1.getDocuments()) {
+          createdDocuments.add(documentSnapshot.getReference());
+        }
+        HashSet<String> createdDocumentIds = new HashSet<>();
+        for (DocumentSnapshot documentSnapshot : querySnapshot1.getDocuments()) {
+          createdDocumentIds.add(documentSnapshot.getId());
+        }
+        assertWithMessage("createdDocumentIds")
+            .that(createdDocumentIds)
+            .containsExactlyElementsIn(testDocIds);
+      }
+
+      // Delete one of the documents so that the next call to getDocs() will
+      // experience an existence filter mismatch. Do this deletion in a
+      // transaction, rather than using deleteDoc(), to avoid affecting the
+      // local cache.
+      waitFor(
+          collection
+              .getFirestore()
+              .runTransaction(
+                  transaction -> {
+                    DocumentReference documentToDelete = collection.document("DocumentToDelete");
+                    DocumentSnapshot documentToDeleteSnapshot = transaction.get(documentToDelete);
+                    assertWithMessage("documentToDeleteSnapshot.exists()")
+                        .that(documentToDeleteSnapshot.exists())
+                        .isTrue();
+                    transaction.delete(documentToDelete);
+                    return null;
+                  }));
+
+      // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
+      // existence filter rather than "delete" events when the query is resumed.
+      Thread.sleep(10000);
+
+      // Resume the query and save the resulting snapshot for verification. Use some internal
+      // testing hooks to "capture" the existence filter mismatches.
+      AtomicReference<QuerySnapshot> querySnapshot2Ref = new AtomicReference<>();
+      ArrayList<ExistenceFilterMismatchInfo> existenceFilterMismatches =
+          captureExistenceFilterMismatches(
+              () -> {
+                QuerySnapshot querySnapshot = waitFor(collection.get());
+                querySnapshot2Ref.set(querySnapshot);
+              });
+      QuerySnapshot querySnapshot2 = querySnapshot2Ref.get();
+
+      // Verify that the snapshot from the resumed query contains the expected documents; that is,
+      // that it contains the documents whose names contain complex Unicode characters and _not_ the
+      // document that was deleted.
+      HashSet<String> querySnapshot2DocumentIds = new HashSet<>();
+      for (DocumentSnapshot documentSnapshot : querySnapshot2.getDocuments()) {
+        querySnapshot2DocumentIds.add(documentSnapshot.getId());
+      }
+      HashSet<String> querySnapshot2ExpectedDocumentIds = new HashSet<>(testDocIds);
+      querySnapshot2ExpectedDocumentIds.remove("DocumentToDelete");
+      assertWithMessage("querySnapshot2DocumentIds")
+          .that(querySnapshot2DocumentIds)
+          .containsExactlyElementsIn(querySnapshot2ExpectedDocumentIds);
+
+      // Verify that Watch sent an existence filter with the correct counts.
+      assertWithMessage("Watch should have sent exactly 1 existence filter")
+          .that(existenceFilterMismatches)
+          .hasSize(1);
+      ExistenceFilterMismatchInfo existenceFilterMismatchInfo = existenceFilterMismatches.get(0);
+      assertWithMessage("localCacheCount")
+          .that(existenceFilterMismatchInfo.localCacheCount())
+          .isEqualTo(testDocIds.size());
+      assertWithMessage("existenceFilterCount")
+          .that(existenceFilterMismatchInfo.existenceFilterCount())
+          .isEqualTo(testDocIds.size() - 1);
+
+      // Verify that Watch sent a valid bloom filter.
+      ExistenceFilterBloomFilterInfo bloomFilter = existenceFilterMismatchInfo.bloomFilter();
+      assertWithMessage("The bloom filter specified in the existence filter")
+          .that(bloomFilter)
+          .isNotNull();
+
+      // Verify that the bloom filter was successfully used to avert a full requery. If a false
+      // positive occurred, which is statistically rare, but technically possible, then retry the
+      // entire test.
       if (attemptNumber == 1 && !bloomFilter.applied()) {
         continue;
       }
