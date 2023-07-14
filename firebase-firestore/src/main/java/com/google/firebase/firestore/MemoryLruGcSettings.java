@@ -30,8 +30,10 @@ public final class MemoryLruGcSettings implements MemoryGarbageCollectorSettings
       return new MemoryLruGcSettings(sizeBytes);
     }
 
-    public void setSizeBytes(long size) {
+    @NonNull
+    public Builder setSizeBytes(long size) {
       sizeBytes = size;
+      return this;
     }
   }
 
