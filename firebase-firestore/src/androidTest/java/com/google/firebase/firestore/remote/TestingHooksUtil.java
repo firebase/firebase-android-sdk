@@ -16,6 +16,7 @@ package com.google.firebase.firestore.remote;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.ListenerRegistration;
 import java.util.ArrayList;
 
@@ -84,7 +85,10 @@ public final class TestingHooksUtil {
     @Nullable
     public ExistenceFilterBloomFilterInfo bloomFilter() {
       TestingHooks.ExistenceFilterBloomFilterInfo bloomFilterInfo = info.bloomFilter();
-      return bloomFilterInfo == null ? null : new ExistenceFilterBloomFilterInfo(bloomFilterInfo);
+      return bloomFilterInfo == null
+          ? null
+          : new ExistenceFilterBloomFilterInfo(
+              bloomFilterInfo, info.projectId(), info.databaseId());
     }
   }
 
@@ -92,9 +96,16 @@ public final class TestingHooksUtil {
   public static final class ExistenceFilterBloomFilterInfo {
 
     private final TestingHooks.ExistenceFilterBloomFilterInfo info;
+    private final String projectId;
+    private final String databaseId;
 
-    ExistenceFilterBloomFilterInfo(@NonNull TestingHooks.ExistenceFilterBloomFilterInfo info) {
+    ExistenceFilterBloomFilterInfo(
+        @NonNull TestingHooks.ExistenceFilterBloomFilterInfo info,
+        String projectId,
+        String databaseId) {
       this.info = info;
+      this.projectId = projectId;
+      this.databaseId = databaseId;
     }
 
     public boolean applied() {
@@ -111,6 +122,23 @@ public final class TestingHooksUtil {
 
     public int padding() {
       return info.padding();
+    }
+
+    public boolean mightContain(DocumentReference documentReference) {
+      BloomFilter bloomFilter = info.bloomFilter();
+      if (bloomFilter == null) {
+        return false;
+      }
+      return bloomFilter.mightContain(getBloomFilterEntryFor(documentReference));
+    }
+
+    private String getBloomFilterEntryFor(DocumentReference documentReference) {
+      return "projects/"
+          + projectId
+          + "/databases/"
+          + databaseId
+          + "/documents/"
+          + documentReference.getPath();
     }
   }
 }

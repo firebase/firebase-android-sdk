@@ -1220,109 +1220,104 @@ public class QueryTest {
       testDocs.put(docId, map("foo", 42));
     }
 
-    // Each iteration of the "while" loop below runs a single iteration of the test. The test will
-    // be run multiple times only if a bloom filter false positive occurs.
-    int attemptNumber = 0;
-    while (true) {
-      attemptNumber++;
+    // Create the documents whose names contain complex Unicode characters in a new collection.
+    CollectionReference collection = testCollectionWithDocs(testDocs);
 
-      // Create the documents whose names contain complex Unicode characters in a new collection.
-      CollectionReference collection = testCollectionWithDocs(testDocs);
-
-      // Run a query to populate the local cache with documents that have names with complex Unicode
-      // characters.
-      List<DocumentReference> createdDocuments = new ArrayList<>();
-      {
-        QuerySnapshot querySnapshot1 = waitFor(collection.get());
-        for (DocumentSnapshot documentSnapshot : querySnapshot1.getDocuments()) {
-          createdDocuments.add(documentSnapshot.getReference());
-        }
-        HashSet<String> createdDocumentIds = new HashSet<>();
-        for (DocumentSnapshot documentSnapshot : querySnapshot1.getDocuments()) {
-          createdDocumentIds.add(documentSnapshot.getId());
-        }
-        assertWithMessage("createdDocumentIds")
-            .that(createdDocumentIds)
-            .containsExactlyElementsIn(testDocIds);
+    // Run a query to populate the local cache with documents that have names with complex Unicode
+    // characters.
+    List<DocumentReference> createdDocuments = new ArrayList<>();
+    {
+      QuerySnapshot querySnapshot1 = waitFor(collection.get());
+      for (DocumentSnapshot documentSnapshot : querySnapshot1.getDocuments()) {
+        createdDocuments.add(documentSnapshot.getReference());
       }
-
-      // Delete one of the documents so that the next call to getDocs() will
-      // experience an existence filter mismatch. Do this deletion in a
-      // transaction, rather than using deleteDoc(), to avoid affecting the
-      // local cache.
-      waitFor(
-          collection
-              .getFirestore()
-              .runTransaction(
-                  transaction -> {
-                    DocumentReference documentToDelete = collection.document("DocumentToDelete");
-                    DocumentSnapshot documentToDeleteSnapshot = transaction.get(documentToDelete);
-                    assertWithMessage("documentToDeleteSnapshot.exists()")
-                        .that(documentToDeleteSnapshot.exists())
-                        .isTrue();
-                    transaction.delete(documentToDelete);
-                    return null;
-                  }));
-
-      // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
-      // existence filter rather than "delete" events when the query is resumed.
-      Thread.sleep(10000);
-
-      // Resume the query and save the resulting snapshot for verification. Use some internal
-      // testing hooks to "capture" the existence filter mismatches.
-      AtomicReference<QuerySnapshot> querySnapshot2Ref = new AtomicReference<>();
-      ArrayList<ExistenceFilterMismatchInfo> existenceFilterMismatches =
-          captureExistenceFilterMismatches(
-              () -> {
-                QuerySnapshot querySnapshot = waitFor(collection.get());
-                querySnapshot2Ref.set(querySnapshot);
-              });
-      QuerySnapshot querySnapshot2 = querySnapshot2Ref.get();
-
-      // Verify that the snapshot from the resumed query contains the expected documents; that is,
-      // that it contains the documents whose names contain complex Unicode characters and _not_ the
-      // document that was deleted.
-      HashSet<String> querySnapshot2DocumentIds = new HashSet<>();
-      for (DocumentSnapshot documentSnapshot : querySnapshot2.getDocuments()) {
-        querySnapshot2DocumentIds.add(documentSnapshot.getId());
+      HashSet<String> createdDocumentIds = new HashSet<>();
+      for (DocumentSnapshot documentSnapshot : querySnapshot1.getDocuments()) {
+        createdDocumentIds.add(documentSnapshot.getId());
       }
-      HashSet<String> querySnapshot2ExpectedDocumentIds = new HashSet<>(testDocIds);
-      querySnapshot2ExpectedDocumentIds.remove("DocumentToDelete");
-      assertWithMessage("querySnapshot2DocumentIds")
-          .that(querySnapshot2DocumentIds)
-          .containsExactlyElementsIn(querySnapshot2ExpectedDocumentIds);
+      assertWithMessage("createdDocumentIds")
+          .that(createdDocumentIds)
+          .containsExactlyElementsIn(testDocIds);
+    }
 
-      // Verify that Watch sent an existence filter with the correct counts.
-      assertWithMessage("Watch should have sent exactly 1 existence filter")
-          .that(existenceFilterMismatches)
-          .hasSize(1);
-      ExistenceFilterMismatchInfo existenceFilterMismatchInfo = existenceFilterMismatches.get(0);
-      assertWithMessage("localCacheCount")
-          .that(existenceFilterMismatchInfo.localCacheCount())
-          .isEqualTo(testDocIds.size());
-      assertWithMessage("existenceFilterCount")
-          .that(existenceFilterMismatchInfo.existenceFilterCount())
-          .isEqualTo(testDocIds.size() - 1);
+    // Delete one of the documents so that the next call to getDocs() will experience an existence
+    // filter mismatch. Do this deletion in a transaction, rather than using deleteDoc(), to avoid
+    // affecting the local cache.
+    DocumentReference documentToDelete = collection.document("DocumentToDelete");
+    waitFor(
+        collection
+            .getFirestore()
+            .runTransaction(
+                transaction -> {
+                  DocumentSnapshot documentToDeleteSnapshot = transaction.get(documentToDelete);
+                  assertWithMessage("documentToDeleteSnapshot.exists()")
+                      .that(documentToDeleteSnapshot.exists())
+                      .isTrue();
+                  transaction.delete(documentToDelete);
+                  return null;
+                }));
 
-      // Verify that Watch sent a valid bloom filter.
-      ExistenceFilterBloomFilterInfo bloomFilter = existenceFilterMismatchInfo.bloomFilter();
-      assertWithMessage("The bloom filter specified in the existence filter")
-          .that(bloomFilter)
-          .isNotNull();
+    // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
+    // existence filter rather than "delete" events when the query is resumed.
+    Thread.sleep(10000);
 
-      // Verify that the bloom filter was successfully used to avert a full requery. If a false
-      // positive occurred, which is statistically rare, but technically possible, then retry the
-      // entire test.
-      if (attemptNumber == 1 && !bloomFilter.applied()) {
-        continue;
-      }
+    // Resume the query and save the resulting snapshot for verification. Use some internal testing
+    // hooks to "capture" the existence filter mismatches.
+    AtomicReference<QuerySnapshot> querySnapshot2Ref = new AtomicReference<>();
+    ArrayList<ExistenceFilterMismatchInfo> existenceFilterMismatches =
+        captureExistenceFilterMismatches(
+            () -> {
+              QuerySnapshot querySnapshot = waitFor(collection.get());
+              querySnapshot2Ref.set(querySnapshot);
+            });
+    QuerySnapshot querySnapshot2 = querySnapshot2Ref.get();
 
-      assertWithMessage("bloom filter successfully applied with attemptNumber=" + attemptNumber)
-          .that(bloomFilter.applied())
+    // Verify that the snapshot from the resumed query contains the expected documents; that is,
+    // that it contains the documents whose names contain complex Unicode characters and _not_ the
+    // document that was deleted.
+    HashSet<String> querySnapshot2DocumentIds = new HashSet<>();
+    for (DocumentSnapshot documentSnapshot : querySnapshot2.getDocuments()) {
+      querySnapshot2DocumentIds.add(documentSnapshot.getId());
+    }
+    HashSet<String> querySnapshot2ExpectedDocumentIds = new HashSet<>(testDocIds);
+    querySnapshot2ExpectedDocumentIds.remove("DocumentToDelete");
+    assertWithMessage("querySnapshot2DocumentIds")
+        .that(querySnapshot2DocumentIds)
+        .containsExactlyElementsIn(querySnapshot2ExpectedDocumentIds);
+
+    // Verify that Watch sent an existence filter with the correct counts.
+    assertWithMessage("Watch should have sent exactly 1 existence filter")
+        .that(existenceFilterMismatches)
+        .hasSize(1);
+    ExistenceFilterMismatchInfo existenceFilterMismatchInfo = existenceFilterMismatches.get(0);
+    assertWithMessage("localCacheCount")
+        .that(existenceFilterMismatchInfo.localCacheCount())
+        .isEqualTo(testDocIds.size());
+    assertWithMessage("existenceFilterCount")
+        .that(existenceFilterMismatchInfo.existenceFilterCount())
+        .isEqualTo(testDocIds.size() - 1);
+
+    // Verify that Watch sent a valid bloom filter.
+    ExistenceFilterBloomFilterInfo bloomFilter = existenceFilterMismatchInfo.bloomFilter();
+    assertWithMessage("The bloom filter specified in the existence filter")
+        .that(bloomFilter)
+        .isNotNull();
+
+    // The bloom filter application should statistically be successful almost every time; the _only_
+    // time when it would _not_ be successful is if there is a false positive when testing for
+    // 'DocumentToDelete' in the bloom filter. So verify that the bloom filter application is
+    // successful, unless there was a false positive.
+    boolean isFalsePositive = bloomFilter.mightContain(documentToDelete);
+    assertWithMessage("bloomFilter.applied()")
+        .that(bloomFilter.applied())
+        .isEqualTo(!isFalsePositive);
+
+    // Verify that the bloom filter contains the document paths with complex Unicode characters.
+    for (DocumentSnapshot documentSnapshot : querySnapshot2.getDocuments()) {
+      DocumentReference documentReference = documentSnapshot.getReference();
+      assertWithMessage("bloomFilter.mightContain() for " + documentReference.getPath())
+          .that(bloomFilter.mightContain(documentReference))
           .isTrue();
-
-      // Break out of the test loop now that the test passes.
-      break;
     }
   }
 
