@@ -63,14 +63,6 @@ fun File.childFile(childPath: String) = File("$path/$childPath")
  * The lines of the file are first read and then transformed by the provided `block` function. The
  * transformed lines are then joined together with a newline character and written back to the file.
  *
- * If the `terminateWithNewline` parameter is set to `false`, the file will not be terminated with a
- * newline character.
- *
- * @param terminateWithNewline Whether to terminate the file with a newline character. Defaults to
- * `true`.
- * @param block A function that takes a string as input and returns a new string. This function is
- * used to transform the lines of the file before they are rewritten.
- *
  * ```
  * val file = File("my-file.txt")
  *
@@ -81,12 +73,15 @@ fun File.childFile(childPath: String) = File("$path/$childPath")
  * file.rewriteLines { it.capitalizeWords() }
  * ```
  *
+ * @param block A function that takes a string as input and returns a new string. This function is
+ * used to transform the lines of the file before they are rewritten.
+ *
  * @see [readLines]
  * @see [writeText]
  */
-fun File.rewriteLines(terminateWithNewline: Boolean = true, block: (String) -> String) {
+fun File.rewriteLines(block: (String) -> String) {
   val newLines = readLines().map(block)
-  writeText(newLines.joinToString("\n").let { if (terminateWithNewline) it + "\n" else it })
+  writeText(newLines.joinToString("\n") + "\n")
 }
 
 /**
