@@ -345,7 +345,7 @@ package com.google.firebase.firestore {
 
   public static class MemoryLruGcSettings.Builder {
     method @NonNull public com.google.firebase.firestore.MemoryLruGcSettings build();
-    method public void setSizeBytes(long);
+    method @NonNull public com.google.firebase.firestore.MemoryLruGcSettings.Builder setSizeBytes(long);
   }
 
   public enum MetadataChanges {
