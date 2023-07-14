@@ -502,4 +502,33 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     executeQuery(query2);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
   }
+
+  @Test
+  public void testIndexAutoCreationWorksWithMutation() {
+    Query query = query("coll").filter(filter("matches", "==", true));
+    int targetId = allocateQuery(query);
+
+    enableIndexAutoCreation();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("matches", true)), targetId));
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    writeMutation(deleteMutation("coll/e"));
+
+    backfillIndexes();
+
+    writeMutation(setMutation("coll/f", map("matches", true)));
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 1);
+    assertQueryReturned("coll/a", "coll/f");
+  }
 }
