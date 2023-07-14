@@ -576,6 +576,66 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
   }
 
   @Test
+  public void testDeleteAllIndexesWorksWithIndexAutoCreation() {
+    Query query = query("coll").filter(filter("matches", "==", true));
+    int targetId = allocateQuery(query);
+
+    enableIndexAutoCreation();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("matches", true)), targetId));
+
+    // First time query is running without indexes.
+    // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
+    // Full matched index should be created.
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    disableIndexAutoCreation();
+
+    backfillIndexes();
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 0);
+    assertQueryReturned("coll/a", "coll/e");
+
+    deleteAllIndexes();
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+  }
+
+  @Test
+  public void testDeleteAllIndexesWorksWithManualAddedIndexes() {
+    FieldIndex index =
+        fieldIndex(
+            "coll", 0, FieldIndex.INITIAL_STATE, "matches", FieldIndex.Segment.Kind.ASCENDING);
+    configureFieldIndexes(singletonList(index));
+
+    Query query = query("coll").filter(filter("matches", "==", true));
+    int targetId = allocateQuery(query);
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
+
+    backfillIndexes();
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 1, /* byCollection= */ 0);
+    assertQueryReturned("coll/a");
+
+    deleteAllIndexes();
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 1);
+    assertQueryReturned("coll/a");
+  }
+
+  @Test
   public void testIndexAutoCreationWorksWithMutation() {
     Query query =
         query("coll").filter(filter("value", "array-contains-any", Arrays.asList(8, 1, "string")));

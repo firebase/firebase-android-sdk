@@ -51,4 +51,8 @@ public final class PersistentCacheIndexManager {
   public void disableIndexAutoCreation() {
     client.setIndexAutoCreationEnabled(false);
   }
+
+  public void deleteAllIndexes() {
+    client.deleteAllFieldIndexes();
+  }
 }
