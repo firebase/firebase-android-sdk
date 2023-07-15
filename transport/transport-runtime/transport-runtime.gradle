@@ -123,15 +123,15 @@ dependencies {
 
     testImplementation 'junit:junit:4.13-beta-2'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'androidx.test:core:1.2.0'
-    testImplementation 'androidx.test.ext:junit:1.1.1'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    testImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
 
     androidTestImplementation 'junit:junit:4.13-beta-3'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
     androidTestImplementation 'androidx.test:rules:1.2.0'
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
     androidTestImplementation 'org.mockito:mockito-android:2.25.0'
