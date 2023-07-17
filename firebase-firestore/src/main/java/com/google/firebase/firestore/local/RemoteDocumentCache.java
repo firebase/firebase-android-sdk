@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
  * meaning we can cache both Document instances (an actual document with data) as well as NoDocument
  * instances (indicating that the document is known to not exist).
  */
-public interface RemoteDocumentCache {
+interface RemoteDocumentCache {
 
   /** Sets the index manager to use for managing the collectionGroup index. */
   void setIndexManager(IndexManager indexManager);

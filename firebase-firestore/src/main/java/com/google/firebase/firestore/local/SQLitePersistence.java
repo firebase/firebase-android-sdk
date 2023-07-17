@@ -171,7 +171,7 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
-  public MutationQueue getMutationQueue(User user, IndexManager indexManager) {
+  MutationQueue getMutationQueue(User user, IndexManager indexManager) {
     return new SQLiteMutationQueue(this, serializer, user, indexManager);
   }
 
@@ -181,7 +181,7 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
-  public IndexManager getIndexManager(User user) {
+  IndexManager getIndexManager(User user) {
     return new SQLiteIndexManager(this, serializer, user);
   }
 
@@ -191,7 +191,7 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
-  public DocumentOverlayCache getDocumentOverlayCache(User user) {
+  DocumentOverlayCache getDocumentOverlayCache(User user) {
     return new SQLiteDocumentOverlayCache(this, this.serializer, user);
   }
 
@@ -201,12 +201,12 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
-  public RemoteDocumentCache getRemoteDocumentCache() {
+  RemoteDocumentCache getRemoteDocumentCache() {
     return remoteDocumentCache;
   }
 
   @Override
-  public void runTransaction(String action, Runnable operation) {
+  void runTransaction(String action, Runnable operation) {
     Logger.debug(TAG, "Starting transaction: %s", action);
     db.beginTransactionWithListener(transactionListener);
     try {
