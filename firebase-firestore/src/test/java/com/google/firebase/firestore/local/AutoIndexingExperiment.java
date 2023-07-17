@@ -148,24 +148,26 @@ public class AutoIndexingExperiment {
     }
   }
 
-  protected DocumentSet runQuery(Query query, boolean autoIndexing, QueryContext counter) {
+  protected DocumentSet runQuery(Query query, boolean usingIndex, QueryContext context) {
     Preconditions.checkNotNull(
         expectFullCollectionScan,
         "Encountered runQuery() call not wrapped in expectOptimizedCollectionQuery()/expectFullCollectionQuery()");
     ImmutableSortedMap<DocumentKey, Document> docs =
-        queryEngine.getDocumentsMatchingQueryTest(query, autoIndexing, counter);
+        queryEngine.getDocumentsMatchingQueryForTest(query, usingIndex, context);
     View view =
         new View(query, new ImmutableSortedSet<>(Collections.emptyList(), DocumentKey::compareTo));
     View.DocumentChanges viewDocChanges = view.computeDocChanges(docs);
     return view.applyChanges(viewDocChanges).getSnapshot().getDocuments();
   }
 
+  /** Creates one test document based on requirements. */
   private void createTestingDocument(
       String basePath, int documentID, boolean isMatched, int numOfFields) {
     Map<String, Object> fields = map("match", isMatched);
 
-    // Randomly generate the rest of fields
+    // Randomly generate the rest of fields.
     for (int i = 2; i <= numOfFields; i++) {
+      // Randomly select a field in values table.
       int valueIndex = (int) (Math.random() * values.size()) % values.size();
       fields.put("field" + i, values.get(valueIndex));
     }
@@ -180,14 +182,18 @@ public class AutoIndexingExperiment {
   private void createTestingCollection(
       String basePath, int totalSetCount, int portion /*0 - 10*/, int numOfFields /* 1 - 30*/) {
     int documentCounter = 0;
+
+    // A set contains 10 documents.
     for (int i = 1; i <= totalSetCount; i++) {
-      // Generate a random order list of 0 ... 9
+      // Generate a random order list of 0 ... 9, to make sure the matching documents stay in
+      // random positions.
       ArrayList<Integer> indexes = new ArrayList<>();
       for (int index = 0; index < 10; index++) {
         indexes.add(index);
       }
       Collections.shuffle(indexes);
 
+      // portion% of the set match
       for (int match = 0; match < portion; match++) {
         int currentID = documentCounter + indexes.get(match);
         createTestingDocument(basePath, currentID, true, numOfFields);
@@ -200,8 +206,11 @@ public class AutoIndexingExperiment {
     }
   }
 
+  /** Create mutation for 10% of total documents. */
   private void createMutationForCollection(String basePath, int totalSetCount) {
     ArrayList<Integer> indexes = new ArrayList<>();
+
+    // Randomly selects 10% of documents.
     for (int index = 0; index < totalSetCount * 10; index++) {
       indexes.add(index);
     }
@@ -215,14 +224,14 @@ public class AutoIndexingExperiment {
   @Test
   public void testCombinesIndexedWithNonIndexedResults() throws Exception {
     // Every set contains 10 documents
-    final int numOfSet = 100;
+    final int numOfSet = 1000;
     // could overflow. Currently it is safe when numOfSet set to 1000 and running on macbook M1
     long totalBeforeIndex = 0;
     long totalAfterIndex = 0;
     long totalDocumentCount = 0;
     long totalResultCount = 0;
 
-    // Temperate heuristic
+    // Temperate heuristic, gets when setting numOfSet to 1000.
     double without = 3.7;
     double with = 4.9;
 
@@ -231,33 +240,38 @@ public class AutoIndexingExperiment {
       for (int portion = 0; portion <= 10; portion++) {
         for (int numOfFields = 1; numOfFields <= 31; numOfFields += 10) {
           String basePath = "documentCount" + totalSetCount;
-          // Auto indexing
           Query query = query(basePath).filter(filter("match", "==", true));
+
+          // Creates a full matched index for given query.
           indexManager.createTargetIndices(query.toTarget());
+
           createTestingCollection(basePath, totalSetCount, portion, numOfFields);
           createMutationForCollection(basePath, totalSetCount);
 
-          QueryContext counterWithoutIndex = new QueryContext();
+          // runs query using full collection scan.
+          QueryContext contextWithoutIndex = new QueryContext();
           long beforeAutoStart = System.nanoTime();
           DocumentSet results =
-              expectFullCollectionScan(() -> runQuery(query, false, counterWithoutIndex));
+              expectFullCollectionScan(() -> runQuery(query, false, contextWithoutIndex));
           long beforeAutoEnd = System.nanoTime();
           long millisecondsBeforeAuto =
               TimeUnit.MILLISECONDS.convert(
                   (beforeAutoEnd - beforeAutoStart), TimeUnit.NANOSECONDS);
           totalBeforeIndex += (beforeAutoEnd - beforeAutoStart);
-          totalDocumentCount += counterWithoutIndex.getDocumentReadCount();
+          totalDocumentCount += contextWithoutIndex.getDocumentReadCount();
           assertEquals(portion * totalSetCount, results.size());
 
-          QueryContext counterWithIndex = new QueryContext();
+          // runs query using index look up.
+          QueryContext contextWithIndex = new QueryContext();
           long autoStart = System.nanoTime();
-          results = expectOptimizedCollectionScan(() -> runQuery(query, true, counterWithIndex));
+          results = expectOptimizedCollectionScan(() -> runQuery(query, true, contextWithIndex));
           long autoEnd = System.nanoTime();
           long millisecondsAfterAuto =
               TimeUnit.MILLISECONDS.convert((autoEnd - autoStart), TimeUnit.NANOSECONDS);
           totalAfterIndex += (autoEnd - autoStart);
           assertEquals(portion * totalSetCount, results.size());
           totalResultCount += results.size();
+
           if (millisecondsBeforeAuto > millisecondsAfterAuto) {
             System.out.println(
                 "Auto Indexing saves time when total of documents inside collection is "
@@ -268,7 +282,7 @@ public class AutoIndexingExperiment {
                     + numOfFields
                     + " fields.\n"
                     + "Weight result for without auto indexing is "
-                    + without * counterWithoutIndex.getDocumentReadCount()
+                    + without * contextWithoutIndex.getDocumentReadCount()
                     + ". And weight result for auto indexing is "
                     + with * results.size());
           }

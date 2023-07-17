@@ -117,12 +117,14 @@ public class QueryEngine {
     return result;
   }
 
-  public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQueryTest(
-      Query query, boolean autoIndexing, QueryContext counter) {
+  // Used for auto indexing experiment, allows test running specifically with or without field
+  // indexes
+  public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQueryForTest(
+      Query query, boolean usingIndex, QueryContext counter) {
     hardAssert(initialized, "initialize() not called");
 
     ImmutableSortedMap<DocumentKey, Document> result;
-    if (autoIndexing) {
+    if (usingIndex) {
       result = performQueryUsingIndex(query);
       if (result == null) {
         fail("createTargetIndices fails");
