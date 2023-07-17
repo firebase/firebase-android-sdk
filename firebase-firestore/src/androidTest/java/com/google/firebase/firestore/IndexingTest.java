@@ -118,6 +118,7 @@ public class IndexingTest {
             .build();
     db.setFirestoreSettings(settings);
 
+    // Based on current heuristic, collection document counts (3) > 2 * resultSize (1).
     CollectionReference collection =
         testCollectionWithDocs(
             map(
@@ -135,6 +136,9 @@ public class IndexingTest {
     assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().disableIndexAutoCreation());
 
     results = waitFor(collection.whereEqualTo("match", true).get());
+    assertEquals(1, results.size());
+
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().deleteAllIndexes());
     assertEquals(1, results.size());
   }
 
@@ -143,6 +147,7 @@ public class IndexingTest {
     // Use persistent disk cache (default)
     FirebaseFirestore db = testFirestore();
 
+    // Based on current heuristic, collection document counts (3) > 2 * resultSize (1).
     CollectionReference collection =
         testCollectionWithDocs(
             map(
@@ -160,6 +165,9 @@ public class IndexingTest {
     assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().disableIndexAutoCreation());
 
     results = waitFor(collection.whereEqualTo("match", true).get());
+    assertEquals(1, results.size());
+
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().deleteAllIndexes());
     assertEquals(1, results.size());
   }
 
