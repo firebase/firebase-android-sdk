@@ -246,7 +246,7 @@ public class AutoIndexingExperiment {
               TimeUnit.MILLISECONDS.convert(
                   (beforeAutoEnd - beforeAutoStart), TimeUnit.NANOSECONDS);
           totalBeforeIndex += (beforeAutoEnd - beforeAutoStart);
-          totalDocumentCount += counterWithoutIndex.getDocumentCount();
+          totalDocumentCount += counterWithoutIndex.getDocumentReadCount();
           assertEquals(portion * totalSetCount, results.size());
 
           QueryContext counterWithIndex = new QueryContext();
@@ -268,7 +268,7 @@ public class AutoIndexingExperiment {
                     + numOfFields
                     + " fields.\n"
                     + "Weight result for without auto indexing is "
-                    + without * counterWithoutIndex.getDocumentCount()
+                    + without * counterWithoutIndex.getDocumentReadCount()
                     + ". And weight result for auto indexing is "
                     + with * results.size());
           }
