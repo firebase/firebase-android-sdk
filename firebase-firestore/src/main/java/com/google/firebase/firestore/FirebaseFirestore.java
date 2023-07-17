@@ -406,6 +406,12 @@ public class FirebaseFirestore {
     return client.configureFieldIndexes(parsedIndexes);
   }
 
+  /**
+   * Returns the PersistentCache Index Manager used by this {@code FirebaseFirestore} object.
+   *
+   * @return The {@code PersistentCacheIndexManager} instance or null if local persistent storage is
+   *     not in use.
+   */
   // TODO(csi): Remove the `hide` and scope annotations.
   /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY)

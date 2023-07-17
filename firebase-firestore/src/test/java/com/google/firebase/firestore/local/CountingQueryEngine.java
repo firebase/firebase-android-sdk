@@ -180,7 +180,7 @@ class CountingQueryEngine extends QueryEngine {
 
       @Override
       public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-          Query query, IndexOffset offset, Set<DocumentKey> mutatedKeys) {
+          Query query, IndexOffset offset, @NonNull Set<DocumentKey> mutatedKeys) {
         return getDocumentsMatchingQuery(query, offset, mutatedKeys, null);
       }
 

@@ -78,6 +78,7 @@ public interface IndexManager {
   /** Removes the given field index and deletes all index values. */
   void deleteFieldIndex(FieldIndex index);
 
+  /** Creates a full matched field index which serves the given target. */
   void createTargetIndices(Target target);
 
   /**

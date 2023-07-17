@@ -258,6 +258,8 @@ class LocalDocumentsView {
    *
    * @param query The query to match documents against.
    * @param offset Read time and key to start scanning by (exclusive).
+   * @param context A optional tracker to keep a record of important details during database local
+   *     query execution.
    */
   ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query, IndexOffset offset, @Nullable QueryContext context) {
@@ -271,6 +273,12 @@ class LocalDocumentsView {
     }
   }
 
+  /**
+   * Performs a query against the local view of all documents.
+   *
+   * @param query The query to match documents against.
+   * @param offset Read time and key to start scanning by (exclusive).
+   */
   ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query, IndexOffset offset) {
     return getDocumentsMatchingQuery(query, offset, null);

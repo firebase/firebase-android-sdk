@@ -18,6 +18,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import com.google.firebase.firestore.core.FirestoreClient;
 
+/**
+ * A {@code PersistentCacheIndexManager} which you can config persistent cache indexes used for
+ * local query execution.
+ *
+ * <p>To use, calling {@link FirebaseFirestore#getPersistentCacheIndexManager()} to get an instance.
+ */
 // TODO(csi): Remove the `hide` and scope annotations.
 /** @hide */
 @RestrictTo(RestrictTo.Scope.LIBRARY)
@@ -29,10 +35,20 @@ public class PersistentCacheIndexManager {
     this.client = client;
   }
 
+  /**
+   * Enables SDK to create persistent cache indexes automatically for local query execution when SDK
+   * believes cache indexes can help improves performance.
+   *
+   * <p>This feature is disabled by default.
+   */
   public void enableIndexAutoCreation() {
     client.enableIndexAutoCreation();
   }
 
+  /**
+   * Stops creating persistent cache indexes automatically for local query execution. The indexes
+   * which have been created by calling {@link #enableIndexAutoCreation()} still take effect.
+   */
   public void disableIndexAutoCreation() {
     client.disableIndexAutoCreation();
   }

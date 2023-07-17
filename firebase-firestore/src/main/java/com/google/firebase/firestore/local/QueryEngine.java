@@ -105,6 +105,10 @@ public class QueryEngine {
     return result;
   }
 
+  /**
+   * Decides whether SDK should create a full matched field index for this query based on query
+   * context and query result size.
+   */
   // TODO(csi): Auto experiment data.
   private void CreateCacheIndexes(Query query, QueryContext context, int resultSize) {
     String decisionStr = "";

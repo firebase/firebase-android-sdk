@@ -14,9 +14,11 @@
 
 package com.google.firebase.firestore.local;
 
+/** A tracker to keep a record of important details during database local query execution. */
 public class QueryContext {
   public QueryContext() {}
 
+  /** Counts the number of documents passed through during local query execution. */
   private int documentReadCount = 0;
 
   public int getDocumentReadCount() {
