@@ -24,7 +24,7 @@ import androidx.annotation.Nullable;
  *
  * <p>This is the default garbage collector unless specified explicitly otherwise.
  *
- * <p>To use, create an instance using {@link MemoryEagerGcSettings#newBuilder().build()}, then set
+ * <p>To use, create an instance using {@code MemoryEagerGcSettings#newBuilder().build()}, then set
  * the instance to {@code MemoryCacheSettings.Builder#setGcSettings}, and use the built {@code
  * MemoryCacheSettings} instance to configure the Firestore SDK.
  */

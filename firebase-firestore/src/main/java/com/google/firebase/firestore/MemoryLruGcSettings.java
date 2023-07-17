@@ -19,7 +19,7 @@ import androidx.annotation.NonNull;
 /**
  * Configures the SDK to use a Least-Recently-Used garbage collector for memory cache.
  *
- * <p>To use, create an instance using {@link MemoryLruGcSettings#newBuilder().build()}, then set
+ * <p>To use, create an instance using {@code MemoryLruGcSettings#newBuilder().build()}, then set
  * the instance to {@code MemoryCacheSettings.Builder#setGcSettings}, and use the built {@code
  * MemoryCacheSettings} instance to configure the Firestore SDK.
  */
@@ -43,7 +43,8 @@ public final class MemoryLruGcSettings implements MemoryGarbageCollectorSettings
      * a guarantee that the cache will stay below that size, only that if the cache exceeds the
      * given size, cleanup will be attempted.
      *
-     * <p>A default size of 100MB is used if unset. The minimum value to set is 1 MB.
+     * <p>A default size of 100MB (100 * 1024 * 1024) is used if unset. The minimum value to set is
+     * 1 MB (1024 * 1024).
      *
      * @return this {@code Builder} instance.
      */
@@ -70,8 +71,8 @@ public final class MemoryLruGcSettings implements MemoryGarbageCollectorSettings
    * guarantee that the cache will stay below that size, only that if the cache exceeds the given
    * size, cleanup will be attempted.
    *
-   * <p>By default, persistent cache is enabled with a cache size of 100 MB. The minimum value is 1
-   * MB.
+   * <p>By default, memory LRU cache is enabled with a cache size of 100MB (100 * 1024 * 1024). The
+   * minimum value is 1 MB (1024 * 1024).
    */
   public long getSizeBytes() {
     return sizeBytes;
