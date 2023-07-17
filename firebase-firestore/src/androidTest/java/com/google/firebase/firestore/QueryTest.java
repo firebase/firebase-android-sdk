@@ -1068,21 +1068,18 @@ public class QueryTest {
       }
       assertWithMessage("createdDocuments").that(createdDocuments).hasSize(100);
 
-      // Delete 50 of the 100 documents. Do this in a transaction, rather than
-      // DocumentReference.delete(), to avoid affecting the local cache.
+      // Delete 50 of the 100 documents. Use a WriteBatch, rather than DocumentReference.delete(),
+      // to avoid affecting the local cache.
       HashSet<String> deletedDocumentIds = new HashSet<>();
-      waitFor(
-          collection
-              .getFirestore()
-              .runTransaction(
-                  transaction -> {
-                    for (int i = 0; i < createdDocuments.size(); i += 2) {
-                      DocumentReference documentToDelete = createdDocuments.get(i);
-                      transaction.delete(documentToDelete);
-                      deletedDocumentIds.add(documentToDelete.getId());
-                    }
-                    return null;
-                  }));
+      {
+        WriteBatch writeBatchForDocumentDeletes = collection.getFirestore().batch();
+        for (int i = 0; i < createdDocuments.size(); i += 2) {
+          DocumentReference documentToDelete = createdDocuments.get(i);
+          writeBatchForDocumentDeletes.delete(documentToDelete);
+          deletedDocumentIds.add(documentToDelete.getId());
+        }
+        waitFor(writeBatchForDocumentDeletes.commit());
+      }
       assertWithMessage("deletedDocumentIds").that(deletedDocumentIds).hasSize(50);
 
       // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
@@ -1240,22 +1237,15 @@ public class QueryTest {
           .containsExactlyElementsIn(testDocIds);
     }
 
-    // Delete one of the documents so that the next call to getDocs() will experience an existence
-    // filter mismatch. Do this deletion in a transaction, rather than using deleteDoc(), to avoid
+    // Delete one of the documents so that the next call to collection.get() will experience an
+    // existence filter mismatch. Use a WriteBatch, rather than DocumentReference.delete(), to avoid
     // affecting the local cache.
     DocumentReference documentToDelete = collection.document("DocumentToDelete");
-    waitFor(
-        collection
-            .getFirestore()
-            .runTransaction(
-                transaction -> {
-                  DocumentSnapshot documentToDeleteSnapshot = transaction.get(documentToDelete);
-                  assertWithMessage("documentToDeleteSnapshot.exists()")
-                      .that(documentToDeleteSnapshot.exists())
-                      .isTrue();
-                  transaction.delete(documentToDelete);
-                  return null;
-                }));
+    {
+      WriteBatch writeBatchForDocumentDeletes = collection.getFirestore().batch();
+      writeBatchForDocumentDeletes.delete(documentToDelete);
+      waitFor(writeBatchForDocumentDeletes.commit());
+    }
 
     // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
     // existence filter rather than "delete" events when the query is resumed.
