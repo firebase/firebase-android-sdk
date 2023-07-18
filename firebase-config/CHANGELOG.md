@@ -1,5 +1,12 @@
 # Unreleased
 
+* [changed] Internal improvements to support Remote Config real-time updates.
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-config` library. The Kotlin extensions library has no additional
+updates.
+
 
 # 21.4.0
 * [unchanged] Updated to accommodate the release of the updated

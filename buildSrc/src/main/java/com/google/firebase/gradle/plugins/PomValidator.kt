@@ -43,10 +43,15 @@ abstract class PomValidator : DefaultTask() {
 
   @TaskAction
   fun run() {
-    var diff = diffWithPomFromURL(getLatestReleasePomUrl())
+    try {
+      var diff = diffWithPomFromURL(getLatestReleasePomUrl())
 
-    if (diff.isNotEmpty()) {
-      throw GradleException("Dependency version errors found:\n${diff}")
+      if (diff.isNotEmpty()) {
+        throw GradleException("Dependency version errors found:\n${diff}")
+      }
+    } catch (_: java.io.FileNotFoundException) {
+      // Gmaven artifact doesn't exist.
+      return
     }
   }
 

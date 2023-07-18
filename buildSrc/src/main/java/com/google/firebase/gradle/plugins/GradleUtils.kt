@@ -58,6 +58,38 @@ fun Provider<File>.childFile(path: String) = map { File("${it.path}/$path") }
 fun File.childFile(childPath: String) = File("$path/$childPath")
 
 /**
+ * Rewrites the lines of a file.
+ *
+ * The lines of the file are first read and then transformed by the provided `block` function. The
+ * transformed lines are then joined together with a newline character and written back to the file.
+ *
+ * If the `terminateWithNewline` parameter is set to `false`, the file will not be terminated with a
+ * newline character.
+ *
+ * @param terminateWithNewline Whether to terminate the file with a newline character. Defaults to
+ * `true`.
+ * @param block A function that takes a string as input and returns a new string. This function is
+ * used to transform the lines of the file before they are rewritten.
+ *
+ * ```
+ * val file = File("my-file.txt")
+ *
+ * // Rewrite the lines of the file, replacing all spaces with tabs.
+ * file.rewriteLines { it.replace(" ", "\t") }
+ *
+ * // Rewrite the lines of the file, capitalizing the first letter of each word.
+ * file.rewriteLines { it.capitalizeWords() }
+ * ```
+ *
+ * @see [readLines]
+ * @see [writeText]
+ */
+fun File.rewriteLines(terminateWithNewline: Boolean = true, block: (String) -> String) {
+  val newLines = readLines().map(block)
+  writeText(newLines.joinToString("\n").let { if (terminateWithNewline) it + "\n" else it })
+}
+
+/**
  * Provides a temporary file for use during the task.
  *
  * Creates a file under the [temporaryDir][DefaultTask.getTemporaryDir] of the task, and should be
