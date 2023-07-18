@@ -15,7 +15,6 @@
 package com.google.firebase.functions.ktx
 
 import androidx.annotation.Keep
-import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
@@ -23,6 +22,7 @@ import com.google.firebase.functions.BuildConfig
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.functions.HttpsCallableOptions
 import com.google.firebase.functions.HttpsCallableReference
+import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 import java.net.URL
 

@@ -44,17 +44,18 @@ android {
 }
 
 dependencies {
-  implementation(project(":firebase-common"))
-  implementation("com.google.firebase:firebase-components:17.1.0")
-  implementation(project(":firebase-common:ktx"))
-  implementation(project(":firebase-functions"))
-  implementation(libs.kotlin.stdlib)
-  implementation(libs.androidx.annotation)
-  implementation(libs.playservices.tasks)
+  api(project(":firebase-functions"))
+  androidTestImplementation(project(":firebase-common"))
+  androidTestImplementation("com.google.firebase:firebase-components:17.1.0")
+  androidTestImplementation(project(":firebase-common:ktx"))
 
   androidTestImplementation(libs.junit)
   androidTestImplementation(libs.truth)
   androidTestImplementation(libs.androidx.test.runner)
+
+  testImplementation(project(":firebase-common"))
+  testImplementation("com.google.firebase:firebase-components:17.1.0")
+  testImplementation(project(":firebase-common:ktx"))
 
   testImplementation(libs.robolectric)
   testImplementation(libs.junit)
