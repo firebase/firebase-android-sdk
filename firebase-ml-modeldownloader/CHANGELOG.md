@@ -1,4 +1,5 @@
 # Unreleased
+* [unchanged] Updated internal Dagger dependency.
 
 # 24.1.2
 * [changed] Internal infrastructure improvements.
