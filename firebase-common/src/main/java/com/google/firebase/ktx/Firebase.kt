@@ -19,7 +19,6 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-import com.google.firebase.platforminfo.LibraryVersionComponent
 
 /**
  * Single access point to all firebase SDKs from Kotlin.
@@ -56,8 +55,6 @@ internal const val LIBRARY_NAME: String = "fire-core-ktx"
 @Keep
 class FirebaseCommonKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> {
-    return listOf(
-      LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
-    )
+    return listOf()
   }
 }
