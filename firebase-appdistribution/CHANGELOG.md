@@ -1,6 +1,5 @@
 # Unreleased
 * [feature] Improved development mode to allow all API calls to be made without having to sign in.
-* [unchanged] Updated internal Dagger dependency.
 
 # 16.0.0-beta08
 * [fixed] Fixed an issue where a crash happened whenever a feedback
