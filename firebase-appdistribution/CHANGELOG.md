@@ -1,5 +1,6 @@
 # Unreleased
 * [feature] Improved development mode to allow all API calls to be made without having to sign in.
+* [fixed] Updated the third-party license file to include Dagger's license.
 
 # 16.0.0-beta08
 * [fixed] Fixed an issue where a crash happened whenever a feedback
@@ -69,4 +70,3 @@ The [appdistro] Android library with Kotlin extensions is now available in
 beta. The Kotlin extensions library transitively includes the base
 `firebase-app-distribution` library. To learn more, visit the
 [[appdistro] KTX reference documentation](/docs/reference/kotlin/com/google/firebase/appdistribution/ktx/package-summary).
-
