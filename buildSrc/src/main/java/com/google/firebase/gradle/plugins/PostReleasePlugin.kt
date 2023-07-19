@@ -27,6 +27,7 @@ import org.gradle.kotlin.dsl.register
 class PostReleasePlugin : Plugin<Project> {
   override fun apply(project: Project) {
     registerVersionBumpTask(project)
+    registerMoveUnreleasedChangesTask(project)
   }
 
   /**
