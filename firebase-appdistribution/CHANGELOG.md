@@ -45,10 +45,8 @@
 # 16.0.0-beta02
 * [fixed] Fixed a bug that prevented testers from signing in when the app had
 an underscore in the package name.
-
 * [fixed] Fixed a UI bug where the APK download notification displayed the
 incorrect error message.
-
 * [changed] Internal improvements to tests.
 
 

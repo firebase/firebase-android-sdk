@@ -1,7 +1,6 @@
 # Unreleased
 * [feature] Improved development mode to allow all API calls to be made without having to sign in.
 
-
 # 16.0.0-beta08
 * [fixed] Fixed an issue where a crash happened whenever a feedback
   notification was shown on devices running Android 4.4 and lower.
@@ -88,3 +87,4 @@ API-only library: `firebase-appdistribution-api-ktx`.
 This new Kotlin extensions library transitively includes the
 `firebase-appdistribution-api` library. The Kotlin extensions library has no
 additional updates.
+
