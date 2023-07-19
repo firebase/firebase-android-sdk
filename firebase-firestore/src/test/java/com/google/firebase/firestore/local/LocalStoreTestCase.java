@@ -234,6 +234,10 @@ public abstract class LocalStoreTestCase {
     queryEngine.setRelativeIndexReadCostPerDocument(newCost);
   }
 
+  protected void setMinCollectionSizeToAutoCreateIndex(int newMin) {
+    queryEngine.setMinCollectionSizeToAutoCreateIndex(newMin);
+  }
+
   private void releaseTarget(int targetId) {
     localStore.releaseTarget(targetId);
   }
