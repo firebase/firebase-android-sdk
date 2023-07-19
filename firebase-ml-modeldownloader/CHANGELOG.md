@@ -1,5 +1,7 @@
 # Unreleased
 * [unchanged] Updated internal Dagger dependency.
+* [fixed] Updated the third-party license file to include Dagger's license.
+
 
 # 24.1.2
 * [changed] Internal infrastructure improvements.

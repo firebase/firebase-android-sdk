@@ -61,6 +61,10 @@ android {
     }
 }
 
+thirdPartyLicenses {
+    add 'Dagger', "${rootDir}/third_party/licenses/apache-2.0.txt"
+}
+
 dependencies {
     implementation 'com.google.firebase:firebase-encoders:17.0.0'
     implementation 'com.google.firebase:firebase-encoders-json:18.0.0'
