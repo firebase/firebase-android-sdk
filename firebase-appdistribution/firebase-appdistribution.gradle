@@ -46,6 +46,10 @@ android {
     }
 }
 
+thirdPartyLicenses {
+    add 'Dagger', "${rootDir}/third_party/licenses/apache-2.0.txt"
+}
+
 dependencies {
     implementation project(':firebase-appdistribution-api')
     implementation 'com.google.firebase:firebase-components:17.1.0'
