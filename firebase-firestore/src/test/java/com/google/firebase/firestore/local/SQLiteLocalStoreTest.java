@@ -373,6 +373,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     int targetId = allocateQuery(query);
 
     enableIndexAutoCreation();
+    setMinCollectionSizeToAutoCreateIndex(0);
 
     applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
     applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", false)), targetId));
@@ -397,11 +398,39 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
   }
 
   @Test
+  public void testIndexAutoCreationDoesNotWorkWhenCollectionSizeIsTooSmall() {
+    Query query = query("coll").filter(filter("matches", "==", true));
+    int targetId = allocateQuery(query);
+
+    enableIndexAutoCreation();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("matches", false)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("matches", true)), targetId));
+
+    // SDK will not create indexes since collection size is too small.
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    backfillIndexes();
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/f", 20, map("matches", true)), targetId));
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 3);
+    assertQueryReturned("coll/a", "coll/e", "coll/f");
+  }
+
+  @Test
   public void testIndexAutoCreationWorksWhenBackfillerRunsHalfway() {
     Query query = query("coll").filter(filter("matches", "==", true));
     int targetId = allocateQuery(query);
 
     enableIndexAutoCreation();
+    setMinCollectionSizeToAutoCreateIndex(0);
 
     applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
     applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", false)), targetId));
@@ -433,6 +462,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     int targetId = allocateQuery(query);
 
     enableIndexAutoCreation();
+    setMinCollectionSizeToAutoCreateIndex(0);
 
     applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
     applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", false)), targetId));
@@ -464,6 +494,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     int targetId1 = allocateQuery(query1);
 
     enableIndexAutoCreation();
+    setMinCollectionSizeToAutoCreateIndex(0);
 
     applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId1));
     applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", false)), targetId1));
@@ -509,6 +540,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     int targetId = allocateQuery(query);
 
     enableIndexAutoCreation();
+    setMinCollectionSizeToAutoCreateIndex(0);
 
     applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
     applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", false)), targetId));

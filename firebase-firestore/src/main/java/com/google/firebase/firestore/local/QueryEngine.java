@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
@@ -60,12 +61,16 @@ import javax.annotation.Nullable;
  */
 public class QueryEngine {
   private static final String LOG_TAG = "QueryEngine";
+  private static final int MIN_COLLECTION_SIZE_TO_AUTO_CREATE_INDEX = 100;
 
   private LocalDocumentsView localDocumentsView;
   private IndexManager indexManager;
   private boolean initialized;
 
   private boolean automaticIndexingEnabled = false;
+
+  /** SDK only decides whether it should create index when collection size is larger than this. */
+  private int minCollectionSizeToAutoCreateIndex = MIN_COLLECTION_SIZE_TO_AUTO_CREATE_INDEX;
 
   public void initialize(LocalDocumentsView localDocumentsView, IndexManager indexManager) {
     this.localDocumentsView = localDocumentsView;
@@ -111,6 +116,15 @@ public class QueryEngine {
    */
   // TODO(csi): Auto experiment data.
   private void CreateCacheIndexes(Query query, QueryContext context, int resultSize) {
+    if (context.getDocumentReadCount() < minCollectionSizeToAutoCreateIndex) {
+      Logger.debug(
+          LOG_TAG,
+          "SDK will only creates cache indexes for collection contains more than or equal to "
+              + "%s documents.",
+          minCollectionSizeToAutoCreateIndex);
+      return;
+    }
+
     String decisionStr = "";
     // If evaluation is updated, please update tests in SQLiteLocalStoreTest.java
     if (context.getDocumentReadCount() > 2 * resultSize) {
@@ -304,5 +318,10 @@ public class QueryEngine {
       remainingResults = remainingResults.insert(entry.getKey(), entry);
     }
     return remainingResults;
+  }
+
+  @VisibleForTesting
+  void setMinCollectionSizeToAutoCreateIndex(int newMin) {
+    minCollectionSizeToAutoCreateIndex = newMin;
   }
 }
