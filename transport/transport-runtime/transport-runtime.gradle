@@ -64,14 +64,8 @@ firebaseLibrary {
     }
 }
 
-vendor {
-    // Integration tests use dagger classes that are not used in the main SDK,
-    // so we disable dead code elimination to ensure those classes are preserved.
-    optimize = false
-}
-
 android {
-    namespace "com.google.android.datatransport.runtime"    
+    namespace "com.google.android.datatransport.runtime"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
@@ -111,15 +105,15 @@ dependencies {
     implementation "com.google.firebase:firebase-encoders-proto:16.0.0"
     annotationProcessor project(":encoders:firebase-encoders-processor")
 
-    vendor ('com.google.dagger:dagger:2.27') {
+    vendor (libs.dagger.dagger) {
         exclude group: "javax.inject", module: "javax.inject"
     }
+    annotationProcessor libs.dagger.compiler
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
     compileOnly "com.google.errorprone:error_prone_annotations:2.9.0"
 
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"
-    annotationProcessor 'com.google.dagger:dagger-compiler:2.27'
 
     testImplementation 'junit:junit:4.13-beta-2'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
