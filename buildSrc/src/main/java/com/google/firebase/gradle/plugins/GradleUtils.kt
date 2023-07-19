@@ -110,6 +110,25 @@ fun DefaultTask.tempFile(path: String) = provider { temporaryDir.childFile(path)
 fun File.listFilesOrEmpty() = listFiles().orEmpty()
 
 /**
+ * Copies this file to the specified directory.
+ *
+ * The new file will retain the same [name][File.getName] and [extension][File.extension] as this
+ * file.
+ *
+ * @param target The directory to copy the file to.
+ * @param overwrite Whether to overwrite the file if it already exists.
+ * @param bufferSize The size of the buffer to use for the copy operation.
+ * @return The new file.
+ *
+ * @see copyTo
+ */
+fun File.copyToDirectory(
+  target: File,
+  overwrite: Boolean = false,
+  bufferSize: Int = DEFAULT_BUFFER_SIZE
+): File = copyTo(target.childFile(name), overwrite, bufferSize)
+
+/**
  * Submits a piece of work to be executed asynchronously.
  *
  * More Kotlin friendly variant of the existing [WorkQueue.submit]
