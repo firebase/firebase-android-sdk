@@ -23,6 +23,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.auto.value.AutoValue;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.remote.WatchChangeAggregator.BloomFilterApplicationStatus;
 import com.google.firestore.v1.BloomFilter;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
@@ -168,13 +169,13 @@ final class TestingHooks {
         ExistenceFilter existenceFilter,
         DatabaseId databaseId,
         @Nullable com.google.firebase.firestore.remote.BloomFilter bloomFilter,
-        boolean bloomFilterApplied) {
+        BloomFilterApplicationStatus bloomFilterStatus) {
       return create(
           localCacheCount,
           existenceFilter.getCount(),
           databaseId.getProjectId(),
           databaseId.getDatabaseId(),
-          ExistenceFilterBloomFilterInfo.from(bloomFilter, bloomFilterApplied, existenceFilter));
+          ExistenceFilterBloomFilterInfo.from(bloomFilter, bloomFilterStatus, existenceFilter));
     }
   }
 
@@ -214,7 +215,7 @@ final class TestingHooks {
     @Nullable
     static ExistenceFilterBloomFilterInfo from(
         @Nullable com.google.firebase.firestore.remote.BloomFilter bloomFilter,
-        boolean bloomFilterApplied,
+        BloomFilterApplicationStatus bloomFilterStatus,
         ExistenceFilter existenceFilter) {
       BloomFilter unchangedNames = existenceFilter.getUnchangedNames();
       if (unchangedNames == null) {
@@ -222,7 +223,7 @@ final class TestingHooks {
       }
       return create(
           bloomFilter,
-          bloomFilterApplied,
+          /*bloomFilterApplied=*/ bloomFilterStatus == BloomFilterApplicationStatus.SUCCESS,
           unchangedNames.getHashCount(),
           unchangedNames.getBits().getBitmap().size(),
           unchangedNames.getBits().getPadding());
