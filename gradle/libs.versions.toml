@@ -14,6 +14,8 @@ truth = "1.1.2"
 protobufjavautil = "3.21.11"
 kotest = "5.5.5"
 quickcheck = "0.6"
+androidx-test-core="1.5.0"
+androidx-test-junit="1.1.5"
 
 [libraries]
 android-lint = { module = "com.android.tools.lint:lint", version.ref = "android-lint" }
@@ -42,9 +44,9 @@ playservices-basement = { module = "com.google.android.gms:play-services-basemen
 playservices-tasks = { module = "com.google.android.gms:play-services-tasks", version = "18.0.2" }
 
 # Test libs
-androidx-test-core = { module = "androidx.test:core", version = "1.5.0" }
-androidx-test-junit = { module = "androidx.test.ext:junit", version = "1.1.4" }
-androidx-test-rules = { module = "androidx.test:rules", version = "1.5.0" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
+androidx-test-junit = { module = "androidx.test.ext:junit", version.ref = "androidx-test-junit" }
+androidx-test-rules = { module = "androidx.test:rules", version.ref = "androidx-test-core" }
 androidx-test-runner = { module = "androidx.test:runner", version = "1.5.2" }
 junit = { module = "junit:junit", version = "4.13.2" }
 kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
