@@ -815,7 +815,7 @@ public class TargetIndexMatcherTest {
   private void validateBuildTargetIndexCreateFullMatchIndex(Query query) {
     Target target = query.toTarget();
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
-    FieldIndex expectedIndex = targetIndexMatcher.BuildTargetIndex();
+    FieldIndex expectedIndex = targetIndexMatcher.buildTargetIndex();
     assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
     // Check the index created is a FULL MATCH index
     assertTrue(expectedIndex.getSegments().size() >= target.getSegmentCount());

@@ -105,7 +105,7 @@ public class QueryEngine {
     QueryContext context = new QueryContext();
     result = executeFullCollectionScan(query, context);
     if (result != null && automaticIndexingEnabled) {
-      CreateCacheIndexes(query, context, result.size());
+      createCacheIndexes(query, context, result.size());
     }
     return result;
   }
@@ -115,7 +115,7 @@ public class QueryEngine {
    * context and query result size.
    */
   // TODO(csi): Auto experiment data.
-  private void CreateCacheIndexes(Query query, QueryContext context, int resultSize) {
+  private void createCacheIndexes(Query query, QueryContext context, int resultSize) {
     if (context.getDocumentReadCount() < minCollectionSizeToAutoCreateIndex) {
       Logger.debug(
           LOG_TAG,

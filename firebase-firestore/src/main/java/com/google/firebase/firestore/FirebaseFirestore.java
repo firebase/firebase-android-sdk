@@ -49,6 +49,7 @@ import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.remote.FirestoreChannel;
 import com.google.firebase.firestore.remote.GrpcMetadataProvider;
+import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.ByteBufferInputStream;
 import com.google.firebase.firestore.util.Executors;
@@ -63,6 +64,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -105,7 +107,9 @@ public class FirebaseFirestore {
   private volatile FirestoreClient client;
   private final GrpcMetadataProvider metadataProvider;
 
-  @Nullable private PersistentCacheIndexManager persistentCacheIndexManager;
+  @Nullable
+  private AtomicReference<PersistentCacheIndexManager> persistentCacheIndexManager =
+      new AtomicReference<>();
 
   @NonNull
   private static FirebaseApp getDefaultFirebaseApp() {
@@ -418,14 +422,15 @@ public class FirebaseFirestore {
   @Nullable
   public PersistentCacheIndexManager getPersistentCacheIndexManager() {
     ensureClientConfigured();
-    if (persistentCacheIndexManager != null) {
-      return persistentCacheIndexManager;
-    }
+    Assert.hardAssertNonNull(
+        persistentCacheIndexManager, "persistentCacheIndexManager has not been initialized.");
+
     if (settings.isPersistenceEnabled()
         || settings.getCacheSettings() instanceof PersistentCacheSettings) {
-      persistentCacheIndexManager = new PersistentCacheIndexManager(client);
+      persistentCacheIndexManager.compareAndSet(null, new PersistentCacheIndexManager(client));
     }
-    return persistentCacheIndexManager;
+
+    return persistentCacheIndexManager.get();
   }
 
   /**
