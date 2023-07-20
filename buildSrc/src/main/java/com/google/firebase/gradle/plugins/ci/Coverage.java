@@ -98,7 +98,7 @@ public final class Coverage {
                         .getHtml()
                         .setDestination(
                             new File(reportsDir, firebaseLibrary.artifactId.get() + "/html"));
-                    reports.getXml().setEnabled(true);
+                    reports.getXml().getRequired().set(true);
                     reports
                         .getXml()
                         .setDestination(
