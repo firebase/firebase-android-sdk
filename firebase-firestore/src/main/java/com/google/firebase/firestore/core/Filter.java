@@ -32,7 +32,7 @@ public abstract class Filter {
   /** Returns a list of all filters that are contained within this filter */
   public abstract List<Filter> getFilters();
 
-  /** Returns the field of the first filter that's an inequality, or null if none. */
-  @Nullable
-  public abstract FieldPath getFirstInequalityField();
+  /** Returns a list of all field filters that's an inequality */
+  public abstract List<FieldFilter> getInequalityFilters();
+
 }

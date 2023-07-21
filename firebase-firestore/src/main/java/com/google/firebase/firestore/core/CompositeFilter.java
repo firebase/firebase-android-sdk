@@ -74,18 +74,18 @@ public class CompositeFilter extends Filter {
     return Collections.unmodifiableList(memoizedFlattenedFilters);
   }
 
-  /**
-   * Returns the first inequality filter contained within this composite filter. Returns {@code
-   * null} if it does not contain any inequalities.
-   */
-  @Override
-  public FieldPath getFirstInequalityField() {
-    FieldFilter found = findFirstMatchingFilter(f -> f.isInequality());
-    if (found != null) {
-      return found.getField();
+  public List<FieldFilter> getInequalityFilters() {
+    List<FieldFilter> flattenedFilters = getFlattenedFilters();
+    List<FieldFilter> inequalityFilters = new ArrayList<>();
+
+    for (FieldFilter filter : flattenedFilters) {
+        if (filter.isInequality()) {
+            inequalityFilters.add(filter);
+        }
     }
-    return null;
-  }
+
+    return inequalityFilters;
+}
 
   public boolean isConjunction() {
     return operator == Operator.AND;

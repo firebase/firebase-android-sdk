@@ -173,11 +173,12 @@ public class FieldFilter extends Filter {
   }
 
   @Override
-  public FieldPath getFirstInequalityField() {
+  public List<FieldFilter> getInequalityFilters() {
+    // We return a list of size one if it is an inequality filter, otherwise return an empty list.
     if (isInequality()) {
-      return getField();
+      return Collections.singletonList(this);
     }
-    return null;
+    return Collections.emptyList();
   }
 
   @Override
