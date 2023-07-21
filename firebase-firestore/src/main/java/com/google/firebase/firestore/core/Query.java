@@ -22,9 +22,7 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.util.Assert;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -135,6 +133,7 @@ public final class Query {
 
   /**
    * Returns true if this query does not specify any query constraints that could remove results.
+   * ???
    */
   public boolean matchesAllDocuments() {
     return filters.isEmpty()
@@ -194,7 +193,6 @@ public final class Query {
 
     return result;
   }
-    
 
   /**
    * Creates a new Query with an additional filter.
@@ -325,7 +323,7 @@ public final class Query {
     if (memoizedOrderBy == null) {
       List<OrderBy> res = new ArrayList<>();
       HashSet<String> explicitFields = new HashSet<String>();
-      
+
       // Any explicit order by fields should be added as is.
       for (OrderBy explicit : explicitSortOrder) {
         res.add(explicit);
@@ -339,30 +337,25 @@ public final class Query {
               ? explicitSortOrder.get(explicitSortOrder.size() - 1).getDirection()
               : Direction.ASCENDING;
 
-      // Any inequality fields not explicitly ordered should be implicitly ordered in a lexicographical
-    // order. When there are multiple inequality filters on the same field, the field should be added
-    // only once.
-    // Note: key field would be lexicographically ordered to the first by sorted set.       
-           
+      // Any inequality fields not explicitly ordered should be implicitly ordered in a
+      // lexicographical
+      // order. When there are multiple inequality filters on the same field, the field should be
+      // added
+      // only once.
+      // Note: key field would be lexicographically ordered to the first by sorted set.
+      SortedSet<FieldPath> inequalityFields = getInequalityFilterFields();
 
-
-    SortedSet<FieldPath> inequalityFields = getInequalityFilterFields();
-
-    for (FieldPath field : inequalityFields) {
-      if (!explicitFields.contains(field.canonicalString()) && !field.isKeyField()) {
-        res.add(OrderBy.getInstance(Direction.ASCENDING, field));
-        
+      for (FieldPath field : inequalityFields) {
+        if (!explicitFields.contains(field.canonicalString()) && !field.isKeyField()) {
+          res.add(OrderBy.getInstance(Direction.ASCENDING, field));
+        }
       }
-    }
-    
-    if (!explicitFields.has(FieldPath.keyField().canonicalString())) {
-      res.add(lastDirection.equals(Direction.ASCENDING) ? KEY_ORDERING_ASC : KEY_ORDERING_DESC);
 
-    }
+      if (!explicitFields.contains(FieldPath.KEY_PATH.canonicalString())) {
+        res.add(lastDirection.equals(Direction.ASCENDING) ? KEY_ORDERING_ASC : KEY_ORDERING_DESC);
+      }
 
-        
       memoizedOrderBy = Collections.unmodifiableList(res);
-      
     }
     return memoizedOrderBy;
   }

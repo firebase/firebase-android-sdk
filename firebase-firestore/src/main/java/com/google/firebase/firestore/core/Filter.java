@@ -14,9 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
-import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.FieldPath;
 import java.util.List;
 
 public abstract class Filter {
@@ -34,5 +32,4 @@ public abstract class Filter {
 
   /** Returns a list of all field filters that's an inequality */
   public abstract List<FieldFilter> getInequalityFilters();
-
 }

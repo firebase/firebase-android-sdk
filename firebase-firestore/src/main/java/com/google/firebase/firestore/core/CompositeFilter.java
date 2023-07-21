@@ -17,7 +17,6 @@ package com.google.firebase.firestore.core;
 import android.text.TextUtils;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.model.Document;
-import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.util.Function;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -74,18 +73,21 @@ public class CompositeFilter extends Filter {
     return Collections.unmodifiableList(memoizedFlattenedFilters);
   }
 
+  // Performs a depth-first search to find and return the inequality FieldFilters in the composite
+  // filter. Returns an empty array if none of the FieldFilters has inequality filters.
+  @Override
   public List<FieldFilter> getInequalityFilters() {
     List<FieldFilter> flattenedFilters = getFlattenedFilters();
     List<FieldFilter> inequalityFilters = new ArrayList<>();
 
     for (FieldFilter filter : flattenedFilters) {
-        if (filter.isInequality()) {
-            inequalityFilters.add(filter);
-        }
+      if (filter.isInequality()) {
+        inequalityFilters.add(filter);
+      }
     }
 
     return inequalityFilters;
-}
+  }
 
   public boolean isConjunction() {
     return operator == Operator.AND;
