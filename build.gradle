@@ -51,6 +51,8 @@ ext {
     googleTruthVersion = libs.versions.truth.get()
     grpcVersion = libs.versions.grpc.get()
     robolectricVersion = libs.versions.robolectric.get()
+    androidxTestCoreVersion = libs.versions.androidx.test.core.get()
+    androidxTestJUnitVersion = libs.versions.androidx.test.junit.get()
     protocVersion = libs.versions.protoc.get()
     javaliteVersion = libs.versions.javalite.get()
     protobufJavaUtilVersion = libs.versions.protobufjavautil.get()
