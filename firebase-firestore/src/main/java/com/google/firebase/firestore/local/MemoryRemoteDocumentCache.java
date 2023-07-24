@@ -142,7 +142,7 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
-    return getDocumentsMatchingQuery(query, offset, mutatedKeys, null);
+    return getDocumentsMatchingQuery(query, offset, mutatedKeys, /*context*/ null);
   }
 
   Iterable<Document> getDocuments() {

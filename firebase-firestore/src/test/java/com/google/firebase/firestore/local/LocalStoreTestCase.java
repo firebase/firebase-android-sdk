@@ -236,6 +236,10 @@ public abstract class LocalStoreTestCase {
     queryEngine.setMinCollectionSizeToAutoCreateIndex(newMin);
   }
 
+  protected void setRelativeIndexReadCost(int newCost) {
+    queryEngine.setRelativeIndexReadCost(newCost);
+  }
+
   private void releaseTarget(int targetId) {
     localStore.releaseTarget(targetId);
   }

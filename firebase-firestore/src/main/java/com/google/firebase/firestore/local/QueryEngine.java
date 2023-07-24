@@ -61,7 +61,16 @@ import javax.annotation.Nullable;
  */
 public class QueryEngine {
   private static final String LOG_TAG = "QueryEngine";
+
   private static final int MIN_COLLECTION_SIZE_TO_AUTO_CREATE_INDEX = 100;
+
+  // TODO(csi): update the temp cost.
+  /**
+   * This cost represents the evaluation result of (([index, docKey] + [docKey, docContent]) per
+   * document in the result set) / ([docKey, docContent] per documents in full collection scan)
+   * coming from experiment https://github.com/firebase/firebase-android-sdk/pull/5064.
+   */
+  private static final int RELATIVE_INDEX_READ_COST = 3;
 
   private LocalDocumentsView localDocumentsView;
   private IndexManager indexManager;
@@ -71,6 +80,8 @@ public class QueryEngine {
 
   /** SDK only decides whether it should create index when collection size is larger than this. */
   private int minCollectionSizeToAutoCreateIndex = MIN_COLLECTION_SIZE_TO_AUTO_CREATE_INDEX;
+
+  private int relativeIndexReadCost = RELATIVE_INDEX_READ_COST;
 
   public void initialize(LocalDocumentsView localDocumentsView, IndexManager indexManager) {
     this.localDocumentsView = localDocumentsView;
@@ -125,9 +136,16 @@ public class QueryEngine {
       return;
     }
 
+    if (Logger.isDebugEnabled()) {
+      Logger.debug(
+          LOG_TAG,
+          "Query scans %s local documents and returns %s documents as results.",
+          context.getDocumentReadCount(),
+          resultSize);
+    }
+
     String decisionStr = "";
-    // If evaluation is updated, please update tests in SQLiteLocalStoreTest.java
-    if (context.getDocumentReadCount() > 2 * resultSize) {
+    if (context.getDocumentReadCount() > relativeIndexReadCost * resultSize) {
       indexManager.createTargetIndices(query.toTarget());
     } else {
       decisionStr = " not";
@@ -136,11 +154,8 @@ public class QueryEngine {
     if (Logger.isDebugEnabled()) {
       Logger.debug(
           LOG_TAG,
-          "Query ran locally using a full collection scan, walking through %s documents in total "
-              + "and returning %s documents. The SDK has decided%s to create cache indexes "
-              + "for this query, as using cache indexes may%s help improve performance.",
-          context.getDocumentReadCount(),
-          resultSize,
+          "The SDK decides%s to create cache indexes for this query, as using cache indexes "
+              + "may%s help improve performance.",
           decisionStr,
           decisionStr);
     }
@@ -323,5 +338,10 @@ public class QueryEngine {
   @VisibleForTesting
   void setMinCollectionSizeToAutoCreateIndex(int newMin) {
     minCollectionSizeToAutoCreateIndex = newMin;
+  }
+
+  @VisibleForTesting
+  void setRelativeIndexReadCost(int newCost) {
+    relativeIndexReadCost = newCost;
   }
 }

@@ -102,6 +102,11 @@ class CountingQueryEngine extends QueryEngine {
     queryEngine.setMinCollectionSizeToAutoCreateIndex(newMin);
   }
 
+  @Override
+  public void setRelativeIndexReadCost(int newCost) {
+    queryEngine.setRelativeIndexReadCost(newCost);
+  }
+
   /**
    * Returns the number of documents returned by the RemoteDocumentCache's `getAll()` API (since the
    * last call to `resetCounts()`)
@@ -186,7 +191,7 @@ class CountingQueryEngine extends QueryEngine {
       @Override
       public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
           Query query, IndexOffset offset, @NonNull Set<DocumentKey> mutatedKeys) {
-        return getDocumentsMatchingQuery(query, offset, mutatedKeys, null);
+        return getDocumentsMatchingQuery(query, offset, mutatedKeys, /*context*/ null);
       }
 
       @Override

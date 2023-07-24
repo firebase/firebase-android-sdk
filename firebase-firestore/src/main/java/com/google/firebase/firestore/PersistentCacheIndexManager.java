@@ -22,7 +22,7 @@ import com.google.firebase.firestore.core.FirestoreClient;
  * A {@code PersistentCacheIndexManager} which you can config persistent cache indexes used for
  * local query execution.
  *
- * <p>To use, calling {@link FirebaseFirestore#getPersistentCacheIndexManager()} to get an instance.
+ * <p>To use, call {@link FirebaseFirestore#getPersistentCacheIndexManager()} to get an instance.
  */
 // TODO(csi): Remove the `hide` and scope annotations.
 /** @hide */
@@ -30,8 +30,7 @@ import com.google.firebase.firestore.core.FirestoreClient;
 public final class PersistentCacheIndexManager {
   @NonNull private FirestoreClient client;
 
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
-  public PersistentCacheIndexManager(FirestoreClient client) {
+  PersistentCacheIndexManager(FirestoreClient client) {
     this.client = client;
   }
 

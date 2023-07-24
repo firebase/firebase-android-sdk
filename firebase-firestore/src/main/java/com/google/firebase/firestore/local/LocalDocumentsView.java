@@ -281,7 +281,7 @@ class LocalDocumentsView {
    */
   ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
       Query query, IndexOffset offset) {
-    return getDocumentsMatchingQuery(query, offset, null);
+    return getDocumentsMatchingQuery(query, offset, /*context*/ null);
   }
 
   /** Performs a simple document lookup for the given path. */
