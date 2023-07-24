@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics.internal.metadata;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -27,10 +28,13 @@ import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -135,6 +139,48 @@ class MetaDataStore {
     return Collections.emptyMap();
   }
 
+  @VisibleForTesting
+  public List<RolloutAssignment> readRolloutsState(String sessionId) {
+    final File f = getRolloutsStateForSession(sessionId);
+    if (!f.exists() || f.length() == 0) {
+      safeDeleteCorruptFile(f);
+      return Collections.emptyList();
+    }
+
+    InputStream is = null;
+    try {
+      is = new FileInputStream(f);
+      List<RolloutAssignment> rolloutsState = jsonToRolloutsState(CommonUtils.streamToString(is));
+      Logger.getLogger()
+          .d("Loaded rollouts state:\n" + rolloutsState + "\nfor session " + sessionId);
+      return rolloutsState;
+    } catch (Exception e) {
+      Logger.getLogger().w("Error deserializing rollouts state.", e);
+      safeDeleteCorruptFile(f);
+    } finally {
+      CommonUtils.closeOrLog(is, "Failed to close rollouts state file.");
+    }
+    return Collections.emptyList();
+  }
+
+  @VisibleForTesting
+  public void writeRolloutState(String sessionId, List<RolloutAssignment> rolloutsState) {
+    final File f = getRolloutsStateForSession(sessionId);
+
+    Writer writer = null;
+    try {
+      final String rolloutsStateString = rolloutsStateToJson(rolloutsState);
+      writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(f), UTF_8));
+      writer.write(rolloutsStateString);
+      writer.flush();
+    } catch (Exception e) {
+      Logger.getLogger().w("Error serializing rollouts state.", e);
+      safeDeleteCorruptFile(f);
+    } finally {
+      CommonUtils.closeOrLog(writer, "Failed to close rollouts state file.");
+    }
+  }
+
   @NonNull
   public File getUserDataFileForSession(String sessionId) {
     return fileStore.getSessionFile(sessionId, UserMetadata.USERDATA_FILENAME);
@@ -148,6 +194,11 @@ class MetaDataStore {
   @NonNull
   public File getInternalKeysFileForSession(String sessionId) {
     return fileStore.getSessionFile(sessionId, UserMetadata.INTERNAL_KEYDATA_FILENAME);
+  }
+
+  @NonNull
+  public File getRolloutsStateForSession(String sessionId) {
+    return fileStore.getSessionFile(sessionId, UserMetadata.ROLLOUTS_STATE_FILENAME);
   }
 
   @Nullable
@@ -177,6 +228,34 @@ class MetaDataStore {
 
   private static String keysDataToJson(final Map<String, String> keyData) {
     return new JSONObject(keyData).toString();
+  }
+
+  private static List<RolloutAssignment> jsonToRolloutsState(String json) throws JSONException {
+    final List<RolloutAssignment> rolloutsState = new ArrayList<RolloutAssignment>();
+    final JSONArray dataArray = new JSONArray(json);
+
+    for (int i = 0; i < dataArray.length(); i++) {
+      String dataObjectString = dataArray.getString(i);
+
+      try {
+        final RolloutAssignment rolloutAssignment = RolloutAssignment.create(dataObjectString);
+        rolloutsState.add(rolloutAssignment);
+      } catch (Exception e) {
+        Logger.getLogger().w("Failed de-serializing rollouts state. " + dataObjectString, e);
+      }
+    }
+    return rolloutsState;
+  }
+
+  private static String rolloutsStateToJson(List<RolloutAssignment> rolloutsState) {
+
+    List<String> rolloutsStateJson = new ArrayList<>();
+    for (int i = 0; i < rolloutsState.size(); i++) {
+      String rolloutAssignmentJson =
+          RolloutAssignment.ROLLOUT_ASSIGNMENT_JSON_ENCODER.encode(rolloutsState.get(i));
+      rolloutsStateJson.add(rolloutAssignmentJson);
+    }
+    return new JSONArray(rolloutsStateJson).toString();
   }
 
   private static String valueOrNull(JSONObject json, String key) {
