@@ -94,6 +94,8 @@ abstract class PublishingPlugin : Plugin<Project> {
         )
       val publishReleasingLibrariesToBuildDir =
         registerPublishReleasingLibrariesToBuildDirTask(project, releasingProjects)
+      val publishReleasingLibrariesToNexus =
+        registerPublishReleasingLibrariesToNexusTask(project, releasingProjects)
       val generateKotlindocsForRelease =
         registerGenerateKotlindocForReleaseTask(project, releasingFirebaseLibraries)
       val prepareReleaseNotesForDrop =
@@ -107,6 +109,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       registerPublishReleasingLibrariesToMavenLocalTask(project, releasingProjects)
       registerSemverCheckForReleaseTask(project, releasingProjects)
       registerPublishAllToBuildDir(project, allFirebaseLibraries)
+      registerPublishAllToNexus(project, allFirebaseLibraries)
       registerPostReleasePlugin(releasingProjects)
       registerLibraryGroupsTask(project, libraryGroups)
 
@@ -143,6 +146,7 @@ abstract class PublishingPlugin : Plugin<Project> {
           validateLibraryGroupsToPublish,
           checkHeadDependencies,
           // validatePomForRelease, TODO(b/279466888) - Make GmavenHelper testable
+          publishReleasingLibrariesToNexus,
           buildMavenZip,
           buildKotlindocZip,
           buildReleaseNotesZip
@@ -402,6 +406,21 @@ abstract class PublishingPlugin : Plugin<Project> {
       }
     }
 
+  private fun registerPublishReleasingLibrariesToNexusTask(
+    project: Project,
+    releasingProjects: List<Project>
+  ) =
+    project.tasks.register(PUBLISH_RELEASING_LIBS_TO_NEXUS_TASK) {
+      for (releasingProject in releasingProjects) {
+        val publishTask =
+          releasingProject.tasks.named<PublishToMavenRepository>(
+            "publishMavenAarPublicationToNexusRepository"
+          )
+
+        dependsOn(publishTask)
+      }
+    }
+
   /**
    * Registers the [GENERATE_KOTLINDOC_FOR_RELEASE_TASK] task.
    *
@@ -539,6 +558,19 @@ abstract class PublishingPlugin : Plugin<Project> {
       }
     }
 
+  private fun registerPublishAllToNexus(
+    project: Project,
+    allFirebaseLibraries: List<FirebaseLibraryExtension>
+  ) =
+    project.tasks.register(PUBLISH_ALL_TO_NEXUS_TASK) {
+      for (firebaseLibrary in allFirebaseLibraries) {
+        val publishTask =
+          firebaseLibrary.project.tasks.named("publishMavenAarPublicationToNexusRepository")
+
+        dependsOn(publishTask)
+      }
+    }
+
   /** Registers the [PostReleasePlugin] to each releaing project. */
   private fun registerPostReleasePlugin(releasingProjects: List<Project>) {
     for (releasingProject in releasingProjects) {
@@ -560,6 +592,7 @@ abstract class PublishingPlugin : Plugin<Project> {
     const val VALIDATE_POM_TASK = "validatePomForRelease"
     const val LIBRARY_GROUPS_TASK = "libraryGroups"
     const val PUBLISH_RELEASING_LIBS_TO_BUILD_TASK = "publishReleasingLibrariesToBuildDir"
+    const val PUBLISH_RELEASING_LIBS_TO_NEXUS_TASK = "publishReleasingLibrariesToNexus"
     const val PUBLISH_RELEASING_LIBS_TO_LOCAL_TASK = "publishReleasingLibrariesToMavenLocal"
     const val GENERATE_KOTLINDOC_FOR_RELEASE_TASK = "generateKotlindocForRelease"
     const val PREPARE_RELEASE_NOTES_FOR_DROP = "prepareReleaseNotesForDrop"
@@ -570,6 +603,7 @@ abstract class PublishingPlugin : Plugin<Project> {
     const val BUILD_BOM_ZIP_TASK = "buildBomZip"
     const val FIREBASE_PUBLISH_TASK = "firebasePublish"
     const val PUBLISH_ALL_TO_BUILD_TASK = "publishAllToBuildDir"
+    const val PUBLISH_ALL_TO_NEXUS_TASK = "publishAllToNexus"
 
     const val BUILD_DIR_REPOSITORY_DIR = "m2repository"
   }

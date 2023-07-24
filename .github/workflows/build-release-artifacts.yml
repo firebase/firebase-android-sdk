@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NEXUS_MAVEN_RELEASE_URL: ${{ vars.NEXUS_MAVEN_RELEASE_URL }}
+      NEXUS_MAVEN_USERNAME: ${{ vars.NEXUS_MAVEN_USERNAME }}
+      NEXUS_MAVEN_PASSWORD: ${{ secrets.NEXUS_MAVEN_PASSWORD }}
     steps:
       - uses: actions/checkout@v3.5.3
 
@@ -23,7 +26,7 @@ jobs:
 
       - name: Perform gradle build
         run: |
-          ./gradlew firebasePublish
+          ./gradlew firebasePublish -Durl="$NEXUS_MAVEN_RELEASE_URL" -Dusername="$NEXUS_MAVEN_USERNAME" -Dpassword="$NEXUS_MAVEN_PASSWORD"
 
       - name: Upload generated artifacts
         uses: actions/upload-artifact@v2

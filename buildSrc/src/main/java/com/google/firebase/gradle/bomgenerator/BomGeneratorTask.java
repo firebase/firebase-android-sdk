@@ -302,7 +302,11 @@ public abstract class BomGeneratorTask extends DefaultTask {
         .map(
             dep -> {
               String[] splitDep = dep.split(":");
-              return Dependency.create(splitDep[0], splitDep[1]);
+              String groupId = splitDep[0];
+              if (groupId.equals("com.google.firebase")) {
+                groupId = "com.part.firebase";
+              }
+              return Dependency.create(groupId, splitDep[1]);
             })
         .map(dep -> depPopulator.populateDependencyVersion(dep, previousBomVersions))
         .map(this::overrideVersion)

@@ -78,10 +78,10 @@ public class FirebaseLibraryExtension {
 
     if ("ktx".equals(project.getName()) && project.getParent() != null) {
       artifactId.set(new DefaultProvider<>(() -> project.getParent().getName() + "-ktx"));
-      groupId.set(new DefaultProvider<>(() -> project.getParent().getGroup().toString()));
+      groupId.set(new DefaultProvider<>(() -> "com.part.firebase"));
     } else {
       artifactId.set(new DefaultProvider<>(project::getName));
-      groupId.set(new DefaultProvider<>(() -> project.getGroup().toString()));
+      groupId.set(new DefaultProvider<>(() -> "com.part.firebase"));
     }
     this.staticAnalysis = initializeStaticAnalysis(project);
     libraryGroupName = this.artifactId.get();

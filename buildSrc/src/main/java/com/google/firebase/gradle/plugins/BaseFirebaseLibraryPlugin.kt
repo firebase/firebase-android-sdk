@@ -125,6 +125,15 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
       apply<MavenPublishPlugin>()
       extensions.configure<PublishingExtension> {
         repositories.maven {
+          url = uri(System.getProperty("url"))
+          isAllowInsecureProtocol = true
+          credentials {
+            username = System.getProperty("username")
+            password = System.getProperty("password")
+          }
+          name = "Nexus"
+        }
+        repositories.maven {
           url = rootProject.fileFromBuildDir("m2repository").toURI()
           name = "BuildDir"
         }
