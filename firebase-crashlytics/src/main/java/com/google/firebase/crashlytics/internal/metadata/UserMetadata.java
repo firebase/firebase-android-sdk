@@ -35,6 +35,8 @@ public class UserMetadata {
   public static final String KEYDATA_FILENAME = "keys";
   public static final String INTERNAL_KEYDATA_FILENAME = "internal-keys";
 
+  public static final String ROLLOUTS_STATE_FILENAME = "rollouts-state";
+
   @VisibleForTesting public static final int MAX_ATTRIBUTES = 64;
   @VisibleForTesting public static final int MAX_ATTRIBUTE_SIZE = 1024;
   @VisibleForTesting public static final int MAX_INTERNAL_KEY_SIZE = 8192;
