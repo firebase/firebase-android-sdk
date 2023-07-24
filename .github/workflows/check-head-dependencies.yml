@@ -7,7 +7,7 @@ on:
       - 'releases/**'
 
 jobs:
-  build-artifacts:
+  check-head-dependencies:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
