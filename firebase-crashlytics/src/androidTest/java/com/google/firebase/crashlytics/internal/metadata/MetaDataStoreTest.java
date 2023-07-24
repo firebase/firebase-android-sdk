@@ -14,8 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.metadata;
 
-import static com.google.common.truth.Truth.assertThat;
-
+import com.google.common.truth.Truth;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsBackgroundWorker;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -371,18 +370,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     storeUnderTest.writeRolloutState(SESSION_ID_1, ROLLOUTS_STATE);
     List<RolloutAssignment> readRolloutsState = storeUnderTest.readRolloutsState(SESSION_ID_1);
 
-    assertThat(readRolloutsState).isEqualTo(ROLLOUTS_STATE);
-  }
-
-  @Test
-  public void testWriteReadRolloutState_writeValidThenEmpty() throws Exception {
-    storeUnderTest.writeRolloutState(SESSION_ID_1, ROLLOUTS_STATE);
-    List<RolloutAssignment> emptyState = new ArrayList<>();
-    storeUnderTest.writeRolloutState(SESSION_ID_1, emptyState);
-
-    assertThat(
-            fileStore.getSessionFile(SESSION_ID_1, UserMetadata.ROLLOUTS_STATE_FILENAME).exists())
-        .isFalse();
+    Truth.assertThat(readRolloutsState).isEqualTo(ROLLOUTS_STATE);
   }
 
   public static void assertEqualMaps(Map<String, String> expected, Map<String, String> actual) {

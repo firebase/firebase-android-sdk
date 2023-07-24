@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics.internal.metadata;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -138,6 +139,7 @@ class MetaDataStore {
     return Collections.emptyMap();
   }
 
+  @VisibleForTesting
   public List<RolloutAssignment> readRolloutsState(String sessionId) {
     final File f = getRolloutsStateForSession(sessionId);
     if (!f.exists() || f.length() == 0) {
@@ -161,12 +163,9 @@ class MetaDataStore {
     return Collections.emptyList();
   }
 
+  @VisibleForTesting
   public void writeRolloutState(String sessionId, List<RolloutAssignment> rolloutsState) {
     final File f = getRolloutsStateForSession(sessionId);
-    if (rolloutsState.isEmpty()) {
-      safeDeleteCorruptFile(f);
-      return;
-    }
 
     Writer writer = null;
     try {
@@ -232,9 +231,8 @@ class MetaDataStore {
   }
 
   private static List<RolloutAssignment> jsonToRolloutsState(String json) throws JSONException {
-    JSONObject object = new JSONObject(json);
-    JSONArray dataArray = object.getJSONArray(RolloutAssignmentList.ROLLOUTS_STATE);
-    List<RolloutAssignment> rolloutsState = new ArrayList<RolloutAssignment>();
+    final List<RolloutAssignment> rolloutsState = new ArrayList<RolloutAssignment>();
+    final JSONArray dataArray = new JSONArray(json);
 
     for (int i = 0; i < dataArray.length(); i++) {
       String dataObjectString = dataArray.getString(i);
@@ -250,20 +248,14 @@ class MetaDataStore {
   }
 
   private static String rolloutsStateToJson(List<RolloutAssignment> rolloutsState) {
-    HashMap<String, JSONArray> jsonObject = new HashMap<>();
-    JSONArray rolloutsStateJsonArray = new JSONArray();
+
+    List<String> rolloutsStateJson = new ArrayList<>();
     for (int i = 0; i < rolloutsState.size(); i++) {
       String rolloutAssignmentJson =
           RolloutAssignment.ROLLOUT_ASSIGNMENT_JSON_ENCODER.encode(rolloutsState.get(i));
-      try {
-        rolloutsStateJsonArray.put(new JSONObject(rolloutAssignmentJson));
-      } catch (JSONException e) {
-        Logger.getLogger().w("Exception parsing rollout assignment!", e);
-      }
+      rolloutsStateJson.add(rolloutAssignmentJson);
     }
-    jsonObject.put(RolloutAssignmentList.ROLLOUTS_STATE, rolloutsStateJsonArray);
-
-    return new JSONObject(jsonObject).toString();
+    return new JSONArray(rolloutsStateJson).toString();
   }
 
   private static String valueOrNull(JSONObject json, String key) {

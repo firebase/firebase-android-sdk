@@ -108,14 +108,14 @@ public class RolloutAssignmentListTest extends CrashlyticsTestCase {
   public void testUpdateRolloutAssignmentList() throws Exception {
     final List<String> changed = new ArrayList<String>();
 
-    rolloutAssignmentList.updateRolloutAssignmentList(ROLLOUTS_STATE_1);
+    rolloutAssignmentList.updateMapList(ROLLOUTS_STATE_1);
 
     new Thread(
             new Runnable() {
               @Override
               public void run() {
                 changed.add("changed");
-                rolloutAssignmentList.updateRolloutAssignmentList(ROLLOUTS_STATE_2);
+                rolloutAssignmentList.updateMapList(ROLLOUTS_STATE_2);
               }
             })
         .start();
@@ -124,11 +124,11 @@ public class RolloutAssignmentListTest extends CrashlyticsTestCase {
             new Runnable() {
               @Override
               public void run() {
-                List<RolloutAssignment> list = rolloutAssignmentList.getRolloutAssignmentList();
+                List<RolloutAssignment> list = rolloutAssignmentList.getKeysMapList();
                 if (changed.isEmpty()) {
-                  assertThat(rolloutAssignmentList.getRolloutAssignmentList().size()).isEqualTo(1);
+                  assertThat(rolloutAssignmentList.getKeysMapList().size()).isEqualTo(1);
                 } else {
-                  assertThat(rolloutAssignmentList.getRolloutAssignmentList().size()).isEqualTo(2);
+                  assertThat(rolloutAssignmentList.getKeysMapList().size()).isEqualTo(2);
                 }
               }
             })

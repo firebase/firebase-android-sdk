@@ -15,7 +15,6 @@
 package com.google.firebase.crashlytics.internal.metadata;
 
 import com.google.auto.value.AutoValue;
-import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
@@ -28,7 +27,6 @@ import org.json.JSONObject;
 @Encodable
 @AutoValue
 public abstract class RolloutAssignment {
-  private static final int MAX_PARAMETER_VALUE_LENGTH = 256;
 
   public abstract String getRolloutId();
 
@@ -40,17 +38,14 @@ public abstract class RolloutAssignment {
 
   public abstract long getTemplateVersion();
 
-  public static RolloutAssignment create(
+  static RolloutAssignment create(
       String rolloutId,
       String parameterKey,
       String parameterValue,
       String variantId,
       long templateVersion) {
-
-    String validatedParameterValue = validate(parameterValue);
-
     return new AutoValue_RolloutAssignment(
-        rolloutId, parameterKey, validatedParameterValue, variantId, templateVersion);
+        rolloutId, parameterKey, parameterValue, variantId, templateVersion);
   }
 
   public static final DataEncoder ROLLOUT_ASSIGNMENT_JSON_ENCODER =
@@ -63,29 +58,7 @@ public abstract class RolloutAssignment {
     String parameterValue = dataObj.getString("parameterValue");
     String variantId = dataObj.getString("variantId");
     long templateVersion = dataObj.getLong("templateVersion");
-
-    return RolloutAssignment.create(
+    return new AutoValue_RolloutAssignment(
         rolloutId, parameterKey, parameterValue, variantId, templateVersion);
-  }
-
-  public CrashlyticsReport.Session.Event.RolloutAssignment toReportProto() {
-    return CrashlyticsReport.Session.Event.RolloutAssignment.builder()
-        .setRolloutVariant(
-            CrashlyticsReport.Session.Event.RolloutAssignment.RolloutVariant.builder()
-                .setVariantId(getVariantId())
-                .setRolloutId(getRolloutId())
-                .build())
-        .setParameterKey(getParameterKey())
-        .setParameterValue(getParameterValue())
-        .setTemplateVersion(getTemplateVersion())
-        .build();
-  }
-
-  private static String validate(String parameterValue) {
-    String validatedParameterValue = parameterValue;
-    if (validatedParameterValue.length() > MAX_PARAMETER_VALUE_LENGTH) {
-      validatedParameterValue = validatedParameterValue.substring(0, MAX_PARAMETER_VALUE_LENGTH);
-    }
-    return validatedParameterValue;
   }
 }

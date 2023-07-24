@@ -15,7 +15,6 @@
 package com.google.firebase.crashlytics.internal.metadata;
 
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,18 +26,16 @@ public class RolloutAssignmentList {
   private final List<RolloutAssignment> rolloutsState = new ArrayList<>();
   private final int maxEntries;
 
-  static final String ROLLOUTS_STATE = "rolloutsState";
-
   // init
   public RolloutAssignmentList(int maxEntries) {
     this.maxEntries = maxEntries;
   }
 
-  public synchronized List<RolloutAssignment> getRolloutAssignmentList() {
+  public synchronized List<RolloutAssignment> getKeysMapList() {
     return Collections.unmodifiableList(new ArrayList<RolloutAssignment>(rolloutsState));
   }
 
-  public synchronized boolean updateRolloutAssignmentList(List<RolloutAssignment> newMapList) {
+  public synchronized boolean updateMapList(List<RolloutAssignment> newMapList) {
     rolloutsState.clear();
     int nOverLimit = 0;
 
@@ -54,17 +51,5 @@ public class RolloutAssignmentList {
       return rolloutsState.addAll(maxAllowedNewMapList);
     }
     return rolloutsState.addAll(newMapList);
-  }
-
-  // TODO: Nest assignments as a field in RolloutsState
-  public List<CrashlyticsReport.Session.Event.RolloutAssignment> getReportRolloutsState() {
-    List<RolloutAssignment> rolloutAssignments = getRolloutAssignmentList();
-    List<CrashlyticsReport.Session.Event.RolloutAssignment> rolloutsState =
-        new ArrayList<CrashlyticsReport.Session.Event.RolloutAssignment>();
-
-    for (int i = 0; i < rolloutAssignments.size(); i++) {
-      rolloutsState.add(rolloutAssignments.get(i).toReportProto());
-    }
-    return rolloutsState;
   }
 }
