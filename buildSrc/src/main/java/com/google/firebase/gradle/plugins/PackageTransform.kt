@@ -16,8 +16,7 @@ abstract class PackageTransform : DefaultTask() {
   fun copyDir(src: Path, dest: Path) {
     Files.walk(src).forEach {
       if (!Files.isDirectory(it)) {
-        println(it)
-        println(dest.resolve(src.relativize(it)))
+        Files.copy(it, dest.resolve(src.relativize(it)), StandardCopyOption.REPLACE_EXISTING)
       }
     }
   }
