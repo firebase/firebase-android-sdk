@@ -176,7 +176,7 @@ public class TargetIndexMatcher {
         return false;
       }
 
-      // Only a single inequality is currently supported. Get the only entry in the map.
+      // Only a single inequality is currently supported. Get the only entry in the set.
       FieldFilter inequalityFilter = this.inequalityFilters.first();
 
       // If there is an inequality filter and the field was not in one of the equality filters
