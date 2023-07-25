@@ -88,23 +88,18 @@ class CountingQueryEngine extends QueryEngine {
   }
 
   @Override
-  public void enableIndexAutoCreation() {
-    queryEngine.enableIndexAutoCreation();
+  public void setIndexAutoCreationEnabled(boolean enabled) {
+    queryEngine.setIndexAutoCreationEnabled(enabled);
   }
 
   @Override
-  public void disableIndexAutoCreation() {
-    queryEngine.disableIndexAutoCreation();
+  public void setIndexAutoCreationMinCollectionSize(int newMin) {
+    queryEngine.setIndexAutoCreationMinCollectionSize(newMin);
   }
 
   @Override
-  public void setMinCollectionSizeToAutoCreateIndex(int newMin) {
-    queryEngine.setMinCollectionSizeToAutoCreateIndex(newMin);
-  }
-
-  @Override
-  public void setRelativeIndexReadCost(int newCost) {
-    queryEngine.setRelativeIndexReadCost(newCost);
+  public void setRelativeIndexReadCostPerDocument(double newCost) {
+    queryEngine.setRelativeIndexReadCostPerDocument(newCost);
   }
 
   /**

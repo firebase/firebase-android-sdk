@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCol
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.TestUtil.assertDoesNotThrow;
+import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static org.junit.Assert.assertEquals;
 
@@ -108,7 +109,7 @@ public class IndexingTest {
   }
 
   @Test
-  public void testAutomaticIndexingSetSuccessfully() {
+  public void testAutoIndexCreationSetSuccessfully() {
     // Use persistent disk cache (default)
     FirebaseFirestore db = testFirestore();
     FirebaseFirestoreSettings settings =
@@ -138,7 +139,7 @@ public class IndexingTest {
   }
 
   @Test
-  public void testAutomaticIndexingSetSuccessfullyUseDefault() {
+  public void testAutoIndexCreationSetSuccessfullyUsingDefault() {
     // Use persistent disk cache (default)
     FirebaseFirestore db = testFirestore();
 
@@ -160,5 +161,19 @@ public class IndexingTest {
 
     results = waitFor(collection.whereEqualTo("match", true).get());
     assertEquals(1, results.size());
+  }
+
+  @Test
+  public void testAutoIndexCreationAfterFailsTermination() {
+    FirebaseFirestore db = testFirestore();
+    waitFor(db.terminate());
+
+    expectError(
+        () -> db.getPersistentCacheIndexManager().enableIndexAutoCreation(),
+        "The client has already been terminated");
+
+    expectError(
+        () -> db.getPersistentCacheIndexManager().disableIndexAutoCreation(),
+        "The client has already been terminated");
   }
 }

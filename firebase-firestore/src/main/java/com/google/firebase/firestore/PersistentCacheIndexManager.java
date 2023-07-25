@@ -41,7 +41,7 @@ public final class PersistentCacheIndexManager {
    * <p>This feature is disabled by default.
    */
   public void enableIndexAutoCreation() {
-    client.enableIndexAutoCreation();
+    client.setIndexAutoCreationEnabled(true);
   }
 
   /**
@@ -49,6 +49,6 @@ public final class PersistentCacheIndexManager {
    * which have been created by calling {@link #enableIndexAutoCreation()} still take effect.
    */
   public void disableIndexAutoCreation() {
-    client.disableIndexAutoCreation();
+    client.setIndexAutoCreationEnabled(false);
   }
 }

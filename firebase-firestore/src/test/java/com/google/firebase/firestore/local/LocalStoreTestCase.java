@@ -217,27 +217,21 @@ public abstract class LocalStoreTestCase {
     lastQueryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
   }
 
-  protected void enableIndexAutoCreation() {
+  protected void setIndexAutoCreationEnabled(boolean enabled) {
     // Noted: there are two queryEngines here, the first one is extended by CountingQueryEngine,
     // which is set by localStore function; The second one a pointer inside CountingQueryEngine,
     // which is set by queryEngine function.
     // Only the second function takes effect in the tests. Adding first one here for compatibility.
-    localStore.enableIndexAutoCreation();
-    queryEngine.enableIndexAutoCreation();
-  }
-
-  protected void disableIndexAutoCreation() {
-    // Please refer to the notes in `enableIndexAutoCreation()`
-    localStore.disableIndexAutoCreation();
-    queryEngine.disableIndexAutoCreation();
+    localStore.setIndexAutoCreationEnabled(enabled);
+    queryEngine.setIndexAutoCreationEnabled(enabled);
   }
 
   protected void setMinCollectionSizeToAutoCreateIndex(int newMin) {
-    queryEngine.setMinCollectionSizeToAutoCreateIndex(newMin);
+    queryEngine.setIndexAutoCreationMinCollectionSize(newMin);
   }
 
-  protected void setRelativeIndexReadCost(int newCost) {
-    queryEngine.setRelativeIndexReadCost(newCost);
+  protected void setRelativeIndexReadCostPerDocument(double newCost) {
+    queryEngine.setRelativeIndexReadCostPerDocument(newCost);
   }
 
   private void releaseTarget(int targetId) {

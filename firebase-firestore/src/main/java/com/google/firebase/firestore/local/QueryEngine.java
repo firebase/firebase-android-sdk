@@ -62,26 +62,25 @@ import javax.annotation.Nullable;
 public class QueryEngine {
   private static final String LOG_TAG = "QueryEngine";
 
-  private static final int MIN_COLLECTION_SIZE_TO_AUTO_CREATE_INDEX = 100;
+  private static final int INDEX_AUTO_CREATION_DEFAULT_MIN_COLLECTION_SIZE = 100;
 
-  // TODO(csi): update the temp cost.
   /**
    * This cost represents the evaluation result of (([index, docKey] + [docKey, docContent]) per
    * document in the result set) / ([docKey, docContent] per documents in full collection scan)
    * coming from experiment https://github.com/firebase/firebase-android-sdk/pull/5064.
    */
-  private static final int RELATIVE_INDEX_READ_COST = 3;
+  private static final double DEFAULT_RELATIVE_INDEX_READ_COST_PER_DOCUMENT = 3;
 
   private LocalDocumentsView localDocumentsView;
   private IndexManager indexManager;
   private boolean initialized;
 
-  private boolean automaticIndexingEnabled = false;
+  private boolean indexAutoCreationEnabled = false;
 
   /** SDK only decides whether it should create index when collection size is larger than this. */
-  private int minCollectionSizeToAutoCreateIndex = MIN_COLLECTION_SIZE_TO_AUTO_CREATE_INDEX;
+  private int indexAutoCreationMinCollectionSize = INDEX_AUTO_CREATION_DEFAULT_MIN_COLLECTION_SIZE;
 
-  private int relativeIndexReadCost = RELATIVE_INDEX_READ_COST;
+  private double relativeIndexReadCostPerDocument = DEFAULT_RELATIVE_INDEX_READ_COST_PER_DOCUMENT;
 
   public void initialize(LocalDocumentsView localDocumentsView, IndexManager indexManager) {
     this.localDocumentsView = localDocumentsView;
@@ -89,12 +88,8 @@ public class QueryEngine {
     this.initialized = true;
   }
 
-  public void enableIndexAutoCreation() {
-    this.automaticIndexingEnabled = true;
-  }
-
-  public void disableIndexAutoCreation() {
-    this.automaticIndexingEnabled = false;
+  public void setIndexAutoCreationEnabled(boolean enabled) {
+    this.indexAutoCreationEnabled = enabled;
   }
 
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
@@ -115,7 +110,7 @@ public class QueryEngine {
 
     QueryContext context = new QueryContext();
     result = executeFullCollectionScan(query, context);
-    if (result != null && automaticIndexingEnabled) {
+    if (result != null && indexAutoCreationEnabled) {
       createCacheIndexes(query, context, result.size());
     }
     return result;
@@ -127,37 +122,32 @@ public class QueryEngine {
    */
   // TODO(csi): Auto experiment data.
   private void createCacheIndexes(Query query, QueryContext context, int resultSize) {
-    if (context.getDocumentReadCount() < minCollectionSizeToAutoCreateIndex) {
+    if (context.getDocumentReadCount() < indexAutoCreationMinCollectionSize) {
       Logger.debug(
           LOG_TAG,
           "SDK will only creates cache indexes for collection contains more than or equal to "
               + "%s documents.",
-          minCollectionSizeToAutoCreateIndex);
+          indexAutoCreationMinCollectionSize);
       return;
     }
 
-    if (Logger.isDebugEnabled()) {
-      Logger.debug(
-          LOG_TAG,
-          "Query scans %s local documents and returns %s documents as results.",
-          context.getDocumentReadCount(),
-          resultSize);
-    }
+    Logger.debug(
+        LOG_TAG,
+        "Query scans %s local documents and returns %s documents as results.",
+        context.getDocumentReadCount(),
+        resultSize);
 
-    String decisionStr = "";
-    if (context.getDocumentReadCount() > relativeIndexReadCost * resultSize) {
+    if (context.getDocumentReadCount() > relativeIndexReadCostPerDocument * resultSize) {
       indexManager.createTargetIndices(query.toTarget());
-    } else {
-      decisionStr = " not";
-    }
-
-    if (Logger.isDebugEnabled()) {
       Logger.debug(
           LOG_TAG,
-          "The SDK decides%s to create cache indexes for this query, as using cache indexes "
-              + "may%s help improve performance.",
-          decisionStr,
-          decisionStr);
+          "The SDK decides to create cache indexes for this query, as using cache indexes "
+              + "may help improve performance.");
+    } else {
+      Logger.debug(
+          LOG_TAG,
+          "The SDK decides not to create cache indexes for this query, as using cache indexes "
+              + "may not help improve performance.");
     }
   }
 
@@ -336,12 +326,12 @@ public class QueryEngine {
   }
 
   @VisibleForTesting
-  void setMinCollectionSizeToAutoCreateIndex(int newMin) {
-    minCollectionSizeToAutoCreateIndex = newMin;
+  void setIndexAutoCreationMinCollectionSize(int newMin) {
+    indexAutoCreationMinCollectionSize = newMin;
   }
 
   @VisibleForTesting
-  void setRelativeIndexReadCost(int newCost) {
-    relativeIndexReadCost = newCost;
+  void setRelativeIndexReadCostPerDocument(double newCost) {
+    relativeIndexReadCostPerDocument = newCost;
   }
 }

@@ -223,7 +223,6 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
             row -> {
               processRowInBackground(backgroundQueue, results, row, filter);
               if (context != null) {
-                // Increases the counter by 1 for every document processed.
                 context.incrementDocumentReadCount();
               }
             });

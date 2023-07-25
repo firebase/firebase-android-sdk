@@ -372,9 +372,9 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     Query query = query("coll").filter(filter("matches", "==", true));
     int targetId = allocateQuery(query);
 
-    enableIndexAutoCreation();
+    setIndexAutoCreationEnabled(true);
     setMinCollectionSizeToAutoCreateIndex(0);
-    setRelativeIndexReadCost(2);
+    setRelativeIndexReadCostPerDocument(2);
 
     applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
     applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", false)), targetId));
@@ -403,8 +403,8 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     Query query = query("coll").filter(filter("count", ">=", 3));
     int targetId = allocateQuery(query);
 
-    enableIndexAutoCreation();
-    setRelativeIndexReadCost(2);
+    setIndexAutoCreationEnabled(true);
+    setRelativeIndexReadCostPerDocument(2);
 
     applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("count", 5)), targetId));
     applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("count", 1)), targetId));
@@ -431,9 +431,9 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     Query query = query("coll").filter(filter("array", "array-contains-any", Arrays.asList(0, 7)));
     int targetId = allocateQuery(query);
 
-    enableIndexAutoCreation();
+    setIndexAutoCreationEnabled(true);
     setMinCollectionSizeToAutoCreateIndex(0);
-    setRelativeIndexReadCost(5);
+    setRelativeIndexReadCostPerDocument(5);
 
     applyRemoteEvent(
         addedRemoteEvent(doc("coll/a", 10, map("array", Arrays.asList(2, 7))), targetId));
@@ -465,9 +465,9 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     Query query = query("coll").filter(filter("matches", "==", "foo"));
     int targetId = allocateQuery(query);
 
-    enableIndexAutoCreation();
+    setIndexAutoCreationEnabled(true);
     setMinCollectionSizeToAutoCreateIndex(0);
-    setRelativeIndexReadCost(2);
+    setRelativeIndexReadCostPerDocument(2);
 
     applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", "foo")), targetId));
     applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", "")), targetId));
@@ -498,9 +498,9 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     Query query = query("coll").filter(filter("value", "not-in", Collections.singletonList(3)));
     int targetId = allocateQuery(query);
 
-    enableIndexAutoCreation();
+    setIndexAutoCreationEnabled(true);
     setMinCollectionSizeToAutoCreateIndex(0);
-    setRelativeIndexReadCost(2);
+    setRelativeIndexReadCostPerDocument(2);
 
     applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("value", 5)), targetId));
     applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("value", 3)), targetId));
@@ -515,7 +515,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
     assertQueryReturned("coll/a", "coll/e");
 
-    disableIndexAutoCreation();
+    setIndexAutoCreationEnabled(false);
 
     backfillIndexes();
 
@@ -531,9 +531,9 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     Query query1 = query("coll").filter(filter("value", "in", Arrays.asList(0, 1)));
     int targetId1 = allocateQuery(query1);
 
-    enableIndexAutoCreation();
+    setIndexAutoCreationEnabled(true);
     setMinCollectionSizeToAutoCreateIndex(0);
-    setRelativeIndexReadCost(2);
+    setRelativeIndexReadCostPerDocument(2);
 
     applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("value", 1)), targetId1));
     applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("value", 8)), targetId1));
@@ -548,7 +548,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
     assertQueryReturned("coll/a", "coll/e");
 
-    disableIndexAutoCreation();
+    setIndexAutoCreationEnabled(false);
 
     backfillIndexes();
 
@@ -581,9 +581,9 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
         query("coll").filter(filter("value", "array-contains-any", Arrays.asList(8, 1, "string")));
     int targetId = allocateQuery(query);
 
-    enableIndexAutoCreation();
+    setIndexAutoCreationEnabled(true);
     setMinCollectionSizeToAutoCreateIndex(0);
-    setRelativeIndexReadCost(2);
+    setRelativeIndexReadCostPerDocument(2);
 
     applyRemoteEvent(
         addedRemoteEvent(doc("coll/a", 10, map("value", Arrays.asList(8, 1, "string"))), targetId));
