@@ -224,7 +224,7 @@ public class AutoIndexingExperiment {
   @Test
   public void testCombinesIndexedWithNonIndexedResults() throws Exception {
     // Every set contains 10 documents
-    final int numOfSet = 10;
+    final int numOfSet = 100;
     // could overflow. Currently it is safe when numOfSet set to 1000 and running on macbook M1
     long totalBeforeIndex = 0;
     long totalAfterIndex = 0;
@@ -235,7 +235,7 @@ public class AutoIndexingExperiment {
     double without = 1;
     double with = 3;
 
-    for (int totalSetCount = 1; totalSetCount <= numOfSet; totalSetCount *= 10) {
+    for (int totalSetCount = 10; totalSetCount <= numOfSet; totalSetCount *= 10) {
       // portion stands for the percentage of documents matching query
       for (int portion = 0; portion <= 10; portion++) {
         for (int numOfFields = 1; numOfFields <= 31; numOfFields += 10) {
