@@ -15,6 +15,12 @@
 package com.google.firebase.firestore;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.firestore.Filter.and;
+import static com.google.firebase.firestore.Filter.equalTo;
+import static com.google.firebase.firestore.Filter.greaterThan;
+import static com.google.firebase.firestore.Filter.inArray;
+import static com.google.firebase.firestore.Filter.notInArray;
+import static com.google.firebase.firestore.Filter.or;
 import static com.google.firebase.firestore.testutil.Assert.assertThrows;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testAlternateFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
@@ -39,6 +45,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.firestore.Transaction.Function;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.Consumer;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -522,6 +529,13 @@ public class ValidationTest {
   }
 
   @Test
+  public void queriesWithMultipleNotEqualAndInequalitiesFail() {
+    expectError(
+        () -> testCollection().whereNotEqualTo("x", 32).whereNotEqualTo("x", 33),
+        "Invalid Query. You cannot use more than one '!=' filter.");
+  }
+
+  @Test
   public void queriesWithNotEqualAndNotInFiltersFail() {
     expectError(
         () -> testCollection().whereNotIn("foo", asList(1, 2)).whereNotEqualTo("foo", 1),
@@ -530,6 +544,28 @@ public class ValidationTest {
     expectError(
         () -> testCollection().whereNotEqualTo("foo", 1).whereNotIn("foo", asList(1, 2)),
         "Invalid Query. You cannot use 'not_in' filters with '!=' filters.");
+  }
+
+  @Test
+  public void queriesWithMultipleDisjunctiveFiltersFail() {
+    expectError(
+        () -> testCollection().whereNotIn("foo", asList(1, 2)).whereNotIn("bar", asList(1, 2)),
+        "Invalid Query. You cannot use more than one 'not_in' filter.");
+
+    expectError(
+        () ->
+            testCollection()
+                .whereNotIn("bar", asList(1, 2))
+                .whereArrayContainsAny("foo", asList(1, 2)),
+        "Invalid Query. You cannot use 'array_contains_any' filters with 'not_in' filters.");
+
+    expectError(
+        () -> testCollection().whereNotIn("bar", asList(1, 2)).whereIn("foo", asList(1, 2)),
+        "Invalid Query. You cannot use 'in' filters with 'not_in' filters.");
+
+    expectError(
+        () -> testCollection().whereIn("bar", asList(1, 2)).whereNotIn("foo", asList(1, 2)),
+        "Invalid Query. You cannot use 'not_in' filters with 'in' filters.");
   }
 
   @Test
@@ -631,6 +667,161 @@ public class ValidationTest {
             testFirestore()
                 .collectionGroup("collection")
                 .whereIn(FieldPath.documentId(), asList("foo")),
+        reason);
+  }
+
+  // Multiple Inequality
+  @Test
+  public void multipleInequalityQueriesCanHaveDifferentFields() {
+    assertDoesNotThrow(() -> testCollection().whereGreaterThan("x", 32).whereLessThan("y", "cat"));
+  }
+
+  @Test
+  public void multipleInequalityQueriesCanHaveDocumentKeyOnInequalityFields() {
+    assertDoesNotThrow(
+        () ->
+            testCollection().whereGreaterThan("x", 32).whereLessThan(FieldPath.documentId(), "aa"));
+  }
+
+  @Test
+  public void multipleInequalityQueriesWithInWorks() {
+    assertDoesNotThrow(
+        () ->
+            testCollection()
+                .whereGreaterThan("x", 32)
+                .whereLessThan("y", "cat")
+                .whereIn("foo", asList(1, 2)));
+  }
+
+  @Test
+  public void multipleInequalityQueriesWithNotInWorks() {
+    assertDoesNotThrow(
+        () ->
+            testCollection()
+                .whereGreaterThan("x", 32)
+                .whereLessThan("y", "cat")
+                .whereNotIn("foo", asList(1, 2)));
+  }
+
+  @Test
+  public void multipleInequalityQueriesWithArrayContainsWorks() {
+    assertDoesNotThrow(
+        () ->
+            testCollection()
+                .whereGreaterThan("x", 32)
+                .whereLessThan("y", "cat")
+                .whereArrayContains("foo", 1));
+  }
+
+  @Test
+  public void multipleInequalityQueriesWithArrayContainsAnyWorks() {
+    assertDoesNotThrow(
+        () ->
+            testCollection()
+                .whereGreaterThan("x", 32)
+                .whereLessThan("y", "cat")
+                .whereArrayContainsAny("foo", asList(1, 2)));
+  }
+
+  @Test
+  public void queriesCanHaveInequalityFieldsDifferentThanFirstOrderBy() {
+    CollectionReference collection = testCollection();
+    // Equality
+    assertDoesNotThrow(() -> collection.whereEqualTo("x", 32).orderBy("y"));
+
+    // Single Inequality
+    assertDoesNotThrow(() -> collection.whereGreaterThan("x", 32).orderBy("y"));
+    assertDoesNotThrow(() -> collection.orderBy("y").whereGreaterThan("x", 32));
+    assertDoesNotThrow(() -> collection.whereGreaterThan("x", 32).orderBy("y").orderBy("x"));
+    assertDoesNotThrow(() -> collection.orderBy("y").orderBy("x").whereGreaterThan("x", 32));
+    assertDoesNotThrow(() -> collection.orderBy("y").orderBy("x").whereNotEqualTo("x", 32));
+
+    // Multiple Inequality
+    assertDoesNotThrow(
+        () -> collection.whereGreaterThan("x", 32).whereNotEqualTo("y", "cat").orderBy("z"));
+    assertDoesNotThrow(
+        () -> collection.orderBy("z").whereGreaterThan("x", 32).whereNotEqualTo("y", "cat"));
+    assertDoesNotThrow(
+        () ->
+            collection
+                .whereGreaterThan("x", 32)
+                .orderBy("z")
+                .orderBy("x")
+                .whereNotEqualTo("y", "cat"));
+    assertDoesNotThrow(
+        () ->
+            collection
+                .orderBy("z")
+                .orderBy("x")
+                .whereGreaterThan("x", 32)
+                .whereNotEqualTo("y", "cat"));
+    assertDoesNotThrow(
+        () ->
+            collection
+                .orderBy("z")
+                .orderBy("x")
+                .whereNotEqualTo("y", "cat")
+                .whereGreaterThan("x", 32));
+  }
+
+  @Test
+  public void testInvalidQueryFilters() {
+    CollectionReference collection = testCollection();
+    // Multiple inequalities, one of which is inside a nested composite filter.
+    assertDoesNotThrow(
+        () ->
+            collection
+                .where(
+                    or(
+                        and(equalTo("a", "b"), greaterThan("c", "d")),
+                        and(equalTo("e", "f"), equalTo("g", "h"))))
+                .where(greaterThan("r", "s")));
+
+    // OrderBy and inequality on different fields. Inequality inside a nested composite filter.
+    assertDoesNotThrow(
+        () ->
+            collection
+                .where(
+                    or(
+                        and(equalTo("a", "b"), greaterThan("c", "d")),
+                        and(equalTo("e", "f"), equalTo("g", "h"))))
+                .orderBy("r"));
+
+    // Conflicting operations within a composite filter.
+    String reason = "Invalid Query. You cannot use 'not_in' filters with 'in' filters.";
+    expectError(
+        () ->
+            collection.where(
+                or(
+                    and(equalTo("a", "b"), inArray("c", Arrays.asList("d", "e"))),
+                    and(equalTo("e", "f"), notInArray("c", Arrays.asList("f", "g"))))),
+        reason);
+
+    // Conflicting operations between a field filter and a composite filter.
+    reason = "Invalid Query. You cannot use 'not_in' filters with 'in' filters.";
+    expectError(
+        () ->
+            collection
+                .where(
+                    or(
+                        and(equalTo("a", "b"), inArray("c", Arrays.asList("d", "e"))),
+                        and(equalTo("e", "f"), equalTo("g", "h"))))
+                .where(notInArray("i", Arrays.asList("j", "k"))),
+        reason);
+
+    // Conflicting operations between two composite filters.
+    reason = "Invalid Query. You cannot use 'not_in' filters with 'in' filters.";
+    expectError(
+        () ->
+            collection
+                .where(
+                    or(
+                        and(equalTo("a", "b"), inArray("c", Arrays.asList("d", "e"))),
+                        and(equalTo("e", "f"), equalTo("g", "h"))))
+                .where(
+                    or(
+                        and(equalTo("i", "j"), notInArray("l", Arrays.asList("m", "n"))),
+                        and(equalTo("o", "p"), equalTo("q", "r")))),
         reason);
   }
 

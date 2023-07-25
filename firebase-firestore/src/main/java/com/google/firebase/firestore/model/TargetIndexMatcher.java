@@ -26,6 +26,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * A light query planner for Firestore.
@@ -86,7 +88,8 @@ public class TargetIndexMatcher {
   // The collection ID (or collection group) of the query target.
   private final String collectionId;
 
-  private @Nullable FieldFilter inequalityFilter;
+  private final SortedSet<FieldFilter> inequalityFilters;
+
   private final List<FieldFilter> equalityFilters;
   private final List<OrderBy> orderBys;
 
@@ -96,16 +99,13 @@ public class TargetIndexMatcher {
             ? target.getCollectionGroup()
             : target.getPath().getLastSegment();
     orderBys = target.getOrderBy();
-    inequalityFilter = null;
+    inequalityFilters = new TreeSet<>((lhs, rhs) -> lhs.getField().compareTo(rhs.getField()));
     equalityFilters = new ArrayList<>();
 
     for (Filter filter : target.getFilters()) {
       FieldFilter fieldFilter = (FieldFilter) filter;
       if (fieldFilter.isInequality()) {
-        hardAssert(
-            inequalityFilter == null || inequalityFilter.getField().equals(fieldFilter.getField()),
-            "Only a single inequality is supported");
-        inequalityFilter = fieldFilter;
+        inequalityFilters.add(fieldFilter);
       } else {
         equalityFilters.add(fieldFilter);
       }
@@ -167,7 +167,15 @@ public class TargetIndexMatcher {
       return true;
     }
 
-    if (inequalityFilter != null) {
+    if (inequalityFilters.size() > 0) {
+      if (this.inequalityFilters.size() > 1) {
+        // Only single inequality is supported for now.
+        return false;
+      }
+
+      // Only a single inequality is currently supported. Get the only entry in the map.
+      FieldFilter inequalityFilter = this.inequalityFilters.first();
+
       // If there is an inequality filter and the field was not in one of the equality filters
       // above, the next segment must match both the filter and the first orderBy clause.
       if (!equalitySegments.contains(inequalityFilter.getField().canonicalString())) {

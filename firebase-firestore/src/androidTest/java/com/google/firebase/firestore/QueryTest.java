@@ -28,6 +28,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1607,5 +1608,222 @@ public class QueryTest {
 
     Query query2 = collection.where(Filter.inArray("a", asList(2, 3))).orderBy("a");
     checkOnlineAndOfflineResultsMatch(query2, "doc6", "doc3");
+  }
+
+  /** Multiple Inequality */
+  @Test
+  public void testMultipleInequalityOnDifferentFields() {
+    // TODO(MIEQ-query): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", map("key", "a", "sort", 0, "v", 0),
+                "doc2", map("key", "b", "sort", 3, "v", 1),
+                "doc3", map("key", "c", "sort", 1, "v", 3),
+                "doc4", map("key", "d", "sort", 2, "v", 2)));
+
+    QuerySnapshot docs1 =
+        waitFor(
+            collection
+                .whereNotEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .whereGreaterThan("v", 2)
+                .get());
+    assertEquals(asList("doc3"), querySnapshotToIds(docs1));
+
+    // Duplicate inequality fields
+    QuerySnapshot docs2 =
+        waitFor(
+            collection
+                .whereNotEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .whereGreaterThan("sort", 1)
+                .get());
+    assertEquals(asList("doc4"), querySnapshotToIds(docs2));
+
+    // With multiple IN
+    QuerySnapshot docs3 =
+        waitFor(
+            collection
+                .whereGreaterThanOrEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .whereIn("v", asList(2, 3, 4))
+                .whereIn("sort", asList(2, 3))
+                .get());
+    assertEquals(asList("doc4"), querySnapshotToIds(docs3));
+
+    // With NOT-IN
+    QuerySnapshot docs4 =
+        waitFor(
+            collection
+                .whereGreaterThanOrEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .whereNotIn("v", asList(2, 4, 5))
+                .get());
+    assertEquals(asList("doc1", "doc3"), querySnapshotToIds(docs4));
+
+    // With orderby
+    QuerySnapshot docs5 =
+        waitFor(
+            collection
+                .whereGreaterThanOrEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .orderBy("v", Direction.DESCENDING)
+                .get());
+    assertEquals(asList("doc3", "doc4", "doc1"), querySnapshotToIds(docs5));
+
+    // With limit
+    QuerySnapshot docs6 =
+        waitFor(
+            collection
+                .whereGreaterThanOrEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .orderBy("v", Direction.DESCENDING)
+                .limit(2)
+                .get());
+    assertEquals(asList("doc3", "doc4"), querySnapshotToIds(docs6));
+
+    // With limitToLast
+    QuerySnapshot docs7 =
+        waitFor(
+            collection
+                .whereGreaterThanOrEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .orderBy("v", Direction.DESCENDING)
+                .limitToLast(2)
+                .get());
+    assertEquals(asList("doc4", "doc1"), querySnapshotToIds(docs7));
+  }
+
+  @Test
+  public void testMultipleInequalityOnUnaryValues() {
+    // TODO(MIEQ-query): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", map("key", "a", "sort", 0, "v", 0),
+                "doc2", map("key", "b", "sort", Double.NaN, "v", 1),
+                "doc3", map("key", "c", "sort", null, "v", 3),
+                "doc4", map("key", "d", "v", 2),
+                "doc5", map("key", "e", "sort", 0),
+                "doc6", map("key", "f", "sort", 1, "v", 1)));
+
+    QuerySnapshot docs1 =
+        waitFor(collection.whereNotEqualTo("key", "a").whereLessThanOrEqualTo("sort", 2).get());
+
+    assertEquals(asList("doc5", "doc6"), querySnapshotToIds(docs1));
+
+    QuerySnapshot docs2 =
+        waitFor(
+            collection
+                .whereNotEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .whereLessThanOrEqualTo("v", 1)
+                .get());
+
+    assertEquals(asList("doc6"), querySnapshotToIds(docs2));
+  }
+
+  @Test
+  public void testMultipleInequalityWithArrayMembership() {
+    // TODO(MIEQ-query): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", map("key", "a", "sort", 0, "v", asList(0)),
+                "doc2", map("key", "b", "sort", 1, "v", asList(0, 1, 3)),
+                "doc3", map("key", "c", "sort", 1, "v", emptyList()),
+                "doc4", map("key", "d", "sort", 2, "v", asList(1)),
+                "doc5", map("key", "e", "sort", 3, "v", asList(2, 4)),
+                "doc6", map("key", "f", "sort", 4, "v", asList(Double.NaN)),
+                "doc7", map("key", "g", "sort", 4, "v", nullList())));
+
+    QuerySnapshot docs1 =
+        waitFor(
+            collection
+                .whereNotEqualTo("key", "a")
+                .whereGreaterThanOrEqualTo("sort", 1)
+                .whereArrayContains("v", 0)
+                .get());
+
+    assertEquals(asList("doc2"), querySnapshotToIds(docs1));
+
+    QuerySnapshot docs2 =
+        waitFor(
+            collection
+                .whereNotEqualTo("key", "a")
+                .whereGreaterThanOrEqualTo("sort", 1)
+                .whereArrayContainsAny("v", asList(0, 1))
+                .get());
+
+    assertEquals(asList("doc2", "doc4"), querySnapshotToIds(docs2));
+  }
+
+  private static Map<String, Object> nestedObject(int number) {
+    return map(
+        "name",
+        String.format("room %d", number),
+        "metadata",
+        map("createdAt", (int) number),
+        "field",
+        String.format("field %d", number),
+        "field.dot",
+        (int) number,
+        "field\\slash",
+        (int) number);
+  }
+
+  @Test
+  public void testMultipleInequalityWithNestedField() {
+    // TODO(MIEQ-query): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", nestedObject(400),
+                "doc2", nestedObject(200),
+                "doc3", nestedObject(100),
+                "doc4", nestedObject(300)));
+
+    QuerySnapshot docs1 =
+        waitFor(
+            collection
+                .whereLessThanOrEqualTo("metadata.createdAt", 500)
+                .whereGreaterThan("metadata.createdAt", 100)
+                .whereNotEqualTo("name", "room 200")
+                .orderBy("name")
+                .get());
+
+    assertEquals(asList("doc4", "doc1"), querySnapshotToIds(docs1));
+
+    QuerySnapshot docs2 =
+        waitFor(
+            collection
+                .whereGreaterThanOrEqualTo("field", "field 100")
+                .whereNotEqualTo(FieldPath.of("field.dot"), 300)
+                .whereLessThan("field\\slash", 400)
+                .orderBy("name", Direction.DESCENDING)
+                .get());
+
+    assertEquals(asList("doc2", "doc3"), querySnapshotToIds(docs2));
   }
 }
