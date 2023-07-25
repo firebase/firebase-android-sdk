@@ -90,7 +90,7 @@ public class TargetIndexMatcher {
 
   // The inequality filters of the target (if it exists).
   // Note: The sort on FieldFilters is not required. Using SortedSet here just to utilize
-  // the custom comparator. 
+  // the custom comparator.
   private final SortedSet<FieldFilter> inequalityFilters;
 
   private final List<FieldFilter> equalityFilters;
