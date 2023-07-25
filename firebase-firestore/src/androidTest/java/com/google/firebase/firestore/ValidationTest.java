@@ -765,16 +765,16 @@ public class ValidationTest {
   }
 
   @Test
-  public void testInvalidQueryFilters() {
-    CollectionReference collection = testCollection();
-    // Multiple inequalities, one of which is inside a nested composite filter.
-    assertDoesNotThrow(
+  public void testMultipleInequalityInCompositeFilters() {
+      CollectionReference collection = testCollection();
+        // Multiple inequality on different fields between a field filter and a composite filter.
+        assertDoesNotThrow(
         () ->
             collection
                 .where(
                     or(
                         and(equalTo("a", "b"), greaterThan("c", "d")),
-                        and(equalTo("e", "f"), equalTo("g", "h"))))
+                        and(lessThan("e", "f"), equalTo("g", "h"))))
                 .where(greaterThan("r", "s")));
 
     // OrderBy and inequality on different fields. Inequality inside a nested composite filter.
@@ -785,8 +785,73 @@ public class ValidationTest {
                     or(
                         and(equalTo("a", "b"), greaterThan("c", "d")),
                         and(equalTo("e", "f"), equalTo("g", "h"))))
-                .orderBy("r"));
+            .orderBy("r")
+            .orderBy("a"));
+                
+               // Multiple inequality on different fields between a field filter and a composite filter.
+        assertDoesNotThrow(
+        () ->
+            collection
+                .where(
+                  and(
+                    or(
+                        and(notEqualTo("a", "b"), greaterThan("c", "d")),
+                        and(lessThan("e", "f"), equalTo("g", "h"))
+                        ),
+                                    or(
+                        and(equalTo("i", "j"), greaterThan("k", "l")),
+                        and(lessThan("m", "n"), equalTo("o", "p"))
+                        )
+                        )
+                ));
 
+        // Composite queries can validate conflicting operators in multiple ineuality.
+        String reason = "Invalid query. You cannot use more than one '!=' filter.";
+    expectError(
+        () ->
+            collection
+                .where(
+                    or(
+                        and(lessThan("a", "b"), inArray("c", Arrays.asList("d", "e"))),
+                        and(equalTo("e", "f"), notEqualTo("g", "h"))))
+                .where(
+                    or(
+                        and(greaterThan("i", "j"), greaterThan("k", "l")),
+                        and(notEqualTo("o", "p"), lessThan("q", "r")))),
+        reason);
+
+           reason = "Invalid query. You cannot use more than one 'not-in' filter.";
+    expectError(
+        () ->
+            collection
+                .where(
+                    or(
+                        and(lessThan("a", "b"), inArray("c", Arrays.asList("d", "e"))),
+                        and(equalTo("e", "f"), notInArray("g", Arrays.asList("h","i")))))
+                .where(
+                    or(
+                        and(greaterThan("i", "j"), greaterThan("k", "l")),
+                        and(notInArray("o", Arrays.asList("p","q")), lessThan("q", "r")))),
+        reason);
+
+                   reason = "Invalid query. You cannot use 'not-in' filters with '!=' filters.";
+    expectError(
+        () ->
+            collection
+                .where(
+                    or(
+                        and(lessThan("a", "b"), inArray("c", Arrays.asList("d", "e"))),
+                        and(equalTo("e", "f"), notEqualTo("g", "h"))))
+                .where(
+                    or(
+                        and(greaterThan("i", "j"), greaterThan("k", "l")),
+                        and(notInArray("o", Arrays.asList("p","q")), lessThan("q", "r")))),
+        reason);
+
+  }
+
+  @Test
+  public void testInvalidQueryFilters() {
     // Conflicting operations within a composite filter.
     String reason = "Invalid Query. You cannot use 'not_in' filters with 'in' filters.";
     expectError(

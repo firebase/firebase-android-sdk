@@ -88,6 +88,9 @@ public class TargetIndexMatcher {
   // The collection ID (or collection group) of the query target.
   private final String collectionId;
 
+  // The inequality filters of the target (if it exists).
+  // Note: The sort on FieldFilters is not required. Using SortedSet here just to utilize
+  // the custom comparator. 
   private final SortedSet<FieldFilter> inequalityFilters;
 
   private final List<FieldFilter> equalityFilters;

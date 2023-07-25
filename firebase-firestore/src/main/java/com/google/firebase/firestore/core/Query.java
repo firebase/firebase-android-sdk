@@ -133,7 +133,6 @@ public final class Query {
 
   /**
    * Returns true if this query does not specify any query constraints that could remove results.
-   * ???
    */
   public boolean matchesAllDocuments() {
     return filters.isEmpty()
@@ -141,7 +140,8 @@ public final class Query {
         && startAt == null
         && endAt == null
         && (getExplicitOrderBy().isEmpty()
-            || (getExplicitOrderBy().size() == 1 && getFirstOrderByField().isKeyField()));
+            || (getExplicitOrderBy().size() == 1
+                && getExplicitOrderBy().get(0).field.isKeyField()));
   }
 
   /** The filters on the documents returned by the query. */
@@ -180,6 +180,7 @@ public final class Query {
     return explicitSortOrder.get(0).getField();
   }
 
+  // Returns the sorted set of inequality filter fields used in this query.
   public SortedSet<FieldPath> getInequalityFilterFields() {
     SortedSet<FieldPath> result = new TreeSet<FieldPath>();
 
@@ -338,19 +339,18 @@ public final class Query {
               : Direction.ASCENDING;
 
       // Any inequality fields not explicitly ordered should be implicitly ordered in a
-      // lexicographical
-      // order. When there are multiple inequality filters on the same field, the field should be
-      // added
-      // only once.
-      // Note: key field would be lexicographically ordered to the first by sorted set.
+      // lexicographical order. When there are multiple inequality filters on the same field,
+      // the field should be added only once.
+      // Note: `SortedSet<FieldPath>` sorts the key field before other fields. However, we
+      // want the key field to be sorted last.
       SortedSet<FieldPath> inequalityFields = getInequalityFilterFields();
-
       for (FieldPath field : inequalityFields) {
         if (!explicitFields.contains(field.canonicalString()) && !field.isKeyField()) {
-          res.add(OrderBy.getInstance(Direction.ASCENDING, field));
+          res.add(OrderBy.getInstance(lastDirection, field));
         }
       }
 
+      // Add the document key field to the last if it is not explicitly ordered.
       if (!explicitFields.contains(FieldPath.KEY_PATH.canonicalString())) {
         res.add(lastDirection.equals(Direction.ASCENDING) ? KEY_ORDERING_ASC : KEY_ORDERING_DESC);
       }
