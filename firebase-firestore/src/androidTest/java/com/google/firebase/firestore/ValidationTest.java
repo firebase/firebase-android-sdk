@@ -728,8 +728,6 @@ public class ValidationTest {
   @Test
   public void queriesCanHaveInequalityFieldsDifferentThanFirstOrderBy() {
     CollectionReference collection = testCollection();
-    // Equality
-    assertDoesNotThrow(() -> collection.whereEqualTo("x", 32).orderBy("y"));
 
     // Single Inequality
     assertDoesNotThrow(() -> collection.whereGreaterThan("x", 32).orderBy("y"));
@@ -776,7 +774,7 @@ public class ValidationTest {
                 .where(
                     or(
                         and(equalTo("a", "b"), greaterThan("c", "d")),
-                        and(lessThan("e", "f"), equalTo("g", "h"))))
+                        and(lessThan("e", "f"), notEqualTo("g", "h"))))
                 .where(greaterThan("r", "s")));
 
     // OrderBy and inequality on different fields. Inequality inside a nested composite filter.
@@ -786,7 +784,7 @@ public class ValidationTest {
                 .where(
                     or(
                         and(equalTo("a", "b"), greaterThan("c", "d")),
-                        and(equalTo("e", "f"), equalTo("g", "h"))))
+                        and(lessThan("e", "f"), notEqualTo("g", "h"))))
                 .orderBy("r")
                 .orderBy("a"));
 

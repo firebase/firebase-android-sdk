@@ -1572,7 +1572,7 @@ public class QueryTest {
   /** Multiple Inequality */
   @Test
   public void testMultipleInequalityOnDifferentFields() {
-    // TODO(MIEQ-query): Enable this test against production when possible.
+    // TODO(MIEQ): Enable this test against production when possible.
     assumeTrue(
         "Skip this test if running against production because multiple inequality is "
             + "not supported yet.",
@@ -1661,7 +1661,7 @@ public class QueryTest {
 
   @Test
   public void testMultipleInequalityOnUnaryValues() {
-    // TODO(MIEQ-query): Enable this test against production when possible.
+    // TODO(MIEQ): Enable this test against production when possible.
     assumeTrue(
         "Skip this test if running against production because multiple inequality is "
             + "not supported yet.",
@@ -1679,7 +1679,6 @@ public class QueryTest {
 
     QuerySnapshot snapshot1 =
         waitFor(collection.whereNotEqualTo("key", "a").whereLessThanOrEqualTo("sort", 2).get());
-
     assertEquals(asList("doc5", "doc6"), querySnapshotToIds(snapshot1));
 
     QuerySnapshot snapshot2 =
@@ -1689,13 +1688,12 @@ public class QueryTest {
                 .whereLessThanOrEqualTo("sort", 2)
                 .whereLessThanOrEqualTo("v", 1)
                 .get());
-
     assertEquals(asList("doc6"), querySnapshotToIds(snapshot2));
   }
 
   @Test
   public void testMultipleInequalityWithArrayMembership() {
-    // TODO(MIEQ-query): Enable this test against production when possible.
+    // TODO(MIEQ): Enable this test against production when possible.
     assumeTrue(
         "Skip this test if running against production because multiple inequality is "
             + "not supported yet.",
@@ -1719,7 +1717,6 @@ public class QueryTest {
                 .whereGreaterThanOrEqualTo("sort", 1)
                 .whereArrayContains("v", 0)
                 .get());
-
     assertEquals(asList("doc2"), querySnapshotToIds(snapshot1));
 
     QuerySnapshot snapshot2 =
@@ -1729,7 +1726,6 @@ public class QueryTest {
                 .whereGreaterThanOrEqualTo("sort", 1)
                 .whereArrayContainsAny("v", asList(0, 1))
                 .get());
-
     assertEquals(asList("doc2", "doc4"), querySnapshotToIds(snapshot2));
   }
 
@@ -1738,18 +1734,18 @@ public class QueryTest {
         "name",
         String.format("room %d", number),
         "metadata",
-        map("createdAt", (int) number),
+        map("createdAt", number),
         "field",
         String.format("field %d", number),
         "field.dot",
-        (int) number,
+        number,
         "field\\slash",
-        (int) number);
+        number);
   }
 
   @Test
   public void testMultipleInequalityWithNestedField() {
-    // TODO(MIEQ-query): Enable this test against production when possible.
+    // TODO(MIEQ): Enable this test against production when possible.
     assumeTrue(
         "Skip this test if running against production because multiple inequality is "
             + "not supported yet.",
@@ -1771,7 +1767,6 @@ public class QueryTest {
                 .whereNotEqualTo("name", "room 200")
                 .orderBy("name")
                 .get());
-
     assertEquals(asList("doc4", "doc1"), querySnapshotToIds(snapshot1));
 
     QuerySnapshot snapshot2 =
@@ -1782,13 +1777,12 @@ public class QueryTest {
                 .whereLessThan("field\\slash", 400)
                 .orderBy("name", Direction.DESCENDING)
                 .get());
-
     assertEquals(asList("doc2", "doc3"), querySnapshotToIds(snapshot2));
   }
 
   @Test
   public void testMultipleInequalityWithCompositeFilters() {
-    // TODO(MIEQ-query): Enable this test against production when possible.
+    // TODO(MIEQ): Enable this test against production when possible.
     assumeTrue(
         "Skip this test if running against production because multiple inequality is "
             + "not supported yet.",
@@ -1809,6 +1803,7 @@ public class QueryTest {
                 map("key", "b", "sort", 2, "v", 1),
                 "doc6",
                 map("key", "b", "sort", 0, "v", 0)));
+
     QuerySnapshot snapshot1 =
         waitFor(
             collection
@@ -1817,7 +1812,6 @@ public class QueryTest {
                         and(equalTo("key", "b"), lessThanOrEqualTo("sort", 2)),
                         and(notEqualTo("key", "b"), greaterThan("v", 4))))
                 .get());
-
     // Implicitly ordered by: 'key' asc, 'sort' asc, 'v' asc, __name__ asc
     assertEquals(asList("doc1", "doc6", "doc5", "doc4"), querySnapshotToIds(snapshot1));
 
@@ -1831,7 +1825,6 @@ public class QueryTest {
                 .orderBy("sort", Direction.DESCENDING)
                 .orderBy("key")
                 .get());
-
     // Ordered by: 'sort' desc, 'key' asc, 'v' asc, __name__ asc
     assertEquals(asList("doc5", "doc4", "doc1", "doc6"), querySnapshotToIds(snapshot2));
 
@@ -1847,14 +1840,13 @@ public class QueryTest {
                             and(greaterThan("key", "b"), greaterThanOrEqualTo("sort", 1)),
                             and(lessThan("key", "b"), greaterThan("v", 0)))))
                 .get());
-
     // Implicitly ordered by: 'key' asc, 'sort' asc, 'v' asc, __name__ asc
     assertEquals(asList("doc1", "doc2"), querySnapshotToIds(snapshot3));
   }
 
   @Test
   public void testMultipleInequalityFieldsWillBeImplicitlyOrderedLexicographically() {
-    // TODO(MIEQ-query): Enable this test against production when possible.
+    // TODO(MIEQ): Enable this test against production when possible.
     assumeTrue(
         "Skip this test if running against production because multiple inequality is "
             + "not supported yet.",
@@ -1893,7 +1885,7 @@ public class QueryTest {
 
   @Test
   public void testMultipleInequalityWithMultipleExplicitOrderBy() {
-    // TODO(MIEQ-query): Enable this test against production when possible.
+    // TODO(MIEQ): Enable this test against production when possible.
     assumeTrue(
         "Skip this test if running against production because multiple inequality is "
             + "not supported yet.",
@@ -1902,12 +1894,19 @@ public class QueryTest {
     CollectionReference collection =
         testCollectionWithDocs(
             map(
-                "doc1", map("key", "a", "sort", 5, "v", 0),
-                "doc2", map("key", "aa", "sort", 4, "v", 0),
-                "doc3", map("key", "b", "sort", 3, "v", 1),
-                "doc4", map("key", "b", "sort", 2, "v", 1),
-                "doc5", map("key", "bb", "sort", 1, "v", 1),
-                "doc6", map("key", "c", "sort", 0, "v", 2)));
+                "doc1",
+                map("key", "a", "sort", 5, "v", 0),
+                "doc2",
+                map("key", "aa", "sort", 4, "v", 0),
+                "doc3",
+                map("key", "b", "sort", 3, "v", 1),
+                "doc4",
+                map("key", "b", "sort", 2, "v", 1),
+                "doc5",
+                map("key", "bb", "sort", 1, "v", 1),
+                "doc6",
+                map("key", "c", "sort", 0, "v", 2)));
+
     QuerySnapshot snapshot1 =
         waitFor(
             collection
@@ -1954,7 +1953,7 @@ public class QueryTest {
 
   @Test
   public void testMultipleInequalityInAggregateQuery() {
-    // TODO(MIEQ-query): Enable this test against production when possible.
+    // TODO(MIEQ): Enable this test against production when possible.
     assumeTrue(
         "Skip this test if running against production because multiple inequality is "
             + "not supported yet.",
@@ -1990,13 +1989,12 @@ public class QueryTest {
                 .get(AggregateSource.SERVER));
     assertEquals(3L, snapshot2.get(AggregateField.count()));
     assertEquals(6L, snapshot2.get(AggregateField.sum("sort")));
-
     assertEquals((Double) 1.0, snapshot2.get(AggregateField.average("v")));
   }
 
   @Test
   public void testMultipleInequalityFieldsWithDocumentKey() {
-    // TODO(MIEQ-query): Enable this test against production when possible.
+    // TODO(MIEQ): Enable this test against production when possible.
     assumeTrue(
         "Skip this test if running against production because multiple inequality is "
             + "not supported yet.",
@@ -2042,13 +2040,12 @@ public class QueryTest {
                 .orderBy("sort", Direction.DESCENDING)
                 .get());
     // Ordered by: 'sort' desc,'key' desc,  __name__ desc
-
     assertEquals(asList("doc2", "doc3", "doc4"), querySnapshotToIds(snapshot3));
   }
 
   @Test
   public void testMultipleInequalityReadFromCacheWhenOffline() {
-    // TODO(MIEQ-query): Enable this test against production when possible.
+    // TODO(MIEQ): Enable this test against production when possible.
     assumeTrue(
         "Skip this test if running against production because multiple inequality is "
             + "not supported yet.",
@@ -2066,15 +2063,12 @@ public class QueryTest {
 
     // populate the cache.
     QuerySnapshot snapshot1 = waitFor(query.get());
-
-    // initial event
     assertEquals(2L, snapshot1.size());
     assertFalse(snapshot1.getMetadata().isFromCache());
 
     waitFor(collection.firestore.getClient().disableNetwork());
 
     QuerySnapshot snapshot2 = waitFor(query.get());
-
     assertEquals(2L, snapshot2.size());
     assertTrue(snapshot2.getMetadata().isFromCache());
     // Implicitly ordered by: 'key' asc, 'sort' asc, __name__ asc
@@ -2083,7 +2077,7 @@ public class QueryTest {
 
   @Test
   public void testMultipleInequalityFromCacheAndFromServer() {
-    // TODO(MIEQ-query): Enable this test against production when possible.
+    // TODO(MIEQ): Enable this test against production when possible.
     assumeTrue(
         "Skip this test if running against production because multiple inequality is "
             + "not supported yet.",
@@ -2125,7 +2119,7 @@ public class QueryTest {
             .limit(2);
     checkOnlineAndOfflineResultsMatch(query4, "doc4", "doc2");
 
-    // explicit OR: multiple inequality: a>2 || b<1.
+    // explicit OR: a>2 || b<1.
     Query query5 = collection.where(or(greaterThan("a", 2), lessThan("b", 1)));
     checkOnlineAndOfflineResultsMatch(query5, "doc1", "doc3");
   }
