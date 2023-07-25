@@ -1078,17 +1078,18 @@ public class QueryTest {
       }
       assertWithMessage("createdDocuments").that(createdDocuments).hasSize(100);
 
-      // Delete 50 of the 100 documents. Use a WriteBatch, rather than DocumentReference.delete(),
-      // to avoid affecting the local cache.
+      // Delete 50 of the 100 documents. Use a different Firestore instance to avoid affecting the
+      // local cache.
       HashSet<String> deletedDocumentIds = new HashSet<>();
       {
-        WriteBatch writeBatchForDocumentDeletes = collection.getFirestore().batch();
+        FirebaseFirestore db2 = testFirestore();
+        WriteBatch batch = db2.batch();
         for (int i = 0; i < createdDocuments.size(); i += 2) {
-          DocumentReference documentToDelete = createdDocuments.get(i);
-          writeBatchForDocumentDeletes.delete(documentToDelete);
+          DocumentReference documentToDelete = db2.document(createdDocuments.get(i).getPath());
+          batch.delete(documentToDelete);
           deletedDocumentIds.add(documentToDelete.getId());
         }
-        waitFor(writeBatchForDocumentDeletes.commit());
+        waitFor(batch.commit());
       }
       assertWithMessage("deletedDocumentIds").that(deletedDocumentIds).hasSize(50);
 
@@ -1237,14 +1238,10 @@ public class QueryTest {
     }
 
     // Delete one of the documents so that the next call to collection.get() will experience an
-    // existence filter mismatch. Use a WriteBatch, rather than DocumentReference.delete(), to avoid
-    // affecting the local cache.
+    // existence filter mismatch. Use a different Firestore instance to avoid affecting the local
+    // cache.
     DocumentReference documentToDelete = collection.document("DocumentToDelete");
-    {
-      WriteBatch writeBatchForDocumentDeletes = collection.getFirestore().batch();
-      writeBatchForDocumentDeletes.delete(documentToDelete);
-      waitFor(writeBatchForDocumentDeletes.commit());
-    }
+    waitFor(testFirestore().document(documentToDelete.getPath()).delete());
 
     // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
     // existence filter rather than "delete" events when the query is resumed.
