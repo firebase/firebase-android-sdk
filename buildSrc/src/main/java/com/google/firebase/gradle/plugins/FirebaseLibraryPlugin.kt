@@ -86,7 +86,16 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     setupStaticAnalysis(project, firebaseLibrary)
     getIsPomValidTask(project, firebaseLibrary)
     getSemverTaskAar(project, firebaseLibrary)
+    getPackageTransform(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary, android)
+  }
+
+  private fun getPackageTransform(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+    project.tasks.register<PackageTransform>("packageTransform") {
+      groupId.set(firebaseLibrary.groupId.get())
+      artifactId.set(firebaseLibrary.artifactId.get())
+      projectPath.set(project.projectDir.absolutePath)
+    }
   }
 
   private fun getSemverTaskAar(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
