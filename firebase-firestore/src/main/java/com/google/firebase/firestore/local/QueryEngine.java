@@ -69,7 +69,7 @@ public class QueryEngine {
    * document in the result set) / ([docKey, docContent] per documents in full collection scan)
    * coming from experiment https://github.com/firebase/firebase-android-sdk/pull/5064.
    */
-  private static final double DEFAULT_RELATIVE_INDEX_READ_COST_PER_DOCUMENT = 3;
+  private static final double DEFAULT_RELATIVE_INDEX_READ_COST_PER_DOCUMENT = 2;
 
   private LocalDocumentsView localDocumentsView;
   private IndexManager indexManager;
