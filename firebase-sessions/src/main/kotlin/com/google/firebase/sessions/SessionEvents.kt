@@ -16,7 +16,6 @@
 
 package com.google.firebase.sessions
 
-import android.content.pm.PackageInfo
 import android.os.Build
 import com.google.firebase.FirebaseApp
 import com.google.firebase.encoders.DataEncoder
@@ -76,19 +75,10 @@ internal object SessionEvents {
       androidAppInfo =
         AndroidApplicationInfo(
           packageName = packageName,
-          versionName = versionName(packageInfo) ?: buildVersion,
+          versionName = packageInfo.versionName ?: buildVersion,
           appBuildVersion = buildVersion,
           deviceManufacturer = Build.MANUFACTURER,
         )
     )
   }
-
-  private fun versionName(packageInfo: PackageInfo): String? =
-    try {
-      packageInfo.versionName
-    } catch (_: NullPointerException) {
-      // https://github.com/firebase/firebase-android-sdk/issues/5195#issuecomment-1651834306
-      // packageInfo.versionName has type String! but returns null when unset.
-      null
-    }
 }
