@@ -125,15 +125,17 @@ public class QueryEngine {
     if (context.getDocumentReadCount() < indexAutoCreationMinCollectionSize) {
       Logger.debug(
           LOG_TAG,
-          "SDK will only creates cache indexes for collection contains more than or equal to "
-              + "%s documents.",
+          "SDK will not create cache indexes for query: %s, since it only creates cache indexes "
+              + "for collection contains more than or equal to %s documents.",
+          query.toString(),
           indexAutoCreationMinCollectionSize);
       return;
     }
 
     Logger.debug(
         LOG_TAG,
-        "Query scans %s local documents and returns %s documents as results.",
+        "Query: %s, scans %s local documents and returns %s documents as results.",
+        query.toString(),
         context.getDocumentReadCount(),
         resultSize);
 
