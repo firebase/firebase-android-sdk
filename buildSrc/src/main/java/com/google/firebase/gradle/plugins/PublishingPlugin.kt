@@ -14,6 +14,7 @@
 
 package com.google.firebase.gradle.plugins
 
+import com.google.common.collect.Sets
 import com.google.firebase.gradle.bomgenerator.BomGeneratorTask
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.BUILD_BOM_ZIP_TASK
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.BUILD_KOTLINDOC_ZIP_TASK
@@ -45,18 +46,18 @@ import org.gradle.kotlin.dsl.register
  * - [VALIDATE_POM_TASK][registerValidatePomForReleaseTask]
  * - [VALIDATE_PROJECTS_TO_PUBLISH_TASK][registerValidateProjectsToPublishTask]
  * - [BUILD_MAVEN_ZIP_TASK] -> Creates a zip file of the contents of
- * [PUBLISH_RELEASING_LIBS_TO_BUILD_TASK] [registerPublishReleasingLibrariesToBuildDirTask]
+ *   [PUBLISH_RELEASING_LIBS_TO_BUILD_TASK] [registerPublishReleasingLibrariesToBuildDirTask]
  * - [BUILD_KOTLINDOC_ZIP_TASK] -> Creates a zip file of the contents of
- * [GENERATE_KOTLINDOC_FOR_RELEASE_TASK] [registerGenerateKotlindocForReleaseTask]
+ *   [GENERATE_KOTLINDOC_FOR_RELEASE_TASK] [registerGenerateKotlindocForReleaseTask]
  * - [BUILD_RELEASE_NOTES_ZIP_TASK] -> Creates a zip file of the contents of
- * [PREPARE_RELEASE_NOTES_FOR_DROP][registerPrepareReleaseNotesForDropTask]
+ *   [PREPARE_RELEASE_NOTES_FOR_DROP][registerPrepareReleaseNotesForDropTask]
  * - [FIREBASE_PUBLISH_TASK] -> Runs all the tasks above
  *
  * The following are additional tasks provided- that are either for convenience sake, or are used
  * outside of the standard [FIREBASE_PUBLISH_TASK] workflow (possibly at a later time in the release
  * cycle):
  * - [BUILD_BOM_ZIP_TASK] -> Creates a zip file of the contents of [GENERATE_BOM_TASK]
- * [registerGenerateBomTask]
+ *   [registerGenerateBomTask]
  * - [RELEASE_GENEATOR_TASK][registerGenerateReleaseConfigFilesTask]
  * - [PUBLISH_RELEASING_LIBS_TO_LOCAL_TASK][registerPublishReleasingLibrariesToMavenLocalTask]
  * - [SEMVER_CHECK_TASK][registerSemverCheckForReleaseTask]
@@ -79,7 +80,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       val checkHeadDependencies =
         registerCheckHeadDependenciesTask(project, releasingFirebaseLibraries)
       val validateProjectsToPublish =
-        registerValidateProjectsToPublishTask(project, releasingProjects)
+        registerValidateProjectsToPublishTask(project, releasingFirebaseLibraries)
       val publishReleasingLibrariesToBuildDir =
         registerPublishReleasingLibrariesToBuildDirTask(project, releasingProjects)
       val generateKotlindocsForRelease =
@@ -275,15 +276,24 @@ abstract class PublishingPlugin : Plugin<Project> {
   // TODO(b/280320915): Remove doLast when Gradle + IDEA fix task configuration avoidance bug
   private fun registerValidateProjectsToPublishTask(
     project: Project,
-    releasingProjects: List<Project>
+    releasinglibraries: List<FirebaseLibraryExtension>
   ) =
     project.tasks.register(VALIDATE_PROJECTS_TO_PUBLISH_TASK) {
       doLast {
-        if (releasingProjects.isEmpty()) {
+        if (releasinglibraries.isEmpty()) {
           throw GradleException(
             "No projects to release. " +
               "Ensure you've specified the projectsToPublish parameter, " +
               "or have a valid $RELEASE_CONFIG_FILE file at the root directory."
+          )
+        }
+        val libraryGroupProjects =
+          releasinglibraries.flatMap { it.projectsToRelease }.filterNotNull().toSet()
+        val releasingProjects = releasinglibraries.mapNotNull { it.project }.toSet()
+        if (!libraryGroupProjects.equals(releasingProjects)) {
+          throw GradleException(
+            "Some libraries in library groups are not in the release: " +
+              Sets.difference(libraryGroupProjects, releasingProjects).map { it.displayName }
           )
         }
       }
