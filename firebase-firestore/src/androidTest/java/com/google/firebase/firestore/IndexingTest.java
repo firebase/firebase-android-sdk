@@ -118,7 +118,6 @@ public class IndexingTest {
             .build();
     db.setFirestoreSettings(settings);
 
-    // Based on current heuristic, collection document counts (3) > 2 * resultSize (1).
     CollectionReference collection =
         testCollectionWithDocs(
             map(
@@ -147,7 +146,6 @@ public class IndexingTest {
     // Use persistent disk cache (default)
     FirebaseFirestore db = testFirestore();
 
-    // Based on current heuristic, collection document counts (3) > 2 * resultSize (1).
     CollectionReference collection =
         testCollectionWithDocs(
             map(
@@ -182,6 +180,10 @@ public class IndexingTest {
 
     expectError(
         () -> db.getPersistentCacheIndexManager().disableIndexAutoCreation(),
+        "The client has already been terminated");
+
+    expectError(
+        () -> db.getPersistentCacheIndexManager().deleteAllIndexes(),
         "The client has already been terminated");
   }
 }

@@ -577,16 +577,18 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
   @Test
   public void testDeleteAllIndexesWorksWithIndexAutoCreation() {
-    Query query = query("coll").filter(filter("matches", "==", true));
+    Query query = query("coll").filter(filter("value", "==", "match"));
     int targetId = allocateQuery(query);
 
-    enableIndexAutoCreation();
+    setIndexAutoCreationEnabled(true);
+    setMinCollectionSizeToAutoCreateIndex(0);
+    setRelativeIndexReadCostPerDocument(2);
 
-    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", true)), targetId));
-    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", false)), targetId));
-    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("matches", false)), targetId));
-    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("matches", false)), targetId));
-    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("matches", true)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("value", "match")), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("value", Double.NaN)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("value", null)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("value", "mismatch")), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("value", "match")), targetId));
 
     // First time query is running without indexes.
     // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
@@ -595,7 +597,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
     assertQueryReturned("coll/a", "coll/e");
 
-    disableIndexAutoCreation();
+    setIndexAutoCreationEnabled(false);
 
     backfillIndexes();
 
