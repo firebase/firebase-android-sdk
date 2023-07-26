@@ -243,7 +243,7 @@ public class AutoIndexingExperiment {
           Query query = query(basePath).filter(filter("match", "==", true));
 
           // Creates a full matched index for given query.
-          indexManager.createTargetIndices(query.toTarget());
+          indexManager.createTargetIndexes(query.toTarget());
 
           createTestingCollection(basePath, totalSetCount, portion, numOfFields);
           createMutationForCollection(basePath, totalSetCount);
