@@ -69,7 +69,8 @@ public class FirebasePerfEarly {
 
           @Override
           public boolean isDataCollectionEnabled() {
-            // If there is no cached config data available for data collection, be conservative. Return false.
+            // If there is no cached config data available for data collection, be conservative.
+            // Return false.
             if (!configResolver.isCollectionEnabledCacheAvailable()) {
               return false;
             }
