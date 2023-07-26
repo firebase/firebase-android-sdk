@@ -498,6 +498,20 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
   }
 
   @Test
+  public void getIsPerformanceCollectionCacheAvailable_noDeviceCache_returnsFalse() {
+    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
+        .thenReturn(Optional.absent());
+    assertThat(testConfigResolver.isCollectionEnabledCacheAvailable()).isFalse();
+  }
+
+  @Test
+  public void getIsPerformanceCollectionCacheAvailable_hasDeviceCache_returnsTrue() {
+    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
+        .thenReturn(Optional.of(true));
+    assertThat(testConfigResolver.isCollectionEnabledCacheAvailable()).isTrue();
+  }
+
+  @Test
   public void getIsPerformanceCollectionEnabled_notDeviceCacheOrMetadata_returnsNull() {
     when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
         .thenReturn(Optional.absent());
