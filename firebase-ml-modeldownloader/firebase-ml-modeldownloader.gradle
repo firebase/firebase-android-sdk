@@ -59,6 +59,9 @@ android {
             includeAndroidResources = true
         }
     }
+    lint {
+        baseline = file("lint-baseline.xml")
+    }
 }
 
 thirdPartyLicenses {
