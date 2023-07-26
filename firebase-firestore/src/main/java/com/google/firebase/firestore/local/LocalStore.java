@@ -802,6 +802,10 @@ public final class LocalStore implements BundleCallback {
         });
   }
 
+  public void setIndexAutoCreationEnabled(boolean enabled) {
+    queryEngine.setIndexAutoCreationEnabled(enabled);
+  }
+
   /** Mutable state for the transaction in allocateQuery. */
   private static class AllocateQueryHolder {
     TargetData cached;
