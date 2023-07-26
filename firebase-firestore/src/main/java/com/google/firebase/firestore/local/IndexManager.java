@@ -79,7 +79,7 @@ public interface IndexManager {
   void deleteFieldIndex(FieldIndex index);
 
   /** Creates a full matched field index which serves the given target. */
-  void createTargetIndices(Target target);
+  void createTargetIndexes(Target target);
 
   /**
    * Returns a list of field indexes that correspond to the specified collection group.

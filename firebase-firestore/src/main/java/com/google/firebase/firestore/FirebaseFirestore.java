@@ -63,7 +63,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -106,8 +105,7 @@ public class FirebaseFirestore {
   private volatile FirestoreClient client;
   private final GrpcMetadataProvider metadataProvider;
 
-  private final AtomicReference<PersistentCacheIndexManager> persistentCacheIndexManager =
-      new AtomicReference<>();
+  @Nullable private PersistentCacheIndexManager persistentCacheIndexManager;
 
   @NonNull
   private static FirebaseApp getDefaultFirebaseApp() {
@@ -418,16 +416,14 @@ public class FirebaseFirestore {
   /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
-  public PersistentCacheIndexManager getPersistentCacheIndexManager() {
+  public synchronized PersistentCacheIndexManager getPersistentCacheIndexManager() {
     ensureClientConfigured();
-
-    if ((settings.isPersistenceEnabled()
-            || settings.getCacheSettings() instanceof PersistentCacheSettings)
-        && persistentCacheIndexManager.get() == null) {
-      persistentCacheIndexManager.set(new PersistentCacheIndexManager(client));
+    if (persistentCacheIndexManager == null
+        && (settings.isPersistenceEnabled()
+            || settings.getCacheSettings() instanceof PersistentCacheSettings)) {
+      persistentCacheIndexManager = new PersistentCacheIndexManager(client);
     }
-
-    return persistentCacheIndexManager.get();
+    return persistentCacheIndexManager;
   }
 
   /**

@@ -61,7 +61,7 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public void createTargetIndices(Target target) {}
+  public void createTargetIndexes(Target target) {}
 
   @Override
   @Nullable

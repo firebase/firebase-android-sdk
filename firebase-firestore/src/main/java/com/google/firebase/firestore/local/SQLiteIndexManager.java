@@ -234,7 +234,7 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public void createTargetIndices(Target target) {
+  public void createTargetIndexes(Target target) {
     hardAssert(started, "IndexManager not started");
 
     for (Target subTarget : getSubTargets(target)) {

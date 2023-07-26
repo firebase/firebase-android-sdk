@@ -62,7 +62,7 @@ import javax.annotation.Nullable;
 public class QueryEngine {
   private static final String LOG_TAG = "QueryEngine";
 
-  private static final int INDEX_AUTO_CREATION_DEFAULT_MIN_COLLECTION_SIZE = 100;
+  private static final int DEFAULT_INDEX_AUTO_CREATION_MIN_COLLECTION_SIZE = 100;
 
   /**
    * This cost represents the evaluation result of (([index, docKey] + [docKey, docContent]) per
@@ -78,7 +78,7 @@ public class QueryEngine {
   private boolean indexAutoCreationEnabled = false;
 
   /** SDK only decides whether it should create index when collection size is larger than this. */
-  private int indexAutoCreationMinCollectionSize = INDEX_AUTO_CREATION_DEFAULT_MIN_COLLECTION_SIZE;
+  private int indexAutoCreationMinCollectionSize = DEFAULT_INDEX_AUTO_CREATION_MIN_COLLECTION_SIZE;
 
   private double relativeIndexReadCostPerDocument = DEFAULT_RELATIVE_INDEX_READ_COST_PER_DOCUMENT;
 
@@ -138,16 +138,18 @@ public class QueryEngine {
         resultSize);
 
     if (context.getDocumentReadCount() > relativeIndexReadCostPerDocument * resultSize) {
-      indexManager.createTargetIndices(query.toTarget());
+      indexManager.createTargetIndexes(query.toTarget());
       Logger.debug(
           LOG_TAG,
-          "The SDK decides to create cache indexes for this query, as using cache indexes "
-              + "may help improve performance.");
+          "The SDK decides to create cache indexes for query: %s, as using cache indexes "
+              + "may help improve performance.",
+          query.toString());
     } else {
       Logger.debug(
           LOG_TAG,
-          "The SDK decides not to create cache indexes for this query, as using cache indexes "
-              + "may not help improve performance.");
+          "The SDK decides not to create cache indexes for this query: %s, as using cache "
+              + "indexes may not help improve performance.",
+          query.toString());
     }
   }
 
