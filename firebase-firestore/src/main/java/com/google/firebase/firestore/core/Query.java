@@ -172,14 +172,6 @@ public final class Query {
     return endAt;
   }
 
-  /** Returns the first field in an order-by constraint, or null if none. */
-  public FieldPath getFirstOrderByField() {
-    if (explicitSortOrder.isEmpty()) {
-      return null;
-    }
-    return explicitSortOrder.get(0).getField();
-  }
-
   // Returns the sorted set of inequality filter fields used in this query.
   public SortedSet<FieldPath> getInequalityFilterFields() {
     SortedSet<FieldPath> result = new TreeSet<FieldPath>();
