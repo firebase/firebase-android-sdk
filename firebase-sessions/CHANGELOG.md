@@ -1,6 +1,6 @@
 # Unreleased
 
-* [fixed] Fixed NPE when no version code is set.
+* [fixed] Fixed NPE when no version name is set.
 
 # 1.0.0
 
