@@ -120,7 +120,7 @@ public class FirebaseFirestore {
    * Returns the default {@link FirebaseFirestore} instance for the default {@link FirebaseApp}.
    *
    * <p>Returns the same instance for all invocations. If no instance exists, initializes a new
-   * instance with default settings.
+   * instance.
    *
    * @returns The {@link FirebaseFirestore} instance.
    */
@@ -133,9 +133,9 @@ public class FirebaseFirestore {
    * Returns the default {@link FirebaseFirestore} instance for the provided {@link FirebaseApp}.
    *
    * <p>For a given {@link FirebaseApp}, invocation always returns the same instance. If no instance
-   * exists, initializes a new instance with default settings.
+   * exists, initializes a new instance.
    *
-   * @param app - The {@link FirebaseApp} instance that the returned {@link FirebaseFirestore}
+   * @param app The {@link FirebaseApp} instance that the returned {@link FirebaseFirestore}
    *     instance is associated with.
    * @returns The {@link FirebaseFirestore} instance.
    */
@@ -148,9 +148,9 @@ public class FirebaseFirestore {
    * Returns the {@link FirebaseFirestore} instance for the default {@link FirebaseApp}.
    *
    * <p>Returns the same instance for all invocations given the same database parameter. If no
-   * instance exists, initializes a new instance with default settings.
+   * instance exists, initializes a new instance.
    *
-   * @param database - The name of database.
+   * @param database The database ID.
    * @returns The {@link FirebaseFirestore} instance.
    */
   @NonNull
@@ -162,11 +162,11 @@ public class FirebaseFirestore {
    * Returns the {@link FirebaseFirestore} instance for the provided {@link FirebaseApp}.
    *
    * <p>Returns the same instance for all invocations given the same {@link FirebaseApp} and
-   * database parameter. If no instance exists, initializes a new instance with default settings.
+   * database parameter. If no instance exists, initializes a new instance.
    *
-   * @param app - The {@link FirebaseApp} instance that the returned {@link FirebaseFirestore}
+   * @param app The {@link FirebaseApp} instance that the returned {@link FirebaseFirestore}
    *     instance is associated with.
-   * @param database - The name of database.
+   * @param database The database ID.
    * @returns The {@link FirebaseFirestore} instance.
    */
   @NonNull

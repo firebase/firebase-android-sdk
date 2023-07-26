@@ -17,6 +17,17 @@ package com.google.firebase.firestore;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+/**
+ * Configures the SDK to use an eager garbage collector for memory cache. The eager garbage
+ * collector will attempt to remove any documents from SDK's memory cache as soon as it is no longer
+ * used.
+ *
+ * <p>This is the default garbage collector unless specified explicitly otherwise.
+ *
+ * <p>To use, create an instance using {@code MemoryEagerGcSettings#newBuilder().build()}, then set
+ * the instance to {@code MemoryCacheSettings.Builder#setGcSettings}, and use the built {@code
+ * MemoryCacheSettings} instance to configure the Firestore SDK.
+ */
 public final class MemoryEagerGcSettings implements MemoryGarbageCollectorSettings {
   private MemoryEagerGcSettings() {}
 

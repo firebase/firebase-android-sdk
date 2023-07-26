@@ -65,7 +65,7 @@ dependencies {
     annotationProcessor project(':encoders:firebase-encoders-processor')
 
     testImplementation "com.google.protobuf:protobuf-java-util:$protobufJavaUtilVersion"
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
     testImplementation 'com.github.tomakehurst:wiremock:2.26.3'

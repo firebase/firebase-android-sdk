@@ -30,6 +30,7 @@ import org.gradle.api.Project
 import org.gradle.api.publish.maven.tasks.PublishToMavenRepository
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.bundling.Zip
+import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 
@@ -60,6 +61,9 @@ import org.gradle.kotlin.dsl.register
  * - [PUBLISH_RELEASING_LIBS_TO_LOCAL_TASK][registerPublishReleasingLibrariesToMavenLocalTask]
  * - [SEMVER_CHECK_TASK][registerSemverCheckForReleaseTask]
  * - [PUBLISH_ALL_TO_BUILD_TASK][registerPublishAllToBuildDir]
+ *
+ * Additionally, this plugin registers the [PostReleasePlugin] via [registerPostReleasePlugin] for
+ * each releasing library.
  */
 abstract class PublishingPlugin : Plugin<Project> {
   override fun apply(project: Project) {
@@ -91,6 +95,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       registerPublishReleasingLibrariesToMavenLocalTask(project, releasingProjects)
       registerSemverCheckForReleaseTask(project, releasingProjects)
       registerPublishAllToBuildDir(project, allFirebaseLibraries)
+      registerPostReleasePlugin(releasingProjects)
 
       val buildMavenZip =
         project.tasks.register<Zip>(BUILD_MAVEN_ZIP_TASK) {
@@ -444,6 +449,13 @@ abstract class PublishingPlugin : Plugin<Project> {
       }
     }
 
+  /** Registers the [PostReleasePlugin] to each releaing project. */
+  private fun registerPostReleasePlugin(releasingProjects: List<Project>) {
+    for (releasingProject in releasingProjects) {
+      releasingProject.apply<PostReleasePlugin>()
+    }
+  }
+
   companion object {
     const val RELEASE_CONFIG_FILE = "release.json"
     const val RELEASE_REPORT_MD_FILE = "release_report.md"
@@ -476,7 +488,6 @@ abstract class PublishingPlugin : Plugin<Project> {
  *
  * @property releasingLibraries A list of libraries that should be released
  * @property name The name of the release (such as `m123`)
- *
  * @see computeReleaseMetadata
  */
 data class ReleaseMetadata(
