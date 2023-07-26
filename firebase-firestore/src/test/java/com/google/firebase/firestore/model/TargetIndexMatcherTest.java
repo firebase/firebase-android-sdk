@@ -25,6 +25,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.Target;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -56,6 +57,14 @@ public class TargetIndexMatcherTest {
           query("collId").filter(filter("a", "array-contains", "a")),
           query("collId")
               .filter(filter("a", "array-contains-any", Collections.singletonList("a"))));
+
+  List<Query> queriesWithOrderBy =
+      Arrays.asList(
+          query("collId").orderBy(orderBy("a")),
+          query("collId").orderBy(orderBy("a", "desc")),
+          query("collId").orderBy(orderBy("a", "asc")),
+          query("collId").orderBy(orderBy("a")).orderBy(orderBy("__name__")),
+          query("collId").filter(filter("a", "array-contains", "a")).orderBy(orderBy("b")));
 
   @Test
   public void canUseMergeJoin() {
@@ -631,5 +640,184 @@ public class TargetIndexMatcherTest {
     FieldIndex expectedIndex = fieldIndex("collId", field, kind, fieldsAndKind);
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(query.toTarget());
     assertFalse(targetIndexMatcher.servedByIndex(expectedIndex));
+  }
+
+  @Test
+  public void testBuildTargetIndexWithQueriesWithEqualities() {
+    for (Query query : queriesWithEqualities) {
+      validateBuildTargetIndexCreateFullMatchIndex(query);
+    }
+  }
+
+  @Test
+  public void testBuildTargetIndexWithQueriesWithInequalities() {
+    for (Query query : queriesWithInequalities) {
+      validateBuildTargetIndexCreateFullMatchIndex(query);
+    }
+  }
+
+  @Test
+  public void testBuildTargetIndexWithQueriesWithArrayContains() {
+    for (Query query : queriesWithArrayContains) {
+      validateBuildTargetIndexCreateFullMatchIndex(query);
+    }
+  }
+
+  @Test
+  public void testBuildTargetIndexWithQueriesWithOrderBy() {
+    for (Query query : queriesWithOrderBy) {
+      validateBuildTargetIndexCreateFullMatchIndex(query);
+    }
+  }
+
+  @Test
+  public void testBuildTargetIndexWithInequalityUsesSingleFieldIndex() {
+    Query query = query("collId").filter(filter("a", ">", 1)).filter(filter("a", "<", 10));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+  }
+
+  @Test
+  public void testBuildTargetIndexWithCollection() {
+    Query query = query("collId");
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+  }
+
+  @Test
+  public void testBuildTargetIndexWithArrayContainsAndOrderBy() {
+    Query query =
+        query("collId")
+            .filter(filter("a", "array-contains", "a"))
+            .filter(filter("a", ">", "b"))
+            .orderBy(orderBy("a", "asc"));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+  }
+
+  @Test
+  public void testBuildTargetIndexWithEqualityAndDescendingOrder() {
+    Query query = query("collId").filter(filter("a", "==", 1)).orderBy(orderBy("__name__", "desc"));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+  }
+
+  @Test
+  public void testBuildTargetIndexWithMultipleEqualities() {
+    Query query = query("collId").filter(filter("a1", "==", "a")).filter(filter("a2", "==", "b"));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+  }
+
+  @Test
+  public void testBuildTargetIndexWithMultipleEqualitiesAndInequality() {
+    Query query =
+        query("collId")
+            .filter(filter("equality1", "==", "a"))
+            .filter(filter("equality2", "==", "b"))
+            .filter(filter("inequality", ">=", "c"));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+    query =
+        query("collId")
+            .filter(filter("equality1", "==", "a"))
+            .filter(filter("inequality", ">=", "c"))
+            .filter(filter("equality2", "==", "b"));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+  }
+
+  @Test
+  public void testBuildTargetIndexWithMultipleFilters() {
+    Query query = query("collId").filter(filter("a", "==", "a")).filter(filter("b", ">", "b"));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+    query =
+        query("collId")
+            .filter(filter("a1", "==", "a"))
+            .filter(filter("a2", ">", "b"))
+            .orderBy(orderBy("a2", "asc"));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+    query =
+        query("collId")
+            .filter(filter("a", ">=", 1))
+            .filter(filter("a", "==", 5))
+            .filter(filter("a", "<=", 10));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+    query =
+        query("collId")
+            .filter(filter("a", "not-in", Arrays.asList(1, 2, 3)))
+            .filter(filter("a", ">=", 2));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+  }
+
+  @Test
+  public void testBuildTargetIndexWithMultipleOrderBys() {
+    Query query =
+        query("collId")
+            .orderBy(orderBy("fff"))
+            .orderBy(orderBy("bar", "desc"))
+            .orderBy(orderBy("__name__"));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+    query =
+        query("collId")
+            .orderBy(orderBy("foo"))
+            .orderBy(orderBy("bar"))
+            .orderBy(orderBy("__name__", "desc"));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+  }
+
+  @Test
+  public void testBuildTargetIndexWithInAndNotIn() {
+    Query query =
+        query("collId")
+            .filter(filter("a", "not-in", Arrays.asList(1, 2, 3)))
+            .filter(filter("b", "in", Arrays.asList(1, 2, 3)));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+  }
+
+  @Test
+  public void testBuildTargetIndexWithEqualityAndDifferentOrderBy() {
+    Query query =
+        query("collId")
+            .filter(filter("foo", "==", ""))
+            .filter(filter("bar", "==", ""))
+            .orderBy(orderBy("qux"));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+    query =
+        query("collId")
+            .filter(filter("aaa", "==", ""))
+            .filter(filter("qqq", "==", ""))
+            .filter(filter("ccc", "==", ""))
+            .orderBy(orderBy("fff", "desc"))
+            .orderBy(orderBy("bbb"));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+  }
+
+  @Test
+  public void testBuildTargetIndexWithEqualsAndNotIn() {
+    Query query =
+        query("collId")
+            .filter(filter("a", "==", 1))
+            .filter(filter("b", "not-in", Arrays.asList(1, 2, 3)));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+  }
+
+  @Test
+  public void testBuildTargetIndexWithInAndOrderBy() {
+    Query query =
+        query("collId")
+            .filter(filter("a", "not-in", Arrays.asList(1, 2, 3)))
+            .orderBy(orderBy("a"))
+            .orderBy(orderBy("b"));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+  }
+
+  @Test
+  public void testBuildTargetIndexWithInAndOrderBySameField() {
+    Query query =
+        query("collId").filter(filter("a", "in", Arrays.asList(1, 2, 3))).orderBy(orderBy("a"));
+    validateBuildTargetIndexCreateFullMatchIndex(query);
+  }
+
+  private void validateBuildTargetIndexCreateFullMatchIndex(Query query) {
+    Target target = query.toTarget();
+    TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
+    FieldIndex expectedIndex = targetIndexMatcher.buildTargetIndex();
+    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+    // Check the index created is a FULL MATCH index
+    assertTrue(expectedIndex.getSegments().size() >= target.getSegmentCount());
   }
 }
