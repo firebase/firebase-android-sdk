@@ -156,6 +156,11 @@ public class ConfigResolver {
     return null;
   }
 
+  public boolean isCollectionEnabledCacheAvailable() {
+    Optional<Boolean> deviceCacheValue = getDeviceCacheBoolean(CollectionEnabled.getInstance());
+    return deviceCacheValue.isAvailable();
+  }
+
   /** Returns whether developers have deactivated Firebase Performance event collection. */
   @Nullable
   public Boolean getIsPerformanceCollectionDeactivated() {
