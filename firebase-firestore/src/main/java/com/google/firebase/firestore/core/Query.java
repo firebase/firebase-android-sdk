@@ -315,12 +315,12 @@ public final class Query {
   public synchronized List<OrderBy> getOrderBy() {
     if (memoizedOrderBy == null) {
       List<OrderBy> res = new ArrayList<>();
-      HashSet<String> explicitFields = new HashSet<String>();
+      HashSet<String> fieldsNormalized = new HashSet<String>();
 
       // Any explicit order by fields should be added as is.
       for (OrderBy explicit : explicitSortOrder) {
         res.add(explicit);
-        explicitFields.add(explicit.field.canonicalString());
+        fieldsNormalized.add(explicit.field.canonicalString());
       }
 
       // The direction of the implicit key ordering always matches the direction of the last
@@ -337,13 +337,13 @@ public final class Query {
       // want the key field to be sorted last.
       SortedSet<FieldPath> inequalityFields = getInequalityFilterFields();
       for (FieldPath field : inequalityFields) {
-        if (!explicitFields.contains(field.canonicalString()) && !field.isKeyField()) {
+        if (!fieldsNormalized.contains(field.canonicalString()) && !field.isKeyField()) {
           res.add(OrderBy.getInstance(lastDirection, field));
         }
       }
 
       // Add the document key field to the last if it is not explicitly ordered.
-      if (!explicitFields.contains(FieldPath.KEY_PATH.canonicalString())) {
+      if (!fieldsNormalized.contains(FieldPath.KEY_PATH.canonicalString())) {
         res.add(lastDirection.equals(Direction.ASCENDING) ? KEY_ORDERING_ASC : KEY_ORDERING_DESC);
       }
 
