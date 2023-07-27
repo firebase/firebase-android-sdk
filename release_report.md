@@ -1,31 +1,14 @@
 # Release Report
 ## firebase-appdistribution
       
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
-
 * Add third party license to aars (#5178)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5178) [commit](https://github.com/firebase/firebase-android-sdk/commit/3fcf34366f99b21c57fd3065bc54699e6c823955)  [Rodrigo Lazo]
 
 * Update AGP to version 7.3.1 (#5114)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
 
-## firebase-config/ktx
-      
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
-
-* Update semver tests and the pom validator tests to handle new sdk (#5133)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5133) [commit](https://github.com/firebase/firebase-android-sdk/commit/d68ed5ca01147e2ed4a07952d39af5c9aeece826)  [Vinay Guthal]
-
-* Update AGP to version 7.3.1 (#5114)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
-
 ## firebase-config
       
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
-
 * Update semver tests and the pom validator tests to handle new sdk (#5133)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5133) [commit](https://github.com/firebase/firebase-android-sdk/commit/d68ed5ca01147e2ed4a07952d39af5c9aeece826)  [Vinay Guthal]
 
@@ -35,11 +18,27 @@
 * Update AGP to version 7.3.1 (#5114)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
 
+## firebase-config/ktx
+      
+* Update semver tests and the pom validator tests to handle new sdk (#5133)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5133) [commit](https://github.com/firebase/firebase-android-sdk/commit/d68ed5ca01147e2ed4a07952d39af5c9aeece826)  [Vinay Guthal]
+
+* Update AGP to version 7.3.1 (#5114)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
+
+## firebase-crashlytics
+      
+* update versions (#5151)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5151) [commit](https://github.com/firebase/firebase-android-sdk/commit/2aef609de97e7e4edd0b58aa5d362e17a7370f1d)  [Vinay Guthal]
+
+* Add changelog for Crashlytics and Perf integrating with Sessions (#5123)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5123) [commit](https://github.com/firebase/firebase-android-sdk/commit/d337cde4bb122bf32dcea7f2cce596fcea482351)  [Matthew Robertson]
+
+* Update AGP to version 7.3.1 (#5114)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
+
 ## firebase-crashlytics-ndk
       
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
-
 * update versions (#5151)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5151) [commit](https://github.com/firebase/firebase-android-sdk/commit/2aef609de97e7e4edd0b58aa5d362e17a7370f1d)  [Vinay Guthal]
 
@@ -51,77 +50,37 @@
 * Update AGP to version 7.3.1 (#5114)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
 
-## firebase-crashlytics
+## firebase-inappmessaging
       
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
-
-* update versions (#5151)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5151) [commit](https://github.com/firebase/firebase-android-sdk/commit/2aef609de97e7e4edd0b58aa5d362e17a7370f1d)  [Vinay Guthal]
-
-* Add changelog for Crashlytics and Perf integrating with Sessions (#5123)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5123) [commit](https://github.com/firebase/firebase-android-sdk/commit/d337cde4bb122bf32dcea7f2cce596fcea482351)  [Matthew Robertson]
-
-* Update AGP to version 7.3.1 (#5114)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
-
-## firebase-inappmessaging-display/ktx
-      
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
+* Update vendor plugin to use non-deprecated api (#5179)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5179) [commit](https://github.com/firebase/firebase-android-sdk/commit/f15e429ad82e0ba12967e73fe29130330564132a)  [Rodrigo Lazo]
 
 * Update AGP to version 7.3.1 (#5114)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
 
 ## firebase-inappmessaging/ktx
       
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
+* Update AGP to version 7.3.1 (#5114)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
 
+## firebase-inappmessaging-display/ktx
+      
 * Update AGP to version 7.3.1 (#5114)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
 
 ## firebase-inappmessaging-display
       
-* Fix lint erors (#5188)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5188) [commit](https://github.com/firebase/firebase-android-sdk/commit/fc5cde40ea2731af17a831b0c9e90411fdb1c015)  [utzcoz]
-
 * Make TestActivity exported for firebase-inappmessaging-display (#5185)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5185) [commit](https://github.com/firebase/firebase-android-sdk/commit/d91342e4b919a89084f5369c47d047bbcc85b385)  [utzcoz]
 
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
-
 * Update vendor plugin to use non-deprecated api (#5179)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5179) [commit](https://github.com/firebase/firebase-android-sdk/commit/f15e429ad82e0ba12967e73fe29130330564132a)  [Rodrigo Lazo]
-
-* Update AGP to version 7.3.1 (#5114)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
-
-## firebase-inappmessaging
-      
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
-
-* Update vendor plugin to use non-deprecated api (#5179)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5179) [commit](https://github.com/firebase/firebase-android-sdk/commit/f15e429ad82e0ba12967e73fe29130330564132a)  [Rodrigo Lazo]
-
-* Update AGP to version 7.3.1 (#5114)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
-
-## firebase-messaging-directboot
-      
-* Update messaging versions (#5152)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5152) [commit](https://github.com/firebase/firebase-android-sdk/commit/91a1d3eb1f5132f06c8f552fcce7e6b15ddd61a3)  [Vinay Guthal]
 
 * Update AGP to version 7.3.1 (#5114)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
 
 ## firebase-messaging
       
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
-
 * Clean up documentation. (#5155)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5155) [commit](https://github.com/firebase/firebase-android-sdk/commit/4d1cc39a14fe7e838d86bad53def4c3f3ce41380)  [Greg Sakakihara]
 
@@ -140,22 +99,26 @@
 * Update AGP to version 7.3.1 (#5114)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
 
+## firebase-messaging-directboot
+      
+* Update messaging versions (#5152)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5152) [commit](https://github.com/firebase/firebase-android-sdk/commit/91a1d3eb1f5132f06c8f552fcce7e6b15ddd61a3)  [Vinay Guthal]
+
+* Update AGP to version 7.3.1 (#5114)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
+
 ## firebase-messaging/ktx
       
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
+* Update AGP to version 7.3.1 (#5114)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
 
+## firebase-ml-modeldownloader/ktx
+      
 * Update AGP to version 7.3.1 (#5114)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
 
 ## firebase-ml-modeldownloader
       
-* Fix lint erors (#5188)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5188) [commit](https://github.com/firebase/firebase-android-sdk/commit/fc5cde40ea2731af17a831b0c9e90411fdb1c015)  [utzcoz]
-
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
-
 * Update vendor plugin to use non-deprecated api (#5179)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5179) [commit](https://github.com/firebase/firebase-android-sdk/commit/f15e429ad82e0ba12967e73fe29130330564132a)  [Rodrigo Lazo]
 
@@ -165,19 +128,8 @@
 * Update AGP to version 7.3.1 (#5114)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
 
-## firebase-ml-modeldownloader/ktx
-      
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
-
-* Update AGP to version 7.3.1 (#5114)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
-
 ## firebase-perf
       
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
-
 * update versions (#5151)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5151) [commit](https://github.com/firebase/firebase-android-sdk/commit/2aef609de97e7e4edd0b58aa5d362e17a7370f1d)  [Vinay Guthal]
 
@@ -189,9 +141,6 @@
 
 ## firebase-perf/ktx
       
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
-
 * Update AGP to version 7.3.1 (#5114)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5114) [commit](https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88)  [Rodrigo Lazo]
 
@@ -211,9 +160,6 @@
 
 ## transport/transport-runtime
       
-* Bump AXT dependencies to 1.5.0 (#5169)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5169) [commit](https://github.com/firebase/firebase-android-sdk/commit/79d24f03c54556437904c675b4a4727b74427773)  [utzcoz]
-
 * Update vendor plugin to use non-deprecated api (#5179)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5179) [commit](https://github.com/firebase/firebase-android-sdk/commit/f15e429ad82e0ba12967e73fe29130330564132a)  [Rodrigo Lazo]
 
@@ -228,29 +174,28 @@
 :firebase-common:ktx  
 :firebase-common  
 :firebase-components  
-:firebase-database:ktx  
 :firebase-database  
+:firebase-database:ktx  
 :firebase-database-collection  
 :firebase-datatransport  
-:firebase-dynamic-links:ktx  
 :firebase-dynamic-links  
+:firebase-dynamic-links:ktx  
 :firebase-firestore:ktx  
 :firebase-firestore  
-:firebase-functions:ktx  
 :firebase-functions  
-:firebase-installations  
+:firebase-functions:ktx  
 :firebase-installations:ktx  
+:firebase-installations  
 :firebase-installations-interop  
-:firebase-storage:ktx  
 :firebase-storage  
+:firebase-storage:ktx  
 :protolite-well-known-types  
 :appcheck:firebase-appcheck-debug-testing  
-:appcheck:firebase-appcheck  
 :appcheck:firebase-appcheck:ktx  
+:appcheck:firebase-appcheck  
 :appcheck:firebase-appcheck-debug  
 :appcheck:firebase-appcheck-playintegrity  
 :appcheck:firebase-appcheck-interop  
-:appcheck:firebase-appcheck-safetynet  
 :encoders:firebase-decoders-json  
 :encoders:firebase-encoders-json  
 :encoders:firebase-encoders-reflective  
