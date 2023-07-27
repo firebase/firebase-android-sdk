@@ -16,7 +16,7 @@ jobs:
     outputs:
       modules: ${{ steps.changed-modules.outputs.modules }}
     steps:
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 2
           submodules: true
@@ -44,7 +44,7 @@ jobs:
         module: ${{ fromJSON(needs.determine_changed.outputs.modules) }}
 
     steps:
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 2
           submodules: true
@@ -100,7 +100,7 @@ jobs:
         module: ${{ fromJSON(needs.determine_changed.outputs.modules) }}
 
     steps:
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 2
           submodules: true

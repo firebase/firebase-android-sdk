@@ -18,6 +18,7 @@ import static com.google.firebase.firestore.model.DocumentCollections.emptyDocum
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.model.Document;
@@ -97,7 +98,10 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
+      Query query,
+      IndexOffset offset,
+      @Nonnull Set<DocumentKey> mutatedKeys,
+      @Nullable QueryContext context) {
     Map<DocumentKey, MutableDocument> result = new HashMap<>();
 
     // Documents are ordered by key, so we can use a prefix scan to narrow down the documents
@@ -133,6 +137,12 @@ final class MemoryRemoteDocumentCache implements RemoteDocumentCache {
     }
 
     return result;
+  }
+
+  @Override
+  public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
+    return getDocumentsMatchingQuery(query, offset, mutatedKeys, /*context*/ null);
   }
 
   Iterable<Document> getDocuments() {
