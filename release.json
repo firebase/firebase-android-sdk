@@ -19,6 +19,8 @@
         ":firebase-perf",
         ":firebase-perf:ktx",
         ":firebase-sessions",
-        ":transport:transport-runtime"
+        ":transport:transport-runtime",
+        ":firebase-installations",
+        ":firebase-appdistribution-api"
     ]
 }
