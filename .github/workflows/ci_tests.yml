@@ -132,15 +132,13 @@ jobs:
 
   firestore_custom_integ_tests:
     name: "Firestore Custom Instrumentation Tests Against Named DB"
-    # only run on post submit or PRs not originating from forks.
-    if: (github.repository == 'Firebase/firebase-android-sdk' && github.event_name == 'push') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-22.04
     needs:
       - determine_changed
+    # only run on post submit or PRs not originating from forks.
+    if: ((github.repository == 'Firebase/firebase-android-sdk' && github.event_name == 'push') || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)) && contains(fromJSON(needs.determine_changed.outputs.modules), ':firebase-firestore')
     strategy:
       fail-fast: false
-      matrix:
-        module: ${{ fromJSON(needs.determine_changed.outputs.modules) }}
 
     steps:
       - uses: actions/checkout@v3.5.3
@@ -165,7 +163,6 @@ jobs:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v0
       - name: Firestore Named DB Integ Tests
-        if: (matrix.module == ':firebase-firestore')
         env:
           FIREBASE_CI: 1
           FTL_RESULTS_BUCKET: android-ci
