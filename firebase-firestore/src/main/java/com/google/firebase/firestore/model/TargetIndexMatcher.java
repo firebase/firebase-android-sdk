@@ -195,7 +195,7 @@ public class TargetIndexMatcher {
   /** Returns a full matched field index for this target. */
   public FieldIndex buildTargetIndex() {
     // We want to make sure only one segment created for one field. For example, in case like
-    // a == 3 and a > 2, index, a ASCENDING, will only be created once.
+    // a == 3 and a > 2, Index: {a ASCENDING} will only be created once.
     Set<FieldPath> uniqueFields = new HashSet<>();
     List<FieldIndex.Segment> segments = new ArrayList<>();
 
