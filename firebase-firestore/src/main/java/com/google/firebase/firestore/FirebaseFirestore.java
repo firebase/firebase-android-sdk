@@ -23,6 +23,7 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -103,6 +104,8 @@ public class FirebaseFirestore {
   private FirebaseFirestoreSettings settings;
   private volatile FirestoreClient client;
   private final GrpcMetadataProvider metadataProvider;
+
+  @Nullable private PersistentCacheIndexManager persistentCacheIndexManager;
 
   @NonNull
   private static FirebaseApp getDefaultFirebaseApp() {
@@ -401,6 +404,26 @@ public class FirebaseFirestore {
     }
 
     return client.configureFieldIndexes(parsedIndexes);
+  }
+
+  /**
+   * Returns the PersistentCache Index Manager used by this {@code FirebaseFirestore} object.
+   *
+   * @return The {@code PersistentCacheIndexManager} instance or null if local persistent storage is
+   *     not in use.
+   */
+  // TODO(csi): Remove the `hide` and scope annotations.
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @Nullable
+  public synchronized PersistentCacheIndexManager getPersistentCacheIndexManager() {
+    ensureClientConfigured();
+    if (persistentCacheIndexManager == null
+        && (settings.isPersistenceEnabled()
+            || settings.getCacheSettings() instanceof PersistentCacheSettings)) {
+      persistentCacheIndexManager = new PersistentCacheIndexManager(client);
+    }
+    return persistentCacheIndexManager;
   }
 
   /**
