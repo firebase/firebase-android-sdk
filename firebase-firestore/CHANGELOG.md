@@ -15,24 +15,19 @@ updates.
 # 24.6.0
 * [fixed] Fixed stack overflow caused by deeply nested server timestamps.
   (GitHub [#4702](//github.com/firebase/firebase-android-sdk/issues/4702){: .external})
-
 * [feature] Added new
   [cache config APIs](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestoreSettings.Builder#setLocalCacheSettings(com.google.firebase.firestore.LocalCacheSettings))
   to customize the SDK's cache setup.
-
 * [feature] Added
   [LRU garbage collector](/docs/reference/android/com/google/firebase/firestore/MemoryLruGcSettings)
   to the SDK's memory cache.
-
 * [deprecated] Deprecated the following APIs from
   [`FirebaseFirestoreSettings`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestoreSettings):<br>
   `isPersistenceEnabled` and `getCacheSizeBytes`.
-
 * [deprecated] Deprecated the following APIs from
   [`FirebaseFirestoreSettings.Builder`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestoreSettings.Builder#setLocalCacheSettings(com.google.firebase.firestore.LocalCacheSettings)):<br>
   `isPersistenceEnabled`, `getCacheSizeBytes`, `setPersistenceEnabled`,
   and `setCacheSizeBytes`.
-
 * [changed] Internal changes to ensure alignment with other SDK releases.
 
 
@@ -40,6 +35,7 @@ updates.
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
 updates.
+
 # 24.5.0
 * [fixed] Fixed stack overflow caused by deeply nested server timestamps.
   (GitHub [#4702](//github.com/firebase/firebase-android-sdk/issues/4702){: .external})
@@ -52,6 +48,7 @@ updates.
   [`DocumentReference.dataObjects<T>()`](/docs/reference/kotlin/com/google/firebase/firestore/ktx/package-summary#dataObjects_1)
   Kotlin Flows to listen for realtime updates and convert its values to a
   specific type.
+
 # 24.4.5
 * [feature] Added support for disjunctions in queries (`OR` queries).
 
@@ -98,15 +95,12 @@ updates.
 * [fixed] Fix `FAILED_PRECONDITION` when writing to a deleted document in a
   transaction.
   (#5871)
-
 * [fixed] Fixed [firestore] failing to raise initial snapshot from an empty
   local cache result.
   (#4207)
-
 * [fixed] Removed invalid suggestions to use `GenericTypeIndicator` from
   error messages.
   (#222)
-
 * [changed] Updated dependency of `io.grpc.*` to its latest version
   (v1.50.2).
 
@@ -144,6 +138,7 @@ The Kotlin extensions library transitively includes the updated
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library.
+
 # 24.3.0
 * [changed] Updated dependency of `play-services-basement` to its latest
   version (v18.1.0).
@@ -169,6 +164,7 @@ following additional updates:
 The Kotlin extensions library transitively includes the updated
 `firebase-firestore` library. The Kotlin extensions library has no additional
 updates.
+
 # 24.2.1
 * [changed] Internal refactor and test improvements.
 
@@ -202,7 +198,6 @@ updates.
 * [fixed] Fixed an issue in the beta version of the index engine that might
   cause [firestore] to exclude document results for limit queries with local
   modifications.
-
 * [changed] [firestore] can now serialize objects with `android.net.Uri`s.
 
 
@@ -217,10 +212,8 @@ updates.
   the JSON index definition exported by the [firebase_cli]. Queries against
   the cache are executed using an index once the asynchronous index generation
   completes.
-
 * [fixed] Fixed missing document fields issue with offline overlays.
   (#3528).
-
 
 
 ## Kotlin
@@ -232,18 +225,14 @@ updates.
 * [fixed] Fixed a [firebase_app_check] issue that caused [firestore]
   listeners to stop working and receive a `Permission Denied` error. This issue
   only occurred if the [app_check] expiration time was set to under an hour.
-
 * [fixed] Fixed a potential problem during the shutdown of [firestore] that
   prevented the shutdown from proceeding if a network connection was opened
   right before.
-
 * [fixed] Fixed an NPE issue where mutations with multiple documents were not
   handled correctly during previous mutation acknowledgement.
   (#3490).
-
 * [changed] Queries are now sent to the backend before the SDK starts local
   processing, which reduces overall query latency.
-
 * [changed] Updated dependencies of `play-services-basement`,
   `play-services-base`, and `play-services-tasks` to their latest versions
   (v18.0.0, v18.0.1, and v18.0.1, respectively). For more information, see the
@@ -258,7 +247,6 @@ updates.
 
 # 24.0.1
 * [changed] Optimized performance for offline usage.
-
 * [changed] Optimized performance for queries with collections that contain
   subcollections.
 
@@ -273,7 +261,6 @@ updates.
   19 (KitKat) or higher and to use Android 4.4 or higher. This is due to an
   update in its gRPC dependency version and to align with requirements of other
   Firebase libraries.
-
 * [feature] Added support for [firebase_app_check].
 
 
@@ -323,7 +310,6 @@ updates.
 
 # 23.0.0
 * [changed] Internal infrastructure improvements.
-
 * [changed] Internal changes to support dynamic feature modules.
 
 
@@ -429,7 +415,6 @@ updates.
 
   Neither query operator finds documents where the specified field isn't
   present.
-
 * [fixed] Fixed an issue that caused poor performance for queries that
   filtered results using nested array values.
 
@@ -443,10 +428,8 @@ updates.
 * [fixed] Removed a delay that may have prevented [firestore] from
   immediately reestablishing a network connection if a connectivity change
   occurred while the app was in the background.
-
 * [fixed] Fixed an issue that may have prevented the client from connecting
   to the backend immediately after a user signed in.
-
 * [feature] Added support for connecting to the Firebase Emulator Suite via
   a new method,
   [`FirebaseFirestore#useEmulator()`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestore#useEmulator(java.lang.String,%20int)).
@@ -533,7 +516,6 @@ updates.
   is IN a specified array. `Query.whereArrayContainsAny()` finds documents
   where a specified field is an array and contains ANY element of a specified
   array.
-  
 * [changed] Improved the performance of repeatedly executed queries. Recently
   executed queries should see dramatic improvements. This benefit is reduced
   if changes accumulate while the query is inactive. Queries that use the
@@ -548,11 +530,9 @@ updates.
 # 21.2.1
 * [fixed] Fixed an issue where devices targeting Android API level 19 or
   earlier would crash when they were unable to connect to [firestore].
-
 * [fixed] Fixed a race condition in Documents where access to `getData` and
   `getField` on the same document in different threads could cause a
   `NullPointerException`.
-
 * [fixed] Fixed a race condition that could cause a `NullPointerException`
   during client initialization.
 
@@ -593,12 +573,10 @@ update to the next version of the Cloud Firestore SDK to get the fix.
   method which terminates the instance, releasing any held resources. Once it
   completes, you can optionally call `clearPersistence()` to wipe persisted
   [firestore] data from disk.
-
 * [feature] Added a
   [`FirebaseFirestore.waitForPendingWrites()`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestore#waitForPendingWrites())
   method which allows users to wait on a promise that resolves when all pending
   writes are acknowledged by the [firestore] backend.
-
 * [changed] Transactions now perform exponential backoff before retrying.
   This means transactions on highly contended documents are more likely to
   succeed.
@@ -614,13 +592,11 @@ updates.
   that were previously incorrectly disallowed are now allowed. For example,
   after reading a document that doesn't exist, you can now set it multiple
   times successfully in a transaction.
-
 * [fixed] Fixed an issue where query results were temporarily missing
   documents that previously had not matched but had been updated to now match
   the query. Refer to this
   [GitHub issue](https://github.com/firebase/firebase-android-sdk/issues/155)
   for more details.
-
 * [changed] Added nullability annotations to improve the Kotlin developer
   experience.
 
@@ -634,18 +610,14 @@ updates.
 * [feature] Added a `@DocumentId` annotation which can be used on a
   `DocumentReference` or `String` property in a POJO to indicate that the SDK
   should automatically populate it with the document's ID.
-
 * [fixed] Fixed an internal assertion that was triggered when an update with
   a `FieldValue.serverTimestamp()` and an update with a
   `FieldValue.increment()` were pending for the same document. Refer to this
   [GitHub issue](https://github.com/firebase/firebase-android-sdk/issues/491)
   for more details.
-
 * [changed] Improved performance of queries with large result sets.
-
 * [changed] Improved performance for queries with filters that only return a
   small subset of the documents in a collection.
-
 * [changed] Instead of failing silently, [firestore] now crashes the client
   app if it fails to load SSL Ciphers. To avoid these crashes, you must bundle
   Conscrypt to support non-GMSCore devices on Android API level 19 (KitKat) or
@@ -733,20 +705,16 @@ updates.
 * [feature] Added [`FieldValue.increment()`](/docs/reference/android/com/google/firebase/firestore/FieldValue#increment(double)),
   which can be used in `update()` and `set(..., SetOptions.merge())` to
   increment or decrement numeric field values safely without transactions.
-
 * [feature] Added functional interface [`FirebaseFirestore.runBatch()`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestore#runBatch( com.google.firebase.firestore.WriteBatch.Function)),
   similar to [`FirebaseFirestore.runTransaction()`](/docs/reference/android/com/google/firebase/firestore/FirebaseFirestore#runTransaction(com.google.firebase.firestore.Transaction.Function%3CTResult%3E )),
   which allows a developer to focus on the mutations of the batch rather than on
   creating and committing the batch.
-
 * [changed] Prepared the persistence layer to support collection group
   queries. While this feature is not yet available, all schema changes are
   included in this release.
-
 * [changed] Added `@RestrictTo` annotations to discourage the use of APIs that
   are not public. This affects internal APIs that were previously obfuscated and
   are not mentioned in our documentation.
-
 * [changed] Improved error messages for certain Number types that are not
   supported by our serialization layer.
 
@@ -797,7 +765,6 @@ updates.
 * [fixed] Fixed a race condition that caused a `SQLiteDatabaseLockedException`
   when an app attempted to access the SQLite database from multiple threads.
 
-
 # 17.1.2
 * [changed] Changed how the SDK handles locally-updated documents while syncing those updates with Cloud Firestore servers. This can lead to slight behavior changes and may affect the [`SnapshotMetadata.hasPendingWrites()`](/docs/reference/android/com/google/firebase/firestore/SnapshotMetadata.html#hasPendingWrites()) metadata flag.
 * [changed] Eliminated superfluous update events for locally cached documents that are known to lag behind the server version. Instead, the SDK buffers these events until the client has caught up with the server.
@@ -824,6 +791,7 @@ updates.
   [improper caching](https://github.com/firebase/firebase-ios-sdk/issues/1548),
   so clients may use extra bandwidth the first time they launch with this
   version of the SDK, as they re-download cleared cached data.
+
 # 17.0.3
 * [changed] The [`Timestamp`](/docs/reference/android/com/google/firebase/Timestamp) class now implements [`Parcelable`](//developer.android.com/reference/android/os/Parcelable) in addition to [`Comparable`](//developer.android.com/reference/java/lang/Comparable).
 

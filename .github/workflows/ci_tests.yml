@@ -16,7 +16,7 @@ jobs:
     outputs:
       modules: ${{ steps.changed-modules.outputs.modules }}
     steps:
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 2
           submodules: true
@@ -31,7 +31,7 @@ jobs:
       - id: changed-modules
         run: |
           git diff --name-only HEAD~1 | xargs printf -- '--changed-git-paths %s\n' | xargs ./gradlew writeChangedProjects --output-file-path=modules.json
-          echo ::set-output name=modules::$(cat modules.json)
+          echo modules=$(cat modules.json) >> $GITHUB_OUTPUT
 
   unit_tests:
     name: "Unit Tests"
@@ -44,7 +44,7 @@ jobs:
         module: ${{ fromJSON(needs.determine_changed.outputs.modules) }}
 
     steps:
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 2
           submodules: true
@@ -100,7 +100,7 @@ jobs:
         module: ${{ fromJSON(needs.determine_changed.outputs.modules) }}
 
     steps:
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 2
           submodules: true

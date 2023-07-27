@@ -234,6 +234,19 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
+  public void createTargetIndexes(Target target) {
+    hardAssert(started, "IndexManager not started");
+
+    for (Target subTarget : getSubTargets(target)) {
+      IndexType type = getIndexType(subTarget);
+      if (type == IndexType.NONE || type == IndexType.PARTIAL) {
+        TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(subTarget);
+        addFieldIndex(targetIndexMatcher.buildTargetIndex());
+      }
+    }
+  }
+
+  @Override
   public @Nullable String getNextCollectionGroupToUpdate() {
     hardAssert(started, "IndexManager not started");
     FieldIndex nextIndex = nextIndexToUpdate.peek();

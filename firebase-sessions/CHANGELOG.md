@@ -1,3 +1,8 @@
 # Unreleased
 
+* [fixed] Fixed NPE when no version name is
+  set ([#5195](//github.com/firebase/firebase-android-sdk/issues/5195)).
+
+# 1.0.0
+
 * [feature] Initial Firebase sessions library.

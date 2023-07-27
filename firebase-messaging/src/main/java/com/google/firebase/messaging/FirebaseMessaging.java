@@ -65,17 +65,6 @@ import java.util.concurrent.TimeUnit;
  * <p>In order to receive Firebase messages, declare an implementation of <br>
  * {@link FirebaseMessagingService} in the app manifest. To process messages, override base class
  * methods to handle any events required by the application.
- *
- * <p>Client apps can send <a
- * href="https://firebase.google.com/docs/cloud-messaging/android/upstream">upstream messages</a>
- * back to the app server using the XMPP-based Cloud Connection Server. For example:
- *
- * <pre>
- * FirebaseMessaging.getInstance().send(
- *     new RemoteMessage.Builder(SENDER_ID + "&#64;fcm.googleapis.com")
- *     .setMessageId(id)
- *     .addData("key", "value")
- *     .build());</pre>
  */
 public class FirebaseMessaging {
 
@@ -447,7 +436,7 @@ public class FirebaseMessaging {
    * <p>The subscribe operation is persisted and will be retried until successful.
    *
    * <p>This uses an FCM registration token to identify the app instance, generating one if it does
-   * not exist (see {@link #getToken()}), which perodically sends data to the Firebase backend when
+   * not exist (see {@link #getToken()}), which periodically sends data to the Firebase backend when
    * auto-init is enabled. To delete the data, delete the token ({@link #deleteToken}) and the
    * Firebase Installations ID ({@code FirebaseInstallations.delete()}). To stop the periodic
    * sending of data, disable auto-init ({@link #setAutoInitEnabled}).
@@ -487,9 +476,9 @@ public class FirebaseMessaging {
    * <p>When there is an active connection the message will be sent immediately, otherwise the
    * message will be queued up to the time to live (TTL) set in the message.
    *
-   * @deprecated FCM upstream is deprecated and will be decommissioned in June 2024. More details
-   *     can be found in <a
-   *     href="https://firebase.google.com/support/faq#fcm-23-deprecation">https://firebase.google.com/support/faq#fcm-23-deprecation</a>
+   * @deprecated FCM upstream messaging is deprecated and will be decommissioned in June 2024. Learn
+   *     more in the <a href="https://firebase.google.com/support/faq#fcm-23-deprecation">FAQ about
+   *     FCM features deprecated in June 2023</a>.
    */
   @Deprecated
   public void send(@NonNull RemoteMessage message) {

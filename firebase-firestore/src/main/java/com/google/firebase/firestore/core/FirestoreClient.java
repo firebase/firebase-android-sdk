@@ -353,6 +353,11 @@ public final class FirestoreClient {
     return asyncQueue.enqueue(() -> localStore.configureFieldIndexes(fieldIndices));
   }
 
+  public void setIndexAutoCreationEnabled(boolean enabled) {
+    verifyNotTerminated();
+    asyncQueue.enqueueAndForget(() -> localStore.setIndexAutoCreationEnabled(enabled));
+  }
+
   public void removeSnapshotsInSyncListener(EventListener<Void> listener) {
     // Checks for shutdown but does not raise error, allowing remove after shutdown to be a no-op.
     if (isTerminated()) {
