@@ -234,6 +234,10 @@ public abstract class LocalStoreTestCase {
     queryEngine.setRelativeIndexReadCostPerDocument(newCost);
   }
 
+  protected void deleteAllIndexes() {
+    localStore.deleteAllFieldIndexes();
+  }
+
   private void releaseTarget(int targetId) {
     localStore.releaseTarget(targetId);
   }

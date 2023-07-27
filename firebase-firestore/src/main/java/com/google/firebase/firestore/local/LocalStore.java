@@ -802,6 +802,10 @@ public final class LocalStore implements BundleCallback {
         });
   }
 
+  public void deleteAllFieldIndexes() {
+    persistence.runTransaction("Delete All Indexes", () -> indexManager.deleteAllFieldIndexes());
+  }
+
   public void setIndexAutoCreationEnabled(boolean enabled) {
     queryEngine.setIndexAutoCreationEnabled(enabled);
   }
