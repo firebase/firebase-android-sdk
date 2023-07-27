@@ -147,22 +147,11 @@ public final class LocalStore implements BundleCallback {
   /** Used to generate targetIds for queries tracked locally. */
   private final TargetIdGenerator targetIdGenerator;
 
-  private boolean autoIndexEnabled;
-
   public LocalStore(Persistence persistence, QueryEngine queryEngine, User initialUser) {
-    this(persistence, queryEngine, initialUser, false);
-  }
-
-  public LocalStore(
-      Persistence persistence,
-      QueryEngine queryEngine,
-      User initialUser,
-      boolean autoIndexEnabled) {
     hardAssert(
         persistence.isStarted(), "LocalStore was passed an unstarted persistence implementation");
     this.persistence = persistence;
     this.queryEngine = queryEngine;
-    this.autoIndexEnabled = autoIndexEnabled;
 
     targetCache = persistence.getTargetCache();
     bundleCache = persistence.getBundleCache();
@@ -186,7 +175,7 @@ public final class LocalStore implements BundleCallback {
         new LocalDocumentsView(remoteDocuments, mutationQueue, documentOverlayCache, indexManager);
 
     remoteDocuments.setIndexManager(indexManager);
-    queryEngine.initialize(localDocuments, indexManager, autoIndexEnabled);
+    queryEngine.initialize(localDocuments, indexManager);
   }
 
   public void start() {

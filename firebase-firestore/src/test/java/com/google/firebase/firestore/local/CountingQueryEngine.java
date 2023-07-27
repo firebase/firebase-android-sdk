@@ -102,16 +102,6 @@ class CountingQueryEngine extends QueryEngine {
     queryEngine.setRelativeIndexReadCostPerDocument(newCost);
   }
 
-  @Override
-  public void setMinCollectionSizeToAutoCreateIndex(int newMin) {
-    queryEngine.setMinCollectionSizeToAutoCreateIndex(newMin);
-  }
-
-  @Override
-  public void setRelativeIndexReadCost(int newCost) {
-    queryEngine.setRelativeIndexReadCost(newCost);
-  }
-
   /**
    * Returns the number of documents returned by the RemoteDocumentCache's `getAll()` API (since the
    * last call to `resetCounts()`)
