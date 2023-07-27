@@ -108,6 +108,12 @@ android.libraryVariants.all { variant ->
         variant.buildConfigField("String", "TARGET_BACKEND", "\"emulator\"")
     }
 
+    if (findProperty('targetDatabaseId')) {
+        variant.buildConfigField("String", "TARGET_DATABASE_ID", "\"${property("targetDatabaseId")}\"")
+    } else {
+        variant.buildConfigField("String", "TARGET_DATABASE_ID", "\"(default)\"")
+    }
+
     def localProps = new Properties()
 
     try {
