@@ -73,8 +73,10 @@ public class CompositeFilter extends Filter {
     return Collections.unmodifiableList(memoizedFlattenedFilters);
   }
 
-  // Performs a depth-first search to find and return the inequality FieldFilters in the composite
-  // filter. Returns an empty array if none of the FieldFilters has inequality filters.
+  /**
+   * Performs a depth-first search to find and return the inequality FieldFilters in the composite
+   * filter. Returns an empty array if none of the FieldFilters has inequality filters.
+   */
   @Override
   public List<FieldFilter> getInequalityFilters() {
     List<FieldFilter> flattenedFilters = getFlattenedFilters();

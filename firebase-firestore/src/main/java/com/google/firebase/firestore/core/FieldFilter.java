@@ -174,7 +174,9 @@ public class FieldFilter extends Filter {
 
   @Override
   public List<FieldFilter> getInequalityFilters() {
-    // We return a list of size one if it is an inequality filter, otherwise return an empty list.
+    /**
+     * We return a list of size one if it is an inequality filter, otherwise return an empty list.
+     */
     if (isInequality()) {
       return Collections.singletonList(this);
     }

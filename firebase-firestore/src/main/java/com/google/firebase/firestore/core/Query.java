@@ -172,7 +172,7 @@ public final class Query {
     return endAt;
   }
 
-  // Returns the sorted set of inequality filter fields used in this query.
+  /** Returns the sorted set of inequality filter fields used in this query. */
   public SortedSet<FieldPath> getInequalityFilterFields() {
     SortedSet<FieldPath> result = new TreeSet<FieldPath>();
 
@@ -317,24 +317,24 @@ public final class Query {
       List<OrderBy> res = new ArrayList<>();
       HashSet<String> fieldsNormalized = new HashSet<String>();
 
-      // Any explicit order by fields should be added as is.
+      /** Any explicit order by fields should be added as is. */
       for (OrderBy explicit : explicitSortOrder) {
         res.add(explicit);
         fieldsNormalized.add(explicit.field.canonicalString());
       }
 
-      // The direction of the implicit key ordering always matches the direction of the last
-      // explicit sort order
+      /** The order of the implicit ordering always matches the last explicit order by. */
       Direction lastDirection =
           explicitSortOrder.size() > 0
               ? explicitSortOrder.get(explicitSortOrder.size() - 1).getDirection()
               : Direction.ASCENDING;
 
-      // Any inequality fields not explicitly ordered should be implicitly ordered in a
-      // lexicographical order. When there are multiple inequality filters on the same field,
-      // the field should be added only once.
-      // Note: `SortedSet<FieldPath>` sorts the key field before other fields. However, we
-      // want the key field to be sorted last.
+      /**
+       * Any inequality fields not explicitly ordered should be implicitly ordered in a
+       * lexicographical order. When there are multiple inequality filters on the same field, the
+       * field should be added only once. Note: `SortedSet<FieldPath>` sorts the key field before
+       * other fields. However, we want the key field to be sorted last.
+       */
       SortedSet<FieldPath> inequalityFields = getInequalityFilterFields();
       for (FieldPath field : inequalityFields) {
         if (!fieldsNormalized.contains(field.canonicalString()) && !field.isKeyField()) {
@@ -342,7 +342,7 @@ public final class Query {
         }
       }
 
-      // Add the document key field to the last if it is not explicitly ordered.
+      /** Add the document key field to the last if it is not explicitly ordered. */
       if (!fieldsNormalized.contains(FieldPath.KEY_PATH.canonicalString())) {
         res.add(lastDirection.equals(Direction.ASCENDING) ? KEY_ORDERING_ASC : KEY_ORDERING_DESC);
       }

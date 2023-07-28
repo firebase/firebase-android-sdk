@@ -1660,7 +1660,7 @@ public class QueryTest {
   }
 
   @Test
-  public void testMultipleInequalityOnUnaryValues() {
+  public void testMultipleInequalityOnSpecialValues() {
     // TODO(MIEQ): Enable this test against production when possible.
     assumeTrue(
         "Skip this test if running against production because multiple inequality is "
