@@ -217,13 +217,13 @@ public abstract class LocalStoreTestCase {
     lastQueryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
   }
 
-  protected void setIndexAutoCreationEnabled(boolean enabled) {
+  protected void setIndexAutoCreationEnabled(boolean isEnabled) {
     // Noted: there are two queryEngines here, the first one is extended by CountingQueryEngine,
     // which is set by localStore function; The second one a pointer inside CountingQueryEngine,
     // which is set by queryEngine function.
     // Only the second function takes effect in the tests. Adding first one here for compatibility.
-    localStore.setIndexAutoCreationEnabled(enabled);
-    queryEngine.setIndexAutoCreationEnabled(enabled);
+    localStore.setIndexAutoCreationEnabled(isEnabled);
+    queryEngine.setIndexAutoCreationEnabled(isEnabled);
   }
 
   protected void setMinCollectionSizeToAutoCreateIndex(int newMin) {
