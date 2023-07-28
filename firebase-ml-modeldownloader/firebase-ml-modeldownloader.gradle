@@ -59,6 +59,9 @@ android {
             includeAndroidResources = true
         }
     }
+    lint {
+        baseline = file("lint-baseline.xml")
+    }
 }
 
 thirdPartyLicenses {
@@ -81,7 +84,7 @@ dependencies {
 
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation 'com.google.auto.service:auto-service-annotations:1.0-rc6'
+    implementation 'com.google.auto.service:auto-service-annotations:1.0.1'
     implementation 'javax.inject:javax.inject:1'
 
     vendor (libs.dagger.dagger) {
