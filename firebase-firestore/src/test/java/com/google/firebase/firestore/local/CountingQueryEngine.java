@@ -88,8 +88,8 @@ class CountingQueryEngine extends QueryEngine {
   }
 
   @Override
-  public void setIndexAutoCreationEnabled(boolean enabled) {
-    queryEngine.setIndexAutoCreationEnabled(enabled);
+  public void setIndexAutoCreationEnabled(boolean isEnabled) {
+    queryEngine.setIndexAutoCreationEnabled(isEnabled);
   }
 
   @Override
