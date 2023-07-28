@@ -108,6 +108,9 @@ public class IndexingTest {
                     + "}"));
   }
 
+  /**
+  * After Auto Index Creation is enabled, through public API there is no way to state of indexes sitting inside SDK. So this test only checks the API of auto index creation.
+   */
   @Test
   public void testAutoIndexCreationSetSuccessfully() {
     // Use persistent disk cache (default)
@@ -128,19 +131,21 @@ public class IndexingTest {
     assertEquals(1, results.size());
 
     assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().enableIndexAutoCreation());
-
-    results = waitFor(collection.whereEqualTo("match", true).get());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
     assertEquals(1, results.size());
 
     assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().disableIndexAutoCreation());
-
-    results = waitFor(collection.whereEqualTo("match", true).get());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
     assertEquals(1, results.size());
 
     assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().deleteAllIndexes());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
     assertEquals(1, results.size());
   }
 
+  /**
+   * After Auto Index Creation is enabled, through public API there is no way to state of indexes sitting inside SDK. So this test only checks the API of auto index creation.
+   */
   @Test
   public void testAutoIndexCreationSetSuccessfullyUsingDefault() {
     // Use persistent disk cache (default)
@@ -156,16 +161,15 @@ public class IndexingTest {
     assertEquals(1, results.size());
 
     assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().enableIndexAutoCreation());
-
-    results = waitFor(collection.whereEqualTo("match", true).get());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
     assertEquals(1, results.size());
 
     assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().disableIndexAutoCreation());
-
-    results = waitFor(collection.whereEqualTo("match", true).get());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
     assertEquals(1, results.size());
 
     assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().deleteAllIndexes());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
     assertEquals(1, results.size());
   }
 
