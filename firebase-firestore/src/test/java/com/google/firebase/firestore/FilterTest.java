@@ -18,7 +18,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 import com.google.common.collect.ImmutableList;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
@@ -35,7 +34,7 @@ public class FilterTest {
     assertEquals(filter, Filter.equalTo(FieldPath.of("x"), "v"));
     assertNotEquals(filter, Filter.equalTo("x", "z"));
     assertNotEquals(filter, Filter.equalTo("y", "v"));
-    assertNotEquals(filter,Filter.notEqualTo("y", "v"));
+    assertNotEquals(filter, Filter.notEqualTo("x", "v"));
   }
 
   @Test
@@ -45,7 +44,7 @@ public class FilterTest {
     assertEquals(filter, Filter.notEqualTo(FieldPath.of("x"), "v"));
     assertNotEquals(filter, Filter.notEqualTo("x", "z"));
     assertNotEquals(filter, Filter.notEqualTo("y", "v"));
-    assertNotEquals(filter,Filter.equalTo("y", "v"));
+    assertNotEquals(filter, Filter.equalTo("x", "v"));
   }
 
   @Test
@@ -55,7 +54,7 @@ public class FilterTest {
     assertEquals(filter, Filter.greaterThan(FieldPath.of("x"), "v"));
     assertNotEquals(filter, Filter.greaterThan("x", "z"));
     assertNotEquals(filter, Filter.greaterThan("y", "v"));
-    assertNotEquals(filter,Filter.lessThan("y", "v"));
+    assertNotEquals(filter, Filter.lessThan("x", "v"));
   }
 
   @Test
@@ -65,7 +64,7 @@ public class FilterTest {
     assertEquals(filter, Filter.greaterThanOrEqualTo(FieldPath.of("x"), "v"));
     assertNotEquals(filter, Filter.greaterThanOrEqualTo("x", "z"));
     assertNotEquals(filter, Filter.greaterThanOrEqualTo("y", "v"));
-    assertNotEquals(filter,Filter.lessThanOrEqualTo("y", "v"));
+    assertNotEquals(filter, Filter.lessThanOrEqualTo("x", "v"));
   }
 
   @Test
@@ -75,7 +74,7 @@ public class FilterTest {
     assertEquals(filter, Filter.lessThan(FieldPath.of("x"), "v"));
     assertNotEquals(filter, Filter.lessThan("x", "z"));
     assertNotEquals(filter, Filter.lessThan("y", "v"));
-    assertNotEquals(filter,Filter.greaterThan("y", "v"));
+    assertNotEquals(filter, Filter.greaterThan("x", "v"));
   }
 
   @Test
@@ -85,7 +84,7 @@ public class FilterTest {
     assertEquals(filter, Filter.lessThanOrEqualTo(FieldPath.of("x"), "v"));
     assertNotEquals(filter, Filter.lessThanOrEqualTo("x", "z"));
     assertNotEquals(filter, Filter.lessThanOrEqualTo("y", "v"));
-    assertNotEquals(filter,Filter.greaterThanOrEqualTo("y", "v"));
+    assertNotEquals(filter, Filter.greaterThanOrEqualTo("x", "v"));
   }
 
   @Test
@@ -95,7 +94,7 @@ public class FilterTest {
     assertEquals(filter, Filter.arrayContains(FieldPath.of("x"), "v"));
     assertNotEquals(filter, Filter.arrayContains("x", "z"));
     assertNotEquals(filter, Filter.arrayContains("y", "v"));
-    assertNotEquals(filter,Filter.equalTo("y", "v"));
+    assertNotEquals(filter, Filter.equalTo("x", "v"));
   }
 
   @Test
@@ -103,9 +102,10 @@ public class FilterTest {
     Filter filter = Filter.arrayContainsAny("x", ImmutableList.of("v1", "v2"));
     assertEquals(filter, filter);
     assertEquals(filter, Filter.arrayContainsAny(FieldPath.of("x"), ImmutableList.of("v1", "v2")));
+    assertNotEquals(filter, Filter.arrayContainsAny("x", ImmutableList.of("v2", "v1")));
     assertNotEquals(filter, Filter.arrayContainsAny("x", ImmutableList.of("v2", "v3")));
     assertNotEquals(filter, Filter.arrayContainsAny("y", ImmutableList.of("v1", "v2")));
-    assertNotEquals(filter, Filter.equalTo("y", "v"));
+    assertNotEquals(filter, Filter.equalTo("x", "v"));
   }
 
   @Test
@@ -113,9 +113,10 @@ public class FilterTest {
     Filter filter = Filter.inArray("x", ImmutableList.of("v1", "v2"));
     assertEquals(filter, filter);
     assertEquals(filter, Filter.inArray(FieldPath.of("x"), ImmutableList.of("v1", "v2")));
+    assertNotEquals(filter, Filter.inArray("x", ImmutableList.of("v2", "v1")));
     assertNotEquals(filter, Filter.inArray("x", ImmutableList.of("v2", "v3")));
     assertNotEquals(filter, Filter.inArray("y", ImmutableList.of("v1", "v2")));
-    assertNotEquals(filter, Filter.notInArray("y", ImmutableList.of("v1", "v2")));
+    assertNotEquals(filter, Filter.notInArray("x", ImmutableList.of("v1", "v2")));
   }
 
   @Test
@@ -123,66 +124,55 @@ public class FilterTest {
     Filter filter = Filter.notInArray("x", ImmutableList.of("v1", "v2"));
     assertEquals(filter, filter);
     assertEquals(filter, Filter.notInArray(FieldPath.of("x"), ImmutableList.of("v1", "v2")));
+    assertNotEquals(filter, Filter.notInArray("x", ImmutableList.of("v2", "v1")));
     assertNotEquals(filter, Filter.notInArray("x", ImmutableList.of("v2", "v3")));
     assertNotEquals(filter, Filter.notInArray("y", ImmutableList.of("v1", "v2")));
-    assertNotEquals(filter, Filter.inArray("y", ImmutableList.of("v1", "v2")));
+    assertNotEquals(filter, Filter.inArray("x", ImmutableList.of("v1", "v2")));
   }
 
   @Test
   public void or() {
-    Filter filter = Filter.or(
-        Filter.equalTo("x", ImmutableList.of("v1", "v2")),
-        Filter.equalTo("y", ImmutableList.of("v3", "v4"))
-    );
+    Filter filter =
+        Filter.or(
+            Filter.inArray("x", ImmutableList.of("v1", "v2")),
+            Filter.inArray("y", ImmutableList.of("v3", "v4")));
     assertEquals(
         filter,
         Filter.or(
-            Filter.equalTo(FieldPath.of("x"), ImmutableList.of("v1", "v2")),
-            Filter.equalTo(FieldPath.of("y"), ImmutableList.of("v3", "v4"))
-        )
-    );
+            Filter.inArray(FieldPath.of("x"), ImmutableList.of("v1", "v2")),
+            Filter.inArray(FieldPath.of("y"), ImmutableList.of("v3", "v4"))));
     assertNotEquals(
         filter,
         Filter.and(
-            Filter.equalTo("x", ImmutableList.of("v1", "v2")),
-            Filter.equalTo("y", ImmutableList.of("v3", "v4"))
-        )
-    );
+            Filter.inArray("x", ImmutableList.of("v1", "v2")),
+            Filter.inArray("y", ImmutableList.of("v3", "v4"))));
     assertNotEquals(
         filter,
-        Filter.and(
-            Filter.equalTo("y", ImmutableList.of("v3", "v4")),
-            Filter.equalTo("x", ImmutableList.of("v1", "v2"))
-        )
-    );
+        Filter.or(
+            Filter.inArray("y", ImmutableList.of("v3", "v4")),
+            Filter.inArray("x", ImmutableList.of("v1", "v2"))));
   }
 
   @Test
   public void and() {
-    Filter filter = Filter.and(
-        Filter.equalTo("x", ImmutableList.of("v1", "v2")),
-        Filter.equalTo("y", ImmutableList.of("v3", "v4"))
-    );
+    Filter filter =
+        Filter.and(
+            Filter.inArray("x", ImmutableList.of("v1", "v2")),
+            Filter.inArray("y", ImmutableList.of("v3", "v4")));
     assertEquals(
         filter,
         Filter.and(
-            Filter.equalTo(FieldPath.of("x"), ImmutableList.of("v1", "v2")),
-            Filter.equalTo(FieldPath.of("y"), ImmutableList.of("v3", "v4"))
-        )
-    );
+            Filter.inArray(FieldPath.of("x"), ImmutableList.of("v1", "v2")),
+            Filter.inArray(FieldPath.of("y"), ImmutableList.of("v3", "v4"))));
     assertNotEquals(
         filter,
         Filter.or(
-            Filter.equalTo("x", ImmutableList.of("v1", "v2")),
-            Filter.equalTo("y", ImmutableList.of("v3", "v4"))
-        )
-    );
+            Filter.inArray("x", ImmutableList.of("v1", "v2")),
+            Filter.inArray("y", ImmutableList.of("v3", "v4"))));
     assertNotEquals(
         filter,
-        Filter.or(
-            Filter.equalTo("y", ImmutableList.of("v3", "v4")),
-            Filter.equalTo("x", ImmutableList.of("v1", "v2"))
-        )
-    );
+        Filter.and(
+            Filter.inArray("y", ImmutableList.of("v3", "v4")),
+            Filter.inArray("x", ImmutableList.of("v1", "v2"))));
   }
 }

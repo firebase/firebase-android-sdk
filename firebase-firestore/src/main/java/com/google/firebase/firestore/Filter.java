@@ -58,8 +58,8 @@ public class Filter {
       UnaryFilter that = (UnaryFilter) o;
 
       return this.operator == that.operator
-              && Objects.equals(this.field, that.field)
-              && Objects.equals(this.value, that.value);
+          && Objects.equals(this.field, that.field)
+          && Objects.equals(this.value, that.value);
     }
 
     @Override
