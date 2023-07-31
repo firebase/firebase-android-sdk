@@ -283,7 +283,7 @@ public class IntegrationTestUtil {
       FirebaseFirestoreSettings settings,
       String persistenceKey) {
     return testFirestore(
-        DatabaseId.forDatabase(projectId, DatabaseId.DEFAULT_DATABASE_ID),
+        DatabaseId.forDatabase(projectId, BuildConfig.TARGET_DATABASE_ID),
         logLevel,
         settings,
         persistenceKey);
