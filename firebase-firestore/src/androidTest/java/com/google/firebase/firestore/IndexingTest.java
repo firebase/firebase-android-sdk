@@ -136,6 +136,9 @@ public class IndexingTest {
 
     results = waitFor(collection.whereEqualTo("match", true).get());
     assertEquals(1, results.size());
+
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().deleteAllIndexes());
+    assertEquals(1, results.size());
   }
 
   @Test
@@ -161,6 +164,9 @@ public class IndexingTest {
 
     results = waitFor(collection.whereEqualTo("match", true).get());
     assertEquals(1, results.size());
+
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().deleteAllIndexes());
+    assertEquals(1, results.size());
   }
 
   @Test
@@ -174,6 +180,10 @@ public class IndexingTest {
 
     expectError(
         () -> db.getPersistentCacheIndexManager().disableIndexAutoCreation(),
+        "The client has already been terminated");
+
+    expectError(
+        () -> db.getPersistentCacheIndexManager().deleteAllIndexes(),
         "The client has already been terminated");
   }
 }
