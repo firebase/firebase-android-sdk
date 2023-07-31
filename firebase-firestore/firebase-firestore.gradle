@@ -70,11 +70,8 @@ android {
         def targetBackend = findProperty("targetBackend") ?: "emulator"
         buildConfigField("String", "TARGET_BACKEND", "\"$targetBackend\"")
 
-        if (findProperty('targetDatabaseId')) {
-            buildConfigField("String", "TARGET_DATABASE_ID", "\"${property("targetDatabaseId")}\"")
-        } else {
-            buildConfigField("String", "TARGET_DATABASE_ID", "\"(default)\"")
-        }
+        def targetDatabaseId = findProperty('targetDatabaseId') ?: "(default)"
+        buildConfigField("String", "TARGET_DATABASE_ID", "\"$targetDatabaseId\"")
 
         def localProps = new Properties()
 
