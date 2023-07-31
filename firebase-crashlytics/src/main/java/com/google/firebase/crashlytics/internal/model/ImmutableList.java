@@ -25,15 +25,15 @@ import java.util.ListIterator;
 import java.util.RandomAccess;
 
 /** Immutable list implementation for use with AutoValue */
-public final class ImmutableList<E> implements List<E>, RandomAccess {
+final class ImmutableList<E> implements List<E>, RandomAccess {
 
   @NonNull
-  public static <E> ImmutableList<E> from(E... elements) {
+  static <E> ImmutableList<E> from(E... elements) {
     return new ImmutableList<>(Arrays.asList(elements));
   }
 
   @NonNull
-  public static <E> ImmutableList<E> from(@NonNull List<E> mutableList) {
+  static <E> ImmutableList<E> from(@NonNull List<E> mutableList) {
     return new ImmutableList<>(mutableList);
   }
 
