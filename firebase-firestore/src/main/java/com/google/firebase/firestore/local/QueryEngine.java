@@ -88,8 +88,8 @@ public class QueryEngine {
     this.initialized = true;
   }
 
-  public void setIndexAutoCreationEnabled(boolean enabled) {
-    this.indexAutoCreationEnabled = enabled;
+  public void setIndexAutoCreationEnabled(boolean isEnabled) {
+    this.indexAutoCreationEnabled = isEnabled;
   }
 
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
