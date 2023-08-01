@@ -8,113 +8,9 @@
                 "message": "Add third party license to aars (#5178)\n\n* Add third party license to aars\r\n\r\n* Update CHANGELOG.md files",
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3fcf34366f99b21c57fd3065bc54699e6c823955",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5178"
-            },
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
             }
         ],
-        "firebase-config": [
-            {
-                "commitId": "d68ed5ca01147e2ed4a07952d39af5c9aeece826",
-                "prId": "5133",
-                "author": "Vinay Guthal",
-                "message": "Update semver tests and the pom validator tests to handle new sdk (#5133)\n\n* update\r\n\r\n* update",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d68ed5ca01147e2ed4a07952d39af5c9aeece826",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5133"
-            },
-            {
-                "commitId": "52389ce36fd47072a6d00bd9c536b0c113b95c84",
-                "prId": "5126",
-                "author": "Dana Silver",
-                "message": "Add changelog entry for Remote Config real-time request improvements. (#5126)\n\n* Add changelog entry for Remote Config real-time request improvements.\r\n\r\n* Fix subheader format.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/52389ce36fd47072a6d00bd9c536b0c113b95c84",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5126"
-            },
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
-            }
-        ],
-        "firebase-config/ktx": [
-            {
-                "commitId": "d68ed5ca01147e2ed4a07952d39af5c9aeece826",
-                "prId": "5133",
-                "author": "Vinay Guthal",
-                "message": "Update semver tests and the pom validator tests to handle new sdk (#5133)\n\n* update\r\n\r\n* update",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d68ed5ca01147e2ed4a07952d39af5c9aeece826",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5133"
-            },
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
-            }
-        ],
-        "firebase-crashlytics": [
-            {
-                "commitId": "2aef609de97e7e4edd0b58aa5d362e17a7370f1d",
-                "prId": "5151",
-                "author": "Vinay Guthal",
-                "message": "update versions (#5151)\n\n* update versions\r\n\r\n* update version",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2aef609de97e7e4edd0b58aa5d362e17a7370f1d",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5151"
-            },
-            {
-                "commitId": "d337cde4bb122bf32dcea7f2cce596fcea482351",
-                "prId": "5123",
-                "author": "Matthew Robertson",
-                "message": "Add changelog for Crashlytics and Perf integrating with Sessions (#5123)\n\n* Add changelog for Crashlytics and Perf integrating with Sessions\r\n\r\n* Changelog entry as [feature] not [added]",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d337cde4bb122bf32dcea7f2cce596fcea482351",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5123"
-            },
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
-            }
-        ],
-        "firebase-crashlytics-ndk": [
-            {
-                "commitId": "2aef609de97e7e4edd0b58aa5d362e17a7370f1d",
-                "prId": "5151",
-                "author": "Vinay Guthal",
-                "message": "update versions (#5151)\n\n* update versions\r\n\r\n* update version",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2aef609de97e7e4edd0b58aa5d362e17a7370f1d",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5151"
-            },
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
-            }
-        ],
-        "firebase-crashlytics/ktx": [
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
-            }
+        "firebase-inappmessaging/ktx": [
         ],
         "firebase-inappmessaging": [
             {
@@ -124,34 +20,6 @@
                 "message": "Update vendor plugin to use non-deprecated api (#5179)\n\n* Upgrade to agp 7.4.2\r\n\r\n* Update vendor code\r\n\r\n* Update dagger dependencies\r\n\r\n* Update changelogs\r\n\r\n* Remove unneeded change\r\n\r\n* Remove extra line",
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f15e429ad82e0ba12967e73fe29130330564132a",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5179"
-            },
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
-            }
-        ],
-        "firebase-inappmessaging/ktx": [
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
-            }
-        ],
-        "firebase-inappmessaging-display/ktx": [
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
             }
         ],
         "firebase-inappmessaging-display": [
@@ -170,15 +38,13 @@
                 "message": "Update vendor plugin to use non-deprecated api (#5179)\n\n* Upgrade to agp 7.4.2\r\n\r\n* Update vendor code\r\n\r\n* Update dagger dependencies\r\n\r\n* Update changelogs\r\n\r\n* Remove unneeded change\r\n\r\n* Remove extra line",
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f15e429ad82e0ba12967e73fe29130330564132a",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5179"
-            },
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
             }
+        ],
+        "firebase-inappmessaging-display/ktx": [
+        ],
+        "firebase-messaging-directboot": [
+        ],
+        "firebase-messaging/ktx": [
         ],
         "firebase-messaging": [
             {
@@ -198,14 +64,6 @@
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5142"
             },
             {
-                "commitId": "91a1d3eb1f5132f06c8f552fcce7e6b15ddd61a3",
-                "prId": "5152",
-                "author": "Vinay Guthal",
-                "message": "Update messaging versions (#5152)\n\n* update versions\r\n\r\n* update version\r\n\r\n* update messaging versions",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/91a1d3eb1f5132f06c8f552fcce7e6b15ddd61a3",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5152"
-            },
-            {
                 "commitId": "d41d2abab7a6d50aee19e0c71af4432620b135c9",
                 "prId": "5147",
                 "author": "Greg Sakakihara",
@@ -220,55 +78,19 @@
                 "message": "Change send deprecation link to hyperlinked text. (#5140)\n\n",
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bf8cb54157e821e4f5e4fe08bb8c086327d03ec4",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5140"
-            },
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
-            }
-        ],
-        "firebase-messaging-directboot": [
-            {
-                "commitId": "91a1d3eb1f5132f06c8f552fcce7e6b15ddd61a3",
-                "prId": "5152",
-                "author": "Vinay Guthal",
-                "message": "Update messaging versions (#5152)\n\n* update versions\r\n\r\n* update version\r\n\r\n* update messaging versions",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/91a1d3eb1f5132f06c8f552fcce7e6b15ddd61a3",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5152"
-            },
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
-            }
-        ],
-        "firebase-messaging/ktx": [
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
             }
         ],
         "firebase-ml-modeldownloader/ktx": [
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
-            }
         ],
         "firebase-ml-modeldownloader": [
+            {
+                "commitId": "d941aad568cdc90ef046e70b073529c91f6467b7",
+                "prId": "5207",
+                "author": "emilypgoogle",
+                "message": "Bump Auto Service Annotations version to match regex (#5207)\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d941aad568cdc90ef046e70b073529c91f6467b7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5207"
+            },
             {
                 "commitId": "f15e429ad82e0ba12967e73fe29130330564132a",
                 "prId": "5179",
@@ -284,50 +106,6 @@
                 "message": "Add third party license to aars (#5178)\n\n* Add third party license to aars\r\n\r\n* Update CHANGELOG.md files",
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3fcf34366f99b21c57fd3065bc54699e6c823955",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5178"
-            },
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
-            }
-        ],
-        "firebase-perf": [
-            {
-                "commitId": "2aef609de97e7e4edd0b58aa5d362e17a7370f1d",
-                "prId": "5151",
-                "author": "Vinay Guthal",
-                "message": "update versions (#5151)\n\n* update versions\r\n\r\n* update version",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2aef609de97e7e4edd0b58aa5d362e17a7370f1d",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5151"
-            },
-            {
-                "commitId": "d337cde4bb122bf32dcea7f2cce596fcea482351",
-                "prId": "5123",
-                "author": "Matthew Robertson",
-                "message": "Add changelog for Crashlytics and Perf integrating with Sessions (#5123)\n\n* Add changelog for Crashlytics and Perf integrating with Sessions\r\n\r\n* Changelog entry as [feature] not [added]",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d337cde4bb122bf32dcea7f2cce596fcea482351",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5123"
-            },
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
-            }
-        ],
-        "firebase-perf/ktx": [
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
             }
         ],
         "firebase-sessions": [
@@ -354,14 +132,6 @@
                 "message": "Add initial Firebase sessions library changelog (#5125)\n\n",
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/15696e52c12d7b51915a7bb136c58d4e963eceff",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5125"
-            },
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
             }
         ],
         "transport/transport-runtime": [
@@ -372,51 +142,13 @@
                 "message": "Update vendor plugin to use non-deprecated api (#5179)\n\n* Upgrade to agp 7.4.2\r\n\r\n* Update vendor code\r\n\r\n* Update dagger dependencies\r\n\r\n* Update changelogs\r\n\r\n* Remove unneeded change\r\n\r\n* Remove extra line",
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f15e429ad82e0ba12967e73fe29130330564132a",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5179"
-            },
-            {
-                "commitId": "9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prId": "5114",
-                "author": "Rodrigo Lazo",
-                "message": "Update AGP to version 7.3.1 (#5114)\n\n* Update AGP to version 7.3.1\r\n\r\n* Use namespace in gradle file instead of package in AndroidManifest\r\n\r\n* Organize namespace more consistently\r\n\r\n* Update protolite-well-known-types.gradle",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9aa45a5615ffd139a4dc5b20ab01ea99bb5dff88",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5114"
             }
         ]
     },
     "changedLibrariesWithNoChangelog": [
-        ":firebase-abt",
-        ":firebase-appdistribution-api",
-        ":firebase-appdistribution-api:ktx",
-        ":firebase-common:ktx",
-        ":firebase-common",
-        ":firebase-components",
-        ":firebase-database",
-        ":firebase-database:ktx",
-        ":firebase-database-collection",
-        ":firebase-datatransport",
-        ":firebase-dynamic-links",
-        ":firebase-dynamic-links:ktx",
         ":firebase-firestore:ktx",
         ":firebase-firestore",
-        ":firebase-functions",
-        ":firebase-functions:ktx",
-        ":firebase-installations:ktx",
-        ":firebase-installations",
         ":firebase-installations-interop",
-        ":firebase-storage",
-        ":firebase-storage:ktx",
-        ":protolite-well-known-types",
-        ":appcheck:firebase-appcheck-debug-testing",
-        ":appcheck:firebase-appcheck:ktx",
-        ":appcheck:firebase-appcheck",
-        ":appcheck:firebase-appcheck-debug",
-        ":appcheck:firebase-appcheck-playintegrity",
-        ":appcheck:firebase-appcheck-interop",
-        ":encoders:firebase-decoders-json",
-        ":encoders:firebase-encoders-json",
-        ":encoders:firebase-encoders-reflective",
-        ":firebase-components:firebase-dynamic-module-support",
-        ":transport:transport-api",
-        ":transport:transport-backend-cct"
+        ":protolite-well-known-types"
     ]
 }

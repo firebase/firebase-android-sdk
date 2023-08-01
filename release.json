@@ -2,25 +2,16 @@
     "name": "m135",
     "libraries": [
         ":firebase-appdistribution",
-        ":firebase-config",
-        ":firebase-config:ktx",
-        ":firebase-crashlytics",
-        ":firebase-crashlytics-ndk",
-        ":firebase-crashlytics:ktx",
-        ":firebase-inappmessaging",
         ":firebase-inappmessaging:ktx",
-        ":firebase-inappmessaging-display:ktx",
+        ":firebase-inappmessaging",
         ":firebase-inappmessaging-display",
-        ":firebase-messaging",
+        ":firebase-inappmessaging-display:ktx",
         ":firebase-messaging-directboot",
         ":firebase-messaging:ktx",
+        ":firebase-messaging",
         ":firebase-ml-modeldownloader:ktx",
         ":firebase-ml-modeldownloader",
-        ":firebase-perf",
-        ":firebase-perf:ktx",
         ":firebase-sessions",
-        ":transport:transport-runtime",
-        ":firebase-installations",
-        ":firebase-appdistribution-api"
+        ":transport:transport-runtime"
     ]
 }
