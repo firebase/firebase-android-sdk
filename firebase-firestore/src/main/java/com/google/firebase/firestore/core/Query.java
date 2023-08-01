@@ -57,10 +57,16 @@ public final class Query {
 
   private final List<OrderBy> explicitSortOrder;
 
-  private List<OrderBy> memoizedOrderBy;
+  private List<OrderBy> memoizedNormalizedOrderBys;
 
-  // The corresponding Target of this Query instance.
+  /** Returns a `Target` instance this query will be mapped to in backend and local store. */
   private @Nullable Target memoizedTarget;
+
+  /**
+   * Returns a `Target` instance this query will be mapped to in backend and local store, for use
+   * within an aggregate query.
+   */
+  private @Nullable Target memoizedAggregateTarget;
 
   private final List<Filter> filters;
 
@@ -333,8 +339,8 @@ public final class Query {
    * <p>The returned list is unmodifiable, to prevent ConcurrentModificationExceptions, if one
    * thread is iterating the list and one thread is modifying the list.
    */
-  public synchronized List<OrderBy> getOrderBy() {
-    if (memoizedOrderBy == null) {
+  public synchronized List<OrderBy> getNormalizedOrderBy() {
+    if (memoizedNormalizedOrderBys == null) {
       FieldPath inequalityField = inequalityField();
       FieldPath firstOrderByField = getFirstOrderByField();
       if (inequalityField != null && firstOrderByField == null) {
@@ -342,9 +348,9 @@ public final class Query {
         // it to be a valid query. Note that the default inequality field and key ordering is
         // ascending.
         if (inequalityField.isKeyField()) {
-          this.memoizedOrderBy = Collections.singletonList(KEY_ORDERING_ASC);
+          this.memoizedNormalizedOrderBys = Collections.singletonList(KEY_ORDERING_ASC);
         } else {
-          memoizedOrderBy =
+          memoizedNormalizedOrderBys =
               Collections.unmodifiableList(
                   Arrays.asList(
                       OrderBy.getInstance(Direction.ASCENDING, inequalityField), KEY_ORDERING_ASC));
@@ -367,10 +373,10 @@ public final class Query {
                   : Direction.ASCENDING;
           res.add(lastDirection.equals(Direction.ASCENDING) ? KEY_ORDERING_ASC : KEY_ORDERING_DESC);
         }
-        memoizedOrderBy = Collections.unmodifiableList(res);
+        memoizedNormalizedOrderBys = Collections.unmodifiableList(res);
       }
     }
-    return memoizedOrderBy;
+    return memoizedNormalizedOrderBys;
   }
 
   private boolean matchesPathAndCollectionGroup(Document doc) {
@@ -403,7 +409,7 @@ public final class Query {
     // to the inequality, and is evaluated as "a > 1 orderBy a || b==1 orderBy a".
     // A document with content of {b:1} matches the filters, but does not match the orderBy because
     // it's missing the field 'a'.
-    for (OrderBy order : getOrderBy()) {
+    for (OrderBy order : getNormalizedOrderBy()) {
       // order by key always matches
       if (!order.getField().equals(FieldPath.KEY_PATH) && (doc.getField(order.field) == null)) {
         return false;
@@ -414,10 +420,10 @@ public final class Query {
 
   /** Makes sure a document is within the bounds, if provided. */
   private boolean matchesBounds(Document doc) {
-    if (startAt != null && !startAt.sortsBeforeDocument(getOrderBy(), doc)) {
+    if (startAt != null && !startAt.sortsBeforeDocument(getNormalizedOrderBy(), doc)) {
       return false;
     }
-    if (endAt != null && !endAt.sortsAfterDocument(getOrderBy(), doc)) {
+    if (endAt != null && !endAt.sortsAfterDocument(getNormalizedOrderBy(), doc)) {
       return false;
     }
     return true;
@@ -434,7 +440,7 @@ public final class Query {
 
   /** Returns a comparator that will sort documents according to this Query's sort order. */
   public Comparator<Document> comparator() {
-    return new QueryComparator(getOrderBy());
+    return new QueryComparator(getNormalizedOrderBy());
   }
 
   private static class QueryComparator implements Comparator<Document> {
@@ -470,50 +476,62 @@ public final class Query {
    */
   public synchronized Target toTarget() {
     if (this.memoizedTarget == null) {
-      if (this.limitType == LimitType.LIMIT_TO_FIRST) {
-        this.memoizedTarget =
-            new Target(
-                this.getPath(),
-                this.getCollectionGroup(),
-                this.getFilters(),
-                this.getOrderBy(),
-                this.limit,
-                this.getStartAt(),
-                this.getEndAt());
-      } else {
-        // Flip the orderBy directions since we want the last results
-        ArrayList<OrderBy> newOrderBy = new ArrayList<>();
-        for (OrderBy orderBy : this.getOrderBy()) {
-          Direction dir =
-              orderBy.getDirection() == Direction.DESCENDING
-                  ? Direction.ASCENDING
-                  : Direction.DESCENDING;
-          newOrderBy.add(OrderBy.getInstance(dir, orderBy.getField()));
-        }
-
-        // We need to swap the cursors to match the now-flipped query ordering.
-        Bound newStartAt =
-            this.endAt != null
-                ? new Bound(this.endAt.getPosition(), this.endAt.isInclusive())
-                : null;
-        Bound newEndAt =
-            this.startAt != null
-                ? new Bound(this.startAt.getPosition(), this.startAt.isInclusive())
-                : null;
-
-        this.memoizedTarget =
-            new Target(
-                this.getPath(),
-                this.getCollectionGroup(),
-                this.getFilters(),
-                newOrderBy,
-                this.limit,
-                newStartAt,
-                newEndAt);
-      }
+      memoizedTarget = toTarget(getNormalizedOrderBy());
     }
-
     return this.memoizedTarget;
+  }
+
+  private synchronized Target toTarget(List<OrderBy> orderBys) {
+    if (this.limitType == LimitType.LIMIT_TO_FIRST) {
+      return new Target(
+          this.getPath(),
+          this.getCollectionGroup(),
+          this.getFilters(),
+          orderBys,
+          this.limit,
+          this.getStartAt(),
+          this.getEndAt());
+    } else {
+      // Flip the orderBy directions since we want the last results
+      ArrayList<OrderBy> newOrderBy = new ArrayList<>();
+      for (OrderBy orderBy : orderBys) {
+        Direction dir =
+            orderBy.getDirection() == Direction.DESCENDING
+                ? Direction.ASCENDING
+                : Direction.DESCENDING;
+        newOrderBy.add(OrderBy.getInstance(dir, orderBy.getField()));
+      }
+
+      // We need to swap the cursors to match the now-flipped query ordering.
+      Bound newStartAt =
+          this.endAt != null ? new Bound(this.endAt.getPosition(), this.endAt.isInclusive()) : null;
+      Bound newEndAt =
+          this.startAt != null
+              ? new Bound(this.startAt.getPosition(), this.startAt.isInclusive())
+              : null;
+
+      return new Target(
+          this.getPath(),
+          this.getCollectionGroup(),
+          this.getFilters(),
+          newOrderBy,
+          this.limit,
+          newStartAt,
+          newEndAt);
+    }
+  }
+
+  /**
+   * This method is marked as synchronized because it modifies the internal state in some cases.
+   *
+   * @return A {@code Target} instance this query will be mapped to in backend and local store, for
+   *     use within an aggregate query.
+   */
+  private synchronized Target toAggregateTarget() {
+    if (this.memoizedAggregateTarget == null) {
+      memoizedAggregateTarget = toTarget(explicitSortOrder);
+    }
+    return this.memoizedAggregateTarget;
   }
 
   /**

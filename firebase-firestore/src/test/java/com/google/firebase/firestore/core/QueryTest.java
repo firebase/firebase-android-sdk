@@ -582,37 +582,49 @@ public class QueryTest {
   public void testImplicitOrderBy() {
     Query baseQuery = Query.atPath(path("foo"));
     // Default is ascending
-    assertEquals(asList(orderBy(KEY_FIELD_NAME, "asc")), baseQuery.getOrderBy());
+    assertEquals(asList(orderBy(KEY_FIELD_NAME, "asc")), baseQuery.getNormalizedOrderBy());
 
     // Explicit key ordering is respected
     assertEquals(
         asList(orderBy(KEY_FIELD_NAME, "asc")),
-        baseQuery.orderBy(orderBy(KEY_FIELD_NAME, "asc")).getOrderBy());
+        baseQuery.orderBy(orderBy(KEY_FIELD_NAME, "asc")).getNormalizedOrderBy());
     assertEquals(
         asList(orderBy(KEY_FIELD_NAME, "desc")),
-        baseQuery.orderBy(orderBy(KEY_FIELD_NAME, "desc")).getOrderBy());
+        baseQuery.orderBy(orderBy(KEY_FIELD_NAME, "desc")).getNormalizedOrderBy());
     assertEquals(
         asList(orderBy("foo"), orderBy(KEY_FIELD_NAME, "asc")),
-        baseQuery.orderBy(orderBy("foo")).orderBy(orderBy(KEY_FIELD_NAME, "asc")).getOrderBy());
+        baseQuery
+            .orderBy(orderBy("foo"))
+            .orderBy(orderBy(KEY_FIELD_NAME, "asc"))
+            .getNormalizedOrderBy());
     assertEquals(
         asList(orderBy("foo"), orderBy(KEY_FIELD_NAME, "desc")),
-        baseQuery.orderBy(orderBy("foo")).orderBy(orderBy(KEY_FIELD_NAME, "desc")).getOrderBy());
+        baseQuery
+            .orderBy(orderBy("foo"))
+            .orderBy(orderBy(KEY_FIELD_NAME, "desc"))
+            .getNormalizedOrderBy());
 
     // Inequality filters add order bys
     assertEquals(
         asList(orderBy("foo"), orderBy(KEY_FIELD_NAME, "asc")),
-        baseQuery.filter(filter("foo", "<", 5)).getOrderBy());
+        baseQuery.filter(filter("foo", "<", 5)).getNormalizedOrderBy());
 
     // Descending order by applies to implicit key ordering
     assertEquals(
         asList(orderBy("foo", "desc"), orderBy(KEY_FIELD_NAME, "desc")),
-        baseQuery.orderBy(orderBy("foo", "desc")).getOrderBy());
+        baseQuery.orderBy(orderBy("foo", "desc")).getNormalizedOrderBy());
     assertEquals(
         asList(orderBy("foo", "asc"), orderBy("bar", "desc"), orderBy(KEY_FIELD_NAME, "desc")),
-        baseQuery.orderBy(orderBy("foo", "asc")).orderBy(orderBy("bar", "desc")).getOrderBy());
+        baseQuery
+            .orderBy(orderBy("foo", "asc"))
+            .orderBy(orderBy("bar", "desc"))
+            .getNormalizedOrderBy());
     assertEquals(
         asList(orderBy("foo", "desc"), orderBy("bar", "asc"), orderBy(KEY_FIELD_NAME, "asc")),
-        baseQuery.orderBy(orderBy("foo", "desc")).orderBy(orderBy("bar", "asc")).getOrderBy());
+        baseQuery
+            .orderBy(orderBy("foo", "desc"))
+            .orderBy(orderBy("bar", "asc"))
+            .getNormalizedOrderBy());
   }
 
   @Test
@@ -891,7 +903,7 @@ public class QueryTest {
             .orderBy(orderBy("e"))
             .orderBy(orderBy("f"));
 
-    List<OrderBy> orderByList = query.getOrderBy();
+    List<OrderBy> orderByList = query.getNormalizedOrderBy();
 
     assertThrows(UnsupportedOperationException.class, () -> orderByList.add(orderBy("g")));
   }
