@@ -527,7 +527,7 @@ public final class Query {
    * @return A {@code Target} instance this query will be mapped to in backend and local store, for
    *     use within an aggregate query.
    */
-  private synchronized Target toAggregateTarget() {
+  public synchronized Target toAggregateTarget() {
     if (this.memoizedAggregateTarget == null) {
       memoizedAggregateTarget = toTarget(explicitSortOrder);
     }

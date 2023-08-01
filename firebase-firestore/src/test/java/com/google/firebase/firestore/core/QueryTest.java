@@ -908,6 +908,60 @@ public class QueryTest {
     assertThrows(UnsupportedOperationException.class, () -> orderByList.add(orderBy("g")));
   }
 
+  @Test
+  public void testOrderByForAggregateAndNonAggregate() {
+    Query col = query("collection");
+
+    // Build two identical queries
+    Query query1 = col.filter(filter("foo", ">", 1));
+    Query query2 = col.filter(filter("foo", ">", 1));
+
+    // Compute an aggregate and non-aggregate target from the queries
+    Target aggregateTarget = query1.toAggregateTarget();
+    Target target = query2.toTarget();
+
+    assertEquals(aggregateTarget.getOrderBy().size(), 0);
+
+    assertEquals(target.getOrderBy().size(), 2);
+    assertEquals(target.getOrderBy().get(0).getDirection(), OrderBy.Direction.ASCENDING);
+    assertEquals(target.getOrderBy().get(0).getField().toString(), "foo");
+    assertEquals(target.getOrderBy().get(1).getDirection(), OrderBy.Direction.ASCENDING);
+    assertEquals(target.getOrderBy().get(1).getField().toString(), "__name__");
+  }
+
+  @Test
+  public void testGeneratedOrderBysNotAffectedByPreviouslyMemoizedTargets() {
+    Query col = query("collection");
+
+    // Build two identical queries
+    Query query1 = col.filter(filter("foo", ">", 1));
+    Query query2 = col.filter(filter("foo", ">", 1));
+
+    // query1 - first to aggregate target, then to non-aggregate target
+    Target aggregateTarget1 = query1.toAggregateTarget();
+    Target target1 = query1.toTarget();
+
+    // query2 - first to non-aggregate target, then to aggregate target
+    Target target2 = query2.toTarget();
+    Target aggregateTarget2 = query2.toAggregateTarget();
+
+    assertEquals(aggregateTarget1.getOrderBy().size(), 0);
+
+    assertEquals(aggregateTarget2.getOrderBy().size(), 0);
+
+    assertEquals(target1.getOrderBy().size(), 2);
+    assertEquals(target1.getOrderBy().get(0).getDirection(), OrderBy.Direction.ASCENDING);
+    assertEquals(target1.getOrderBy().get(0).getField().toString(), "foo");
+    assertEquals(target1.getOrderBy().get(1).getDirection(), OrderBy.Direction.ASCENDING);
+    assertEquals(target1.getOrderBy().get(1).getField().toString(), "__name__");
+
+    assertEquals(target2.getOrderBy().size(), 2);
+    assertEquals(target2.getOrderBy().get(0).getDirection(), OrderBy.Direction.ASCENDING);
+    assertEquals(target2.getOrderBy().get(0).getField().toString(), "foo");
+    assertEquals(target2.getOrderBy().get(1).getDirection(), OrderBy.Direction.ASCENDING);
+    assertEquals(target2.getOrderBy().get(1).getField().toString(), "__name__");
+  }
+
   private void assertQueryMatches(
       Query query, List<MutableDocument> matching, List<MutableDocument> nonMatching) {
     for (MutableDocument doc : matching) {
