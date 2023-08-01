@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package com.google.firebase.ktx
+package com.google.firebase
 
 import android.content.Context
 import androidx.annotation.Keep
@@ -35,33 +35,41 @@ import kotlinx.coroutines.asCoroutineDispatcher
  *
  * <p>Acts as a target for extension methods provided by sdks.
  */
+@Deprecated("Use {@code } instead")
 object Firebase
 
 /** Returns the default firebase app instance. */
+@Deprecated
 val Firebase.app: FirebaseApp
   get() = FirebaseApp.getInstance()
 
 /** Returns a named firebase app instance. */
+@Deprecated
 fun Firebase.app(name: String): FirebaseApp = FirebaseApp.getInstance(name)
 
 /** Initializes and returns a FirebaseApp. */
+@Deprecated
 fun Firebase.initialize(context: Context): FirebaseApp? = FirebaseApp.initializeApp(context)
 
 /** Initializes and returns a FirebaseApp. */
+@Deprecated
 fun Firebase.initialize(context: Context, options: FirebaseOptions): FirebaseApp =
   FirebaseApp.initializeApp(context, options)
 
 /** Initializes and returns a FirebaseApp. */
+@Deprecated
 fun Firebase.initialize(context: Context, options: FirebaseOptions, name: String): FirebaseApp =
   FirebaseApp.initializeApp(context, options, name)
 
 /** Returns options of default FirebaseApp */
+@Deprecated
 val Firebase.options: FirebaseOptions
   get() = Firebase.app.options
 
 internal const val LIBRARY_NAME: String = "fire-core-ktx"
 
 /** @suppress */
+@Deprecated
 @Keep
 class FirebaseCommonKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> {
