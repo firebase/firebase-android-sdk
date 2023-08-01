@@ -1,7 +1,7 @@
 # Unreleased
 * [fixed] Implement equals method on Filter class. [#5210](//github.com/firebase/firebase-android-sdk/issues/5210)
 
-# 24.6.2
+# 24.7.0
 * [feature] Expose MultiDb support in API. [#4015](//github.com/firebase/firebase-android-sdk/issues/4015)
 * [fixed] Fixed a thread interference issue that may lead to a ConcurrentModificationException.
   (GitHub [#5091](//github.com/firebase/firebase-android-sdk/issues/5091){: .external})
