@@ -1,8 +1,16 @@
 # Unreleased
+* [fixed] Implement equals method on Filter class. [#5210](//github.com/firebase/firebase-android-sdk/issues/5210)
+
+# 24.7.0
 * [feature] Expose MultiDb support in API. [#4015](//github.com/firebase/firebase-android-sdk/issues/4015)
 * [fixed] Fixed a thread interference issue that may lead to a ConcurrentModificationException.
-    (GitHub [#5091](//github.com/firebase/firebase-android-sdk/issues/5091){: .external})
-* [fixed] Implement equals method on Filter class. [#5210](//github.com/firebase/firebase-android-sdk/issues/5210)
+  (GitHub [#5091](//github.com/firebase/firebase-android-sdk/issues/5091){: .external})
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.6.1
 * [feature] Implemented an optimization in the local cache synchronization logic that reduces the number of billed document reads when documents were deleted on the server while the client was not actively listening to the query (e.g. while the client was offline). (GitHub [#4982](//github.com/firebase/firebase-android-sdk/pull/4982){: .external})
