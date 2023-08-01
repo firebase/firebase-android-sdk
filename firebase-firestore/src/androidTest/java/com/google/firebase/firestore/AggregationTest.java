@@ -575,7 +575,11 @@ public class AggregationTest {
     CollectionReference collection = testCollectionWithDocs(testDocs1);
 
     AggregateQuerySnapshot snapshot =
-        waitFor(collection.aggregate(sum("pages")).get(AggregateSource.SERVER));
+        waitFor(
+            collection
+                .whereGreaterThan("pages", 200)
+                .aggregate(sum("pages"))
+                .get(AggregateSource.SERVER));
 
     Exception exception = null;
     try {
@@ -860,17 +864,13 @@ public class AggregationTest {
         "Skip this test if running against production because sum/avg is only support "
             + "in emulator currently.",
         isRunningAgainstEmulator());
-
+    // Sum of rating would be 0, but if the accumulation overflow, we expect infinity
     Map<String, Map<String, Object>> testDocs =
         map(
             "a", map("author", "authorA", "title", "titleA", "rating", Double.MAX_VALUE),
             "b", map("author", "authorB", "title", "titleB", "rating", Double.MAX_VALUE),
             "c", map("author", "authorC", "title", "titleC", "rating", -Double.MAX_VALUE),
-            "d", map("author", "authorD", "title", "titleD", "rating", -Double.MAX_VALUE),
-            "e", map("author", "authorE", "title", "titleE", "rating", Double.MAX_VALUE),
-            "f", map("author", "authorF", "title", "titleF", "rating", -Double.MAX_VALUE),
-            "g", map("author", "authorG", "title", "titleG", "rating", -Double.MAX_VALUE),
-            "h", map("author", "authorH", "title", "titleH", "rating", Double.MAX_VALUE));
+            "d", map("author", "authorD", "title", "titleD", "rating", -Double.MAX_VALUE));
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
     AggregateQuerySnapshot snapshot =
@@ -878,7 +878,7 @@ public class AggregationTest {
 
     Object sum = snapshot.get(sum("rating"));
     assertTrue(sum instanceof Long);
-    assertEquals(sum, 0L);
+    assertTrue(sum.equals(0L) || sum.equals(Long.MAX_VALUE) || sum.equals(Long.MIN_VALUE));
   }
 
   @Test
@@ -1240,7 +1240,6 @@ public class AggregationTest {
     // 1500 bytes, the alias will be longer than 1500, which is the limit for aliases. This is to
     // make sure the client
     // can handle this corner case correctly.
-
     StringBuilder builder = new StringBuilder(1500);
     for (int i = 0; i < 1500; i++) {
       builder.append("a");

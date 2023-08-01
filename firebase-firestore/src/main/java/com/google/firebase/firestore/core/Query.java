@@ -403,7 +403,8 @@ public final class Query {
 
   /** A document must have a value for every ordering clause in order to show up in the results. */
   private boolean matchesOrderBy(Document doc) {
-    // We must use `getNormalizedOrderBy()` to get the list of all orderBys (both implicit and explicit).
+    // We must use `getNormalizedOrderBy()` to get the list of all orderBys (both implicit and
+    // explicit).
     // Note that for OR queries, orderBy applies to all disjunction terms and implicit orderBys must
     // be taken into account. For example, the query "a > 1 || b==1" has an implicit "orderBy a" due
     // to the inequality, and is evaluated as "a > 1 orderBy a || b==1 orderBy a".
