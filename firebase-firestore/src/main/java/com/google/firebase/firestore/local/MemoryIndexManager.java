@@ -61,14 +61,6 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public void deleteAllFieldIndexes() {
-    // Field indices are not supported with memory persistence.
-  }
-
-  @Override
-  public void createTargetIndexes(Target target) {}
-
-  @Override
   @Nullable
   public List<DocumentKey> getDocumentsMatchingTarget(Target target) {
     // Field indices are not supported with memory persistence.

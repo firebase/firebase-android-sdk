@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.local;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
@@ -85,21 +84,6 @@ class CountingQueryEngine extends QueryEngine {
       SnapshotVersion lastLimboFreeSnapshotVersion,
       ImmutableSortedSet<DocumentKey> remoteKeys) {
     return queryEngine.getDocumentsMatchingQuery(query, lastLimboFreeSnapshotVersion, remoteKeys);
-  }
-
-  @Override
-  public void setIndexAutoCreationEnabled(boolean isEnabled) {
-    queryEngine.setIndexAutoCreationEnabled(isEnabled);
-  }
-
-  @Override
-  public void setIndexAutoCreationMinCollectionSize(int newMin) {
-    queryEngine.setIndexAutoCreationMinCollectionSize(newMin);
-  }
-
-  @Override
-  public void setRelativeIndexReadCostPerDocument(double newCost) {
-    queryEngine.setRelativeIndexReadCostPerDocument(newCost);
   }
 
   /**
@@ -185,18 +169,9 @@ class CountingQueryEngine extends QueryEngine {
 
       @Override
       public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-          Query query, IndexOffset offset, @NonNull Set<DocumentKey> mutatedKeys) {
-        return getDocumentsMatchingQuery(query, offset, mutatedKeys, /*context*/ null);
-      }
-
-      @Override
-      public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-          Query query,
-          IndexOffset offset,
-          @NonNull Set<DocumentKey> mutatedKeys,
-          @Nullable QueryContext context) {
+          Query query, IndexOffset offset, Set<DocumentKey> mutatedKeys) {
         Map<DocumentKey, MutableDocument> result =
-            subject.getDocumentsMatchingQuery(query, offset, mutatedKeys, context);
+            subject.getDocumentsMatchingQuery(query, offset, mutatedKeys);
         documentsReadByCollection[0] += result.size();
         return result;
       }

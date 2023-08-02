@@ -14,7 +14,6 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.google.common.collect.Sets
 import com.google.firebase.gradle.bomgenerator.BomGeneratorTask
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.BUILD_BOM_ZIP_TASK
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.BUILD_KOTLINDOC_ZIP_TASK
@@ -80,7 +79,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       val checkHeadDependencies =
         registerCheckHeadDependenciesTask(project, releasingFirebaseLibraries)
       val validateProjectsToPublish =
-        registerValidateProjectsToPublishTask(project, releasingFirebaseLibraries)
+        registerValidateProjectsToPublishTask(project, releasingProjects)
       val publishReleasingLibrariesToBuildDir =
         registerPublishReleasingLibrariesToBuildDirTask(project, releasingProjects)
       val generateKotlindocsForRelease =
@@ -276,24 +275,15 @@ abstract class PublishingPlugin : Plugin<Project> {
   // TODO(b/280320915): Remove doLast when Gradle + IDEA fix task configuration avoidance bug
   private fun registerValidateProjectsToPublishTask(
     project: Project,
-    releasinglibraries: List<FirebaseLibraryExtension>
+    releasingProjects: List<Project>
   ) =
     project.tasks.register(VALIDATE_PROJECTS_TO_PUBLISH_TASK) {
       doLast {
-        if (releasinglibraries.isEmpty()) {
+        if (releasingProjects.isEmpty()) {
           throw GradleException(
             "No projects to release. " +
               "Ensure you've specified the projectsToPublish parameter, " +
               "or have a valid $RELEASE_CONFIG_FILE file at the root directory."
-          )
-        }
-        val libraryGroupProjects =
-          releasinglibraries.flatMap { it.projectsToRelease }.filterNotNull().toSet()
-        val releasingProjects = releasinglibraries.mapNotNull { it.project }.toSet()
-        if (!libraryGroupProjects.equals(releasingProjects)) {
-          throw GradleException(
-            "Some libraries in library groups are not in the release: " +
-              Sets.difference(libraryGroupProjects, releasingProjects).map { it.displayName }
           )
         }
       }
@@ -388,7 +378,6 @@ abstract class PublishingPlugin : Plugin<Project> {
       currentRelease.convention(project.provideProperty("currentRelease"))
       pastRelease.convention(project.provideProperty("pastRelease"))
       printReleaseConfig.convention(project.provideProperty("printOutput"))
-      commitsToIgnoreFile.convention(project.layout.projectDirectory.file("ignoreCommits.txt"))
 
       releaseConfigFile.convention(project.layout.projectDirectory.file(RELEASE_CONFIG_FILE))
       releaseReportMdFile.convention(project.layout.projectDirectory.file(RELEASE_REPORT_MD_FILE))
