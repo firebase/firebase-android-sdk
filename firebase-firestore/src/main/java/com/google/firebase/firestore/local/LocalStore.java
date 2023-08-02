@@ -802,6 +802,14 @@ public final class LocalStore implements BundleCallback {
         });
   }
 
+  public void deleteAllFieldIndexes() {
+    persistence.runTransaction("Delete All Indexes", () -> indexManager.deleteAllFieldIndexes());
+  }
+
+  public void setIndexAutoCreationEnabled(boolean isEnabled) {
+    queryEngine.setIndexAutoCreationEnabled(isEnabled);
+  }
+
   /** Mutable state for the transaction in allocateQuery. */
   private static class AllocateQueryHolder {
     TargetData cached;
