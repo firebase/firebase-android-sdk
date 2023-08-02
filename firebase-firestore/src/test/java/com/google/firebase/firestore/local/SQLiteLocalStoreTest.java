@@ -444,9 +444,7 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     applyRemoteEvent(
         addedRemoteEvent(doc("coll/e", 10, map("array", Arrays.asList(2, 0, 8))), targetId));
 
-    // First time query runs without indexes.
-    // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
-    // Full matched index should be created.
+    // SDK will not create indexes since relative read cost is too large.
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
     assertQueryReturned("coll/a", "coll/e");
