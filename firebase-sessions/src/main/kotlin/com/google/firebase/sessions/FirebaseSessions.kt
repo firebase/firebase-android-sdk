@@ -139,7 +139,7 @@ internal constructor(
     }
 
     sessionCoordinator.attemptLoggingSessionEvent(
-      SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings)
+      SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings, subscribers)
     )
   }
 
