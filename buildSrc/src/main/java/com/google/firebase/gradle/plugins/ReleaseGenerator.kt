@@ -29,8 +29,6 @@ import org.gradle.api.Project
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
@@ -121,14 +119,6 @@ abstract class ReleaseGenerator : DefaultTask() {
   @get:Input abstract val pastRelease: Property<String>
 
   @get:Optional @get:Input abstract val printReleaseConfig: Property<String>
-
-  @get:Optional @get:InputFiles abstract val commitsToIgnoreFile: RegularFileProperty
-
-  @get:Internal
-  val commitsToIgnore: List<ObjectId>
-    get() =
-      commitsToIgnoreFile.asFileIfExistsOrNull()?.readLines()?.map { ObjectId.fromString(it) }
-        ?: emptyList()
 
   @get:OutputFile abstract val releaseConfigFile: RegularFileProperty
 
@@ -234,10 +224,7 @@ abstract class ReleaseGenerator : DefaultTask() {
       .addRange(previousReleaseRef, currentReleaseRef)
       .setMaxCount(10)
       .call()
-      .filter {
-        !it.fullMessage.contains(RELEASE_CHANGE_FILTER) &&
-          !commitsToIgnore.any { ignore -> it.id == ignore }
-      }
+      .filter { !it.fullMessage.contains(RELEASE_CHANGE_FILTER) }
       .isNotEmpty()
 
   private fun getDirChanges(
@@ -251,14 +238,8 @@ abstract class ReleaseGenerator : DefaultTask() {
       .addPath(directory)
       .addRange(previousReleaseRef, currentReleaseRef)
       .call()
-      .filter {
-        !it.fullMessage.contains(RELEASE_CHANGE_FILTER) &&
-          !commitsToIgnore.any { ignore -> it.id == ignore }
-      }
+      .filter { !it.fullMessage.contains(RELEASE_CHANGE_FILTER) }
       .map { CommitDiff.fromRevCommit(it) }
 
   private fun getRelativeDir(project: Project) = project.path.substring(1).replace(':', '/')
 }
-
-fun RegularFileProperty.asFileIfExistsOrNull(): File? =
-  if (isPresent && asFile.get().exists()) asFile.get() else null

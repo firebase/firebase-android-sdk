@@ -20,9 +20,9 @@ jobs:
         environment: [ prod, autopush ]
     steps:
       - name: Checkout firebase-android-sdk
-        uses: actions/checkout@v3.5.3
+        uses: actions/checkout@v3
       - name: Checkout firebase-android-buildtools
-        uses: actions/checkout@v3.5.3
+        uses: actions/checkout@v3
         with:
           repository: FirebasePrivate/firebase-android-buildtools
           token: ${{ secrets.GOOGLE_OSS_BOT_TOKEN }}

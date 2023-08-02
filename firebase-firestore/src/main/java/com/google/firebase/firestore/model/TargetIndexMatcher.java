@@ -203,59 +203,6 @@ public class TargetIndexMatcher {
     return true;
   }
 
-  /** Returns a full matched field index for this target. */
-  public FieldIndex buildTargetIndex() {
-    // We want to make sure only one segment created for one field. For example, in case like
-    // a == 3 and a > 2, Index: {a ASCENDING} will only be created once.
-    Set<FieldPath> uniqueFields = new HashSet<>();
-    List<FieldIndex.Segment> segments = new ArrayList<>();
-
-    for (FieldFilter filter : equalityFilters) {
-      if (filter.getField().isKeyField()) {
-        continue;
-      }
-      boolean isArrayOperator =
-          filter.getOperator().equals(FieldFilter.Operator.ARRAY_CONTAINS)
-              || filter.getOperator().equals(FieldFilter.Operator.ARRAY_CONTAINS_ANY);
-      if (isArrayOperator) {
-        segments.add(
-            FieldIndex.Segment.create(filter.getField(), FieldIndex.Segment.Kind.CONTAINS));
-      } else {
-        if (uniqueFields.contains(filter.getField())) {
-          continue;
-        }
-        uniqueFields.add(filter.getField());
-        segments.add(
-            FieldIndex.Segment.create(filter.getField(), FieldIndex.Segment.Kind.ASCENDING));
-      }
-    }
-
-    for (OrderBy orderBy : orderBys) {
-      // Stop adding more segments if we see a order-by on key. Typically this is the default
-      // implicit order-by which is covered in the index_entry table as a separate column.
-      // If it is not the default order-by, the generated index will be missing some segments
-      // optimized for order-bys, which is probably fine.
-      if (orderBy.getField().isKeyField()) {
-        continue;
-      }
-
-      if (uniqueFields.contains(orderBy.getField())) {
-        continue;
-      }
-      uniqueFields.add(orderBy.getField());
-
-      segments.add(
-          FieldIndex.Segment.create(
-              orderBy.getField(),
-              orderBy.getDirection() == OrderBy.Direction.ASCENDING
-                  ? FieldIndex.Segment.Kind.ASCENDING
-                  : FieldIndex.Segment.Kind.DESCENDING));
-    }
-
-    return FieldIndex.create(
-        FieldIndex.UNKNOWN_ID, collectionId, segments, FieldIndex.INITIAL_STATE);
-  }
-
   private boolean hasMatchingEqualityFilter(FieldIndex.Segment segment) {
     for (FieldFilter filter : equalityFilters) {
       if (matchesFilter(filter, segment)) {

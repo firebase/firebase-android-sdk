@@ -78,12 +78,6 @@ public interface IndexManager {
   /** Removes the given field index and deletes all index values. */
   void deleteFieldIndex(FieldIndex index);
 
-  /** Removes all field indexes and deletes all index values. */
-  void deleteAllFieldIndexes();
-
-  /** Creates a full matched field index which serves the given target. */
-  void createTargetIndexes(Target target);
-
   /**
    * Returns a list of field indexes that correspond to the specified collection group.
    *
