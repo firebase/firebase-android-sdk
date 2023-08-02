@@ -263,6 +263,10 @@ public class TestUtil {
     return res;
   }
 
+  public static FieldFilter filter(FieldPath key, String operator, Object value) {
+    return FieldFilter.create(key, operatorFromString(operator), wrap(value));
+  }
+
   public static FieldFilter filter(String key, String operator, Object value) {
     return FieldFilter.create(field(key), operatorFromString(operator), wrap(value));
   }
@@ -314,15 +318,21 @@ public class TestUtil {
   }
 
   public static OrderBy orderBy(String key, String dir) {
-    Direction direction;
+    return OrderBy.getInstance(parseDirection(dir), field(key));
+  }
+
+  public static OrderBy orderBy(FieldPath key, String dir) {
+    return OrderBy.getInstance(parseDirection(dir), key);
+  }
+
+  private static Direction parseDirection(String dir) {
     if (dir.equals("asc")) {
-      direction = Direction.ASCENDING;
+      return Direction.ASCENDING;
     } else if (dir.equals("desc")) {
-      direction = Direction.DESCENDING;
+      return Direction.DESCENDING;
     } else {
       throw new IllegalArgumentException("Unknown direction: " + dir);
     }
-    return OrderBy.getInstance(direction, field(key));
   }
 
   public static Bound bound(boolean inclusive, Object... values) {

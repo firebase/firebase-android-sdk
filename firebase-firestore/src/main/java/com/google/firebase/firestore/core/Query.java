@@ -177,10 +177,11 @@ public final class Query {
     SortedSet<FieldPath> result = new TreeSet<FieldPath>();
 
     for (Filter filter : getFilters()) {
-      List<FieldFilter> inequalityFilters = filter.getInequalityFilters();
-      for (FieldFilter inequalityFilter : inequalityFilters) {
-        FieldPath field = inequalityFilter.getField();
-        result.add(field);
+      List<FieldFilter> Filters = filter.getFlattenedFilters();
+      for (FieldFilter subFilter : Filters) {
+        if (subFilter.isInequality()) {
+          result.add(subFilter.getField());
+        }
       }
     }
 

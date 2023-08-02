@@ -36,6 +36,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.testutil.ComparatorTester;
@@ -613,6 +614,95 @@ public class QueryTest {
     assertEquals(
         asList(orderBy("foo", "desc"), orderBy("bar", "asc"), orderBy(KEY_FIELD_NAME, "asc")),
         baseQuery.orderBy(orderBy("foo", "desc")).orderBy(orderBy("bar", "asc")).getOrderBy());
+  }
+
+  @Test
+  public void testImplicitOrderByInMultipleInequality() {
+    Query baseQuery = Query.atPath(path("foo"));
+    assertEquals(
+        asList(
+            orderBy("A", "asc"),
+            orderBy("a", "asc"),
+            orderBy("aa", "asc"),
+            orderBy("b", "asc"),
+            orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery
+            .filter(filter("a", "<", 5))
+            .filter(filter("aa", "<", 5))
+            .filter(filter("b", "<", 5))
+            .filter(filter("A", "<", 5))
+            .getOrderBy());
+
+    // numbers
+    assertEquals(
+        asList(
+            orderBy("1", "asc"),
+            orderBy("19", "asc"),
+            orderBy("2", "asc"),
+            orderBy("a", "asc"),
+            orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery
+            .filter(filter("a", "<", 5))
+            .filter(filter("1", "<", 5))
+            .filter(filter("2", "<", 5))
+            .filter(filter("19", "<", 5))
+            .getOrderBy());
+
+    // nested fields
+    assertEquals(
+        asList(
+            orderBy("a", "asc"),
+            orderBy("a.a", "asc"),
+            orderBy("aa", "asc"),
+            orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery
+            .filter(filter("a", "<", 5))
+            .filter(filter("aa", "<", 5))
+            .filter(filter("a.a", "<", 5))
+            .getOrderBy());
+
+    // special characters
+    assertEquals(
+        asList(
+            orderBy("_a", "asc"),
+            orderBy("a", "asc"),
+            orderBy("a.a", "asc"),
+            orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery
+            .filter(filter("a", "<", 5))
+            .filter(filter("_a", "<", 5))
+            .filter(filter("a.a", "<", 5))
+            .getOrderBy());
+
+    // field name with dot
+    FieldPath FieldNameWithDot = FieldPath.fromSingleSegment("a.a");
+    assertEquals(
+        asList(
+            orderBy("a", "asc"),
+            orderBy("a.z", "asc"),
+            orderBy(FieldNameWithDot, "asc"),
+            orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery
+            .filter(filter("a", "<", 5))
+            .filter(filter(FieldNameWithDot, "<", 5))
+            .filter(filter("a.z", "<", 5))
+            .getOrderBy());
+
+    // composite filter
+    assertEquals(
+        asList(
+            orderBy("a", "asc"),
+            orderBy("b", "asc"),
+            orderBy("c", "asc"),
+            orderBy("d", "asc"),
+            orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery
+            .filter(filter("a", "<", 5))
+            .filter(
+                andFilters(
+                    orFilters(filter("b", ">=", 1), filter("c", "<=", 1)),
+                    orFilters(filter("d", "<=", 1), filter("e", "==", 1))))
+            .getOrderBy());
   }
 
   @Test

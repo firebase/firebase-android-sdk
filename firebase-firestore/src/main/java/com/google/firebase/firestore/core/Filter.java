@@ -29,7 +29,4 @@ public abstract class Filter {
 
   /** Returns a list of all filters that are contained within this filter */
   public abstract List<Filter> getFilters();
-
-  /** Returns a list of all field filters that's an inequality */
-  public abstract List<FieldFilter> getInequalityFilters();
 }
