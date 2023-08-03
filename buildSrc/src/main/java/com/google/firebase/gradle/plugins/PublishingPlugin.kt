@@ -309,7 +309,7 @@ abstract class PublishingPlugin : Plugin<Project> {
         val missingProjects = libraryGroupProjects - releasinglibraries
         if (missingProjects.isNotEmpty()) {
           throw GradleException(
-            "Some libraries in library groups are not in the release: ${missingProjects.map { it.mavenName }}"
+            "Some libraries in library groups are not in the release: ${missingProjects.map { it.mavenName }.joinToString("\n")}"
           )
         }
       }
@@ -491,7 +491,7 @@ abstract class PublishingPlugin : Plugin<Project> {
 
     const val GENERATE_BOM_TASK = "generateBom"
     const val VALIDATE_PROJECTS_TO_PUBLISH_TASK = "validateProjectsToPublish"
-    const val VALIDATE_LIBRARY_GROUPS_TO_PUBLISH_TASK = "validateLGsToPublish"
+    const val VALIDATE_LIBRARY_GROUPS_TO_PUBLISH_TASK = "validateLibraryGroupsToPublish"
     const val SEMVER_CHECK_TASK = "semverCheckForRelease"
     const val RELEASE_GENEATOR_TASK = "generateReleaseConfig"
     const val VALIDATE_POM_TASK = "validatePomForRelease"
