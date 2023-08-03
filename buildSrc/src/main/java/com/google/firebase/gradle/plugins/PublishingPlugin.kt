@@ -14,7 +14,6 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.google.common.collect.Sets
 import com.google.firebase.gradle.bomgenerator.BomGeneratorTask
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.BUILD_BOM_ZIP_TASK
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.BUILD_KOTLINDOC_ZIP_TASK
