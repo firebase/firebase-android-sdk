@@ -477,7 +477,6 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
     // Full matched index should be created.
     executeQuery(query);
-    // Only document a matches the result
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
     assertQueryReturned("coll/a", "coll/e");
 
