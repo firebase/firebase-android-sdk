@@ -1,0 +1,18 @@
+{
+    "name": "m135",
+    "libraries": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-inappmessaging:ktx",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-inappmessaging-display:ktx",
+        ":firebase-installations",
+        ":firebase-messaging-directboot",
+        ":firebase-messaging:ktx",
+        ":firebase-messaging",
+        ":firebase-ml-modeldownloader:ktx",
+        ":firebase-ml-modeldownloader",
+        ":firebase-sessions"
+    ]
+}
