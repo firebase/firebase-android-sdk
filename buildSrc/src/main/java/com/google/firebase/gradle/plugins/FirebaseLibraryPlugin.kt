@@ -27,7 +27,6 @@ import java.io.File
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
-import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.Copy
 import org.gradle.kotlin.dsl.apply
 import org.gradle.kotlin.dsl.create
@@ -169,7 +168,6 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     android: LibraryExtension
   ) {
     android.publishing.singleVariant("release") { withSourcesJar() }
-    project.tasks.withType<GenerateModuleMetadata> { isEnabled = false }
 
     configurePublishing(project, firebaseLibrary)
   }
