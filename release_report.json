@@ -1,0 +1,154 @@
+{
+    "changesByLibraryName": {
+        "firebase-appdistribution": [
+            {
+                "commitId": "3fcf34366f99b21c57fd3065bc54699e6c823955",
+                "prId": "5178",
+                "author": "Rodrigo Lazo",
+                "message": "Add third party license to aars (#5178)\n\n* Add third party license to aars\r\n\r\n* Update CHANGELOG.md files",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3fcf34366f99b21c57fd3065bc54699e6c823955",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5178"
+            }
+        ],
+        "firebase-inappmessaging/ktx": [
+        ],
+        "firebase-inappmessaging": [
+            {
+                "commitId": "f15e429ad82e0ba12967e73fe29130330564132a",
+                "prId": "5179",
+                "author": "Rodrigo Lazo",
+                "message": "Update vendor plugin to use non-deprecated api (#5179)\n\n* Upgrade to agp 7.4.2\r\n\r\n* Update vendor code\r\n\r\n* Update dagger dependencies\r\n\r\n* Update changelogs\r\n\r\n* Remove unneeded change\r\n\r\n* Remove extra line",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f15e429ad82e0ba12967e73fe29130330564132a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5179"
+            }
+        ],
+        "firebase-inappmessaging-display": [
+            {
+                "commitId": "d91342e4b919a89084f5369c47d047bbcc85b385",
+                "prId": "5185",
+                "author": "utzcoz",
+                "message": "Make TestActivity exported for firebase-inappmessaging-display (#5185)\n\nPrepare for SDK 33.\r\n\r\nSigned-off-by: utzcoz <utzcoz@outlook.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d91342e4b919a89084f5369c47d047bbcc85b385",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5185"
+            },
+            {
+                "commitId": "f15e429ad82e0ba12967e73fe29130330564132a",
+                "prId": "5179",
+                "author": "Rodrigo Lazo",
+                "message": "Update vendor plugin to use non-deprecated api (#5179)\n\n* Upgrade to agp 7.4.2\r\n\r\n* Update vendor code\r\n\r\n* Update dagger dependencies\r\n\r\n* Update changelogs\r\n\r\n* Remove unneeded change\r\n\r\n* Remove extra line",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f15e429ad82e0ba12967e73fe29130330564132a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5179"
+            }
+        ],
+        "firebase-inappmessaging-display/ktx": [
+        ],
+        "firebase-messaging-directboot": [
+        ],
+        "firebase-messaging/ktx": [
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "4d1cc39a14fe7e838d86bad53def4c3f3ce41380",
+                "prId": "5155",
+                "author": "Greg Sakakihara",
+                "message": "Clean up documentation. (#5155)\n\n* Removed deprecated class documentation about upstream messaging.\r\n* Updated send deprecation wording to \"FCM upstream messaging\" to align with the standard naming.\r\n* Fixed spelling error.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4d1cc39a14fe7e838d86bad53def4c3f3ce41380",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5155"
+            },
+            {
+                "commitId": "8fff029b3f22377198898e5ee3cca9117728ebb1",
+                "prId": "5142",
+                "author": "Greg Sakakihara",
+                "message": "Finish background FCM broadcasts after handling the message. (#5142)\n\n* Changed to finish a background broadcast after the message has been handled, subject to a timeout. This keeps the `FirebaseMessagingService`'s process in an active state while it is handling an FCM message, up to the 20 seconds allowed.\r\n* Removed acquiring a WakeLock for background broadcasts as one is held for the app until the broadcast is finished.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8fff029b3f22377198898e5ee3cca9117728ebb1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5142"
+            },
+            {
+                "commitId": "d41d2abab7a6d50aee19e0c71af4432620b135c9",
+                "prId": "5147",
+                "author": "Greg Sakakihara",
+                "message": "Add documentation to onMessageReceived on the time to handle a message. (#5147)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d41d2abab7a6d50aee19e0c71af4432620b135c9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5147"
+            },
+            {
+                "commitId": "bf8cb54157e821e4f5e4fe08bb8c086327d03ec4",
+                "prId": "5140",
+                "author": "Greg Sakakihara",
+                "message": "Change send deprecation link to hyperlinked text. (#5140)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bf8cb54157e821e4f5e4fe08bb8c086327d03ec4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5140"
+            }
+        ],
+        "firebase-ml-modeldownloader/ktx": [
+        ],
+        "firebase-ml-modeldownloader": [
+            {
+                "commitId": "d941aad568cdc90ef046e70b073529c91f6467b7",
+                "prId": "5207",
+                "author": "emilypgoogle",
+                "message": "Bump Auto Service Annotations version to match regex (#5207)\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d941aad568cdc90ef046e70b073529c91f6467b7",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5207"
+            },
+            {
+                "commitId": "f15e429ad82e0ba12967e73fe29130330564132a",
+                "prId": "5179",
+                "author": "Rodrigo Lazo",
+                "message": "Update vendor plugin to use non-deprecated api (#5179)\n\n* Upgrade to agp 7.4.2\r\n\r\n* Update vendor code\r\n\r\n* Update dagger dependencies\r\n\r\n* Update changelogs\r\n\r\n* Remove unneeded change\r\n\r\n* Remove extra line",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f15e429ad82e0ba12967e73fe29130330564132a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5179"
+            },
+            {
+                "commitId": "3fcf34366f99b21c57fd3065bc54699e6c823955",
+                "prId": "5178",
+                "author": "Rodrigo Lazo",
+                "message": "Add third party license to aars (#5178)\n\n* Add third party license to aars\r\n\r\n* Update CHANGELOG.md files",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3fcf34366f99b21c57fd3065bc54699e6c823955",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5178"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "d86eb6f04d7aecde0021f82c9db9e99192da462a",
+                "prId": "5187",
+                "author": "argzdev",
+                "message": "a helpful commit message (#5187)\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d86eb6f04d7aecde0021f82c9db9e99192da462a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5187"
+            },
+            {
+                "commitId": "e67be1edd7d509dc0cc5b4ab25b5c6fe9c5eb155",
+                "prId": "5136",
+                "author": "Sam Edson",
+                "message": "Remove Firebase Sessions from Javadoc (#5136)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e67be1edd7d509dc0cc5b4ab25b5c6fe9c5eb155",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5136"
+            },
+            {
+                "commitId": "15696e52c12d7b51915a7bb136c58d4e963eceff",
+                "prId": "5125",
+                "author": "Matthew Robertson",
+                "message": "Add initial Firebase sessions library changelog (#5125)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/15696e52c12d7b51915a7bb136c58d4e963eceff",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5125"
+            }
+        ],
+        "transport/transport-runtime": [
+            {
+                "commitId": "f15e429ad82e0ba12967e73fe29130330564132a",
+                "prId": "5179",
+                "author": "Rodrigo Lazo",
+                "message": "Update vendor plugin to use non-deprecated api (#5179)\n\n* Upgrade to agp 7.4.2\r\n\r\n* Update vendor code\r\n\r\n* Update dagger dependencies\r\n\r\n* Update changelogs\r\n\r\n* Remove unneeded change\r\n\r\n* Remove extra line",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f15e429ad82e0ba12967e73fe29130330564132a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5179"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-firestore:ktx",
+        ":firebase-firestore",
+        ":firebase-installations-interop",
+        ":protolite-well-known-types"
+    ]
+}

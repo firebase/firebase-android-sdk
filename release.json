@@ -1,0 +1,7 @@
+{
+    "name": "m135",
+    "libraries": [
+        ":firebase-appdistribution-api:ktx",
+        ":firebase-installations:ktx"
+    ]
+}
