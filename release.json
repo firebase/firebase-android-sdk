@@ -13,7 +13,6 @@
         ":firebase-messaging",
         ":firebase-ml-modeldownloader:ktx",
         ":firebase-ml-modeldownloader",
-        ":firebase-sessions",
-        ":transport:transport-runtime"
+        ":firebase-sessions"
     ]
 }
