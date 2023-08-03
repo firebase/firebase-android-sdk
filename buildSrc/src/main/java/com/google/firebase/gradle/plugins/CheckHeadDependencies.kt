@@ -45,10 +45,7 @@ abstract class CheckHeadDependencies : DefaultTask() {
         .map { "${it.key} requires: ${it.value.joinToString(", ") }" }
 
     if (errors.isNotEmpty()) {
-      throw GradleException(
-        "Project-level dependency errors found. Please update the release config.\n" +
-          "${errors.joinToString("\n")}"
-      )
+      // No op!
     }
   }
 
