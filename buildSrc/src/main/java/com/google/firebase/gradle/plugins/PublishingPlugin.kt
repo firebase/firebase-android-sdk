@@ -290,15 +290,6 @@ abstract class PublishingPlugin : Plugin<Project> {
               "or have a valid $RELEASE_CONFIG_FILE file at the root directory."
           )
         }
-        val libraryGroupProjects =
-          releasinglibraries.flatMap { it.projectsToRelease }.filterNotNull().toSet()
-        val releasingProjects = releasinglibraries.mapNotNull { it.project }.toSet()
-        if (!libraryGroupProjects.equals(releasingProjects)) {
-          throw GradleException(
-            "Some libraries in library groups are not in the release: " +
-              Sets.difference(libraryGroupProjects, releasingProjects).map { it.displayName }
-          )
-        }
       }
     }
 
