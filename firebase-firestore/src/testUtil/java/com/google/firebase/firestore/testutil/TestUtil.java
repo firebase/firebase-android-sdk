@@ -180,7 +180,7 @@ public class TestUtil {
   }
 
   public static FieldPath field(String path) {
-    return FieldPath.fromSegments(Arrays.asList(path.split("\\.")));
+    return FieldPath.fromServerFormat(path);
   }
 
   public static DocumentReference ref(String key) {
@@ -263,10 +263,6 @@ public class TestUtil {
     return res;
   }
 
-  public static FieldFilter filter(FieldPath key, String operator, Object value) {
-    return FieldFilter.create(key, operatorFromString(operator), wrap(value));
-  }
-
   public static FieldFilter filter(String key, String operator, Object value) {
     return FieldFilter.create(field(key), operatorFromString(operator), wrap(value));
   }
@@ -318,21 +314,15 @@ public class TestUtil {
   }
 
   public static OrderBy orderBy(String key, String dir) {
-    return OrderBy.getInstance(parseDirection(dir), field(key));
-  }
-
-  public static OrderBy orderBy(FieldPath key, String dir) {
-    return OrderBy.getInstance(parseDirection(dir), key);
-  }
-
-  private static Direction parseDirection(String dir) {
+    Direction direction;
     if (dir.equals("asc")) {
-      return Direction.ASCENDING;
+      direction = Direction.ASCENDING;
     } else if (dir.equals("desc")) {
-      return Direction.DESCENDING;
+      direction = Direction.DESCENDING;
     } else {
       throw new IllegalArgumentException("Unknown direction: " + dir);
     }
+    return OrderBy.getInstance(direction, field(key));
   }
 
   public static Bound bound(boolean inclusive, Object... values) {

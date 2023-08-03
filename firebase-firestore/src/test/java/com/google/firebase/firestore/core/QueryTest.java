@@ -36,7 +36,6 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.model.DocumentKey;
-import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.testutil.ComparatorTester;
@@ -675,17 +674,16 @@ public class QueryTest {
             .getOrderBy());
 
     // field name with dot
-    FieldPath FieldNameWithDot = FieldPath.fromSingleSegment("a.a");
     assertEquals(
         asList(
             orderBy("a", "asc"),
             orderBy("a.z", "asc"),
-            orderBy(FieldNameWithDot, "asc"),
+            orderBy("`a.a`", "asc"),
             orderBy(KEY_FIELD_NAME, "asc")),
         baseQuery
             .filter(filter("a", "<", 5))
-            .filter(filter(FieldNameWithDot, "<", 5))
-            .filter(filter("a.z", "<", 5))
+            .filter(filter("`a.a`", "<", 5)) //Field name with dot
+            .filter(filter("a.z", "<", 5)) // Nested field
             .getOrderBy());
 
     // composite filter
