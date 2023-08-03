@@ -682,7 +682,7 @@ public class QueryTest {
             orderBy(KEY_FIELD_NAME, "asc")),
         baseQuery
             .filter(filter("a", "<", 5))
-            .filter(filter("`a.a`", "<", 5)) //Field name with dot
+            .filter(filter("`a.a`", "<", 5)) // Field name with dot
             .filter(filter("a.z", "<", 5)) // Nested field
             .getOrderBy());
 
