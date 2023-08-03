@@ -309,7 +309,8 @@ abstract class PublishingPlugin : Plugin<Project> {
         val missingProjects = libraryGroupProjects - releasinglibraries
         if (missingProjects.isNotEmpty()) {
           throw GradleException(
-            "Some libraries in library groups are not in the release: ${missingProjects.map { it.mavenName }.joinToString("\n")}"
+            "Some libraries in library groups are not in the release: " +
+              missingProjects.map { it.mavenName }.joinToString("\n")
           )
         }
       }
