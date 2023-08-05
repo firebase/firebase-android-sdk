@@ -21,8 +21,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.SessionEvents.SESSION_EVENT_ENCODER
+import com.google.firebase.sessions.api.SessionSubscriber
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
+import com.google.firebase.sessions.testing.FakeSessionSubscriber
 import com.google.firebase.sessions.testing.FakeSettingsProvider
 import com.google.firebase.sessions.testing.TestSessionEventData
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -51,6 +53,15 @@ class SessionEventEncoderTest {
           localOverrideSettings = FakeSettingsProvider(),
           remoteSettings = FakeSettingsProvider(),
         ),
+        subscribers =
+          mapOf(
+            SessionSubscriber.Name.CRASHLYTICS to FakeSessionSubscriber(),
+            SessionSubscriber.Name.PERFORMANCE to
+              FakeSessionSubscriber(
+                isDataCollectionEnabled = false,
+                sessionSubscriberName = SessionSubscriber.Name.PERFORMANCE,
+              ),
+          ),
       )
 
     val json = SESSION_EVENT_ENCODER.encode(sessionEvent)
@@ -66,7 +77,7 @@ class SessionEventEncoderTest {
               "sessionIndex":3,
               "eventTimestampUs":12340000,
               "dataCollectionStatus":{
-                "performance":2,
+                "performance":3,
                 "crashlytics":2,
                 "sessionSamplingRate":1.0
               },
@@ -133,8 +144,8 @@ class SessionEventEncoderTest {
               "sessionIndex":0,
               "eventTimestampUs":0,
               "dataCollectionStatus":{
-                "performance":2,
-                "crashlytics":2,
+                "performance":1,
+                "crashlytics":1,
                 "sessionSamplingRate":1.0
               },
               "firebaseInstallationId":""

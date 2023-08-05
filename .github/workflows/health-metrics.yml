@@ -24,7 +24,7 @@ jobs:
               && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 2
           submodules: true
@@ -59,7 +59,7 @@ jobs:
               && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 2
           submodules: true
@@ -95,7 +95,7 @@ jobs:
               && github.event.pull_request.base.ref == 'master')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 2
           submodules: true

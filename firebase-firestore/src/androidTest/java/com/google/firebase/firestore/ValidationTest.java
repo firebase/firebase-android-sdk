@@ -100,7 +100,8 @@ public class ValidationTest {
   }
 
   @Test
-  public void firestoreGetInstanceWithNullDbNamepFails() {
+  public void firestoreGetInstanceWithNullDbNameFails() {
+    FirebaseApp.initializeApp(ApplicationProvider.getApplicationContext());
     expectError(
         () -> FirebaseFirestore.getInstance((String) null),
         "Provided database name must not be null.");
@@ -248,9 +249,12 @@ public class ValidationTest {
     expectWriteError(
         data,
         String.format(
-            "Invalid data. Document reference is for database %s/(default) but should be for "
-                + "database %s/(default) (found in field foo)",
-            IntegrationTestUtil.BAD_PROJECT_ID, IntegrationTestUtil.provider().projectId()));
+            "Invalid data. Document reference is for database %s/%s but should be for "
+                + "database %s/%s (found in field foo)",
+            IntegrationTestUtil.BAD_PROJECT_ID,
+            BuildConfig.TARGET_DATABASE_ID,
+            IntegrationTestUtil.provider().projectId(),
+            BuildConfig.TARGET_DATABASE_ID));
   }
 
   @Test
