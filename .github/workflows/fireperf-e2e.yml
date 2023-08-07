@@ -1,8 +1,6 @@
 name: FirePerf E2E Tests
 
 on:
-  schedule:
-    - cron: 4 */4 * * *  # every 4 hours at 04 minutes past the hour
   workflow_dispatch:     # allow triggering the workflow manually
 
 concurrency:

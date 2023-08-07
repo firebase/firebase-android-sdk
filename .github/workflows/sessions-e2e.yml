@@ -1,8 +1,6 @@
 name: Firebase Sessions E2E Tests
 
 on:
-  schedule:
-    - cron: 24 */4 * * *  # every 4 hours at 24 minutes past the hour
   workflow_dispatch:     # allow triggering the workflow manually
 
 concurrency:
