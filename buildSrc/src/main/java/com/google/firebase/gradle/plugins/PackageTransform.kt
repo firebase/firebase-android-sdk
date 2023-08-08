@@ -9,8 +9,43 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
+import org.gradle.configurationcache.extensions.capitalized
 import org.gradle.kotlin.dsl.project
 import org.w3c.dom.Element
+
+val KTX_CONTENT =
+  """
+  // Copyright 2023 Google LLC
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //      http://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  package com.google.firebase.ktx
+
+  import androidx.annotation.Keep
+  import com.google.firebase.components.Component
+  import com.google.firebase.components.ComponentRegistrar
+  import com.google.firebase.platforminfo.LibraryVersionComponent
+
+  internal const val LIBRARY_NAME: String = #{LIBRARY_NAME}
+
+  /** @suppress */
+  @Keep
+  class #{PROJECT_NAME}LoggingRegistrar : ComponentRegistrar {
+    override fun getComponents(): List<Component<*>> {
+      return listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
+    }
+  }
+"""
+    .trimIndent()
 
 abstract class PackageTransform : DefaultTask() {
   @get:Input abstract val artifactId: Property<String>
@@ -208,13 +243,31 @@ abstract class PackageTransform : DefaultTask() {
       ktxGradlePath = "${projectPath.get()}/ktx/ktx.gradle"
     }
     val dependencies = readDependencies(gradlePath)
-    val ktxDependencies = readDependencies(ktxGradlePath)
-    val deps =
-      (dependencies.toSet() + ktxDependencies.toSet())
-        .toList()
-        .sorted()
-        .map { x -> "    " + x }
+    var ktxDependencies =
+      readDependencies(ktxGradlePath)
         .filter { !it.contains("project(\"${project.path}\")") }
+        .toMutableList()
+    val deps = (dependencies.toSet() + ktxDependencies.toSet()).toList()
+    updateGradleFile(gradlePath, deps)
+    // KTX changes
+    updateCode(
+      ktxArtifactPath,
+      packageNamePath.replace("/", "."),
+      "${projectPath.get()}/ktx/src/main/AndroidManifest.xml"
+    )
+    ktxDependencies =
+      ktxDependencies
+        .filter {
+          !((it.contains("implementation") || it.contains("api")) &&
+            !it.contains("firebase-components:"))
+        }
+        .toMutableList()
+    // KTX gradle changes
+    ktxDependencies.add("api(project(\"${project.path}\"))")
+    updateGradleFile(ktxGradlePath, ktxDependencies)
+  }
+  private fun updateGradleFile(gradlePath: String, depsArg: List<String>) {
+    val deps = depsArg.sorted().map { x -> "    " + x }
     val lines = File(gradlePath).readLines()
     val output = mutableListOf<String>()
     for (line in lines) {
@@ -232,15 +285,34 @@ abstract class PackageTransform : DefaultTask() {
       }
     }
     File(gradlePath).writeText(output.joinToString("\n"))
-    // KTX changes
-    updateCode(File(ktxArtifactPath).toPath())
-
   }
-  private fun updateCode(path: Path) {
-    Files.walk(path).forEach {
-      if (!Files.isDirectory(it) && it.toAbsolutePath().endsWith(".kt")) {
-        val filePath = it.toAbsolutePath()
-        println(filePath)
+  private fun extractLibraryName(path: String): String =
+    File(path)
+      .readLines()
+      .filter { x -> x.contains("LIBRARY_NAME:") }
+      .map { x -> x.split(" ").last() }
+      .get(0)
+  private fun updateCode(path: String, pkgName: String, manifestPath: String) {
+    File(path).walk().forEach {
+      if (it.absolutePath.endsWith(".kt")) {
+        val filePath = it.absolutePath
+        val projectName = artifactId.get().split("-").map { x -> x.capitalized() }.joinToString("")
+        val replaceClass: String =
+          File(filePath)
+            .readLines()
+            .filter { it.contains("class") }
+            .map { x -> x.split(" ").get(1).replace(":", "") }
+            .get(0)
+        File(filePath)
+          .writeText(
+            KTX_CONTENT.replace("#{LIBRARY_NAME}", extractLibraryName(filePath))
+              .replace("#{PROJECT_NAME}", projectName)
+          )
+        val lines =
+          File(manifestPath).readLines().map { x ->
+            x.replace(replaceClass, "${projectName}LoggingRegistrar")
+          }
+        File(manifestPath).writeText(lines.joinToString("\n"))
       }
     }
   }
