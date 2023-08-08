@@ -47,7 +47,9 @@ abstract class PackageTransform : DefaultTask() {
   fun copyDir(src: Path, dest: Path) {
     Files.walk(src).forEach {
       if (!Files.isDirectory(it)) {
-        Files.copy(it, dest.resolve(src.relativize(it)), StandardCopyOption.REPLACE_EXISTING)
+        val destination = dest.resolve(src.relativize(it))
+        Files.createDirectories(destination.parent)
+        Files.copy(it, destination, StandardCopyOption.REPLACE_EXISTING)
       }
     }
   }
@@ -95,12 +97,31 @@ abstract class PackageTransform : DefaultTask() {
               """LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),""",
               ""
             )
-          }
+          }.filter { x-> !x.contains("contains(LIBRARY_NAME)") }
         File(it.absolutePath).delete()
         val newFile = File(it.absolutePath)
         newFile.writeText(lines.joinToString("\n"))
       }
     }
+  }
+
+  fun readDependencies(path: String): List<String> {
+    val lines = File(path).readLines()
+    var start = false
+    var output = mutableListOf<String>()
+    for (line in lines) {
+      if (start == true) {
+        if (line.contains("}")) {
+          break
+        }
+        output.add(line.trim())
+      }
+
+      if (line.contains("dependencies {")) {
+        start = true
+      }
+    }
+    return output.filter { x -> (x.trim().isNotEmpty() && !x.startsWith("//")) }
   }
 
   @TaskAction
@@ -110,11 +131,53 @@ abstract class PackageTransform : DefaultTask() {
     val ktxArtifactPath = "${projectPath.get()}/ktx/src/main/kotlin/${packageNamePath}/ktx"
     val ktxPackagePath = "${projectPath.get()}/src/main/java/${packageNamePath}/ktx"
     val mainPackagePath = "${projectPath.get()}/src/main/java/${packageNamePath}"
+    val ktxArtifactTestPath = "${projectPath.get()}/ktx/src/test/kotlin/${packageNamePath}/ktx"
+    val ktxPackageTestPath = "${projectPath.get()}/src/test/java/${packageNamePath}/ktx"
+    val mainPackageTestPath = "${projectPath.get()}/src/test/java/${packageNamePath}"
+    val ktxArtifactAndroidTestPath =
+      "${projectPath.get()}/ktx/src/androidTest/kotlin/${packageNamePath}/ktx"
+    val ktxPackageAndroidTestPath =
+      "${projectPath.get()}/src/androidTest/java/${packageNamePath}/ktx"
+    val mainPackageAndroidTestPath = "${projectPath.get()}/src/androidTest/java/${packageNamePath}"
     copyDir(File(ktxArtifactPath).toPath(), File(ktxPackagePath).toPath())
     copyDir(File(ktxArtifactPath).toPath(), File(mainPackagePath).toPath())
+    if (File(ktxArtifactTestPath).exists()) {
+      copyDir(File(ktxArtifactTestPath).toPath(), File(mainPackageTestPath).toPath())
+      copyDir(File(ktxArtifactTestPath).toPath(), File(ktxPackageTestPath).toPath())
+      updateKTXReferences(mainPackageTestPath)
+    }
+    if (File(ktxArtifactAndroidTestPath).exists()) {
+      copyDir(File(ktxArtifactAndroidTestPath).toPath(), File(mainPackageAndroidTestPath).toPath())
+      copyDir(File(ktxArtifactAndroidTestPath).toPath(), File(ktxPackageAndroidTestPath).toPath())
+      updateKTXReferences(mainPackageAndroidTestPath)
+    }
     updateKTXReferences(mainPackagePath)
-    updatePlatformLogging(mainPackagePath)
+    updatePlatformLogging("${projectPath.get()}/src")
     deprecateKTX(ktxPackagePath, packageNamePath.replace("/", "."))
-    project.dependencies.create("com.google.firebase:firebase-functions-ktx:20.3.1")
+    var gradlePath = "${projectPath.get()}/${artifactId.get()}.gradle.kts"
+    var ktxGradlePath = "${projectPath.get()}/ktx/ktx.gradle.kts"
+    if (!File(gradlePath).exists()) {
+      gradlePath = "${projectPath.get()}/${artifactId.get()}.gradle"
+      ktxGradlePath = "${projectPath.get()}/ktx/ktx.gradle"
+    }
+    val dependencies = readDependencies(gradlePath)
+    val ktxDependencies = readDependencies(ktxGradlePath)
+    val deps =
+      (dependencies.toSet() + ktxDependencies.toSet()).toList().sorted().map { x -> "    " + x }
+    val lines = File(gradlePath).readLines()
+    val output = mutableListOf<String>()
+    println(project.path)
+    for (line in lines) {
+      output.add(line)
+      if (line.contains("id(\"firebase-library\")")) {
+        output.add("    id(\"kotlin-android\")")
+      }
+      if (line.contains("dependencies {")) {
+        output += deps
+        output.add("}")
+        break
+      }
+    }
+    File(gradlePath).writeText(output.joinToString("\n"))
   }
 }

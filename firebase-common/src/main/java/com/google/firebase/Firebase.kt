@@ -15,8 +15,6 @@ package com.google.firebase
 
 import android.content.Context
 import androidx.annotation.Keep
-import com.google.firebase.FirebaseApp
-import com.google.firebase.FirebaseOptions
 import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.annotations.concurrent.Lightweight
@@ -25,7 +23,6 @@ import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.components.Dependency
 import com.google.firebase.components.Qualified
-import com.google.firebase.platforminfo.LibraryVersionComponent
 import java.util.concurrent.Executor
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -66,7 +63,6 @@ internal const val LIBRARY_NAME: String = "fire-core-ktx"
 class FirebaseCommonKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> {
     return listOf(
-      
       coroutineDispatcher<Background>(),
       coroutineDispatcher<Lightweight>(),
       coroutineDispatcher<Blocking>(),
