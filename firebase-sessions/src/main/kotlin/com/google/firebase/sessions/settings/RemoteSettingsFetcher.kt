@@ -46,12 +46,12 @@ internal class RemoteSettingsFetcher(
     onFailure: suspend (String) -> Unit
   ) =
     withContext(blockingDispatcher) {
-      val connection = settingsUrl().openConnection() as HttpsURLConnection
-      connection.requestMethod = "GET"
-      connection.setRequestProperty("Accept", "application/json")
-      headerOptions.forEach { connection.setRequestProperty(it.key, it.value) }
-
       try {
+        val connection = settingsUrl().openConnection() as HttpsURLConnection
+        connection.requestMethod = "GET"
+        connection.setRequestProperty("Accept", "application/json")
+        headerOptions.forEach { connection.setRequestProperty(it.key, it.value) }
+
         val responseCode = connection.responseCode
         if (responseCode == HttpsURLConnection.HTTP_OK) {
           val inputStream = connection.inputStream
