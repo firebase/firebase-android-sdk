@@ -177,8 +177,7 @@ public final class Query {
     SortedSet<FieldPath> result = new TreeSet<FieldPath>();
 
     for (Filter filter : getFilters()) {
-      List<FieldFilter> Filters = filter.getFlattenedFilters();
-      for (FieldFilter subFilter : Filters) {
+      for (FieldFilter subFilter : filter.getFlattenedFilters()) {
         if (subFilter.isInequality()) {
           result.add(subFilter.getField());
         }
