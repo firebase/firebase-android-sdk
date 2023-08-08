@@ -232,5 +232,16 @@ abstract class PackageTransform : DefaultTask() {
       }
     }
     File(gradlePath).writeText(output.joinToString("\n"))
+    // KTX changes
+    updateCode(File(ktxArtifactPath).toPath())
+
+  }
+  private fun updateCode(path: Path) {
+    Files.walk(path).forEach {
+      if (!Files.isDirectory(it) && it.toAbsolutePath().endsWith(".kt")) {
+        val filePath = it.toAbsolutePath()
+        println(filePath)
+      }
+    }
   }
 }

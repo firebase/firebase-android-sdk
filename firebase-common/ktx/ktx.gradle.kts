@@ -42,16 +42,8 @@ android {
 }
 
 dependencies {
-    implementation(libs.kotlin.stdlib)
-
-    implementation("com.google.firebase:firebase-annotations:16.2.0")
-    implementation(project(":firebase-common"))
     implementation("com.google.firebase:firebase-components:17.1.0")
-    implementation(libs.androidx.annotation)
-
-    // We"re exposing this library as a transitive dependency so developers can
-    // get Kotlin Coroutines support out-of-the-box for methods that return a Task
-    api(libs.kotlin.coroutines.tasks)
+    api(project(":firebase-common"))
 
     testImplementation(libs.robolectric)
     testImplementation(libs.junit)
