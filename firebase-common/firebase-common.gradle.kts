@@ -14,7 +14,6 @@
 
 plugins {
     id("firebase-library")
-    id("kotlin-android")
 }
 
 firebaseLibrary {
@@ -24,34 +23,57 @@ firebaseLibrary {
 }
 
 android {
-  val targetSdkVersion : Int by rootProject
-  val minSdkVersion : Int by rootProject
+    val targetSdkVersion : Int by rootProject
+    val minSdkVersion : Int by rootProject
 
-  compileSdk = targetSdkVersion
-  namespace = "com.google.firebase"
-  defaultConfig {
-    minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
-    multiDexEnabled = true
-    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    consumerProguardFiles("proguard.txt")
-  }
-  sourceSets {
-    getByName("androidTest") {
-      java.srcDirs("src/testUtil")
+    compileSdk = targetSdkVersion
+    namespace = "com.google.firebase"
+    defaultConfig {
+        minSdk = minSdkVersion
+        targetSdk = targetSdkVersion
+        multiDexEnabled = true
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles("proguard.txt")
     }
-    getByName("test") {
-      java.srcDirs("src/testUtil")
+    sourceSets {
+        getByName("androidTest") {
+            java.srcDirs("src/testUtil")
+        }
+        getByName("test") {
+            java.srcDirs("src/testUtil")
+        }
     }
-  }
-  compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-  }
-  testOptions.unitTests.isIncludeAndroidResources = true
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+    testOptions.unitTests.isIncludeAndroidResources = true
 }
 
 dependencies {
+    implementation("com.google.firebase:firebase-annotations:16.2.0")
+    implementation("com.google.firebase:firebase-components:17.1.0")
+    implementation(libs.androidx.futures)
+    implementation(libs.playservices.basement)
+    implementation(libs.playservices.tasks)
+
+    annotationProcessor(libs.autovalue)
+
+    compileOnly(libs.autovalue.annotations)
+    compileOnly(libs.findbugs.jsr305)
+    // needed for Kotlin detection to compile, but not necessarily present at runtime.
+    compileOnly(libs.kotlin.stdlib)
+
+    testImplementation("com.google.guava:guava-testlib:12.0-rc2")
+    testImplementation(libs.androidx.test.junit)
+    testImplementation(libs.androidx.test.junit)
+    testImplementation(libs.androidx.test.runner)
+    testImplementation(libs.junit)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.org.json)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.truth)
+
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.junit)
@@ -59,26 +81,4 @@ dependencies {
     androidTestImplementation(libs.mockito.dexmaker)
     androidTestImplementation(libs.truth)
     androidTestImplementation(project(":integ-testing"))
-    annotationProcessor(libs.autovalue)
-    api(libs.kotlin.coroutines.tasks)
-    compileOnly(libs.autovalue.annotations)
-    compileOnly(libs.findbugs.jsr305)
-    compileOnly(libs.kotlin.stdlib)
-    implementation("com.google.firebase:firebase-annotations:16.2.0")
-    implementation("com.google.firebase:firebase-components:17.1.0")
-    implementation(libs.androidx.annotation)
-    implementation(libs.androidx.futures)
-    implementation(libs.kotlin.stdlib)
-    implementation(libs.playservices.basement)
-    implementation(libs.playservices.tasks)
-    testImplementation("com.google.guava:guava-testlib:12.0-rc2")
-    testImplementation(libs.androidx.test.core)
-    testImplementation(libs.androidx.test.junit)
-    testImplementation(libs.androidx.test.runner)
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlin.coroutines.test)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.org.json)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.truth)
 }

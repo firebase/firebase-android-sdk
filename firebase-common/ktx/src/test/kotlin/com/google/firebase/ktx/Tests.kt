@@ -17,7 +17,6 @@ package com.google.firebase.ktx
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.gms.tasks.Tasks
 import com.google.common.truth.Truth.assertThat
-import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.platforminfo.UserAgentPublisher
@@ -51,6 +50,7 @@ class VersionTests {
     withApp("ktxTestApp") {
       val uaPublisher = get(UserAgentPublisher::class.java)
       assertThat(uaPublisher.userAgent).contains("kotlin")
+      assertThat(uaPublisher.userAgent).contains(LIBRARY_NAME)
     }
   }
 }
