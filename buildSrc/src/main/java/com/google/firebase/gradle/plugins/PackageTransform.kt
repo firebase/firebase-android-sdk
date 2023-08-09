@@ -294,7 +294,7 @@ abstract class PackageTransform : DefaultTask() {
       .get(0)
   private fun updateCode(path: String, pkgName: String, manifestPath: String) {
     File(path).walk().forEach {
-      if (it.absolutePath.endsWith(".kt")) {
+      if (it.absolutePath.endsWith(".kt") && !it.absolutePath.endsWith("Logging.kt")) {
         val filePath = it.absolutePath
         val projectName = artifactId.get().split("-").map { x -> x.capitalized() }.joinToString("")
         val replaceClass: String =
@@ -303,7 +303,8 @@ abstract class PackageTransform : DefaultTask() {
             .filter { it.contains("class") }
             .map { x -> x.split(" ").get(1).replace(":", "") }
             .get(0)
-        File(filePath)
+        val loggingPath: String = "${File(filePath).parent}/Logging.kt"
+        File(loggingPath)
           .writeText(
             KTX_CONTENT.replace("#{LIBRARY_NAME}", extractLibraryName(filePath))
               .replace("#{PROJECT_NAME}", projectName)
@@ -313,6 +314,7 @@ abstract class PackageTransform : DefaultTask() {
             x.replace(replaceClass, "${projectName}LoggingRegistrar")
           }
         File(manifestPath).writeText(lines.joinToString("\n"))
+        File(filePath).delete()
       }
     }
   }
