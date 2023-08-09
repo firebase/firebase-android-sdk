@@ -284,7 +284,6 @@ abstract class PackageTransform : DefaultTask() {
         break
       }
     }
-    output.add("\n")
     File(gradlePath).writeText(output.joinToString("\n"))
   }
   private fun extractLibraryName(path: String): String =
@@ -311,10 +310,9 @@ abstract class PackageTransform : DefaultTask() {
               .replace("#{PROJECT_NAME}", projectName)
           )
         val lines =
-          File(manifestPath)
-            .readLines()
-            .map { x -> x.replace(replaceClass, "${projectName}LoggingRegistrar") }
-            .plus("\n")
+          File(manifestPath).readLines().map { x ->
+            x.replace(replaceClass, "${projectName}LoggingRegistrar")
+          }
         File(manifestPath).writeText(lines.joinToString("\n"))
         File(filePath).delete()
       }
