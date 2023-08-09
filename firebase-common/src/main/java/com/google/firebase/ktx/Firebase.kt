@@ -25,7 +25,6 @@ import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.components.Dependency
 import com.google.firebase.components.Qualified
-import com.google.firebase.platforminfo.LibraryVersionComponent
 import java.util.concurrent.Executor
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -35,38 +34,66 @@ import kotlinx.coroutines.asCoroutineDispatcher
  *
  * <p>Acts as a target for extension methods provided by sdks.
  */
+@Deprecated("Use `com.google.firebase.Firebase`", ReplaceWith("com.google.firebase.Firebase"))
 object Firebase
 
 /** Returns the default firebase app instance. */
+@Deprecated(
+  "Use `com.google.firebase.Firebase.app`",
+  ReplaceWith("com.google.firebase.Firebase.app")
+)
 val Firebase.app: FirebaseApp
   get() = FirebaseApp.getInstance()
 
 /** Returns a named firebase app instance. */
+@Deprecated(
+  "Use `com.google.firebase.Firebase.app(name)`",
+  ReplaceWith("com.google.firebase.Firebase.app(name)")
+)
 fun Firebase.app(name: String): FirebaseApp = FirebaseApp.getInstance(name)
 
 /** Initializes and returns a FirebaseApp. */
+@Deprecated(
+  "Use `com.google.firebase.Firebase.initialize(context)`",
+  ReplaceWith("com.google.firebase.Firebase.initialize(context)")
+)
 fun Firebase.initialize(context: Context): FirebaseApp? = FirebaseApp.initializeApp(context)
 
 /** Initializes and returns a FirebaseApp. */
+@Deprecated(
+  "Use `com.google.firebase.Firebase.initialize(context, options)`",
+  ReplaceWith("com.google.firebase.Firebase.initialize(context, options)")
+)
 fun Firebase.initialize(context: Context, options: FirebaseOptions): FirebaseApp =
   FirebaseApp.initializeApp(context, options)
 
 /** Initializes and returns a FirebaseApp. */
+@Deprecated(
+  "Use `com.google.firebase.Firebase.initialize(context, options, name)`",
+  ReplaceWith("com.google.firebase.Firebase.initialize(context, options, name)")
+)
 fun Firebase.initialize(context: Context, options: FirebaseOptions, name: String): FirebaseApp =
   FirebaseApp.initializeApp(context, options, name)
 
 /** Returns options of default FirebaseApp */
+@Deprecated(
+  "Use `com.google.firebase.Firebase.options`",
+  ReplaceWith("com.google.firebase.Firebase.options")
+)
 val Firebase.options: FirebaseOptions
   get() = Firebase.app.options
 
 internal const val LIBRARY_NAME: String = "fire-core-ktx"
 
 /** @suppress */
+@Deprecated(
+  "Use `com.google.firebase.FirebaseCommonKtxRegistrar`",
+  ReplaceWith("com.google.firebase.FirebaseCommonKtxRegistrar")
+)
 @Keep
 class FirebaseCommonKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> {
     return listOf(
-      LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
       coroutineDispatcher<Background>(),
       coroutineDispatcher<Lightweight>(),
       coroutineDispatcher<Blocking>(),
