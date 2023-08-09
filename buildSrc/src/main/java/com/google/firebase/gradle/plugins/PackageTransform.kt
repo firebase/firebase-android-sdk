@@ -100,7 +100,7 @@ abstract class PackageTransform : DefaultTask() {
     return ""
   }
 
-  fun copyDir(src: Path, dest: Path) {
+  fun copyDir(src: Path, dest: Path, cont: Boolean) {
     Files.walk(src).forEach {
       if (!Files.isDirectory(it)) {
         val destination = dest.resolve(src.relativize(it))
@@ -108,7 +108,7 @@ abstract class PackageTransform : DefaultTask() {
         Files.copy(it, destination, StandardCopyOption.REPLACE_EXISTING)
       }
     }
-    if (dest.endsWith("/ktx")) return
+    if (!cont) return
     val dir: File = File(src.parent.toString())
     if (dir.exists() && dir.isDirectory) {
 
@@ -131,7 +131,7 @@ abstract class PackageTransform : DefaultTask() {
           if (lines[i].contains("*/")) {
             var symbol = ""
             var ctr = i + 1
-            while (symbol.isEmpty()) {
+            while (symbol.isEmpty() && ctr < lines.size) {
               symbol = getSymbol(lines[ctr++]).trim()
             }
             output.add(
@@ -233,7 +233,6 @@ abstract class PackageTransform : DefaultTask() {
           "<meta-data android:name=\"${x.getAttribute("android:name").replace(".ktx.",".")}\" android:value=\"${x.getAttribute("android:value")}\"/>"
         }
         .joinToString("\n")
-
     val lines = File(dest).readLines()
     var output = mutableListOf<String>()
     var inside = false
@@ -275,16 +274,24 @@ abstract class PackageTransform : DefaultTask() {
     val ktxPackageAndroidTestPath =
       "${projectPath.get()}/src/androidTest/java/${packageNamePath}/ktx"
     val mainPackageAndroidTestPath = "${projectPath.get()}/src/androidTest/java/${packageNamePath}"
-    copyDir(File(ktxArtifactPath).toPath(), File(ktxPackagePath).toPath())
-    copyDir(File(ktxArtifactPath).toPath(), File(mainPackagePath).toPath())
+    copyDir(File(ktxArtifactPath).toPath(), File(ktxPackagePath).toPath(), false)
+    copyDir(File(ktxArtifactPath).toPath(), File(mainPackagePath).toPath(), true)
     if (File(ktxArtifactTestPath).exists()) {
-      copyDir(File(ktxArtifactTestPath).toPath(), File(mainPackageTestPath).toPath())
-      copyDir(File(ktxArtifactTestPath).toPath(), File(ktxPackageTestPath).toPath())
+      copyDir(File(ktxArtifactTestPath).toPath(), File(mainPackageTestPath).toPath(), true)
+      copyDir(File(ktxArtifactTestPath).toPath(), File(ktxPackageTestPath).toPath(), false)
       updateKTXReferences(mainPackageTestPath)
     }
     if (File(ktxArtifactAndroidTestPath).exists()) {
-      copyDir(File(ktxArtifactAndroidTestPath).toPath(), File(mainPackageAndroidTestPath).toPath())
-      copyDir(File(ktxArtifactAndroidTestPath).toPath(), File(ktxPackageAndroidTestPath).toPath())
+      copyDir(
+        File(ktxArtifactAndroidTestPath).toPath(),
+        File(mainPackageAndroidTestPath).toPath(),
+        true
+      )
+      copyDir(
+        File(ktxArtifactAndroidTestPath).toPath(),
+        File(ktxPackageAndroidTestPath).toPath(),
+        false
+      )
       updateKTXReferences(mainPackageAndroidTestPath)
     }
     updateKTXReferences(mainPackagePath)
@@ -356,34 +363,39 @@ abstract class PackageTransform : DefaultTask() {
     }
     File(gradlePath).writeText(output.joinToString("\n"))
   }
-  private fun extractLibraryName(path: String): String =
+  private fun extractLibraryName(path: String): String? =
     File(path)
       .readLines()
       .filter { x -> x.contains("LIBRARY_NAME:") }
       .map { x -> x.split(" ").last() }
-      .get(0)
+      .getOrNull(0)
   private fun updateCode(path: String, pkgName: String, manifestPath: String) {
     File(path).walk().forEach {
       if (it.absolutePath.endsWith(".kt") && !it.absolutePath.endsWith("Logging.kt")) {
         val filePath = it.absolutePath
         val projectName = artifactId.get().split("-").map { x -> x.capitalized() }.joinToString("")
-        val replaceClass: String =
+        val replaceClass: String? =
           File(filePath)
             .readLines()
             .filter { it.contains("class") }
             .map { x -> x.split(" ").get(1).replace(":", "") }
-            .get(0)
+            .getOrNull(0)
         val loggingPath: String = "${File(filePath).parent}/Logging.kt"
-        File(loggingPath)
-          .writeText(
-            KTX_CONTENT.replace("#{LIBRARY_NAME}", extractLibraryName(filePath))
-              .replace("#{PROJECT_NAME}", projectName)
-          )
-        val lines =
-          File(manifestPath).readLines().map { x ->
-            x.replace(replaceClass, "${projectName}LoggingRegistrar")
-          }
-        File(manifestPath).writeText(lines.joinToString("\n"))
+        val libraryName = extractLibraryName(filePath)
+        if (!libraryName.isNullOrEmpty()) {
+          File(loggingPath)
+            .writeText(
+              KTX_CONTENT.replace("#{LIBRARY_NAME}", libraryName)
+                .replace("#{PROJECT_NAME}", projectName)
+            )
+        }
+        if (!replaceClass.isNullOrEmpty()) {
+          val lines =
+            File(manifestPath).readLines().map { x ->
+              x.replace(replaceClass, "${projectName}LoggingRegistrar")
+            }
+          File(manifestPath).writeText(lines.joinToString("\n"))
+        }
         File(filePath).delete()
       }
     }
