@@ -13,6 +13,24 @@ import org.gradle.configurationcache.extensions.capitalized
 import org.gradle.kotlin.dsl.project
 import org.w3c.dom.Element
 
+val PROJECT_LEVEL_REQUIRED =
+  [
+    "firebase-appdistribution-api",
+    "firebase-common",
+    "firebase-config",
+    "firebase-crashlytics",
+    "firebase-database",
+    "firebase-dynamic-links",
+    "firebase-firestore",
+    "firebase-functions",
+    "firebase-messaging",
+    "firebase-inappmessaging",
+    "firebase-inappmessaging-display",
+    "firebase-installations",
+    "firebase-ml-modeldownloader",
+    "firebase-perf",
+    "firebase-storage",
+  ]
 val KTX_CONTENT =
   """
   // Copyright 2023 Google LLC
@@ -248,6 +266,14 @@ abstract class PackageTransform : DefaultTask() {
         .filter { !it.contains("project(\"${project.path}\")") }
         .toMutableList()
     val deps = (dependencies.toSet() + ktxDependencies.toSet()).toList()
+    val filtered_project_deps =
+      PROJECT_LEVEL_REQUIRED.map { x -> ":${x}" }.filter { it != project.path }
+    deps.map { x ->
+      val matches = filtered_project_deps.filter { y -> x.contains(y) }
+      if (matches.isEmpty()) return@map x
+      return@map "implementation(project(\"matches.get(0)\"))"
+    }
+
     updateGradleFile(gradlePath, deps)
     // KTX changes
     updateCode(
