@@ -14,7 +14,7 @@ import org.gradle.kotlin.dsl.project
 import org.w3c.dom.Element
 
 val PROJECT_LEVEL_REQUIRED =
-  [
+  mutableListOf<String>(
     "firebase-appdistribution-api",
     "firebase-common",
     "firebase-config",
@@ -30,7 +30,7 @@ val PROJECT_LEVEL_REQUIRED =
     "firebase-ml-modeldownloader",
     "firebase-perf",
     "firebase-storage",
-  ]
+  )
 val KTX_CONTENT =
   """
   // Copyright 2023 Google LLC
@@ -108,6 +108,17 @@ abstract class PackageTransform : DefaultTask() {
         Files.copy(it, destination, StandardCopyOption.REPLACE_EXISTING)
       }
     }
+    if (dest.endsWith("/ktx")) return
+    val dir: File = File(src.parent.toString())
+    if (dir.exists() && dir.isDirectory) {
+
+      dir.listFiles().forEach { x ->
+        if (x.isDirectory) return
+        val destination = dest.resolve(dir.toPath().relativize(x.toPath()))
+        Files.createDirectories(destination.parent)
+        Files.copy(x.toPath(), destination, StandardCopyOption.COPY_ATTRIBUTES)
+      }
+    }
   }
 
   fun deprecateKTX(src: String, pkgName: String) {
@@ -148,10 +159,23 @@ abstract class PackageTransform : DefaultTask() {
     File(src).walk().forEach {
       if (it.absolutePath.endsWith(".kt")) {
         val lines =
-          File(it.absolutePath).readLines().filter { x ->
-            !x.contains("contains(LIBRARY_NAME)") &&
-              !x.contains("LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME)")
-          }
+          File(it.absolutePath)
+            .readLines()
+            .map { x ->
+              val p =
+                x.replace(
+                  "LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME)",
+                  ""
+                )
+              if (p.trim().isEmpty()) {
+                return@map "#REMOVE#REMOVE#REMOVE"
+              } else {
+                return@map p
+              }
+            }
+            .filter {
+              !it.contains("#REMOVE#REMOVE#REMOVE") && !it.contains("contains(LIBRARY_NAME)")
+            }
         File(it.absolutePath).delete()
         val newFile = File(it.absolutePath)
         newFile.writeText(lines.joinToString("\n"))
@@ -161,18 +185,33 @@ abstract class PackageTransform : DefaultTask() {
 
   fun readDependencies(path: String): List<String> {
     val lines = File(path).readLines()
-    var start = false
+    var ctr = 0
     var output = mutableListOf<String>()
+    var tmpString = ""
     for (line in lines) {
-      if (start == true) {
-        if (line.contains("}")) {
-          break
+      if (ctr == 0) {
+        if (line.contains("dependencies {")) {
+          ctr++
+          continue
         }
-        output.add(line.trim())
-      }
-
-      if (line.contains("dependencies {")) {
-        start = true
+      } else if (ctr == 1) {
+        if (line.contains("{") && !line.contains("}")) {
+          tmpString = line
+          ctr += 1
+        } else if (line.contains("}") && !line.contains("{")) {
+          break
+        } else {
+          output.add(line.trim())
+        }
+      } else if (ctr == 2) {
+        val add = "  "
+        if (line.contains("}")) {
+          ctr = 1
+          tmpString += "\n" + add + line
+          output.add(tmpString.trim())
+        } else {
+          tmpString += "\n" + add + line
+        }
       }
     }
     return output.filter { x -> (x.trim().isNotEmpty() && !x.startsWith("//")) }
@@ -225,6 +264,7 @@ abstract class PackageTransform : DefaultTask() {
     var packageNamePath = "${groupId.get()}.${artifactId.get().split("-")[1]}".replace(".", "/")
     packageNamePath = packageNamePath.replace("common", "")
     val ktxArtifactPath = "${projectPath.get()}/ktx/src/main/kotlin/${packageNamePath}/ktx"
+
     val ktxPackagePath = "${projectPath.get()}/src/main/java/${packageNamePath}/ktx"
     val mainPackagePath = "${projectPath.get()}/src/main/java/${packageNamePath}"
     val ktxArtifactTestPath = "${projectPath.get()}/ktx/src/test/kotlin/${packageNamePath}/ktx"
@@ -265,14 +305,18 @@ abstract class PackageTransform : DefaultTask() {
       readDependencies(ktxGradlePath)
         .filter { !it.contains("project(\"${project.path}\")") }
         .toMutableList()
-    val deps = (dependencies.toSet() + ktxDependencies.toSet()).toList()
     val filtered_project_deps =
       PROJECT_LEVEL_REQUIRED.map { x -> ":${x}" }.filter { it != project.path }
-    deps.map { x ->
-      val matches = filtered_project_deps.filter { y -> x.contains(y) }
-      if (matches.isEmpty()) return@map x
-      return@map "implementation(project(\"matches.get(0)\"))"
-    }
+    val deps =
+      (dependencies.toSet() + ktxDependencies.toSet())
+        .toList()
+        .map { x ->
+          val matches = filtered_project_deps.filter { y -> x.contains(y) }
+          if (matches.isEmpty()) return@map x
+          return@map "implementation(project(\"${matches.get(0)}\"))"
+        }
+        .toSet()
+        .toList()
 
     updateGradleFile(gradlePath, deps)
     // KTX changes
