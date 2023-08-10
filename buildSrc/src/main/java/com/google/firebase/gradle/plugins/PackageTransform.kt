@@ -1,3 +1,16 @@
+// Copyright 2023 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package com.google.firebase.gradle.plugins
 
 import java.io.File
@@ -101,17 +114,16 @@ abstract class PackageTransform : DefaultTask() {
   }
 
   fun copyDir(src: Path, dest: Path, cont: Boolean) {
-    Files.walk(src).forEach {
-      if (!Files.isDirectory(it)) {
-        val destination = dest.resolve(src.relativize(it))
+    for (file in Files.walk(src)) {
+      if (!Files.isDirectory(file)) {
+        val destination = dest.resolve(src.relativize(file))
         Files.createDirectories(destination.parent)
-        Files.copy(it, destination, StandardCopyOption.REPLACE_EXISTING)
+        Files.copy(file, destination, StandardCopyOption.REPLACE_EXISTING)
       }
     }
     if (!cont) return
     val dir: File = File(src.parent.toString())
     if (dir.exists() && dir.isDirectory) {
-
       dir.listFiles().forEach { x ->
         if (x.isDirectory) return
         val destination = dest.resolve(dir.toPath().relativize(x.toPath()))
@@ -122,9 +134,9 @@ abstract class PackageTransform : DefaultTask() {
   }
 
   fun deprecateKTX(src: String, pkgName: String) {
-    File(src).walk().forEach {
-      if (it.absolutePath.endsWith(".kt")) {
-        val lines = File(it.absolutePath).readLines()
+    for (file in File(src).walk()) {
+      if (file.absolutePath.endsWith(".kt")) {
+        val lines = File(file.absolutePath).readLines()
         val output = mutableListOf<String>()
         for (i in 0 until lines.size) {
           output.add(lines[i])
@@ -139,10 +151,11 @@ abstract class PackageTransform : DefaultTask() {
             )
           }
         }
-        File(it.absolutePath).writeText(output.joinToString("\n"))
+        File(file.absolutePath).writeText(output.joinToString("\n"))
       }
     }
   }
+
   fun updateKTXReferences(src: String) {
     // Remove all .ktx suffixes essentially.
     File(src).walk().forEach {
