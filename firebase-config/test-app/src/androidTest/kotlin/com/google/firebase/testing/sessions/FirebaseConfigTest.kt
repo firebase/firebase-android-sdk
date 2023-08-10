@@ -18,7 +18,6 @@ package com.google.firebase.testing.config
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
@@ -66,7 +65,8 @@ class FirebaseConfigTest {
 
   // private class FakeSessionSubscriber(
   //   override val isDataCollectionEnabled: Boolean = true,
-  //   override val sessionSubscriberName: SessionSubscriber.Name = SessionSubscriber.Name.MATT_SAYS_HI
+  //   override val sessionSubscriberName: SessionSubscriber.Name =
+  // SessionSubscriber.Name.MATT_SAYS_HI
   // ) : SessionSubscriber {
   //   var sessionDetails: SessionSubscriber.SessionDetails? = null
   //     private set
