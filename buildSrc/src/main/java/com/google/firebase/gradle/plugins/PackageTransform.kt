@@ -59,11 +59,12 @@ val KTX_CONTENT =
   // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   // See the License for the specific language governing permissions and
   // limitations under the License.
-  package com.google.firebase.ktx
+  package #{PACKAGE_NAME}.ktx
 
   import androidx.annotation.Keep
   import com.google.firebase.components.Component
   import com.google.firebase.components.ComponentRegistrar
+  import #{PACKAGE_NAME}.BuildConfig
   import com.google.firebase.platforminfo.LibraryVersionComponent
 
   internal const val LIBRARY_NAME: String = #{LIBRARY_NAME}
@@ -275,6 +276,9 @@ abstract class PackageTransform : DefaultTask() {
   fun run() {
     var packageNamePath = "${groupId.get()}.${artifactId.get().split("-")[1]}".replace(".", "/")
     packageNamePath = packageNamePath.replace("common", "")
+    if (artifactId.get().equals("firebase-config")) {
+      packageNamePath = "com/google/firebase/remoteconfig"
+    }
     val ktxArtifactPath = "${projectPath.get()}/ktx/src/main/kotlin/${packageNamePath}/ktx"
 
     val ktxPackagePath = "${projectPath.get()}/src/main/java/${packageNamePath}/ktx"
@@ -391,13 +395,17 @@ abstract class PackageTransform : DefaultTask() {
       .getOrNull(0)
   private fun updateCode(path: String, pkgName: String, manifestPath: String) {
     File(path).walk().forEach {
-      if (it.absolutePath.endsWith(".kt") && !it.absolutePath.endsWith("Logging.kt")) {
+      if (
+        it.absolutePath.endsWith(".kt") &&
+          !it.absolutePath.endsWith("ChildEvent.kt") &&
+          !it.absolutePath.endsWith("Logging.kt")
+      ) {
         val filePath = it.absolutePath
         val projectName = artifactId.get().split("-").map { x -> x.capitalized() }.joinToString("")
         val replaceClass: String? =
           File(filePath)
             .readLines()
-            .filter { it.contains("class") }
+            .filter { it.contains("class") && it.contains("KtxRegistrar") }
             .map { x -> x.split(" ").get(1).replace(":", "") }
             .getOrNull(0)
         val loggingPath: String = "${File(filePath).parent}/Logging.kt"
@@ -407,6 +415,7 @@ abstract class PackageTransform : DefaultTask() {
             .writeText(
               KTX_CONTENT.replace("#{LIBRARY_NAME}", libraryName)
                 .replace("#{PROJECT_NAME}", projectName)
+                .replace("#{PACKAGE_NAME}", pkgName.trim('.'))
             )
         }
         if (!replaceClass.isNullOrEmpty()) {
