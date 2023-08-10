@@ -327,7 +327,9 @@ abstract class PackageTransform : DefaultTask() {
     val dependencies = readDependencies(gradlePath)
     var ktxDependencies =
       readDependencies(ktxGradlePath)
-        .filter { !it.contains("project(\"${project.path}\")") }
+        .filter {
+          !it.contains("project(\"${project.path}\")") && !it.contains("project '${project.path}'")
+        }
         .toMutableList()
     val filtered_project_deps =
       PROJECT_LEVEL_REQUIRED.map { x -> ":${x}" }.filter { it != project.path }
@@ -355,6 +357,12 @@ abstract class PackageTransform : DefaultTask() {
           !((it.contains("implementation") || it.contains("api")) &&
             !it.contains("firebase-components:"))
         }
+        .map { x ->
+          val filtered = PROJECT_LEVEL_REQUIRED.filter { x.contains("${it}:") }
+          println(filtered.isEmpty())
+          if (filtered.isEmpty()) return@map x
+          else return@map "api(project(\":${filtered.get(0)}\")"
+        }
         .toMutableList()
     // KTX gradle changes
     ktxDependencies.add("api(project(\"${project.path}\"))")
@@ -365,10 +373,13 @@ abstract class PackageTransform : DefaultTask() {
     val lines = File(gradlePath).readLines()
     val output = mutableListOf<String>()
     for (line in lines) {
-      if (line.contains("id(\"kotlin-android\")")) {
+      if (line.contains("id(\"kotlin-android\")") || line.contains("id 'kotlin-android'")) {
         continue
       }
-      if (line.contains("plugins { id(\"firebase-library\") }")) {
+      if (
+        line.contains("plugins { id(\"firebase-library\") }") ||
+          line.contains("plugins { id 'firebase-library' }")
+      ) {
         output.add("plugins {")
         output.add("    id(\"firebase-library\")")
         output.add("    id(\"kotlin-android\")")
