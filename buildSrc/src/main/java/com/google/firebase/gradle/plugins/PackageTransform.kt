@@ -217,7 +217,7 @@ abstract class PackageTransform : DefaultTask() {
           output.add(line.trim())
         }
       } else if (ctr == 2) {
-        val add = "  "
+        val add = " "
         if (line.contains("}")) {
           ctr = 1
           tmpString += "\n" + add + line
@@ -364,8 +364,15 @@ abstract class PackageTransform : DefaultTask() {
       if (line.contains("id(\"kotlin-android\")")) {
         continue
       }
+      if (line.contains("plugins { id(\"firebase-library\") }")) {
+        output.add("plugins {")
+        output.add("    id(\"firebase-library\")")
+        output.add("    id(\"kotlin-android\")")
+        output.add("}")
+        continue
+      }
       output.add(line)
-      if (line.contains("id(\"firebase-library\")")) {
+      if (line.contains("id(\"firebase-library\")") || line.contains("id 'firebase-library'")) {
         output.add("    id(\"kotlin-android\")")
       }
       if (line.contains("dependencies {")) {
