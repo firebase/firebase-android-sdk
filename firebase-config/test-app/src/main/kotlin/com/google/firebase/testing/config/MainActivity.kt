@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.testing.sessions
+package com.google.firebase.testing.config
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
