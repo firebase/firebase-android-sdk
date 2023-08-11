@@ -41,14 +41,14 @@ package com.google.firebase.firestore {
 
   public class AggregateQuery {
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.AggregateQuerySnapshot> get(@NonNull com.google.firebase.firestore.AggregateSource);
-    method @NonNull public java.util.List<com.google.firebase.firestore.AggregateField> getAggregateFields();
+    method @NonNull @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY) public java.util.List<com.google.firebase.firestore.AggregateField> getAggregateFields();
     method @NonNull public com.google.firebase.firestore.Query getQuery();
   }
 
   public class AggregateQuerySnapshot {
     method @Nullable public Object get(@NonNull com.google.firebase.firestore.AggregateField);
-    method @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY) public long get(@NonNull com.google.firebase.firestore.AggregateField.CountAggregateField);
-    method @Nullable @RestrictTo(androidx.annotation.RestrictTo.Scope.LIBRARY) public Double get(@NonNull com.google.firebase.firestore.AggregateField.AverageAggregateField);
+    method public long get(@NonNull com.google.firebase.firestore.AggregateField.CountAggregateField);
+    method @Nullable public Double get(@NonNull com.google.firebase.firestore.AggregateField.AverageAggregateField);
     method public long getCount();
     method @Nullable public Double getDouble(@NonNull com.google.firebase.firestore.AggregateField);
     method @Nullable public Long getLong(@NonNull com.google.firebase.firestore.AggregateField);
