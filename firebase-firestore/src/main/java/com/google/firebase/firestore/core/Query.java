@@ -59,12 +59,11 @@ public final class Query {
 
   private List<OrderBy> memoizedNormalizedOrderBys;
 
-  /** Returns a `Target` instance this query will be mapped to in backend and local store. */
+  /** The corresponding `Target` of this `Query` instance, for use with non-aggregate queries. */
   private @Nullable Target memoizedTarget;
 
   /**
-   * Returns a `Target` instance this query will be mapped to in backend and local store, for use
-   * within an aggregate query.
+   * The corresponding `Target` of this `Query` instance, for use with aggregate queries. Unlike targets for non-aggregate queries, aggregate query targets do not contain normalized order-bys, they only contain explicit order-bys.
    */
   private @Nullable Target memoizedAggregateTarget;
 
