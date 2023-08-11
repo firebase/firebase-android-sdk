@@ -1,4 +1,6 @@
 # Unreleased
+
+# 23.2.1
 * [changed] Changed to finish a background broadcast after the message has been
   handled, subject to a timeout. This keeps the `FirebaseMessagingService`'s
   process in an active state while it is handling an FCM message, up to the

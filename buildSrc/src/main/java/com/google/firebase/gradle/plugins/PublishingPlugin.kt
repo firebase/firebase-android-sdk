@@ -14,7 +14,6 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.google.common.collect.Sets
 import com.google.firebase.gradle.bomgenerator.BomGeneratorTask
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.BUILD_BOM_ZIP_TASK
 import com.google.firebase.gradle.plugins.PublishingPlugin.Companion.BUILD_KOTLINDOC_ZIP_TASK
@@ -81,6 +80,8 @@ abstract class PublishingPlugin : Plugin<Project> {
         registerCheckHeadDependenciesTask(project, releasingFirebaseLibraries)
       val validateProjectsToPublish =
         registerValidateProjectsToPublishTask(project, releasingFirebaseLibraries)
+      val validateLibraryGroupsToPublish =
+        registerValidateLibraryGroupsToPublishTask(project, releasingFirebaseLibraries)
       val publishReleasingLibrariesToBuildDir =
         registerPublishReleasingLibrariesToBuildDirTask(project, releasingProjects)
       val generateKotlindocsForRelease =
@@ -128,6 +129,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       project.tasks.register(FIREBASE_PUBLISH_TASK) {
         dependsOn(
           validateProjectsToPublish,
+          validateLibraryGroupsToPublish,
           checkHeadDependencies,
           // validatePomForRelease, TODO(b/279466888) - Make GmavenHelper testable
           buildMavenZip,
@@ -287,13 +289,28 @@ abstract class PublishingPlugin : Plugin<Project> {
               "or have a valid $RELEASE_CONFIG_FILE file at the root directory."
           )
         }
-        val libraryGroupProjects =
-          releasinglibraries.flatMap { it.projectsToRelease }.filterNotNull().toSet()
-        val releasingProjects = releasinglibraries.mapNotNull { it.project }.toSet()
-        if (!libraryGroupProjects.equals(releasingProjects)) {
+      }
+    }
+
+  /**
+   * Registers the [VALIDATE_LIBRARY_GROUPS_TO_PUBLISH_TASK] task.
+   *
+   * Validates that all library groups of all publishing projects are included in the release config
+   *
+   * @throws GradleException if a library is releasing without it's library group.
+   */
+  private fun registerValidateLibraryGroupsToPublishTask(
+    project: Project,
+    releasinglibraries: List<FirebaseLibraryExtension>
+  ) =
+    project.tasks.register(VALIDATE_LIBRARY_GROUPS_TO_PUBLISH_TASK) {
+      doLast {
+        val libraryGroupProjects = releasinglibraries.flatMap { it.librariesToRelease }
+        val missingProjects = libraryGroupProjects - releasinglibraries
+        if (missingProjects.isNotEmpty()) {
           throw GradleException(
             "Some libraries in library groups are not in the release: " +
-              Sets.difference(libraryGroupProjects, releasingProjects).map { it.displayName }
+              missingProjects.map { it.mavenName }.joinToString("\n")
           )
         }
       }
@@ -475,6 +492,7 @@ abstract class PublishingPlugin : Plugin<Project> {
 
     const val GENERATE_BOM_TASK = "generateBom"
     const val VALIDATE_PROJECTS_TO_PUBLISH_TASK = "validateProjectsToPublish"
+    const val VALIDATE_LIBRARY_GROUPS_TO_PUBLISH_TASK = "validateLibraryGroupsToPublish"
     const val SEMVER_CHECK_TASK = "semverCheckForRelease"
     const val RELEASE_GENEATOR_TASK = "generateReleaseConfig"
     const val VALIDATE_POM_TASK = "validatePomForRelease"
