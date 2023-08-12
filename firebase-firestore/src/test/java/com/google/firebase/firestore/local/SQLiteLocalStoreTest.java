@@ -628,8 +628,6 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
     assertQueryReturned("coll/a", "coll/e");
 
-    setIndexAutoCreationEnabled(false);
-
     backfillIndexes();
 
     executeQuery(query);
@@ -640,6 +638,13 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    // Field index is created again.
+    backfillIndexes();
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 2, /* byCollection= */ 0);
     assertQueryReturned("coll/a", "coll/e");
   }
 
