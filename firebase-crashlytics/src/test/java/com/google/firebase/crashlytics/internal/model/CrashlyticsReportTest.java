@@ -41,6 +41,8 @@ public class CrashlyticsReportTest {
     assertNotEquals(testReport, withEventsReport);
     assertNotNull(withEventsReport.getSession().getEvents());
     assertEquals(2, withEventsReport.getSession().getEvents().size());
+    // no rollouts feature so we don't expect any rollouts state info within a event
+    assertNull(withEventsReport.getSession().getEvents().get(0).getRolloutsState());
   }
 
   @Test
@@ -191,6 +193,21 @@ public class CrashlyticsReportTest {
     assertEquals(expectedUuid, binaryImage.getUuid());
   }
 
+  @Test
+  public void testWithEvents_returnsNewReportWithRolloutsState() {
+    final CrashlyticsReport testReport = makeTestReport();
+
+    List<Event> eventList = new ArrayList<Event>();
+    eventList.add(makeEventWithRolloutsState());
+    final CrashlyticsReport withEventsReport = testReport.withEvents(ImmutableList.from(eventList));
+
+    assertNotEquals(testReport, withEventsReport);
+    assertNotNull(withEventsReport.getSession().getEvents());
+    assertEquals(1, withEventsReport.getSession().getEvents().size());
+
+    assertNotNull(withEventsReport.getSession().getEvents().get(0).getRolloutsState());
+  }
+
   private static CrashlyticsReport makeTestReport() {
     return CrashlyticsReport.builder()
         .setSdkVersion("sdkVersion")
@@ -308,6 +325,28 @@ public class CrashlyticsReportTest {
                 .setRamUsed(10000000)
                 .build())
         .build();
+  }
+
+  private static Event makeEventWithRolloutsState() {
+    final Event event = makeTestEvent();
+
+    List<Event.RolloutAssignment> rolloutAssignmentList = new ArrayList<Event.RolloutAssignment>();
+    rolloutAssignmentList.add(
+        Event.RolloutAssignment.builder()
+            .setRolloutVariant(
+                Event.RolloutAssignment.RolloutVariant.builder()
+                    .setRolloutId("rollout_100")
+                    .setVariantId("enabled")
+                    .build())
+            .setParameterValue("true")
+            .setParameterKey("my_test_feature")
+            .setTemplateVersion(4)
+            .build());
+
+    final ImmutableList<Event.RolloutAssignment> rolloutsState =
+        ImmutableList.from(rolloutAssignmentList);
+    final Event eventWithRolloutsState = event.toBuilder().setRolloutsState(rolloutsState).build();
+    return eventWithRolloutsState;
   }
 
   private static CrashlyticsReport.ApplicationExitInfo makeAppExitInfo() {
