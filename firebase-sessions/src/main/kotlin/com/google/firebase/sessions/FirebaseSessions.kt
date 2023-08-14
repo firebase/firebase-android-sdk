@@ -75,6 +75,11 @@ internal constructor(
     val appContext = firebaseApp.applicationContext.applicationContext
     if (appContext is Application) {
       appContext.registerActivityLifecycleCallbacks(sessionInitiator.activityLifecycleCallbacks)
+
+      firebaseApp.addLifecycleEventListener { _, _ ->
+        Log.w(TAG, "FirebaseApp instance deleted. Sessions library will not collect session data.")
+        appContext.unregisterActivityLifecycleCallbacks(sessionInitiator.activityLifecycleCallbacks)
+      }
     } else {
       Log.e(
         TAG,
@@ -144,7 +149,11 @@ internal constructor(
       sessionCoordinator.attemptLoggingSessionEvent(sessionEvent)
     } catch (ex: IllegalStateException) {
       // This can happen if the app suddenly deletes the instance of FirebaseApp.
-      Log.i(TAG, "Sessions SDK failed to log Session Start event.", ex)
+      Log.i(
+        TAG,
+        "FirebaseApp is not initialized. Sessions library will not collect session data.",
+        ex
+      )
     }
   }
 
