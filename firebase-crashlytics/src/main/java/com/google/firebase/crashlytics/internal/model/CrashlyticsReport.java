@@ -665,7 +665,7 @@ public abstract class CrashlyticsReport {
       public abstract Log getLog();
 
       @Nullable
-      public abstract RolloutsState getRollouts();
+      public abstract ImmutableList<RolloutAssignment> getRolloutsState();
 
       @NonNull
       public abstract Builder toBuilder();
@@ -1105,28 +1105,6 @@ public abstract class CrashlyticsReport {
       }
 
       @AutoValue
-      public abstract static class RolloutsState {
-        @NonNull
-        public static RolloutsState.Builder builder() {
-          return new AutoValue_CrashlyticsReport_Session_Event_RolloutsState.Builder();
-        }
-
-        @NonNull
-        @Field(name = "assignments")
-        public abstract List<RolloutAssignment> getRolloutAssignments();
-
-        @AutoValue.Builder
-        public abstract static class Builder {
-          @NonNull
-          public abstract RolloutsState.Builder setRolloutAssignments(
-              @Nullable List<RolloutAssignment> rolloutAssignments);
-
-          @NonNull
-          public abstract RolloutsState build();
-        }
-      }
-
-      @AutoValue
       public abstract static class RolloutAssignment {
 
         @NonNull
@@ -1216,7 +1194,8 @@ public abstract class CrashlyticsReport {
         public abstract Builder setLog(@NonNull Log value);
 
         @Nullable
-        public abstract Builder setRollouts(@NonNull RolloutsState rolloutsState);
+        public abstract Builder setRolloutsState(
+            @Nullable ImmutableList<RolloutAssignment> rolloutsState);
 
         @NonNull
         public abstract Event build();

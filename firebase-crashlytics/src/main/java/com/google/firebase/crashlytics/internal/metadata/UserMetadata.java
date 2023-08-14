@@ -215,6 +215,22 @@ public class UserMetadata {
     }
   }
 
+  /** Update RolloutsState in memory and persistence */
+  public boolean updateRolloutsState(List<RolloutAssignment> rolloutAssignments) {
+    synchronized (rolloutsState) {
+      if (rolloutsState.updateMapList(rolloutAssignments)) {
+        List<RolloutAssignment> updatedRolloutAssignments = rolloutsState.getKeysMapList();
+        backgroundWorker.submit(
+            () -> {
+              metaDataStore.writeRolloutState(sessionIdentifier, updatedRolloutAssignments);
+              return null;
+            });
+        return true;
+      }
+      return false;
+    }
+  }
+
   /**
    * Helper class to maintain & asynchronously cache key data asynchronously in case of a
    * non-graceful process exit. Instances will only schedule one serialization task at a time,
