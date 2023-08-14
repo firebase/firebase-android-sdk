@@ -19,6 +19,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsBackgroundWorker;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicMarkableReference;
@@ -41,6 +42,8 @@ public class UserMetadata {
   @VisibleForTesting public static final int MAX_ATTRIBUTE_SIZE = 1024;
   @VisibleForTesting public static final int MAX_INTERNAL_KEY_SIZE = 8192;
 
+  @VisibleForTesting public static final int MAX_ROLLOUT_ASSIGNMENTS = 128;
+
   private final MetaDataStore metaDataStore;
   private final CrashlyticsBackgroundWorker backgroundWorker;
   private String sessionIdentifier;
@@ -52,6 +55,10 @@ public class UserMetadata {
   // as atomic APIs.
   private final SerializeableKeysMap customKeys = new SerializeableKeysMap(false);
   private final SerializeableKeysMap internalKeys = new SerializeableKeysMap(true);
+
+  private final RolloutAssignmentList rolloutsState =
+      new RolloutAssignmentList(MAX_ROLLOUT_ASSIGNMENTS);
+
   private final AtomicMarkableReference<String> userId = new AtomicMarkableReference<>(null, false);
 
   @Nullable
@@ -178,6 +185,22 @@ public class UserMetadata {
     }
     if (needsUpdate) {
       metaDataStore.writeUserData(sessionIdentifier, userIdString);
+    }
+  }
+
+  /** Update RolloutsState in memory and persistence */
+  public boolean updateRolloutsState(List<RolloutAssignment> rolloutAssignments) {
+    synchronized (rolloutsState) {
+      if (rolloutsState.updateMapList(rolloutAssignments)) {
+        List<RolloutAssignment> updatedRolloutAssignments = rolloutsState.getKeysMapList();
+        backgroundWorker.submit(
+            () -> {
+              metaDataStore.writeRolloutState(sessionIdentifier, updatedRolloutAssignments);
+              return null;
+            });
+        return true;
+      }
+      return false;
     }
   }
 
