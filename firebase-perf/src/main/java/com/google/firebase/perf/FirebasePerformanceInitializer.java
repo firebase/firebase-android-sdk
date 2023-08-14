@@ -31,7 +31,7 @@ public final class FirebasePerformanceInitializer implements AppStateMonitor.App
     try {
       FirebasePerformance.getInstance();
     } catch (IllegalStateException ex) {
-      logger.info(
+      logger.warn(
           "FirebaseApp is not initialized. Firebase Performance will not be collecting any "
               + "performance metrics until initialized. %s",
           ex);

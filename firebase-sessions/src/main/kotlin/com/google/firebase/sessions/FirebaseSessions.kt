@@ -149,7 +149,7 @@ internal constructor(
       sessionCoordinator.attemptLoggingSessionEvent(sessionEvent)
     } catch (ex: IllegalStateException) {
       // This can happen if the app suddenly deletes the instance of FirebaseApp.
-      Log.i(
+      Log.w(
         TAG,
         "FirebaseApp is not initialized. Sessions library will not collect session data.",
         ex
