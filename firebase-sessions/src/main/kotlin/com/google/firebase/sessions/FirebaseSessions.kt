@@ -138,9 +138,14 @@ internal constructor(
       return
     }
 
-    sessionCoordinator.attemptLoggingSessionEvent(
-      SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings, subscribers)
-    )
+    try {
+      val sessionEvent =
+        SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings, subscribers)
+      sessionCoordinator.attemptLoggingSessionEvent(sessionEvent)
+    } catch (ex: IllegalStateException) {
+      // This can happen if the app suddenly deletes the instance of FirebaseApp.
+      Log.i(TAG, "Sessions SDK failed to log Session Start event.", ex)
+    }
   }
 
   /** Calculate whether we should sample events using [sessionSettings] data. */
