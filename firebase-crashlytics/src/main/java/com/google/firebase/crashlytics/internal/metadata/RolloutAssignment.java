@@ -27,6 +27,7 @@ import org.json.JSONObject;
 @Encodable
 @AutoValue
 public abstract class RolloutAssignment {
+  private static final int MAX_PARAMETER_VALUE_LENGTH = 256;
 
   public abstract String getRolloutId();
 
@@ -44,8 +45,11 @@ public abstract class RolloutAssignment {
       String parameterValue,
       String variantId,
       long templateVersion) {
+
+    String validatedParameterValue = validate(parameterValue);
+
     return new AutoValue_RolloutAssignment(
-        rolloutId, parameterKey, parameterValue, variantId, templateVersion);
+        rolloutId, parameterKey, validatedParameterValue, variantId, templateVersion);
   }
 
   public static final DataEncoder ROLLOUT_ASSIGNMENT_JSON_ENCODER =
@@ -58,7 +62,18 @@ public abstract class RolloutAssignment {
     String parameterValue = dataObj.getString("parameterValue");
     String variantId = dataObj.getString("variantId");
     long templateVersion = dataObj.getLong("templateVersion");
+
+    String validatedParameterValue = validate(parameterValue);
+
     return new AutoValue_RolloutAssignment(
-        rolloutId, parameterKey, parameterValue, variantId, templateVersion);
+        rolloutId, parameterKey, validatedParameterValue, variantId, templateVersion);
+  }
+
+  private static String validate(String parameterValue) {
+    String validatedParameterValue = parameterValue;
+    if (validatedParameterValue.length() > MAX_PARAMETER_VALUE_LENGTH) {
+      validatedParameterValue = validatedParameterValue.substring(0, MAX_PARAMETER_VALUE_LENGTH);
+    }
+    return validatedParameterValue;
   }
 }
