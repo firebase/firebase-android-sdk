@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.model.serialization;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.*;
 
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -103,6 +104,14 @@ public class CrashlyticsReportJsonTransformTest {
         transform.applicationExitInfoFromJson(testAppExitInfoJson);
     assertNotSame(reifiedAppExitInfo, testAppExitInfo);
     assertEquals(reifiedAppExitInfo, testAppExitInfo);
+  }
+
+  @Test
+  public void testRolloutsEventToJsonAndBack_equals() throws IOException {
+    final CrashlyticsReport.Session.Event testEvent = makeRolloutsEvent();
+    final String testEventJson = transform.eventToJson(testEvent);
+    final CrashlyticsReport.Session.Event reifiedEvent = transform.eventFromJson(testEventJson);
+    assertThat(reifiedEvent).isEqualTo(testEvent);
   }
 
   private static CrashlyticsReport makeTestReport(boolean useDevelopmentPlatform) {
@@ -231,6 +240,37 @@ public class CrashlyticsReportJsonTransformTest {
                 .setRamUsed(10000000)
                 .build())
         .build();
+  }
+
+  private static Event makeRolloutsEvent() {
+    Event baseEvent = makeTestEvent();
+    List<Event.RolloutAssignment> rolloutAssignmentList = new ArrayList<Event.RolloutAssignment>();
+    rolloutAssignmentList.add(
+        Event.RolloutAssignment.builder()
+            .setRolloutVariant(
+                Event.RolloutAssignment.RolloutVariant.builder()
+                    .setRolloutId("rollout_100")
+                    .setVariantId("enabled")
+                    .build())
+            .setParameterValue("true")
+            .setParameterKey("my_test_feature")
+            .setTemplateVersion(4)
+            .build());
+    rolloutAssignmentList.add(
+        Event.RolloutAssignment.builder()
+            .setRolloutVariant(
+                Event.RolloutAssignment.RolloutVariant.builder()
+                    .setRolloutId("rollout_200")
+                    .setVariantId("control")
+                    .build())
+            .setParameterValue("false")
+            .setParameterKey("my_color_feature")
+            .setTemplateVersion(2)
+            .build());
+    final ImmutableList<Event.RolloutAssignment> rolloutsState =
+        ImmutableList.from(rolloutAssignmentList);
+    Event rolloutsEvent = baseEvent.toBuilder().setRolloutsState(rolloutsState).build();
+    return rolloutsEvent;
   }
 
   private static ImmutableList<Frame> makeTestFrames() {
