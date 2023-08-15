@@ -111,7 +111,7 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
     project.tasks.register<Copy>("extractPreviousClasses") {
       dependsOn("copyPreviousArtifacts")
-      if (project.file("semver/previous.aar").exists()) {
+      if (File("${project.projectDir.absolutePath}/semver/previous.aar").exists()) {
         from(project.zipTree("semver/previous.aar"))
         into(project.file("semver/previous-version"))
       }
