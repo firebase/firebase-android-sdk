@@ -863,6 +863,8 @@ class CrashlyticsController {
         fileStore.getSessionFile(previousSessionId, UserMetadata.USERDATA_FILENAME);
     final File keysFile =
         fileStore.getSessionFile(previousSessionId, UserMetadata.KEYDATA_FILENAME);
+    final File rolloutsFile =
+        fileStore.getSessionFile(previousSessionId, UserMetadata.ROLLOUTS_STATE_FILENAME);
 
     List<NativeSessionFile> nativeSessionFiles = new ArrayList<>();
     nativeSessionFiles.add(new BytesBackedNativeSessionFile("logs_file", "logs", logBytes));
@@ -882,6 +884,8 @@ class CrashlyticsController {
     nativeSessionFiles.add(nativeCoreFile(fileProvider));
     nativeSessionFiles.add(new FileBackedNativeSessionFile("user_meta_file", "user", userFile));
     nativeSessionFiles.add(new FileBackedNativeSessionFile("keys_file", "keys", keysFile));
+    nativeSessionFiles.add(
+        new FileBackedNativeSessionFile("rollouts_file", "rollouts", rolloutsFile));
     return nativeSessionFiles;
   }
 
