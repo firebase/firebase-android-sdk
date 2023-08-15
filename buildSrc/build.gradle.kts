@@ -13,8 +13,7 @@
 // limitations under the License.
 
 plugins {
-    id("com.diffplug.spotless") version "6.18.0"
-    id("com.github.sherter.google-java-format") version "0.9"
+    id("com.diffplug.spotless") version "6.20.0"
     kotlin("plugin.serialization") version "1.7.10"
     `kotlin-dsl`
 }
@@ -34,11 +33,11 @@ val perfPluginVersion = System.getenv("FIREBASE_PERF_PLUGIN_VERSION") ?: "1.4.1"
 
 spotless {
     java {
-        googleJavaFormat("1.16.0").groupArtifact("com.google.googlejavaformat:google-java-format")
+        googleJavaFormat("1.17.0").groupArtifact("com.google.googlejavaformat:google-java-format")
         targetExclude(".gradle/**")
     }
     kotlin {
-        ktfmt("0.43").googleStyle()
+        ktfmt("0.44").googleStyle()
     }
 }
 
@@ -68,7 +67,7 @@ dependencies {
     implementation("com.google.code.gson:gson:2.8.9")
     implementation("com.android.tools.build:gradle:7.4.2")
     implementation("com.android.tools.build:builder-test-api:7.4.2")
-    implementation("com.diffplug.spotless:spotless-plugin-gradle:6.18.0")
+    implementation("com.diffplug.spotless:spotless-plugin-gradle:6.20.0")
     implementation("gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9")
 
     testImplementation(libs.bundles.kotest)

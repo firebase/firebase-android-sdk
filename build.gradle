@@ -35,7 +35,7 @@ buildscript {
     dependencies {
         classpath 'com.google.protobuf:protobuf-gradle-plugin:0.9.2'
         classpath 'net.ltgt.gradle:gradle-errorprone-plugin:1.3.0'
-        classpath "com.diffplug.spotless:spotless-plugin-gradle:6.18.0"
+        classpath "com.diffplug.spotless:spotless-plugin-gradle:6.20.0"
         classpath 'com.google.gms:google-services:4.3.15'
         classpath 'com.google.firebase:firebase-appdistribution-gradle:3.0.2'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.5'
@@ -70,7 +70,7 @@ firebaseContinuousIntegration {
     ]
 }
 
-if(JavaVersion.current() < JavaVersion.VERSION_11){
+if (JavaVersion.current() < JavaVersion.VERSION_11) {
     throw new GradleException("This build must be run with java 11 or greater. You're using ${JavaVersion.current()}.")
 }
 
@@ -90,18 +90,16 @@ configure(subprojects) {
     apply plugin: "com.diffplug.spotless"
 
     spotless {
-        spotless {
-            java {
-                target("**/*.java")
-                googleJavaFormat("1.16.0").groupArtifact("com.google.googlejavaformat:google-java-format")
-                targetExclude(".gradle/**")
-            }
+        java {
+            target("**/*.java")
+            googleJavaFormat("1.17.0").groupArtifact("com.google.googlejavaformat:google-java-format")
+            targetExclude(".gradle/**")
         }
         kotlin {
             // Setting a target here is a workaround for a spotless issue in Android projects
             // See https://github.com/diffplug/spotless/issues/858#issuecomment-830681795
             target("**/*.kt")
-            ktfmt('0.43').googleStyle()
+            ktfmt('0.44').googleStyle()
         }
     }
 }
