@@ -498,17 +498,80 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void getIsPerformanceCollectionCacheAvailable_noDeviceCache_returnsFalse() {
+  public void
+      getIsPerformanceCollectionConfigValueAvailable_noDeviceCacheNoRemoteConfig_returnsFalse() {
     when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
         .thenReturn(Optional.absent());
-    assertThat(testConfigResolver.isCollectionEnabledCacheAvailable()).isFalse();
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
+    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
+        .thenReturn(Optional.absent());
+    assertThat(testConfigResolver.isCollectionEnabledConfigValueAvailable()).isFalse();
   }
 
   @Test
-  public void getIsPerformanceCollectionCacheAvailable_hasDeviceCache_returnsTrue() {
+  public void
+      getIsPerformanceCollectionConfigValueAvailable_noDeviceCacheHasRemoteConfigValueFalse_returnsTrue() {
+    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
+        .thenReturn(Optional.absent());
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
+    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
+        .thenReturn(Optional.of(false));
+    assertThat(testConfigResolver.isCollectionEnabledConfigValueAvailable()).isTrue();
+  }
+
+  @Test
+  public void
+      getIsPerformanceCollectionConfigValueAvailable_HasDeviceCacheNoRemoteConfigValue_returnsTrue() {
+    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
+        .thenReturn(Optional.of(false));
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
+    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
+        .thenReturn(Optional.absent());
+    assertThat(testConfigResolver.isCollectionEnabledConfigValueAvailable()).isTrue();
+  }
+
+  @Test
+  public void
+      getIsPerformanceCollectionConfigValueAvailable_HasDeviceCacheFalseHasRemoteConfigValueFalse_returnsTrue() {
+    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
+        .thenReturn(Optional.of(false));
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
+    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
+        .thenReturn(Optional.of(false));
+    assertThat(testConfigResolver.isCollectionEnabledConfigValueAvailable()).isTrue();
+  }
+
+  @Test
+  public void
+      getIsPerformanceCollectionConfigValueAvailable_noDeviceCacheHasRemoteConfigValueTrue_returnsTrue() {
+    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
+        .thenReturn(Optional.of(false));
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
+    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
+        .thenReturn(Optional.of(true));
+    assertThat(testConfigResolver.isCollectionEnabledConfigValueAvailable()).isTrue();
+  }
+
+  @Test
+  public void
+      getIsPerformanceCollectionConfigValueAvailable_hasDeviceCacheHasRemoteConfigValueFalse_returnsTrue() {
     when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
         .thenReturn(Optional.of(true));
-    assertThat(testConfigResolver.isCollectionEnabledCacheAvailable()).isTrue();
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
+    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
+        .thenReturn(Optional.of(false));
+    assertThat(testConfigResolver.isCollectionEnabledConfigValueAvailable()).isTrue();
+  }
+
+  @Test
+  public void
+      getIsPerformanceCollectionConfigValueAvailable_hasDeviceCacheHasRemoteConfig_returnsTrue() {
+    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_COLLECTION_ENABLED_CACHE_KEY))
+        .thenReturn(Optional.of(true));
+    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
+    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
+        .thenReturn(Optional.of(true));
+    assertThat(testConfigResolver.isCollectionEnabledConfigValueAvailable()).isTrue();
   }
 
   @Test

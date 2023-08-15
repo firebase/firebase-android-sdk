@@ -71,7 +71,7 @@ public class FirebasePerfEarly {
           public boolean isDataCollectionEnabled() {
             // If there is no cached config data available for data collection, be conservative.
             // Return false.
-            if (!configResolver.isCollectionEnabledCacheAvailable()) {
+            if (!configResolver.isCollectionEnabledConfigValueAvailable()) {
               return false;
             }
             return ConfigResolver.getInstance().isPerformanceMonitoringEnabled();

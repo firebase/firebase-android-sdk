@@ -156,9 +156,13 @@ public class ConfigResolver {
     return null;
   }
 
-  public boolean isCollectionEnabledCacheAvailable() {
+  /**
+   * Returns whether data collection flag is fetched either through device cache or remote config.
+   */
+  public boolean isCollectionEnabledConfigValueAvailable() {
+    Optional<Boolean> remoteConfigValue = getRemoteConfigBoolean(SdkEnabled.getInstance());
     Optional<Boolean> deviceCacheValue = getDeviceCacheBoolean(CollectionEnabled.getInstance());
-    return deviceCacheValue.isAvailable();
+    return deviceCacheValue.isAvailable() || remoteConfigValue.isAvailable();
   }
 
   /** Returns whether developers have deactivated Firebase Performance event collection. */
