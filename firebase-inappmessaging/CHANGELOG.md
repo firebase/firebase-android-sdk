@@ -1,5 +1,5 @@
 # Unreleased
-* [changed] Fire log to clear cut migration.
+* [changed] Firelog to clearcut migration.
 
 # 20.3.3
 * [unchanged] Updated internal Dagger dependency.
