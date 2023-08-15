@@ -1,0 +1,28 @@
+{
+    "name": "test_m136_1",
+    "libraries": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-appdistribution-api:ktx",
+        ":firebase-config:ktx",
+        ":firebase-config",
+        ":firebase-crashlytics:ktx",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-datatransport",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-inappmessaging-display",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display:ktx",
+        ":firebase-inappmessaging:ktx",
+        ":firebase-messaging",
+        ":firebase-messaging:ktx",
+        ":firebase-messaging-directboot",
+        ":firebase-ml-modeldownloader",
+        ":firebase-ml-modeldownloader:ktx",
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":firebase-sessions"
+    ]
+}
