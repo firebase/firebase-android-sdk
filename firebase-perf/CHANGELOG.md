@@ -1,4 +1,5 @@
 # Unreleased
+* [fixed] Make fireperf data collection state is reliable for Firebase Sessions library.
 
 # 20.4.0
 * [feature] Integrated with Firebase sessions library to enable upcoming features related to
