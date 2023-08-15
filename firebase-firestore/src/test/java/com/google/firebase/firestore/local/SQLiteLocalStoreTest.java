@@ -492,18 +492,22 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
 
   @Test
   public void testIndexAutoCreationWorksWhenBackfillerRunsHalfway() {
-    Query query = query("coll").filter(filter("matches", "==", "foo")).filter(filter("count", ">", 10));
+    Query query =
+        query("coll").filter(filter("matches", "==", "foo")).filter(filter("count", ">", 10));
     int targetId = allocateQuery(query);
 
     setIndexAutoCreationEnabled(true);
     setMinCollectionSizeToAutoCreateIndex(0);
     setRelativeIndexReadCostPerDocument(2);
 
-    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("matches", "foo", "count", 11)), targetId));
-    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("matches", "foo", "count", 9)), targetId));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/a", 10, map("matches", "foo", "count", 11)), targetId));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/b", 10, map("matches", "foo", "count", 9)), targetId));
     applyRemoteEvent(addedRemoteEvent(doc("coll/c", 10, map("matches", "foo")), targetId));
     applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("matches", 7, "count", 11)), targetId));
-    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("matches", "foo", "count", 21)), targetId));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/e", 10, map("matches", "foo", "count", 21)), targetId));
 
     // First time query is running without indexes.
     // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
@@ -515,7 +519,8 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     setBackfillerMaxDocumentsToProcess(2);
     backfillIndexes();
 
-    applyRemoteEvent(addedRemoteEvent(doc("coll/f", 20, map("matches", "foo" , "count", 15)), targetId));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/f", 20, map("matches", "foo", "count", 15)), targetId));
 
     executeQuery(query);
     assertRemoteDocumentsRead(/* byKey= */ 1, /* byCollection= */ 2);
