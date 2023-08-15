@@ -282,6 +282,8 @@ abstract class PackageTransform : DefaultTask() {
       packageNamePath = "com/google/firebase/dynamiclinks"
     } else if (artifactId.get().equals("firebase-ml-modeldownloader")) {
       packageNamePath = "com/google/firebase/ml/modeldownloader"
+    } else if (artifactId.get().contains("appcheck")) {
+      packageNamePath = "com/google/firebase/appcheck"
     }
     val ktxArtifactPath = "${projectPath.get()}/ktx/src/main/kotlin/${packageNamePath}/ktx"
 
