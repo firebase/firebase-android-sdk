@@ -41,7 +41,7 @@ import org.gradle.kotlin.dsl.findByType
  *
  * @property changesByLibraryName contains libs which have opted into the release, and their changes
  * @property changedLibrariesWithNoChangelog contains libs not opted into the release, despite
- * having changes
+ *   having changes
  */
 @Serializable
 data class ReleaseReport(

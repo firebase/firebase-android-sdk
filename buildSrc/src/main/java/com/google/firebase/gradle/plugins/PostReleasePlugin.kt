@@ -51,9 +51,8 @@ class PostReleasePlugin : Plugin<Project> {
    * moved into a seperate section that specifies the version it went out with, and the `Unreleased`
    * section should be wiped clear for new changes to come; for the next release.
    *
-   * @see [MoveUnreleasedChangesTask]
-   *
    * @param project the [Project] to register this task to
+   * @see [MoveUnreleasedChangesTask]
    */
   fun registerMoveUnreleasedChangesTask(project: Project) =
     project.tasks.register<MoveUnreleasedChangesTask>("moveUnreleasedChanges")

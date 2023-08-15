@@ -75,7 +75,7 @@ fun Element.toArtifactString() =
  * ```
  *
  * @throws NoSuchElementException if the [Element] does not have descendant [Element]s with tags
- * that match the components of an Artifact string; groupId, artifactId, version.
+ *   that match the components of an Artifact string; groupId, artifactId, version.
  */
 fun Element.toMavenName() = "${textByTag("groupId")}:${textByTag("artifactId")}"
 
@@ -143,7 +143,7 @@ fun multiLine(vararg strings: Any?) = strings.joinToString("\n")
  *
  * @param input the string to search through
  * @param startIndex an index to start search with, by default zero. Must be not less than zero and
- * not greater than `input.length()`
+ *   not greater than `input.length()`
  * @throws RuntimeException if a match is not found
  */
 fun Regex.findOrThrow(input: CharSequence, startIndex: Int = 0) =

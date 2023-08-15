@@ -25,12 +25,11 @@ import kotlinx.serialization.json.Json
  *
  * Allows a type safe representation of data generated for an official release.
  *
+ * @property name the name of a release, such as `m130`
+ * @property libraries a list of project paths intending to release
  * @see ReleaseGenerator
  * @see fromFile
  * @see toFile
- *
- * @property name the name of a release, such as `m130`
- * @property libraries a list of project paths intending to release
  */
 @Serializable
 data class ReleaseConfig(val name: String, val libraries: List<String>) {

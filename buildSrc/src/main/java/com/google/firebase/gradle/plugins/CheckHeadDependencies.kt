@@ -28,7 +28,7 @@ import org.gradle.api.tasks.TaskAction
  * [FirebaseLibraryExtension.artifactId], so that the check is version agnostic.
  *
  * @throws GradleException if any project level dependencies are found that are not included in the
- * release
+ *   release
  */
 abstract class CheckHeadDependencies : DefaultTask() {
   @get:Input abstract val projectsToPublish: ListProperty<FirebaseLibraryExtension>
