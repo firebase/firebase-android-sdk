@@ -1,0 +1,9 @@
+{
+    "name": "test_m136_2",
+    "libraries": [
+        ":firebase-datatransport",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-sessions"
+    ]
+}
