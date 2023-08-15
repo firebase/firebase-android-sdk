@@ -68,7 +68,7 @@ public class FirebaseInAppMessagingRegistrar implements ComponentRegistrar {
       Qualified.qualified(Lightweight.class, Executor.class);
 
   private Qualified<TransportFactory> legacyTransportFactory =
-          Qualified.qualified(LegacyTransportBackend.class, TransportFactory.class);
+      Qualified.qualified(LegacyTransportBackend.class, TransportFactory.class);
 
   @Override
   @Keep
