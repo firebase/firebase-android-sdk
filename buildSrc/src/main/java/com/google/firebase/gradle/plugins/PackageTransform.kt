@@ -278,6 +278,10 @@ abstract class PackageTransform : DefaultTask() {
     packageNamePath = packageNamePath.replace("common", "")
     if (artifactId.get().equals("firebase-config")) {
       packageNamePath = "com/google/firebase/remoteconfig"
+    } else if (artifactId.get().equals("firebase-dynamic-links")) {
+      packageNamePath = "com/google/firebase/dynamiclinks"
+    } else if (artifactId.get().equals("firebase-ml-modeldownloader")) {
+      packageNamePath = "com/google/firebase/ml/modeldownloader"
     }
     val ktxArtifactPath = "${projectPath.get()}/ktx/src/main/kotlin/${packageNamePath}/ktx"
 
@@ -328,7 +332,7 @@ abstract class PackageTransform : DefaultTask() {
     var ktxDependencies =
       readDependencies(ktxGradlePath)
         .filter {
-          !it.contains("project(\"${project.path}\")") && !it.contains("project '${project.path}'")
+          !it.contains("project(\"${project.path}\")") && !it.contains("project('${project.path}')")
         }
         .toMutableList()
     val filtered_project_deps =
@@ -337,7 +341,10 @@ abstract class PackageTransform : DefaultTask() {
       (dependencies.toSet() + ktxDependencies.toSet())
         .toList()
         .map { x ->
-          val matches = filtered_project_deps.filter { y -> x.contains(y) }
+          val matches =
+            filtered_project_deps.filter { y ->
+              x.contains(y) && !x.contains("interop") && !x.contains("collection")
+            }
           if (matches.isEmpty()) return@map x
           return@map "implementation(project(\"${matches.get(0)}\"))"
         }
@@ -355,13 +362,12 @@ abstract class PackageTransform : DefaultTask() {
       ktxDependencies
         .filter {
           !((it.contains("implementation") || it.contains("api")) &&
-            !it.contains("firebase-components:"))
+            (!it.contains("firebase") || it.contains(project.path) || it.contains("-ktx")))
         }
         .map { x ->
           val filtered = PROJECT_LEVEL_REQUIRED.filter { x.contains("${it}:") }
-          println(filtered.isEmpty())
           if (filtered.isEmpty()) return@map x
-          else return@map "api(project(\":${filtered.get(0)}\")"
+          else return@map "api(project(\":${filtered.get(0)}\"))"
         }
         .toMutableList()
     // KTX gradle changes
