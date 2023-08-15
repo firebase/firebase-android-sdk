@@ -35,6 +35,7 @@ public class FirebaseLibraryExtension {
 
   public final Project project;
   public final LibraryType type;
+
   /** Indicates whether the library has public javadoc. */
   public boolean publishJavadoc = true;
 

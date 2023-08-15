@@ -174,7 +174,8 @@ data class ModuleVersion(
      * ```
      */
     val VERSION_REGEX =
-      "(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?:\\-\\b)?(?<pre>\\w\\D+)?(?<build>\\B\\d+)?".toRegex()
+      "(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?:\\-\\b)?(?<pre>\\w\\D+)?(?<build>\\B\\d+)?"
+        .toRegex()
 
     /**
      * Extrapolates the version variables from a provided [String], and turns them into a

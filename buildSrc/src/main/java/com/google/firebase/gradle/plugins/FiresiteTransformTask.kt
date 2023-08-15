@@ -147,6 +147,7 @@ abstract class FiresiteTransformTask : DefaultTask() {
   // TODO(b/243674302): Remove when dackka exposes configuration for this
   private fun String.removeClassHeader() =
     remove(Regex("- title: \"Class Index\"\n {2}path: \".+\"\n\n"))
+
   private fun String.removeIndexHeader() =
     remove(Regex("- title: \"Package Index\"\n {2}path: \".+\"\n\n"))
 
