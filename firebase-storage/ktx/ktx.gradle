@@ -26,6 +26,7 @@ firebaseLibrary {
 }
 
 android {
+    namespace "com.google.firebase.storage.ktx"    
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16
@@ -73,5 +74,5 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:3.3.3'
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
 }

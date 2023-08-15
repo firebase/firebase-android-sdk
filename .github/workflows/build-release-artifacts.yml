@@ -13,7 +13,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.5.3
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -24,12 +24,7 @@ jobs:
 
       - name: Perform gradle build
         run: |
-          ./gradlew firebasePublish -PpublishConfigFilePath=release.cfg -PpublishMode=RELEASE
-
-      - name: Generate release notes
-        run: |
-          python3 docs/make_release_notes.py
-          cd build/changelog && zip -r ../release_notes.zip android
+          ./gradlew firebasePublish
 
       - name: Upload generated artifacts
         uses: actions/upload-artifact@v2

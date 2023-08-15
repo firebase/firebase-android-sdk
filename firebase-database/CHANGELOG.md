@@ -1,7 +1,22 @@
 # Unreleased
-* [unchanged] Updated to accommodate the release of the updated
-  [database] Kotlin extensions library.
 
+# 20.2.2
+* [changed] Internal changes to ensure alignment with other SDK releases.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-database` library. The Kotlin extensions library has no additional
+updates.
+
+# 20.2.1
+* [changed] Internal changes to ensure alignment with other SDK releases.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-database` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.2.0
 * [unchanged] Updated to accommodate the release of the updated
@@ -117,7 +132,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.7.0
-- [feature] Added [`Query#startAfter()`](/docs/reference/android/com/google/firebase/database/Query#startAfter(java.lang.String,%20java.lang.String))
+* [feature] Added [`Query#startAfter()`](/docs/reference/android/com/google/firebase/database/Query#startAfter(java.lang.String,%20java.lang.String))
   and [`Query#endBefore()`](/docs/reference/android/com/google/firebase/database/Query#endBefore(java.lang.String,%20java.lang.String))
   filters to help with paginated queries.
 
@@ -128,11 +143,11 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.6.0
-- [feature] Added [`DatabaseReference#get()`](/docs/reference/android/com/google/firebase/database/DatabaseReference#get())
+* [feature] Added [`DatabaseReference#get()`](/docs/reference/android/com/google/firebase/database/DatabaseReference#get())
   and [`Query#get()`](/docs/reference/android/com/google/firebase/database/Query#get()),
   which return data from the server even when older data is available in the local
   cache.
-- [fixed] Fixed a crash that occured on some Pixel devices when closing the
+* [fixed] Fixed a crash that occured on some Pixel devices when closing the
   network connection.
 
 
@@ -142,7 +157,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.5.1
-- [fixed] Fixed a regression introduced in v19.3.0 that may cause assertion
+* [fixed] Fixed a regression introduced in v19.3.0 that may cause assertion
   failures, especially when persistence is enabled.
 
 
@@ -152,7 +167,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.5.0
-- [feature] The SDK can now infer a default database URL even if it is omitted
+* [feature] The SDK can now infer a default database URL even if it is omitted
 in the project's configuration.
 
 
@@ -162,7 +177,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.4.0
-- [feature] Added support for connecting to the Firebase Emulator Suite via
+* [feature] Added support for connecting to the Firebase Emulator Suite via
   a new method,
   [`FirebaseDatabase#useEmulator()`](/docs/reference/android/com/google/firebase/database/FirebaseDatabase#useEmulator(java.lang.String,%20int)).
 
@@ -173,7 +188,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.3.1
-- [changed] Added internal HTTP header to the WebChannel connection.
+* [changed] Added internal HTTP header to the WebChannel connection.
 
 
 ## Kotlin
@@ -182,7 +197,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.3.0
-- [feature] Added [`ServerValue.increment()`](/docs/reference/android/com/google/firebase/database/ServerValue#increment(double))
+* [feature] Added [`ServerValue.increment()`](/docs/reference/android/com/google/firebase/database/ServerValue#increment(double))
   to support atomic field value increments without transactions.
 
 
@@ -192,7 +207,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.2.1
-- [changed] Internal changes to ensure functionality alignment with other SDK releases.
+* [changed] Internal changes to ensure functionality alignment with other SDK releases.
 
 
 ## Kotlin
@@ -201,7 +216,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.2.0
-- [feature] Added support for type wildcards in
+* [feature] Added support for type wildcards in
   [`GenericTypeIndicator`](/docs/reference/android/com/google/firebase/database/GenericTypeIndicator),
   expanding our custom class serialization to include classes with wildcard
   generics.
@@ -214,7 +229,7 @@ updates.
   [[database] KTX documentation](/docs/reference/kotlin/com/google/firebase/database/ktx/package-summary).
 
 # 19.1.0
-- [feature] Added support for the [firebase_database] Emulator. To connect
+* [feature] Added support for the [firebase_database] Emulator. To connect
   to the emulator, specify "http://<hostname>:<port>/?ns=<project_id>" as your
   Database URL (via [`FirebaseDatabase.getInstance(String)`](/docs/reference/android/com/google/firebase/database/FirebaseDatabase.html#getSdkVersion())).
   Note that if you are running the [database] Emulator on "localhost" and
@@ -226,9 +241,9 @@ updates.
   developer experience. No other changes.
 
 # 18.0.1
-- [changed] Internal changes to ensure functionality alignment with other SDK
+* [changed] Internal changes to ensure functionality alignment with other SDK
   releases.
-- [fixed] The SDK now reports the correct version number (via
+* [fixed] The SDK now reports the correct version number (via
   [`FirebaseDatabase.getSdkVersion()`](/docs/reference/android/com/google/firebase/database/FirebaseDatabase.html#getSdkVersion()`).
 
 # 17.0.0

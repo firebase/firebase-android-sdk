@@ -812,7 +812,16 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void isLastFetchFailed_frcIsNonNullAndStatusOtherThanFailed_returnsFalse() {
+  public void isLastFetchFailed_frcIsNonNullAndStatusThrottled_returnsTrue() {
+    RemoteConfigManager testRemoteConfigManager =
+        setupTestRemoteConfigManager(createDefaultRcConfigMap());
+    simulateFirebaseRemoteConfigLastFetchStatus(FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED);
+
+    assertThat(testRemoteConfigManager.isLastFetchFailed()).isTrue();
+  }
+
+  @Test
+  public void isLastFetchFailed_frcIsNonNullAndStatusOtherThanFailedOrThrottled_returnsFalse() {
     RemoteConfigManager testRemoteConfigManager =
         setupTestRemoteConfigManager(createDefaultRcConfigMap());
 
@@ -821,9 +830,6 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     assertThat(testRemoteConfigManager.isLastFetchFailed()).isFalse();
 
     simulateFirebaseRemoteConfigLastFetchStatus(FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS);
-    assertThat(testRemoteConfigManager.isLastFetchFailed()).isFalse();
-
-    simulateFirebaseRemoteConfigLastFetchStatus(FirebaseRemoteConfig.LAST_FETCH_STATUS_THROTTLED);
     assertThat(testRemoteConfigManager.isLastFetchFailed()).isFalse();
   }
 

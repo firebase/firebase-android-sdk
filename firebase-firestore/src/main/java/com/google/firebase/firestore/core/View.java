@@ -287,7 +287,6 @@ public class View {
         viewChanges,
         (DocumentViewChange o1, DocumentViewChange o2) -> {
           int typeComp = compareIntegers(View.changeTypeOrder(o1), View.changeTypeOrder(o2));
-          o1.getType().compareTo(o2.getType());
           if (typeComp != 0) {
             return typeComp;
           }

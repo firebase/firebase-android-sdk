@@ -14,36 +14,38 @@
 
 package com.google.firebase.crashlytics.ktx
 
-import androidx.test.InstrumentationRegistry
-import androidx.test.runner.AndroidJUnit4
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
+import com.google.firebase.FirebaseOptions
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.ktx.initialize
 import com.google.firebase.platforminfo.UserAgentPublisher
-import org.junit.AfterClass
-import org.junit.BeforeClass
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class CrashlyticsTests {
-  companion object {
-    lateinit var app: FirebaseApp
+  @Before
+  fun setUp() {
+    Firebase.initialize(
+      ApplicationProvider.getApplicationContext(),
+      FirebaseOptions.Builder()
+        .setApplicationId(APP_ID)
+        .setApiKey(API_KEY)
+        .setProjectId(PROJECT_ID)
+        .build()
+    )
+  }
 
-    @BeforeClass
-    @JvmStatic
-    fun setup() {
-      app = Firebase.initialize(InstrumentationRegistry.getContext())!!
-    }
-
-    @AfterClass
-    @JvmStatic
-    fun cleanup() {
-      app.delete()
-    }
+  @After
+  fun cleanUp() {
+    FirebaseApp.clearInstancesForTest()
   }
 
   @Test
@@ -52,32 +54,14 @@ class CrashlyticsTests {
   }
 
   @Test
-  fun testDataCall() {
-    assertThat("hola").isEqualTo("hola")
-  }
-}
-
-@RunWith(AndroidJUnit4::class)
-class LibraryVersionTest {
-  companion object {
-    lateinit var app: FirebaseApp
-
-    @BeforeClass
-    @JvmStatic
-    fun setup() {
-      app = Firebase.initialize(InstrumentationRegistry.getContext())!!
-    }
-
-    @AfterClass
-    @JvmStatic
-    fun cleanup() {
-      app.delete()
-    }
-  }
-
-  @Test
   fun libraryRegistrationAtRuntime() {
     val publisher = Firebase.app.get(UserAgentPublisher::class.java)
-    assertThat(publisher.userAgent).contains(LIBRARY_NAME)
+    assertThat(publisher.userAgent).contains(FirebaseCrashlyticsKtxRegistrar.LIBRARY_NAME)
+  }
+
+  companion object {
+    private const val APP_ID = "1:1:android:1a"
+    private const val API_KEY = "API-KEY-API-KEY-API-KEY-API-KEY-API-KEY"
+    private const val PROJECT_ID = "PROJECT-ID"
   }
 }

@@ -1,6 +1,17 @@
 # Unreleased
-* [feature] Added `getLimtedUseAppCheckToken()` for obtaining limited-use tokens
-  for protecting non-Firebase backends.
+
+# 17.0.1
+* [changed] Internal updates to allow Firebase SDKs to obtain limited-use tokens.
+
+# 17.0.0
+* [feature] Added [`getLimitedUseAppCheckToken()`](/docs/reference/android/com/google/firebase/appcheck/FirebaseAppCheck#getLimitedUseAppCheckToken())
+  for obtaining limited-use tokens for protecting non-Firebase backends.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-appcheck` library. The Kotlin extensions library has no additional
+updates.
 
 # 16.1.2
 * [unchanged] Updated to keep [app_check] SDK versions aligned.

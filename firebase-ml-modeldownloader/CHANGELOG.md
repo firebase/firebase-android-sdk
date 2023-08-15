@@ -1,5 +1,10 @@
 # Unreleased
 
+# 24.1.3
+* [unchanged] Updated internal Dagger dependency.
+* [fixed] Updated the third-party license file to include Dagger's license.
+
+
 # 24.1.2
 * [changed] Internal infrastructure improvements.
 
@@ -88,7 +93,7 @@ additional updates.
 * [fixed] Added support for Android API key restrictions.
 
 # 24.0.0
-- [changed] Internal infrastructure improvements.
+* [changed] Internal infrastructure improvements.
 
 
 ## Kotlin

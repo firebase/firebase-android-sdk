@@ -22,6 +22,7 @@ firebaseLibrary {
 }
 
 android {
+    namespace "com.google.firebase.encoders.reflective"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
@@ -47,7 +48,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-encoders-json:18.0.0'
 
     testImplementation 'androidx.test:runner:1.3.0'
-    testImplementation 'androidx.test.ext:junit:1.1.2'
+    testImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.13'
     testImplementation 'com.google.truth:truth:1.0.1'

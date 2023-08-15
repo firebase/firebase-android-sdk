@@ -14,6 +14,8 @@
 
 plugins {
     id("com.diffplug.spotless") version "6.18.0"
+    id("com.github.sherter.google-java-format") version "0.9"
+    kotlin("plugin.serialization") version "1.7.10"
     `kotlin-dsl`
 }
 
@@ -40,11 +42,6 @@ spotless {
     }
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-}
-
 dependencies {
     // Firebase performance plugin, it should be added here because of how gradle dependency
     // resolution works, otherwise it breaks Fireperf Test Apps.
@@ -67,9 +64,10 @@ dependencies {
 
     implementation("org.eclipse.jgit:org.eclipse.jgit:6.3.0.202209071007-r")
 
+    implementation(libs.kotlinx.serialization.json)
     implementation("com.google.code.gson:gson:2.8.9")
-    implementation("com.android.tools.build:gradle:7.2.2")
-    implementation("com.android.tools.build:builder-test-api:7.2.2")
+    implementation("com.android.tools.build:gradle:7.4.2")
+    implementation("com.android.tools.build:builder-test-api:7.4.2")
     implementation("com.diffplug.spotless:spotless-plugin-gradle:6.18.0")
     implementation("gradle.plugin.com.github.sherter.google-java-format:google-java-format-gradle-plugin:0.9")
 
@@ -91,7 +89,7 @@ gradlePlugin {
         }
         register("publishingPlugin") {
             id = "PublishingPlugin"
-            implementationClass = "com.google.firebase.gradle.plugins.publish.PublishingPlugin"
+            implementationClass = "com.google.firebase.gradle.plugins.PublishingPlugin"
         }
         register("firebaseLibraryPlugin") {
             id = "firebase-library"

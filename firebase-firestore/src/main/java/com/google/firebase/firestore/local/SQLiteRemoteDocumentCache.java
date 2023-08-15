@@ -182,7 +182,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       List<ResourcePath> collections,
       IndexOffset offset,
       int count,
-      @Nullable Function<MutableDocument, Boolean> filter) {
+      @Nullable Function<MutableDocument, Boolean> filter,
+      @Nullable QueryContext context) {
     Timestamp readTime = offset.getReadTime().getTimestamp();
     DocumentKey documentKey = offset.getDocumentKey();
 
@@ -218,9 +219,23 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
     db.query(sql.toString())
         .binding(bindVars)
-        .forEach(row -> processRowInBackground(backgroundQueue, results, row, filter));
+        .forEach(
+            row -> {
+              processRowInBackground(backgroundQueue, results, row, filter);
+              if (context != null) {
+                context.incrementDocumentReadCount();
+              }
+            });
     backgroundQueue.drain();
     return results;
+  }
+
+  private Map<DocumentKey, MutableDocument> getAll(
+      List<ResourcePath> collections,
+      IndexOffset offset,
+      int count,
+      @Nullable Function<MutableDocument, Boolean> filter) {
+    return getAll(collections, offset, count, filter, /*context*/ null);
   }
 
   private void processRowInBackground(
@@ -250,11 +265,21 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
   @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
       Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
+    return getDocumentsMatchingQuery(query, offset, mutatedKeys, /*context*/ null);
+  }
+
+  @Override
+  public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
+      Query query,
+      IndexOffset offset,
+      @Nonnull Set<DocumentKey> mutatedKeys,
+      @Nullable QueryContext context) {
     return getAll(
         Collections.singletonList(query.getPath()),
         offset,
         Integer.MAX_VALUE,
-        (MutableDocument doc) -> query.matches(doc) || mutatedKeys.contains(doc.getKey()));
+        (MutableDocument doc) -> query.matches(doc) || mutatedKeys.contains(doc.getKey()),
+        context);
   }
 
   private MutableDocument decodeMaybeDocument(

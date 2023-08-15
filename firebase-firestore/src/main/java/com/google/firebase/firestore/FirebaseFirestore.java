@@ -23,6 +23,7 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -104,24 +105,74 @@ public class FirebaseFirestore {
   private volatile FirestoreClient client;
   private final GrpcMetadataProvider metadataProvider;
 
+  @Nullable private PersistentCacheIndexManager persistentCacheIndexManager;
+
   @NonNull
-  public static FirebaseFirestore getInstance() {
+  private static FirebaseApp getDefaultFirebaseApp() {
     FirebaseApp app = FirebaseApp.getInstance();
     if (app == null) {
       throw new IllegalStateException("You must call FirebaseApp.initializeApp first.");
     }
-    return getInstance(app, DatabaseId.DEFAULT_DATABASE_ID);
+    return app;
   }
 
+  /**
+   * Returns the default {@link FirebaseFirestore} instance for the default {@link FirebaseApp}.
+   *
+   * <p>Returns the same instance for all invocations. If no instance exists, initializes a new
+   * instance.
+   *
+   * @returns The {@link FirebaseFirestore} instance.
+   */
+  @NonNull
+  public static FirebaseFirestore getInstance() {
+    return getInstance(getDefaultFirebaseApp(), DatabaseId.DEFAULT_DATABASE_ID);
+  }
+
+  /**
+   * Returns the default {@link FirebaseFirestore} instance for the provided {@link FirebaseApp}.
+   *
+   * <p>For a given {@link FirebaseApp}, invocation always returns the same instance. If no instance
+   * exists, initializes a new instance.
+   *
+   * @param app The {@link FirebaseApp} instance that the returned {@link FirebaseFirestore}
+   *     instance is associated with.
+   * @returns The {@link FirebaseFirestore} instance.
+   */
   @NonNull
   public static FirebaseFirestore getInstance(@NonNull FirebaseApp app) {
     return getInstance(app, DatabaseId.DEFAULT_DATABASE_ID);
   }
 
-  // TODO: make this public
+  /**
+   * Returns the {@link FirebaseFirestore} instance for the default {@link FirebaseApp}.
+   *
+   * <p>Returns the same instance for all invocations given the same database parameter. If no
+   * instance exists, initializes a new instance.
+   *
+   * @param database The database ID.
+   * @returns The {@link FirebaseFirestore} instance.
+   */
   @NonNull
-  private static FirebaseFirestore getInstance(@NonNull FirebaseApp app, @NonNull String database) {
+  public static FirebaseFirestore getInstance(@NonNull String database) {
+    return getInstance(getDefaultFirebaseApp(), database);
+  }
+
+  /**
+   * Returns the {@link FirebaseFirestore} instance for the provided {@link FirebaseApp}.
+   *
+   * <p>Returns the same instance for all invocations given the same {@link FirebaseApp} and
+   * database parameter. If no instance exists, initializes a new instance.
+   *
+   * @param app The {@link FirebaseApp} instance that the returned {@link FirebaseFirestore}
+   *     instance is associated with.
+   * @param database The database ID.
+   * @returns The {@link FirebaseFirestore} instance.
+   */
+  @NonNull
+  public static FirebaseFirestore getInstance(@NonNull FirebaseApp app, @NonNull String database) {
     checkNotNull(app, "Provided FirebaseApp must not be null.");
+    checkNotNull(database, "Provided database name must not be null.");
     FirestoreMultiDbComponent component = app.get(FirestoreMultiDbComponent.class);
     checkNotNull(component, "Firestore component is not present.");
     return component.get(database);
@@ -353,6 +404,26 @@ public class FirebaseFirestore {
     }
 
     return client.configureFieldIndexes(parsedIndexes);
+  }
+
+  /**
+   * Returns the PersistentCache Index Manager used by this {@code FirebaseFirestore} object.
+   *
+   * @return The {@code PersistentCacheIndexManager} instance or null if local persistent storage is
+   *     not in use.
+   */
+  // TODO(csi): Remove the `hide` and scope annotations.
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @Nullable
+  public synchronized PersistentCacheIndexManager getPersistentCacheIndexManager() {
+    ensureClientConfigured();
+    if (persistentCacheIndexManager == null
+        && (settings.isPersistenceEnabled()
+            || settings.getCacheSettings() instanceof PersistentCacheSettings)) {
+      persistentCacheIndexManager = new PersistentCacheIndexManager(client);
+    }
+    return persistentCacheIndexManager;
   }
 
   /**

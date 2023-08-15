@@ -26,6 +26,7 @@ android {
         timeOutInMs 60 * 1000
     }
 
+    namespace "com.google.firebase.appcheck.playintegrity"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
@@ -57,5 +58,5 @@ dependencies {
     testImplementation 'org.mockito:mockito-core:3.4.6'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'androidx.test:core:1.4.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
 }

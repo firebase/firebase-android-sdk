@@ -57,7 +57,7 @@ android {
     adbOptions {
         timeOutInMs 60 * 1000
     }
-
+    namespace "com.google.firebase.messaging"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 19
@@ -105,7 +105,7 @@ dependencies {
 
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
 
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation 'com.google.android.gms:play-services-cloud-messaging:17.0.1'
     testImplementation 'androidx.test:rules:1.2.0'
     testImplementation 'androidx.test:runner:1.2.0'
@@ -131,7 +131,7 @@ dependencies {
     testImplementation 'androidx.core:core:1.6.0'
 
     androidTestImplementation project(':integ-testing')
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'junit:junit:4.12'

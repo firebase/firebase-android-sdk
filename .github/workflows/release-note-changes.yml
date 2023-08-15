@@ -1,0 +1,60 @@
+name: Release note changes
+
+on:
+  pull_request:
+    branches:
+      - 'master'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3.5.3
+      with:
+        fetch-depth: 0
+
+    - name: Create output file
+      run: touch changelog_comment.md
+
+    - name: Get changed changelog files
+      id: changed-files
+      uses: tj-actions/changed-files@v36.0.10
+      with:
+        files_ignore: |
+          buildSrc/**
+        files: |
+          **/CHANGELOG.md
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      if: ${{ steps.changed-files.outputs.any_changed == 'true' }}
+      with:
+        python-version: '3.10'
+          
+    - name: Set up fireci
+      id: install-fireci
+      if: ${{ steps.changed-files.outputs.any_changed == 'true' }}
+      run: pip3 install -e ci/fireci
+
+    - name: Generate comment
+      id: generate-comment
+      if: ${{ steps.install-fireci.outcome == 'success' }}
+      run: |
+        fireci changelog_comment -c "${{ steps.changed-files.outputs.all_changed_files }}" -o ./changelog_comment.md
+
+    - name: Add PR Comment
+      uses: mshick/add-pr-comment@v2.8.1
+      continue-on-error: true
+      with:
+        status: ${{ steps.generate-comment.outcome }}
+        message-path: ./changelog_comment.md
+        message-skipped: |
+          ## Release note changes
+          No release note changes were detected. If you made changes that should be
+          present in the next release, ensure you've added an entry in the appropriate
+          `CHANGELOG.md` file(s).
+        message-failure: |
+          ## Release note changes
+          A `CHANGELOG.md` file seems to not match the expected format.
+          Please ensure your changelog files are following the format as
+          defined in [our documentation](#).

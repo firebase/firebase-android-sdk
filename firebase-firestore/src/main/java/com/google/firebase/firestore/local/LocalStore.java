@@ -425,7 +425,7 @@ public final class LocalStore implements BundleCallback {
             targetCache.addMatchingKeys(change.getAddedDocuments(), targetId);
 
             TargetData newTargetData = oldTargetData.withSequenceNumber(sequenceNumber);
-            if (remoteEvent.getTargetMismatches().contains(targetId)) {
+            if (remoteEvent.getTargetMismatches().containsKey(targetId)) {
               newTargetData =
                   newTargetData
                       .withResumeToken(ByteString.EMPTY, SnapshotVersion.NONE)
@@ -800,6 +800,14 @@ public final class LocalStore implements BundleCallback {
               indexManager::addFieldIndex,
               indexManager::deleteFieldIndex);
         });
+  }
+
+  public void deleteAllFieldIndexes() {
+    persistence.runTransaction("Delete All Indexes", () -> indexManager.deleteAllFieldIndexes());
+  }
+
+  public void setIndexAutoCreationEnabled(boolean isEnabled) {
+    queryEngine.setIndexAutoCreationEnabled(isEnabled);
   }
 
   /** Mutable state for the transaction in allocateQuery. */

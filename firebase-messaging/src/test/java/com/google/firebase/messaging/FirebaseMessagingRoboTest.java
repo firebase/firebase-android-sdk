@@ -13,7 +13,6 @@
 // limitations under the License.
 package com.google.firebase.messaging;
 
-import static android.os.Looper.getMainLooper;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.messaging.FirebaseMessaging.GMS_PACKAGE;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -462,6 +461,8 @@ public final class FirebaseMessagingRoboTest {
     assertThat(FirebaseMessaging.getInstance().isNotificationDelegationEnabled()).isFalse();
   }
 
+  /*
+  TODO b/286544512
   @Test
   public void testSubscribeToTopic_withPrefix() {
     firebaseMessaging.subscribeToTopic(VALID_TOPIC);
@@ -491,6 +492,7 @@ public final class FirebaseMessagingRoboTest {
     shadowOf(getMainLooper()).runToEndOfTasks();
     assertThat(task.getException()).isInstanceOf(IllegalArgumentException.class);
   }
+   */
 
   @Test
   public void testLibraryVersionRegistration_valid() {

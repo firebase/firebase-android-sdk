@@ -142,6 +142,9 @@ public class CrashlyticsReportJsonTransform {
           builder.setIdentifierFromUtf8Bytes(
               Base64.decode(jsonReader.nextString(), Base64.NO_WRAP));
           break;
+        case "appQualitySessionId":
+          builder.setAppQualitySessionId(jsonReader.nextString());
+          break;
         case "startedAt":
           builder.setStartedAt(jsonReader.nextLong());
           break;

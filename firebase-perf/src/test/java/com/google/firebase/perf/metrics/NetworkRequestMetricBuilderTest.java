@@ -28,7 +28,6 @@ import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
-import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.NetworkRequestMetric;
 import com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod;
 import java.nio.charset.StandardCharsets;
@@ -226,7 +225,8 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
     assertThat(this.networkMetricBuilder.getSessions()).isEmpty();
 
     int numberOfSessionIds = metricBuilder.getSessions().size();
-    SessionManager.getInstance().updatePerfSession(ApplicationProcessState.FOREGROUND);
+    PerfSession perfSession = PerfSession.createWithId("testSessionId");
+    SessionManager.getInstance().updatePerfSession(perfSession);
 
     assertThat(metricBuilder.getSessions().size()).isEqualTo(numberOfSessionIds + 1);
   }
@@ -242,24 +242,9 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
 
     int numberOfSessionIds = metricBuilder.getSessions().size();
 
-    new SessionManager(mock(GaugeManager.class), null, mock(AppStateMonitor.class))
-        .onUpdateAppState(ApplicationProcessState.FOREGROUND);
+    new SessionManager(mock(GaugeManager.class), null, mock(AppStateMonitor.class));
 
     assertThat(metricBuilder.getSessions()).hasSize(numberOfSessionIds);
-  }
-
-  @Test
-  public void testSessionIdNotAddedForBackgroundInNetworkRequestMetric() {
-    NetworkRequestMetricBuilder metricBuilder =
-        NetworkRequestMetricBuilder.builder(mockTransportManager);
-    metricBuilder.setRequestStartTimeMicros(/* time= */ 2000);
-
-    assertThat(this.networkMetricBuilder.getSessions()).isNotNull();
-    assertThat(this.networkMetricBuilder.getSessions()).isEmpty();
-
-    int numberOfSessionIds = metricBuilder.getSessions().size();
-    SessionManager.getInstance().onUpdateAppState(ApplicationProcessState.BACKGROUND);
-    assertThat(metricBuilder.getSessions().size() == numberOfSessionIds).isTrue();
   }
 
   @Test
@@ -343,7 +328,7 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
     networkMetricBuilder.setRequestStartTimeMicros(/* time= */ 2000);
 
     assertThat(networkMetricBuilder.getSessions()).hasSize(1);
-    networkMetricBuilder.updateSession(PerfSession.create());
+    networkMetricBuilder.updateSession(PerfSession.createWithId("testSessionId"));
     assertThat(networkMetricBuilder.getSessions()).hasSize(2);
   }
 

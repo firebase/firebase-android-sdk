@@ -749,7 +749,7 @@ class CrashlyticsController {
         idManager.getAppIdentifier(),
         appData.versionCode,
         appData.versionName,
-        idManager.getCrashlyticsInstallId(),
+        idManager.getInstallIds().getCrashlyticsInstallId(),
         DeliveryMechanism.determineFrom(appData.installerPackageName).getId(),
         appData.developmentPlatformProvider);
   }

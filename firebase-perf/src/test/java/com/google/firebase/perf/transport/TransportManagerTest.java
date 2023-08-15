@@ -24,7 +24,11 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
+import static org.robolectric.Shadows.shadowOf;
 
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
@@ -64,6 +68,7 @@ import org.mockito.Mock;
 import org.mockito.verification.VerificationMode;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadows.ShadowPackageManager;
 
 /** Unit tests for {@link TransportManager}. */
 @Config(shadows = ShadowPreconditions.class)
@@ -1195,11 +1200,11 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void logTraceMetric_perfSessionExpired_updatesSessionId() {
+  public void logTraceMetric_perfSessionExpired_doesNotUpdateSessionId() {
     com.google.firebase.perf.session.PerfSession mockPerfSession =
         mock(com.google.firebase.perf.session.PerfSession.class);
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
-    when(mockPerfSession.isExpired()).thenReturn(true);
+    when(mockPerfSession.isSessionRunningTooLong()).thenReturn(true);
 
     SessionManager.getInstance().setPerfSession(mockPerfSession);
     String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
@@ -1208,15 +1213,15 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     testTransportManager.log(createValidTraceMetric(), ApplicationProcessState.BACKGROUND);
     fakeExecutorService.runAll();
 
-    assertThat(oldSessionId).isNotEqualTo(SessionManager.getInstance().perfSession().sessionId());
+    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
   }
 
   @Test
-  public void logNetworkMetric_perfSessionExpired_updatesSessionId() {
+  public void logNetworkMetric_perfSessionExpired_doesNotUpdateSessionId() {
     com.google.firebase.perf.session.PerfSession mockPerfSession =
         mock(com.google.firebase.perf.session.PerfSession.class);
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
-    when(mockPerfSession.isExpired()).thenReturn(true);
+    when(mockPerfSession.isSessionRunningTooLong()).thenReturn(true);
 
     SessionManager.getInstance().setPerfSession(mockPerfSession);
     String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
@@ -1225,15 +1230,15 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     testTransportManager.log(createValidNetworkRequestMetric(), ApplicationProcessState.BACKGROUND);
     fakeExecutorService.runAll();
 
-    assertThat(oldSessionId).isNotEqualTo(SessionManager.getInstance().perfSession().sessionId());
+    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
   }
 
   @Test
-  public void logGaugeMetric_perfSessionExpired_updatesSessionId() {
+  public void logGaugeMetric_perfSessionExpired_doesNotUpdateSessionId() {
     com.google.firebase.perf.session.PerfSession mockPerfSession =
         mock(com.google.firebase.perf.session.PerfSession.class);
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
-    when(mockPerfSession.isExpired()).thenReturn(true);
+    when(mockPerfSession.isSessionRunningTooLong()).thenReturn(true);
 
     SessionManager.getInstance().setPerfSession(mockPerfSession);
     String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
@@ -1242,7 +1247,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     testTransportManager.log(createValidGaugeMetric(), ApplicationProcessState.FOREGROUND);
     fakeExecutorService.runAll();
 
-    assertThat(oldSessionId).isNotEqualTo(SessionManager.getInstance().perfSession().sessionId());
+    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
   }
 
   @Test
@@ -1250,7 +1255,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     com.google.firebase.perf.session.PerfSession mockPerfSession =
         mock(com.google.firebase.perf.session.PerfSession.class);
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
-    when(mockPerfSession.isExpired()).thenReturn(false);
+    when(mockPerfSession.isSessionRunningTooLong()).thenReturn(false);
 
     SessionManager.getInstance().setPerfSession(mockPerfSession);
     String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
@@ -1267,7 +1272,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     com.google.firebase.perf.session.PerfSession mockPerfSession =
         mock(com.google.firebase.perf.session.PerfSession.class);
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
-    when(mockPerfSession.isExpired()).thenReturn(false);
+    when(mockPerfSession.isSessionRunningTooLong()).thenReturn(false);
 
     SessionManager.getInstance().setPerfSession(mockPerfSession);
     String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
@@ -1284,7 +1289,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     com.google.firebase.perf.session.PerfSession mockPerfSession =
         mock(com.google.firebase.perf.session.PerfSession.class);
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
-    when(mockPerfSession.isExpired()).thenReturn(false);
+    when(mockPerfSession.isSessionRunningTooLong()).thenReturn(false);
 
     SessionManager.getInstance().setPerfSession(mockPerfSession);
     String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
@@ -1393,6 +1398,16 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     clearLastLoggedEvents();
 
     if (shouldInitialize) {
+      // Set the version name since Firebase sessions needs it.
+      Context context = ApplicationProvider.getApplicationContext();
+      ShadowPackageManager shadowPackageManager = shadowOf(context.getPackageManager());
+
+      PackageInfo packageInfo =
+          shadowPackageManager.getInternalMutablePackageInfo(context.getPackageName());
+      packageInfo.versionName = "1.0.0";
+
+      packageInfo.applicationInfo.metaData.clear();
+
       testTransportManager = TransportManager.getInstance();
       testTransportManager.initializeForTest(
           FirebaseApp.getInstance(),

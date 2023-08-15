@@ -17,6 +17,7 @@ plugins {
 }
 
 android {
+    namespace "com.google.firebase.segmentation"    
     compileSdkVersion project.targetSdkVersion
 
     defaultConfig {
@@ -50,7 +51,7 @@ dependencies {
     annotationProcessor "com.google.auto.value:auto-value:1.6.2"
     javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
 
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation 'junit:junit:4.12'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"

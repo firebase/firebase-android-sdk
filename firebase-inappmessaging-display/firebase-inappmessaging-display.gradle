@@ -23,6 +23,7 @@ firebaseLibrary {
 }
 
 android {
+    namespace "com.google.firebase.inappmessaging.display"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16
@@ -39,6 +40,10 @@ android {
         // jetification in our SDK build will still require developers to use jetification in their
         // apps.
         disable "GradleCompatible"
+    }
+
+    lint {
+        baseline = file("lint-baseline.xml")
     }
 
     compileOptions {
@@ -87,12 +92,13 @@ dependencies {
     implementation 'com.github.bumptech.glide:glide:4.11.0'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
 
-    vendor ('com.google.dagger:dagger:2.27') {
+    vendor (libs.dagger.dagger) {
         exclude group: "javax.inject", module: "javax.inject"
     }
+    annotationProcessor libs.dagger.compiler
+
     implementation 'javax.inject:javax.inject:1'
 
-    annotationProcessor "com.google.dagger:dagger-compiler:2.27"
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.6'
 
@@ -100,11 +106,11 @@ dependencies {
     testImplementation "junit:junit:4.12"
     testImplementation "org.mockito:mockito-core:2.25.0"
     testImplementation "com.google.truth:truth:1.0"
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation 'com.google.guava:guava:30.1-android'
 
     androidTestImplementation project(':integ-testing')
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
     androidTestImplementation "androidx.annotation:annotation:1.0.0"
     androidTestImplementation "org.mockito:mockito-core:2.25.0"
     androidTestImplementation "com.google.dexmaker:dexmaker:1.2"

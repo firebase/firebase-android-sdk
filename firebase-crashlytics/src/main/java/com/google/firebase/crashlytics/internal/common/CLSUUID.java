@@ -40,10 +40,9 @@ class CLSUUID {
     this.populateSequenceNumber(bytes);
     this.populatePID(bytes);
 
-    // appInstallationUUID may be empty but is guaranteed not to be null.
     // sha1 it to ensure the string is long enough, has only valid hex characters, and to
     // increase entropy.
-    final String idSha = CommonUtils.sha1(idManager.getCrashlyticsInstallId());
+    final String idSha = CommonUtils.sha1(idManager.getInstallIds().getCrashlyticsInstallId());
     final String timeSeqPid = CommonUtils.hexify(bytes);
 
     _clsId =

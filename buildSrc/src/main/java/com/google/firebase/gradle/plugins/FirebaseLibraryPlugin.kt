@@ -29,7 +29,11 @@ import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.Copy
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
@@ -41,6 +45,7 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     project.extensions.getByType<GoogleJavaFormatExtension>().toolVersion = "1.10.0"
 
     setupAndroidLibraryExtension(project)
+    registerMakeReleaseNotesTask(project)
 
     // reduce the likelihood of kotlin module files colliding.
     project.tasks.withType<KotlinCompile> {
@@ -49,7 +54,6 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
 
     project.apply<DackkaPlugin>()
     project.apply<GitSubmodulePlugin>()
-    project.apply<PostReleasePlugin>()
     project.tasks.getByName("preBuild").dependsOn("updateGitSubmodules")
   }
 
@@ -104,11 +108,13 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
       from(project.zipTree("build/outputs/aar/${releaseAar}"))
       into(project.file("semver/current-version"))
     }
+
     project.tasks.register<Copy>("extractPreviousClasses") {
       dependsOn("copyPreviousArtifacts")
-
-      from(project.zipTree("semver/previous.aar"))
-      into(project.file("semver/previous-version"))
+      if (project.file("semver/previous.aar").exists()) {
+        from(project.zipTree("semver/previous.aar"))
+        into(project.file("semver/previous-version"))
+      }
     }
 
     val currentJarFile = project.file("semver/current-version/classes.jar").absolutePath
