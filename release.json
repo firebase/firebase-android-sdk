@@ -1,0 +1,18 @@
+{
+    "name": "m136",
+    "libraries": [
+        ":firebase-crashlytics-ndk",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics:ktx",
+        ":firebase-datatransport",
+        ":firebase-firestore:ktx",
+        ":firebase-firestore",
+        ":firebase-inappmessaging-display:ktx",
+        ":firebase-inappmessaging:ktx",
+        ":firebase-inappmessaging-display",
+        ":firebase-inappmessaging",
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":firebase-sessions"
+    ]
+}

@@ -1,0 +1,181 @@
+{
+    "changesByLibraryName": {
+        "firebase-crashlytics-ndk": [
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "d56af81963bf22763ddc1def529366f9ae62a50e",
+                "prId": "5244",
+                "author": "Matthew Robertson",
+                "message": "Add Sessions dep version change to Crashlytics CHANGELOG file (#5244)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d56af81963bf22763ddc1def529366f9ae62a50e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5244"
+            },
+            {
+                "commitId": "a43a31f62f68734ac9d10dd982de61427346f1b8",
+                "prId": "5238",
+                "author": "Matthew Robertson",
+                "message": "Make Sessions resilient to the FirebaseApp instance being deleted (#5238)\n\n* Make Sessions resilient to the FirebaseApp instance being deleted\r\n\r\n* Remove listener when FirebaseApp deleted, and update log messages\r\n\r\n* Log as warning",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a43a31f62f68734ac9d10dd982de61427346f1b8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5238"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-datatransport": [
+            {
+                "commitId": "339cb42e822d219a3b38e96315c1cec83d113288",
+                "prId": "5246",
+                "author": "Rodrigo Lazo",
+                "message": "Minor version bump firebase-datatransport since new classes are added (#5246)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/339cb42e822d219a3b38e96315c1cec83d113288",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5246"
+            },
+            {
+                "commitId": "34ccc9ad3fb9ca50082fa82ef08f9ac89e12625b",
+                "prId": "5242",
+                "author": "Rodrigo Lazo",
+                "message": "Update firebase-datatransport dependencies (#5242)\n\nBump common and transport-* to their latest released versions",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/34ccc9ad3fb9ca50082fa82ef08f9ac89e12625b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5242"
+            },
+            {
+                "commitId": "da631d23d558b33660bd1f1f180d9e13f1884ab0",
+                "prId": "5237",
+                "author": "Rodrigo Lazo",
+                "message": "Expose the transport factory as a Qualified component (#5237)\n\n* Expose the transport factory as a Qualified dependency.\r\n\r\n* Add CHANGELOG entry\r\n\r\n* Fix version bump.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/da631d23d558b33660bd1f1f180d9e13f1884ab0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5237"
+            }
+        ],
+        "firebase-firestore/ktx": [
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "d5b05f2dcfb0462c486c0fed5bcad7c52100b27a",
+                "prId": "5219",
+                "author": "Denver Coneybeare",
+                "message": "Firestore: Fix comment in testDoesNotAutoCreateIndexesWhenIndexLookUpIsExpensive (#5219)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d5b05f2dcfb0462c486c0fed5bcad7c52100b27a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5219"
+            },
+            {
+                "commitId": "8ce2dfc8fbb2536057d46fc19b6b484471496fc3",
+                "prId": "5206",
+                "author": "wu-hui",
+                "message": "Setup CI for named db tests (#5206)\n\n* Initial setup\r\n\r\n* fix gradle file\r\n\r\n* separate job\r\n\r\n* Control\r\n\r\n* Address Feedback.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8ce2dfc8fbb2536057d46fc19b6b484471496fc3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5206"
+            },
+            {
+                "commitId": "622d65b1abe2f23626796a924f278410f87f9295",
+                "prId": "5210",
+                "author": "Tom Andersen",
+                "message": "Implement Filter equals method. (#5210)\n\n* Implement filter equals method.\r\n\r\n* Add changelog entry\r\n\r\n* Fix format and PR feedback",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/622d65b1abe2f23626796a924f278410f87f9295",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5210"
+            },
+            {
+                "commitId": "824195e57135f60f3c17c14ba4b2bc1e01984f81",
+                "prId": "5209",
+                "author": "cherylEnkidu",
+                "message": "Rename variable to keep naming convention (#5209)\n\n* Rename valuable to keep naming convention\r\n\r\n* improve comment's readability\r\n\r\n* change naming",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/824195e57135f60f3c17c14ba4b2bc1e01984f81",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5209"
+            },
+            {
+                "commitId": "c5cd53632db89ef98f86edc16fa6dd178bad9ebe",
+                "prId": "5162",
+                "author": "cherylEnkidu",
+                "message": "Support deleteAllIndexes in PersistentCacheIndexManager (#5162)\n\n* Add counter\r\n\r\n* address feedback 1\r\n\r\n* implement autoClientIndexing\r\n\r\n* Add tests and fix bugs for BuildTargetIndex\r\n\r\n* hide getter from public API\r\n\r\n* move the flag from IndexManager to QueryEngine\r\n\r\n* move auto index flag to runtime\r\n\r\n* Support old way to enable persistent for PersistentCacheManager\r\n\r\n* Add hide and copyright\r\n\r\n* Rename PersistentCacheManager to PersistentCacheIndexManager\r\n\r\n* add configurable min documents to create indexes\r\n\r\n* Address feedback\r\n\r\n* Add deleteAllIndexes\r\n\r\n* Add documentation\r\n\r\n* add test coverage\r\n\r\n* merge main branch",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c5cd53632db89ef98f86edc16fa6dd178bad9ebe",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5162"
+            },
+            {
+                "commitId": "a5e706201096dfe318ae25b4091172ef16811b38",
+                "prId": "4987",
+                "author": "cherylEnkidu",
+                "message": "Add option to allow SDK create cache indexes automatically to improve query execution locally (#4987)\n\n* Add counter\r\n\r\n* address feedback 1\r\n\r\n* add copyright\r\n\r\n* fix concurrency bug\r\n\r\n* implement autoClientIndexing\r\n\r\n* Add tests and fix bugs for BuildTargetIndex\r\n\r\n* hide getter from public API\r\n\r\n* move the flag from IndexManager to QueryEngine\r\n\r\n* Address feedback\r\n\r\n* move auto index flag to runtime\r\n\r\n* Support old way to enable persistent for PersistentCacheManager\r\n\r\n* Polish Tests\r\n\r\n* Add hide and copyright\r\n\r\n* clean up unused function\r\n\r\n* Rename PersistentCacheManager to PersistentCacheIndexManager\r\n\r\n* Remove unused QueryContext\r\n\r\n* Address feedbacks other than adding tests and comments\r\n\r\n* Change the api to match the update\r\n\r\n* Add tests\r\n\r\n* Increase tests coverage\r\n\r\n* Add comments\r\n\r\n* add configurable min documents to create indexes\r\n\r\n* Address Denver's feedback\r\n\r\n* Address feedback\r\n\r\n* address more feedbacks\r\n\r\n* use the number getting from 100 ~ 1000 documents experiment\r\n\r\n* Address feedbacks\r\n\r\n* improve debug log",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a5e706201096dfe318ae25b4091172ef16811b38",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/4987"
+            }
+        ],
+        "firebase-inappmessaging-display/ktx": [
+        ],
+        "firebase-inappmessaging/ktx": [
+        ],
+        "firebase-inappmessaging-display": [
+            {
+                "commitId": "2d3b2be7d2d00d693eb74986f20a6265c918848f",
+                "prId": "5245",
+                "author": "Eldhose M Babu",
+                "message": "[FIAM] Firelog to clearcut migration (#5245)\n\n[FIAM] Firelog to clearcut migration",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2d3b2be7d2d00d693eb74986f20a6265c918848f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5245"
+            }
+        ],
+        "firebase-inappmessaging": [
+            {
+                "commitId": "2d3b2be7d2d00d693eb74986f20a6265c918848f",
+                "prId": "5245",
+                "author": "Eldhose M Babu",
+                "message": "[FIAM] Firelog to clearcut migration (#5245)\n\n[FIAM] Firelog to clearcut migration",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2d3b2be7d2d00d693eb74986f20a6265c918848f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5245"
+            }
+        ],
+        "firebase-perf": [
+            {
+                "commitId": "a43a31f62f68734ac9d10dd982de61427346f1b8",
+                "prId": "5238",
+                "author": "Matthew Robertson",
+                "message": "Make Sessions resilient to the FirebaseApp instance being deleted (#5238)\n\n* Make Sessions resilient to the FirebaseApp instance being deleted\r\n\r\n* Remove listener when FirebaseApp deleted, and update log messages\r\n\r\n* Log as warning",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a43a31f62f68734ac9d10dd982de61427346f1b8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5238"
+            },
+            {
+                "commitId": "8671998d606f470f44559491a791b9cbe2915caf",
+                "prId": "5202",
+                "author": "Visu",
+                "message": "Make sure the data collection state is reliable for App Quality Sessions library (#5202)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8671998d606f470f44559491a791b9cbe2915caf",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5202"
+            }
+        ],
+        "firebase-perf/ktx": [
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "a43a31f62f68734ac9d10dd982de61427346f1b8",
+                "prId": "5238",
+                "author": "Matthew Robertson",
+                "message": "Make Sessions resilient to the FirebaseApp instance being deleted (#5238)\n\n* Make Sessions resilient to the FirebaseApp instance being deleted\r\n\r\n* Remove listener when FirebaseApp deleted, and update log messages\r\n\r\n* Log as warning",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a43a31f62f68734ac9d10dd982de61427346f1b8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5238"
+            },
+            {
+                "commitId": "afe23b616f3f88c063396b8e3aa1586b2feb7338",
+                "prId": "5205",
+                "author": "Matthew Robertson",
+                "message": "Populate DataCollectionStatus for Crashlytics and Perf in Sessions (#5205)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/afe23b616f3f88c063396b8e3aa1586b2feb7338",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5205"
+            },
+            {
+                "commitId": "3d3eeaf1e22267c6b1734b399c2814bc62287dce",
+                "prId": "5198",
+                "author": "Matthew Robertson",
+                "message": "Fix NPE when no version name is set (#5198)\n\n* Fix NPE when no version code is set\r\n\r\n* Update changelog\r\n\r\n* Simplify the null check\r\n\r\n* name\r\n\r\n* Add issue to changelog",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3d3eeaf1e22267c6b1734b399c2814bc62287dce",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5198"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-messaging",
+        ":firebase-messaging:ktx",
+        ":firebase-messaging-directboot",
+        ":firebase-ml-modeldownloader:ktx",
+        ":firebase-ml-modeldownloader"
+    ]
+}
