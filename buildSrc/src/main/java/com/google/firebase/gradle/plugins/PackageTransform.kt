@@ -125,11 +125,12 @@ abstract class PackageTransform : DefaultTask() {
     if (!cont) return
     val dir: File = File(src.parent.toString())
     if (dir.exists() && dir.isDirectory) {
-      dir.listFiles().forEach { x ->
-        if (x.isDirectory) return
-        val destination = dest.resolve(dir.toPath().relativize(x.toPath()))
-        Files.createDirectories(destination.parent)
-        Files.copy(x.toPath(), destination, StandardCopyOption.COPY_ATTRIBUTES)
+      for (file in Files.walk(dir.toPath())) {
+        if (!Files.isDirectory(file) && !file.toAbsolutePath().contains(src.toAbsolutePath())) {
+          val destination = dest.resolve(dir.toPath().relativize(file))
+          Files.createDirectories(destination.parent)
+          Files.copy(file, destination, StandardCopyOption.REPLACE_EXISTING)
+        }
       }
     }
   }

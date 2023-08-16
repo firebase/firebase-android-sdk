@@ -85,27 +85,3 @@ val Firebase.options: FirebaseOptions
 
 internal const val LIBRARY_NAME: String = "fire-core-ktx"
 
-/** @suppress */
-@Deprecated(
-  "Use `com.google.firebase.FirebaseCommonKtxRegistrar`",
-  ReplaceWith("com.google.firebase.FirebaseCommonKtxRegistrar")
-)
-@Keep
-class FirebaseCommonKtxRegistrar : ComponentRegistrar {
-  override fun getComponents(): List<Component<*>> {
-    return listOf(
-      coroutineDispatcher<Background>(),
-      coroutineDispatcher<Lightweight>(),
-      coroutineDispatcher<Blocking>(),
-      coroutineDispatcher<UiThread>()
-    )
-  }
-}
-
-private inline fun <reified T : Annotation> coroutineDispatcher(): Component<CoroutineDispatcher> =
-  Component.builder(Qualified.qualified(T::class.java, CoroutineDispatcher::class.java))
-    .add(Dependency.required(Qualified.qualified(T::class.java, Executor::class.java)))
-    .factory { c ->
-      c.get(Qualified.qualified(T::class.java, Executor::class.java)).asCoroutineDispatcher()
-    }
-    .build()
