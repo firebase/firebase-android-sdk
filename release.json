@@ -1,0 +1,14 @@
+{
+    "name": "m136",
+    "libraries": [
+        ":firebase-crashlytics:ktx",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-datatransport",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":firebase-sessions"
+    ]
+}
