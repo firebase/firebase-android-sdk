@@ -69,8 +69,12 @@ public class FirebasePerfEarly {
 
           @Override
           public boolean isDataCollectionEnabled() {
-            // TODO(b/289036760): Get configResolver to read metadata by here.
-            return false;
+            // If there is no cached config data available for data collection, be conservative.
+            // Return false.
+            if (!configResolver.isCollectionEnabledConfigValueAvailable()) {
+              return false;
+            }
+            return ConfigResolver.getInstance().isPerformanceMonitoringEnabled();
           }
 
           @NonNull

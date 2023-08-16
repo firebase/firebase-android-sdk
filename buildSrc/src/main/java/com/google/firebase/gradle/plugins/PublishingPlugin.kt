@@ -450,7 +450,6 @@ abstract class PublishingPlugin : Plugin<Project> {
     project.tasks.register(SEMVER_CHECK_TASK) {
       for (releasingProject in releasingProjects) {
         val semverCheckTask = releasingProject.tasks.named("semverCheck")
-
         dependsOn(semverCheckTask)
       }
     }
