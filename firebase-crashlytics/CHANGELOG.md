@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Updated `firebase-sessions` dependency to v1.0.2
 
 # 18.4.0
 * [feature] Integrated with Firebase sessions library to enable upcoming features related to
@@ -477,4 +478,3 @@ The following release notes describe changes in the new SDK.
  from your `AndroidManifest.xml` file.
  * [removed] The `fabric.properties` and `crashlytics.properties` files are no
  longer supported. Remove them from your app.
-
