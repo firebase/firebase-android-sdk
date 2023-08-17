@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.google.firebase.remoteconfig.interop;
+package com.google.firebase.remoteconfig.interop.rollouts;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment;
 import org.json.JSONException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
