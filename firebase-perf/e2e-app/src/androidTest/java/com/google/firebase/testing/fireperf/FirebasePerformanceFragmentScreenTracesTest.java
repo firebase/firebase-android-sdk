@@ -54,10 +54,11 @@ public class FirebasePerformanceFragmentScreenTracesTest {
     scenario.onActivity(new NavigateAction(R.id.navigation_slow));
     scrollRecyclerViewToEnd(SlowFragment.NUM_LIST_ITEMS, R.id.rv_numbers_slow);
     assertThat(scenario.getState()).isEqualTo(State.RESUMED);
-    scenario.moveToState(State.STARTED).moveToState(State.CREATED);
-
-    // End Activity screen trace by relaunching the activity to ensure the screen trace is sent.
-    scenario.launch(FirebasePerfFragmentsActivity.class);
+    scenario.moveToState(State.STARTED).moveToState(State.CREATED); // trigger activity screen trace
+    // Wait for TransportManager and Firelog executors to finish
+    Thread.sleep(5000);
+    // Block until all Fireperf events are sent by Firelog
+    InstrumentationTestUtil.flgForceUploadSync();
   }
 
   private void scrollRecyclerViewToEnd(int itemCount, int viewId) {

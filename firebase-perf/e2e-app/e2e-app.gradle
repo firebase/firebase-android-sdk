@@ -76,10 +76,14 @@ dependencies {
     if (project.hasProperty("fireperfBuildForAutopush")) {
         println("Building with HEAD version ':firebase-perf' of SDK")
         implementation project(":firebase-perf")
-
+        androidTestImplementation project(":transport:transport-api")
+        androidTestImplementation project(":transport:transport-backend-cct")
+        androidTestImplementation project(":transport:transport-runtime")
+        androidTestImplementation project(":transport:transport-runtime-testing")
     } else {
         println("Building with latest public version ':firebase-perf:$latestReleasedVersion' of SDK")
         implementation "com.google.firebase:firebase-perf:$latestReleasedVersion"
+        androidTestImplementation project(":transport:transport-runtime-testing")
     }
 
     // Google Deps

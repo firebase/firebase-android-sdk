@@ -60,5 +60,9 @@ public class FirebasePerformanceTest {
     for (Future<?> future : futureList) {
       future.get();
     }
+    // Wait for TransportManager and Firelog executors to finish
+    Thread.sleep(5000);
+    // Block until all Fireperf events are sent by Firelog
+    InstrumentationTestUtil.flgForceUploadSync();
   }
 }
