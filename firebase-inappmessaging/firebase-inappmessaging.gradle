@@ -106,7 +106,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation project(':protolite-well-known-types')
     implementation 'com.google.android.datatransport:transport-api:3.0.0'
-    implementation 'com.google.firebase:firebase-datatransport:18.1.7'
+    implementation project(':firebase-datatransport')
     implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
     runtimeOnly project(':firebase-installations')
     implementation 'javax.inject:javax.inject:1'

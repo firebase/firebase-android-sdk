@@ -15,6 +15,7 @@
 package com.google.firebase.gradle.plugins
 
 import java.io.FileNotFoundException
+import java.net.HttpURLConnection
 import java.net.URL
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
@@ -28,6 +29,16 @@ class GmavenHelper(val groupId: String, val artifactId: String) {
     val pomFileName = "${artifactId}-${version}.pom"
     val groupIdAsPath = groupId.replace(".", "/")
     return "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/${version}/${pomFileName}"
+  }
+
+  fun isPresentInGmaven(): Boolean {
+    val groupIdAsPath = groupId.replace(".", "/")
+    val u = URL("${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/maven-metadata.xml")
+    val huc: HttpURLConnection = u.openConnection() as HttpURLConnection
+    huc.setRequestMethod("GET") // OR  huc.setRequestMethod ("HEAD");
+    huc.connect()
+    val code: Int = huc.getResponseCode()
+    return code == HttpURLConnection.HTTP_OK
   }
 
   fun getArtifactForVersion(version: String, isJar: Boolean): String {
