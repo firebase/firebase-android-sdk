@@ -24,12 +24,11 @@ import com.google.firebase.firestore.core.FirestoreClient;
  *
  * <p>To use, call {@link FirebaseFirestore#getPersistentCacheIndexManager()} to get an instance.
  */
-// TODO(csi): Remove the `hide` and scope annotations.
-/** @hide */
-@RestrictTo(RestrictTo.Scope.LIBRARY)
 public final class PersistentCacheIndexManager {
   @NonNull private FirestoreClient client;
 
+  /** @hide */
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
   PersistentCacheIndexManager(FirestoreClient client) {
     this.client = client;
   }
