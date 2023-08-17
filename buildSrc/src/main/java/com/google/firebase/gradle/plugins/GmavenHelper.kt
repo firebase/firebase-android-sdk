@@ -37,6 +37,24 @@ class GmavenHelper(val groupId: String, val artifactId: String) {
     return "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/${version}/${fileName}"
   }
 
+  fun hasReleasedVersion(version: String): Boolean {
+    try {
+      val groupIdAsPath = groupId.replace(".", "/")
+      val mavenMetadataUrl = "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/maven-metadata.xml"
+      val factory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
+      val builder: DocumentBuilder = factory.newDocumentBuilder()
+      val doc: Document = builder.parse(URL(mavenMetadataUrl).openStream())
+      doc.documentElement.normalize()
+      val versions = doc.getElementsByTagName("version")
+      for (i in 0..versions.length - 1) {
+        if (versions.item(i).textContent == version) {
+          return true
+        }
+      }
+    } catch (e: FileNotFoundException) {}
+    return false
+  }
+
   fun getLatestReleasedVersion(): String {
     try {
       val groupIdAsPath = groupId.replace(".", "/")

@@ -86,7 +86,17 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     setupStaticAnalysis(project, firebaseLibrary)
     getIsPomValidTask(project, firebaseLibrary)
     getSemverTaskAar(project, firebaseLibrary)
+    setupVersionCheckTask(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary, android)
+  }
+
+  private fun setupVersionCheckTask(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+    project.tasks.register<GmavenVersionChecker>("gmavenVersionCheck") {
+      groupId.value(firebaseLibrary.groupId.get())
+      artifactId.value(firebaseLibrary.artifactId.get())
+      version.value(firebaseLibrary.version)
+      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElseGet { "" })
+    }
   }
 
   private fun getSemverTaskAar(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
