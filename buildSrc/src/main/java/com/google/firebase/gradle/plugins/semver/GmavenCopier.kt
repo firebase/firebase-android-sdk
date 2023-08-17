@@ -36,16 +36,14 @@ abstract class GmavenCopier : DefaultTask() {
   @TaskAction
   fun run() {
     val mavenHelper = GmavenHelper(groupId.get(), artifactId.get())
+    if (!mavenHelper.isPresentInGmaven()) {
+      return
+    }
     val gMavenPath =
       mavenHelper.getArtifactForVersion(
         mavenHelper.getLatestReleasedVersion(),
         !aarAndroidFile.get()
       )
-    try {
-      URL(gMavenPath).openStream().use { Files.copy(it, Paths.get(filePath.get())) }
-    } catch (_: java.io.FileNotFoundException) {
-      // Gmaven Artifact doesn't exist.
-      return
-    }
+    URL(gMavenPath).openStream().use { Files.copy(it, Paths.get(filePath.get())) }
   }
 }
