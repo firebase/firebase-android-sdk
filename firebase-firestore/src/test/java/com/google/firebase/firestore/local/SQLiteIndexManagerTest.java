@@ -1191,7 +1191,7 @@ public class SQLiteIndexManagerTest extends IndexManagerTestCase {
   }
 
   @Test
-  public void TestCreateTargetIndexesCreatesFullIndexesForEachSubTargets() {
+  public void TestCreateTargetIndexesCreatesFullIndexesForEachSubTarget() {
     Query query =
         query("coll")
             .filter(orFilters(filter("a", "==", 1), filter("b", "==", 2), filter("c", "==", 3)));
