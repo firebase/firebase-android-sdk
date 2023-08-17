@@ -664,7 +664,7 @@ public class TargetIndexMatcherTest {
   }
 
   @Test
-  public void testBuildTargetIndexWithQueriesWithOrderBy() {
+  public void testBuildTargetIndexWithQueriesWithOrderBys() {
     for (Query query : queriesWithOrderBys) {
       validateBuildTargetIndexCreateFullMatchIndex(query);
     }
