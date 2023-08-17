@@ -51,13 +51,9 @@ dependencies {
     annotationProcessor("com.google.auto.value:auto-value:1.10.1")
     annotationProcessor(project(":encoders:firebase-encoders-processor"))
 
-    implementation(libs.appcompat)
-    implementation(libs.material)
-
     testImplementation(libs.junit)
     testImplementation(libs.truth)
     testImplementation(libs.robolectric)
 
     androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation(libs.espresso.core)
 }
