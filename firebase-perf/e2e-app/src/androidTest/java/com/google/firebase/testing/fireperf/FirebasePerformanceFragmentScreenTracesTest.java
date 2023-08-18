@@ -58,6 +58,7 @@ public class FirebasePerformanceFragmentScreenTracesTest {
 
     // End Activity screen trace by relaunching the activity to ensure the screen trace is sent.
     scenario.launch(FirebasePerfFragmentsActivity.class);
+    Thread.sleep(15 * 1000);
   }
 
   private void scrollRecyclerViewToEnd(int itemCount, int viewId) {

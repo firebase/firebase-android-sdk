@@ -60,5 +60,6 @@ public class FirebasePerformanceTest {
     for (Future<?> future : futureList) {
       future.get();
     }
+    Thread.sleep(15 * 1000);
   }
 }
