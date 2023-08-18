@@ -18,6 +18,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.GuardedBy;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.annotation.KeepForSdk;
@@ -39,6 +40,9 @@ import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
+import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
+import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
+import com.google.firebase.remoteconfig.interop.rollouts.RolloutsStateSubscriber;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -57,7 +61,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @hide
  */
 @KeepForSdk
-public class RemoteConfigComponent {
+public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
   /** Name of the file where activated configs are stored. */
   public static final String ACTIVATE_FILE_NAME = "activate";
   /** Name of the file where fetched configs are stored. */
@@ -216,7 +220,8 @@ public class RemoteConfigComponent {
                   activatedClient,
                   context,
                   namespace,
-                  metadataClient));
+                  metadataClient),
+              getRolloutsStateSubscriptionsHandler());
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
       frcNamespaceInstancesStatic.put(namespace, in);
@@ -309,6 +314,10 @@ public class RemoteConfigComponent {
     return null;
   }
 
+  private RolloutsStateSubscriptionsHandler getRolloutsStateSubscriptionsHandler() {
+    return new RolloutsStateSubscriptionsHandler(executor);
+  }
+
   /**
    * Checks if ABT can be used in the given {@code firebaseApp} and {@code namespace}.
    *
@@ -340,6 +349,23 @@ public class RemoteConfigComponent {
     for (FirebaseRemoteConfig frc : frcNamespaceInstancesStatic.values()) {
       frc.setConfigUpdateBackgroundState(isInBackground);
     }
+  }
+
+  /**
+   * Register a {@link RolloutsStateSubscriber} {@code subscriber} in for the given Remote Config
+   * {@code namespace}.
+   *
+   * <p>This implements {@link FirebaseRemoteConfigInterop} for use by other Firebase SDKs.
+   *
+   * @param namespace
+   * @param subscriber
+   */
+  @Override
+  public void registerRolloutsStateSubscriber(
+      @NonNull String namespace, @NonNull RolloutsStateSubscriber subscriber) {
+    get(namespace)
+        .getRolloutsStateSubscriptionsHandler()
+        .registerRolloutsStateSubscriber(subscriber);
   }
 
   private static class GlobalBackgroundListener
