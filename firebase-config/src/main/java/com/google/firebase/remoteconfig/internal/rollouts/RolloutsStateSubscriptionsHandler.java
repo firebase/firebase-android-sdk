@@ -16,19 +16,73 @@
 
 package com.google.firebase.remoteconfig.internal.rollouts;
 
+import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
+
+import android.util.Log;
 import androidx.annotation.NonNull;
+import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
+import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
+import com.google.firebase.remoteconfig.interop.rollouts.RolloutsState;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutsStateSubscriber;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 
 public class RolloutsStateSubscriptionsHandler {
+  private ConfigCacheClient activatedConfigsCache;
+  private RolloutsStateFactory rolloutsStateFactory;
+  private Executor executor;
 
-  public RolloutsStateSubscriptionsHandler() {}
+  public RolloutsStateSubscriptionsHandler(
+      @NonNull ConfigCacheClient activatedConfigsCache,
+      @NonNull RolloutsStateFactory rolloutsStateFactory,
+      @NonNull Executor executor) {
+    this.activatedConfigsCache = activatedConfigsCache;
+    this.rolloutsStateFactory = rolloutsStateFactory;
+    this.executor = executor;
+  }
+
+  // Thread-safe implementation for subscribers, using a ConcurrentHashMap as the underlying
+  // implementation with set-like accessors.
+  private Set<RolloutsStateSubscriber> subscribers =
+      Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   public void registerRolloutsStateSubscriber(@NonNull RolloutsStateSubscriber subscriber) {
-    // TODO: Implement registration.
+    subscribers.add(subscriber);
+
+    activatedConfigsCache
+        .get()
+        .addOnSuccessListener(
+            executor,
+            configContainer -> {
+              try {
+                RolloutsState rolloutsState =
+                    rolloutsStateFactory.getActiveRolloutsState(configContainer);
+                executor.execute(() -> subscriber.onRolloutsStateChanged(rolloutsState));
+              } catch (FirebaseRemoteConfigException e) {
+                Log.w(
+                    TAG,
+                    "Exception publishing RolloutsState to subscriber. Continuing to listen for changes.",
+                    e);
+              }
+            });
   }
 
   public void publishActiveRolloutsState(@NonNull ConfigContainer configContainer) {
-    // TODO: Implement publishing.
+    try {
+      RolloutsState activeRolloutsState =
+          rolloutsStateFactory.getActiveRolloutsState(configContainer);
+
+      for (RolloutsStateSubscriber subscriber : subscribers) {
+        executor.execute(() -> subscriber.onRolloutsStateChanged(activeRolloutsState));
+      }
+    } catch (FirebaseRemoteConfigException e) {
+      Log.w(
+          TAG,
+          "Exception publishing RolloutsState to subscribers. Continuing to listen for changes.",
+          e);
+    }
   }
 }
