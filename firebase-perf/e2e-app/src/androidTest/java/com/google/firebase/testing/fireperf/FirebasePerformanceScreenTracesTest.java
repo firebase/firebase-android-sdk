@@ -51,6 +51,6 @@ public class FirebasePerformanceScreenTracesTest {
     }
     // End Activity screen trace by switching to another Activity
     scenario.launch(FirebasePerfScreenTracesActivity.class);
-    Thread.sleep(15 * 1000);
+    Thread.sleep(30 * 1000);
   }
 }
