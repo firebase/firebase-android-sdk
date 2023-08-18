@@ -60,23 +60,54 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
 
   @TaskAction
   fun build() {
-    val needsChanging = computeLibrariesThatNeedChanging()
+    val needsChanging = findProjectLevelDependenciesToChange()
+
+    if (needsChanging.isEmpty()) throw StopExecutionException("No libraries to change.")
 
     val lines = buildFile.get().readLines()
     val newLines = updateDependencyLines(lines, needsChanging)
 
-    if (newLines == lines) throw missingProjectLevelDependenciesError(needsChanging)
+    validateNewLines(needsChanging, lines, newLines)
 
     outputFile.get().writeText(newLines.joinToString("\n") + "\n")
   }
 
-  private fun computeLibrariesThatNeedChanging(): List<FirebaseLibraryExtension> {
+  private fun validateNewLines(
+    needsChanging: List<FirebaseLibraryExtension>,
+    lines: List<String>,
+    newLines: List<String>
+  ) {
+    if (newLines == lines) throw missingProjectLevelDependenciesError(needsChanging)
+
+    val diff = lines.diff(newLines)
+    val changedLines = diff.mapNotNull { it.first ?: it.second }
+
+    val (librariesCorrectlyChanged, linesChangedIncorrectly) =
+      needsChanging.partition { lib -> changedLines.any { it.contains(lib.path) } }
+
+    val librariesNotChanged = needsChanging - librariesCorrectlyChanged
+
+    if (linesChangedIncorrectly.isNotEmpty())
+      throw RuntimeException(
+        "The following lines were caught by our REGEX, but should not have been:\n ${linesChangedIncorrectly.joinToString("\n")}"
+      )
+
+    if (librariesNotChanged.isNotEmpty())
+      throw RuntimeException(
+        "The following libraries were not found, but should have been:\n ${librariesNotChanged.joinToString("\n") { it.mavenName }}"
+      )
+
+    if (librariesCorrectlyChanged.size > needsChanging.size)
+      throw RuntimeException(
+        "Too many libraries were caught by our change, possible REGEX false positive:\n ${changedLines.joinToString("\n")}"
+      )
+  }
+
+  private fun findProjectLevelDependenciesToChange(): List<FirebaseLibraryExtension> {
     val firebaseLibrary = project.firebaseLibrary
     val sisterProjects = firebaseLibrary.getLibrariesToRelease()
     val dependencies = projectLevelDependenciesForLibrary(firebaseLibrary)
     val needsChanging = dependencies - sisterProjects
-
-    if (needsChanging.isEmpty()) throw StopExecutionException("No libraries to change.")
 
     return needsChanging
   }
