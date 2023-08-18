@@ -41,7 +41,7 @@ abstract class GmavenVersionChecker : DefaultTask() {
     if (latestMavenVersion.isEmpty()) {
       return
     }
-    // b/285892320
+    // TODO(b/285892320): Remove condition when bug fixed
     if (artifactId.get() == "protolite-well-known-types") {
       return
     }

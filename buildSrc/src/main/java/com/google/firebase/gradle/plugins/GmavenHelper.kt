@@ -38,7 +38,7 @@ class GmavenHelper(val groupId: String, val artifactId: String) {
   }
 
   fun hasReleasedVersion(version: String): Boolean {
-    val doc: Document? = getDocument()
+    val doc: Document? = getMavenMetadata()
     if (doc != null) {
       val versions = doc.getElementsByTagName("version")
       for (i in 0..versions.length - 1) {
@@ -51,16 +51,16 @@ class GmavenHelper(val groupId: String, val artifactId: String) {
   }
 
   fun getLatestReleasedVersion(): String {
-    val doc: Document? = getDocument()
+    val doc: Document? = getMavenMetadata()
     return doc?.getElementsByTagName("latest")?.item(0)?.getTextContent() ?: ""
   }
 
-  fun getDocument(): Document? {
+  fun getMavenMetadata(): Document? {
+    val groupIdAsPath = groupId.replace(".", "/")
+    val mavenMetadataUrl = "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/maven-metadata.xml"
+    val factory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
+    val builder: DocumentBuilder = factory.newDocumentBuilder()
     try {
-      val groupIdAsPath = groupId.replace(".", "/")
-      val mavenMetadataUrl = "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/maven-metadata.xml"
-      val factory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
-      val builder: DocumentBuilder = factory.newDocumentBuilder()
       val doc: Document = builder.parse(URL(mavenMetadataUrl).openStream())
       doc.documentElement.normalize()
       return doc
