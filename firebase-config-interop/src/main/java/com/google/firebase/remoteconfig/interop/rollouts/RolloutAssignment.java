@@ -53,6 +53,7 @@ public abstract class RolloutAssignment {
   /** The Remote Config template version containing this rollout. */
   public abstract long getTemplateVersion();
 
+  // TODO(Dana): Maybe the encoder should live in the Crashlytics SDK?
   public static final DataEncoder ROLLOUT_ASSIGNMENT_JSON_ENCODER =
       new JsonDataEncoderBuilder().configureWith(AutoRolloutAssignmentEncoder.CONFIG).build();
 

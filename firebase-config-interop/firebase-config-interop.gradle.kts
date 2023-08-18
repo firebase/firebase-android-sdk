@@ -45,7 +45,6 @@ android {
 dependencies {
     implementation("com.google.firebase:firebase-encoders-json:18.0.1")
     implementation("com.google.firebase:firebase-encoders:17.0.0")
-    implementation("com.google.guava:guava:28.1-jre")
 
     compileOnly("com.google.auto.value:auto-value-annotations:1.10.1")
 

@@ -18,17 +18,17 @@ package com.google.firebase.remoteconfig.interop.rollouts;
 
 import androidx.annotation.NonNull;
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableSet;
+import java.util.Set;
 
 /** Model representing the state of all rollouts assigned to an app instance at a point in time. */
 @AutoValue
 public abstract class RolloutsState {
   /** Rollouts assigned at this point in time. May include zero or more assignments. */
   @NonNull
-  public abstract ImmutableSet<RolloutAssignment> getRolloutAssignments();
+  public abstract Set<RolloutAssignment> getRolloutAssignments();
 
   @NonNull
-  public static RolloutsState create(@NonNull ImmutableSet<RolloutAssignment> rolloutAssignments) {
+  public static RolloutsState create(@NonNull Set<RolloutAssignment> rolloutAssignments) {
     return new AutoValue_RolloutsState(rolloutAssignments);
   }
 }
