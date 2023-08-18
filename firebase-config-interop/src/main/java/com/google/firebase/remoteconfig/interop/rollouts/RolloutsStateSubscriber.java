@@ -16,6 +16,8 @@
 
 package com.google.firebase.remoteconfig.interop.rollouts;
 
+import androidx.annotation.NonNull;
+
 public interface RolloutsStateSubscriber {
-  void onRolloutsStateChanged(RolloutsState rolloutsState);
+  void onRolloutsStateChanged(@NonNull RolloutsState rolloutsState);
 }

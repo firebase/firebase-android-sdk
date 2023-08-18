@@ -57,7 +57,8 @@ public abstract class RolloutAssignment {
       new JsonDataEncoderBuilder().configureWith(AutoRolloutAssignmentEncoder.CONFIG).build();
 
   /** Create a {@code RolloutAssignment} from its JSON-encoded representation. */
-  public static RolloutAssignment create(String jsonString) throws JSONException {
+  @NonNull
+  public static RolloutAssignment create(@NonNull String jsonString) throws JSONException {
     final JSONObject json = new JSONObject(jsonString);
     return RolloutAssignment.builder()
         .setRolloutId(json.getString(ROLLOUT_ID))
@@ -68,22 +69,23 @@ public abstract class RolloutAssignment {
         .build();
   }
 
+  @NonNull
   public static Builder builder() {
     return new AutoValue_RolloutAssignment.Builder();
   }
 
   @AutoValue.Builder
   public abstract static class Builder {
-    public abstract Builder setRolloutId(String rolloutId);
+    @NonNull public abstract Builder setRolloutId(@NonNull String rolloutId);
 
-    public abstract Builder setVariantId(String variantId);
+    @NonNull public abstract Builder setVariantId(@NonNull String variantId);
 
-    public abstract Builder setParameterKey(String parameterKey);
+    @NonNull public abstract Builder setParameterKey(@NonNull String parameterKey);
 
-    public abstract Builder setParameterValue(String parameterValue);
+    @NonNull public abstract Builder setParameterValue(@NonNull String parameterValue);
 
-    public abstract Builder setTemplateVersion(long templateVersion);
+    @NonNull public abstract Builder setTemplateVersion(long templateVersion);
 
-    public abstract RolloutAssignment build();
+    @NonNull public abstract RolloutAssignment build();
   }
 }
