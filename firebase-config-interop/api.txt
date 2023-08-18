@@ -2,7 +2,7 @@
 package com.google.firebase.remoteconfig.interop {
 
   public interface FirebaseRemoteConfigInterop {
-    method public void registerRolloutsStateSubscriber(String, com.google.firebase.remoteconfig.interop.rollouts.RolloutsStateSubscriber);
+    method public void registerRolloutsStateSubscriber(@NonNull String, @NonNull com.google.firebase.remoteconfig.interop.rollouts.RolloutsStateSubscriber);
   }
 
 }
@@ -33,8 +33,8 @@ package com.google.firebase.remoteconfig.interop.rollouts {
 
   @com.google.auto.value.AutoValue public abstract class RolloutsState {
     ctor public RolloutsState();
-    method public static com.google.firebase.remoteconfig.interop.rollouts.RolloutsState create(@NonNull java.util.Set<com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment>);
-    method @NonNull public abstract java.util.Set<com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment> getRolloutAssignments();
+    method public static com.google.firebase.remoteconfig.interop.rollouts.RolloutsState create(@NonNull com.google.common.collect.ImmutableSet<com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment>);
+    method @NonNull public abstract com.google.common.collect.ImmutableSet<com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment> getRolloutAssignments();
   }
 
   public interface RolloutsStateSubscriber {
