@@ -29,7 +29,7 @@ public abstract class RolloutsState {
   @NonNull
   public abstract ImmutableSet<RolloutAssignment> getRolloutAssignments();
 
-  public static RolloutsState create(@NonNull Set<RolloutAssignment> rolloutAssignments) {
+  public static RolloutsState create(@NonNull ImmutableSet<RolloutAssignment> rolloutAssignments) {
     return new AutoValue_RolloutsState(rolloutAssignments);
   }
 }
