@@ -76,16 +76,22 @@ public abstract class RolloutAssignment {
 
   @AutoValue.Builder
   public abstract static class Builder {
-    @NonNull public abstract Builder setRolloutId(@NonNull String rolloutId);
+    @NonNull
+    public abstract Builder setRolloutId(@NonNull String rolloutId);
 
-    @NonNull public abstract Builder setVariantId(@NonNull String variantId);
+    @NonNull
+    public abstract Builder setVariantId(@NonNull String variantId);
 
-    @NonNull public abstract Builder setParameterKey(@NonNull String parameterKey);
+    @NonNull
+    public abstract Builder setParameterKey(@NonNull String parameterKey);
 
-    @NonNull public abstract Builder setParameterValue(@NonNull String parameterValue);
+    @NonNull
+    public abstract Builder setParameterValue(@NonNull String parameterValue);
 
-    @NonNull public abstract Builder setTemplateVersion(long templateVersion);
+    @NonNull
+    public abstract Builder setTemplateVersion(long templateVersion);
 
-    @NonNull public abstract RolloutAssignment build();
+    @NonNull
+    public abstract RolloutAssignment build();
   }
 }

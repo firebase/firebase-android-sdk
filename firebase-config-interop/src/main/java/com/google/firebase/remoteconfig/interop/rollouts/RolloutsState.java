@@ -20,8 +20,6 @@ import androidx.annotation.NonNull;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableSet;
 
-import java.util.Set;
-
 /** Model representing the state of all rollouts assigned to an app instance at a point in time. */
 @AutoValue
 public abstract class RolloutsState {
