@@ -77,7 +77,11 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
     lines: List<String>,
     newLines: List<String>
   ) {
-    if (newLines == lines) throw missingProjectLevelDependenciesError(needsChanging)
+    if (newLines == lines)
+      throw RuntimeException(
+        "Expected the following project level dependencies, but found none: " +
+          "${needsChanging.joinToString("\n") { it.mavenName }}"
+      )
 
     val diff = lines.diff(newLines)
     val changedLines = diff.mapNotNull { it.first ?: it.second }
@@ -105,15 +109,12 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
 
   private fun findProjectLevelDependenciesToChange(): List<FirebaseLibraryExtension> {
     val firebaseLibrary = project.firebaseLibrary
-    val sisterProjects = firebaseLibrary.getLibrariesToRelease()
-    val dependencies = projectLevelDependenciesForLibrary(firebaseLibrary)
-    val needsChanging = dependencies - sisterProjects
 
-    return needsChanging
+    return firebaseLibrary.projectLevelDependencies - firebaseLibrary.librariesToRelease
   }
 
-  private fun projectLevelDependenciesForLibrary(library: FirebaseLibraryExtension) =
-    library.resolveProjectLevelDependencies().filterNot { it.path in DEPENDENCIES_TO_IGNORE }
+  private val FirebaseLibraryExtension.projectLevelDependencies: List<FirebaseLibraryExtension>
+    get() = resolveProjectLevelDependencies().filterNot { it.path in DEPENDENCIES_TO_IGNORE }
 
   private fun updateDependencyLines(
     lines: List<String>,
@@ -126,15 +127,6 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
 
       latestVersion?.let { "\"${projectToChange.mavenName}:$latestVersion\"" }
     }
-
-  // This should never occur, but if it does- it's probably a regex error. Better safe than sorry?
-  private fun missingProjectLevelDependenciesError(
-    expectedLibraries: List<FirebaseLibraryExtension>
-  ) =
-    RuntimeException(
-      "Expected the following project level dependencies, but found none: " +
-        "${expectedLibraries.joinToString("\n") { it.mavenName }}"
-    )
 
   companion object {
     /** TODO() */
