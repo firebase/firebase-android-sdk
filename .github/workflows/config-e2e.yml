@@ -9,7 +9,7 @@ concurrency:
   group: ${{ github.workflow }}
 
 env:
-  REMOTE_CONFIG_E2E_GOOGLE_SERVICES; ${{ secrets.REMOTE_CONFIG_E2E_GOOGLE_SERVICES }}
+  REMOTE_CONFIG_E2E_GOOGLE_SERVICES: ${{ secrets.REMOTE_CONFIG_E2E_GOOGLE_SERVICES }}
 
 jobs:
   test:
