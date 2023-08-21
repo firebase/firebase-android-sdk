@@ -665,7 +665,7 @@ public abstract class CrashlyticsReport {
       public abstract Log getLog();
 
       @Nullable
-      public abstract ImmutableList<RolloutAssignment> getRolloutsState();
+      public abstract List<RolloutAssignment> getRolloutsState();
 
       @NonNull
       public abstract Builder toBuilder();
@@ -1194,8 +1194,7 @@ public abstract class CrashlyticsReport {
         public abstract Builder setLog(@NonNull Log value);
 
         @Nullable
-        public abstract Builder setRolloutsState(
-            @Nullable ImmutableList<RolloutAssignment> rolloutsState);
+        public abstract Builder setRolloutsState(@Nullable List<RolloutAssignment> rolloutsState);
 
         @NonNull
         public abstract Event build();
