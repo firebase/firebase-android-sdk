@@ -16,7 +16,6 @@ package com.google.firebase.crashlytics.internal.metadata;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -139,7 +138,6 @@ class MetaDataStore {
     return Collections.emptyMap();
   }
 
-  @VisibleForTesting
   public List<RolloutAssignment> readRolloutsState(String sessionId) {
     final File f = getRolloutsStateForSession(sessionId);
     if (!f.exists() || f.length() == 0) {
@@ -163,7 +161,6 @@ class MetaDataStore {
     return Collections.emptyList();
   }
 
-  @VisibleForTesting
   public void writeRolloutState(String sessionId, List<RolloutAssignment> rolloutsState) {
     final File f = getRolloutsStateForSession(sessionId);
 
@@ -231,8 +228,9 @@ class MetaDataStore {
   }
 
   private static List<RolloutAssignment> jsonToRolloutsState(String json) throws JSONException {
-    final List<RolloutAssignment> rolloutsState = new ArrayList<RolloutAssignment>();
-    final JSONArray dataArray = new JSONArray(json);
+    JSONObject object = new JSONObject(json);
+    JSONArray dataArray = object.getJSONArray(RolloutAssignmentList.ROLLOUTS_STATE);
+    List<RolloutAssignment> rolloutsState = new ArrayList<RolloutAssignment>();
 
     for (int i = 0; i < dataArray.length(); i++) {
       String dataObjectString = dataArray.getString(i);
@@ -248,14 +246,17 @@ class MetaDataStore {
   }
 
   private static String rolloutsStateToJson(List<RolloutAssignment> rolloutsState) {
-
     List<String> rolloutsStateJson = new ArrayList<>();
     for (int i = 0; i < rolloutsState.size(); i++) {
       String rolloutAssignmentJson =
           RolloutAssignment.ROLLOUT_ASSIGNMENT_JSON_ENCODER.encode(rolloutsState.get(i));
       rolloutsStateJson.add(rolloutAssignmentJson);
     }
-    return new JSONArray(rolloutsStateJson).toString();
+    HashMap<String, JSONArray> jsonObject = new HashMap<>();
+    JSONArray rolloutsStateJsonArray = new JSONArray(rolloutsStateJson);
+    jsonObject.put(RolloutAssignmentList.ROLLOUTS_STATE, rolloutsStateJsonArray);
+
+    return new JSONObject(jsonObject).toString();
   }
 
   private static String valueOrNull(JSONObject json, String key) {

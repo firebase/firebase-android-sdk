@@ -157,11 +157,13 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         dataCapture.captureAnrEventData(convertApplicationExitInfo(relevantApplicationExitInfo));
 
     Logger.getLogger().d("Persisting anr for session " + sessionId);
-    reportPersistence.persistEvent(
+
+    CrashlyticsReport.Session.Event eventWithLogsAndCustomKeys =
         addLogsAndCustomKeysToEvent(
-            capturedEvent, logFileManagerForSession, userMetadataForSession),
-        sessionId,
-        true);
+            capturedEvent, logFileManagerForSession, userMetadataForSession);
+    CrashlyticsReport.Session.Event eventWithRolloutsState =
+        addRolloutsStateToEvent(eventWithLogsAndCustomKeys, userMetadataForSession);
+    reportPersistence.persistEvent(eventWithRolloutsState, sessionId, true);
   }
 
   public void finalizeSessionWithNativeEvent(
@@ -251,6 +253,15 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     return reportToSend;
   }
 
+  private CrashlyticsReport.Session.Event addMetaDataToEvent(
+      CrashlyticsReport.Session.Event capturedEvent) {
+    CrashlyticsReport.Session.Event eventWithLogsAndCustomKeys =
+        addLogsAndCustomKeysToEvent(capturedEvent, logFileManager, reportMetadata);
+    CrashlyticsReport.Session.Event eventWithRollouts =
+        addRolloutsStateToEvent(eventWithLogsAndCustomKeys, reportMetadata);
+    return eventWithRollouts;
+  }
+
   private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
       CrashlyticsReport.Session.Event capturedEvent) {
     return addLogsAndCustomKeysToEvent(capturedEvent, logFileManager, reportMetadata);
@@ -289,6 +300,20 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     return eventBuilder.build();
   }
 
+  private CrashlyticsReport.Session.Event addRolloutsStateToEvent(
+      CrashlyticsReport.Session.Event capturedEvent, UserMetadata reportMetadata) {
+    List<CrashlyticsReport.Session.Event.RolloutAssignment> reportRolloutsState =
+        reportMetadata.getRolloutsState();
+
+    if (reportRolloutsState.isEmpty()) {
+      return capturedEvent;
+    }
+
+    CrashlyticsReport.Session.Event.Builder eventBuilder = capturedEvent.toBuilder();
+    eventBuilder.setRolloutsState(ImmutableList.from(reportRolloutsState));
+    return eventBuilder.build();
+  }
+
   private void persistEvent(
       @NonNull Throwable event,
       @NonNull Thread thread,
@@ -309,8 +334,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
             MAX_CHAINED_EXCEPTION_DEPTH,
             includeAllThreads);
 
-    reportPersistence.persistEvent(
-        addLogsAndCustomKeysToEvent(capturedEvent), sessionId, isHighPriority);
+    reportPersistence.persistEvent(addMetaDataToEvent(capturedEvent), sessionId, isHighPriority);
   }
 
   private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {
