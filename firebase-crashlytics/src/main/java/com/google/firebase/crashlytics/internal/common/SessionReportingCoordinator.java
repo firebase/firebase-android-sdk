@@ -301,18 +301,15 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
   private CrashlyticsReport.Session.Event addRolloutsStateToEvent(
       CrashlyticsReport.Session.Event capturedEvent, UserMetadata reportMetadata) {
-    List<CrashlyticsReport.Session.Event.RolloutAssignment> reportRolloutAssignments =
+    List<CrashlyticsReport.Session.Event.RolloutAssignment> reportRolloutsState =
         reportMetadata.getRolloutsState();
 
-    if (reportRolloutAssignments.isEmpty()) {
+    if (reportRolloutsState.isEmpty()) {
       return capturedEvent;
     }
 
     CrashlyticsReport.Session.Event.Builder eventBuilder = capturedEvent.toBuilder();
-    eventBuilder.setRollouts(
-        CrashlyticsReport.Session.Event.RolloutsState.builder()
-            .setRolloutAssignments(reportRolloutAssignments)
-            .build());
+    eventBuilder.setRolloutsState(ImmutableList.from(reportRolloutsState));
     return eventBuilder.build();
   }
 
