@@ -445,6 +445,10 @@ public class CrashlyticsReportJsonTransform {
         case "log":
           builder.setLog(parseEventLog(jsonReader));
           break;
+        case "rolloutsState":
+          builder.setRolloutsState(
+              parseArray(jsonReader, CrashlyticsReportJsonTransform::parseEventRolloutsState));
+          break;
         default:
           jsonReader.skipValue();
           break;
@@ -765,6 +769,61 @@ public class CrashlyticsReportJsonTransform {
         builder.setContent(jsonReader.nextString());
       } else {
         jsonReader.skipValue();
+      }
+    }
+    jsonReader.endObject();
+    return builder.build();
+  }
+
+  @NonNull
+  private static Event.RolloutAssignment parseEventRolloutsState(@NonNull JsonReader jsonReader)
+      throws IOException {
+    Event.RolloutAssignment.Builder builder = Event.RolloutAssignment.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "rolloutVariant":
+          builder.setRolloutVariant(parseRolloutAssignmentRolloutVariant(jsonReader));
+          break;
+        case "parameterKey":
+          builder.setParameterKey(jsonReader.nextString());
+          break;
+        case "parameterValue":
+          builder.setParameterValue(jsonReader.nextString());
+          break;
+        case "templateVersion":
+          builder.setTemplateVersion(jsonReader.nextLong());
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
+      }
+    }
+    jsonReader.endObject();
+    return builder.build();
+  }
+
+  @NonNull
+  private static Event.RolloutAssignment.RolloutVariant parseRolloutAssignmentRolloutVariant(
+      @NonNull JsonReader jsonReader) throws IOException {
+    Event.RolloutAssignment.RolloutVariant.Builder builder =
+        Event.RolloutAssignment.RolloutVariant.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "rolloutId":
+          builder.setRolloutId(jsonReader.nextString());
+          break;
+        case "variantId":
+          builder.setVariantId(jsonReader.nextString());
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
       }
     }
     jsonReader.endObject();

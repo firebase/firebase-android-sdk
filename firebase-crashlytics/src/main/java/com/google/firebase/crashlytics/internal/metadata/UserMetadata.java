@@ -18,6 +18,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsBackgroundWorker;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +76,7 @@ public class UserMetadata {
     metadata.customKeys.map.getReference().setKeys(store.readKeyData(sessionId, false));
     metadata.internalKeys.map.getReference().setKeys(store.readKeyData(sessionId, true));
     metadata.userId.set(store.readUserId(sessionId), false);
-
+    metadata.rolloutsState.updateRolloutAssignmentList(store.readRolloutsState(sessionId));
     return metadata;
   }
 
@@ -168,6 +169,29 @@ public class UserMetadata {
     return internalKeys.setKey(key, value);
   }
 
+  public List<CrashlyticsReport.Session.Event.RolloutAssignment> getRolloutsState() {
+    return rolloutsState.getReportRolloutsState();
+  }
+
+  /**
+   * Update RolloutsState in memory and persistence. Return True if update successfully, false
+   * otherwise
+   */
+  public boolean updateRolloutsState(List<RolloutAssignment> rolloutAssignments) {
+    synchronized (rolloutsState) {
+      if (!rolloutsState.updateRolloutAssignmentList(rolloutAssignments)) {
+        return false;
+      }
+      List<RolloutAssignment> updatedRolloutAssignments = rolloutsState.getRolloutAssignmentList();
+      backgroundWorker.submit(
+          () -> {
+            metaDataStore.writeRolloutState(sessionIdentifier, updatedRolloutAssignments);
+            return null;
+          });
+      return true;
+    }
+  }
+
   /**
    * Write the user-specific metadata to disk, if it has changed since the last time this method was
    * called. This method should be called on a worker thread, since the write operation (if
@@ -185,22 +209,6 @@ public class UserMetadata {
     }
     if (needsUpdate) {
       metaDataStore.writeUserData(sessionIdentifier, userIdString);
-    }
-  }
-
-  /** Update RolloutsState in memory and persistence */
-  public boolean updateRolloutsState(List<RolloutAssignment> rolloutAssignments) {
-    synchronized (rolloutsState) {
-      if (rolloutsState.updateMapList(rolloutAssignments)) {
-        List<RolloutAssignment> updatedRolloutAssignments = rolloutsState.getKeysMapList();
-        backgroundWorker.submit(
-            () -> {
-              metaDataStore.writeRolloutState(sessionIdentifier, updatedRolloutAssignments);
-              return null;
-            });
-        return true;
-      }
-      return false;
     }
   }
 

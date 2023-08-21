@@ -200,7 +200,7 @@ public class CrashlyticsReportTest {
 
     List<Event> eventList = new ArrayList<Event>();
     eventList.add(makeEventWithRolloutsState());
-    final CrashlyticsReport withEventsReport = testReport.withEvents(ImmutableList.from(eventList));
+    final CrashlyticsReport withEventsReport = testReport.withEvents(eventList);
 
     assertNotEquals(testReport, withEventsReport);
     assertNotNull(withEventsReport.getSession().getEvents());
@@ -344,9 +344,8 @@ public class CrashlyticsReportTest {
             .setTemplateVersion(4)
             .build());
 
-    final ImmutableList<Event.RolloutAssignment> rolloutsState =
-        ImmutableList.from(rolloutAssignmentList);
-    final Event eventWithRolloutsState = event.toBuilder().setRolloutsState(rolloutsState).build();
+    final Event eventWithRolloutsState =
+        event.toBuilder().setRolloutsState(rolloutAssignmentList).build();
     return eventWithRolloutsState;
   }
 

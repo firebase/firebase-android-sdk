@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.metadata;
 
 import static com.google.common.truth.Truth.assertThat;
+
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsBackgroundWorker;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
