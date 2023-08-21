@@ -56,11 +56,17 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     setupStaticAnalysis(project, firebaseLibrary)
     setupApiInformationAnalysis(project)
     getIsPomValidTask(project, firebaseLibrary)
-    getSemverTaskJar(project, firebaseLibrary)
+    setupVersionCheckTasks(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary)
   }
 
-  private fun getSemverTaskJar(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+  private fun setupVersionCheckTasks(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+    project.tasks.register<GmavenVersionChecker>("gmavenVersionCheck") {
+      groupId.value(firebaseLibrary.groupId.get())
+      artifactId.value(firebaseLibrary.artifactId.get())
+      version.value(firebaseLibrary.version)
+      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElseGet { "" })
+    }
     project.mkdir("semver")
     project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {
       dependsOn("jar")
