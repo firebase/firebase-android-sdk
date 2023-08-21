@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.metadata;
 
 import com.google.auto.value.AutoValue;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
@@ -67,6 +68,19 @@ public abstract class RolloutAssignment {
 
     return new AutoValue_RolloutAssignment(
         rolloutId, parameterKey, validatedParameterValue, variantId, templateVersion);
+  }
+
+  public CrashlyticsReport.Session.Event.RolloutAssignment toReportProto() {
+    return CrashlyticsReport.Session.Event.RolloutAssignment.builder()
+        .setRolloutVariant(
+            CrashlyticsReport.Session.Event.RolloutAssignment.RolloutVariant.builder()
+                .setVariantId(getVariantId())
+                .setRolloutId(getRolloutId())
+                .build())
+        .setParameterKey(getParameterKey())
+        .setParameterValue(getParameterValue())
+        .setTemplateVersion(getTemplateVersion())
+        .build();
   }
 
   private static String validate(String parameterValue) {
