@@ -59,37 +59,37 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
   abstract val outputFile: Property<File>
 
   @TaskAction
-  fun build() {
-    val needsChanging = findProjectLevelDependenciesToChange()
+  fun updateBuildFileDependencies() {
+    val dependenciesToChange = findProjectLevelDependenciesToChange()
 
-    if (needsChanging.isEmpty()) throw StopExecutionException("No libraries to change.")
+    if (dependenciesToChange.isEmpty()) throw StopExecutionException("No libraries to change.")
 
-    val lines = buildFile.get().readLines()
-    val newLines = updateDependencyLines(lines, needsChanging)
+    val buildFileContent = buildFile.get().readLines()
+    val updatedContent = replaceProjectLevelDependencies(buildFileContent, dependenciesToChange)
 
-    validateNewLines(needsChanging, lines, newLines)
+    validateDependenciesHaveChanged(dependenciesToChange, buildFileContent, updatedContent)
 
-    outputFile.get().writeText(newLines.joinToString("\n") + "\n")
+    outputFile.get().writeText(updatedContent.joinToString("\n") + "\n")
   }
 
-  private fun validateNewLines(
-    needsChanging: List<FirebaseLibraryExtension>,
-    lines: List<String>,
-    newLines: List<String>
+  private fun validateDependenciesHaveChanged(
+    dependenciesToChange: List<FirebaseLibraryExtension>,
+    oldContent: List<String>,
+    updatedContent: List<String>
   ) {
-    if (newLines == lines)
+    if (oldContent == updatedContent)
       throw RuntimeException(
         "Expected the following project level dependencies, but found none: " +
-          "${needsChanging.joinToString("\n") { it.mavenName }}"
+          "${dependenciesToChange.joinToString("\n") { it.mavenName }}"
       )
 
-    val diff = lines.diff(newLines)
+    val diff = oldContent.diff(updatedContent)
     val changedLines = diff.mapNotNull { it.first ?: it.second }
 
     val (librariesCorrectlyChanged, linesChangedIncorrectly) =
-      needsChanging.partition { lib -> changedLines.any { it.contains(lib.path) } }
+      dependenciesToChange.partition { lib -> changedLines.any { it.contains(lib.path) } }
 
-    val librariesNotChanged = needsChanging - librariesCorrectlyChanged
+    val librariesNotChanged = dependenciesToChange - librariesCorrectlyChanged
 
     if (linesChangedIncorrectly.isNotEmpty())
       throw RuntimeException(
@@ -101,7 +101,7 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
         "The following libraries were not found, but should have been:\n ${librariesNotChanged.joinToString("\n") { it.mavenName }}"
       )
 
-    if (librariesCorrectlyChanged.size > needsChanging.size)
+    if (librariesCorrectlyChanged.size > dependenciesToChange.size)
       throw RuntimeException(
         "Too many libraries were caught by our change, possible REGEX false positive:\n ${changedLines.joinToString("\n")}"
       )
@@ -116,11 +116,11 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
   private val FirebaseLibraryExtension.projectLevelDependencies: List<FirebaseLibraryExtension>
     get() = resolveProjectLevelDependencies().filterNot { it.path in DEPENDENCIES_TO_IGNORE }
 
-  private fun updateDependencyLines(
-    lines: List<String>,
+  private fun replaceProjectLevelDependencies(
+    buildFileContent: List<String>,
     libraries: List<FirebaseLibraryExtension>
   ) =
-    lines.replaceMatches(DEPENDENCY_REGEX) {
+    buildFileContent.replaceMatches(DEPENDENCY_REGEX) {
       val projectName = it.firstCapturedValue
       val projectToChange = libraries.find { it.path == projectName }
       val latestVersion = projectToChange?.latestVersion
@@ -129,9 +129,30 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
     }
 
   companion object {
-    /** TODO() */
+    /**
+     * Regex used in finding project level dependencies and their respective project.
+     *
+     * The regex can be broken down as such:
+     *
+     * `(N whitespace)(N letters)(a space or bracket)project((a single or double quote): (anything
+     * besides whitespace)(a single or double quote))`
+     *
+     * For example, given the following input:
+     * ```
+     * dependencies {
+     *   implementation 'com.google.firebase:firebase-annotations:16.2.0'
+     *   implementation 'com.google.firebase:firebase-common:20.3.1'
+     *   implementation project(':firebase-installations')
+     *   implementation 'com.google.firebase:firebase-database-collection:18.0.1'
+     * ```
+     *
+     * The following group would be captured:
+     * ```
+     * :firebase-installations
+     * ```
+     */
     val DEPENDENCY_REGEX =
-      Regex("(?<=\\s{1,20}\\w{1,20}|(?:\\s|\\())project\\((?:'|\")(:\\S+)(?:'|\")\\)")
+      Regex("(?<=\\s{1,20}\\w{1,20}(?:\\s|\\())project\\((?:'|\")(:\\S+)(?:'|\")\\)")
 
     val DEPENDENCIES_TO_IGNORE = listOf(":protolite-well-known-types")
   }
