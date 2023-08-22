@@ -32,6 +32,7 @@ val PROJECT_LEVEL_REQUIRED =
     "firebase-common",
     "firebase-config",
     "firebase-crashlytics",
+    "firebase-components",
     "firebase-database",
     "firebase-dynamic-links",
     "firebase-firestore",
@@ -283,6 +284,8 @@ abstract class PackageTransform : DefaultTask() {
       packageNamePath = "com/google/firebase/dynamiclinks"
     } else if (artifactId.get().equals("firebase-ml-modeldownloader")) {
       packageNamePath = "com/google/firebase/ml/modeldownloader"
+    } else if (artifactId.get().equals("firebase-inappmessaging-display")) {
+      packageNamePath = "com/google/firebase/inappmessaging/display"
     } else if (artifactId.get().contains("appcheck")) {
       packageNamePath = "com/google/firebase/appcheck"
     }
