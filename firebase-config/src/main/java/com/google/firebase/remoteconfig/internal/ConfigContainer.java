@@ -254,7 +254,6 @@ public class ConfigContainer {
     private JSONArray builderAbtExperiments;
     private JSONObject builderPersonalizationMetadata;
     private long builderTemplateVersionNumber;
-
     private JSONArray builderRolloutMetadata;
 
     private Builder() {
