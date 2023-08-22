@@ -18,6 +18,7 @@ package com.google.firebase.testing.config
 
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
@@ -53,6 +54,7 @@ class FirebaseConfigTest {
 
     // // Assert that some session was generated and sent to the subscriber.
     // assertThat(fakeSessionSubscriber.sessionDetails).isNotNull()
+    assertThat(true).isEqualTo(false)
   }
 
   companion object {
