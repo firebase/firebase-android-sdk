@@ -327,7 +327,14 @@ public class ConfigContainer {
     }
 
     public Builder withRolloutMetadata(JSONArray rolloutMetadata) {
-      this.builderRolloutMetadata = rolloutMetadata;
+      try {
+        this.builderRolloutMetadata = new JSONArray(rolloutMetadata.toString());
+      } catch (JSONException e) {
+        // We serialize and deserialize the JSONArray to guarantee that it cannot be mutated after
+        // being set in the builder.
+        // A JSONException should never occur because the JSON that is being deserialized is
+        // guaranteed to be valid.
+      }
       return this;
     }
 

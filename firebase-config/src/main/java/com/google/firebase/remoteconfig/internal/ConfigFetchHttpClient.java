@@ -454,7 +454,7 @@ public class ConfigFetchHttpClient {
         // Do nothing if rolloutMetadata does not exist.
       }
       if (rolloutMetadata != null) {
-        containerBuilder.withRolloutMetadata(rolloutMetadata);
+        containerBuilder = containerBuilder.withRolloutMetadata(rolloutMetadata);
       }
 
       return containerBuilder.build();
