@@ -427,7 +427,7 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
               new UnavailableAnalyticsEventLogger(),
               new FileStore(context),
               new SameThreadExecutorService(),
-              mock(CrashlyticsAppQualitySessionsSubscriber.class));
+              mock(CrashlyticsAppQualitySessionsStore.class));
       return crashlyticsCore;
     }
   }

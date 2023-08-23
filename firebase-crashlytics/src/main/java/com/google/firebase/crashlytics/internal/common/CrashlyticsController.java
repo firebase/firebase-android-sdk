@@ -92,6 +92,7 @@ class CrashlyticsController {
   private final LogFileManager logFileManager;
   private final CrashlyticsNativeComponent nativeComponent;
   private final AnalyticsEventLogger analyticsEventLogger;
+  private final CrashlyticsAppQualitySessionsStore appQualitySessionsStore;
   private final SessionReportingCoordinator reportingCoordinator;
 
   private CrashlyticsUncaughtExceptionHandler crashHandler;
@@ -125,7 +126,8 @@ class CrashlyticsController {
       LogFileManager logFileManager,
       SessionReportingCoordinator sessionReportingCoordinator,
       CrashlyticsNativeComponent nativeComponent,
-      AnalyticsEventLogger analyticsEventLogger) {
+      AnalyticsEventLogger analyticsEventLogger,
+      CrashlyticsAppQualitySessionsStore appQualitySessionsStore) {
     this.context = context;
     this.backgroundWorker = backgroundWorker;
     this.idManager = idManager;
@@ -137,7 +139,7 @@ class CrashlyticsController {
     this.logFileManager = logFileManager;
     this.nativeComponent = nativeComponent;
     this.analyticsEventLogger = analyticsEventLogger;
-
+    this.appQualitySessionsStore = appQualitySessionsStore;
     this.reportingCoordinator = sessionReportingCoordinator;
   }
 
@@ -176,7 +178,7 @@ class CrashlyticsController {
       @NonNull SettingsProvider settingsProvider,
       @NonNull final Thread thread,
       @NonNull final Throwable ex) {
-    handleUncaughtException(settingsProvider, thread, ex, /*isOnDemand=*/ false);
+    handleUncaughtException(settingsProvider, thread, ex, /* isOnDemand= */ false);
   }
 
   synchronized void handleUncaughtException(
@@ -451,7 +453,7 @@ class CrashlyticsController {
       Logger.getLogger().w("settingsProvider not set");
       return;
     }
-    handleUncaughtException(settingsProvider, thread, ex, /*isOnDemand=*/ true);
+    handleUncaughtException(settingsProvider, thread, ex, /* isOnDemand= */ true);
   }
 
   void setUserId(String identifier) {
@@ -567,6 +569,7 @@ class CrashlyticsController {
         StaticSessionData.create(appData, osData, deviceData));
 
     logFileManager.setCurrentSession(sessionIdentifier);
+    appQualitySessionsStore.setSessionId(sessionIdentifier);
     reportingCoordinator.onBeginSession(sessionIdentifier, startedAtSeconds);
   }
 
@@ -610,6 +613,7 @@ class CrashlyticsController {
     }
 
     reportingCoordinator.finalizeSessions(getCurrentTimestampSeconds(), currentSessionId);
+    appQualitySessionsStore.setSessionId(/* sessionId= */ null);
   }
 
   // endregion

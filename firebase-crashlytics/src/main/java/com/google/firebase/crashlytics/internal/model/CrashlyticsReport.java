@@ -94,6 +94,9 @@ public abstract class CrashlyticsReport {
   @Nullable
   public abstract String getFirebaseInstallationId();
 
+  @Nullable
+  public abstract String getAppQualitySessionId();
+
   @NonNull
   public abstract String getBuildVersion();
 
@@ -185,7 +188,7 @@ public abstract class CrashlyticsReport {
   /** Augment an existing {@link CrashlyticsReport} with the given app quality session id. */
   @NonNull
   public CrashlyticsReport withAppQualitySessionId(@Nullable String appQualitySessionId) {
-    Builder builder = toBuilder();
+    Builder builder = toBuilder().setAppQualitySessionId(appQualitySessionId);
     if (getSession() != null) {
       builder.setSession(getSession().withAppQualitySessionId(appQualitySessionId));
     }
@@ -1191,6 +1194,9 @@ public abstract class CrashlyticsReport {
 
     @NonNull
     public abstract Builder setInstallationUuid(@NonNull String value);
+
+    @NonNull
+    public abstract Builder setAppQualitySessionId(@Nullable String appQualitySessionId);
 
     @NonNull
     public abstract Builder setFirebaseInstallationId(@Nullable String value);

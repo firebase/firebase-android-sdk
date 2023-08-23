@@ -1,0 +1,171 @@
+// Copyright 2023 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package com.google.firebase.crashlytics.internal.common;
+
+import android.os.Looper;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.persistence.FileStore;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.charset.Charset;
+
+/**
+ * Handles persistence of App Quality Sessions session id for Crashlytics, keeps track of the
+ * appQualitySessionId and the Crashlytics sessionId, which are different.
+ *
+ * <p>All public methods are intended to be called from background threads.
+ */
+public class CrashlyticsAppQualitySessionsStore {
+  @SuppressWarnings("CharsetObjectCanBeUsed") // StandardCharsets requires API level 19.
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
+
+  private static final int AQS_SESSION_ID_LENGTH = 32;
+  private static final String AQS_SESSION_ID_FILENAME = "app-quality-session-id";
+
+  private final FileStore fileStore;
+  private final boolean hasNdk;
+
+  @Nullable private String sessionId = null;
+  @Nullable private String appQualitySessionId = null;
+
+  public CrashlyticsAppQualitySessionsStore(FileStore fileStore, boolean hasNdk) {
+    this.fileStore = fileStore;
+    this.hasNdk = hasNdk;
+  }
+
+  /** Gets the App Quality Sessions session id for the given Crashlytics session id. */
+  @Nullable
+  public String getAppQualitySessionId(@NonNull String sessionId) {
+    checkNotOnMainThread();
+    if (sessionId.equals(this.sessionId)) {
+      return appQualitySessionId;
+    }
+
+    File aqsFile = getAqsSessionIdFile(sessionId);
+    if (!aqsFile.exists() || aqsFile.length() == 0) {
+      Logger.getLogger().d("No aqs session id set for session " + sessionId);
+      safeDeleteCorruptAqsFile(aqsFile);
+      return null;
+    }
+
+    return readAAqsSessionIdFile(aqsFile);
+  }
+
+  /** Sets the App Quality Sessions session id. */
+  public void setAppQualitySessionId(@NonNull String appQualitySessionId) {
+    if (sessionId != null) {
+      // Only do this check when the session has been opened because aqs sends an id right away.
+      // This is fine since Sessions initializes before Crashlytics opens a session, so no persist.
+      checkNotOnMainThread();
+    }
+    if (!appQualitySessionId.equals(this.appQualitySessionId)) {
+      this.appQualitySessionId = appQualitySessionId;
+      persistOnAqsSession();
+    }
+  }
+
+  /** Sets the Crashlytics session id, null means the session was closed. */
+  public void setSessionId(String sessionId) {
+    checkNotOnMainThread();
+    if (sessionId == null) {
+      // Don't try to write a aqs id in a closed session.
+      this.sessionId = null;
+    } else {
+      if (!sessionId.equals(this.sessionId)) {
+        this.sessionId = sessionId;
+        persistOnAqsSession();
+      }
+    }
+  }
+
+  /** Persists the current App Quality Sessions session id to disk, meant to be called on event. */
+  public void persistOnEvent() {
+    checkNotOnMainThread();
+    // Don't persist on event for apps with the ndk because they were persisted on aqs session.
+    if (!hasNdk) {
+      persist();
+    }
+  }
+
+  /** Persists the current aqs session id to disk, meant to be called on every aqs session. */
+  private void persistOnAqsSession() {
+    // Only persist on aqs session for apps with the ndk since they cannot persist on native events.
+    // This will avoid disk io when apps come back to foreground when possible.
+    if (hasNdk) {
+      persist();
+    }
+  }
+
+  /** Persists the current session ids to disk, only if they are all non-null. */
+  private void persist() {
+    // Make local immutable copies to avoid needing to synchronize the setters.
+    String sessionId = this.sessionId;
+    String appQualitySessionId = this.appQualitySessionId;
+
+    if (sessionId != null && appQualitySessionId != null) {
+      File file = getAqsSessionIdFile(sessionId);
+      try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
+        fileOutputStream.write(appQualitySessionId.getBytes(UTF_8));
+
+        // Update the local values to match what was persisted to avoid any inconsistencies.
+        this.sessionId = sessionId;
+        this.appQualitySessionId = appQualitySessionId;
+      } catch (IOException ex) {
+        Logger.getLogger().w("Unable to write App Quality Sessions session id.", ex);
+      }
+    }
+  }
+
+  @VisibleForTesting
+  File getAqsSessionIdFile(@NonNull String sessionId) {
+    return fileStore.getSessionFile(sessionId, AQS_SESSION_ID_FILENAME);
+  }
+
+  @VisibleForTesting
+  String readAAqsSessionIdFile(File aqsFile) {
+    try (FileInputStream fileInputStream = new FileInputStream(aqsFile)) {
+      byte[] data = new byte[AQS_SESSION_ID_LENGTH];
+      int read = fileInputStream.read(data);
+      if (read == -1) {
+        throw new IOException("Unexpected end of file.");
+      }
+      String appQualitySessionId = new String(data, 0, read);
+      Logger.getLogger().d("Loaded aqs session id " + appQualitySessionId);
+      return appQualitySessionId;
+    } catch (IOException ex) {
+      Logger.getLogger().w("Unable to read App Quality Sessions session id.", ex);
+      safeDeleteCorruptAqsFile(aqsFile);
+      return null;
+    }
+  }
+
+  private static void safeDeleteCorruptAqsFile(File aqsFile) {
+    if (aqsFile.exists() && aqsFile.delete()) {
+      Logger.getLogger().i("Deleted corrupt aqs file: " + aqsFile.getAbsolutePath());
+    }
+  }
+
+  private static void checkNotOnMainThread() {
+    // TODO(mrober): Remove this after testing and validation.
+    if (Looper.getMainLooper() == Looper.myLooper()) {
+      throw new IllegalStateException("Running on main thread when expected not to!");
+    }
+  }
+}

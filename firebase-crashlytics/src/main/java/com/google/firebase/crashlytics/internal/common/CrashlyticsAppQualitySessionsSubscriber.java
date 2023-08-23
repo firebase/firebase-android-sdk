@@ -27,25 +27,19 @@ import com.google.firebase.sessions.api.SessionSubscriber;
  */
 public class CrashlyticsAppQualitySessionsSubscriber implements SessionSubscriber {
   private final DataCollectionArbiter dataCollectionArbiter;
+  private final CrashlyticsAppQualitySessionsStore appQualitySessionsStore;
 
-  @Nullable private String appQualitySessionId = null;
-
-  public CrashlyticsAppQualitySessionsSubscriber(DataCollectionArbiter dataCollectionArbiter) {
+  public CrashlyticsAppQualitySessionsSubscriber(
+      DataCollectionArbiter dataCollectionArbiter,
+      CrashlyticsAppQualitySessionsStore appQualitySessionsStore) {
     this.dataCollectionArbiter = dataCollectionArbiter;
-  }
-
-  /**
-   * Gets the App Quality Sessions session id (which is different than the Crashlytics session id).
-   */
-  @Nullable
-  public String getAppQualitySessionId() {
-    return appQualitySessionId;
+    this.appQualitySessionsStore = appQualitySessionsStore;
   }
 
   @Override
   public void onSessionChanged(@NonNull SessionDetails sessionDetails) {
     Logger.getLogger().d("App Quality Sessions session changed: " + sessionDetails);
-    appQualitySessionId = sessionDetails.getSessionId();
+    appQualitySessionsStore.setAppQualitySessionId(sessionDetails.getSessionId());
   }
 
   @Override

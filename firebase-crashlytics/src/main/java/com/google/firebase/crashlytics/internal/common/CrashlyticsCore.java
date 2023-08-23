@@ -90,7 +90,7 @@ public class CrashlyticsCore {
 
   private final ExecutorService crashHandlerExecutor;
   private final CrashlyticsBackgroundWorker backgroundWorker;
-  private final CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber;
+  private final CrashlyticsAppQualitySessionsStore appQualitySessionsStore;
 
   private final CrashlyticsNativeComponent nativeComponent;
 
@@ -105,7 +105,7 @@ public class CrashlyticsCore {
       AnalyticsEventLogger analyticsEventLogger,
       FileStore fileStore,
       ExecutorService crashHandlerExecutor,
-      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
+      CrashlyticsAppQualitySessionsStore appQualitySessionsStore) {
     this.app = app;
     this.dataCollectionArbiter = dataCollectionArbiter;
     this.context = app.getApplicationContext();
@@ -116,7 +116,7 @@ public class CrashlyticsCore {
     this.crashHandlerExecutor = crashHandlerExecutor;
     this.fileStore = fileStore;
     this.backgroundWorker = new CrashlyticsBackgroundWorker(crashHandlerExecutor);
-    this.sessionsSubscriber = sessionsSubscriber;
+    this.appQualitySessionsStore = appQualitySessionsStore;
 
     startTime = System.currentTimeMillis();
     onDemandCounter = new OnDemandCounter();
@@ -162,7 +162,7 @@ public class CrashlyticsCore {
               stackTraceTrimmingStrategy,
               settingsProvider,
               onDemandCounter,
-              sessionsSubscriber);
+              appQualitySessionsStore);
 
       controller =
           new CrashlyticsController(
@@ -177,7 +177,8 @@ public class CrashlyticsCore {
               logFileManager,
               sessionReportingCoordinator,
               nativeComponent,
-              analyticsEventLogger);
+              analyticsEventLogger,
+              appQualitySessionsStore);
 
       // If the file is present at this point, then the previous run's initialization
       // did not complete, and we want to perform initialization synchronously this time.
