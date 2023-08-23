@@ -355,10 +355,9 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
    * Register a {@link RolloutsStateSubscriber} {@code subscriber} in for the given Remote Config
    * {@code namespace}.
    *
-   * <p>This implements {@link FirebaseRemoteConfigInterop} for use by other Firebase SDKs.
-   *
-   * @param namespace
-   * @param subscriber
+   * <p>This implements {@link FirebaseRemoteConfigInterop} for use by other Firebase SDKs. See
+   * {@link FirebaseRemoteConfigInterop#registerRolloutsStateSubscriber(String,
+   * RolloutsStateSubscriber)} for more details.
    */
   @Override
   public void registerRolloutsStateSubscriber(
