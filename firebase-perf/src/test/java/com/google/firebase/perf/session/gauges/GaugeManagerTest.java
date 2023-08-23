@@ -711,7 +711,9 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     verify(fakeMemoryGaugeCollector).collectOnce(ArgumentMatchers.any());
   }
 
-  /** @return The minimum background collection frequency of all the Gauges. */
+  /**
+   * @return The minimum background collection frequency of all the Gauges.
+   */
   private long getMinimumBackgroundCollectionFrequency() {
     return DEFAULT_CPU_GAUGE_COLLECTION_FREQUENCY_BG_MS;
   }

@@ -37,9 +37,8 @@ class PostReleasePlugin : Plugin<Project> {
    * is set to the current version of said module. After a release, this `version` should be bumped
    * up to differentiate between code at HEAD, and the latest released version.
    *
-   * @see [VersionBumpTask]
-   *
    * @param project the [Project] to register this task to
+   * @see [VersionBumpTask]
    */
   fun registerVersionBumpTask(project: Project) =
     project.tasks.register<VersionBumpTask>("versionBump")
@@ -52,9 +51,8 @@ class PostReleasePlugin : Plugin<Project> {
    * moved into a seperate section that specifies the version it went out with, and the `Unreleased`
    * section should be wiped clear for new changes to come; for the next release.
    *
-   * @see [MoveUnreleasedChangesTask]
-   *
    * @param project the [Project] to register this task to
+   * @see [MoveUnreleasedChangesTask]
    */
   fun registerMoveUnreleasedChangesTask(project: Project) =
     project.tasks.register<MoveUnreleasedChangesTask>("moveUnreleasedChanges")

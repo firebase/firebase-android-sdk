@@ -29,7 +29,7 @@ import org.gradle.api.tasks.TaskAction
  * @property changelogFile The `CHANGELOG.md` file to use as a [Changelog]
  * @property releaseNotesFile The output file to write the release notes to
  * @throws StopActionException If metadata does not exist for the given project, or there are no
- * changes to release
+ *   changes to release
  * @see make
  */
 abstract class MakeReleaseNotesTask : DefaultTask() {
@@ -156,7 +156,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
      * - Look for numbers that will be surrounded by either brackets or parentheses
      * - These numbers might be preceded by `GitHub `
      * - These numbers might also be followed by parentheses with `//` followed by some text (a
-     * link)
+     *   link)
      * - At the end there might be `{: .external}`
      *
      * For example:

@@ -19,6 +19,8 @@ package com.google.firebase.crashlytics.internal.common;
  * time can be fixed and simulated.
  */
 public interface CurrentTimeProvider {
-  /** @return the current time in milliseconds */
+  /**
+   * @return the current time in milliseconds
+   */
   long getCurrentTimeMillis();
 }

@@ -32,7 +32,9 @@ public class MockInputStreamHelper extends InputStream {
   private boolean opened;
   private boolean throwOnNextRead;
 
-  /** @param responseData The byte array that contains the response data. */
+  /**
+   * @param responseData The byte array that contains the response data.
+   */
   public MockInputStreamHelper(final byte[] responseData) {
     this.inputStream = new ByteArrayInputStream(responseData);
     this.injectExceptions = new TreeSet<>();

@@ -361,7 +361,7 @@ public class FirebaseABTesting {
     analyticsConnector
         .get()
         .clearConditionalUserProperty(
-            experimentId, /*clearEventName=*/ null, /*clearEventParams=*/ null);
+            experimentId, /* clearEventName= */ null, /* clearEventParams= */ null);
   }
 
   @WorkerThread
@@ -382,6 +382,6 @@ public class FirebaseABTesting {
   private List<ConditionalUserProperty> getAllExperimentsInAnalytics() {
     return analyticsConnector
         .get()
-        .getConditionalUserProperties(originService, /*propertyNamePrefix=*/ "");
+        .getConditionalUserProperties(originService, /* propertyNamePrefix= */ "");
   }
 }

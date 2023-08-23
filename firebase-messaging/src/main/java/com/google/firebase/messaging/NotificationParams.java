@@ -401,7 +401,9 @@ public class NotificationParams {
         || key.startsWith(MessageNotificationKeys.NOTIFICATION_PREFIX_OLD);
   }
 
-  /** @throws IllegalArgumentException if {@code color} maps to color "transparent". */
+  /**
+   * @throws IllegalArgumentException if {@code color} maps to color "transparent".
+   */
   private static int getLightColor(String color) {
     int result = Color.parseColor(color);
 

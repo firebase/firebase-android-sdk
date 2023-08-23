@@ -553,7 +553,9 @@ public class DatabaseReference extends Query {
     return this.repo.getDatabase();
   }
 
-  /** @return The full location url for this reference */
+  /**
+   * @return The full location url for this reference
+   */
   @Override
   public String toString() {
     DatabaseReference parent = getParent();
@@ -582,7 +584,9 @@ public class DatabaseReference extends Query {
     }
   }
 
-  /** @return A reference to the root location of this Firebase Database */
+  /**
+   * @return A reference to the root location of this Firebase Database
+   */
   @NonNull
   public DatabaseReference getRoot() {
     return new DatabaseReference(repo, new Path(""));

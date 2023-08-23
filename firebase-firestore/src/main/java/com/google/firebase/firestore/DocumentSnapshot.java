@@ -99,19 +99,25 @@ public class DocumentSnapshot {
     return new DocumentSnapshot(firestore, key, null, fromCache, /* hasPendingWrites= */ false);
   }
 
-  /** @return The id of the document. */
+  /**
+   * @return The id of the document.
+   */
   @NonNull
   public String getId() {
     return key.getDocumentId();
   }
 
-  /** @return The metadata for this document snapshot. */
+  /**
+   * @return The metadata for this document snapshot.
+   */
   @NonNull
   public SnapshotMetadata getMetadata() {
     return metadata;
   }
 
-  /** @return true if the document existed in this snapshot. */
+  /**
+   * @return true if the document existed in this snapshot.
+   */
   public boolean exists() {
     return doc != null;
   }

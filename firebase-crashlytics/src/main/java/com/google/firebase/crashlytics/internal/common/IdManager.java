@@ -200,7 +200,9 @@ public class IdManager implements InstallIdProvider {
     return iid;
   }
 
-  /** @return the package name that identifies this App. */
+  /**
+   * @return the package name that identifies this App.
+   */
   public String getAppIdentifier() {
     return appIdentifier;
   }

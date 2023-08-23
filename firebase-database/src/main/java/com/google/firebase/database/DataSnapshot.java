@@ -228,7 +228,9 @@ public class DataSnapshot {
     return CustomClassMapper.convertToCustomClass(value, t);
   }
 
-  /** @return The number of immediate children in the this snapshot */
+  /**
+   * @return The number of immediate children in the this snapshot
+   */
   public long getChildrenCount() {
     return node.getNode().getChildCount();
   }

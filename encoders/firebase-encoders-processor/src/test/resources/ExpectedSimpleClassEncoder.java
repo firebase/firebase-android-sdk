@@ -18,17 +18,14 @@ import com.google.firebase.encoders.ObjectEncoderContext;
 import com.google.firebase.encoders.config.Configurator;
 import com.google.firebase.encoders.config.EncoderConfig;
 import java.io.IOException;
-import java.lang.Override;
 
-/**
- * @hide */
+/** @hide */
 public final class AutoSimpleClassEncoder implements Configurator {
   public static final int CODEGEN_VERSION = 2;
 
   public static final Configurator CONFIG = new AutoSimpleClassEncoder();
 
-  private AutoSimpleClassEncoder() {
-  }
+  private AutoSimpleClassEncoder() {}
 
   @Override
   public void configure(EncoderConfig<?> cfg) {

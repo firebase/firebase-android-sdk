@@ -183,13 +183,17 @@ public final class FirebaseFirestoreSettings {
       return this;
     }
 
-    /** @return the host of the Cloud Firestore backend. */
+    /**
+     * @return the host of the Cloud Firestore backend.
+     */
     @NonNull
     public String getHost() {
       return host;
     }
 
-    /** @return boolean indicating whether SSL is enabled or not. */
+    /**
+     * @return boolean indicating whether SSL is enabled or not.
+     */
     public boolean isSslEnabled() {
       return sslEnabled;
     }

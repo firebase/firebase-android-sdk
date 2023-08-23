@@ -105,7 +105,9 @@ public class FirebaseError {
     this.errorCode = errorCode;
   }
 
-  /** @return the {@link String} error code. */
+  /**
+   * @return the {@link String} error code.
+   */
   public int getErrorCode() {
     return errorCode;
   }

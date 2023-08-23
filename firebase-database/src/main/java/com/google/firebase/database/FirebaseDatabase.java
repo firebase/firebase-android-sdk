@@ -321,7 +321,9 @@ public class FirebaseDatabase {
     this.emulatorSettings = new EmulatedServiceSettings(host, port);
   }
 
-  /** @return The semver version for this build of the Firebase Database client */
+  /**
+   * @return The semver version for this build of the Firebase Database client
+   */
   @NonNull
   public static String getSdkVersion() {
     return SDK_VERSION;

@@ -82,7 +82,9 @@ public class QuerySnapshot implements Iterable<QueryDocumentSnapshot> {
     return originalQuery;
   }
 
-  /** @return The metadata for this query snapshot. */
+  /**
+   * @return The metadata for this query snapshot.
+   */
   @NonNull
   public SnapshotMetadata getMetadata() {
     return metadata;

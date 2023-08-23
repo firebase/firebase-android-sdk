@@ -51,7 +51,9 @@ public class Blob implements Comparable<Blob> {
     return new Blob(bytes);
   }
 
-  /** @return The bytes of this blob as a new byte[] array. */
+  /**
+   * @return The bytes of this blob as a new byte[] array.
+   */
   @NonNull
   public byte[] toBytes() {
     return bytes.toByteArray();

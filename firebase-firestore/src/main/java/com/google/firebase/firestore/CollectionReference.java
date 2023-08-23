@@ -46,7 +46,9 @@ public class CollectionReference extends Query {
     }
   }
 
-  /** @return The ID of the collection. */
+  /**
+   * @return The ID of the collection.
+   */
   @NonNull
   public String getId() {
     return query.getPath().getLastSegment();

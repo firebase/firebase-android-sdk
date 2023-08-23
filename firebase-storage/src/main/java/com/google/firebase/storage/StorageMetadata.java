@@ -133,7 +133,9 @@ public class StorageMetadata {
     }
   }
 
-  /** @return the content type of the {@link StorageReference}. */
+  /**
+   * @return the content type of the {@link StorageReference}.
+   */
   @Nullable
   public String getContentType() {
     return mContentType.getValue();
@@ -154,20 +156,26 @@ public class StorageMetadata {
     return metadata.get(key);
   }
 
-  /** @return the keys for custom metadata. */
+  /**
+   * @return the keys for custom metadata.
+   */
   @NonNull
   public Set<String> getCustomMetadataKeys() {
     Map<String, String> metadata = mCustomMetadata.getValue();
     return metadata.keySet();
   }
 
-  /** @return the path of the {@link StorageReference} object */
+  /**
+   * @return the path of the {@link StorageReference} object
+   */
   @NonNull
   public String getPath() {
     return mPath != null ? mPath : "";
   }
 
-  /** @return a simple name of the {@link StorageReference} object */
+  /**
+   * @return a simple name of the {@link StorageReference} object
+   */
   @Nullable
   public String getName() {
     String path = getPath();
@@ -181,70 +189,94 @@ public class StorageMetadata {
     return path;
   }
 
-  /** @return the owning Google Cloud Storage bucket for the {@link StorageReference} */
+  /**
+   * @return the owning Google Cloud Storage bucket for the {@link StorageReference}
+   */
   @Nullable
   public String getBucket() {
     return mBucket;
   }
 
-  /** @return a version String indicating what version of the {@link StorageReference} */
+  /**
+   * @return a version String indicating what version of the {@link StorageReference}
+   */
   @Nullable
   public String getGeneration() {
     return mGeneration;
   }
 
-  /** @return a version String indicating the version of this {@link StorageMetadata} */
+  /**
+   * @return a version String indicating the version of this {@link StorageMetadata}
+   */
   @Nullable
   public String getMetadataGeneration() {
     return mMetadataGeneration;
   }
 
-  /** @return the time the {@link StorageReference} was created. */
+  /**
+   * @return the time the {@link StorageReference} was created.
+   */
   public long getCreationTimeMillis() {
     return Util.parseDateTime(mCreationTime);
   }
 
-  /** @return the time the {@link StorageReference} was last updated. */
+  /**
+   * @return the time the {@link StorageReference} was last updated.
+   */
   public long getUpdatedTimeMillis() {
     return Util.parseDateTime(mUpdatedTime);
   }
 
-  /** @return the stored Size in bytes of the {@link StorageReference} object */
+  /**
+   * @return the stored Size in bytes of the {@link StorageReference} object
+   */
   public long getSizeBytes() {
     return mSize;
   }
 
-  /** @return the MD5Hash of the {@link StorageReference} object */
+  /**
+   * @return the MD5Hash of the {@link StorageReference} object
+   */
   @Nullable
   public String getMd5Hash() {
     return mMD5Hash;
   }
 
-  /** @return the Cache Control setting of the {@link StorageReference} */
+  /**
+   * @return the Cache Control setting of the {@link StorageReference}
+   */
   @Nullable
   public String getCacheControl() {
     return mCacheControl.getValue();
   }
 
-  /** @return the content disposition of the {@link StorageReference} */
+  /**
+   * @return the content disposition of the {@link StorageReference}
+   */
   @Nullable
   public String getContentDisposition() {
     return mContentDisposition.getValue();
   }
 
-  /** @return the content encoding for the {@link StorageReference} */
+  /**
+   * @return the content encoding for the {@link StorageReference}
+   */
   @Nullable
   public String getContentEncoding() {
     return mContentEncoding.getValue();
   }
 
-  /** @return the content language for the {@link StorageReference} */
+  /**
+   * @return the content language for the {@link StorageReference}
+   */
   @Nullable
   public String getContentLanguage() {
     return mContentLanguage.getValue();
   }
 
-  /** @return the associated {@link StorageReference} for which this metadata belongs to. */
+  /**
+   * @return the associated {@link StorageReference} for which this metadata belongs to.
+   */
   @Nullable
   public StorageReference getReference() {
     if (mStorageRef == null) {
@@ -387,7 +419,9 @@ public class StorageMetadata {
       return this;
     }
 
-    /** @return the content language for the {@link StorageReference} */
+    /**
+     * @return the content language for the {@link StorageReference}
+     */
     @Nullable
     public String getContentLanguage() {
       return mMetadata.mContentLanguage.getValue();
@@ -404,7 +438,9 @@ public class StorageMetadata {
       return this;
     }
 
-    /** @return the content encoding for the {@link StorageReference} */
+    /**
+     * @return the content encoding for the {@link StorageReference}
+     */
     @Nullable
     public String getContentEncoding() {
       return mMetadata.mContentEncoding.getValue();
@@ -421,7 +457,9 @@ public class StorageMetadata {
       return this;
     }
 
-    /** @return the content disposition for the {@link StorageReference} */
+    /**
+     * @return the content disposition for the {@link StorageReference}
+     */
     @Nullable
     public String getContentDisposition() {
       return mMetadata.mContentDisposition.getValue();
@@ -438,7 +476,9 @@ public class StorageMetadata {
       return this;
     }
 
-    /** @return the Cache Control header for the {@link StorageReference} */
+    /**
+     * @return the Cache Control header for the {@link StorageReference}
+     */
     @Nullable
     public String getCacheControl() {
       return mMetadata.mCacheControl.getValue();
@@ -470,7 +510,9 @@ public class StorageMetadata {
       return this;
     }
 
-    /** @return the Content Type of this associated {@link StorageReference} */
+    /**
+     * @return the Content Type of this associated {@link StorageReference}
+     */
     @Nullable
     public String getContentType() {
       return mMetadata.mContentType.getValue();

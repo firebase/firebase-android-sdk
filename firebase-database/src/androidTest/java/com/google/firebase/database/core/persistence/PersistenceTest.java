@@ -742,7 +742,7 @@ public class PersistenceTest {
     assertFalse(serverCache.isFullyInitialized());
     assertTrue(serverCache.getNode().isEmpty());
 
-    tree.ackUserWrite(1, /*revert=*/ false, /*persist=*/ true, new TestClock());
+    tree.ackUserWrite(1, /* revert= */ false, /* persist= */ true, new TestClock());
 
     serverCache = manager.serverCache(defaultQueryAt("foo"));
     assertTrue(serverCache.isFullyInitialized());
@@ -759,7 +759,7 @@ public class PersistenceTest {
     assertFalse(serverCache.isFullyInitialized());
     assertTrue(serverCache.getNode().isEmpty());
 
-    tree.ackUserWrite(1, /*revert=*/ false, /*persist=*/ true, new TestClock());
+    tree.ackUserWrite(1, /* revert= */ false, /* persist= */ true, new TestClock());
 
     serverCache = manager.serverCache(defaultFooQuery);
     assertTrue(serverCache.isFullyInitialized());
@@ -776,7 +776,7 @@ public class PersistenceTest {
     assertFalse(serverCache.isFullyInitialized());
     assertTrue(serverCache.getNode().isEmpty());
 
-    tree.ackUserWrite(1, /*revert=*/ false, /*persist=*/ true, new TestClock());
+    tree.ackUserWrite(1, /* revert= */ false, /* persist= */ true, new TestClock());
 
     serverCache = manager.serverCache(defaultFooQuery);
     assertFalse(serverCache.isFullyInitialized());
@@ -852,7 +852,7 @@ public class PersistenceTest {
     assertFalse(serverCache.isFullyInitialized());
     assertTrue(serverCache.getNode().isEmpty());
 
-    tree.ackUserWrite(1, /*revert=*/ true, /*persist=*/ true, new TestClock());
+    tree.ackUserWrite(1, /* revert= */ true, /* persist= */ true, new TestClock());
 
     serverCache = manager.serverCache(defaultFooQuery);
     assertFalse(serverCache.isFullyInitialized());
@@ -967,6 +967,6 @@ public class PersistenceTest {
   }
 
   private void applyUserOverwrite(SyncTree tree, Path path, Node node, long id) {
-    tree.applyUserOverwrite(path, node, node, id, /*visible=*/ true, /*persist=*/ true);
+    tree.applyUserOverwrite(path, node, node, id, /* visible= */ true, /* persist= */ true);
   }
 }

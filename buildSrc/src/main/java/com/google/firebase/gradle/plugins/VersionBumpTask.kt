@@ -29,12 +29,11 @@ import org.gradle.kotlin.dsl.provideDelegate
  * Primarily utilized as a post-release clean up task in which we bump the versions of released
  * modules to be one patch higher than their currently released counterparts.
  *
- * @see PostReleasePlugin
- *
  * @property versionFile A [File] that contains the `version` property. Defaults to the
- * `gradle.properties` file at the project's root.
+ *   `gradle.properties` file at the project's root.
  * @property newVersion A [ModuleVersion] of what to set the version to. Defaults to one patch
- * higher than the existing version.
+ *   higher than the existing version.
+ * @see PostReleasePlugin
  */
 abstract class VersionBumpTask : DefaultTask() {
   @get:[Optional InputFile]

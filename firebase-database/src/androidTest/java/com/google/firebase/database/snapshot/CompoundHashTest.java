@@ -185,9 +185,9 @@ public class CompoundHashTest {
     CompoundHash hash10K = CompoundHash.fromNode(node10k);
     CompoundHash hash100K = CompoundHash.fromNode(node100k);
     CompoundHash hash1M = CompoundHash.fromNode(node1M);
-    assertWithinPercent(15, hash10K.getHashes().size(), /*percent=*/ 10);
-    assertWithinPercent(50, hash100K.getHashes().size(), /*percent=*/ 10);
-    assertWithinPercent(150, hash1M.getHashes().size(), /*percent=*/ 10);
+    assertWithinPercent(15, hash10K.getHashes().size(), /* percent= */ 10);
+    assertWithinPercent(50, hash100K.getHashes().size(), /* percent= */ 10);
+    assertWithinPercent(150, hash1M.getHashes().size(), /* percent= */ 10);
   }
 
   @Test

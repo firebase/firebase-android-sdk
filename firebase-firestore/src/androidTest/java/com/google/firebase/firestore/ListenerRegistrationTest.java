@@ -190,7 +190,9 @@ public class ListenerRegistrationTest {
     assertEquals(0, events.availablePermits());
   }
 
-  /** @param activity Must be a TestActivity or a TestFragmentActivity */
+  /**
+   * @param activity Must be a TestActivity or a TestFragmentActivity
+   */
   private void waitForActivityToStop(Activity activity) {
     if (activity instanceof TestActivity) {
       ((TestActivity) activity).waitForStop();
@@ -205,22 +207,22 @@ public class ListenerRegistrationTest {
   @Rule
   public ActivityTestRule<TestActivity> activityTestRule =
       new ActivityTestRule<>(
-          TestActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
+          TestActivity.class, /* initialTouchMode= */ false, /* launchActivity= */ false);
 
   @Test
   public void activityScopedListenerStopsListeningWhenRawActivityStops() {
-    TestActivity activity = activityTestRule.launchActivity(/*intent=*/ null);
+    TestActivity activity = activityTestRule.launchActivity(/* intent= */ null);
     activityScopedListenerStopsListeningWhenActivityStops(activity);
   }
 
   @Rule
   public ActivityTestRule<TestFragmentActivity> activityTestFragmentRule =
       new ActivityTestRule<>(
-          TestFragmentActivity.class, /*initialTouchMode=*/ false, /*launchActivity=*/ false);
+          TestFragmentActivity.class, /* initialTouchMode= */ false, /* launchActivity= */ false);
 
   @Test
   public void activityScopedListenerStopsListeningWhenFragmentActivityStops() {
-    TestFragmentActivity activity = activityTestFragmentRule.launchActivity(/*intent=*/ null);
+    TestFragmentActivity activity = activityTestFragmentRule.launchActivity(/* intent= */ null);
     activityScopedListenerStopsListeningWhenActivityStops(activity);
   }
 }

@@ -744,7 +744,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     RemoteConfigManager testRemoteConfigManager =
         setupTestRemoteConfigManager(
             fakeTaskCompletionSource.getTask(),
-            /* initializeFrc = */ true,
+            /* initializeFrc= */ true,
             createDefaultRcConfigMap());
 
     simulateFirebaseRemoteConfigLastFetchStatus(
@@ -772,7 +772,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     RemoteConfigManager testRemoteConfigManager =
         setupTestRemoteConfigManager(
             fakeTaskCompletionSource.getTask(),
-            /* initializeFrc = */ true,
+            /* initializeFrc= */ true,
             createDefaultRcConfigMap());
 
     simulateFirebaseRemoteConfigLastFetchStatus(
@@ -1013,7 +1013,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     RemoteConfigManager testRemoteConfigManager =
         setupTestRemoteConfigManager(
             fakeTaskCompletionSource.getTask(),
-            /* initializeFrc = */ true,
+            /* initializeFrc= */ true,
             createDefaultRcConfigMap());
 
     simulateFirebaseRemoteConfigLastFetchStatus(

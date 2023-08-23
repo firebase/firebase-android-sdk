@@ -250,7 +250,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
         };
 
     storeUnderTest.writeKeyData(SESSION_ID_1, keys);
-    storeUnderTest.writeKeyData(SESSION_ID_1, internalKeys, /*isInternal=*/ true);
+    storeUnderTest.writeKeyData(SESSION_ID_1, internalKeys, /* isInternal= */ true);
 
     final Map<String, String> readKeys = storeUnderTest.readKeyData(SESSION_ID_1);
     final Map<String, String> readInternalKeys = storeUnderTest.readKeyData(SESSION_ID_1, true);

@@ -870,7 +870,9 @@ public class Query {
     return new Query(repo, path, params.orderBy(ValueIndex.getInstance()), true);
   }
 
-  /** @return A DatabaseReference to this location */
+  /**
+   * @return A DatabaseReference to this location
+   */
   @NonNull
   public DatabaseReference getRef() {
     return new DatabaseReference(repo, getPath());

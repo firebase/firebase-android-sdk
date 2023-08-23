@@ -219,7 +219,7 @@ public class ConfigFetchHandler {
             (cachedFetchConfigsTask) ->
                 fetchIfCacheExpiredAndNotThrottled(
                     cachedFetchConfigsTask,
-                    /*minimumFetchIntervalInSeconds= */ 0,
+                    /* minimumFetchIntervalInSeconds= */ 0,
                     copyOfCustomHttpHeaders));
   }
 
@@ -581,7 +581,7 @@ public class ConfigFetchHandler {
     }
 
     for (Map.Entry<String, Object> userPropertyEntry :
-        connector.getUserProperties(/*includeInternal=*/ false).entrySet()) {
+        connector.getUserProperties(/* includeInternal= */ false).entrySet()) {
       userPropertiesMap.put(userPropertyEntry.getKey(), userPropertyEntry.getValue().toString());
     }
     return userPropertiesMap;
@@ -598,7 +598,7 @@ public class ConfigFetchHandler {
       return null;
     }
 
-    return (Long) connector.getUserProperties(/*includeInternal=*/ true).get(FIRST_OPEN_TIME_KEY);
+    return (Long) connector.getUserProperties(/* includeInternal= */ true).get(FIRST_OPEN_TIME_KEY);
   }
 
   public long getTemplateVersionNumber() {
@@ -649,13 +649,16 @@ public class ConfigFetchHandler {
       return new FetchResponse(
           fetchTime,
           Status.BACKEND_HAS_NO_UPDATES,
-          /*fetchedConfigs=*/ fetchedConfigs,
-          /*lastFetchETag=*/ null);
+          /* fetchedConfigs= */ fetchedConfigs,
+          /* lastFetchETag= */ null);
     }
 
     public static FetchResponse forLocalStorageUsed(Date fetchTime) {
       return new FetchResponse(
-          fetchTime, Status.LOCAL_STORAGE_USED, /*fetchedConfigs=*/ null, /*lastFetchETag=*/ null);
+          fetchTime,
+          Status.LOCAL_STORAGE_USED,
+          /* fetchedConfigs= */ null,
+          /* lastFetchETag= */ null);
     }
 
     Date getFetchTime() {

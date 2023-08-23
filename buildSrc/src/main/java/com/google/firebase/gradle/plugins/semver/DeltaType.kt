@@ -679,6 +679,7 @@ enum class DeltaType {
     val withoutPackage = normalizedPath.substring(normalizedPath.lastIndexOf('/') + 1)
     return withoutPackage.substring(withoutPackage.lastIndexOf('$') + 1)
   }
+
   fun hasNonPublicFieldSignature(fieldNode: FieldNode): Boolean {
     val fieldType = Type.getType(fieldNode.desc)
     return UtilityClass.isObfuscatedSymbol(getUnqualifiedClassname(fieldType.getClassName()))

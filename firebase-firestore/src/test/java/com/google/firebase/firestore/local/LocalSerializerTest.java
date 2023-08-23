@@ -476,7 +476,7 @@ public final class LocalSerializerTest {
             /* collectionGroup= */ null,
             Collections.emptyList(),
             Collections.emptyList(),
-            /* limit=*/ 42,
+            /* limit= */ 42,
             /* startAt= */ null,
             /* endAt= */ null);
     BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_LAST);

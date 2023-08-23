@@ -17,10 +17,10 @@ package com.google.firebase.firestore.testutil;
 // JUnit 4.13 class lifted from https://github.com/junit-team/junit4 with thanks.
 
 /**
- * This interface facilitates the use of expectThrows from Java 8. It allows method references
- * to void methods (that declare checked exceptions) to be passed directly into expectThrows
- * without wrapping. It is not meant to be implemented directly.
+ * This interface facilitates the use of expectThrows from Java 8. It allows method references to
+ * void methods (that declare checked exceptions) to be passed directly into expectThrows without
+ * wrapping. It is not meant to be implemented directly.
  */
 public interface ThrowingRunnable {
-    void run() throws Throwable;
+  void run() throws Throwable;
 }

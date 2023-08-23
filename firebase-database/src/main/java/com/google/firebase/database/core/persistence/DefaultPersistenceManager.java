@@ -165,10 +165,10 @@ public class DefaultPersistenceManager implements PersistenceManager {
             filteredNode.updateImmediateChild(key, serverCacheNode.getImmediateChild(key));
       }
       return new CacheNode(
-          IndexedNode.from(filteredNode, query.getIndex()), complete, /*filtered=*/ true);
+          IndexedNode.from(filteredNode, query.getIndex()), complete, /* filtered= */ true);
     } else {
       return new CacheNode(
-          IndexedNode.from(serverCacheNode, query.getIndex()), complete, /*filtered=*/ false);
+          IndexedNode.from(serverCacheNode, query.getIndex()), complete, /* filtered= */ false);
     }
   }
 

@@ -56,8 +56,8 @@ public class LoadBundleTaskTest {
   public ActivityTestRule<ListenerRegistrationTest.TestActivity> activityTestRule =
       new ActivityTestRule<>(
           ListenerRegistrationTest.TestActivity.class,
-          /*initialTouchMode=*/ false,
-          /*launchActivity=*/ false);
+          /* initialTouchMode= */ false,
+          /* launchActivity= */ false);
 
   Executor testExecutor =
       Executors.newSingleThreadExecutor(
@@ -101,7 +101,7 @@ public class LoadBundleTaskTest {
     task.addOnSuccessListener(progress -> sources.get(0).setResult(0));
     task.addOnSuccessListener(testExecutor, progress -> sources.get(1).setResult(1));
     ListenerRegistrationTest.TestActivity activity =
-        activityTestRule.launchActivity(/*intent=*/ null);
+        activityTestRule.launchActivity(/* intent= */ null);
     task.addOnSuccessListener(activity, progress -> sources.get(2).setResult(2));
 
     task.setResult(SUCCESS_RESULT);
@@ -117,7 +117,7 @@ public class LoadBundleTaskTest {
     task.addOnFailureListener(progress -> sources.get(0).setResult(0));
     task.addOnFailureListener(testExecutor, progress -> sources.get(1).setResult(1));
     ListenerRegistrationTest.TestActivity activity =
-        activityTestRule.launchActivity(/*intent=*/ null);
+        activityTestRule.launchActivity(/* intent= */ null);
     task.addOnFailureListener(activity, progress -> sources.get(2).setResult(2));
 
     task.setException(TEST_EXCEPTION);
@@ -133,7 +133,7 @@ public class LoadBundleTaskTest {
     task.addOnCompleteListener(progress -> sources.get(0).setResult(0));
     task.addOnCompleteListener(testExecutor, progress -> sources.get(1).setResult(1));
     ListenerRegistrationTest.TestActivity activity =
-        activityTestRule.launchActivity(/*intent=*/ null);
+        activityTestRule.launchActivity(/* intent= */ null);
     task.addOnCompleteListener(activity, progress -> sources.get(2).setResult(2));
 
     task.setResult(SUCCESS_RESULT);
@@ -149,7 +149,7 @@ public class LoadBundleTaskTest {
     task.addOnProgressListener(progress -> sources.get(0).setResult(0));
     task.addOnProgressListener(testExecutor, progress -> sources.get(1).setResult(1));
     ListenerRegistrationTest.TestActivity activity =
-        activityTestRule.launchActivity(/*intent=*/ null);
+        activityTestRule.launchActivity(/* intent= */ null);
     task.addOnProgressListener(activity, progress -> sources.get(2).setResult(2));
 
     task.updateProgress(SUCCESS_RESULT);

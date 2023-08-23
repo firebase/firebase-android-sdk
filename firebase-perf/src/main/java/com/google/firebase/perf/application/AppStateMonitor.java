@@ -257,7 +257,9 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     return isColdStart;
   }
 
-  /** @return current app state. */
+  /**
+   * @return current app state.
+   */
   public ApplicationProcessState getAppState() {
     return currentAppState;
   }

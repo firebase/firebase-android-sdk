@@ -265,7 +265,9 @@ public final class CpuGaugeCollectorTest {
     assertThat(CpuGaugeCollector.isInvalidCollectionFrequency(1)).isFalse();
   }
 
-  /** @return The file path of this fake file which can be used to read the file. */
+  /**
+   * @return The file path of this fake file which can be used to read the file.
+   */
   private String createFakeFileWithContents(String fileContent) throws IOException {
     // Due to file permission issues on forge, it's easiest to just write this file to the emulated
     // robolectric external storage.
@@ -281,7 +283,9 @@ public final class CpuGaugeCollectorTest {
     return file.getAbsolutePath();
   }
 
-  /** @return The file path of this fake file which can be used to read the file. */
+  /**
+   * @return The file path of this fake file which can be used to read the file.
+   */
   private String createFakeFileToEmulateProcPidStat(
       String utime, String cutime, String stime, String cstime) throws IOException {
     return createFakeFileWithContents(procFileContents(utime, cutime, stime, cstime));

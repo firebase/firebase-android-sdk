@@ -71,7 +71,6 @@ inline fun <reified T> MutableData.getValue(): T? {
 
 /**
  * Starts listening to this query and emits its values via a [Flow].
- *
  * - When the returned flow starts being collected, a [ValueEventListener] will be attached.
  * - When the flow completes, the listener will be removed.
  */
@@ -95,7 +94,6 @@ val Query.snapshots
 
 /**
  * Starts listening to this query's child events and emits its values via a [Flow].
- *
  * - When the returned flow starts being collected, a [ChildEventListener] will be attached.
  * - When the flow completes, the listener will be removed.
  */
@@ -131,7 +129,6 @@ val Query.childEvents
 
 /**
  * Starts listening to this query and emits its values converted to a POJO via a [Flow].
- *
  * - When the returned flow starts being collected, a [ValueEventListener] will be attached.
  * - When the flow completes, the listener will be removed.
  */

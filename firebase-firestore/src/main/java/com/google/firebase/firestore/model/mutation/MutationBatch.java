@@ -220,7 +220,9 @@ public final class MutationBatch {
     return localWriteTime;
   }
 
-  /** @return The user-provided mutations in this mutation batch. */
+  /**
+   * @return The user-provided mutations in this mutation batch.
+   */
   public List<Mutation> getMutations() {
     return mutations;
   }

@@ -133,7 +133,7 @@ public class AsyncQueue {
       if (scheduledFuture != null) {
         // NOTE: We don't rely on this cancel() succeeding since handleDelayElapsed() will become
         // a no-op anyway (since markDone() sets scheduledFuture to null).
-        scheduledFuture.cancel(/*mayInterruptRunning=*/ false);
+        scheduledFuture.cancel(/* mayInterruptRunning= */ false);
         markDone();
       }
     }

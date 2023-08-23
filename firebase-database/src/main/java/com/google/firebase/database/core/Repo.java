@@ -264,8 +264,8 @@ public class Repo implements PersistentConnection.Delegate {
             write.getOverwrite(),
             resolved,
             write.getWriteId(),
-            /*visible=*/ true,
-            /*persist=*/ false);
+            /* visible= */ true,
+            /* persist= */ false);
       } else {
         if (operationLogger.logsDebug()) {
           operationLogger.debug("Restoring merge with id " + write.getWriteId());
@@ -275,7 +275,7 @@ public class Repo implements PersistentConnection.Delegate {
             ServerValues.resolveDeferredValueMerge(
                 write.getMerge(), serverSyncTree, write.getPath(), serverValues);
         serverSyncTree.applyUserMerge(
-            write.getPath(), write.getMerge(), resolved, write.getWriteId(), /*persist=*/ false);
+            write.getPath(), write.getMerge(), resolved, write.getWriteId(), /* persist= */ false);
       }
     }
   }
@@ -444,7 +444,7 @@ public class Repo implements PersistentConnection.Delegate {
     } else {
       boolean success = error == null;
       List<? extends Event> clearEvents =
-          serverSyncTree.ackUserWrite(writeId, !success, /*persist=*/ true, serverClock);
+          serverSyncTree.ackUserWrite(writeId, !success, /* persist= */ true, serverClock);
       if (clearEvents.size() > 0) {
         rerunTransactions(path);
       }
@@ -471,7 +471,7 @@ public class Repo implements PersistentConnection.Delegate {
     final long writeId = this.getNextWriteId();
     List<? extends Event> events =
         this.serverSyncTree.applyUserOverwrite(
-            path, newValueUnresolved, newValue, writeId, /*visible=*/ true, /*persist=*/ true);
+            path, newValueUnresolved, newValue, writeId, /* visible= */ true, /* persist= */ true);
     this.postEvents(events);
 
     connection.put(
@@ -558,7 +558,7 @@ public class Repo implements PersistentConnection.Delegate {
                         QuerySpec spec = query.getSpec();
                         // EventRegistrations require a listener to be attached, so a dummy
                         // ValueEventListener was created.
-                        keepSynced(spec, /*keep=*/ true, /*skipDedup=*/ true);
+                        keepSynced(spec, /* keep= */ true, /* skipDedup= */ true);
                         List<? extends Event> events;
                         if (spec.loadsAllData()) {
                           events = serverSyncTree.applyServerOverwrite(spec.getPath(), serverNode);
@@ -576,7 +576,7 @@ public class Repo implements PersistentConnection.Delegate {
                             InternalHelpers.createDataSnapshot(
                                 query.getRef(),
                                 IndexedNode.from(serverNode, query.getSpec().getIndex())));
-                        keepSynced(spec, /*keep=*/ false, /*skipDedup=*/ true);
+                        keepSynced(spec, /* keep= */ false, /* skipDedup= */ true);
                       }
                     });
           }
@@ -611,7 +611,7 @@ public class Repo implements PersistentConnection.Delegate {
 
     final long writeId = this.getNextWriteId();
     List<? extends Event> events =
-        this.serverSyncTree.applyUserMerge(path, updates, resolved, writeId, /*persist=*/ true);
+        this.serverSyncTree.applyUserMerge(path, updates, resolved, writeId, /* persist= */ true);
     this.postEvents(events);
 
     // TODO: DatabaseReference.CompleteionListener isn't really appropriate (the DatabaseReference
@@ -764,7 +764,7 @@ public class Repo implements PersistentConnection.Delegate {
   }
 
   public void keepSynced(QuerySpec query, boolean keep) {
-    keepSynced(query, keep, /*skipDedup=*/ false);
+    keepSynced(query, keep, /* skipDedup= */ false);
   }
 
   public void keepSynced(QuerySpec query, boolean keep, final boolean skipDedup) {
@@ -1011,8 +1011,8 @@ public class Repo implements PersistentConnection.Delegate {
               newNodeUnresolved,
               newNode,
               transaction.currentWriteId,
-              /*visible=*/ applyLocally,
-              /*persist=*/ false);
+              /* visible= */ applyLocally,
+              /* persist= */ false);
       this.postEvents(events);
       sendAllReadyTransactions();
     }
@@ -1116,7 +1116,10 @@ public class Repo implements PersistentConnection.Delegate {
                 txn.status = TransactionStatus.COMPLETED;
                 events.addAll(
                     serverSyncTree.ackUserWrite(
-                        txn.currentWriteId, /*revert=*/ false, /*persist=*/ false, serverClock));
+                        txn.currentWriteId,
+                        /* revert= */ false,
+                        /* persist= */ false,
+                        serverClock));
 
                 // We never unset the output snapshot, and given that this
                 // transaction is complete, it should be set
@@ -1250,7 +1253,10 @@ public class Repo implements PersistentConnection.Delegate {
         if (abortReason.getCode() != DatabaseError.WRITE_CANCELED) {
           events.addAll(
               serverSyncTree.ackUserWrite(
-                  transaction.currentWriteId, /*revert=*/ true, /*persist=*/ false, serverClock));
+                  transaction.currentWriteId,
+                  /* revert= */ true,
+                  /* persist= */ false,
+                  serverClock));
         }
       } else if (transaction.status == TransactionStatus.RUN) {
         if (transaction.retryCount >= TRANSACTION_MAX_RETRIES) {
@@ -1258,7 +1264,10 @@ public class Repo implements PersistentConnection.Delegate {
           abortReason = DatabaseError.fromStatus(TRANSACTION_TOO_MANY_RETRIES);
           events.addAll(
               serverSyncTree.ackUserWrite(
-                  transaction.currentWriteId, /*revert=*/ true, /*persist=*/ false, serverClock));
+                  transaction.currentWriteId,
+                  /* revert= */ true,
+                  /* persist= */ false,
+                  serverClock));
         } else {
           // This code reruns a transaction
           Node currentNode = this.getLatestState(transaction.path, setsToIgnore);
@@ -1294,10 +1303,10 @@ public class Repo implements PersistentConnection.Delegate {
                     newNodeResolved,
                     transaction.currentWriteId,
                     transaction.applyLocally,
-                    /*persist=*/ false));
+                    /* persist= */ false));
             events.addAll(
                 serverSyncTree.ackUserWrite(
-                    oldWriteId, /*revert=*/ true, /*persist=*/ false, serverClock));
+                    oldWriteId, /* revert= */ true, /* persist= */ false, serverClock));
           } else {
             // The user aborted the transaction. It's not an error, so we don't need to send them
             // one
@@ -1305,7 +1314,10 @@ public class Repo implements PersistentConnection.Delegate {
             abortReason = error;
             events.addAll(
                 serverSyncTree.ackUserWrite(
-                    transaction.currentWriteId, /*revert=*/ true, /*persist=*/ false, serverClock));
+                    transaction.currentWriteId,
+                    /* revert= */ true,
+                    /* persist= */ false,
+                    serverClock));
           }
         }
       }
@@ -1465,7 +1477,10 @@ public class Repo implements PersistentConnection.Delegate {
           if (reason == DatabaseError.OVERRIDDEN_BY_SET) {
             events.addAll(
                 serverSyncTree.ackUserWrite(
-                    transaction.currentWriteId, /*revert=*/ true, /*persist=*/ false, serverClock));
+                    transaction.currentWriteId,
+                    /* revert= */ true,
+                    /* persist= */ false,
+                    serverClock));
           } else {
             hardAssert(
                 reason == DatabaseError.WRITE_CANCELED,

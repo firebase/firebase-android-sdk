@@ -197,18 +197,24 @@ public class DatabaseError {
     this.details = (details == null) ? "" : details;
   }
 
-  /** @return One of the defined status codes, depending on the error */
+  /**
+   * @return One of the defined status codes, depending on the error
+   */
   public int getCode() {
     return code;
   }
 
-  /** @return A human-readable description of the error */
+  /**
+   * @return A human-readable description of the error
+   */
   @NonNull
   public String getMessage() {
     return message;
   }
 
-  /** @return Human-readable details on the error and additional information, e.g. links to docs; */
+  /**
+   * @return Human-readable details on the error and additional information, e.g. links to docs;
+   */
   @NonNull
   public String getDetails() {
     return details;

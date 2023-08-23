@@ -165,6 +165,7 @@ private val SNAKE_CASE_REGEX = "_[a-zA-Z]".toRegex()
  *
  * @property name name of the field as defined in the proto file, usually camel_cased.
  * @property type this property is mutable because it's not always possible specify the type
+ *
  * ```
  *      upfront. See [Unresolved] for details.
  * ```

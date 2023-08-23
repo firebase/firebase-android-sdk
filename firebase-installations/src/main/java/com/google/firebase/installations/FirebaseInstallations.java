@@ -531,10 +531,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     InstallationResponse response =
         serviceClient.createFirebaseInstallation(
-            /*apiKey= */ getApiKey(),
-            /*fid= */ prefs.getFirebaseInstallationId(),
-            /*projectID= */ getProjectIdentifier(),
-            /*appId= */ getApplicationId(),
+            /* apiKey= */ getApiKey(),
+            /* fid= */ prefs.getFirebaseInstallationId(),
+            /* projectID= */ getProjectIdentifier(),
+            /* appId= */ getApplicationId(),
             /* migration-header= */ iidToken);
 
     switch (response.getResponseCode()) {
@@ -564,10 +564,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       @NonNull PersistedInstallationEntry prefs) throws FirebaseInstallationsException {
     TokenResult tokenResult =
         serviceClient.generateAuthToken(
-            /*apiKey= */ getApiKey(),
-            /*fid= */ prefs.getFirebaseInstallationId(),
-            /*projectID= */ getProjectIdentifier(),
-            /*refreshToken= */ prefs.getRefreshToken());
+            /* apiKey= */ getApiKey(),
+            /* fid= */ prefs.getFirebaseInstallationId(),
+            /* projectID= */ getProjectIdentifier(),
+            /* refreshToken= */ prefs.getRefreshToken());
 
     switch (tokenResult.getResponseCode()) {
       case OK:
@@ -599,10 +599,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     if (entry.isRegistered()) {
       // Call the FIS servers to delete this Firebase Installation Id.
       serviceClient.deleteFirebaseInstallation(
-          /*apiKey= */ getApiKey(),
-          /*fid= */ entry.getFirebaseInstallationId(),
-          /*projectID= */ getProjectIdentifier(),
-          /*refreshToken= */ entry.getRefreshToken());
+          /* apiKey= */ getApiKey(),
+          /* fid= */ entry.getFirebaseInstallationId(),
+          /* projectID= */ getProjectIdentifier(),
+          /* refreshToken= */ entry.getRefreshToken());
     }
     insertOrUpdatePrefs(entry.withNoGeneratedFid());
     return null;

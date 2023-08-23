@@ -43,7 +43,9 @@ public class MutableData {
   private final SnapshotHolder holder;
   private final Path prefixPath;
 
-  /** @param node The data */
+  /**
+   * @param node The data
+   */
   MutableData(Node node) {
     this(new SnapshotHolder(node), new Path(""));
   }
@@ -58,7 +60,9 @@ public class MutableData {
     return holder.getNode(prefixPath);
   }
 
-  /** @return True if the data at this location has children, false otherwise */
+  /**
+   * @return True if the data at this location has children, false otherwise
+   */
   public boolean hasChildren() {
     Node node = getNode();
     return !node.isLeafNode() && !node.isEmpty();
@@ -85,7 +89,9 @@ public class MutableData {
     return new MutableData(holder, prefixPath.child(new Path(path)));
   }
 
-  /** @return The number of immediate children at this location */
+  /**
+   * @return The number of immediate children at this location
+   */
   public long getChildrenCount() {
     return getNode().getChildCount();
   }
@@ -155,7 +161,9 @@ public class MutableData {
     }
   }
 
-  /** @return The key name of this location, or null if it is the top-most location */
+  /**
+   * @return The key name of this location, or null if it is the top-most location
+   */
   @Nullable
   public String getKey() {
     return prefixPath.getBack() != null ? prefixPath.getBack().asString() : null;

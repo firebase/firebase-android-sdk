@@ -79,7 +79,9 @@ public class TargetIdGenerator {
     this.nextId = targetId;
   }
 
-  /** @return the next id in the sequence */
+  /**
+   * @return the next id in the sequence
+   */
   public int nextId() {
     int nextId = this.nextId;
     this.nextId += 1 << RESERVED_BITS;

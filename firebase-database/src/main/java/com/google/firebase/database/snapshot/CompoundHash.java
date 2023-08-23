@@ -233,7 +233,7 @@ public class CompoundHash {
               state.endChild();
             }
           };
-      childrenNode.forEachChild(visitor, /*includePriority=*/ true);
+      childrenNode.forEachChild(visitor, /* includePriority= */ true);
     }
   }
 }

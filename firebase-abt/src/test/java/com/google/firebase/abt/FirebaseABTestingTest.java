@@ -61,20 +61,20 @@ public class FirebaseABTestingTest {
       createExperimentInfo(
           TEST_EXPERIMENT_1_ID,
           TEST_VARIANT_ID_A,
-          /*triggerEventName=*/ "",
-          /*experimentStartTimeInEpochMillis=*/ 1000L);
+          /* triggerEventName= */ "",
+          /* experimentStartTimeInEpochMillis= */ 1000L);
   private static final AbtExperimentInfo TEST_ABT_EXPERIMENT_2_VARIANT_A =
       createExperimentInfo(
           TEST_EXPERIMENT_2_ID,
           TEST_VARIANT_ID_A,
           "trigger_event_2",
-          /*experimentStartTimeInEpochMillis=*/ 2000L);
+          /* experimentStartTimeInEpochMillis= */ 2000L);
   private static final AbtExperimentInfo TEST_ABT_EXPERIMENT_2_VARIANT_B =
       createExperimentInfo(
           TEST_EXPERIMENT_2_ID,
           TEST_VARIANT_ID_B,
           "trigger_event_2",
-          /*experimentStartTimeInEpochMillis=*/ 2000L);
+          /* experimentStartTimeInEpochMillis= */ 2000L);
 
   private static final int MAX_ALLOWED_EXPERIMENTS_IN_ANALYTICS = 100;
 
@@ -88,8 +88,8 @@ public class FirebaseABTestingTest {
 
     firebaseAbt =
         new FirebaseABTesting(
-            /*unusedAppContext=*/ null,
-            /*analyticsConnector=*/ () -> mockAnalyticsConnector,
+            /* unusedAppContext= */ null,
+            /* analyticsConnector= */ () -> mockAnalyticsConnector,
             ORIGIN_SERVICE);
 
     when(mockAnalyticsConnector.getMaxUserProperties(ORIGIN_SERVICE))
@@ -246,12 +246,12 @@ public class FirebaseABTestingTest {
   public void replaceAllExperiments_analyticsSdkUnavailable_throwsAbtException() {
     firebaseAbt =
         new FirebaseABTesting(
-            /*unusedAppContext=*/ null, /*analyticsConnector=*/ () -> null, ORIGIN_SERVICE);
+            /* unusedAppContext= */ null, /* analyticsConnector= */ () -> null, ORIGIN_SERVICE);
 
     AbtException actualException =
         assertThrows(
             AbtException.class,
-            () -> firebaseAbt.replaceAllExperiments(/*replacementExperiments=*/ null));
+            () -> firebaseAbt.replaceAllExperiments(/* replacementExperiments= */ null));
 
     assertThat(actualException).hasMessageThat().contains("The Analytics SDK is not available");
     verify(mockAnalyticsConnector, never()).setConditionalUserProperty(any());
@@ -263,7 +263,7 @@ public class FirebaseABTestingTest {
     IllegalArgumentException actualException =
         assertThrows(
             IllegalArgumentException.class,
-            () -> firebaseAbt.replaceAllExperiments(/*replacementExperiments=*/ null));
+            () -> firebaseAbt.replaceAllExperiments(/* replacementExperiments= */ null));
 
     assertThat(actualException)
         .hasMessageThat()
@@ -300,7 +300,7 @@ public class FirebaseABTestingTest {
   public void removeAllExperiments_analyticsSdkUnavailable_throwsAbtException() {
     firebaseAbt =
         new FirebaseABTesting(
-            /*unusedAppContext=*/ null, /*analyticsConnector=*/ () -> null, ORIGIN_SERVICE);
+            /* unusedAppContext= */ null, /* analyticsConnector= */ () -> null, ORIGIN_SERVICE);
 
     AbtException actualException =
         assertThrows(AbtException.class, () -> firebaseAbt.removeAllExperiments());
@@ -338,7 +338,7 @@ public class FirebaseABTestingTest {
   public void getAllExperiments_analyticsSdkUnavailable_throwsAbtException() {
     firebaseAbt =
         new FirebaseABTesting(
-            /*unusedAppContext=*/ null, /*analyticsConnector=*/ () -> null, ORIGIN_SERVICE);
+            /* unusedAppContext= */ null, /* analyticsConnector= */ () -> null, ORIGIN_SERVICE);
 
     AbtException actualException =
         assertThrows(AbtException.class, () -> firebaseAbt.getAllExperiments());

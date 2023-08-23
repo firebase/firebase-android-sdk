@@ -40,12 +40,16 @@ public class GeoPoint implements Comparable<GeoPoint> {
     this.longitude = longitude;
   }
 
-  /** @return The latitude value of this {@code GeoPoint}. */
+  /**
+   * @return The latitude value of this {@code GeoPoint}.
+   */
   public double getLatitude() {
     return latitude;
   }
 
-  /** @return The longitude value of this {@code GeoPoint}. */
+  /**
+   * @return The longitude value of this {@code GeoPoint}.
+   */
   public double getLongitude() {
     return longitude;
   }

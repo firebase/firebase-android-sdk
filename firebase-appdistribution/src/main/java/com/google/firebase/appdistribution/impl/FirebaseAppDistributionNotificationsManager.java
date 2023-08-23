@@ -148,7 +148,7 @@ class FirebaseAppDistributionNotificationsManager
     int commonFlags =
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.M ? PendingIntent.FLAG_IMMUTABLE : 0;
     return PendingIntent.getActivity(
-        context, /* requestCode = */ 0, intent, extraFlags | commonFlags);
+        context, /* requestCode= */ 0, intent, extraFlags | commonFlags);
   }
 
   public void showFeedbackNotification(

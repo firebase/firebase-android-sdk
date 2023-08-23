@@ -94,7 +94,9 @@ public class Utils {
     return ret;
   }
 
-  /** @return true if logcat is enabled via AndroidManifest meta data flag, false otherwise */
+  /**
+   * @return true if logcat is enabled via AndroidManifest meta data flag, false otherwise
+   */
   public static boolean isDebugLoggingEnabled(@NonNull Context appContext) {
     if (isDebugLoggingEnabled != null) {
       return isDebugLoggingEnabled;

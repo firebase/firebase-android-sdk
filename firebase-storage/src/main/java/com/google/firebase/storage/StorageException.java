@@ -170,7 +170,9 @@ public class StorageException extends FirebaseException {
     return errorCode;
   }
 
-  /** @return the Http result code (if one exists) from a network operation. */
+  /**
+   * @return the Http result code (if one exists) from a network operation.
+   */
   @SuppressWarnings("unused")
   public int getHttpResultCode() {
     return httpResultCode;
