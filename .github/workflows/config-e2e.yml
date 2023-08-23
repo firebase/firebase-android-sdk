@@ -1,4 +1,4 @@
-name: Firebase Remote Config Rollouts E2E Tests
+name: Firebase Remote Config E2E Tests
 
 on:
   schedule:
