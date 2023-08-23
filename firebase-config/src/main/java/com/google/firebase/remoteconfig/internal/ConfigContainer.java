@@ -108,6 +108,7 @@ public class ConfigContainer {
       personalizationMetadataJSON = new JSONObject();
     }
 
+    // Default to empty JSONArray if Rollout metadata does not exist.
     JSONArray rolloutMetadataJSON = containerJson.optJSONArray(ROLLOUT_METADATA_KEY);
     if (rolloutMetadataJSON == null) {
       rolloutMetadataJSON = new JSONArray();
