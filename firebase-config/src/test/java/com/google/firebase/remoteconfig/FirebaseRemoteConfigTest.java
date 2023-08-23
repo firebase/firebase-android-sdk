@@ -77,6 +77,7 @@ import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
 import com.google.firebase.remoteconfig.internal.FakeHttpURLConnection;
 import com.google.firebase.remoteconfig.internal.Personalization;
+import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -184,6 +185,8 @@ public final class FirebaseRemoteConfigTest {
   @Mock private FirebaseInstallationsApi mockFirebaseInstallations;
   @Mock private Provider<AnalyticsConnector> mockAnalyticsConnectorProvider;
 
+  @Mock private RolloutsStateSubscriptionsHandler mockRolloutsStateSubscriptionsHandler;
+
   private FirebaseRemoteConfig frc;
   private FirebaseRemoteConfig fireperfFrc;
   private FirebaseRemoteConfig personalizationFrc;
@@ -242,7 +245,8 @@ public final class FirebaseRemoteConfigTest {
             mockFetchHandler,
             mockGetHandler,
             metadataClient,
-            mockConfigRealtimeHandler);
+            mockConfigRealtimeHandler,
+            mockRolloutsStateSubscriptionsHandler);
 
     // Set up an FRC instance for the Fireperf namespace that uses mocked clients.
     fireperfFrc =
@@ -259,7 +263,8 @@ public final class FirebaseRemoteConfigTest {
                 mockFireperfDefaultsCache,
                 mockFireperfFetchHandler,
                 mockFireperfGetHandler,
-                RemoteConfigComponent.getMetadataClient(context, APP_ID, FIREPERF_NAMESPACE));
+                RemoteConfigComponent.getMetadataClient(context, APP_ID, FIREPERF_NAMESPACE),
+                mockRolloutsStateSubscriptionsHandler);
 
     personalizationFrc =
         FirebaseApp.getInstance()
@@ -275,8 +280,8 @@ public final class FirebaseRemoteConfigTest {
                 mockDefaultsCache,
                 mockFetchHandler,
                 parameterHandler,
-                RemoteConfigComponent.getMetadataClient(
-                    context, APP_ID, PERSONALIZATION_NAMESPACE));
+                RemoteConfigComponent.getMetadataClient(context, APP_ID, PERSONALIZATION_NAMESPACE),
+                mockRolloutsStateSubscriptionsHandler);
 
     firstFetchedContainer =
         ConfigContainer.newBuilder()

@@ -40,6 +40,7 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler;
 import com.google.firebase.remoteconfig.internal.ConfigFetchHttpClient;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
+import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -52,11 +53,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
 
-/**
- * Unit tests for the Firebase Remote Config Component.
- *
- * @author Miraziz Yusupov
- */
+/** Unit tests for the Firebase Remote Config Component. */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class RemoteConfigComponentTest {
@@ -75,6 +72,7 @@ public class RemoteConfigComponentTest {
   @Mock private ConfigFetchHandler mockFetchHandler;
   @Mock private ConfigGetParameterHandler mockGetParameterHandler;
   @Mock private ConfigMetadataClient mockMetadataClient;
+  @Mock private RolloutsStateSubscriptionsHandler mockRolloutsStateSubscriptionsHandler;
 
   private Context context;
   private ExecutorService directExecutor;
@@ -212,7 +210,8 @@ public class RemoteConfigComponentTest {
         mockDefaultsCache,
         mockFetchHandler,
         mockGetParameterHandler,
-        metadataClient);
+        metadataClient,
+        mockRolloutsStateSubscriptionsHandler);
   }
 
   private FirebaseRemoteConfig getFrcInstanceFromComponent(
@@ -228,7 +227,8 @@ public class RemoteConfigComponentTest {
         mockDefaultsCache,
         mockFetchHandler,
         mockGetParameterHandler,
-        mockMetadataClient);
+        mockMetadataClient,
+        mockRolloutsStateSubscriptionsHandler);
   }
 
   private void loadConfigsWithExperimentsForActivate() throws Exception {

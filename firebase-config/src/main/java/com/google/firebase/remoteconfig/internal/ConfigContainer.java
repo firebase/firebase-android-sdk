@@ -34,6 +34,7 @@ public class ConfigContainer {
   static final String FETCH_TIME_KEY = "fetch_time_key";
   static final String ABT_EXPERIMENTS_KEY = "abt_experiments_key";
   static final String PERSONALIZATION_METADATA_KEY = "personalization_metadata_key";
+  static final String ROLLOUTS_METADATA_KEY = "rollouts_metadata_key";
   static final String TEMPLATE_VERSION_NUMBER_KEY = "template_version_number_key";
 
   private static final Date DEFAULTS_FETCH_TIME = new Date(0L);
@@ -59,6 +60,8 @@ public class ConfigContainer {
 
   private JSONObject personalizationMetadata;
 
+  private JSONArray rolloutsMetadata;
+
   private long templateVersionNumber;
 
   /**
@@ -71,6 +74,7 @@ public class ConfigContainer {
       Date fetchTime,
       JSONArray abtExperiments,
       JSONObject personalizationMetadata,
+      JSONArray rolloutsMetadata,
       long templateVersionNumber)
       throws JSONException {
     JSONObject containerJson = new JSONObject();
@@ -78,12 +82,14 @@ public class ConfigContainer {
     containerJson.put(FETCH_TIME_KEY, fetchTime.getTime());
     containerJson.put(ABT_EXPERIMENTS_KEY, abtExperiments);
     containerJson.put(PERSONALIZATION_METADATA_KEY, personalizationMetadata);
+    containerJson.put(ROLLOUTS_METADATA_KEY, "");
     containerJson.put(TEMPLATE_VERSION_NUMBER_KEY, templateVersionNumber);
 
     this.configsJson = configsJson;
     this.fetchTime = fetchTime;
     this.abtExperiments = abtExperiments;
     this.personalizationMetadata = personalizationMetadata;
+    this.rolloutsMetadata = rolloutsMetadata;
     this.templateVersionNumber = templateVersionNumber;
 
     this.containerJson = containerJson;
@@ -102,11 +108,17 @@ public class ConfigContainer {
       personalizationMetadataJSON = new JSONObject();
     }
 
+    JSONArray rolloutsMetadataJSON = containerJson.optJSONArray(ROLLOUTS_METADATA_KEY);
+    if (rolloutsMetadataJSON == null) {
+      rolloutsMetadataJSON = new JSONArray();
+    }
+
     return new ConfigContainer(
         containerJson.getJSONObject(CONFIGS_KEY),
         new Date(containerJson.getLong(FETCH_TIME_KEY)),
         containerJson.getJSONArray(ABT_EXPERIMENTS_KEY),
         personalizationMetadataJSON,
+        rolloutsMetadataJSON,
         // Default to 0 if template_version_number_key has not been cached yet.
         containerJson.optLong(TEMPLATE_VERSION_NUMBER_KEY));
   }
@@ -144,6 +156,10 @@ public class ConfigContainer {
 
   public JSONObject getPersonalizationMetadata() {
     return personalizationMetadata;
+  }
+
+  public JSONArray getRolloutsMetadata() {
+    return rolloutsMetadata;
   }
 
   public long getTemplateVersionNumber() {
@@ -237,6 +253,7 @@ public class ConfigContainer {
     private Date builderFetchTime;
     private JSONArray builderAbtExperiments;
     private JSONObject builderPersonalizationMetadata;
+    private JSONArray builderRolloutsMetadata;
     private long builderTemplateVersionNumber;
 
     private Builder() {
@@ -244,6 +261,7 @@ public class ConfigContainer {
       builderFetchTime = DEFAULTS_FETCH_TIME;
       builderAbtExperiments = new JSONArray();
       builderPersonalizationMetadata = new JSONObject();
+      builderRolloutsMetadata = new JSONArray();
       builderTemplateVersionNumber = 0L;
     }
 
@@ -252,6 +270,7 @@ public class ConfigContainer {
       this.builderFetchTime = otherContainer.getFetchTime();
       this.builderAbtExperiments = otherContainer.getAbtExperiments();
       this.builderPersonalizationMetadata = otherContainer.getPersonalizationMetadata();
+      this.builderRolloutsMetadata = otherContainer.getRolloutsMetadata();
       this.builderTemplateVersionNumber = otherContainer.getTemplateVersionNumber();
     }
 
@@ -301,6 +320,15 @@ public class ConfigContainer {
       return this;
     }
 
+    public Builder withRolloutsMetadata(JSONArray rolloutsMetadata) {
+      try {
+        this.builderRolloutsMetadata = new JSONArray(rolloutsMetadata.toString());
+      } catch (JSONException e) {
+
+      }
+      return this;
+    }
+
     public Builder withTemplateVersionNumber(long templateVersionNumber) {
       this.builderTemplateVersionNumber = templateVersionNumber;
       return this;
@@ -313,6 +341,7 @@ public class ConfigContainer {
           builderFetchTime,
           builderAbtExperiments,
           builderPersonalizationMetadata,
+          builderRolloutsMetadata,
           builderTemplateVersionNumber);
     }
   }

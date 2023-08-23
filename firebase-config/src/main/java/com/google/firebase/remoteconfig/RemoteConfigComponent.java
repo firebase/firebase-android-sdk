@@ -40,6 +40,7 @@ import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
+import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateFactory;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
 import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutsStateSubscriber;
@@ -57,7 +58,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>A unique FRC instance is returned for each {{@link FirebaseApp}, {@code namespace}}
  * combination.
  *
- * @author Miraziz Yusupov
  * @hide
  */
 @KeepForSdk
@@ -172,6 +172,9 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
       getHandler.addListener(personalization::logArmActive);
     }
 
+    RolloutsStateSubscriptionsHandler rolloutsStateSubscriptionsHandler =
+        getRolloutsStateSubscriptionsHandler(activatedCacheClient, getHandler);
+
     return get(
         firebaseApp,
         namespace,
@@ -183,7 +186,8 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
         defaultsCacheClient,
         getFetchHandler(namespace, fetchedCacheClient, metadataClient),
         getHandler,
-        metadataClient);
+        metadataClient,
+        rolloutsStateSubscriptionsHandler);
   }
 
   @VisibleForTesting
@@ -198,7 +202,8 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
       ConfigCacheClient defaultsClient,
       ConfigFetchHandler fetchHandler,
       ConfigGetParameterHandler getHandler,
-      ConfigMetadataClient metadataClient) {
+      ConfigMetadataClient metadataClient,
+      RolloutsStateSubscriptionsHandler rolloutsStateSubscriptionsHandler) {
     if (!frcNamespaceInstances.containsKey(namespace)) {
       FirebaseRemoteConfig in =
           new FirebaseRemoteConfig(
@@ -221,7 +226,7 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
                   context,
                   namespace,
                   metadataClient),
-              getRolloutsStateSubscriptionsHandler());
+              rolloutsStateSubscriptionsHandler);
       in.startLoadingConfigsFromDisk();
       frcNamespaceInstances.put(namespace, in);
       frcNamespaceInstancesStatic.put(namespace, in);
@@ -314,8 +319,14 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
     return null;
   }
 
-  private RolloutsStateSubscriptionsHandler getRolloutsStateSubscriptionsHandler() {
-    return new RolloutsStateSubscriptionsHandler(executor);
+  private RolloutsStateSubscriptionsHandler getRolloutsStateSubscriptionsHandler(
+      ConfigCacheClient activatedConfigsCache,
+      ConfigGetParameterHandler configGetParameterHandler) {
+    RolloutsStateFactory rolloutsStateFactory =
+        RolloutsStateFactory.create(configGetParameterHandler, executor);
+
+    return new RolloutsStateSubscriptionsHandler(
+        activatedConfigsCache, rolloutsStateFactory, executor);
   }
 
   /**

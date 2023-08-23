@@ -57,17 +57,21 @@ public abstract class RolloutAssignment {
   public static final DataEncoder ROLLOUT_ASSIGNMENT_JSON_ENCODER =
       new JsonDataEncoderBuilder().configureWith(AutoRolloutAssignmentEncoder.CONFIG).build();
 
+  @NonNull
+  public static RolloutAssignment create(@NonNull JSONObject json) throws JSONException {
+    return RolloutAssignment.builder()
+            .setRolloutId(json.getString(ROLLOUT_ID))
+            .setVariantId(json.getString(VARIANT_ID))
+            .setParameterKey(json.getString(PARAMETER_KEY))
+            .setParameterValue(json.getString(PARAMETER_VALUE))
+            .setTemplateVersion(json.getLong(TEMPLATE_VERSION))
+            .build();
+  }
+
   /** Create a {@code RolloutAssignment} from its JSON-encoded representation. */
   @NonNull
   public static RolloutAssignment create(@NonNull String jsonString) throws JSONException {
-    final JSONObject json = new JSONObject(jsonString);
-    return RolloutAssignment.builder()
-        .setRolloutId(json.getString(ROLLOUT_ID))
-        .setVariantId(json.getString(VARIANT_ID))
-        .setParameterKey(json.getString(PARAMETER_KEY))
-        .setParameterValue(json.getString(PARAMETER_VALUE))
-        .setTemplateVersion(json.getLong(TEMPLATE_VERSION))
-        .build();
+    return create(new JSONObject(jsonString));
   }
 
   @NonNull
