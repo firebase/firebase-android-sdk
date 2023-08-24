@@ -181,10 +181,10 @@ abstract class PackageTransform : DefaultTask() {
             .map { x ->
               val p =
                 x.replace(
-                  "LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME)",
+                  "LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),",
                   ""
                 )
-              if (p.trim().isEmpty()) {
+              if (p.trim().isEmpty() && !x.trim().isEmpty()) {
                 return@map "#REMOVE#REMOVE#REMOVE"
               } else {
                 return@map p
