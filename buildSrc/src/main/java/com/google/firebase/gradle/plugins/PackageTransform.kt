@@ -151,7 +151,7 @@ abstract class PackageTransform : DefaultTask() {
               symbol = getSymbol(lines[ctr++]).trim()
             }
             output.add(
-              """@Deprecated("Use `${pkgName}${symbol}`", ReplaceWith("${pkgName}${symbol}"))"""
+              """@Deprecated("${pkgName}ktx.${symbol} has been deprecated. Use `${pkgName}${symbol}`", ReplaceWith(expression="${pkgName}${symbol}", imports=[]))"""
             )
           }
         }
