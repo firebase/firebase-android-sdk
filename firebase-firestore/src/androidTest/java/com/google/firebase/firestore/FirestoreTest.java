@@ -1419,4 +1419,77 @@ public class FirestoreTest {
     assertTrue(e instanceof FirebaseFirestoreException);
     assertEquals(((FirebaseFirestoreException) e).getCode(), Code.UNAVAILABLE);
   }
+
+  @Test
+  public void testGetPersistentCacheIndexManager() {
+    // Use persistent disk cache (explicit)
+    FirebaseFirestore db1 = testFirestore();
+    FirebaseFirestoreSettings settings1 =
+        new FirebaseFirestoreSettings.Builder(db1.getFirestoreSettings())
+            .setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
+            .build();
+    db1.setFirestoreSettings(settings1);
+    assertNotNull(db1.getPersistentCacheIndexManager());
+
+    // Use persistent disk cache (default)
+    FirebaseFirestore db2 = testFirestore();
+    assertNotNull(db2.getPersistentCacheIndexManager());
+
+    // Disable persistent disk cache
+    FirebaseFirestore db3 = testFirestore();
+    FirebaseFirestoreSettings settings3 =
+        new FirebaseFirestoreSettings.Builder(db1.getFirestoreSettings())
+            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+            .build();
+    db3.setFirestoreSettings(settings3);
+    assertNull(db3.getPersistentCacheIndexManager());
+
+    // Disable persistent disk cache (deprecated)
+    FirebaseFirestore db4 = testFirestore();
+    FirebaseFirestoreSettings settings4 =
+        new FirebaseFirestoreSettings.Builder(db4.getFirestoreSettings())
+            .setPersistenceEnabled(false)
+            .build();
+    db4.setFirestoreSettings(settings4);
+    assertNull(db4.getPersistentCacheIndexManager());
+  }
+
+  @Test
+  public void testCanGetSameOrDifferentPersistentCacheIndexManager() {
+    // Use persistent disk cache (explicit)
+    FirebaseFirestore db1 = testFirestore();
+    FirebaseFirestoreSettings settings1 =
+        new FirebaseFirestoreSettings.Builder(db1.getFirestoreSettings())
+            .setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
+            .build();
+    db1.setFirestoreSettings(settings1);
+    PersistentCacheIndexManager indexManager1 = db1.getPersistentCacheIndexManager();
+    PersistentCacheIndexManager indexManager2 = db1.getPersistentCacheIndexManager();
+    assertSame(indexManager1, indexManager2);
+
+    // Use persistent disk cache (default)
+    FirebaseFirestore db2 = testFirestore();
+    PersistentCacheIndexManager indexManager3 = db2.getPersistentCacheIndexManager();
+    PersistentCacheIndexManager indexManager4 = db2.getPersistentCacheIndexManager();
+    assertSame(indexManager3, indexManager4);
+
+    assertNotSame(indexManager1, indexManager3);
+
+    FirebaseFirestore db3 = testFirestore();
+    FirebaseFirestoreSettings settings3 =
+        new FirebaseFirestoreSettings.Builder(db3.getFirestoreSettings())
+            .setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
+            .build();
+    db3.setFirestoreSettings(settings3);
+    PersistentCacheIndexManager indexManager5 = db3.getPersistentCacheIndexManager();
+    assertNotSame(indexManager1, indexManager5);
+    assertNotSame(indexManager3, indexManager5);
+
+    // Use persistent disk cache (default)
+    FirebaseFirestore db4 = testFirestore();
+    PersistentCacheIndexManager indexManager6 = db4.getPersistentCacheIndexManager();
+    assertNotSame(indexManager1, indexManager6);
+    assertNotSame(indexManager3, indexManager6);
+    assertNotSame(indexManager5, indexManager6);
+  }
 }

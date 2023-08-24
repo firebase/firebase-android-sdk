@@ -219,6 +219,9 @@ public class TargetIndexMatcher {
       }
     }
 
+    // Note: We do not explicitly check `inequalityFilter` but rather rely on the target defining an
+    // appropriate `orderBys` to ensure that the required index segment is added. The query engine
+    // would reject a query with an inequality filter that lacks the required order-by clause.
     for (OrderBy orderBy : orderBys) {
       // Stop adding more segments if we see a order-by on key. Typically this is the default
       // implicit order-by which is covered in the index_entry table as a separate column.

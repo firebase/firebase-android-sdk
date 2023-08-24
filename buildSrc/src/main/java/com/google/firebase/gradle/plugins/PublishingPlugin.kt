@@ -191,9 +191,9 @@ abstract class PublishingPlugin : Plugin<Project> {
     allFirebaseLibraries: List<FirebaseLibraryExtension>
   ): ReleaseMetadata? {
     val projectsToPublish = project.provideProperty<String>("projectsToPublish").orNull
-    val releaseName = project.provideProperty<String>("releaseName").orNull
+    val releaseName = project.provideProperty<String>("releaseName").orNull ?: "NO_NAME"
 
-    if (projectsToPublish == null || releaseName == null) return null
+    if (projectsToPublish == null) return null
 
     val projectNames = projectsToPublish.split(",")
     val librariesToRelease =
@@ -450,7 +450,6 @@ abstract class PublishingPlugin : Plugin<Project> {
     project.tasks.register(SEMVER_CHECK_TASK) {
       for (releasingProject in releasingProjects) {
         val semverCheckTask = releasingProject.tasks.named("semverCheck")
-
         dependsOn(semverCheckTask)
       }
     }

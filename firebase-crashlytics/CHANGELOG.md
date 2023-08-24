@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Updated `firebase-sessions` dependency to v1.0.2
 
 * [feature] Integrated with Firebase sessions library to enable upcoming features related to
   session-based crash metrics.
