@@ -73,7 +73,7 @@ val KTX_CONTENT =
 
   /** @suppress */
   @Keep
-  class #{PROJECT_NAME}LoggingRegistrar : ComponentRegistrar {
+  class #{PROJECT_NAME}LegacyRegistrar : ComponentRegistrar {
     override fun getComponents(): List<Component<*>> {
       return listOf(LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME))
     }
@@ -150,8 +150,13 @@ abstract class PackageTransform : DefaultTask() {
             while (symbol.isEmpty() && ctr < lines.size) {
               symbol = getSymbol(lines[ctr++]).trim()
             }
+            var pos = symbol.indexOf("(")
+            if (pos == -1) {
+              pos = symbol.length
+            }
+            val importName = symbol.substring(0, pos).replace("Firebase.", "")
             output.add(
-              """@Deprecated("${pkgName}ktx.${symbol} has been deprecated. Use `${pkgName}${symbol}`", ReplaceWith(expression="${pkgName}${symbol}", imports=[]))"""
+              """@Deprecated("${pkgName}ktx.${symbol} has been deprecated. Use `${pkgName}${symbol}` instead.", ReplaceWith(expression="${symbol}", imports=["com.google.firebase.Firebase", "${pkgName}${importName}"]))"""
             )
           }
         }
@@ -445,7 +450,7 @@ abstract class PackageTransform : DefaultTask() {
         if (!replaceClass.isNullOrEmpty()) {
           val lines =
             File(manifestPath).readLines().map { x ->
-              x.replace(replaceClass, "${projectName}LoggingRegistrar")
+              x.replace(replaceClass, "${projectName}LegacyRegistrar")
             }
           File(manifestPath).writeText(lines.joinToString("\n"))
         }
