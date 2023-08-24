@@ -201,8 +201,10 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public void addFieldIndex(FieldIndex index) {
+  public void addFieldIndex(@Nullable FieldIndex index) {
     hardAssert(started, "IndexManager not started");
+
+    if (index == null) return;
 
     int nextIndexId = memoizedMaxIndexId + 1;
     index =

@@ -115,6 +115,10 @@ public class TargetIndexMatcher {
     }
   }
 
+  public boolean hasMultipleInequality() {
+    return inequalityFilters.size() > 1;
+  }
+
   /**
    * Returns whether the index can be used to serve the TargetIndexMatcher's target.
    *
@@ -138,6 +142,11 @@ public class TargetIndexMatcher {
    */
   public boolean servedByIndex(FieldIndex index) {
     hardAssert(index.getCollectionGroup().equals(collectionId), "Collection IDs do not match");
+
+    if (hasMultipleInequality()) {
+      // Only single inequality is supported for now.
+      return false;
+    }
 
     // If there is an array element, find a matching filter.
     FieldIndex.Segment arraySegment = index.getArraySegment();
@@ -171,11 +180,6 @@ public class TargetIndexMatcher {
     }
 
     if (inequalityFilters.size() > 0) {
-      if (this.inequalityFilters.size() > 1) {
-        // Only single inequality is supported for now.
-        return false;
-      }
-
       // Only a single inequality is currently supported. Get the only entry in the set.
       FieldFilter inequalityFilter = this.inequalityFilters.first();
 
@@ -204,7 +208,12 @@ public class TargetIndexMatcher {
   }
 
   /** Returns a full matched field index for this target. */
+  @Nullable
   public FieldIndex buildTargetIndex() {
+    if (hasMultipleInequality()) {
+      return null;
+    }
+
     // We want to make sure only one segment created for one field. For example, in case like
     // a == 3 and a > 2, Index: {a ASCENDING} will only be created once.
     Set<FieldPath> uniqueFields = new HashSet<>();
