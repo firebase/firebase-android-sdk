@@ -49,6 +49,7 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
   private final Map<Qualified<?>, Provider<?>> lazyInstanceMap = new HashMap<>();
   private final Map<Qualified<?>, LazySet<?>> lazySetMap = new HashMap<>();
   private final List<Provider<ComponentRegistrar>> unprocessedRegistrarProviders;
+  private final List<Component<?>> processedComponents = new ArrayList<>();
   private final EventBus eventBus;
   private final AtomicReference<Boolean> eagerComponentsInitializedWith = new AtomicReference<>();
   private final ComponentRegistrarProcessor componentRegistrarProcessor;
@@ -61,14 +62,14 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
    */
   @Deprecated
   public ComponentRuntime(
-      Executor defaultEventExecutor,
-      Iterable<ComponentRegistrar> registrars,
-      Component<?>... additionalComponents) {
+          Executor defaultEventExecutor,
+          Iterable<ComponentRegistrar> registrars,
+          Component<?>... additionalComponents) {
     this(
-        defaultEventExecutor,
-        toProviders(registrars),
-        Arrays.asList(additionalComponents),
-        ComponentRegistrarProcessor.NOOP);
+            defaultEventExecutor,
+            toProviders(registrars),
+            Arrays.asList(additionalComponents),
+            ComponentRegistrarProcessor.NOOP);
   }
 
   /** A builder for creating {@link ComponentRuntime} instances. */
@@ -77,10 +78,10 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
   }
 
   private ComponentRuntime(
-      Executor defaultEventExecutor,
-      Iterable<Provider<ComponentRegistrar>> registrars,
-      Collection<Component<?>> additionalComponents,
-      ComponentRegistrarProcessor componentRegistrarProcessor) {
+          Executor defaultEventExecutor,
+          Iterable<Provider<ComponentRegistrar>> registrars,
+          Collection<Component<?>> additionalComponents,
+          ComponentRegistrarProcessor componentRegistrarProcessor) {
     eventBus = new EventBus(defaultEventExecutor);
     this.componentRegistrarProcessor = componentRegistrarProcessor;
 
@@ -107,6 +108,8 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
     // instead of executing such code in the synchronized block below, we store it in a list and
     // execute right after the synchronized section.
     List<Runnable> runAfterDiscovery = new ArrayList<>();
+    List<Component<?>> componentsAdding = new ArrayList<>();
+    Set<String> existingInterfaces = new HashSet<>();
     synchronized (this) {
       Iterator<Provider<ComponentRegistrar>> iterator = unprocessedRegistrarProviders.iterator();
       while (iterator.hasNext()) {
@@ -122,27 +125,53 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
           Log.w(ComponentDiscovery.TAG, "Invalid component registrar.", ex);
         }
       }
+      for (int i = 0; i < processedComponents.size(); i++) {
+        Object[] interfaces = processedComponents.get(i).getProvidedInterfaces().toArray();
+        for (Object anInterface : interfaces) {
+          if (anInterface.toString().contains("kotlinx.coroutines.CoroutineDispatcher")) {
+            existingInterfaces.add(anInterface.toString());
+          }
+        }
+      }
+      for (int i = 0; i < componentsToAdd.size(); i++) {
+        Object[] interfaces = componentsToAdd.get(i).getProvidedInterfaces().toArray();
+        boolean addComponent = true;
+        for (Object anInterface : interfaces) {
+          String interfaceString = anInterface.toString();
+          if (interfaceString.contains("kotlinx.coroutines.CoroutineDispatcher")) {
+            if (existingInterfaces.contains(interfaceString)) {
+              addComponent = false;
+            } else {
+              existingInterfaces.add(interfaceString);
+            }
+          }
+        }
+        if (addComponent) {
+          componentsAdding.add(componentsToAdd.get(i));
+        }
+      }
 
       if (components.isEmpty()) {
-        CycleDetector.detect(componentsToAdd);
+        CycleDetector.detect(componentsAdding);
       } else {
         ArrayList<Component<?>> allComponents = new ArrayList<>(this.components.keySet());
-        allComponents.addAll(componentsToAdd);
+        allComponents.addAll(componentsAdding);
         CycleDetector.detect(allComponents);
       }
 
-      for (Component<?> component : componentsToAdd) {
+      for (Component<?> component : componentsAdding) {
         Lazy<?> lazy =
-            new Lazy<>(
-                () ->
-                    component
-                        .getFactory()
-                        .create(new RestrictedComponentContainer(component, this)));
+                new Lazy<>(
+                        () ->
+                                component
+                                        .getFactory()
+                                        .create(new RestrictedComponentContainer(component, this)));
 
         components.put(component, lazy);
       }
 
-      runAfterDiscovery.addAll(processInstanceComponents(componentsToAdd));
+      runAfterDiscovery.addAll(processInstanceComponents(componentsAdding));
+      processedComponents.addAll(componentsAdding);
       runAfterDiscovery.addAll(processSetComponents());
       processDependencies();
     }
@@ -160,7 +189,7 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
   }
 
   private static Iterable<Provider<ComponentRegistrar>> toProviders(
-      Iterable<ComponentRegistrar> registrars) {
+          Iterable<ComponentRegistrar> registrars) {
     List<Provider<ComponentRegistrar>> result = new ArrayList<>();
     for (ComponentRegistrar registrar : registrars) {
       result.add(() -> registrar);
@@ -293,7 +322,7 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
   }
 
   private void doInitializeEagerComponents(
-      Map<Component<?>, Provider<?>> componentsToInitialize, boolean isDefaultApp) {
+          Map<Component<?>, Provider<?>> componentsToInitialize, boolean isDefaultApp) {
     for (Map.Entry<Component<?>, Provider<?>> entry : componentsToInitialize.entrySet()) {
       Component<?> component = entry.getKey();
       Provider<?> provider = entry.getValue();
@@ -332,9 +361,9 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
         } else if (!lazyInstanceMap.containsKey(dependency.getInterface())) {
           if (dependency.isRequired()) {
             throw new MissingDependencyException(
-                String.format(
-                    "Unsatisfied dependency for component %s: %s",
-                    component, dependency.getInterface()));
+                    String.format(
+                            "Unsatisfied dependency for component %s: %s",
+                            component, dependency.getInterface()));
           } else if (!dependency.isSet()) {
             lazyInstanceMap.put(dependency.getInterface(), OptionalProvider.empty());
           }
@@ -353,7 +382,7 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
     private final List<Provider<ComponentRegistrar>> lazyRegistrars = new ArrayList<>();
     private final List<Component<?>> additionalComponents = new ArrayList<>();
     private ComponentRegistrarProcessor componentRegistrarProcessor =
-        ComponentRegistrarProcessor.NOOP;
+            ComponentRegistrarProcessor.NOOP;
 
     Builder(Executor defaultExecutor) {
       this.defaultExecutor = defaultExecutor;
@@ -385,7 +414,7 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
 
     public ComponentRuntime build() {
       return new ComponentRuntime(
-          defaultExecutor, lazyRegistrars, additionalComponents, componentRegistrarProcessor);
+              defaultExecutor, lazyRegistrars, additionalComponents, componentRegistrarProcessor);
     }
   }
 }
