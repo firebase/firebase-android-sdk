@@ -34,7 +34,6 @@ protobuf {
     generateProtoTasks {
 
         all().each { task ->
-            task.dependsOn configurations.protobuild
             task.inputs.file 'code_gen_cfg.textproto'
             task.plugins {
                 firebaseEncoders {
