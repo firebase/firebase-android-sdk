@@ -42,12 +42,12 @@ android {
 }
 
 dependencies {
-    api(project(":firebase-common"))
     implementation("com.google.firebase:firebase-components:17.1.0")
-    testImplementation(libs.androidx.test.core)
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlin.coroutines.test)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.truth)
-}
+    api(project(":firebase-common"))
 
+    testImplementation(libs.robolectric)
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.kotlin.coroutines.test)
+}
