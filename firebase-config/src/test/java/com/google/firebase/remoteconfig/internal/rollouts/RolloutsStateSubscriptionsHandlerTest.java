@@ -81,6 +81,7 @@ public class RolloutsStateSubscriptionsHandlerTest {
                         + "\"rollout_id\": \"rollout_1\","
                         + "\"variant_id\": \"control\","
                         + "\"affected_parameter_keys\": [\"my_feature\"]"
+                        + "\"template_version\": 1"
                         + "}]"))
             .build();
 

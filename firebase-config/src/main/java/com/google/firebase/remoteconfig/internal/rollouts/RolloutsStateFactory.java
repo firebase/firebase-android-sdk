@@ -23,13 +23,11 @@ import com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutsState;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class RolloutsStateFactory {
-  Executor executor;
   ConfigGetParameterHandler getParameterHandler;
 
   private static final String ROLLOUT_ID_KEY = "rollout_id";
@@ -37,8 +35,7 @@ public class RolloutsStateFactory {
   private static final String AFFECTED_PARAMETER_KEYS_KEY = "affected_parameter_keys";
   private static final String TEMPLATE_VERSION_KEY = "template_version";
 
-  RolloutsStateFactory(ConfigGetParameterHandler getParameterHandler, Executor executor) {
-    this.executor = executor;
+  RolloutsStateFactory(ConfigGetParameterHandler getParameterHandler) {
     this.getParameterHandler = getParameterHandler;
   }
 
@@ -76,7 +73,7 @@ public class RolloutsStateFactory {
 
   @NonNull
   public static RolloutsStateFactory create(
-      @NonNull ConfigGetParameterHandler configGetParameterHandler, @NonNull Executor executor) {
-    return new RolloutsStateFactory(configGetParameterHandler, executor);
+      @NonNull ConfigGetParameterHandler configGetParameterHandler) {
+    return new RolloutsStateFactory(configGetParameterHandler);
   }
 }
