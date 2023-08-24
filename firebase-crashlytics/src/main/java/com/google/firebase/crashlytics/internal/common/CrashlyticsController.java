@@ -610,10 +610,12 @@ class CrashlyticsController {
     String currentSessionId = null;
     if (skipCurrentSession) {
       currentSessionId = sortedOpenSessions.get(0);
+    } else {
+      // Clear the session id in case a new aqs session starts before a new crashlytics session.
+      appQualitySessionsStore.setSessionId(/* sessionId= */ null);
     }
 
     reportingCoordinator.finalizeSessions(getCurrentTimestampSeconds(), currentSessionId);
-    appQualitySessionsStore.setSessionId(/* sessionId= */ null);
   }
 
   // endregion

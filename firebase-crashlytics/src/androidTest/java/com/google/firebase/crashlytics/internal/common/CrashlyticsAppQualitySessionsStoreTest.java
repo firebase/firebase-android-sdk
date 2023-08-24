@@ -205,7 +205,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
   }
 
   public void testCorruptFile_withoutNdk_getsDeletedAndReturnsNullOnEvent() {
-    appQualitySessionsStore = createAppQualitySessionsStore(WITH_NDK);
+    appQualitySessionsStore = createAppQualitySessionsStore(WITHOUT_NDK);
     appQualitySessionsStore.setSessionId(SESSION_ID);
     appQualitySessionsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
 
