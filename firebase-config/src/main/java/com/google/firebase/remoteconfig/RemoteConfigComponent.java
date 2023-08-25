@@ -39,6 +39,9 @@ import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
+import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
+import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
+import com.google.firebase.remoteconfig.interop.rollouts.RolloutsStateSubscriber;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -167,6 +170,9 @@ public class RemoteConfigComponent {
     if (personalization != null) {
       getHandler.addListener(personalization::logArmActive);
     }
+
+    RolloutsStateSubscriptionsHandler rolloutsStateSubscriptionsHandler =
+        getRolloutsStateSubscriptionsHandler();
 
     return get(
         firebaseApp,
@@ -307,6 +313,10 @@ public class RemoteConfigComponent {
       return new Personalization(analyticsConnector);
     }
     return null;
+  }
+
+  private RolloutsStateSubscriptionsHandler getRolloutsStateSubscriptionsHandler() {
+    return new RolloutsStateSubscriptionsHandler();
   }
 
   /**

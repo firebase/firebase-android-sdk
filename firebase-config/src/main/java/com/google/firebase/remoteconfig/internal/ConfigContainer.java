@@ -67,12 +67,12 @@ public class ConfigContainer {
    * <p>The {@code configsJson} must not be modified.
    */
   private ConfigContainer(
-      JSONObject configsJson,
-      Date fetchTime,
-      JSONArray abtExperiments,
-      JSONObject personalizationMetadata,
-      long templateVersionNumber)
-      throws JSONException {
+          JSONObject configsJson,
+          Date fetchTime,
+          JSONArray abtExperiments,
+          JSONObject personalizationMetadata,
+          long templateVersionNumber)
+          throws JSONException {
     JSONObject containerJson = new JSONObject();
     containerJson.put(CONFIGS_KEY, configsJson);
     containerJson.put(FETCH_TIME_KEY, fetchTime.getTime());
@@ -97,18 +97,18 @@ public class ConfigContainer {
   static ConfigContainer copyOf(JSONObject containerJson) throws JSONException {
     // Personalization metadata may not have been written yet.
     JSONObject personalizationMetadataJSON =
-        containerJson.optJSONObject(PERSONALIZATION_METADATA_KEY);
+            containerJson.optJSONObject(PERSONALIZATION_METADATA_KEY);
     if (personalizationMetadataJSON == null) {
       personalizationMetadataJSON = new JSONObject();
     }
 
     return new ConfigContainer(
-        containerJson.getJSONObject(CONFIGS_KEY),
-        new Date(containerJson.getLong(FETCH_TIME_KEY)),
-        containerJson.getJSONArray(ABT_EXPERIMENTS_KEY),
-        personalizationMetadataJSON,
-        // Default to 0 if template_version_number_key has not been cached yet.
-        containerJson.optLong(TEMPLATE_VERSION_NUMBER_KEY));
+            containerJson.getJSONObject(CONFIGS_KEY),
+            new Date(containerJson.getLong(FETCH_TIME_KEY)),
+            containerJson.getJSONArray(ABT_EXPERIMENTS_KEY),
+            personalizationMetadataJSON,
+            // Default to 0 if template_version_number_key has not been cached yet.
+            containerJson.optLong(TEMPLATE_VERSION_NUMBER_KEY));
   }
 
   /**
@@ -196,7 +196,7 @@ public class ConfigContainer {
 
       // If only one of the configs has PersonalizationMetadata for the key
       if (this.getPersonalizationMetadata().has(key) && !other.getPersonalizationMetadata().has(key)
-          || !this.getPersonalizationMetadata().has(key)
+              || !this.getPersonalizationMetadata().has(key)
               && other.getPersonalizationMetadata().has(key)) {
         changed.add(key);
         continue;
@@ -204,8 +204,8 @@ public class ConfigContainer {
 
       // If the both configs have PersonalizationMetadata for the key, but the metadata has changed
       if (this.getPersonalizationMetadata().has(key)
-          && other.getPersonalizationMetadata().has(key)
-          && !this.getPersonalizationMetadata()
+              && other.getPersonalizationMetadata().has(key)
+              && !this.getPersonalizationMetadata()
               .getJSONObject(key)
               .toString()
               .equals(other.getPersonalizationMetadata().getJSONObject(key).toString())) {
@@ -309,11 +309,11 @@ public class ConfigContainer {
     /** If a fetch time is not provided, the defaults container fetch time is used. */
     public ConfigContainer build() throws JSONException {
       return new ConfigContainer(
-          builderConfigsJson,
-          builderFetchTime,
-          builderAbtExperiments,
-          builderPersonalizationMetadata,
-          builderTemplateVersionNumber);
+              builderConfigsJson,
+              builderFetchTime,
+              builderAbtExperiments,
+              builderPersonalizationMetadata,
+              builderTemplateVersionNumber);
     }
   }
 
