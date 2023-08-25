@@ -14,7 +14,10 @@
 
 package com.google.firebase.remoteconfig.internal;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -185,6 +188,46 @@ public class ConfigContainer {
     return containerJson.toString().equals(that.toString());
   }
 
+  // Create a map of parameter key to rolloutMetadata.
+  private Map<String, ArrayList<JSONObject>> createRolloutParameterKeyMap() throws JSONException {
+    // Create a map where the key is the parameter key and the value is a List of rolloutMetadata
+    // associated with the key.
+    Map<String, ArrayList<JSONObject>> rolloutMetadataMap = new HashMap<>();
+    for (int i = 0; i < this.getRolloutMetadata().length(); i++) {
+      JSONObject rolloutMetadata = this.getRolloutMetadata().getJSONObject(i);
+
+      // Iterate through affectedParameterKeys and add rolloutMetadata to the key's list.
+      JSONArray parameterKeys = rolloutMetadata.getJSONArray("affectedParameterKeys");
+      for (int j = 0; j < parameterKeys.length(); j++) {
+        String key = parameterKeys.getString(j);
+        if (!rolloutMetadataMap.containsKey(key)) {
+          rolloutMetadataMap.put(key, new ArrayList<>());
+        }
+
+        ArrayList<JSONObject> parameterKeyRolloutMetadata = rolloutMetadataMap.get(key);
+        if (parameterKeyRolloutMetadata != null) {
+          parameterKeyRolloutMetadata.add(new JSONObject(rolloutMetadata.toString()));
+        }
+      }
+    }
+
+    // Sort the key's rolloutMetadata based on rolloutId to make it easier to diff.
+    for (ArrayList<JSONObject> parameterKeyRolloutMetadata : rolloutMetadataMap.values()) {
+      Collections.sort(
+          parameterKeyRolloutMetadata,
+          (a, b) -> {
+            try {
+              return a.getString("rolloutId").compareTo(b.getString("rolloutId"));
+            } catch (JSONException e) {
+              // Do nothing if `rolloutId` doesn't exist.
+            }
+            return 0;
+          });
+    }
+
+    return rolloutMetadataMap;
+  }
+
   /**
    * @param other The other {@link ConfigContainer} against which to compute the diff
    * @return The set of config keys that have changed between the this config and {@code other}
@@ -193,6 +236,11 @@ public class ConfigContainer {
   public Set<String> getChangedParams(ConfigContainer other) throws JSONException {
     // Make a deep copy of the other config before modifying it
     JSONObject otherConfig = ConfigContainer.deepCopyOf(other.containerJson).getConfigs();
+
+    // Config key to rolloutMetadata map.
+    Map<String, ArrayList<JSONObject>> rolloutMetadataMap = this.createRolloutParameterKeyMap();
+    Map<String, ArrayList<JSONObject>> otherRolloutMetadataMap =
+        other.createRolloutParameterKeyMap();
 
     Set<String> changed = new HashSet<>();
     Iterator<String> keys = this.getConfigs().keys();
@@ -226,6 +274,21 @@ public class ConfigContainer {
               .getJSONObject(key)
               .toString()
               .equals(other.getPersonalizationMetadata().getJSONObject(key).toString())) {
+        changed.add(key);
+        continue;
+      }
+
+      if (rolloutMetadataMap.containsKey(key) != otherRolloutMetadataMap.containsKey(key)) {
+        changed.add(key);
+        continue;
+      }
+
+      if (rolloutMetadataMap.containsKey(key)
+          && otherRolloutMetadataMap.containsKey(key)
+          && !rolloutMetadataMap
+              .get(key)
+              .toString()
+              .equals(otherRolloutMetadataMap.get(key).toString())) {
         changed.add(key);
         continue;
       }
