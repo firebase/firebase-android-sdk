@@ -51,6 +51,8 @@ android {
 }
 
 dependencies {
+    // TODO: Switch to a versioned dependency once released.
+    implementation project(':firebase-config-interop')
     implementation 'com.google.firebase:firebase-annotations:16.2.0'
     implementation 'com.google.firebase:firebase-common:20.3.1'
     implementation 'com.google.firebase:firebase-abt:21.1.1'

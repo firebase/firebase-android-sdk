@@ -282,7 +282,7 @@ public class ConfigMetadataClient {
   // Realtime exponential backoff logic.
   // -----------------------------------------------------------------
 
-  RealtimeBackoffMetadata getRealtimeBackoffMetadata() {
+  public RealtimeBackoffMetadata getRealtimeBackoffMetadata() {
     synchronized (realtimeBackoffMetadataLock) {
       return new RealtimeBackoffMetadata(
           frcMetadata.getInt(NUM_FAILED_REALTIME_STREAMS_KEY, NO_FAILED_REALTIME_STREAMS),
@@ -313,11 +313,12 @@ public class ConfigMetadataClient {
    * <p>The purpose of this class is to avoid race conditions when retrieving backoff metadata
    * values separately.
    */
-  static class RealtimeBackoffMetadata {
+  @VisibleForTesting
+  public static class RealtimeBackoffMetadata {
     private int numFailedStreams;
     private Date backoffEndTime;
 
-    RealtimeBackoffMetadata(int numFailedStreams, Date backoffEndTime) {
+    public RealtimeBackoffMetadata(int numFailedStreams, Date backoffEndTime) {
       this.numFailedStreams = numFailedStreams;
       this.backoffEndTime = backoffEndTime;
     }
