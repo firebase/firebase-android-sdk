@@ -19,28 +19,21 @@ package com.google.firebase.remoteconfig.internal.rollouts;
 import androidx.annotation.NonNull;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
-import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutsState;
-
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 public class RolloutsStateFactory {
 
-  RolloutsStateFactory() {
-  }
+  RolloutsStateFactory() {}
 
   // TODO: This is a stub.
   @NonNull
   RolloutsState getActiveRolloutsState(@NonNull ConfigContainer configContainer)
       throws FirebaseRemoteConfigClientException {
-    // TODO: Convert configContainer.getRolloutMetadata to RolloutsState with active parameter values.
+    // TODO: Convert configContainer.getRolloutMetadata to RolloutsState with active parameter
+    // values.
 
     Set<RolloutAssignment> rolloutAssignments = new HashSet<>();
     return RolloutsState.create(rolloutAssignments);

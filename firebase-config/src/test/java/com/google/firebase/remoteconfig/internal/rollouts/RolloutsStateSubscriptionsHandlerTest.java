@@ -31,7 +31,6 @@ import com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutsState;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutsStateSubscriber;
 import java.util.concurrent.Executor;
-import org.json.JSONArray;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -72,16 +71,17 @@ public class RolloutsStateSubscriptionsHandlerTest {
 
     configWithoutRollouts = ConfigContainer.newBuilder().build();
 
+    // TODO: Uncomment when https://github.com/firebase/firebase-android-sdk/pull/5270 is merged.
     configWithRollouts =
         ConfigContainer.newBuilder()
-            .withRolloutsMetadata(
-                new JSONArray(
-                    "["
-                        + "{"
-                        + "\"rollout_id\": \"rollout_1\","
-                        + "\"variant_id\": \"control\","
-                        + "\"affected_parameter_keys\": [\"my_feature\"]"
-                        + "}]"))
+            //            .withRolloutMetadata(
+            //                new JSONArray(
+            //                    "["
+            //                        + "{"
+            //                        + "\"rollout_id\": \"rollout_1\","
+            //                        + "\"variant_id\": \"control\","
+            //                        + "\"affected_parameter_keys\": [\"my_feature\"]"
+            //                        + "}]"))
             .build();
 
     handler =

@@ -16,25 +16,5 @@
 
 package com.google.firebase.remoteconfig.internal.rollouts;
 
-import static com.google.common.truth.Truth.assertThat;
-import static com.google.firebase.remoteconfig.testutil.Assert.assertThrows;
-import static org.mockito.Mockito.when;
-
-import com.google.common.collect.ImmutableSet;
-import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
-import com.google.firebase.remoteconfig.internal.ConfigContainer;
-import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
-import com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment;
-import com.google.firebase.remoteconfig.interop.rollouts.RolloutsState;
-import org.json.JSONArray;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.robolectric.RobolectricTestRunner;
-
 // TODO: Add tests.
-public class RolloutsStateFactoryTest {
-
-}
+public class RolloutsStateFactoryTest {}
