@@ -282,6 +282,7 @@ public class ConfigMetadataClient {
   // Realtime exponential backoff logic.
   // -----------------------------------------------------------------
 
+  @VisibleForTesting
   public RealtimeBackoffMetadata getRealtimeBackoffMetadata() {
     synchronized (realtimeBackoffMetadataLock) {
       return new RealtimeBackoffMetadata(
@@ -318,6 +319,7 @@ public class ConfigMetadataClient {
     private int numFailedStreams;
     private Date backoffEndTime;
 
+    @VisibleForTesting
     public RealtimeBackoffMetadata(int numFailedStreams, Date backoffEndTime) {
       this.numFailedStreams = numFailedStreams;
       this.backoffEndTime = backoffEndTime;
