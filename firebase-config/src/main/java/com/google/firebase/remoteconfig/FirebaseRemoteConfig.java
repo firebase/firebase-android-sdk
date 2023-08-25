@@ -593,10 +593,6 @@ public class FirebaseRemoteConfig {
     executor.execute(runnable);
   }
 
-  RolloutsStateSubscriptionsHandler getRolloutsStateSubscriptionsHandler() {
-    return rolloutsStateSubscriptionsHandler;
-  }
-
   /**
    * Processes the result of the put task that persists activated configs. If the task is
    * successful, clears the fetched cache and updates the ABT SDK with the current experiments.
@@ -711,6 +707,10 @@ public class FirebaseRemoteConfig {
       experimentInfoMaps.add(experimentInfo);
     }
     return experimentInfoMaps;
+  }
+
+  RolloutsStateSubscriptionsHandler getRolloutsStateSubscriptionsHandler() {
+    return rolloutsStateSubscriptionsHandler;
   }
 
   /** Returns true if the fetched configs are fresher than the activated configs. */
