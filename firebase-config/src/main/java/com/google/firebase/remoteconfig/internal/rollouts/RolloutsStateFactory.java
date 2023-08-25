@@ -18,6 +18,7 @@ package com.google.firebase.remoteconfig.internal.rollouts;
 
 import androidx.annotation.NonNull;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
+import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutsState;
@@ -40,13 +41,15 @@ public class RolloutsStateFactory {
   }
 
   @NonNull
-  RolloutsState getActiveRolloutsState(@NonNull JSONArray rolloutsMetadata)
+  RolloutsState getActiveRolloutsState(@NonNull ConfigContainer configContainer)
       throws FirebaseRemoteConfigClientException {
+    JSONArray rolloutMetadata = configContainer.getRolloutsMetadata();
+    long templateVersion = configContainer.getTemplateVersionNumber();
 
     Set<RolloutAssignment> rolloutAssignments = new HashSet<>();
-    for (int i = 0; i < rolloutsMetadata.length(); i++) {
+    for (int i = 0; i < rolloutMetadata.length(); i++) {
       try {
-        JSONObject rollout = rolloutsMetadata.getJSONObject(i);
+        JSONObject rollout = rolloutMetadata.getJSONObject(i);
         JSONArray affectedParameterKeys = rollout.getJSONArray(AFFECTED_PARAMETER_KEYS_KEY);
 
         for (int j = 0; j < affectedParameterKeys.length(); j++) {
@@ -59,7 +62,7 @@ public class RolloutsStateFactory {
                   .setVariantId(rollout.getString(VARIANT_ID_KEY))
                   .setParameterKey(parameterKey)
                   .setParameterValue(parameterValue)
-                  .setTemplateVersion(rollout.getLong(TEMPLATE_VERSION_KEY))
+                  .setTemplateVersion(templateVersion)
                   .build());
         }
       } catch (JSONException e) {

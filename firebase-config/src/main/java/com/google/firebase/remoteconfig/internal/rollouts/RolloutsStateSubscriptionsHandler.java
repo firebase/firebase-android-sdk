@@ -22,13 +22,13 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
+import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutsState;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutsStateSubscriber;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import org.json.JSONArray;
 
 public class RolloutsStateSubscriptionsHandler {
   private ConfigCacheClient activatedConfigsCache;
@@ -59,8 +59,7 @@ public class RolloutsStateSubscriptionsHandler {
             configContainer -> {
               try {
                 RolloutsState rolloutsState =
-                    rolloutsStateFactory.getActiveRolloutsState(
-                        configContainer.getRolloutsMetadata());
+                    rolloutsStateFactory.getActiveRolloutsState(configContainer);
                 executor.execute(() -> subscriber.onRolloutsStateChanged(rolloutsState));
               } catch (FirebaseRemoteConfigException e) {
                 Log.w(
@@ -71,10 +70,10 @@ public class RolloutsStateSubscriptionsHandler {
             });
   }
 
-  public void publishActiveRolloutsState(@NonNull JSONArray rolloutsMetadata) {
+  public void publishActiveRolloutsState(@NonNull ConfigContainer configContainer) {
     try {
       RolloutsState activeRolloutsState =
-          rolloutsStateFactory.getActiveRolloutsState(rolloutsMetadata);
+          rolloutsStateFactory.getActiveRolloutsState(configContainer);
 
       for (RolloutsStateSubscriber subscriber : subscribers) {
         executor.execute(() -> subscriber.onRolloutsStateChanged(activeRolloutsState));

@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
+import com.google.firebase.remoteconfig.internal.ConfigContainer;
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutsState;
@@ -50,7 +51,8 @@ public class RolloutsStateFactoryTest {
           .build();
   private static final RolloutsState rolloutsState =
       RolloutsState.create(ImmutableSet.of(rolloutAssignment));
-  private static JSONArray rolloutMetadata;
+  private static ConfigContainer configContainerWithRollout;
+  private static ConfigContainer configContainerWithoutRollout;
 
   private RolloutsStateFactory factory;
 
@@ -58,24 +60,28 @@ public class RolloutsStateFactoryTest {
   public void setUp() throws Exception {
     MockitoAnnotations.initMocks(this);
 
-    rolloutMetadata =
-        new JSONArray(
-            "["
-                + "{"
-                + "\"rollout_id\": \"rollout_1\","
-                + "\"variant_id\": \"control\","
-                + "\"affected_parameter_keys\": [\""
-                + PARAMETER_KEY
-                + "\"],"
-                + "\"template_version\": 1"
-                + "}]");
+    configContainerWithRollout =
+        ConfigContainer.newBuilder()
+            .withRolloutsMetadata(
+                new JSONArray(
+                    "["
+                        + "{"
+                        + "\"rollout_id\": \"rollout_1\","
+                        + "\"variant_id\": \"control\","
+                        + "\"affected_parameter_keys\": [\""
+                        + PARAMETER_KEY
+                        + "\"]"
+                        + "}]"))
+            .withTemplateVersionNumber(1L)
+            .build();
+    configContainerWithoutRollout = ConfigContainer.newBuilder().build();
 
     factory = new RolloutsStateFactory(mockConfigGetParameterHandler);
   }
 
   @Test
   public void getActiveRolloutsState_noRollouts_returnsEmptyState() throws Exception {
-    RolloutsState actual = factory.getActiveRolloutsState(new JSONArray());
+    RolloutsState actual = factory.getActiveRolloutsState(configContainerWithoutRollout);
 
     assertThat(actual).isEqualTo(RolloutsState.create(ImmutableSet.of()));
   }
@@ -84,7 +90,7 @@ public class RolloutsStateFactoryTest {
   public void getActiveRolloutsState_hasRolloutsMetadata_populatesRolloutsState() throws Exception {
     when(mockConfigGetParameterHandler.getString(PARAMETER_KEY)).thenReturn(PARAMETER_VALUE);
 
-    RolloutsState actual = factory.getActiveRolloutsState(rolloutMetadata);
+    RolloutsState actual = factory.getActiveRolloutsState(configContainerWithRollout);
 
     assertThat(actual).isEqualTo(rolloutsState);
   }
@@ -92,12 +98,11 @@ public class RolloutsStateFactoryTest {
   @Test
   public void getActiveRolloutsState_jsonException_throwsRemoteConfigException() throws Exception {
     when(mockConfigGetParameterHandler.getString(PARAMETER_KEY)).thenReturn(PARAMETER_VALUE);
-    JSONArray rolloutMetadatamMssingTemplateVersion =
+    JSONArray rolloutMetadatamMissingVariantId =
         new JSONArray(
             "["
                 + "{"
                 + "\"rollout_id\": \"rollout_1\","
-                + "\"variant_id\": \"control\","
                 + "\"affected_parameter_keys\": [\""
                 + PARAMETER_KEY
                 + "\"]"
@@ -105,6 +110,10 @@ public class RolloutsStateFactoryTest {
 
     assertThrows(
         FirebaseRemoteConfigClientException.class,
-        () -> factory.getActiveRolloutsState(rolloutMetadatamMssingTemplateVersion));
+        () ->
+            factory.getActiveRolloutsState(
+                ConfigContainer.newBuilder()
+                    .withRolloutsMetadata(rolloutMetadatamMissingVariantId)
+                    .build()));
   }
 }

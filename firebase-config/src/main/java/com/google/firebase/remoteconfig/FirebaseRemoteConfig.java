@@ -614,8 +614,7 @@ public class FirebaseRemoteConfig {
       // values from the put task must be non-null.
       if (putTask.getResult() != null) {
         updateAbtWithActivatedExperiments(putTask.getResult().getAbtExperiments());
-        rolloutsStateSubscriptionsHandler.publishActiveRolloutsState(
-            putTask.getResult().getRolloutsMetadata());
+        rolloutsStateSubscriptionsHandler.publishActiveRolloutsState(putTask.getResult());
       } else {
         // Should never happen.
         Log.e(TAG, "Activated configs written to disk are null.");

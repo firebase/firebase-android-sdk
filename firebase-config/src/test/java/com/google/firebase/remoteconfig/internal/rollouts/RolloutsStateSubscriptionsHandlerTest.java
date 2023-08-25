@@ -81,7 +81,6 @@ public class RolloutsStateSubscriptionsHandlerTest {
                         + "\"rollout_id\": \"rollout_1\","
                         + "\"variant_id\": \"control\","
                         + "\"affected_parameter_keys\": [\"my_feature\"]"
-                        + "\"template_version\": 1"
                         + "}]"))
             .build();
 
@@ -138,7 +137,7 @@ public class RolloutsStateSubscriptionsHandlerTest {
     verify(mockRolloutsStateSubscriber).onRolloutsStateChanged(rolloutsStateWithoutAssignments);
 
     // Then some rollouts are assigned.
-    handler.publishActiveRolloutsState(configWithoutRollouts.getRolloutsMetadata());
+    handler.publishActiveRolloutsState(configWithoutRollouts);
     verify(mockRolloutsStateSubscriber).onRolloutsStateChanged(rolloutsState);
   }
 
@@ -155,7 +154,7 @@ public class RolloutsStateSubscriptionsHandlerTest {
     verify(mockRolloutsStateSubscriber).onRolloutsStateChanged(rolloutsState);
 
     // Then assignments are removed.
-    handler.publishActiveRolloutsState(configWithoutRollouts.getRolloutsMetadata());
+    handler.publishActiveRolloutsState(configWithoutRollouts);
     verify(mockRolloutsStateSubscriber).onRolloutsStateChanged(rolloutsStateWithoutAssignments);
   }
 
@@ -172,7 +171,7 @@ public class RolloutsStateSubscriptionsHandlerTest {
 
     // Then assignments are removed.
     // Exception isn't thrown, and the subscriber won't be called.
-    handler.publishActiveRolloutsState(configWithoutRollouts.getRolloutsMetadata());
+    handler.publishActiveRolloutsState(configWithoutRollouts);
     verifyZeroInteractions(mockRolloutsStateSubscriber);
   }
 }
