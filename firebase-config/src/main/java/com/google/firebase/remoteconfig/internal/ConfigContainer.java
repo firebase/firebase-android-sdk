@@ -103,7 +103,7 @@ public class ConfigContainer {
   static ConfigContainer copyOf(JSONObject containerJson) throws JSONException {
     // Personalization metadata may not have been written yet.
     JSONObject personalizationMetadataJSON =
-        containerJson.optJSONObject(PERSONALIZATION_METADATA_KEY);
+            containerJson.optJSONObject(PERSONALIZATION_METADATA_KEY);
     if (personalizationMetadataJSON == null) {
       personalizationMetadataJSON = new JSONObject();
     }
@@ -213,7 +213,7 @@ public class ConfigContainer {
 
       // If only one of the configs has PersonalizationMetadata for the key
       if (this.getPersonalizationMetadata().has(key) && !other.getPersonalizationMetadata().has(key)
-          || !this.getPersonalizationMetadata().has(key)
+              || !this.getPersonalizationMetadata().has(key)
               && other.getPersonalizationMetadata().has(key)) {
         changed.add(key);
         continue;
@@ -221,8 +221,8 @@ public class ConfigContainer {
 
       // If the both configs have PersonalizationMetadata for the key, but the metadata has changed
       if (this.getPersonalizationMetadata().has(key)
-          && other.getPersonalizationMetadata().has(key)
-          && !this.getPersonalizationMetadata()
+              && other.getPersonalizationMetadata().has(key)
+              && !this.getPersonalizationMetadata()
               .getJSONObject(key)
               .toString()
               .equals(other.getPersonalizationMetadata().getJSONObject(key).toString())) {
