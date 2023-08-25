@@ -42,6 +42,8 @@ import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateFactory;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
+import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
+import com.google.firebase.remoteconfig.interop.rollouts.RolloutsStateSubscriber;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
