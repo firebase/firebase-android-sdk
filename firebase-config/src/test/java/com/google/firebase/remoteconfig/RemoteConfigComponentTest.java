@@ -190,7 +190,7 @@ public class RemoteConfigComponentTest {
 
     frcComponent.registerRolloutsStateSubscriber(DEFAULT_NAMESPACE, mockRolloutsStateSubscriber);
 
-    verify(instance.getRolloutsStateSubscriptionHandler())
+    verify(instance.getRolloutsStateSubscriptionsHandler())
         .registerRolloutsStateSubscriber(mockRolloutsStateSubscriber);
   }
 

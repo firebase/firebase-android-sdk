@@ -361,7 +361,7 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
   public void registerRolloutsStateSubscriber(
       @NonNull String namespace, @NonNull RolloutsStateSubscriber subscriber) {
     get(namespace)
-        .getRolloutsStateSubscriptionHandler()
+        .getRolloutsStateSubscriptionsHandler()
         .registerRolloutsStateSubscriber(subscriber);
   }
 

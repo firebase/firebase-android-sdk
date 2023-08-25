@@ -708,7 +708,7 @@ public class FirebaseRemoteConfig {
     return experimentInfoMaps;
   }
 
-  RolloutsStateSubscriptionsHandler getRolloutsStateSubscriptionHandler() {
+  RolloutsStateSubscriptionsHandler getRolloutsStateSubscriptionsHandler() {
     return rolloutsStateSubscriptionsHandler;
   }
 
