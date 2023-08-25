@@ -710,6 +710,10 @@ public class FirebaseRemoteConfig {
     return experimentInfoMaps;
   }
 
+  RolloutsStateSubscriptionsHandler getRolloutsStateSubscriptionsHandler() {
+    return rolloutsStateSubscriptionsHandler;
+  }
+
   /** Returns true if the fetched configs are fresher than the activated configs. */
   private static boolean isFetchedFresh(
       ConfigContainer fetched, @Nullable ConfigContainer activated) {
