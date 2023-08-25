@@ -188,7 +188,9 @@ public abstract class CrashlyticsReport {
   /** Augment an existing {@link CrashlyticsReport} with the given app quality session id. */
   @NonNull
   public CrashlyticsReport withAppQualitySessionId(@Nullable String appQualitySessionId) {
-    // Set the aqs session id in both the Report for native crashes and the Session for jvm crashes.
+    // For native crashes and ANRs, the SDK does not construct the Session value holder for
+    // technical reasons. As such, the AQS session id needs to be set at the Report level. For
+    // non-native crashes and non-ANRs, we can set the AQS session id at the Session level.
     Builder builder = toBuilder().setAppQualitySessionId(appQualitySessionId);
     if (getSession() != null) {
       builder.setSession(getSession().withAppQualitySessionId(appQualitySessionId));

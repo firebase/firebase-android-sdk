@@ -21,10 +21,11 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -34,11 +35,13 @@ import java.util.Objects;
  * <p>All public methods are intended to be called from background threads.
  */
 class CrashlyticsAppQualitySessionsStore {
-  @SuppressWarnings("CharsetObjectCanBeUsed") // StandardCharsets requires API level 19.
-  private static final Charset UTF_8 = Charset.forName("UTF-8");
+  private static final String AQS_SESSION_ID_FILENAME_PREFIX = "aqs.";
 
-  private static final int AQS_SESSION_ID_LENGTH = 32;
-  private static final String AQS_SESSION_ID_FILENAME = "app-quality-session-id";
+  private static final FilenameFilter AQS_SESSION_ID_FILE_FILTER =
+      (dir, name) -> name.startsWith(AQS_SESSION_ID_FILENAME_PREFIX);
+
+  private static final Comparator<File> FILE_RECENCY_COMPARATOR =
+      (file1, file2) -> Long.compare(file2.lastModified(), file1.lastModified());
 
   private final FileStore fileStore;
 
@@ -57,14 +60,7 @@ class CrashlyticsAppQualitySessionsStore {
       return appQualitySessionId;
     }
 
-    File aqsFile = getAqsSessionIdFile(sessionId);
-    if (!aqsFile.exists() || aqsFile.length() == 0) {
-      Logger.getLogger().d("No aqs session id set for session " + sessionId);
-      safeDeleteCorruptAqsFile(aqsFile);
-      return null;
-    }
-
-    return readAAqsSessionIdFile(aqsFile);
+    return readAqsSessionIdFile(sessionId);
   }
 
   /** Sets the App Quality Sessions session id. */
@@ -101,46 +97,36 @@ class CrashlyticsAppQualitySessionsStore {
     String appQualitySessionId = this.appQualitySessionId;
 
     if (sessionId != null && appQualitySessionId != null) {
-      File file = getAqsSessionIdFile(sessionId);
-      try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
-        fileOutputStream.write(appQualitySessionId.getBytes(UTF_8));
+      try {
+        // Instead of storing the AQS session id in the file's contents, write the id as part of
+        // the file name. In all circumstances a file needs to necessarily be created. By writing
+        // the id in the file name, an IO operation of writing the id into the contents of the file
+        // is eliminated. Profiling shows this is an order of magnitude more performant.
+
+        //noinspection ResultOfMethodCallIgnored Noop if the file already exists.
+        fileStore
+            .getSessionFile(sessionId, AQS_SESSION_ID_FILENAME_PREFIX + appQualitySessionId)
+            .createNewFile();
 
         // Update the local values to match what was persisted to avoid any inconsistencies.
         this.sessionId = sessionId;
         this.appQualitySessionId = appQualitySessionId;
       } catch (IOException ex) {
-        Logger.getLogger().w("Unable to write App Quality Sessions session id.", ex);
+        Logger.getLogger().w("Failed to persist App Quality Sessions session id.", ex);
       }
     }
   }
 
   @VisibleForTesting
-  File getAqsSessionIdFile(@NonNull String sessionId) {
-    return fileStore.getSessionFile(sessionId, AQS_SESSION_ID_FILENAME);
-  }
-
-  @VisibleForTesting
-  String readAAqsSessionIdFile(File aqsFile) {
-    try (FileInputStream fileInputStream = new FileInputStream(aqsFile)) {
-      byte[] data = new byte[AQS_SESSION_ID_LENGTH];
-      int read = fileInputStream.read(data);
-      if (read == -1) {
-        throw new IOException("Unexpected end of file.");
-      }
-      String appQualitySessionId = new String(data, 0, read);
-      Logger.getLogger().d("Loaded aqs session id " + appQualitySessionId);
-      return appQualitySessionId;
-    } catch (IOException ex) {
-      Logger.getLogger().w("Unable to read App Quality Sessions session id.", ex);
-      safeDeleteCorruptAqsFile(aqsFile);
+  @Nullable
+  String readAqsSessionIdFile(@NonNull String sessionId) {
+    List<File> aqsFiles = fileStore.getSessionFiles(sessionId, AQS_SESSION_ID_FILE_FILTER);
+    if (aqsFiles.isEmpty()) {
+      Logger.getLogger().w("Unable to read App Quality Sessions session id.");
       return null;
     }
-  }
-
-  private static void safeDeleteCorruptAqsFile(File aqsFile) {
-    if (aqsFile.exists() && aqsFile.delete()) {
-      Logger.getLogger().i("Deleted corrupt aqs file: " + aqsFile.getAbsolutePath());
-    }
+    File mostRecentAqsFile = Collections.min(aqsFiles, FILE_RECENCY_COMPARATOR);
+    return mostRecentAqsFile.getName().substring(AQS_SESSION_ID_FILENAME_PREFIX.length());
   }
 
   private static void checkNotOnMainThread() {

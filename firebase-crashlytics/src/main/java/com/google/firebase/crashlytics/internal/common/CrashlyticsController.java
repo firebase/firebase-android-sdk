@@ -611,13 +611,12 @@ class CrashlyticsController {
     if (skipCurrentSession) {
       currentSessionId = sortedOpenSessions.get(0);
     } else {
-      // The Sessions sdk can rotate the aqs session id independently of the crashlytics session.
-      // For on-demand, there is a case when crashlytics has closed the old session but not yet
-      // opened a new session, and Sessions rotates the aqs session id at that moment. So we
-      // clear the crashlytics session id during this time, otherwise the aqs session id file would
-      // get written in to the closed session's files.
-
-      // Prevent writing a rotated aqs id in a closed crashlytics session.
+      // The Sessions SDK can rotate the AQS session id independently of the Crashlytics session.
+      // There is a window of time between Crashlytics closing the current session and opening a
+      // new session when the Sessions SDK is able to rotate the AQS session id. For such cases it
+      // is necessary to clear the current Crashlytics session id from the Sessions subscriber in
+      // order to prevent the newly rotated AQS session id from being associated with the closed
+      // Crashlytics session. On-demand fatals is an example of where this can happen.
       sessionsSubscriber.setSessionId(/* sessionId= */ null);
     }
 
