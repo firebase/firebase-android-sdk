@@ -108,9 +108,13 @@ public class IndexingTest {
                     + "}"));
   }
 
+  /**
+   * After Auto Index Creation is enabled, through public API there is no way to state of indexes
+   * sitting inside SDK. So this test only checks the API of auto index creation.
+   */
   @Test
   public void testAutoIndexCreationSetSuccessfully() {
-    // Use persistent disk cache (default)
+    // Use persistent disk cache (explicit)
     FirebaseFirestore db = testFirestore();
     FirebaseFirestoreSettings settings =
         new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())
@@ -128,16 +132,22 @@ public class IndexingTest {
     assertEquals(1, results.size());
 
     assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().enableIndexAutoCreation());
-
-    results = waitFor(collection.whereEqualTo("match", true).get());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
     assertEquals(1, results.size());
 
     assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().disableIndexAutoCreation());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
+    assertEquals(1, results.size());
 
-    results = waitFor(collection.whereEqualTo("match", true).get());
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().deleteAllIndexes());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
     assertEquals(1, results.size());
   }
 
+  /**
+   * After Auto Index Creation is enabled, through public API there is no way to state of indexes
+   * sitting inside SDK. So this test only checks the API of auto index creation.
+   */
   @Test
   public void testAutoIndexCreationSetSuccessfullyUsingDefault() {
     // Use persistent disk cache (default)
@@ -153,13 +163,15 @@ public class IndexingTest {
     assertEquals(1, results.size());
 
     assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().enableIndexAutoCreation());
-
-    results = waitFor(collection.whereEqualTo("match", true).get());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
     assertEquals(1, results.size());
 
     assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().disableIndexAutoCreation());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
+    assertEquals(1, results.size());
 
-    results = waitFor(collection.whereEqualTo("match", true).get());
+    assertDoesNotThrow(() -> db.getPersistentCacheIndexManager().deleteAllIndexes());
+    results = waitFor(collection.whereEqualTo("match", true).get(Source.CACHE));
     assertEquals(1, results.size());
   }
 
@@ -175,5 +187,11 @@ public class IndexingTest {
     expectError(
         () -> db.getPersistentCacheIndexManager().disableIndexAutoCreation(),
         "The client has already been terminated");
+
+    expectError(
+        () -> db.getPersistentCacheIndexManager().deleteAllIndexes(),
+        "The client has already been terminated");
   }
+
+  // TODO(b/296100693) Add testing hooks to verify indexes are created as expected.
 }

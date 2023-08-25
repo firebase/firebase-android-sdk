@@ -149,6 +149,7 @@ public abstract class BomGeneratorTask extends DefaultTask {
           "firebase-ml-model-interpreter",
           "firebase-perf-license",
           "firebase-plugins",
+          "firebase-sessions",
           "firebase-storage-common",
           "firebase-storage-common-license",
           "firebase-storage-license",

@@ -12,28 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-        maven {
-            url 'https://storage.googleapis.com/android-ci/mvn/'
-            metadataSources {
-                artifact()
-            }
-        }
-    }
-}
+package com.google.firebase.datatransport;
 
-configure(subprojects) {
-    repositories {
-        google()
-        mavenCentral()
-        maven {
-            url 'https://storage.googleapis.com/android-ci/mvn/'
-            metadataSources {
-                artifact()
-            }
-        }
-    }
-}
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
+import javax.inject.Qualifier;
+
+@Qualifier
+@Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.FIELD})
+public @interface LegacyTransportBackend {}

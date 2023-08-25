@@ -99,14 +99,9 @@ from within Android Studio.
 
 ## Build Local Jar of Firestore SDK
 
-Run:
 ```bash
-./gradlew publishAllToLocal
+./gradlew -PprojectsToPublish="firebase-firestore" publishReleasingLibrariesToMavenLocal
 ```
-
-This will publish firebase SDK at SNAPSHOT versions. All pom level dependencies
-within the published artifacts will also point to SNAPSHOT versions that are
-co-published. The results will be built into your local maven repo.
 
 Developers may then take a dependency on these locally published versions by adding
 the `mavenLocal()` repository to your [repositories

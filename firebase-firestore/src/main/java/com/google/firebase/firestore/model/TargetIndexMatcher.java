@@ -195,7 +195,7 @@ public class TargetIndexMatcher {
   /** Returns a full matched field index for this target. */
   public FieldIndex buildTargetIndex() {
     // We want to make sure only one segment created for one field. For example, in case like
-    // a == 3 and a > 2, index, a ASCENDING, will only be created once.
+    // a == 3 and a > 2, Index: {a ASCENDING} will only be created once.
     Set<FieldPath> uniqueFields = new HashSet<>();
     List<FieldIndex.Segment> segments = new ArrayList<>();
 
@@ -219,6 +219,9 @@ public class TargetIndexMatcher {
       }
     }
 
+    // Note: We do not explicitly check `inequalityFilter` but rather rely on the target defining an
+    // appropriate `orderBys` to ensure that the required index segment is added. The query engine
+    // would reject a query with an inequality filter that lacks the required order-by clause.
     for (OrderBy orderBy : orderBys) {
       // Stop adding more segments if we see a order-by on key. Typically this is the default
       // implicit order-by which is covered in the index_entry table as a separate column.

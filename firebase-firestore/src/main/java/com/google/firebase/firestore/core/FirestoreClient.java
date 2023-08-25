@@ -353,9 +353,14 @@ public final class FirestoreClient {
     return asyncQueue.enqueue(() -> localStore.configureFieldIndexes(fieldIndices));
   }
 
-  public void setIndexAutoCreationEnabled(boolean enabled) {
+  public void setIndexAutoCreationEnabled(boolean isEnabled) {
     verifyNotTerminated();
-    asyncQueue.enqueueAndForget(() -> localStore.setIndexAutoCreationEnabled(enabled));
+    asyncQueue.enqueueAndForget(() -> localStore.setIndexAutoCreationEnabled(isEnabled));
+  }
+
+  public void deleteAllFieldIndexes() {
+    verifyNotTerminated();
+    asyncQueue.enqueueAndForget(() -> localStore.deleteAllFieldIndexes());
   }
 
   public void removeSnapshotsInSyncListener(EventListener<Void> listener) {

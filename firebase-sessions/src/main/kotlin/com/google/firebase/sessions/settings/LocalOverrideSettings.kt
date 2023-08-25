@@ -18,32 +18,21 @@ package com.google.firebase.sessions.settings
 
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 internal class LocalOverrideSettings(context: Context) : SettingsProvider {
+  @Suppress("DEPRECATION") // TODO(mrober): Use ApplicationInfoFlags when target sdk set to 33
   private val metadata =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-      context.packageManager
-        .getApplicationInfo(
-          context.packageName,
-          PackageManager.ApplicationInfoFlags.of(PackageManager.GET_META_DATA.toLong()),
-        )
-        .metaData
-    } else {
-      @Suppress("DEPRECATION") // For older API levels.
-      context.packageManager
-        .getApplicationInfo(
-          context.packageName,
-          PackageManager.GET_META_DATA,
-        )
-        .metaData
-    }
-    // Default to an empty bundle, meaning no cached values.
-    ?: Bundle.EMPTY
+    context.packageManager
+      .getApplicationInfo(
+        context.packageName,
+        PackageManager.GET_META_DATA,
+      )
+      .metaData
+      ?: Bundle.EMPTY // Default to an empty bundle, meaning no cached values.
 
   override val sessionEnabled: Boolean?
     get() =

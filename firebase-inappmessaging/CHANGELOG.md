@@ -1,5 +1,8 @@
 # Unreleased
+* [changed] Firelog to clearcut migration.
 
+# 20.3.3
+* [unchanged] Updated internal Dagger dependency.
 
 # 20.3.2
 * [fixed] Fixed nullpointer crash when using experiments
@@ -273,7 +276,7 @@ additional updates.
 
 # 17.1.0
 * [feature] Adds functionality to programmatically register listeners for
-  updates on in-app engagement (for example, impression, click, display errors). 
+  updates on in-app engagement (for example, impression, click, display errors).
   See
   [`FirebaseInAppMessaging.addClickListener()`](/docs/reference/android/com/google/firebase/inappmessaging/FirebaseInAppMessaging.addClickListener())
   for more details.
@@ -285,8 +288,7 @@ additional updates.
 * [fixed] Improved caching logic, added safeguards for cache expiration, and cleaned up API surface to prepare for open sourcing the [inappmessaging]-display SDK.
 
 # 17.0.1
-* [fixed] Fixed an issue where [fiam] and Firestore could not be included/built into the same app, because of an obfuscation collision. 
+* [fixed] Fixed an issue where [fiam] and Firestore could not be included/built into the same app, because of an obfuscation collision.
 
 # 17.0.0
 * [feature] The initial public beta release of the Firebase In-App Messaging SDK for Android is now available. To learn more, see the [Firebase In-App Messaging documentation](/docs/in-app-messaging).
-

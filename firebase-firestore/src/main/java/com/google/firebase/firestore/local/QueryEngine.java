@@ -89,8 +89,8 @@ public class QueryEngine {
     this.initialized = true;
   }
 
-  public void setIndexAutoCreationEnabled(boolean enabled) {
-    this.indexAutoCreationEnabled = enabled;
+  public void setIndexAutoCreationEnabled(boolean isEnabled) {
+    this.indexAutoCreationEnabled = isEnabled;
   }
 
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
@@ -139,7 +139,6 @@ public class QueryEngine {
    * Decides whether SDK should create a full matched field index for this query based on query
    * context and query result size.
    */
-  // TODO(csi): Auto experiment data.
   private void createCacheIndexes(Query query, QueryContext context, int resultSize) {
     if (context.getDocumentReadCount() < indexAutoCreationMinCollectionSize) {
       Logger.debug(

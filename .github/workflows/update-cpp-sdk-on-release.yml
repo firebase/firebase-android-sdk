@@ -23,7 +23,7 @@ jobs:
     outputs:
       released_version_changed: ${{ steps.check_version.outputs.released_version_changed }}
     steps:
-      - uses: actions/checkout@v2.3.1
+      - uses: actions/checkout@v3.5.3
         with:
           # Check out the actual head commit, not any merge commit.
           ref: ${{ github.sha }}
@@ -35,7 +35,7 @@ jobs:
           # Query the git history for all gradle.properties files changed by this push.
           # Then, check the diff to see if any "latestReleasedVersion=" lines changed.
           if (git diff '${{ github.event.before }}' -- '**/gradle.properties' | grep -q '^[-+]latestReleasedVersion='); then
-            echo "::set-output name=released_version_changed::1"
+            echo "released_version_changed=1" >> $GITHUB_OUTPUT
           else
             echo "No change to latestReleasedVersion detected since ${{ github.event.before }}"
           fi
@@ -56,7 +56,7 @@ jobs:
           python-version: 3.7
 
       - name: Check out firebase-cpp-sdk
-        uses: actions/checkout@v2.3.1
+        uses: actions/checkout@v3.5.3
         with:
           repository: firebase/firebase-cpp-sdk
           ref: main

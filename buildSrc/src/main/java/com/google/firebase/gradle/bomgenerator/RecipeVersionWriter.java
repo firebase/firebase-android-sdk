@@ -176,18 +176,6 @@ public class RecipeVersionWriter {
     outputBuilder.append(
         generateVersionVariable(
             depsByArtifactId,
-            "Firebase Dynamic Links",
-            "fdl-dependency",
-            "com.google.firebase:firebase-dynamic-links"));
-    outputBuilder.append(
-        generateVersionVariable(
-            depsByArtifactId,
-            "Firebase Dynamic Links KTX",
-            "fdl-ktx-dependency",
-            "com.google.firebase:firebase-dynamic-links-ktx"));
-    outputBuilder.append(
-        generateVersionVariable(
-            depsByArtifactId,
             "FIAM Display",
             "fiamd-dependency",
             "com.google.firebase:firebase-inappmessaging-display"));

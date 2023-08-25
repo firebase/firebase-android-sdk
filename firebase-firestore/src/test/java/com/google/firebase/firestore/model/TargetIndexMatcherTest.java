@@ -58,7 +58,7 @@ public class TargetIndexMatcherTest {
           query("collId")
               .filter(filter("a", "array-contains-any", Collections.singletonList("a"))));
 
-  List<Query> queriesWithOrderBy =
+  List<Query> queriesWithOrderBys =
       Arrays.asList(
           query("collId").orderBy(orderBy("a")),
           query("collId").orderBy(orderBy("a", "desc")),
@@ -664,8 +664,8 @@ public class TargetIndexMatcherTest {
   }
 
   @Test
-  public void testBuildTargetIndexWithQueriesWithOrderBy() {
-    for (Query query : queriesWithOrderBy) {
+  public void testBuildTargetIndexWithQueriesWithOrderBys() {
+    for (Query query : queriesWithOrderBys) {
       validateBuildTargetIndexCreateFullMatchIndex(query);
     }
   }

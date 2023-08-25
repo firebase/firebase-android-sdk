@@ -22,10 +22,12 @@ import org.gradle.kotlin.dsl.register
  * Facilitates the creation of Post Release Tasks.
  *
  * TODO() - Add Additional information. Will probably do such whenever we get closer to completion.
+ * TODO() - Add a postReleaseCleanup task when all tasks are ready- as to avoid RO overlooking steps
  */
 class PostReleasePlugin : Plugin<Project> {
   override fun apply(project: Project) {
     registerVersionBumpTask(project)
+    registerMoveUnreleasedChangesTask(project)
   }
 
   /**
@@ -41,4 +43,19 @@ class PostReleasePlugin : Plugin<Project> {
    */
   fun registerVersionBumpTask(project: Project) =
     project.tasks.register<VersionBumpTask>("versionBump")
+
+  /**
+   * Registers the `moveUnreleasedChanges` task for the provided [Project].
+   *
+   * Each SDK has `CHANGELOG.md` file at its root. This file has an `Unreleased` section with
+   * changes that go out in the next release. After a release, this `Unreleased` section should be
+   * moved into a seperate section that specifies the version it went out with, and the `Unreleased`
+   * section should be wiped clear for new changes to come; for the next release.
+   *
+   * @see [MoveUnreleasedChangesTask]
+   *
+   * @param project the [Project] to register this task to
+   */
+  fun registerMoveUnreleasedChangesTask(project: Project) =
+    project.tasks.register<MoveUnreleasedChangesTask>("moveUnreleasedChanges")
 }
