@@ -78,7 +78,6 @@ import com.google.firebase.remoteconfig.internal.ConfigRealtimeHttpClient;
 import com.google.firebase.remoteconfig.internal.FakeHttpURLConnection;
 import com.google.firebase.remoteconfig.internal.Personalization;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -110,9 +109,7 @@ import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
 import org.skyscreamer.jsonassert.JSONAssert;
 
-/**
- * Unit tests for the Firebase Remote Config API.
- */
+/** Unit tests for the Firebase Remote Config API. */
 @RunWith(RobolectricTestRunner.class)
 @Config(
     manifest = Config.NONE,
@@ -245,7 +242,7 @@ public final class FirebaseRemoteConfigTest {
             mockGetHandler,
             metadataClient,
             mockConfigRealtimeHandler,
-                mockRolloutsStateSubscriptionsHandler);
+            mockRolloutsStateSubscriptionsHandler);
 
     // Set up an FRC instance for the Fireperf namespace that uses mocked clients.
     fireperfFrc =
@@ -263,7 +260,7 @@ public final class FirebaseRemoteConfigTest {
                 mockFireperfFetchHandler,
                 mockFireperfGetHandler,
                 RemoteConfigComponent.getMetadataClient(context, APP_ID, FIREPERF_NAMESPACE),
-                    mockRolloutsStateSubscriptionsHandler);
+                mockRolloutsStateSubscriptionsHandler);
 
     personalizationFrc =
         FirebaseApp.getInstance()
@@ -279,9 +276,8 @@ public final class FirebaseRemoteConfigTest {
                 mockDefaultsCache,
                 mockFetchHandler,
                 parameterHandler,
-                RemoteConfigComponent.getMetadataClient(
-                    context, APP_ID, PERSONALIZATION_NAMESPACE),
-                    mockRolloutsStateSubscriptionsHandler);
+                RemoteConfigComponent.getMetadataClient(context, APP_ID, PERSONALIZATION_NAMESPACE),
+                mockRolloutsStateSubscriptionsHandler);
 
     firstFetchedContainer =
         ConfigContainer.newBuilder()

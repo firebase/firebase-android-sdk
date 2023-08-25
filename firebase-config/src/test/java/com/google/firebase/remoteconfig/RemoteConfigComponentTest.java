@@ -26,8 +26,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import android.nfc.tech.NfcA;
-
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -44,7 +42,6 @@ import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutsStateSubscriber;
-
 import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -58,9 +55,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
 
-/**
- * Unit tests for the Firebase Remote Config Component.
- */
+/** Unit tests for the Firebase Remote Config Component. */
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
 public class RemoteConfigComponentTest {
@@ -187,14 +182,16 @@ public class RemoteConfigComponentTest {
   @Test
   public void registerRolloutsStateSubscriber_firebaseNamespace_callsSubscriptionHandler() {
     // Mock metadata client response since Realtime handler can't be mocked here.
-    when(mockMetadataClient.getRealtimeBackoffMetadata()).thenReturn(new ConfigMetadataClient.RealtimeBackoffMetadata(0, new Date()));
+    when(mockMetadataClient.getRealtimeBackoffMetadata())
+        .thenReturn(new ConfigMetadataClient.RealtimeBackoffMetadata(0, new Date()));
 
     RemoteConfigComponent frcComponent = getNewFrcComponent();
     FirebaseRemoteConfig instance = getFrcInstanceFromComponent(frcComponent, DEFAULT_NAMESPACE);
 
     frcComponent.registerRolloutsStateSubscriber(DEFAULT_NAMESPACE, mockRolloutsStateSubscriber);
 
-    verify(instance.getRolloutsStateSubscriptionHandler()).registerRolloutsStateSubscriber(mockRolloutsStateSubscriber);
+    verify(instance.getRolloutsStateSubscriptionHandler())
+        .registerRolloutsStateSubscriber(mockRolloutsStateSubscriber);
   }
 
   private RemoteConfigComponent getNewFrcComponent() {
