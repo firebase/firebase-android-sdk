@@ -61,7 +61,6 @@ public abstract class RolloutAssignment {
   @NonNull
   public static RolloutAssignment create(@NonNull String jsonString) throws JSONException {
     final JSONObject json = new JSONObject(jsonString);
-
     return RolloutAssignment.builder()
         .setRolloutId(json.getString(ROLLOUT_ID))
         .setVariantId(json.getString(VARIANT_ID))
