@@ -58,6 +58,7 @@ public class SessionReportingCoordinatorTest {
   @Mock private DataTransportCrashlyticsReportSender reportSender;
   @Mock private LogFileManager logFileManager;
   @Mock private UserMetadata reportMetadata;
+  @Mock private IdManager idManager;
   @Mock private CrashlyticsReport mockReport;
   @Mock private CrashlyticsReport.Session.Event mockEvent;
   @Mock private CrashlyticsReport.Session.Event.Builder mockEventBuilder;
@@ -74,7 +75,12 @@ public class SessionReportingCoordinatorTest {
 
     reportingCoordinator =
         new SessionReportingCoordinator(
-            dataCapture, reportPersistence, reportSender, logFileManager, reportMetadata);
+            dataCapture,
+            reportPersistence,
+            reportSender,
+            logFileManager,
+            reportMetadata,
+            idManager);
   }
 
   @Test
@@ -442,6 +448,7 @@ public class SessionReportingCoordinatorTest {
     when(reportSender.enqueueReport(mockReport1, false)).thenReturn(successfulTask);
     when(reportSender.enqueueReport(mockReport2, false)).thenReturn(failedTask);
 
+    when(idManager.fetchTrueFid()).thenReturn("fid");
     reportingCoordinator.sendReports(Runnable::run);
 
     verify(reportSender).enqueueReport(mockReport1, false);
@@ -491,6 +498,7 @@ public class SessionReportingCoordinatorTest {
     final CrashlyticsReport.Session mockSession = mock(CrashlyticsReport.Session.class);
     when(mockSession.getIdentifier()).thenReturn(sessionId);
     when(mockReport.getSession()).thenReturn(mockSession);
+    when(mockReport.withFirebaseInstallationId(anyString())).thenReturn(mockReport);
     return mockReport;
   }
 

@@ -18,11 +18,18 @@ import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatExtension
 import com.github.sherter.googlejavaformatgradleplugin.GoogleJavaFormatPlugin
 import com.google.common.collect.ImmutableList
 import com.google.firebase.gradle.plugins.LibraryType.JAVA
+import com.google.firebase.gradle.plugins.semver.ApiDiffer
+import com.google.firebase.gradle.plugins.semver.GmavenCopier
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.getPlugin
+import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
@@ -34,6 +41,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     project.extensions.getByType<GoogleJavaFormatExtension>().toolVersion = "1.10.0"
 
     setupFirebaseLibraryExtension(project)
+    registerMakeReleaseNotesTask(project)
 
     // reduce the likelihood of kotlin module files colliding.
     project.tasks.withType<KotlinCompile> {
@@ -48,7 +56,42 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     setupStaticAnalysis(project, firebaseLibrary)
     setupApiInformationAnalysis(project)
     getIsPomValidTask(project, firebaseLibrary)
+    setupVersionCheckTasks(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary)
+  }
+
+  private fun setupVersionCheckTasks(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+    project.tasks.register<GmavenVersionChecker>("gmavenVersionCheck") {
+      groupId.value(firebaseLibrary.groupId.get())
+      artifactId.value(firebaseLibrary.artifactId.get())
+      version.value(firebaseLibrary.version)
+      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElseGet { "" })
+    }
+    project.mkdir("semver")
+    project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {
+      dependsOn("jar")
+      project.file("semver/previous.jar").delete()
+      groupId.value(firebaseLibrary.groupId.get())
+      artifactId.value(firebaseLibrary.artifactId.get())
+      aarAndroidFile.value(false)
+      filePath.value(project.file("semver/previous.jar").absolutePath)
+    }
+    val currentJarFile =
+      project
+        .file("build/libs/${firebaseLibrary.artifactId.get()}-${firebaseLibrary.version}.jar")
+        .absolutePath
+    val previousJarFile = project.file("semver/previous.jar").absolutePath
+    project.tasks.register<ApiDiffer>("semverCheck") {
+      currentJar.value(currentJarFile)
+      previousJar.value(previousJarFile)
+      version.value(firebaseLibrary.version)
+      previousVersionString.value(
+        GmavenHelper(firebaseLibrary.groupId.get(), firebaseLibrary.artifactId.get())
+          .getLatestReleasedVersion()
+      )
+
+      dependsOn("copyPreviousArtifacts")
+    }
   }
 
   private fun setupApiInformationAnalysis(project: Project) {

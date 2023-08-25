@@ -22,8 +22,10 @@ import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.Target;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A light query planner for Firestore.
@@ -144,14 +146,14 @@ public class TargetIndexMatcher {
     List<FieldIndex.Segment> segments = index.getDirectionalSegments();
     int segmentIndex = 0;
 
+    Set<String> equalitySegments = new HashSet<>();
     // Process all equalities first. Equalities can appear out of order.
     for (; segmentIndex < segments.size(); ++segmentIndex) {
       // We attempt to greedily match all segments to equality filters. If a filter matches an
-      // index segment, we can mark the segment as used. Since it is not possible to use the same
-      // field path in both an equality and inequality/oderBy clause, we do not have to consider the
-      // possibility that a matching equality segment should instead be used to map to an inequality
-      // filter or orderBy clause.
-      if (!hasMatchingEqualityFilter(segments.get(segmentIndex))) {
+      // index segment, we can mark the segment as used.
+      if (hasMatchingEqualityFilter(segments.get(segmentIndex))) {
+        equalitySegments.add(segments.get(segmentIndex).getFieldPath().canonicalString());
+      } else {
         // If we cannot find a matching filter, we need to verify whether the remaining segments map
         // to the target's inequality and its orderBy clauses.
         break;
@@ -165,13 +167,17 @@ public class TargetIndexMatcher {
       return true;
     }
 
-    // If there is an inequality filter, the next segment must match both the filter and the first
-    // orderBy clause.
     if (inequalityFilter != null) {
-      FieldIndex.Segment segment = segments.get(segmentIndex);
-      if (!matchesFilter(inequalityFilter, segment) || !matchesOrderBy(orderBys.next(), segment)) {
-        return false;
+      // If there is an inequality filter and the field was not in one of the equality filters
+      // above, the next segment must match both the filter and the first orderBy clause.
+      if (!equalitySegments.contains(inequalityFilter.getField().canonicalString())) {
+        FieldIndex.Segment segment = segments.get(segmentIndex);
+        if (!matchesFilter(inequalityFilter, segment)
+            || !matchesOrderBy(orderBys.next(), segment)) {
+          return false;
+        }
       }
+
       ++segmentIndex;
     }
 
@@ -184,6 +190,62 @@ public class TargetIndexMatcher {
     }
 
     return true;
+  }
+
+  /** Returns a full matched field index for this target. */
+  public FieldIndex buildTargetIndex() {
+    // We want to make sure only one segment created for one field. For example, in case like
+    // a == 3 and a > 2, Index: {a ASCENDING} will only be created once.
+    Set<FieldPath> uniqueFields = new HashSet<>();
+    List<FieldIndex.Segment> segments = new ArrayList<>();
+
+    for (FieldFilter filter : equalityFilters) {
+      if (filter.getField().isKeyField()) {
+        continue;
+      }
+      boolean isArrayOperator =
+          filter.getOperator().equals(FieldFilter.Operator.ARRAY_CONTAINS)
+              || filter.getOperator().equals(FieldFilter.Operator.ARRAY_CONTAINS_ANY);
+      if (isArrayOperator) {
+        segments.add(
+            FieldIndex.Segment.create(filter.getField(), FieldIndex.Segment.Kind.CONTAINS));
+      } else {
+        if (uniqueFields.contains(filter.getField())) {
+          continue;
+        }
+        uniqueFields.add(filter.getField());
+        segments.add(
+            FieldIndex.Segment.create(filter.getField(), FieldIndex.Segment.Kind.ASCENDING));
+      }
+    }
+
+    // Note: We do not explicitly check `inequalityFilter` but rather rely on the target defining an
+    // appropriate `orderBys` to ensure that the required index segment is added. The query engine
+    // would reject a query with an inequality filter that lacks the required order-by clause.
+    for (OrderBy orderBy : orderBys) {
+      // Stop adding more segments if we see a order-by on key. Typically this is the default
+      // implicit order-by which is covered in the index_entry table as a separate column.
+      // If it is not the default order-by, the generated index will be missing some segments
+      // optimized for order-bys, which is probably fine.
+      if (orderBy.getField().isKeyField()) {
+        continue;
+      }
+
+      if (uniqueFields.contains(orderBy.getField())) {
+        continue;
+      }
+      uniqueFields.add(orderBy.getField());
+
+      segments.add(
+          FieldIndex.Segment.create(
+              orderBy.getField(),
+              orderBy.getDirection() == OrderBy.Direction.ASCENDING
+                  ? FieldIndex.Segment.Kind.ASCENDING
+                  : FieldIndex.Segment.Kind.DESCENDING));
+    }
+
+    return FieldIndex.create(
+        FieldIndex.UNKNOWN_ID, collectionId, segments, FieldIndex.INITIAL_STATE);
   }
 
   private boolean hasMatchingEqualityFilter(FieldIndex.Segment segment) {

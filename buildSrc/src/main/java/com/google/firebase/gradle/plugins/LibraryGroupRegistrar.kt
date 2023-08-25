@@ -26,10 +26,14 @@ class LibraryGroupRegistrar {
       librariesByGroup
         .get(libraryGroup)
         .map { it.project.version.toString() }
-        .filter { it.first().isDigit() } // to filter out any flag values
+        .mapNotNull { ModuleVersion.fromStringOrNull(it) }
         .maxOrNull()
-        ?: "unspecified"
-    librariesByGroup.get(libraryGroup).forEach { it.project.version = maxVersion }
+    if (maxVersion != null) {
+      librariesByGroup
+        .get(libraryGroup)
+        .filter { ModuleVersion.fromStringOrNull(it.project.version.toString()) == null }
+        .forEach { it.project.version = maxVersion.toString() }
+    }
   }
 
   fun getLibrariesForGroup(name: String) = librariesByGroup.get(name)

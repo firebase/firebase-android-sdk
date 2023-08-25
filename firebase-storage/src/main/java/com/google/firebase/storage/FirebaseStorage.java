@@ -25,7 +25,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.appcheck.AppCheckTokenResult;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 import com.google.firebase.auth.internal.InternalAuthProvider;
 import com.google.firebase.emulators.EmulatedServiceSettings;
 import com.google.firebase.inject.Provider;
@@ -50,7 +50,7 @@ public class FirebaseStorage {
       "The storage Uri cannot contain a path element.";
   @NonNull private final FirebaseApp mApp;
   @Nullable private final Provider<InternalAuthProvider> mAuthProvider;
-  @Nullable private final Provider<InternalAppCheckTokenProvider> mAppCheckProvider;
+  @Nullable private final Provider<InteropAppCheckTokenProvider> mAppCheckProvider;
   @Nullable private final String mBucketName;
   private long sMaxUploadRetry = 10 * DateUtils.MINUTE_IN_MILLIS; //  10 * 60 * 1000
   private long sMaxChunkUploadRetry = DateUtils.MINUTE_IN_MILLIS; //  60 * 1000
@@ -63,7 +63,7 @@ public class FirebaseStorage {
       @Nullable String bucketName,
       @NonNull FirebaseApp app,
       @Nullable Provider<InternalAuthProvider> authProvider,
-      @Nullable Provider<InternalAppCheckTokenProvider> appCheckProvider) {
+      @Nullable Provider<InteropAppCheckTokenProvider> appCheckProvider) {
     mBucketName = bucketName;
     mApp = app;
     mAuthProvider = authProvider;
@@ -363,7 +363,7 @@ public class FirebaseStorage {
   }
 
   @Nullable
-  InternalAppCheckTokenProvider getAppCheckProvider() {
+  InteropAppCheckTokenProvider getAppCheckProvider() {
     return mAppCheckProvider != null ? mAppCheckProvider.get() : null;
   }
 

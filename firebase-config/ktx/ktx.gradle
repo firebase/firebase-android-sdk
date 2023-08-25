@@ -24,6 +24,7 @@ firebaseLibrary {
 }
 
 android {
+    namespace "com.google.firebase.remoteconfig.ktx"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16
@@ -50,7 +51,7 @@ dependencies {
     implementation project(':firebase-config')
     implementation 'com.google.firebase:firebase-abt:21.1.1'
     implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
-    runtimeOnly project(':firebase-installations')
+    runtimeOnly 'com.google.firebase:firebase-installations:17.1.2'
 
     implementation 'androidx.annotation:annotation:1.1.0'
 
@@ -58,5 +59,5 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
 }

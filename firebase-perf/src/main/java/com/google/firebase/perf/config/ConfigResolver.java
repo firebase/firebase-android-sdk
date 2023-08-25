@@ -156,6 +156,15 @@ public class ConfigResolver {
     return null;
   }
 
+  /**
+   * Returns whether data collection flag is fetched either through device cache or remote config.
+   */
+  public boolean isCollectionEnabledConfigValueAvailable() {
+    Optional<Boolean> remoteConfigValue = getRemoteConfigBoolean(SdkEnabled.getInstance());
+    Optional<Boolean> deviceCacheValue = getDeviceCacheBoolean(CollectionEnabled.getInstance());
+    return deviceCacheValue.isAvailable() || remoteConfigValue.isAvailable();
+  }
+
   /** Returns whether developers have deactivated Firebase Performance event collection. */
   @Nullable
   public Boolean getIsPerformanceCollectionDeactivated() {
@@ -286,89 +295,107 @@ public class ConfigResolver {
   }
 
   /** Returns what percentage of Traces should be collected, range is [0.00f, 1.00f]. */
-  public float getTraceSamplingRate() {
+  public double getTraceSamplingRate() {
     // Order of precedence is:
     // 1. If the value exists through Firebase Remote Config, cache and return this value.
     // 2. If the value exists in device cache, return this value.
-    // 3. Otherwise, return default value.
+    // 3. If the Firebase Remote Config fetch failed, return the default "rc failure" value.
+    // 4. Otherwise, return default value.
     TraceSamplingRate config = TraceSamplingRate.getInstance();
 
     // 1. Reads value from Firebase Remote Config, saves this value in cache layer if valid.
-    Optional<Float> rcValue = getRemoteConfigFloat(config);
+    Optional<Double> rcValue = getRemoteConfigDouble(config);
     if (rcValue.isAvailable() && isSamplingRateValid(rcValue.get())) {
       deviceCacheManager.setValue(config.getDeviceCacheFlag(), rcValue.get());
       return rcValue.get();
     }
 
     // 2. Reads value from cache layer.
-    Optional<Float> deviceCacheValue = getDeviceCacheFloat(config);
+    Optional<Double> deviceCacheValue = getDeviceCacheDouble(config);
     if (deviceCacheValue.isAvailable() && isSamplingRateValid(deviceCacheValue.get())) {
       return deviceCacheValue.get();
     }
 
-    // 3. Returns default value if there is no valid value from above approaches.
+    // 3. Check if RC fetch failed.
+    if (remoteConfigManager.isLastFetchFailed()) {
+      return config.getDefaultOnRcFetchFail();
+    }
+
+    // 4. Returns default value if there is no valid value from above approaches.
     return config.getDefault();
   }
 
   /** Returns what percentage of NetworkRequest should be collected, range is [0.00f, 1.00f]. */
-  public float getNetworkRequestSamplingRate() {
+  public double getNetworkRequestSamplingRate() {
     // Order of precedence is:
     // 1. If the value exists through Firebase Remote Config, cache and return this value.
     // 2. If the value exists in device cache, return this value.
-    // 3. Otherwise, return default value.
+    // 3. If the Firebase Remote Config fetch failed, return the default "rc failure" value.
+    // 4. Otherwise, return default value.
     NetworkRequestSamplingRate config = NetworkRequestSamplingRate.getInstance();
 
     // 1. Reads value from Firebase Remote Config, saves this value in cache layer if valid.
-    Optional<Float> rcValue = getRemoteConfigFloat(config);
+    Optional<Double> rcValue = getRemoteConfigDouble(config);
     if (rcValue.isAvailable() && isSamplingRateValid(rcValue.get())) {
       deviceCacheManager.setValue(config.getDeviceCacheFlag(), rcValue.get());
       return rcValue.get();
     }
 
     // 2. Reads value from cache layer.
-    Optional<Float> deviceCacheValue = getDeviceCacheFloat(config);
+    Optional<Double> deviceCacheValue = getDeviceCacheDouble(config);
     if (deviceCacheValue.isAvailable() && isSamplingRateValid(deviceCacheValue.get())) {
       return deviceCacheValue.get();
     }
 
-    // 3. Returns default value if there is no valid value from above approaches.
+    // 3. Check if RC fetch failed.
+    if (remoteConfigManager.isLastFetchFailed()) {
+      return config.getDefaultOnRcFetchFail();
+    }
+
+    // 4. Returns default value if there is no valid value from above approaches.
     return config.getDefault();
   }
 
   /** Returns what percentage of Session gauge should be collected, range is [0.00f, 1.00f]. */
-  public float getSessionsSamplingRate() {
+  public double getSessionsSamplingRate() {
     // Order of precedence is:
     // 1. If the value exists in Android Manifest, convert from [0.00f, 100.00f] to [0.00f, 1.00f]
     // and return this value.
     // 2. If the value exists through Firebase Remote Config, cache and return this value.
     // 3. If the value exists in device cache, return this value.
-    // 4. Otherwise, return default value.
+    // 4. If the Firebase Remote Config fetch failed, return the default "rc failure" value.
+    // 5. Otherwise, return default value.
     SessionsSamplingRate config = SessionsSamplingRate.getInstance();
 
     // 1. Reads value in Android Manifest (it is set by developers during build time).
-    Optional<Float> metadataValue = getMetadataFloat(config);
+    Optional<Double> metadataValue = getMetadataDouble(config);
     if (metadataValue.isAvailable()) {
       // Sampling percentage from metadata needs to convert from [0.00f, 100.00f] to [0.00f, 1.00f].
-      float samplingRate = metadataValue.get() / 100.0f;
+      double samplingRate = metadataValue.get() / 100;
       if (isSamplingRateValid(samplingRate)) {
         return samplingRate;
       }
     }
 
     // 2. Reads value from Firebase Remote Config, saves this value in cache layer if valid.
-    Optional<Float> rcValue = getRemoteConfigFloat(config);
+    Optional<Double> rcValue = getRemoteConfigDouble(config);
     if (rcValue.isAvailable() && isSamplingRateValid(rcValue.get())) {
       deviceCacheManager.setValue(config.getDeviceCacheFlag(), rcValue.get());
       return rcValue.get();
     }
 
     // 3. Reads value from cache layer.
-    Optional<Float> deviceCacheValue = getDeviceCacheFloat(config);
+    Optional<Double> deviceCacheValue = getDeviceCacheDouble(config);
     if (deviceCacheValue.isAvailable() && isSamplingRateValid(deviceCacheValue.get())) {
       return deviceCacheValue.get();
     }
 
-    // 4. Returns default value if there is no valid value from above approaches.
+    // 4. Check if RC fetch failed.
+    if (remoteConfigManager.isLastFetchFailed()) {
+      return config.getDefaultOnRcFetchFail();
+    }
+
+    // 5. Returns default value if there is no valid value from above approaches.
     return config.getDefault();
   }
 
@@ -381,7 +408,8 @@ public class ConfigResolver {
     // 1. If the value exists in Android Manifest, return this value.
     // 2. If the value exists through Firebase Remote Config, cache and return this value.
     // 3. If the value exists in device cache, return this value.
-    // 4. Otherwise, return default value.
+    // 4. If the Firebase Remote Config fetch failed, return default failure value.
+    // 5. Otherwise, return default value.
     SessionsCpuCaptureFrequencyForegroundMs config =
         SessionsCpuCaptureFrequencyForegroundMs.getInstance();
 
@@ -404,7 +432,12 @@ public class ConfigResolver {
       return deviceCacheValue.get();
     }
 
-    // 4. Returns default value if there is no valid value from above approaches.
+    // 4. Check if RC fetch failed.
+    if (remoteConfigManager.isLastFetchFailed()) {
+      return config.getDefaultOnRcFetchFail();
+    }
+
+    // 5. Returns default value if there is no valid value from above approaches.
     return config.getDefault();
   }
 
@@ -453,7 +486,8 @@ public class ConfigResolver {
     // 1. If the value exists in Android Manifest, return this value.
     // 2. If the value exists through Firebase Remote Config, cache and return this value.
     // 3. If the value exists in device cache, return this value.
-    // 4. Otherwise, return default value.
+    // 4. If the Firebase Remote Config fetch failed, return default failure value.
+    // 5. Otherwise, return default value.
     SessionsMemoryCaptureFrequencyForegroundMs config =
         SessionsMemoryCaptureFrequencyForegroundMs.getInstance();
 
@@ -476,7 +510,12 @@ public class ConfigResolver {
       return deviceCacheValue.get();
     }
 
-    // 4. Returns default value if there is no valid value from above approaches.
+    // 4. Check if RC fetch failed.
+    if (remoteConfigManager.isLastFetchFailed()) {
+      return config.getDefaultOnRcFetchFail();
+    }
+
+    // 5. Returns default value if there is no valid value from above approaches.
     return config.getDefault();
   }
 
@@ -732,7 +771,7 @@ public class ConfigResolver {
   }
 
   /** Returns what percentage of fragment traces should be collected, range is [0.00f, 1.00f]. */
-  public float getFragmentSamplingRate() {
+  public double getFragmentSamplingRate() {
     // Order of precedence is:
     // 1. If the value exists in Android Manifest, convert from [0.00f, 100.00f] to [0.00f, 1.00f]
     // and return this value.
@@ -742,24 +781,24 @@ public class ConfigResolver {
     FragmentSamplingRate config = FragmentSamplingRate.getInstance();
 
     // 1. Reads value in Android Manifest (it is set by developers during build time).
-    Optional<Float> metadataValue = getMetadataFloat(config);
+    Optional<Double> metadataValue = getMetadataDouble(config);
     if (metadataValue.isAvailable()) {
       // Sampling percentage from metadata needs to convert from [0.00f, 100.00f] to [0.00f, 1.00f].
-      float samplingRate = metadataValue.get() / 100.0f;
+      double samplingRate = metadataValue.get() / 100.0f;
       if (isSamplingRateValid(samplingRate)) {
         return samplingRate;
       }
     }
 
     // 2. Reads value from Firebase Remote Config, saves this value in cache layer if valid.
-    Optional<Float> rcValue = getRemoteConfigFloat(config);
+    Optional<Double> rcValue = getRemoteConfigDouble(config);
     if (rcValue.isAvailable() && isSamplingRateValid(rcValue.get())) {
       deviceCacheManager.setValue(config.getDeviceCacheFlag(), rcValue.get());
       return rcValue.get();
     }
 
     // 3. Reads value from cache layer.
-    Optional<Float> deviceCacheValue = getDeviceCacheFloat(config);
+    Optional<Double> deviceCacheValue = getDeviceCacheDouble(config);
     if (deviceCacheValue.isAvailable() && isSamplingRateValid(deviceCacheValue.get())) {
       return deviceCacheValue.get();
     }
@@ -807,8 +846,8 @@ public class ConfigResolver {
     return metadataBundle.getBoolean(config.getMetadataFlag());
   }
 
-  private Optional<Float> getMetadataFloat(ConfigurationFlag<Float> config) {
-    return metadataBundle.getFloat(config.getMetadataFlag());
+  private Optional<Double> getMetadataDouble(ConfigurationFlag<Double> config) {
+    return metadataBundle.getDouble(config.getMetadataFlag());
   }
 
   private Optional<Long> getMetadataLong(ConfigurationFlag<Long> config) {
@@ -816,8 +855,8 @@ public class ConfigResolver {
   }
 
   // Helper functions for interaction with Firebase Remote Config.
-  private Optional<Float> getRemoteConfigFloat(ConfigurationFlag<Float> config) {
-    return remoteConfigManager.getFloat(config.getRemoteConfigFlag());
+  private Optional<Double> getRemoteConfigDouble(ConfigurationFlag<Double> config) {
+    return remoteConfigManager.getDouble(config.getRemoteConfigFlag());
   }
 
   private Optional<Long> getRemoteConfigLong(ConfigurationFlag<Long> config) {
@@ -841,8 +880,8 @@ public class ConfigResolver {
   }
 
   // Helper functions for interaction with Device Caching layer.
-  private Optional<Float> getDeviceCacheFloat(ConfigurationFlag<Float> config) {
-    return deviceCacheManager.getFloat(config.getDeviceCacheFlag());
+  private Optional<Double> getDeviceCacheDouble(ConfigurationFlag<Double> config) {
+    return deviceCacheManager.getDouble(config.getDeviceCacheFlag());
   }
 
   private Optional<Long> getDeviceCacheLong(ConfigurationFlag<Long> config) {
@@ -858,7 +897,7 @@ public class ConfigResolver {
   }
 
   // Helper functions for config value validation.
-  private boolean isSamplingRateValid(float samplingRate) {
+  private boolean isSamplingRateValid(double samplingRate) {
     return MIN_SAMPLING_RATE <= samplingRate && samplingRate <= MAX_SAMPLING_RATE;
   }
 

@@ -26,6 +26,7 @@ android {
         timeOutInMs 60 * 1000
     }
 
+    namespace "com.google.firebase.appcheck"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
@@ -58,12 +59,12 @@ dependencies {
     testImplementation 'org.mockito:mockito-inline:2.25.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation 'androidx.test:rules:1.2.0'
 
     androidTestImplementation project(':appcheck:firebase-appcheck')
     androidTestImplementation project(':integ-testing')
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'junit:junit:4.12'

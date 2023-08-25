@@ -68,16 +68,17 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       UserMetadata userMetadata,
       StackTraceTrimmingStrategy stackTraceTrimmingStrategy,
       SettingsProvider settingsProvider,
-      OnDemandCounter onDemandCounter) {
+      OnDemandCounter onDemandCounter,
+      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
     final CrashlyticsReportDataCapture dataCapture =
         new CrashlyticsReportDataCapture(
             context, idManager, appData, stackTraceTrimmingStrategy, settingsProvider);
     final CrashlyticsReportPersistence reportPersistence =
-        new CrashlyticsReportPersistence(fileStore, settingsProvider);
+        new CrashlyticsReportPersistence(fileStore, settingsProvider, sessionsSubscriber);
     final DataTransportCrashlyticsReportSender reportSender =
         DataTransportCrashlyticsReportSender.create(context, settingsProvider, onDemandCounter);
     return new SessionReportingCoordinator(
-        dataCapture, reportPersistence, reportSender, logFileManager, userMetadata);
+        dataCapture, reportPersistence, reportSender, logFileManager, userMetadata, idManager);
   }
 
   private final CrashlyticsReportDataCapture dataCapture;
@@ -85,18 +86,21 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private final DataTransportCrashlyticsReportSender reportsSender;
   private final LogFileManager logFileManager;
   private final UserMetadata reportMetadata;
+  private final IdManager idManager;
 
   SessionReportingCoordinator(
       CrashlyticsReportDataCapture dataCapture,
       CrashlyticsReportPersistence reportPersistence,
       DataTransportCrashlyticsReportSender reportsSender,
       LogFileManager logFileManager,
-      UserMetadata reportMetadata) {
+      UserMetadata reportMetadata,
+      IdManager idManager) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
     this.logFileManager = logFileManager;
     this.reportMetadata = reportMetadata;
+    this.idManager = idManager;
   }
 
   @Override
@@ -208,7 +212,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
    *     sent.
    */
   public Task<Void> sendReports(@NonNull Executor reportSendCompleteExecutor) {
-    return sendReports(reportSendCompleteExecutor, /*sessionId=*/ null);
+    return sendReports(reportSendCompleteExecutor, /* sessionId= */ null);
   }
 
   public Task<Void> sendReports(
@@ -220,11 +224,31 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       if (sessionId == null || sessionId.equals(reportToSend.getSessionId())) {
         sendTasks.add(
             reportsSender
-                .enqueueReport(reportToSend, sessionId != null)
+                .enqueueReport(ensureHasFid(reportToSend), sessionId != null)
                 .continueWith(reportSendCompleteExecutor, this::onReportSendComplete));
       }
     }
     return Tasks.whenAll(sendTasks);
+  }
+
+  /**
+   * Ensure reportToSend has a populated fid.
+   *
+   * <p>This is needed because it's possible to capture reports while data collection is disabled,
+   * and then upload the report later by calling sendUnsentReports or enabling data collection.
+   */
+  private CrashlyticsReportWithSessionId ensureHasFid(CrashlyticsReportWithSessionId reportToSend) {
+    // Only do the update if the fid is already missing from the report.
+    if (reportToSend.getReport().getFirebaseInstallationId() == null) {
+      // Fetch the true fid, regardless of automatic data collection since it's uploading.
+      String fid = idManager.fetchTrueFid();
+      return CrashlyticsReportWithSessionId.create(
+          reportToSend.getReport().withFirebaseInstallationId(fid),
+          reportToSend.getSessionId(),
+          reportToSend.getReportFile());
+    }
+
+    return reportToSend;
   }
 
   private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(

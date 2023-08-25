@@ -225,29 +225,20 @@ strategy](https://docs.gradle.org/current/dsl/org.gradle.api.artifacts.Resolutio
 
 ### Commands
 
-The simplest way to publish a project and all its associated dependencies is to
-just publish all projects. The following command builds SNAPSHOT dependencies of
-all projects. All pom level dependencies within the published artifacts will
-also point to SNAPSHOT versions that are co-published.
-
-```bash
-./gradlew publishAllToLocal
-```
-
-Developers may take a dependency on these locally published versions by adding
-the `mavenLocal()` repository to your [repositories
-block](https://docs.gradle.org/current/userguide/declaring_repositories.html) in
-your app module's build.gradle.
-
 For more advanced use cases where developers wish to make changes to a project,
 but have transitive dependencies point to publicly released versions, individual
 projects may be published as follows.
 
 ```bash
 # e.g. to publish Firestore and Functions
-./gradlew -PprojectsToPublish=":firebase-firestore,:firebase-functions" \
-    publishProjectsToMavenLocal
+./gradlew -PprojectsToPublish="firebase-firestore,firebase-functions" \
+    publishReleasingLibrariesToMavenLocal
 ```
+
+Developers may take a dependency on these locally published versions by adding
+the `mavenLocal()` repository to your [repositories
+block](https://docs.gradle.org/current/userguide/declaring_repositories.html) in
+your app module's build.gradle.
 
 ### Code Formatting
 

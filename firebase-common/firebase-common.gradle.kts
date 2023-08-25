@@ -27,6 +27,7 @@ android {
   val minSdkVersion : Int by rootProject
 
   compileSdk = targetSdkVersion
+  namespace = "com.google.firebase"
   defaultConfig {
     minSdk = minSdkVersion
     targetSdk = targetSdkVersion
@@ -63,6 +64,7 @@ dependencies {
     // needed for Kotlin detection to compile, but not necessarily present at runtime.
     compileOnly(libs.kotlin.stdlib)
 
+    testImplementation("com.google.guava:guava-testlib:12.0-rc2")
     testImplementation(libs.androidx.test.junit)
     testImplementation(libs.androidx.test.junit)
     testImplementation(libs.androidx.test.runner)

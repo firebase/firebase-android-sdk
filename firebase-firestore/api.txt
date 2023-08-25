@@ -186,6 +186,8 @@ package com.google.firebase.firestore {
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings getFirestoreSettings();
     method @NonNull public static com.google.firebase.firestore.FirebaseFirestore getInstance();
     method @NonNull public static com.google.firebase.firestore.FirebaseFirestore getInstance(@NonNull com.google.firebase.FirebaseApp);
+    method @NonNull public static com.google.firebase.firestore.FirebaseFirestore getInstance(@NonNull String);
+    method @NonNull public static com.google.firebase.firestore.FirebaseFirestore getInstance(@NonNull com.google.firebase.FirebaseApp, @NonNull String);
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.Query> getNamedQuery(@NonNull String);
     method @NonNull public com.google.firebase.firestore.LoadBundleTask loadBundle(@NonNull java.io.InputStream);
     method @NonNull public com.google.firebase.firestore.LoadBundleTask loadBundle(@NonNull byte[]);
@@ -230,9 +232,10 @@ package com.google.firebase.firestore {
   }
 
   public final class FirebaseFirestoreSettings {
-    method public long getCacheSizeBytes();
+    method @Nullable public com.google.firebase.firestore.LocalCacheSettings getCacheSettings();
+    method @Deprecated public long getCacheSizeBytes();
     method @NonNull public String getHost();
-    method public boolean isPersistenceEnabled();
+    method @Deprecated public boolean isPersistenceEnabled();
     method public boolean isSslEnabled();
     field public static final long CACHE_SIZE_UNLIMITED = -1L; // 0xffffffffffffffffL
   }
@@ -241,13 +244,14 @@ package com.google.firebase.firestore {
     ctor public FirebaseFirestoreSettings.Builder();
     ctor public FirebaseFirestoreSettings.Builder(@NonNull com.google.firebase.firestore.FirebaseFirestoreSettings);
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings build();
-    method public long getCacheSizeBytes();
+    method @Deprecated public long getCacheSizeBytes();
     method @NonNull public String getHost();
-    method public boolean isPersistenceEnabled();
+    method @Deprecated public boolean isPersistenceEnabled();
     method public boolean isSslEnabled();
-    method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setCacheSizeBytes(long);
+    method @Deprecated @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setCacheSizeBytes(long);
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setHost(@NonNull String);
-    method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setPersistenceEnabled(boolean);
+    method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setLocalCacheSettings(@NonNull com.google.firebase.firestore.LocalCacheSettings);
+    method @Deprecated @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setPersistenceEnabled(boolean);
     method @NonNull public com.google.firebase.firestore.FirebaseFirestoreSettings.Builder setSslEnabled(boolean);
   }
 
@@ -310,6 +314,40 @@ package com.google.firebase.firestore {
     enum_constant public static final com.google.firebase.firestore.LoadBundleTaskProgress.TaskState SUCCESS;
   }
 
+  public interface LocalCacheSettings {
+  }
+
+  public final class MemoryCacheSettings implements com.google.firebase.firestore.LocalCacheSettings {
+    method @NonNull public com.google.firebase.firestore.MemoryGarbageCollectorSettings getGarbageCollectorSettings();
+    method @NonNull public static com.google.firebase.firestore.MemoryCacheSettings.Builder newBuilder();
+  }
+
+  public static class MemoryCacheSettings.Builder {
+    method @NonNull public com.google.firebase.firestore.MemoryCacheSettings build();
+    method @NonNull public com.google.firebase.firestore.MemoryCacheSettings.Builder setGcSettings(@NonNull com.google.firebase.firestore.MemoryGarbageCollectorSettings);
+  }
+
+  public final class MemoryEagerGcSettings implements com.google.firebase.firestore.MemoryGarbageCollectorSettings {
+    method @NonNull public static com.google.firebase.firestore.MemoryEagerGcSettings.Builder newBuilder();
+  }
+
+  public static class MemoryEagerGcSettings.Builder {
+    method @NonNull public com.google.firebase.firestore.MemoryEagerGcSettings build();
+  }
+
+  public interface MemoryGarbageCollectorSettings {
+  }
+
+  public final class MemoryLruGcSettings implements com.google.firebase.firestore.MemoryGarbageCollectorSettings {
+    method public long getSizeBytes();
+    method @NonNull public static com.google.firebase.firestore.MemoryLruGcSettings.Builder newBuilder();
+  }
+
+  public static class MemoryLruGcSettings.Builder {
+    method @NonNull public com.google.firebase.firestore.MemoryLruGcSettings build();
+    method @NonNull public com.google.firebase.firestore.MemoryLruGcSettings.Builder setSizeBytes(long);
+  }
+
   public enum MetadataChanges {
     enum_constant public static final com.google.firebase.firestore.MetadataChanges EXCLUDE;
     enum_constant public static final com.google.firebase.firestore.MetadataChanges INCLUDE;
@@ -317,6 +355,16 @@ package com.google.firebase.firestore {
 
   public interface OnProgressListener<ProgressT> {
     method public void onProgress(@NonNull ProgressT);
+  }
+
+  public final class PersistentCacheSettings implements com.google.firebase.firestore.LocalCacheSettings {
+    method public long getSizeBytes();
+    method @NonNull public static com.google.firebase.firestore.PersistentCacheSettings.Builder newBuilder();
+  }
+
+  public static class PersistentCacheSettings.Builder {
+    method @NonNull public com.google.firebase.firestore.PersistentCacheSettings build();
+    method @NonNull public com.google.firebase.firestore.PersistentCacheSettings.Builder setSizeBytes(long);
   }
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @java.lang.annotation.Target({java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) public @interface PropertyName {

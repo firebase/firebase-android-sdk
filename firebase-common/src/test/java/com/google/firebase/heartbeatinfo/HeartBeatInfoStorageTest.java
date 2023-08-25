@@ -22,6 +22,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.runner.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -180,13 +181,29 @@ public class HeartBeatInfoStorageTest {
   }
 
   @Test
+  public void currentDayHeartbeatNotSent_updatesCorrectly() {
+    long millis = System.currentTimeMillis();
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(0);
+    heartBeatInfoStorage.storeHeartBeat(millis, "test-agent");
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(1);
+    assertThat(heartBeatInfoStorage.getAllHeartBeats().size()).isEqualTo(0);
+    heartBeatInfoStorage.deleteAllHeartBeats();
+    assertThat(heartBeatInfoStorage.getHeartBeatCount()).isEqualTo(1);
+    assertThat(heartBeatSharedPreferences.getStringSet("test-agent", new HashSet<>())).isNotEmpty();
+    heartBeatInfoStorage.storeHeartBeat(millis, "test-agent-1");
+    assertThat(heartBeatSharedPreferences.getStringSet("test-agent", new HashSet<>())).isEmpty();
+    assertThat(heartBeatSharedPreferences.getStringSet("test-agent-1", new HashSet<>()))
+        .isNotEmpty();
+  }
+
+  @Test
   public void postHeartBeatCleanUp_worksCorrectly() {
     long millis = System.currentTimeMillis();
     // Store using new method
     heartBeatInfoStorage.storeHeartBeat(millis, "test-agent");
     // Get global heartbeat using old method
     assertThat(heartBeatInfoStorage.shouldSendGlobalHeartBeat(millis)).isTrue();
-    assertThat(heartBeatInfoStorage.getAllHeartBeats().size()).isEqualTo(1);
+    assertThat(heartBeatInfoStorage.getAllHeartBeats().size()).isEqualTo(0);
     heartBeatInfoStorage.postHeartBeatCleanUp();
     assertThat(heartBeatInfoStorage.getAllHeartBeats().size()).isEqualTo(0);
     // Try storing using new method again.

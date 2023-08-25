@@ -14,7 +14,6 @@
 package com.google.firebase.messaging;
 
 import static com.google.firebase.messaging.FirebaseMessaging.TAG;
-import static com.google.firebase.messaging.WakeLockHolder.WAKE_LOCK_ACQUIRE_TIMEOUT_MILLIS;
 
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
@@ -30,6 +29,7 @@ import com.google.android.gms.common.stats.ConnectionTracker;
 import com.google.android.gms.common.util.concurrent.NamedThreadFactory;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -43,10 +43,6 @@ import java.util.concurrent.TimeUnit;
  */
 class WithinAppServiceConnection implements ServiceConnection {
 
-  // Time out WakeLock after 9s to match previous behavior of forcing the broadcast to finish after
-  // that much time.
-  private static final int REQUEST_TIMEOUT_MS = 9000;
-
   static class BindRequest {
     final Intent intent;
     private final TaskCompletionSource<Void> taskCompletionSource = new TaskCompletionSource<>();
@@ -56,10 +52,8 @@ class WithinAppServiceConnection implements ServiceConnection {
     }
 
     void arrangeTimeout(ScheduledExecutorService executor) {
-      // Allow the same maximum WakeLock duration for high priority messages as when using
-      // startService(), otherwise allow up to 9 seconds to match the time that the service was
-      // allowed to run before finishing the BroadcastReceiver.
-      boolean isHighPriority = (intent.getFlags() & Intent.FLAG_RECEIVER_FOREGROUND) != 0;
+      // Timeout after 20 seconds by finishing the Task. This will finish a background broadcast,
+      // which waits for the message to be handled.
       ScheduledFuture<?> timeoutFuture =
           executor.schedule(
               () -> {
@@ -67,11 +61,11 @@ class WithinAppServiceConnection implements ServiceConnection {
                     TAG,
                     "Service took too long to process intent: "
                         + intent.getAction()
-                        + " Releasing WakeLock.");
+                        + " finishing.");
                 finish();
               },
-              isHighPriority ? WAKE_LOCK_ACQUIRE_TIMEOUT_MILLIS : REQUEST_TIMEOUT_MS,
-              TimeUnit.MILLISECONDS);
+              EnhancedIntentService.MESSAGE_TIMEOUT_S,
+              TimeUnit.SECONDS);
 
       getTask()
           .addOnCompleteListener(
@@ -127,6 +121,7 @@ class WithinAppServiceConnection implements ServiceConnection {
     this.scheduledExecutorService = scheduledExecutorService;
   }
 
+  @CanIgnoreReturnValue
   synchronized Task<Void> sendIntent(Intent intent) {
     if (Log.isLoggable(TAG, Log.DEBUG)) {
       Log.d(TAG, "new intent queued in the bind-strategy delivery");

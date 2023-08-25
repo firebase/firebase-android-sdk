@@ -15,6 +15,7 @@
 package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.AccessHelper.getAsyncQueue;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.newTestSettings;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.provider;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testChangeUserTo;
@@ -35,8 +36,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -46,6 +49,7 @@ import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.Query.Direction;
 import com.google.firebase.firestore.auth.User;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.testutil.EventAccumulator;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import com.google.firebase.firestore.util.AsyncQueue.TimerId;
@@ -1132,6 +1136,85 @@ public class FirestoreTest {
   }
 
   @Test
+  public void testDefaultNamedDbIsSame() {
+    FirebaseApp app = FirebaseApp.getInstance();
+    FirebaseFirestore db1 = FirebaseFirestore.getInstance();
+    FirebaseFirestore db2 = FirebaseFirestore.getInstance(app);
+    FirebaseFirestore db3 = FirebaseFirestore.getInstance(app, "(default)");
+    FirebaseFirestore db4 = FirebaseFirestore.getInstance("(default)");
+
+    assertSame(db1, db2);
+    assertSame(db1, db3);
+    assertSame(db1, db4);
+  }
+
+  @Test
+  public void testSameNamedDbIsSame() {
+    FirebaseApp app = FirebaseApp.getInstance();
+    FirebaseFirestore db1 = FirebaseFirestore.getInstance(app, "myDb");
+    FirebaseFirestore db2 = FirebaseFirestore.getInstance("myDb");
+
+    assertSame(db1, db2);
+  }
+
+  @Test
+  public void testDifferentDbNamesAreDifferent() {
+    FirebaseFirestore db1 = FirebaseFirestore.getInstance();
+    FirebaseFirestore db2 = FirebaseFirestore.getInstance("db1");
+    FirebaseFirestore db3 = FirebaseFirestore.getInstance("db2");
+
+    assertNotSame(db1, db2);
+    assertNotSame(db1, db3);
+    assertNotSame(db2, db3);
+  }
+
+  @Test
+  public void testNamedDbHaveDifferentPersistence() {
+    // TODO: Have backend with named databases created beforehand.
+    // Emulator doesn't care if database was created beforehand.
+    assumeTrue(isRunningAgainstEmulator());
+
+    // FirebaseFirestore db1 = FirebaseFirestore.getInstance();
+    String projectId = provider().projectId();
+    FirebaseFirestore db1 =
+        testFirestore(
+            DatabaseId.forDatabase(projectId, "db1"),
+            Level.DEBUG,
+            newTestSettings(),
+            "dbPersistenceKey");
+    FirebaseFirestore db2 =
+        testFirestore(
+            DatabaseId.forDatabase(projectId, "db2"),
+            Level.DEBUG,
+            newTestSettings(),
+            "dbPersistenceKey");
+
+    DocumentReference docRef = db1.collection("col1").document("doc1");
+    waitFor(docRef.set(Collections.singletonMap("foo", "bar")));
+    assertEquals(waitFor(docRef.get(Source.SERVER)).get("foo"), "bar");
+
+    String path = docRef.getPath();
+    DocumentReference docRef2 = db2.document(path);
+
+    {
+      Exception e = waitForException(docRef2.get(Source.CACHE));
+      assertEquals(Code.UNAVAILABLE, ((FirebaseFirestoreException) e).getCode());
+    }
+
+    {
+      Task<DocumentSnapshot> task = docRef2.get(Source.SERVER);
+      DocumentSnapshot result = waitFor(task);
+      assertNull(result.getDocument());
+    }
+
+    {
+      Task<DocumentSnapshot> task = docRef2.get(Source.DEFAULT);
+      DocumentSnapshot result = waitFor(task);
+      assertNull(result.getDocument());
+    }
+  }
+
+  @Test
   public void testNewOperationThrowsAfterFirestoreTerminate() {
     FirebaseFirestore instance = testFirestore();
     DocumentReference reference = instance.document("abc/123");
@@ -1240,5 +1323,173 @@ public class FirestoreTest {
     waitFor(awaitsPendingWrites);
 
     assertTrue(awaitsPendingWrites.isComplete() && awaitsPendingWrites.isSuccessful());
+  }
+
+  @Test
+  public void testLegacyCacheConfigForMemoryCache() {
+    FirebaseFirestore instance = testFirestore();
+    instance.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(newTestSettings())
+            .setPersistenceEnabled(false)
+            .build());
+
+    waitFor(instance.document("coll/doc").set(map("foo", "bar")));
+
+    assertThrows(
+        RuntimeException.class, () -> waitFor(instance.document("coll/doc").get(Source.CACHE)));
+  }
+
+  @Test
+  public void testLegacyCacheConfigForPersistentCache() {
+    FirebaseFirestore instance = testFirestore();
+    instance.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(newTestSettings())
+            .setPersistenceEnabled(true)
+            .build());
+
+    waitFor(instance.document("coll/doc").set(map("foo", "bar")));
+
+    DocumentSnapshot snap = waitFor(instance.document("coll/doc").get(Source.CACHE));
+    assertEquals(map("foo", "bar"), snap.getData());
+  }
+
+  @Test
+  public void testNewCacheConfigForMemoryCache() {
+    FirebaseFirestore instance = testFirestore();
+    instance.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(newTestSettings())
+            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+            .build());
+
+    waitFor(instance.document("coll/doc").set(map("foo", "bar")));
+
+    assertThrows(
+        RuntimeException.class, () -> waitFor(instance.document("coll/doc").get(Source.CACHE)));
+  }
+
+  @Test
+  public void testNewCacheConfigForPersistentCache() {
+    FirebaseFirestore instance = testFirestore();
+    instance.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(newTestSettings())
+            .setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
+            .build());
+
+    waitFor(instance.document("coll/doc").set(map("foo", "bar")));
+
+    DocumentSnapshot snap = waitFor(instance.document("coll/doc").get(Source.CACHE));
+    assertEquals(map("foo", "bar"), snap.getData());
+  }
+
+  @Test
+  public void testCanGetDocumentWithMemoryLruGCEnabled() {
+    FirebaseFirestore db = testFirestore();
+    db.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())
+            .setLocalCacheSettings(
+                MemoryCacheSettings.newBuilder()
+                    .setGcSettings(MemoryLruGcSettings.newBuilder().build())
+                    .build())
+            .build());
+
+    DocumentReference doc = db.collection("abc").document("123");
+    waitFor(doc.set(map("key", "value")));
+
+    DocumentSnapshot snapshot = waitFor(doc.get(Source.CACHE));
+    assertTrue(snapshot.exists());
+    assertTrue(snapshot.getMetadata().isFromCache());
+    assertEquals(snapshot.getData(), map("key", "value"));
+  }
+
+  @Test
+  public void testCannotGetDocumentWithMemoryEagerGcEnabled() {
+    FirebaseFirestore db = testFirestore();
+    db.setFirestoreSettings(
+        new FirebaseFirestoreSettings.Builder(db.getFirestoreSettings())
+            .setLocalCacheSettings(
+                MemoryCacheSettings.newBuilder()
+                    .setGcSettings(MemoryEagerGcSettings.newBuilder().build())
+                    .build())
+            .build());
+
+    DocumentReference doc = db.collection("abc").document("123");
+    waitFor(doc.set(map("key", "value")));
+
+    Exception e = waitForException(doc.get(Source.CACHE));
+    assertTrue(e instanceof FirebaseFirestoreException);
+    assertEquals(((FirebaseFirestoreException) e).getCode(), Code.UNAVAILABLE);
+  }
+
+  @Test
+  public void testGetPersistentCacheIndexManager() {
+    // Use persistent disk cache (explicit)
+    FirebaseFirestore db1 = testFirestore();
+    FirebaseFirestoreSettings settings1 =
+        new FirebaseFirestoreSettings.Builder(db1.getFirestoreSettings())
+            .setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
+            .build();
+    db1.setFirestoreSettings(settings1);
+    assertNotNull(db1.getPersistentCacheIndexManager());
+
+    // Use persistent disk cache (default)
+    FirebaseFirestore db2 = testFirestore();
+    assertNotNull(db2.getPersistentCacheIndexManager());
+
+    // Disable persistent disk cache
+    FirebaseFirestore db3 = testFirestore();
+    FirebaseFirestoreSettings settings3 =
+        new FirebaseFirestoreSettings.Builder(db1.getFirestoreSettings())
+            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+            .build();
+    db3.setFirestoreSettings(settings3);
+    assertNull(db3.getPersistentCacheIndexManager());
+
+    // Disable persistent disk cache (deprecated)
+    FirebaseFirestore db4 = testFirestore();
+    FirebaseFirestoreSettings settings4 =
+        new FirebaseFirestoreSettings.Builder(db4.getFirestoreSettings())
+            .setPersistenceEnabled(false)
+            .build();
+    db4.setFirestoreSettings(settings4);
+    assertNull(db4.getPersistentCacheIndexManager());
+  }
+
+  @Test
+  public void testCanGetSameOrDifferentPersistentCacheIndexManager() {
+    // Use persistent disk cache (explicit)
+    FirebaseFirestore db1 = testFirestore();
+    FirebaseFirestoreSettings settings1 =
+        new FirebaseFirestoreSettings.Builder(db1.getFirestoreSettings())
+            .setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
+            .build();
+    db1.setFirestoreSettings(settings1);
+    PersistentCacheIndexManager indexManager1 = db1.getPersistentCacheIndexManager();
+    PersistentCacheIndexManager indexManager2 = db1.getPersistentCacheIndexManager();
+    assertSame(indexManager1, indexManager2);
+
+    // Use persistent disk cache (default)
+    FirebaseFirestore db2 = testFirestore();
+    PersistentCacheIndexManager indexManager3 = db2.getPersistentCacheIndexManager();
+    PersistentCacheIndexManager indexManager4 = db2.getPersistentCacheIndexManager();
+    assertSame(indexManager3, indexManager4);
+
+    assertNotSame(indexManager1, indexManager3);
+
+    FirebaseFirestore db3 = testFirestore();
+    FirebaseFirestoreSettings settings3 =
+        new FirebaseFirestoreSettings.Builder(db3.getFirestoreSettings())
+            .setLocalCacheSettings(PersistentCacheSettings.newBuilder().build())
+            .build();
+    db3.setFirestoreSettings(settings3);
+    PersistentCacheIndexManager indexManager5 = db3.getPersistentCacheIndexManager();
+    assertNotSame(indexManager1, indexManager5);
+    assertNotSame(indexManager3, indexManager5);
+
+    // Use persistent disk cache (default)
+    FirebaseFirestore db4 = testFirestore();
+    PersistentCacheIndexManager indexManager6 = db4.getPersistentCacheIndexManager();
+    assertNotSame(indexManager1, indexManager6);
+    assertNotSame(indexManager3, indexManager6);
+    assertNotSame(indexManager5, indexManager6);
   }
 }

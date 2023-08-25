@@ -378,7 +378,8 @@ public final class LocalSerializerTest {
             QueryPurpose.LISTEN,
             snapshotVersion,
             limboFreeVersion,
-            resumeToken);
+            resumeToken,
+            null);
 
     // Let the RPC serializer test various permutations of query serialization.
     com.google.firestore.v1.Target.QueryTarget queryTarget =
@@ -401,6 +402,51 @@ public final class LocalSerializerTest {
     assertEquals(expected, serializer.encodeTargetData(targetData));
     TargetData decoded = serializer.decodeTargetData(expected);
     assertEquals(targetData, decoded);
+  }
+
+  @Test
+  public void localSerializerShouldDropExpectedCountInTargetData() {
+    Query query = TestUtil.query("room");
+    int targetId = 42;
+    long sequenceNumber = 10;
+    SnapshotVersion snapshotVersion = TestUtil.version(1039);
+    SnapshotVersion limboFreeVersion = TestUtil.version(1000);
+    ByteString resumeToken = TestUtil.resumeToken(1039);
+
+    TargetData targetData =
+        new TargetData(
+            query.toTarget(),
+            targetId,
+            sequenceNumber,
+            QueryPurpose.LISTEN,
+            snapshotVersion,
+            limboFreeVersion,
+            resumeToken,
+            /* expectedCount= */ 1234);
+
+    com.google.firestore.v1.Target.QueryTarget queryTarget =
+        remoteSerializer.encodeQueryTarget(query.toTarget());
+
+    com.google.firebase.firestore.proto.Target expected =
+        com.google.firebase.firestore.proto.Target.newBuilder()
+            .setTargetId(targetId)
+            .setLastListenSequenceNumber(sequenceNumber)
+            .setSnapshotVersion(com.google.protobuf.Timestamp.newBuilder().setNanos(1039000))
+            .setResumeToken(ByteString.copyFrom(resumeToken.toByteArray()))
+            .setQuery(
+                com.google.firestore.v1.Target.QueryTarget.newBuilder()
+                    .setParent(queryTarget.getParent())
+                    .setStructuredQuery(queryTarget.getStructuredQuery()))
+            .setLastLimboFreeSnapshotVersion(
+                com.google.protobuf.Timestamp.newBuilder().setNanos(1000000))
+            .build();
+
+    assertEquals(expected, serializer.encodeTargetData(targetData));
+    TargetData decoded = serializer.decodeTargetData(expected);
+    // Set the expected_count in TargetData to null, as serializing a TargetData into local Target
+    // proto will drop the expected_count and the deserialized TargetData will not include the
+    // expected_count.
+    assertEquals(targetData.withExpectedCount(null), decoded);
   }
 
   @Test

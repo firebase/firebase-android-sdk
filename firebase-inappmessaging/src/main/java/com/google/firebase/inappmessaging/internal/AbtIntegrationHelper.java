@@ -32,12 +32,12 @@ import javax.inject.Inject;
 @FirebaseAppScope
 public class AbtIntegrationHelper {
   private final FirebaseABTesting abTesting;
-
-  @Inject @Blocking @VisibleForTesting Executor executor;
+  @VisibleForTesting Executor executor;
 
   @Inject
-  public AbtIntegrationHelper(FirebaseABTesting abTesting) {
+  public AbtIntegrationHelper(FirebaseABTesting abTesting, @Blocking Executor blockingExecutor) {
     this.abTesting = abTesting;
+    this.executor = blockingExecutor;
   }
 
   /**

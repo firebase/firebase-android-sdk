@@ -16,6 +16,7 @@ package com.google.firebase.firestore.local;
 
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
@@ -61,14 +62,34 @@ import javax.annotation.Nullable;
 public class QueryEngine {
   private static final String LOG_TAG = "QueryEngine";
 
+  private static final int DEFAULT_INDEX_AUTO_CREATION_MIN_COLLECTION_SIZE = 100;
+
+  /**
+   * This cost represents the evaluation result of (([index, docKey] + [docKey, docContent]) per
+   * document in the result set) / ([docKey, docContent] per documents in full collection scan)
+   * coming from experiment https://github.com/firebase/firebase-android-sdk/pull/5064.
+   */
+  private static final double DEFAULT_RELATIVE_INDEX_READ_COST_PER_DOCUMENT = 2;
+
   private LocalDocumentsView localDocumentsView;
   private IndexManager indexManager;
   private boolean initialized;
+
+  private boolean indexAutoCreationEnabled = false;
+
+  /** SDK only decides whether it should create index when collection size is larger than this. */
+  private int indexAutoCreationMinCollectionSize = DEFAULT_INDEX_AUTO_CREATION_MIN_COLLECTION_SIZE;
+
+  private double relativeIndexReadCostPerDocument = DEFAULT_RELATIVE_INDEX_READ_COST_PER_DOCUMENT;
 
   public void initialize(LocalDocumentsView localDocumentsView, IndexManager indexManager) {
     this.localDocumentsView = localDocumentsView;
     this.indexManager = indexManager;
     this.initialized = true;
+  }
+
+  public void setIndexAutoCreationEnabled(boolean isEnabled) {
+    this.indexAutoCreationEnabled = isEnabled;
   }
 
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
@@ -87,7 +108,50 @@ public class QueryEngine {
       return result;
     }
 
-    return executeFullCollectionScan(query);
+    QueryContext context = new QueryContext();
+    result = executeFullCollectionScan(query, context);
+    if (result != null && indexAutoCreationEnabled) {
+      createCacheIndexes(query, context, result.size());
+    }
+    return result;
+  }
+
+  /**
+   * Decides whether SDK should create a full matched field index for this query based on query
+   * context and query result size.
+   */
+  private void createCacheIndexes(Query query, QueryContext context, int resultSize) {
+    if (context.getDocumentReadCount() < indexAutoCreationMinCollectionSize) {
+      Logger.debug(
+          LOG_TAG,
+          "SDK will not create cache indexes for query: %s, since it only creates cache indexes "
+              + "for collection contains more than or equal to %s documents.",
+          query.toString(),
+          indexAutoCreationMinCollectionSize);
+      return;
+    }
+
+    Logger.debug(
+        LOG_TAG,
+        "Query: %s, scans %s local documents and returns %s documents as results.",
+        query.toString(),
+        context.getDocumentReadCount(),
+        resultSize);
+
+    if (context.getDocumentReadCount() > relativeIndexReadCostPerDocument * resultSize) {
+      indexManager.createTargetIndexes(query.toTarget());
+      Logger.debug(
+          LOG_TAG,
+          "The SDK decides to create cache indexes for query: %s, as using cache indexes "
+              + "may help improve performance.",
+          query.toString());
+    } else {
+      Logger.debug(
+          LOG_TAG,
+          "The SDK decides not to create cache indexes for this query: %s, as using cache "
+              + "indexes may not help improve performance.",
+          query.toString());
+    }
   }
 
   /**
@@ -241,11 +305,12 @@ public class QueryEngine {
         || documentAtLimitEdge.getVersion().compareTo(limboFreeSnapshotVersion) > 0;
   }
 
-  private ImmutableSortedMap<DocumentKey, Document> executeFullCollectionScan(Query query) {
+  private ImmutableSortedMap<DocumentKey, Document> executeFullCollectionScan(
+      Query query, QueryContext context) {
     if (Logger.isDebugEnabled()) {
       Logger.debug(LOG_TAG, "Using full collection scan to execute query: %s", query.toString());
     }
-    return localDocumentsView.getDocumentsMatchingQuery(query, IndexOffset.NONE);
+    return localDocumentsView.getDocumentsMatchingQuery(query, IndexOffset.NONE, context);
   }
 
   /**
@@ -261,5 +326,15 @@ public class QueryEngine {
       remainingResults = remainingResults.insert(entry.getKey(), entry);
     }
     return remainingResults;
+  }
+
+  @VisibleForTesting
+  void setIndexAutoCreationMinCollectionSize(int newMin) {
+    indexAutoCreationMinCollectionSize = newMin;
+  }
+
+  @VisibleForTesting
+  void setRelativeIndexReadCostPerDocument(double newCost) {
+    relativeIndexReadCostPerDocument = newCost;
   }
 }

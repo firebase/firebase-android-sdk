@@ -28,6 +28,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import com.google.common.collect.ImmutableSet;
 import com.google.firebase.platforminfo.UserAgentPublisher;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -53,12 +54,7 @@ public class DefaultHeartBeatControllerTest {
   private final HeartBeatInfoStorage storage = mock(HeartBeatInfoStorage.class);
   private final UserAgentPublisher publisher = mock(UserAgentPublisher.class);
   private final Context applicationContext = ApplicationProvider.getApplicationContext();
-  private final Set<HeartBeatConsumer> logSources =
-      new HashSet<HeartBeatConsumer>() {
-        {
-          add(new HeartBeatConsumer() {});
-        }
-      };
+  private final Set<HeartBeatConsumer> logSources = ImmutableSet.of(new HeartBeatConsumer() {});
   private DefaultHeartBeatController heartBeatController;
 
   @Before

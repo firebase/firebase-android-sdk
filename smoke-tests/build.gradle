@@ -32,7 +32,7 @@ buildscript {
 apply plugin: "com.android.application"
 
 android {
-  compileSdkVersion 31
+  compileSdkVersion 33
 
   defaultConfig {
     minSdkVersion 19
@@ -92,7 +92,7 @@ dependencies {
   implementation "androidx.test:runner:1.4.0"
   implementation "com.google.truth:truth:1.0.1"
   implementation "junit:junit:4.13.2"
-  implementation "androidx.test:core:1.4.0"
+  implementation "androidx.test:core:1.5.0"
 
   // Common utilities (instrumentation side)
   androidTestImplementation "androidx.test:runner:1.4.0"

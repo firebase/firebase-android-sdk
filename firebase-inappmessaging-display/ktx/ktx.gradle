@@ -24,6 +24,7 @@ firebaseLibrary {
 }
 
 android {
+    namespace "com.google.firebase.inappmessaging.display.ktx"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16
@@ -59,5 +60,5 @@ dependencies {
     testImplementation ("com.google.firebase:firebase-analytics:17.0.0") {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
 }

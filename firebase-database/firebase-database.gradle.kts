@@ -27,6 +27,7 @@ android {
   installation.timeOutInMs = 60 * 1000
   compileSdk = targetSdkVersion
 
+  namespace = "com.google.firebase.database"
   defaultConfig {
     minSdk = minSdkVersion
     targetSdk = targetSdkVersion
@@ -54,7 +55,7 @@ dependencies {
   implementation("com.google.firebase:firebase-common:20.3.2")
   implementation("com.google.firebase:firebase-components:17.1.0")
   implementation("com.google.firebase:firebase-auth-interop:20.0.0")
-  implementation("com.google.firebase:firebase-appcheck-interop:16.1.1")
+  implementation(project(":appcheck:firebase-appcheck-interop"))
   implementation("com.google.firebase:firebase-database-collection:18.0.1")
 
   implementation(libs.androidx.annotation)

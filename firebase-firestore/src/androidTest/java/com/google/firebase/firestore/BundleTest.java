@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToValues;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -176,7 +177,9 @@ public class BundleTest {
     // This test really only makes sense with memory persistence, as SQLite persistence only ever
     // lazily deletes data
     db.setFirestoreSettings(
-        new FirebaseFirestoreSettings.Builder().setPersistenceEnabled(false).build());
+        new FirebaseFirestoreSettings.Builder()
+            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+            .build());
 
     InputStream bundle = new ByteArrayInputStream(createBundle());
     LoadBundleTask bundleTask = db.loadBundle(bundle); // Test the InputStream overload
@@ -196,7 +199,7 @@ public class BundleTest {
   public void testLoadWithDocumentsFromOtherProjectFails() throws Exception {
     List<LoadBundleTaskProgress> progressEvents = new ArrayList<>();
 
-    byte[] bundle = createBundle("other-project");
+    byte[] bundle = createBundle("other-project", db.getDatabaseId().getDatabaseId());
     LoadBundleTask bundleTask = db.loadBundle(bundle);
 
     bundleTask.addOnProgressListener(progressEvents::add);
@@ -205,10 +208,9 @@ public class BundleTest {
       awaitCompletion(bundleTask);
       fail();
     } catch (RuntimeExecutionException e) {
-      assertEquals(
-          "Resource name is not valid for current instance: "
-              + "projects/other-project/databases/(default)/documents",
-          e.getCause().getCause().getMessage());
+      assertThat(e.getCause().getCause())
+          .hasMessageThat()
+          .contains("Resource name is not valid for current instance");
     }
 
     assertEquals(2, progressEvents.size());
@@ -260,7 +262,8 @@ public class BundleTest {
    * Returns a valid bundle by replacing project id in `BUNDLE_TEMPLATES` with the given db project
    * id (also recalculates length prefixes).
    */
-  private byte[] createBundle(String projectId) throws UnsupportedEncodingException {
+  private byte[] createBundle(String projectId, String databaseId)
+      throws UnsupportedEncodingException {
     StringBuilder bundle = new StringBuilder();
 
     // Prepare non-metadata elements since we need the total length of these elements before
@@ -268,6 +271,7 @@ public class BundleTest {
     for (int i = 1; i < BUNDLE_TEMPLATES.length; ++i) {
       // Extract elements from BUNDLE_TEMPLATE and replace the project ID.
       String element = BUNDLE_TEMPLATES[i].replaceAll("\\{projectId\\}", projectId);
+      element = element.replaceAll("\\(default\\)", databaseId);
       bundle.append(getUTF8ByteCount(element));
       bundle.append(element);
     }
@@ -288,7 +292,7 @@ public class BundleTest {
    * current test database.
    */
   private byte[] createBundle() throws UnsupportedEncodingException {
-    return createBundle(db.getDatabaseId().getProjectId());
+    return createBundle(db.getDatabaseId().getProjectId(), db.getDatabaseId().getDatabaseId());
   }
 
   private void verifySuccessProgress(LoadBundleTaskProgress progress) {

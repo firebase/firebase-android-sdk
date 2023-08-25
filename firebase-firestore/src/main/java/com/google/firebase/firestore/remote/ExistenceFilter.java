@@ -14,20 +14,34 @@
 
 package com.google.firebase.firestore.remote;
 
+import androidx.annotation.Nullable;
+import com.google.firestore.v1.BloomFilter;
+
 /** Simplest form of existence filter */
 public final class ExistenceFilter {
   private final int count;
+  private BloomFilter unchangedNames;
 
   public ExistenceFilter(int count) {
     this.count = count;
+  }
+
+  public ExistenceFilter(int count, @Nullable BloomFilter unchangedNames) {
+    this.count = count;
+    this.unchangedNames = unchangedNames;
   }
 
   public int getCount() {
     return count;
   }
 
+  @Nullable
+  public BloomFilter getUnchangedNames() {
+    return unchangedNames;
+  }
+
   @Override
   public String toString() {
-    return "ExistenceFilter{count=" + count + '}';
+    return "ExistenceFilter{count=" + count + ", unchangedNames=" + unchangedNames + '}';
   }
 }

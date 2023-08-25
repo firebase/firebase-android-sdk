@@ -260,7 +260,8 @@ public final class LocalSerializer {
         QueryPurpose.LISTEN,
         version,
         lastLimboFreeSnapshotVersion,
-        resumeToken);
+        resumeToken,
+        null);
   }
 
   public com.google.firestore.bundle.BundledQuery encodeBundledQuery(BundledQuery bundledQuery) {

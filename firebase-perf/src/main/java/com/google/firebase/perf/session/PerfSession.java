@@ -24,7 +24,6 @@ import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.SessionVerbosity;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /** Details of a session including a unique Id and related information. */
@@ -38,10 +37,9 @@ public class PerfSession implements Parcelable {
   /*
    * Creates a PerfSession object and decides what metrics to collect.
    */
-  public static PerfSession create() {
-    String sessionId = UUID.randomUUID().toString().replace("-", "");
-
-    PerfSession session = new PerfSession(sessionId, new Clock());
+  public static PerfSession createWithId(@NonNull String sessionId) {
+    String prunedSessionId = sessionId.replace("-", "");
+    PerfSession session = new PerfSession(prunedSessionId, new Clock());
     session.setGaugeAndEventCollectionEnabled(shouldCollectGaugesAndEvents());
 
     return session;
@@ -108,7 +106,7 @@ public class PerfSession implements Parcelable {
    * Checks if it has been more than {@link ConfigResolver#getSessionsMaxDurationMinutes()} time
    * since the creation time of the current session.
    */
-  public boolean isExpired() {
+  public boolean isSessionRunningTooLong() {
     return TimeUnit.MICROSECONDS.toMinutes(creationTime.getDurationMicros())
         > ConfigResolver.getInstance().getSessionsMaxDurationMinutes();
   }

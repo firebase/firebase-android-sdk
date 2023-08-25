@@ -130,7 +130,7 @@ final class ConfigurationConstants {
     }
   }
 
-  protected static final class TraceSamplingRate extends ConfigurationFlag<Float> {
+  protected static final class TraceSamplingRate extends ConfigurationFlag<Double> {
     private static TraceSamplingRate instance;
 
     private TraceSamplingRate() {
@@ -145,11 +145,17 @@ final class ConfigurationConstants {
     }
 
     @Override
-    protected Float getDefault() {
+    protected Double getDefault() {
       // Sampling rate range is [0.00f, 1.00f]. By default, sampling rate is 1.00f, which is 100%.
       // 0.00f means 0%, Fireperf will not capture any event for trace from the device,
       // 1.00f means 100%, Fireperf will capture all events for trace from the device.
-      return 1.00f;
+      return 1.0;
+    }
+
+    @Override
+    protected Double getDefaultOnRcFetchFail() {
+      // Reduce the typical default by 3 orders of magnitude.
+      return getDefault() / 1000;
     }
 
     @Override
@@ -163,7 +169,7 @@ final class ConfigurationConstants {
     }
   }
 
-  protected static final class NetworkRequestSamplingRate extends ConfigurationFlag<Float> {
+  protected static final class NetworkRequestSamplingRate extends ConfigurationFlag<Double> {
     private static NetworkRequestSamplingRate instance;
 
     private NetworkRequestSamplingRate() {
@@ -178,11 +184,17 @@ final class ConfigurationConstants {
     }
 
     @Override
-    protected Float getDefault() {
+    protected Double getDefault() {
       // Sampling rate range is [0.00f, 1.00f]. By default, sampling rate is 1.00f, which is 100%.
       // 0.00f means 0%, Fireperf will not capture any event for trace from the device,
       // 1.00f means 100%, Fireperf will capture all events for trace from the device.
-      return 1.00f;
+      return 1.0;
+    }
+
+    @Override
+    protected Double getDefaultOnRcFetchFail() {
+      // Reduce the typical default by 3 orders of magnitude.
+      return getDefault() / 1000;
     }
 
     @Override
@@ -216,6 +228,12 @@ final class ConfigurationConstants {
       // Capture frequency range is [0, 1000]. By default, capture frequency when the app is in
       // foreground is 100, which is 100ms.
       return 100L;
+    }
+
+    @Override
+    protected Long getDefaultOnRcFetchFail() {
+      // Increase the typical default by factor of 3.
+      return getDefault() * 3;
     }
 
     @Override
@@ -292,6 +310,12 @@ final class ConfigurationConstants {
       // Capture frequency range is [0, 1000]. By default, capture frequency when the app is in
       // foreground is 100, which is 100ms.
       return 100L;
+    }
+
+    @Override
+    protected Long getDefaultOnRcFetchFail() {
+      // Increase the typical default by factor of 3.
+      return getDefault() * 3;
     }
 
     @Override
@@ -534,7 +558,7 @@ final class ConfigurationConstants {
     }
   }
 
-  protected static final class SessionsSamplingRate extends ConfigurationFlag<Float> {
+  protected static final class SessionsSamplingRate extends ConfigurationFlag<Double> {
     private static SessionsSamplingRate instance;
 
     private SessionsSamplingRate() {
@@ -549,8 +573,14 @@ final class ConfigurationConstants {
     }
 
     @Override
-    protected Float getDefault() {
-      return 0.01f;
+    protected Double getDefault() {
+      return 0.01;
+    }
+
+    @Override
+    protected Double getDefaultOnRcFetchFail() {
+      // Reduce the typical default by 3 orders of magnitude.
+      return getDefault() / 1000;
     }
 
     @Override
@@ -624,7 +654,7 @@ final class ConfigurationConstants {
     }
   }
 
-  protected static final class FragmentSamplingRate extends ConfigurationFlag<Float> {
+  protected static final class FragmentSamplingRate extends ConfigurationFlag<Double> {
     private static FragmentSamplingRate instance;
 
     private FragmentSamplingRate() {
@@ -639,11 +669,11 @@ final class ConfigurationConstants {
     }
 
     @Override
-    protected Float getDefault() {
+    protected Double getDefault() {
       // Sampling rate range is [0.00f, 1.00f]. By default, sampling rate is 0.00f, which is 0%.
       // 0.00f means 0%, Fireperf will not capture any event for fragment trace from the device,
       // 1.00f means 100%, Fireperf will capture all events for fragment trace from the device.
-      return 0.00f;
+      return 0.00;
     }
 
     @Override

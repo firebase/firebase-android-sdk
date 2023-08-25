@@ -74,7 +74,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
   public void shouldCollectGaugesAndEvents_perfMonDisabledAtRuntime_sessionNotVerbose() {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     Bundle bundle = new Bundle();
-    bundle.putFloat("sessions_sampling_percentage", 100f);
+    bundle.putFloat("sessions_sampling_percentage", 100);
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
     // By default, session is verbose if developer has set 100% of session verbosity.
@@ -96,7 +96,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     // Developer disables Performance collection at AndroidManifest.
     Bundle bundle = new Bundle();
-    bundle.putFloat("sessions_sampling_percentage", 100f);
+    bundle.putFloat("sessions_sampling_percentage", 100);
     bundle.putBoolean("firebase_performance_collection_enabled", false);
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
@@ -119,7 +119,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
   public void shouldCollectGaugesAndEvents_perfMonDeactivated_sessionNotVerbose() {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     Bundle bundle = new Bundle();
-    bundle.putFloat("sessions_sampling_percentage", 100f);
+    bundle.putFloat("sessions_sampling_percentage", 100);
     bundle.putBoolean("firebase_performance_collection_deactivated", true);
     configResolver.setMetadataBundle(new ImmutableBundle(bundle));
 
@@ -160,21 +160,21 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
   @Test
   public void testPerfSessionsCreateDisabledGaugeCollectionWhenVerboseSessionForceDisabled() {
     forceNonVerboseSession();
-    PerfSession testPerfSession = PerfSession.create();
+    PerfSession testPerfSession = PerfSession.createWithId("sessionId");
     assertThat(testPerfSession.isGaugeAndEventCollectionEnabled()).isFalse();
   }
 
   @Test
   public void testPerfSessionsCreateDisabledGaugeCollectionWhenSessionsFeatureDisabled() {
     forceSessionsFeatureDisabled();
-    PerfSession testPerfSession = PerfSession.create();
+    PerfSession testPerfSession = PerfSession.createWithId("sessionId");
     assertThat(testPerfSession.isGaugeAndEventCollectionEnabled()).isFalse();
   }
 
   @Test
   public void testPerfSessionsCreateEnablesGaugeCollectionWhenVerboseSessionForceEnabled() {
     forceVerboseSession();
-    PerfSession testPerfSession = PerfSession.create();
+    PerfSession testPerfSession = PerfSession.createWithId("sessionId");
     assertThat(testPerfSession.isGaugeAndEventCollectionEnabled()).isTrue();
   }
 
@@ -185,16 +185,16 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
 
     // Next, create 3 non-verbose sessions
     List<PerfSession> sessions = new ArrayList<>();
-    sessions.add(PerfSession.create());
-    sessions.add(PerfSession.create());
-    sessions.add(PerfSession.create());
+    sessions.add(PerfSession.createWithId("sessionId1"));
+    sessions.add(PerfSession.createWithId("sessionId2"));
+    sessions.add(PerfSession.createWithId("sessionId3"));
 
     // Force all the sessions from now onwards to be verbose
     forceVerboseSession();
 
     // Next, create 2 verbose sessions
-    sessions.add(PerfSession.create());
-    sessions.add(PerfSession.create());
+    sessions.add(PerfSession.createWithId("sessionId4"));
+    sessions.add(PerfSession.createWithId("sessionId5"));
 
     // Verify that the first session in the list of sessions was not verbose
     assertThat(sessions.get(0).isVerbose()).isFalse();
@@ -217,7 +217,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
     when(mockClock.getTime()).thenReturn(mockTimer);
 
     PerfSession session = new PerfSession("sessionId", mockClock);
-    assertThat(session.isExpired()).isFalse();
+    assertThat(session.isSessionRunningTooLong()).isFalse();
   }
 
   @Test
@@ -228,7 +228,7 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
     when(mockClock.getTime()).thenReturn(mockTimer);
 
     PerfSession session = new PerfSession("sessionId", mockClock);
-    assertThat(session.isExpired()).isFalse();
+    assertThat(session.isSessionRunningTooLong()).isFalse();
   }
 
   @Test
@@ -239,6 +239,6 @@ public class PerfSessionTest extends FirebasePerformanceTestBase {
     when(mockClock.getTime()).thenReturn(mockTimer);
 
     PerfSession session = new PerfSession("sessionId", mockClock);
-    assertThat(session.isExpired()).isTrue();
+    assertThat(session.isSessionRunningTooLong()).isTrue();
   }
 }

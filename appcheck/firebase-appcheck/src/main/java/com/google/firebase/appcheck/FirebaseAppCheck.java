@@ -19,9 +19,9 @@ import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.appcheck.interop.AppCheckTokenListener;
-import com.google.firebase.appcheck.interop.InternalAppCheckTokenProvider;
+import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
 
-public abstract class FirebaseAppCheck implements InternalAppCheckTokenProvider {
+public abstract class FirebaseAppCheck implements InteropAppCheckTokenProvider {
 
   /** Gets the default instance of {@code FirebaseAppCheck}. */
   @NonNull
@@ -75,9 +75,28 @@ public abstract class FirebaseAppCheck implements InternalAppCheckTokenProvider 
    * Requests a Firebase App Check token. This method should be used ONLY if you need to authorize
    * requests to a non-Firebase backend. Requests to Firebase backends are authorized automatically
    * if configured.
+   *
+   * <p>If your non-Firebase backend exposes a sensitive or expensive endpoint that has low traffic
+   * volume, consider protecting it with <a
+   * href=https://firebase.google.com/docs/app-check/custom-resource-backend#replay-protection>Replay
+   * Protection</a>. In this case, use {@link #getLimitedUseAppCheckToken()} instead to obtain a
+   * limited-use token.
    */
   @NonNull
   public abstract Task<AppCheckToken> getAppCheckToken(boolean forceRefresh);
+
+  /**
+   * Requests a Firebase App Check token. This method should be used ONLY if you need to authorize
+   * requests to a non-Firebase backend.
+   *
+   * <p>Returns limited-use tokens that are intended for use with your non-Firebase backend
+   * endpoints that are protected with <a
+   * href=https://firebase.google.com/docs/app-check/custom-resource-backend#replay-protection>Replay
+   * Protection</a>. This method does not affect the token generation behavior of the {@link
+   * #getAppCheckToken(boolean forceRefresh)} method.
+   */
+  @NonNull
+  public abstract Task<AppCheckToken> getLimitedUseAppCheckToken();
 
   /**
    * Registers an {@link AppCheckListener} to changes in the token state. This method should be used
