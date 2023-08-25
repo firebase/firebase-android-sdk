@@ -60,15 +60,15 @@ public abstract class RolloutAssignment {
   /** Create a {@code RolloutAssignment} from its JSON-encoded representation. */
   @NonNull
   public static RolloutAssignment create(@NonNull String jsonString) throws JSONException {
-    JSONObject json = new JSONObject(jsonString);
+    final JSONObject json = new JSONObject(jsonString);
 
     return RolloutAssignment.builder()
-            .setRolloutId(json.getString(ROLLOUT_ID))
-            .setVariantId(json.getString(VARIANT_ID))
-            .setParameterKey(json.getString(PARAMETER_KEY))
-            .setParameterValue(json.getString(PARAMETER_VALUE))
-            .setTemplateVersion(json.getLong(TEMPLATE_VERSION))
-            .build();
+        .setRolloutId(json.getString(ROLLOUT_ID))
+        .setVariantId(json.getString(VARIANT_ID))
+        .setParameterKey(json.getString(PARAMETER_KEY))
+        .setParameterValue(json.getString(PARAMETER_VALUE))
+        .setTemplateVersion(json.getLong(TEMPLATE_VERSION))
+        .build();
   }
 
   @NonNull

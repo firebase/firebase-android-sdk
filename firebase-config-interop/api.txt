@@ -12,7 +12,6 @@ package com.google.firebase.remoteconfig.interop.rollouts {
   @com.google.auto.value.AutoValue @com.google.firebase.encoders.annotations.Encodable public abstract class RolloutAssignment {
     ctor public RolloutAssignment();
     method @NonNull public static com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment.Builder builder();
-    method @NonNull public static com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment create(@NonNull org.json.JSONObject) throws org.json.JSONException;
     method @NonNull public static com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment create(@NonNull String) throws org.json.JSONException;
     method @NonNull public abstract String getParameterKey();
     method @NonNull public abstract String getParameterValue();
