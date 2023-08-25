@@ -92,7 +92,7 @@ class CrashlyticsController {
   private final LogFileManager logFileManager;
   private final CrashlyticsNativeComponent nativeComponent;
   private final AnalyticsEventLogger analyticsEventLogger;
-  private final CrashlyticsAppQualitySessionsStore appQualitySessionsStore;
+  private final CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber;
   private final SessionReportingCoordinator reportingCoordinator;
 
   private CrashlyticsUncaughtExceptionHandler crashHandler;
@@ -127,7 +127,7 @@ class CrashlyticsController {
       SessionReportingCoordinator sessionReportingCoordinator,
       CrashlyticsNativeComponent nativeComponent,
       AnalyticsEventLogger analyticsEventLogger,
-      CrashlyticsAppQualitySessionsStore appQualitySessionsStore) {
+      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
     this.context = context;
     this.backgroundWorker = backgroundWorker;
     this.idManager = idManager;
@@ -139,7 +139,7 @@ class CrashlyticsController {
     this.logFileManager = logFileManager;
     this.nativeComponent = nativeComponent;
     this.analyticsEventLogger = analyticsEventLogger;
-    this.appQualitySessionsStore = appQualitySessionsStore;
+    this.sessionsSubscriber = sessionsSubscriber;
     this.reportingCoordinator = sessionReportingCoordinator;
   }
 
@@ -569,7 +569,7 @@ class CrashlyticsController {
         StaticSessionData.create(appData, osData, deviceData));
 
     logFileManager.setCurrentSession(sessionIdentifier);
-    appQualitySessionsStore.setSessionId(sessionIdentifier);
+    sessionsSubscriber.setSessionId(sessionIdentifier);
     reportingCoordinator.onBeginSession(sessionIdentifier, startedAtSeconds);
   }
 
@@ -611,8 +611,14 @@ class CrashlyticsController {
     if (skipCurrentSession) {
       currentSessionId = sortedOpenSessions.get(0);
     } else {
-      // Clear the session id in case a new aqs session starts before a new crashlytics session.
-      appQualitySessionsStore.setSessionId(/* sessionId= */ null);
+      // The Sessions sdk can rotate the aqs session id independently of the crashlytics session.
+      // For on-demand, there is a case when crashlytics has closed the old session but not yet
+      // opened a new session, and Sessions rotates the aqs session id at that moment. So we
+      // clear the crashlytics session id during this time, otherwise the aqs session id file would
+      // get written in to the closed session's files.
+
+      // Prevent writing a rotated aqs id in a closed crashlytics session.
+      sessionsSubscriber.setSessionId(/* sessionId= */ null);
     }
 
     reportingCoordinator.finalizeSessions(getCurrentTimestampSeconds(), currentSessionId);

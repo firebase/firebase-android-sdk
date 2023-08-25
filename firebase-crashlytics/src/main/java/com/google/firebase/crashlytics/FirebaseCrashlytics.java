@@ -31,7 +31,6 @@ import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.common.AppData;
 import com.google.firebase.crashlytics.internal.common.BuildIdInfo;
 import com.google.firebase.crashlytics.internal.common.CommonUtils;
-import com.google.firebase.crashlytics.internal.common.CrashlyticsAppQualitySessionsStore;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsAppQualitySessionsSubscriber;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsCore;
 import com.google.firebase.crashlytics.internal.common.DataCollectionArbiter;
@@ -92,12 +91,9 @@ public class FirebaseCrashlytics {
     final ExecutorService crashHandlerExecutor =
         ExecutorUtils.buildSingleThreadExecutorService("Crashlytics Exception Handler");
 
-    // TODO(mrober): Can we determine at this point if the app includes the ndk?
-    // If we can set hasNdk to false for non-native apps, there will be less disk io.
-    CrashlyticsAppQualitySessionsStore appQualitySessionsStore =
-        new CrashlyticsAppQualitySessionsStore(fileStore, /* hasNdk= */ true);
-    firebaseSessions.register(
-        new CrashlyticsAppQualitySessionsSubscriber(arbiter, appQualitySessionsStore));
+    CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber =
+        new CrashlyticsAppQualitySessionsSubscriber(arbiter, fileStore);
+    firebaseSessions.register(sessionsSubscriber);
 
     final CrashlyticsCore core =
         new CrashlyticsCore(
@@ -109,7 +105,7 @@ public class FirebaseCrashlytics {
             analyticsDeferredProxy.getAnalyticsEventLogger(),
             fileStore,
             crashHandlerExecutor,
-            appQualitySessionsStore);
+            sessionsSubscriber);
 
     final String googleAppId = app.getOptions().getApplicationId();
     final String mappingFileId = CommonUtils.getMappingFileId(context);

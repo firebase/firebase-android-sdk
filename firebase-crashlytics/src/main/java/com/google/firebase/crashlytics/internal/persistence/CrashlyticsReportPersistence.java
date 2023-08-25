@@ -17,7 +17,7 @@ package com.google.firebase.crashlytics.internal.persistence;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
-import com.google.firebase.crashlytics.internal.common.CrashlyticsAppQualitySessionsStore;
+import com.google.firebase.crashlytics.internal.common.CrashlyticsAppQualitySessionsSubscriber;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -80,15 +80,15 @@ public class CrashlyticsReportPersistence {
 
   private final FileStore fileStore;
   private final SettingsProvider settingsProvider;
-  private final CrashlyticsAppQualitySessionsStore appQualitySessionsStore;
+  private final CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber;
 
   public CrashlyticsReportPersistence(
       FileStore fileStore,
       SettingsProvider settingsProvider,
-      CrashlyticsAppQualitySessionsStore appQualitySessionsStore) {
+      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
     this.fileStore = fileStore;
     this.settingsProvider = settingsProvider;
-    this.appQualitySessionsStore = appQualitySessionsStore;
+    this.sessionsSubscriber = sessionsSubscriber;
   }
 
   public void persistReport(@NonNull CrashlyticsReport report) {
@@ -139,13 +139,6 @@ public class CrashlyticsReportPersistence {
     final String fileName = generateEventFilename(eventCounter.getAndIncrement(), isHighPriority);
     try {
       writeTextFile(fileStore.getSessionFile(sessionId, fileName), json);
-
-      String appQualitySessionId = appQualitySessionsStore.getAppQualitySessionId(sessionId);
-      if (appQualitySessionId == null) {
-        Logger.getLogger().w("Missing AQS session id for Crashlytics session " + sessionId);
-      } else {
-        appQualitySessionsStore.persistOnEvent();
-      }
     } catch (IOException ex) {
       Logger.getLogger().w("Could not persist event for session " + sessionId, ex);
     }
@@ -324,7 +317,7 @@ public class CrashlyticsReportPersistence {
     }
 
     String userId = UserMetadata.readUserId(sessionId, fileStore);
-    String appQualitySessionId = appQualitySessionsStore.getAppQualitySessionId(sessionId);
+    String appQualitySessionId = sessionsSubscriber.getAppQualitySessionId(sessionId);
 
     File reportFile = fileStore.getSessionFile(sessionId, REPORT_FILE_NAME);
     synthesizeReportFile(
@@ -336,7 +329,7 @@ public class CrashlyticsReportPersistence {
       @NonNull CrashlyticsReport.FilesPayload ndkPayload,
       @NonNull String previousSessionId,
       CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
-    String appQualitySessionId = appQualitySessionsStore.getAppQualitySessionId(previousSessionId);
+    String appQualitySessionId = sessionsSubscriber.getAppQualitySessionId(previousSessionId);
     try {
       final CrashlyticsReport report =
           TRANSFORM

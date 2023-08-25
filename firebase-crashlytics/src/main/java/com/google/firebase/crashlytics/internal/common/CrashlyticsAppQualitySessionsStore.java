@@ -25,6 +25,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.Objects;
 
 /**
  * Handles persistence of App Quality Sessions session id for Crashlytics, keeps track of the
@@ -32,7 +33,7 @@ import java.nio.charset.Charset;
  *
  * <p>All public methods are intended to be called from background threads.
  */
-public class CrashlyticsAppQualitySessionsStore {
+class CrashlyticsAppQualitySessionsStore {
   @SuppressWarnings("CharsetObjectCanBeUsed") // StandardCharsets requires API level 19.
   private static final Charset UTF_8 = Charset.forName("UTF-8");
 
@@ -40,21 +41,19 @@ public class CrashlyticsAppQualitySessionsStore {
   private static final String AQS_SESSION_ID_FILENAME = "app-quality-session-id";
 
   private final FileStore fileStore;
-  private final boolean hasNdk;
 
   @Nullable private String sessionId = null;
   @Nullable private String appQualitySessionId = null;
 
-  public CrashlyticsAppQualitySessionsStore(FileStore fileStore, boolean hasNdk) {
+  CrashlyticsAppQualitySessionsStore(FileStore fileStore) {
     this.fileStore = fileStore;
-    this.hasNdk = hasNdk;
   }
 
   /** Gets the App Quality Sessions session id for the given Crashlytics session id. */
   @Nullable
   public String getAppQualitySessionId(@NonNull String sessionId) {
     checkNotOnMainThread();
-    if (sessionId.equals(this.sessionId)) {
+    if (Objects.equals(this.sessionId, sessionId)) {
       return appQualitySessionId;
     }
 
@@ -75,9 +74,9 @@ public class CrashlyticsAppQualitySessionsStore {
       // This is fine since Sessions initializes before Crashlytics opens a session, so no persist.
       checkNotOnMainThread();
     }
-    if (!appQualitySessionId.equals(this.appQualitySessionId)) {
+    if (!Objects.equals(this.appQualitySessionId, appQualitySessionId)) {
       this.appQualitySessionId = appQualitySessionId;
-      persistOnAqsSession();
+      persist();
     }
   }
 
@@ -85,31 +84,13 @@ public class CrashlyticsAppQualitySessionsStore {
   public void setSessionId(String sessionId) {
     checkNotOnMainThread();
     if (sessionId == null) {
-      // Don't try to write a aqs id in a closed session.
+      // Do not write a aqs id in a closed session.
       this.sessionId = null;
     } else {
       if (!sessionId.equals(this.sessionId)) {
         this.sessionId = sessionId;
-        persistOnAqsSession();
+        persist();
       }
-    }
-  }
-
-  /** Persists the current App Quality Sessions session id to disk, meant to be called on event. */
-  public void persistOnEvent() {
-    checkNotOnMainThread();
-    // Don't persist on event for apps with the ndk because they were persisted on aqs session.
-    if (!hasNdk) {
-      persist();
-    }
-  }
-
-  /** Persists the current aqs session id to disk, meant to be called on every aqs session. */
-  private void persistOnAqsSession() {
-    // Only persist on aqs session for apps with the ndk since they cannot persist on native events.
-    // This will avoid disk io when apps come back to foreground when possible.
-    if (hasNdk) {
-      persist();
     }
   }
 

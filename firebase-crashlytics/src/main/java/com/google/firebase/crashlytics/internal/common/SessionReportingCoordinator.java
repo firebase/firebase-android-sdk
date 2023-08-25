@@ -69,12 +69,12 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       StackTraceTrimmingStrategy stackTraceTrimmingStrategy,
       SettingsProvider settingsProvider,
       OnDemandCounter onDemandCounter,
-      CrashlyticsAppQualitySessionsStore appQualitySessionsStore) {
+      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
     final CrashlyticsReportDataCapture dataCapture =
         new CrashlyticsReportDataCapture(
             context, idManager, appData, stackTraceTrimmingStrategy, settingsProvider);
     final CrashlyticsReportPersistence reportPersistence =
-        new CrashlyticsReportPersistence(fileStore, settingsProvider, appQualitySessionsStore);
+        new CrashlyticsReportPersistence(fileStore, settingsProvider, sessionsSubscriber);
     final DataTransportCrashlyticsReportSender reportSender =
         DataTransportCrashlyticsReportSender.create(context, settingsProvider, onDemandCounter);
     return new SessionReportingCoordinator(

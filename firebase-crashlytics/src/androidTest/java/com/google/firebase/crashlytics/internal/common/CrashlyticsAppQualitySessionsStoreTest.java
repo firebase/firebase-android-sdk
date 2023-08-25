@@ -23,9 +23,8 @@ import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import java.io.File;
 import java.io.IOException;
 
+@SuppressWarnings({"ResultOfMethodCallIgnored", "SameParameterValue"})
 public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTestCase {
-  private static final boolean WITH_NDK = true;
-  private static final boolean WITHOUT_NDK = false;
   private static final String CLOSED_SESSION = null;
 
   private static final String SESSION_ID = "64e61da7023800012303a14eecd3f58d";
@@ -35,9 +34,13 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
 
   private CrashlyticsAppQualitySessionsStore appQualitySessionsStore;
 
-  public void testSetBothIdsWithNdk_createsFile() {
-    appQualitySessionsStore = createAppQualitySessionsStore(WITH_NDK);
+  @Override
+  protected void setUp() throws Exception {
+    // The files created by each test case will get cleaned up in super.tearDown().
+    appQualitySessionsStore = new CrashlyticsAppQualitySessionsStore(new FileStore(getContext()));
+  }
 
+  public void testSetBothIds_createsFile() {
     appQualitySessionsStore.setSessionId(SESSION_ID);
     appQualitySessionsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
 
@@ -45,8 +48,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
     assertThat(readAqsFile(SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
   }
 
-  public void testSetBothIdsWithNdk_updatedAqsId_createsFile() {
-    appQualitySessionsStore = createAppQualitySessionsStore(WITH_NDK);
+  public void testSetBothIds_updatedAqsId_createsFile() {
     appQualitySessionsStore.setSessionId(SESSION_ID);
     appQualitySessionsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
 
@@ -56,53 +58,7 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
     assertThat(readAqsFile(SESSION_ID)).isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
-  public void testBothIdsWithoutNdk_doesNotCreateFileOnNewAqsId() {
-    appQualitySessionsStore = createAppQualitySessionsStore(WITHOUT_NDK);
-
-    appQualitySessionsStore.setSessionId(SESSION_ID);
-    appQualitySessionsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
-
-    assertAqsFileDoesNotExist(SESSION_ID);
-    assertThat(readAqsFile(SESSION_ID)).isNull();
-  }
-
-  public void testBothIdsWithoutNdk_updatedAqsId_doesNotCreateFileOnNewAqsId() {
-    appQualitySessionsStore = createAppQualitySessionsStore(WITHOUT_NDK);
-    appQualitySessionsStore.setSessionId(SESSION_ID);
-    appQualitySessionsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
-
-    appQualitySessionsStore.setAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
-
-    assertAqsFileDoesNotExist(SESSION_ID);
-    assertThat(readAqsFile(SESSION_ID)).isNull();
-  }
-
-  public void testBothIdsWithoutNdk_createsFileOnEvent() {
-    appQualitySessionsStore = createAppQualitySessionsStore(WITHOUT_NDK);
-    appQualitySessionsStore.setSessionId(SESSION_ID);
-    appQualitySessionsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
-
-    appQualitySessionsStore.persistOnEvent();
-
-    assertAqsFileExists(SESSION_ID);
-    assertThat(readAqsFile(SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
-  }
-
-  public void testBothIdsWithoutNdk_updatedAqsId_createsFileOnEvent() {
-    appQualitySessionsStore = createAppQualitySessionsStore(WITHOUT_NDK);
-    appQualitySessionsStore.setSessionId(SESSION_ID);
-    appQualitySessionsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
-
-    appQualitySessionsStore.setAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
-    appQualitySessionsStore.persistOnEvent();
-
-    assertAqsFileExists(SESSION_ID);
-    assertThat(readAqsFile(SESSION_ID)).isEqualTo(NEW_APP_QUALITY_SESSION_ID);
-  }
-
-  public void testUpdateAqsIdWhileSessionClosed_withNdk_persistsAqsIdInNewSession() {
-    appQualitySessionsStore = createAppQualitySessionsStore(WITH_NDK);
-
+  public void testUpdateAqsIdWhileSessionClosed_persistsAqsIdInNewSession() {
     // Setup first session.
     appQualitySessionsStore.setSessionId(SESSION_ID);
     appQualitySessionsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
@@ -123,18 +79,12 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
     assertThat(readAqsFile(NEW_SESSION_ID)).isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
-  public void testUpdateAqsIdWhileSessionClosed_withoutNdk_persistsAqsIdInNewSessionOnEvent() {
-    appQualitySessionsStore = createAppQualitySessionsStore(WITHOUT_NDK);
-
+  public void testUpdateAqsIdWhileSessionFailedToClosed_persistsNewAqsIdInBothSessions() {
     // Setup first session.
     appQualitySessionsStore.setSessionId(SESSION_ID);
     appQualitySessionsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
 
-    // Simulate an event.
-    appQualitySessionsStore.persistOnEvent();
-
-    // Close the first session.
-    appQualitySessionsStore.setSessionId(CLOSED_SESSION);
+    // Simulate failing to close the first session by not closing it.
 
     // Update the aqs session id while crashlytics session is closed.
     appQualitySessionsStore.setAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
@@ -142,75 +92,18 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
     // Start a new crashlytics session.
     appQualitySessionsStore.setSessionId(NEW_SESSION_ID);
 
-    // Simulate an event in the new session.
-    appQualitySessionsStore.persistOnEvent();
-
-    // Verify the old session has the old aqs id
-    assertAqsFileExists(SESSION_ID);
-    assertThat(readAqsFile(SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
-
-    // Verify the new session has the updated aqs id.
-    assertAqsFileExists(NEW_SESSION_ID);
-    assertThat(readAqsFile(NEW_SESSION_ID)).isEqualTo(NEW_APP_QUALITY_SESSION_ID);
-  }
-
-  public void testUpdateAqsIdWhileSessionClosed_withoutNdk_doesNotPersistsAqsIdWithoutEvent() {
-    appQualitySessionsStore = createAppQualitySessionsStore(WITHOUT_NDK);
-
-    // Setup first session.
-    appQualitySessionsStore.setSessionId(SESSION_ID);
-    appQualitySessionsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
-
-    // No event, so does not persist anything.
-
-    // Close the first session.
-    appQualitySessionsStore.setSessionId(CLOSED_SESSION);
-
-    // Update the aqs session id while crashlytics session is closed.
-    appQualitySessionsStore.setAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
-
-    // Start a new crashlytics session.
-    appQualitySessionsStore.setSessionId(NEW_SESSION_ID);
-
-    // No event, so does not persist anything.
-
-    // Verify the old session has no aqs file persisted.
-    assertAqsFileDoesNotExist(SESSION_ID);
-
-    // Verify the new session has no aqs file persisted.
-    assertAqsFileDoesNotExist(NEW_SESSION_ID);
-
-    // Now simulate an event.
-    appQualitySessionsStore.persistOnEvent();
+    // Verify the old session has the new aqs id since it failed to close.
+    assertThat(readAqsFile(SESSION_ID)).isEqualTo(NEW_APP_QUALITY_SESSION_ID);
 
     // Verify the new session has the updated aqs id.
     assertThat(readAqsFile(NEW_SESSION_ID)).isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
-  public void testCorruptFile_withNdk_getsDeletedAndReturnsNull() {
-    appQualitySessionsStore = createAppQualitySessionsStore(WITH_NDK);
+  public void testCorruptFile_getsDeletedAndReturnsNull() {
     appQualitySessionsStore.setSessionId(SESSION_ID);
     appQualitySessionsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
 
     // Verify the aqs file exists before testing it got deleted.
-    assertAqsFileExists(SESSION_ID);
-    corruptAqsFile(SESSION_ID);
-
-    // Attempt to read the aqs id to trigger reading the corrupt aqs file.
-    appQualitySessionsStore.setSessionId(NEW_SESSION_ID); // So it does not read from local value.
-    appQualitySessionsStore.getAppQualitySessionId(SESSION_ID);
-
-    assertAqsFileDoesNotExist(SESSION_ID);
-    assertThat(readAqsFile(SESSION_ID)).isNull();
-  }
-
-  public void testCorruptFile_withoutNdk_getsDeletedAndReturnsNullOnEvent() {
-    appQualitySessionsStore = createAppQualitySessionsStore(WITHOUT_NDK);
-    appQualitySessionsStore.setSessionId(SESSION_ID);
-    appQualitySessionsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
-
-    // Verify the aqs file exists before testing it got deleted.
-    appQualitySessionsStore.persistOnEvent();
     assertAqsFileExists(SESSION_ID);
     corruptAqsFile(SESSION_ID);
 
@@ -223,8 +116,6 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
   }
 
   public void testGetAppQualitySessionId_returnsLatestAqsIdPerSession() {
-    appQualitySessionsStore = createAppQualitySessionsStore(WITH_NDK);
-
     // Open the first crashlytics session.
     appQualitySessionsStore.setSessionId(SESSION_ID);
 
@@ -251,8 +142,8 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
   }
 
   public void testPersistedFileWithAqsIdTooLong() {
-    String tooLongAqsId = "thisAqsIdIsWayTooLooooooooooooonnnnnoooooonnnnnggggggggg";
-    appQualitySessionsStore = createAppQualitySessionsStore(WITH_NDK);
+    String tooLongAqsId = "pneumonoultramicroscopicsilicovolcanoconiosis";
+
     appQualitySessionsStore.setSessionId(SESSION_ID);
     appQualitySessionsStore.setAppQualitySessionId(tooLongAqsId);
 
@@ -264,21 +155,11 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
         .isEqualTo(tooLongAqsId.substring(0, 32));
   }
 
-  /**
-   * Create an instance of the CrashlyticsAppQualitySessionsStore with the given hasNdk flag.
-   *
-   * <p>The files created by each test case will get cleaned up in super.tearDown().
-   */
-  private CrashlyticsAppQualitySessionsStore createAppQualitySessionsStore(boolean hasNdk) {
-    return new CrashlyticsAppQualitySessionsStore(new FileStore(getContext()), hasNdk);
-  }
-
   private String readAqsFile(@NonNull String sessionId) {
     File aqsFile = appQualitySessionsStore.getAqsSessionIdFile(sessionId);
     return appQualitySessionsStore.readAAqsSessionIdFile(aqsFile);
   }
 
-  @SuppressWarnings({"ResultOfMethodCallIgnored", "SameParameterValue"})
   private void corruptAqsFile(@NonNull String sessionId) {
     File aqsFile = appQualitySessionsStore.getAqsSessionIdFile(sessionId);
     try {

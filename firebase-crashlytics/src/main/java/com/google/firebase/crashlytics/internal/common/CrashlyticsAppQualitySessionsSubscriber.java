@@ -19,6 +19,7 @@ package com.google.firebase.crashlytics.internal.common;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.sessions.api.SessionSubscriber;
 
 /**
@@ -30,12 +31,23 @@ public class CrashlyticsAppQualitySessionsSubscriber implements SessionSubscribe
   private final CrashlyticsAppQualitySessionsStore appQualitySessionsStore;
 
   public CrashlyticsAppQualitySessionsSubscriber(
-      DataCollectionArbiter dataCollectionArbiter,
-      CrashlyticsAppQualitySessionsStore appQualitySessionsStore) {
+      DataCollectionArbiter dataCollectionArbiter, FileStore fileStore) {
     this.dataCollectionArbiter = dataCollectionArbiter;
-    this.appQualitySessionsStore = appQualitySessionsStore;
+    appQualitySessionsStore = new CrashlyticsAppQualitySessionsStore(fileStore);
   }
 
+  /** Gets the App Quality Sessions session id for the given Crashlytics session id. */
+  @Nullable
+  public String getAppQualitySessionId(@NonNull String sessionId) {
+    return appQualitySessionsStore.getAppQualitySessionId(sessionId);
+  }
+
+  /** Called when the Crashlytics session id changes or closes. */
+  public void setSessionId(@Nullable String sessionId) {
+    appQualitySessionsStore.setSessionId(sessionId);
+  }
+
+  /** Called by the Sessions sdk when the App Quality Sessions session id changes. */
   @Override
   public void onSessionChanged(@NonNull SessionDetails sessionDetails) {
     Logger.getLogger().d("App Quality Sessions session changed: " + sessionDetails);
