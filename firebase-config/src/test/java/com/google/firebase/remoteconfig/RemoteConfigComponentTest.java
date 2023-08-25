@@ -26,8 +26,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
-import android.nfc.tech.NfcA;
-
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.gms.tasks.Tasks;
 import com.google.common.util.concurrent.MoreExecutors;
