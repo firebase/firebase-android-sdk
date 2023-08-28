@@ -1157,6 +1157,65 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void activate_configWithRolloutMetadata_storedInActivatedCacheSuccessfully()
+      throws Exception {
+    JSONArray affectedParameterKeys = new JSONArray();
+    affectedParameterKeys.put("key_1");
+    affectedParameterKeys.put("key_2");
+
+    JSONArray rolloutsMetadata = new JSONArray();
+    rolloutsMetadata.put(
+        new JSONObject()
+            .put("rolloutId", "1")
+            .put("variantId", "A")
+            .put("affectedParameterKeys", affectedParameterKeys));
+
+    ConfigContainer fetchedConfigContainer =
+        ConfigContainer.newBuilder(firstFetchedContainer)
+            .withRolloutMetadata(rolloutsMetadata)
+            .build();
+
+    loadCacheWithConfig(mockFetchedCache, fetchedConfigContainer);
+    loadCacheWithConfig(mockActivatedCache, null);
+    cachePutReturnsConfig(mockActivatedCache, fetchedConfigContainer);
+
+    frc.activate();
+
+    verify(mockActivatedCache).put(fetchedConfigContainer);
+    verify(mockFetchedCache).clear();
+  }
+
+  @Test
+  public void fetchAndActivate_configWithRolloutMetadata_storedInActivatedCacheSuccessfully()
+      throws Exception {
+    JSONArray affectedParameterKeys = new JSONArray();
+    affectedParameterKeys.put("key_1");
+    affectedParameterKeys.put("key_2");
+
+    JSONArray rolloutsMetadata = new JSONArray();
+    rolloutsMetadata.put(
+        new JSONObject()
+            .put("rolloutId", "1")
+            .put("variantId", "A")
+            .put("affectedParameterKeys", affectedParameterKeys));
+
+    ConfigContainer fetchedConfigContainer =
+        ConfigContainer.newBuilder(firstFetchedContainer)
+            .withRolloutMetadata(rolloutsMetadata)
+            .build();
+
+    loadFetchHandlerWithResponse(fetchedConfigContainer);
+    loadCacheWithConfig(mockFetchedCache, fetchedConfigContainer);
+    loadCacheWithConfig(mockActivatedCache, null);
+    cachePutReturnsConfig(mockActivatedCache, fetchedConfigContainer);
+
+    frc.fetchAndActivate();
+
+    verify(mockActivatedCache).put(fetchedConfigContainer);
+    verify(mockFetchedCache).clear();
+  }
+
+  @Test
   public void realtime_frc_full_test() {
     ConfigUpdateListener eventListener = generateEmptyRealtimeListener();
     when(mockConfigRealtimeHandler.addRealtimeConfigUpdateListener(eventListener))
@@ -1609,6 +1668,12 @@ public final class FirebaseRemoteConfigTest {
 
   private void loadFetchHandlerWithResponse() {
     when(mockFetchHandler.fetch()).thenReturn(Tasks.forResult(firstFetchedContainerResponse));
+  }
+
+  private void loadFetchHandlerWithResponse(ConfigContainer configContainer) {
+    FetchResponse fetchResponse =
+        FetchResponse.forBackendUpdatesFetched(firstFetchedContainer, ETAG);
+    when(mockFetchHandler.fetch()).thenReturn(Tasks.forResult(fetchResponse));
   }
 
   private void load2pFetchHandlerWithResponse() {
