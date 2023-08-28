@@ -41,7 +41,7 @@ public class UserMetadata {
 
   private final MetaDataStore metaDataStore;
   private final CrashlyticsBackgroundWorker backgroundWorker;
-  private final String sessionIdentifier;
+  private String sessionIdentifier;
 
   // The following references contain a marker bit, which is true if the data maintained in the
   // associated reference has been serialized since the last time it was updated.
@@ -75,6 +75,22 @@ public class UserMetadata {
     this.sessionIdentifier = sessionIdentifier;
     this.metaDataStore = new MetaDataStore(fileStore);
     this.backgroundWorker = backgroundWorker;
+  }
+
+  /**
+   * Refresh the userMetadata to reflect the status of the new session. This API is mainly for
+   * on-demand fatal feature since we need to close and update to a new session. UserMetadata also
+   * need to make this update instead of updating session id, we also need to manually writing the
+   * into persistence for the new session.
+   */
+  public void setNewSession(String sessionId) {
+    synchronized (sessionIdentifier) {
+      sessionIdentifier = sessionId;
+      Map<String, String> keyData = customKeys.getKeys();
+      metaDataStore.writeUserData(sessionIdentifier, getUserId());
+      metaDataStore.writeKeyData(sessionIdentifier, keyData);
+      // TODO(themis): adding feature rollouts later
+    }
   }
 
   @Nullable
