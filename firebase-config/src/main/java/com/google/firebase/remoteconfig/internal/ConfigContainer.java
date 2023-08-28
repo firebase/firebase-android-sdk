@@ -39,6 +39,8 @@ public class ConfigContainer {
   static final String PERSONALIZATION_METADATA_KEY = "personalization_metadata_key";
   static final String TEMPLATE_VERSION_NUMBER_KEY = "template_version_number_key";
   static final String ROLLOUT_METADATA_KEY = "rollout_metadata_key";
+  static final String ROLLOUT_METADATA_AFFECTED_KEYS = "affectedParameterKeys";
+  static final String ROLLOUT_METADATA_ID = "rolloutId";
 
   private static final Date DEFAULTS_FETCH_TIME = new Date(0L);
 
@@ -188,16 +190,16 @@ public class ConfigContainer {
     return containerJson.toString().equals(that.toString());
   }
 
-  // Create a map of parameter key to rolloutMetadata.
+  // Create a map of parameter key to `rolloutMetadata`.
   private Map<String, ArrayList<JSONObject>> createRolloutParameterKeyMap() throws JSONException {
-    // Create a map where the key is the parameter key and the value is a List of rolloutMetadata
+    // Create a map where the key is the parameter key and the value is a List of `rolloutMetadata`
     // associated with the key.
     Map<String, ArrayList<JSONObject>> rolloutMetadataMap = new HashMap<>();
     for (int i = 0; i < this.getRolloutMetadata().length(); i++) {
       JSONObject rolloutMetadata = this.getRolloutMetadata().getJSONObject(i);
 
-      // Iterate through affectedParameterKeys and add rolloutMetadata to the key's list.
-      JSONArray parameterKeys = rolloutMetadata.getJSONArray("affectedParameterKeys");
+      // Iterate through `affectedParameterKeys` and add `rolloutMetadata` to the key's list.
+      JSONArray parameterKeys = rolloutMetadata.getJSONArray(ROLLOUT_METADATA_AFFECTED_KEYS);
       for (int j = 0; j < parameterKeys.length(); j++) {
         String key = parameterKeys.getString(j);
         if (!rolloutMetadataMap.containsKey(key)) {
@@ -211,13 +213,14 @@ public class ConfigContainer {
       }
     }
 
-    // Sort the key's rolloutMetadata based on rolloutId to make it easier to diff.
+    // Sort the key's `rolloutMetadata` based on `rolloutId` to make it easier to diff.
     for (ArrayList<JSONObject> parameterKeyRolloutMetadata : rolloutMetadataMap.values()) {
       Collections.sort(
           parameterKeyRolloutMetadata,
+          // Override comparator to use `rolloutId` as the comparison field.
           (a, b) -> {
             try {
-              return a.getString("rolloutId").compareTo(b.getString("rolloutId"));
+              return a.getString(ROLLOUT_METADATA_ID).compareTo(b.getString(ROLLOUT_METADATA_ID));
             } catch (JSONException e) {
               // Do nothing if `rolloutId` doesn't exist.
             }
@@ -237,7 +240,7 @@ public class ConfigContainer {
     // Make a deep copy of the other config before modifying it
     JSONObject otherConfig = ConfigContainer.deepCopyOf(other.containerJson).getConfigs();
 
-    // Config key to rolloutMetadata map.
+    // Config key to `rolloutMetadata` map.
     Map<String, ArrayList<JSONObject>> rolloutMetadataMap = this.createRolloutParameterKeyMap();
     Map<String, ArrayList<JSONObject>> otherRolloutMetadataMap =
         other.createRolloutParameterKeyMap();
@@ -278,11 +281,14 @@ public class ConfigContainer {
         continue;
       }
 
+      // If only one of the configs has `rolloutMetadata` for the given key.
       if (rolloutMetadataMap.containsKey(key) != otherRolloutMetadataMap.containsKey(key)) {
         changed.add(key);
         continue;
       }
 
+      // If both of the configs have `rolloutMetadata` for the given key but the metadata has
+      // changed.
       if (rolloutMetadataMap.containsKey(key)
           && otherRolloutMetadataMap.containsKey(key)
           && !rolloutMetadataMap
