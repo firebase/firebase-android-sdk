@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -273,6 +274,29 @@ public class SessionReportingCoordinatorTest {
   }
 
   @Test
+  public void testNonFatalEvent_addRolloutsEvent() {
+    long timestamp = System.currentTimeMillis();
+    String sessionId = "testSessionId";
+    mockEventInteractions();
+
+    List<CrashlyticsReport.Session.Event.RolloutAssignment> rolloutsState =
+        new ArrayList<CrashlyticsReport.Session.Event.RolloutAssignment>();
+    rolloutsState.add(mockRolloutAssignment());
+    when(reportMetadata.getRolloutsState()).thenReturn(rolloutsState);
+
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistNonFatalEvent(mockException, mockThread, sessionId, timestamp);
+
+    verify(mockEventAppBuilder, never()).setCustomAttributes(any());
+    verify(mockEventAppBuilder, never()).build();
+    verify(mockEventBuilder, never()).setApp(mockEventApp);
+    verify(reportMetadata).getRolloutsState();
+    // first build for custom keys
+    // second build for rollouts
+    verify(mockEventBuilder, times(2)).build();
+  }
+
+  @Test
   public void testFatalEvent_addsSortedCustomKeysToEvent() {
     final long timestamp = System.currentTimeMillis();
 
@@ -366,6 +390,29 @@ public class SessionReportingCoordinatorTest {
     verify(mockEventBuilder, never()).setApp(mockEventApp);
     verify(mockEventBuilder).build();
     verify(logFileManager, never()).clearLog();
+  }
+
+  @Test
+  public void testFatalEvent_addRolloutsToEvent() {
+    long timestamp = System.currentTimeMillis();
+    String sessionId = "testSessionId";
+    mockEventInteractions();
+
+    List<CrashlyticsReport.Session.Event.RolloutAssignment> rolloutsState =
+        new ArrayList<CrashlyticsReport.Session.Event.RolloutAssignment>();
+    rolloutsState.add(mockRolloutAssignment());
+    when(reportMetadata.getRolloutsState()).thenReturn(rolloutsState);
+
+    reportingCoordinator.onBeginSession(sessionId, timestamp);
+    reportingCoordinator.persistFatalEvent(mockException, mockThread, sessionId, timestamp);
+
+    verify(mockEventAppBuilder, never()).setCustomAttributes(any());
+    verify(mockEventAppBuilder, never()).build();
+    verify(mockEventBuilder, never()).setApp(mockEventApp);
+    verify(reportMetadata).getRolloutsState();
+    // first build for custom keys
+    // second build for rollouts
+    verify(mockEventBuilder, times(2)).build();
   }
 
   @Test
@@ -505,5 +552,18 @@ public class SessionReportingCoordinatorTest {
   private static CrashlyticsReportWithSessionId mockReportWithSessionId(String sessionId) {
     return CrashlyticsReportWithSessionId.create(
         mockReport(sessionId), sessionId, new File("fake"));
+  }
+
+  private static CrashlyticsReport.Session.Event.RolloutAssignment mockRolloutAssignment() {
+    return CrashlyticsReport.Session.Event.RolloutAssignment.builder()
+        .setTemplateVersion(2)
+        .setParameterKey("my_feature")
+        .setParameterValue("false")
+        .setRolloutVariant(
+            CrashlyticsReport.Session.Event.RolloutAssignment.RolloutVariant.builder()
+                .setRolloutId("rollout_1")
+                .setVariantId("enabled")
+                .build())
+        .build();
   }
 }
