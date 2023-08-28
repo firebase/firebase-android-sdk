@@ -270,6 +270,72 @@ public class ConfigContainerTest {
     assertThat(configWithoutTemplateVersion.getTemplateVersionNumber()).isEqualTo(0L);
   }
 
+  @Test
+  public void copyOfConfigContainer_withoutRolloutsMetadata_defaultsToEmptyArray()
+      throws Exception {
+    JSONArray affectedParameterKeys = new JSONArray();
+    affectedParameterKeys.put("key_1");
+    affectedParameterKeys.put("key_2");
+
+    JSONArray rolloutsMetadata = new JSONArray();
+    rolloutsMetadata.put(
+        new JSONObject()
+            .put("rolloutId", "1")
+            .put("variantId", "A")
+            .put("affectedParameterKeys", affectedParameterKeys));
+    ConfigContainer configContainer =
+        ConfigContainer.newBuilder().withRolloutMetadata(rolloutsMetadata).build();
+    JSONObject configContainerJson = new JSONObject(configContainer.toString());
+    configContainerJson.remove(ConfigContainer.ROLLOUT_METADATA_KEY);
+
+    ConfigContainer otherConfigContainer = ConfigContainer.copyOf(configContainerJson);
+
+    assertThat(otherConfigContainer.getRolloutMetadata()).isNotNull();
+    assertThat(otherConfigContainer.getRolloutMetadata().length()).isEqualTo(0);
+  }
+
+  @Test
+  public void copyOfConfigContainer_withRolloutsMetadata_returnsSameRolloutsMetadata()
+      throws Exception {
+    JSONArray affectedParameterKeys = new JSONArray();
+    affectedParameterKeys.put("key_1");
+    affectedParameterKeys.put("key_2");
+
+    JSONArray rolloutsMetadata = new JSONArray();
+    rolloutsMetadata.put(
+        new JSONObject()
+            .put("rolloutId", "1")
+            .put("variantId", "A")
+            .put("affectedParameterKeys", affectedParameterKeys));
+    ConfigContainer configContainer =
+        ConfigContainer.newBuilder().withRolloutMetadata(rolloutsMetadata).build();
+    ConfigContainer otherConfigContainer =
+        ConfigContainer.copyOf(new JSONObject(configContainer.toString()));
+
+    assertThat(otherConfigContainer.getRolloutMetadata().toString())
+        .isEqualTo(rolloutsMetadata.toString());
+  }
+
+  @Test
+  public void configContainer_withRolloutsMetadata_returnsCorrectRolloutsMetadata()
+      throws Exception {
+    JSONArray affectedParameterKeys = new JSONArray();
+    affectedParameterKeys.put("key_1");
+    affectedParameterKeys.put("key_2");
+
+    JSONArray rolloutsMetadata = new JSONArray();
+    rolloutsMetadata.put(
+        new JSONObject()
+            .put("rolloutId", "1")
+            .put("variantId", "A")
+            .put("affectedParameterKeys", affectedParameterKeys));
+    ConfigContainer configContainer =
+        ConfigContainer.newBuilder().withRolloutMetadata(rolloutsMetadata).build();
+
+    assertThat(configContainer.getRolloutMetadata().toString())
+        .isEqualTo(rolloutsMetadata.toString());
+  }
+
   private static JSONArray generateAbtExperiments(int numExperiments) throws JSONException {
     JSONArray experiments = new JSONArray();
     for (int experimentNum = 1; experimentNum <= numExperiments; experimentNum++) {
