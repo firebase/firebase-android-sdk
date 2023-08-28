@@ -47,47 +47,40 @@ class CrashlyticsAppQualitySessionsStore {
   @Nullable private String sessionId = null;
   @Nullable private String appQualitySessionId = null;
 
+  /** TODO(mrober): Document why public methods are synchronized. */
   CrashlyticsAppQualitySessionsStore(FileStore fileStore) {
     this.fileStore = fileStore;
   }
 
   /** Gets the App Quality Sessions session id for the given Crashlytics session id. */
   @Nullable
-  public String getAppQualitySessionId(@NonNull String sessionId) {
+  public synchronized String getAppQualitySessionId(@NonNull String sessionId) {
     if (Objects.equals(this.sessionId, sessionId)) {
-      return appQualitySessionId;
+      return this.appQualitySessionId;
     }
 
-    return readAqsSessionIdFile(sessionId);
+    return readAqsSessionIdFile(fileStore, sessionId);
   }
 
-  /** Sets the App Quality Sessions session id. */
-  public void setAppQualitySessionId(@NonNull String appQualitySessionId) {
-    if (!Objects.equals(this.appQualitySessionId, appQualitySessionId)) {
-      this.appQualitySessionId = appQualitySessionId;
-      persist();
-    }
-  }
-
-  /** Sets the Crashlytics session id, null means the session was closed. */
-  public void setSessionId(String sessionId) {
-    if (sessionId == null) {
-      // Do not write a aqs id in a closed session.
-      this.sessionId = null;
-    } else {
-      if (!sessionId.equals(this.sessionId)) {
-        this.sessionId = sessionId;
-        persist();
-      }
+  /** Rotates the App Quality Sessions session id. */
+  public synchronized void rotateAppQualitySessionId(@NonNull String newAppQualitySessionId) {
+    if (!Objects.equals(this.appQualitySessionId, newAppQualitySessionId)) {
+      persist(fileStore, this.sessionId, newAppQualitySessionId);
+      this.appQualitySessionId = newAppQualitySessionId;
     }
   }
 
-  /** Persists the current session ids to disk, only if they are all non-null. */
-  private void persist() {
-    // Make local immutable copies to avoid needing to synchronize the setters.
-    String sessionId = this.sessionId;
-    String appQualitySessionId = this.appQualitySessionId;
+  /** Rotates the Crashlytics session id, null means the session was closed. */
+  public synchronized void rotateSessionId(@Nullable String newSessionId) {
+    if (!Objects.equals(this.sessionId, newSessionId)) {
+      persist(fileStore, newSessionId, this.appQualitySessionId);
+      this.sessionId = newSessionId;
+    }
+  }
 
+  /** Persists the given session ids to disk, only if they are all non-null. */
+  private static void persist(
+      FileStore fileStore, @Nullable String sessionId, @Nullable String appQualitySessionId) {
     if (sessionId != null && appQualitySessionId != null) {
       try {
         // Instead of storing the AQS session id in the file's contents, write the id as part of
@@ -99,10 +92,6 @@ class CrashlyticsAppQualitySessionsStore {
         fileStore
             .getSessionFile(sessionId, AQS_SESSION_ID_FILENAME_PREFIX + appQualitySessionId)
             .createNewFile();
-
-        // Update the local values to match what was persisted to avoid any inconsistencies.
-        this.sessionId = sessionId;
-        this.appQualitySessionId = appQualitySessionId;
       } catch (IOException ex) {
         Logger.getLogger().w("Failed to persist App Quality Sessions session id.", ex);
       }
@@ -111,7 +100,7 @@ class CrashlyticsAppQualitySessionsStore {
 
   @VisibleForTesting
   @Nullable
-  String readAqsSessionIdFile(@NonNull String sessionId) {
+  static String readAqsSessionIdFile(FileStore fileStore, @NonNull String sessionId) {
     List<File> aqsFiles = fileStore.getSessionFiles(sessionId, AQS_SESSION_ID_FILE_FILTER);
     if (aqsFiles.isEmpty()) {
       Logger.getLogger().w("Unable to read App Quality Sessions session id.");

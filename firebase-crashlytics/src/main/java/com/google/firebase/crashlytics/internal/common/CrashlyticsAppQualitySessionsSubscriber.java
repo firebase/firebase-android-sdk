@@ -44,14 +44,14 @@ public class CrashlyticsAppQualitySessionsSubscriber implements SessionSubscribe
 
   /** Called when the Crashlytics session id changes or closes. */
   public void setSessionId(@Nullable String sessionId) {
-    appQualitySessionsStore.setSessionId(sessionId);
+    appQualitySessionsStore.rotateSessionId(sessionId);
   }
 
   /** Called by the Sessions sdk when the App Quality Sessions session id changes. */
   @Override
   public void onSessionChanged(@NonNull SessionDetails sessionDetails) {
     Logger.getLogger().d("App Quality Sessions session changed: " + sessionDetails);
-    appQualitySessionsStore.setAppQualitySessionId(sessionDetails.getSessionId());
+    appQualitySessionsStore.rotateAppQualitySessionId(sessionDetails.getSessionId());
   }
 
   @Override

@@ -31,11 +31,12 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
   private static final String NEW_APP_QUALITY_SESSION_ID = "f7196b60000a44a092b5cc9e624f551c";
 
   private CrashlyticsAppQualitySessionsStore aqsStore;
+  private FileStore fileStore;
 
   @Override
   protected void setUp() throws Exception {
     // The files created by each test case will get cleaned up in super.tearDown().
-    FileStore fileStore = spy(new FileStore(getContext()));
+    fileStore = spy(new FileStore(getContext()));
     aqsStore = new CrashlyticsAppQualitySessionsStore(fileStore);
 
     when(fileStore.getSessionFile(anyString(), anyString()))
@@ -49,80 +50,86 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
   }
 
   public void testSetBothIds_createsFile() {
-    aqsStore.setSessionId(SESSION_ID);
-    aqsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
+    aqsStore.rotateSessionId(SESSION_ID);
+    aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
 
-    assertThat(aqsStore.readAqsSessionIdFile(SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
+    assertThat(CrashlyticsAppQualitySessionsStore.readAqsSessionIdFile(fileStore, SESSION_ID))
+        .isEqualTo(APP_QUALITY_SESSION_ID);
   }
 
   public void testSetBothIds_updatedAqsId_createsFile() {
-    aqsStore.setSessionId(SESSION_ID);
-    aqsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
+    aqsStore.rotateSessionId(SESSION_ID);
+    aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
 
-    aqsStore.setAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
+    aqsStore.rotateAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
 
-    assertThat(aqsStore.readAqsSessionIdFile(SESSION_ID)).isEqualTo(NEW_APP_QUALITY_SESSION_ID);
+    assertThat(CrashlyticsAppQualitySessionsStore.readAqsSessionIdFile(fileStore, SESSION_ID))
+        .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
   public void testUpdateAqsIdWhileSessionClosed_persistsAqsIdInNewSession() {
     // Setup first session.
-    aqsStore.setSessionId(SESSION_ID);
-    aqsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
+    aqsStore.rotateSessionId(SESSION_ID);
+    aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
 
     // Close the first session.
-    aqsStore.setSessionId(CLOSED_SESSION);
+    aqsStore.rotateSessionId(CLOSED_SESSION);
 
     // Update the aqs session id while crashlytics session is closed.
-    aqsStore.setAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
+    aqsStore.rotateAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
 
     // Start a new crashlytics session.
-    aqsStore.setSessionId(NEW_SESSION_ID);
+    aqsStore.rotateSessionId(NEW_SESSION_ID);
 
     // Verify the old session has the old aqs id
-    assertThat(aqsStore.readAqsSessionIdFile(SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
+    assertThat(CrashlyticsAppQualitySessionsStore.readAqsSessionIdFile(fileStore, SESSION_ID))
+        .isEqualTo(APP_QUALITY_SESSION_ID);
 
     // Verify the new session has the updated aqs id.
-    assertThat(aqsStore.readAqsSessionIdFile(NEW_SESSION_ID)).isEqualTo(NEW_APP_QUALITY_SESSION_ID);
+    assertThat(CrashlyticsAppQualitySessionsStore.readAqsSessionIdFile(fileStore, NEW_SESSION_ID))
+        .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
   public void testUpdateAqsIdWhileSessionFailedToClosed_persistsNewAqsIdInBothSessions() {
     // Setup first session.
-    aqsStore.setSessionId(SESSION_ID);
-    aqsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
+    aqsStore.rotateSessionId(SESSION_ID);
+    aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
 
     // Simulate failing to close the first session by not closing it.
 
     // Update the aqs session id while crashlytics session is closed.
-    aqsStore.setAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
+    aqsStore.rotateAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
 
     // Start a new crashlytics session.
-    aqsStore.setSessionId(NEW_SESSION_ID);
+    aqsStore.rotateSessionId(NEW_SESSION_ID);
 
     // Verify the old session has the new aqs id since it failed to close.
-    assertThat(aqsStore.readAqsSessionIdFile(SESSION_ID)).isEqualTo(NEW_APP_QUALITY_SESSION_ID);
+    assertThat(CrashlyticsAppQualitySessionsStore.readAqsSessionIdFile(fileStore, SESSION_ID))
+        .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
 
     // Verify the new session has the updated aqs id.
-    assertThat(aqsStore.readAqsSessionIdFile(NEW_SESSION_ID)).isEqualTo(NEW_APP_QUALITY_SESSION_ID);
+    assertThat(CrashlyticsAppQualitySessionsStore.readAqsSessionIdFile(fileStore, NEW_SESSION_ID))
+        .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
   public void testGetAppQualitySessionId_returnsLatestAqsIdPerSession() {
     // Open the first crashlytics session.
-    aqsStore.setSessionId(SESSION_ID);
+    aqsStore.rotateSessionId(SESSION_ID);
 
     // Update the aqs id several times.
-    aqsStore.setAppQualitySessionId("aqs id 1");
-    aqsStore.setAppQualitySessionId("aqs id 2");
-    aqsStore.setAppQualitySessionId("aqs id 3");
-    aqsStore.setAppQualitySessionId(APP_QUALITY_SESSION_ID);
+    aqsStore.rotateAppQualitySessionId("aqs id 1");
+    aqsStore.rotateAppQualitySessionId("aqs id 2");
+    aqsStore.rotateAppQualitySessionId("aqs id 3");
+    aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
 
     // Open a new crashlytics session.
-    aqsStore.setSessionId(NEW_SESSION_ID);
+    aqsStore.rotateSessionId(NEW_SESSION_ID);
 
     // Update the aqs id several times.
-    aqsStore.setAppQualitySessionId("new aqs id 1");
-    aqsStore.setAppQualitySessionId("new aqs id 2");
-    aqsStore.setAppQualitySessionId("new aqs id 3");
-    aqsStore.setAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
+    aqsStore.rotateAppQualitySessionId("new aqs id 1");
+    aqsStore.rotateAppQualitySessionId("new aqs id 2");
+    aqsStore.rotateAppQualitySessionId("new aqs id 3");
+    aqsStore.rotateAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
 
     // Verify the latest aqs id per session is returned.
     assertThat(aqsStore.getAppQualitySessionId(SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
