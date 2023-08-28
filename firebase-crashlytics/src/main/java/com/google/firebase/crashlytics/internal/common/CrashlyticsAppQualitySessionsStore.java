@@ -14,7 +14,6 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
-import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -55,7 +54,6 @@ class CrashlyticsAppQualitySessionsStore {
   /** Gets the App Quality Sessions session id for the given Crashlytics session id. */
   @Nullable
   public String getAppQualitySessionId(@NonNull String sessionId) {
-    checkNotOnMainThread();
     if (Objects.equals(this.sessionId, sessionId)) {
       return appQualitySessionId;
     }
@@ -65,11 +63,6 @@ class CrashlyticsAppQualitySessionsStore {
 
   /** Sets the App Quality Sessions session id. */
   public void setAppQualitySessionId(@NonNull String appQualitySessionId) {
-    if (sessionId != null) {
-      // Only do this check when the session has been opened because aqs sends an id right away.
-      // This is fine since Sessions initializes before Crashlytics opens a session, so no persist.
-      checkNotOnMainThread();
-    }
     if (!Objects.equals(this.appQualitySessionId, appQualitySessionId)) {
       this.appQualitySessionId = appQualitySessionId;
       persist();
@@ -78,7 +71,6 @@ class CrashlyticsAppQualitySessionsStore {
 
   /** Sets the Crashlytics session id, null means the session was closed. */
   public void setSessionId(String sessionId) {
-    checkNotOnMainThread();
     if (sessionId == null) {
       // Do not write a aqs id in a closed session.
       this.sessionId = null;
@@ -127,12 +119,5 @@ class CrashlyticsAppQualitySessionsStore {
     }
     File mostRecentAqsFile = Collections.min(aqsFiles, FILE_RECENCY_COMPARATOR);
     return mostRecentAqsFile.getName().substring(AQS_SESSION_ID_FILENAME_PREFIX.length());
-  }
-
-  private static void checkNotOnMainThread() {
-    // TODO(mrober): Remove this after testing and validation.
-    if (Looper.getMainLooper() == Looper.myLooper()) {
-      throw new IllegalStateException("Running on main thread when expected not to!");
-    }
   }
 }
