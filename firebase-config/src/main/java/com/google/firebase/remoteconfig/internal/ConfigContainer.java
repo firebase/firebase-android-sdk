@@ -14,8 +14,6 @@
 
 package com.google.firebase.remoteconfig.internal;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,6 +39,7 @@ public class ConfigContainer {
   static final String ROLLOUT_METADATA_KEY = "rollout_metadata_key";
   static final String ROLLOUT_METADATA_AFFECTED_KEYS = "affectedParameterKeys";
   static final String ROLLOUT_METADATA_ID = "rolloutId";
+  static final String ROLLOUT_METADATA_VARIANT_ID = "variantId";
 
   private static final Date DEFAULTS_FETCH_TIME = new Date(0L);
 
@@ -190,42 +189,30 @@ public class ConfigContainer {
     return containerJson.toString().equals(that.toString());
   }
 
-  // Create a map of parameter key to `rolloutMetadata`.
-  private Map<String, ArrayList<JSONObject>> createRolloutParameterKeyMap() throws JSONException {
-    // Create a map where the key is the parameter key and the value is a List of `rolloutMetadata`
-    // associated with the key.
-    Map<String, ArrayList<JSONObject>> rolloutMetadataMap = new HashMap<>();
+  // Create a map of maps of parameter key to `rolloutId`/`variantId`.
+  private Map<String, Map<String, String>> createRolloutParameterKeyMap() throws JSONException {
+    // Create a map where the key is the parameter key and the value is a maps of
+    // rolloutId`/`variantId`.
+    Map<String, Map<String, String>> rolloutMetadataMap = new HashMap<>();
     for (int i = 0; i < this.getRolloutMetadata().length(); i++) {
       JSONObject rolloutMetadata = this.getRolloutMetadata().getJSONObject(i);
-
-      // Iterate through `affectedParameterKeys` and add `rolloutMetadata` to the key's list.
+      String rolloutId = rolloutMetadata.getString(ROLLOUT_METADATA_ID);
+      String variantId = rolloutMetadata.getString(ROLLOUT_METADATA_VARIANT_ID);
       JSONArray parameterKeys = rolloutMetadata.getJSONArray(ROLLOUT_METADATA_AFFECTED_KEYS);
+
+      // Iterate through `affectedParameterKeys` and put `rolloutId`/`variantId` into the key's map.
       for (int j = 0; j < parameterKeys.length(); j++) {
-        String key = parameterKeys.getString(j);
-        if (!rolloutMetadataMap.containsKey(key)) {
-          rolloutMetadataMap.put(key, new ArrayList<>());
+        String parameterKey = parameterKeys.getString(j);
+        if (!rolloutMetadataMap.containsKey(parameterKey)) {
+          rolloutMetadataMap.put(parameterKey, new HashMap<>());
         }
 
-        ArrayList<JSONObject> parameterKeyRolloutMetadata = rolloutMetadataMap.get(key);
+        // Place `rolloutId`/`variantId` into parameterKey's map.
+        Map<String, String> parameterKeyRolloutMetadata = rolloutMetadataMap.get(parameterKey);
         if (parameterKeyRolloutMetadata != null) {
-          parameterKeyRolloutMetadata.add(new JSONObject(rolloutMetadata.toString()));
+          parameterKeyRolloutMetadata.put(rolloutId, variantId);
         }
       }
-    }
-
-    // Sort the key's `rolloutMetadata` based on `rolloutId` to make it easier to diff.
-    for (ArrayList<JSONObject> parameterKeyRolloutMetadata : rolloutMetadataMap.values()) {
-      Collections.sort(
-          parameterKeyRolloutMetadata,
-          // Override comparator to use `rolloutId` as the comparison field.
-          (a, b) -> {
-            try {
-              return a.getString(ROLLOUT_METADATA_ID).compareTo(b.getString(ROLLOUT_METADATA_ID));
-            } catch (JSONException e) {
-              // Do nothing if `rolloutId` doesn't exist.
-            }
-            return 0;
-          });
     }
 
     return rolloutMetadataMap;
@@ -241,9 +228,8 @@ public class ConfigContainer {
     JSONObject otherConfig = ConfigContainer.deepCopyOf(other.containerJson).getConfigs();
 
     // Config key to `rolloutMetadata` map.
-    Map<String, ArrayList<JSONObject>> rolloutMetadataMap = this.createRolloutParameterKeyMap();
-    Map<String, ArrayList<JSONObject>> otherRolloutMetadataMap =
-        other.createRolloutParameterKeyMap();
+    Map<String, Map<String, String>> rolloutMetadataMap = this.createRolloutParameterKeyMap();
+    Map<String, Map<String, String>> otherRolloutMetadataMap = other.createRolloutParameterKeyMap();
 
     Set<String> changed = new HashSet<>();
     Iterator<String> keys = this.getConfigs().keys();
@@ -291,10 +277,7 @@ public class ConfigContainer {
       // changed.
       if (rolloutMetadataMap.containsKey(key)
           && otherRolloutMetadataMap.containsKey(key)
-          && !rolloutMetadataMap
-              .get(key)
-              .toString()
-              .equals(otherRolloutMetadataMap.get(key).toString())) {
+          && !rolloutMetadataMap.get(key).equals(otherRolloutMetadataMap.get(key))) {
         changed.add(key);
         continue;
       }
