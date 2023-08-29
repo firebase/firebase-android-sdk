@@ -101,12 +101,10 @@ thirdPartyLicenses {
 }
 
 dependencies {
-    implementation 'com.google.firebase:firebase-abt:21.1.1'
     implementation 'com.google.firebase:firebase-common:20.3.1'
     implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation project(':protolite-well-known-types')
     implementation 'com.google.android.datatransport:transport-api:3.0.0'
-    implementation project(':firebase-datatransport')
     implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
     runtimeOnly project(':firebase-installations')
     implementation 'javax.inject:javax.inject:1'
@@ -121,6 +119,15 @@ dependencies {
     implementation 'io.reactivex.rxjava2:rxjava:2.1.14'
     implementation 'io.reactivex.rxjava2:rxandroid:2.0.2'
     implementation 'com.google.auto.value:auto-value-annotations:1.8.1'
+    implementation('com.google.firebase:firebase-abt:21.1.1') {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
+    implementation('com.google.firebase:firebase-datatransport:18.1.7'){
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
+
 
     implementation('com.google.firebase:firebase-measurement-connector:18.0.2') {
         exclude group: 'com.google.firebase', module: 'firebase-common'

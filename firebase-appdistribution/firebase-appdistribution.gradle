@@ -51,7 +51,10 @@ thirdPartyLicenses {
 }
 
 dependencies {
-    implementation project(':firebase-appdistribution-api')
+    implementation(project(':firebase-appdistribution-api')) {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
     implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
     implementation 'com.google.firebase:firebase-common:20.3.1'

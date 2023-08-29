@@ -54,7 +54,11 @@ android {
 dependencies {
   implementation("com.google.firebase:firebase-common:20.3.2")
   implementation("com.google.firebase:firebase-components:17.1.0")
-  implementation("com.google.firebase:firebase-auth-interop:20.0.0")
+  implementation("com.google.firebase:firebase-auth-interop:20.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
+
   implementation(project(":appcheck:firebase-appcheck-interop"))
   implementation("com.google.firebase:firebase-database-collection:18.0.1")
 
