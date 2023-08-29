@@ -201,10 +201,8 @@ final class SQLiteIndexManager implements IndexManager {
   }
 
   @Override
-  public void addFieldIndex(@Nullable FieldIndex index) {
+  public void addFieldIndex(FieldIndex index) {
     hardAssert(started, "IndexManager not started");
-
-    if (index == null) return;
 
     int nextIndexId = memoizedMaxIndexId + 1;
     index =
@@ -253,7 +251,10 @@ final class SQLiteIndexManager implements IndexManager {
       IndexType type = getIndexType(subTarget);
       if (type == IndexType.NONE || type == IndexType.PARTIAL) {
         TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(subTarget);
-        addFieldIndex(targetIndexMatcher.buildTargetIndex());
+        FieldIndex fieldIndex = targetIndexMatcher.buildTargetIndex();
+        if (fieldIndex != null) {
+          addFieldIndex(fieldIndex);
+        }
       }
     }
   }

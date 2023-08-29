@@ -51,7 +51,7 @@ class MemoryIndexManager implements IndexManager {
   }
 
   @Override
-  public void addFieldIndex(@Nullable FieldIndex index) {
+  public void addFieldIndex(FieldIndex index) {
     // Field indices are not supported with memory persistence.
   }
 

@@ -73,7 +73,7 @@ public interface IndexManager {
    * <p>Values for this index are persisted asynchronously. The index will only be used for query
    * execution once values are persisted.
    */
-  void addFieldIndex(@Nullable FieldIndex index);
+  void addFieldIndex(FieldIndex index);
 
   /** Removes the given field index and deletes all index values. */
   void deleteFieldIndex(FieldIndex index);
