@@ -23,6 +23,7 @@ import com.google.firebase.remoteconfig.internal.ConfigFetchHandler
 import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler
 import com.google.firebase.remoteconfig.internal.ConfigMetadataClient
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler
+import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler
 import java.util.concurrent.Executor
 
 // This method is a workaround for testing. It enable us to create a FirebaseRemoteConfig object
@@ -39,7 +40,8 @@ fun createRemoteConfig(
   fetchHandler: ConfigFetchHandler,
   getHandler: ConfigGetParameterHandler,
   frcMetadata: ConfigMetadataClient,
-  realtimeHandler: ConfigRealtimeHandler
+  realtimeHandler: ConfigRealtimeHandler,
+  rolloutsStateSubscriptionsHandler: RolloutsStateSubscriptionsHandler
 ): FirebaseRemoteConfig {
   return FirebaseRemoteConfig(
     context,
@@ -53,6 +55,7 @@ fun createRemoteConfig(
     fetchHandler,
     getHandler,
     frcMetadata,
-    realtimeHandler
+    realtimeHandler,
+    rolloutsStateSubscriptionsHandler
   )
 }
