@@ -161,6 +161,34 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   }
 
   @Test
+  public void testUpdateSessionId_notPersistCustomKeysToNewSessionIfNoCustomKeysSet() {
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+    userMetadata.setNewSession(SESSION_ID_2);
+    assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.KEYDATA_FILENAME).exists())
+        .isFalse();
+  }
+
+  @Test
+  public void testUpdateSessionId_persistCustomKeysToNewSessionIfCustomKeysSet() {
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+    final Map<String, String> keys =
+        new HashMap<String, String>() {
+          {
+            put(KEY_1, VALUE_1);
+            put(KEY_2, VALUE_2);
+            put(KEY_3, VALUE_3);
+          }
+        };
+    userMetadata.setCustomKeys(keys);
+    userMetadata.setNewSession(SESSION_ID_2);
+    assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.KEYDATA_FILENAME).exists())
+        .isTrue();
+
+    MetaDataStore metaDataStore = new MetaDataStore(fileStore);
+    assertThat(metaDataStore.readKeyData(SESSION_ID_2)).isEqualTo(keys);
+  }
+
+  @Test
   public void testUpdateSessionId_persistUserIdToNewSessionIfUserIdSet() {
     String userId = "ThemisWang";
     UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);

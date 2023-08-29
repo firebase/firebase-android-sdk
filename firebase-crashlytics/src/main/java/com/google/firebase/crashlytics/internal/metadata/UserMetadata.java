@@ -97,8 +97,12 @@ public class UserMetadata {
     synchronized (sessionIdentifier) {
       sessionIdentifier = sessionId;
       Map<String, String> keyData = customKeys.getKeys();
-      metaDataStore.writeUserData(sessionIdentifier, getUserId());
-      metaDataStore.writeKeyData(sessionIdentifier, keyData);
+      if (getUserId() != null) {
+        metaDataStore.writeUserData(sessionId, getUserId());
+      }
+      if (!keyData.isEmpty()) {
+        metaDataStore.writeKeyData(sessionId, keyData);
+      }
       // TODO(themis): adding feature rollouts later
     }
   }
