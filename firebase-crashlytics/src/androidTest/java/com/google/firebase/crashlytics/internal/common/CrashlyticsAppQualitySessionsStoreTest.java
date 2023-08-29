@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.common;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.crashlytics.internal.common.CrashlyticsAppQualitySessionsStore.readAqsSessionIdFile;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -49,25 +50,93 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
             });
   }
 
-  public void testSetBothIds_createsFile() {
+  public void testRotateAqsId_neverRotatedSessionId_doesNotPersist() {
+    aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
+
+    // Does not create a file because there is no session to persist in.
+    assertThat(readAqsSessionIdFile(fileStore, SESSION_ID)).isNull();
+  }
+
+  public void testRotateSessionId_neverRotatedAqsId_doesNotPersist() {
+    aqsStore.rotateSessionId(SESSION_ID);
+
+    // Does not create a file because there was no aqs id to persist.
+    assertThat(readAqsSessionIdFile(fileStore, SESSION_ID)).isNull();
+  }
+
+  public void testRotateBothIds_persists() {
     aqsStore.rotateSessionId(SESSION_ID);
     aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
 
-    assertThat(CrashlyticsAppQualitySessionsStore.readAqsSessionIdFile(fileStore, SESSION_ID))
-        .isEqualTo(APP_QUALITY_SESSION_ID);
+    assertThat(readAqsSessionIdFile(fileStore, SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
   }
 
-  public void testSetBothIds_updatedAqsId_createsFile() {
+  public void testRotateBothIds_storesIds() {
+    aqsStore.rotateSessionId(SESSION_ID);
+    aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
+
+    // Delete all session files to verify the getter is reading the locally stored ids.
+    fileStore.deleteSessionFiles(SESSION_ID);
+
+    assertThat(aqsStore.getAppQualitySessionId(SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
+  }
+
+  public void testRotateBothIds_thenRotateAqsId_persists() {
     aqsStore.rotateSessionId(SESSION_ID);
     aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
 
     aqsStore.rotateAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
 
-    assertThat(CrashlyticsAppQualitySessionsStore.readAqsSessionIdFile(fileStore, SESSION_ID))
+    assertThat(readAqsSessionIdFile(fileStore, SESSION_ID)).isEqualTo(NEW_APP_QUALITY_SESSION_ID);
+  }
+
+  public void testRotateBothIds_thenRotateSessionId_persistsInNewSession() {
+    aqsStore.rotateSessionId(SESSION_ID);
+    aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
+
+    aqsStore.rotateSessionId(NEW_SESSION_ID);
+
+    assertThat(readAqsSessionIdFile(fileStore, SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
+    assertThat(readAqsSessionIdFile(fileStore, NEW_SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
+  }
+
+  public void testRotateBothIds_thenSessionId_thenAqsId_persistsInNewSessionOnly() {
+    aqsStore.rotateSessionId(SESSION_ID);
+    aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
+
+    aqsStore.rotateSessionId(NEW_SESSION_ID);
+
+    aqsStore.rotateAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
+
+    // Old session still contains the old aqs id.
+    assertThat(readAqsSessionIdFile(fileStore, SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
+
+    // New sessions contains the new aqs id.
+    assertThat(readAqsSessionIdFile(fileStore, NEW_SESSION_ID))
         .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
-  public void testUpdateAqsIdWhileSessionClosed_persistsAqsIdInNewSession() {
+  public void testRotateBothIds_thenAqsId_thenSessionId_persistsInBothSessions() {
+    aqsStore.rotateSessionId(SESSION_ID);
+    aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
+
+    aqsStore.rotateAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
+
+    aqsStore.rotateSessionId(NEW_SESSION_ID);
+
+    assertThat(readAqsSessionIdFile(fileStore, SESSION_ID)).isEqualTo(NEW_APP_QUALITY_SESSION_ID);
+    assertThat(readAqsSessionIdFile(fileStore, NEW_SESSION_ID))
+        .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
+  }
+
+  public void testRotateBothIds_thenReadInvalidSessionId_returnsNull() {
+    aqsStore.rotateSessionId(SESSION_ID);
+    aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
+
+    assertThat(readAqsSessionIdFile(fileStore, "sessionDoesNotExist")).isNull();
+  }
+
+  public void testRotateAqsIdWhileSessionClosed_persistsAqsIdInNewSessionOnly() {
     // Setup first session.
     aqsStore.rotateSessionId(SESSION_ID);
     aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
@@ -75,18 +144,17 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
     // Close the first session.
     aqsStore.rotateSessionId(CLOSED_SESSION);
 
-    // Update the aqs session id while crashlytics session is closed.
+    // Rotate the aqs session id while Crashlytics session is closed.
     aqsStore.rotateAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
 
-    // Start a new crashlytics session.
+    // Start a new Crashlytics session.
     aqsStore.rotateSessionId(NEW_SESSION_ID);
 
     // Verify the old session has the old aqs id
-    assertThat(CrashlyticsAppQualitySessionsStore.readAqsSessionIdFile(fileStore, SESSION_ID))
-        .isEqualTo(APP_QUALITY_SESSION_ID);
+    assertThat(readAqsSessionIdFile(fileStore, SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
 
     // Verify the new session has the updated aqs id.
-    assertThat(CrashlyticsAppQualitySessionsStore.readAqsSessionIdFile(fileStore, NEW_SESSION_ID))
+    assertThat(readAqsSessionIdFile(fileStore, NEW_SESSION_ID))
         .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
@@ -97,35 +165,34 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
 
     // Simulate failing to close the first session by not closing it.
 
-    // Update the aqs session id while crashlytics session is closed.
+    // Update the aqs session id while Crashlytics session failed to closed.
     aqsStore.rotateAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
 
-    // Start a new crashlytics session.
+    // Start a new Crashlytics session.
     aqsStore.rotateSessionId(NEW_SESSION_ID);
 
     // Verify the old session has the new aqs id since it failed to close.
-    assertThat(CrashlyticsAppQualitySessionsStore.readAqsSessionIdFile(fileStore, SESSION_ID))
-        .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
+    assertThat(readAqsSessionIdFile(fileStore, SESSION_ID)).isEqualTo(NEW_APP_QUALITY_SESSION_ID);
 
     // Verify the new session has the updated aqs id.
-    assertThat(CrashlyticsAppQualitySessionsStore.readAqsSessionIdFile(fileStore, NEW_SESSION_ID))
+    assertThat(readAqsSessionIdFile(fileStore, NEW_SESSION_ID))
         .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
-  public void testGetAppQualitySessionId_returnsLatestAqsIdPerSession() {
-    // Open the first crashlytics session.
+  public void testGetAppQualitySessionId_manyAqsIdRotations_returnsLatestAqsIdPerSession() {
+    // Open the first Crashlytics session.
     aqsStore.rotateSessionId(SESSION_ID);
 
-    // Update the aqs id several times.
+    // Rotate the aqs id several times.
     aqsStore.rotateAppQualitySessionId("aqs id 1");
     aqsStore.rotateAppQualitySessionId("aqs id 2");
     aqsStore.rotateAppQualitySessionId("aqs id 3");
     aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
 
-    // Open a new crashlytics session.
+    // Open a new Crashlytics session.
     aqsStore.rotateSessionId(NEW_SESSION_ID);
 
-    // Update the aqs id several times.
+    // Rotate the aqs id several times.
     aqsStore.rotateAppQualitySessionId("new aqs id 1");
     aqsStore.rotateAppQualitySessionId("new aqs id 2");
     aqsStore.rotateAppQualitySessionId("new aqs id 3");
@@ -135,5 +202,63 @@ public final class CrashlyticsAppQualitySessionsStoreTest extends CrashlyticsTes
     assertThat(aqsStore.getAppQualitySessionId(SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
     assertThat(aqsStore.getAppQualitySessionId(NEW_SESSION_ID))
         .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
+  }
+
+  public void testGetAppQualitySessionId_manySessionIdRotations_returnsProperAqsIdForEachSession() {
+    // Rotate the aqs id with no Crashlytics session.
+    aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
+
+    // Rotate the Crashlytics id several times.
+    aqsStore.rotateSessionId("session id 1");
+    aqsStore.rotateSessionId("session id 2");
+    aqsStore.rotateSessionId("session id 3");
+    aqsStore.rotateSessionId(SESSION_ID);
+
+    // Rotate the aqs session id.
+    aqsStore.rotateAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
+
+    // Update the aqs id several times.
+    aqsStore.rotateSessionId("new session id 1");
+    aqsStore.rotateSessionId("new session id 2");
+    aqsStore.rotateSessionId("new session id 3");
+    aqsStore.rotateSessionId(NEW_SESSION_ID);
+
+    // Verify the correct aqs id for each session is returned.
+    assertThat(aqsStore.getAppQualitySessionId(SESSION_ID)).isEqualTo(NEW_APP_QUALITY_SESSION_ID);
+    assertThat(aqsStore.getAppQualitySessionId(NEW_SESSION_ID))
+        .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
+  }
+
+  public void testGetAppQualitySessionId_afterRelaunch_returnsPersistedAqsId() {
+    // Setup first session.
+    aqsStore.rotateSessionId(SESSION_ID);
+    aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
+
+    // Rotate the aqs id during the Crashlytics session
+    aqsStore.rotateAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
+
+    // Simulate a native crash and relaunch by making a new aqs store instance.
+    CrashlyticsAppQualitySessionsStore newAqsStore =
+        new CrashlyticsAppQualitySessionsStore(new FileStore(getContext()));
+
+    assertThat(newAqsStore.getAppQualitySessionId(SESSION_ID))
+        .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
+  }
+
+  public void testGetAppQualitySessionId_afterRelaunch_afterRotate_returnsPersistedAqsId() {
+    // Setup first session.
+    aqsStore.rotateSessionId(SESSION_ID);
+    aqsStore.rotateAppQualitySessionId(APP_QUALITY_SESSION_ID);
+
+    // Simulate a native crash and relaunch by making a new aqs store instance.
+    CrashlyticsAppQualitySessionsStore newAqsStore =
+        new CrashlyticsAppQualitySessionsStore(new FileStore(getContext()));
+
+    // Rotate the ids in the new launch.
+    newAqsStore.rotateSessionId(NEW_SESSION_ID);
+    newAqsStore.rotateAppQualitySessionId(NEW_APP_QUALITY_SESSION_ID);
+
+    // Verify the old session still persisted the old aqs id.
+    assertThat(newAqsStore.getAppQualitySessionId(SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
   }
 }

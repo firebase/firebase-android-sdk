@@ -25,6 +25,8 @@ import com.google.firebase.sessions.api.SessionSubscriber.SessionDetails;
 public final class CrashlyticsAppQualitySessionsSubscriberTest extends CrashlyticsTestCase {
   private static final String SESSION_ID = "64e61da7023800012303a14eecd3f58d";
   private static final String APP_QUALITY_SESSION_ID = "79fd5d2e08ef4ea9a4f378879e53af2e";
+  private static final String NEW_SESSION_ID = "64e61da0007500012284a14eecd3f58d";
+  private static final String NEW_APP_QUALITY_SESSION_ID = "f7196b60000a44a092b5cc9e624f551c";
 
   private CrashlyticsAppQualitySessionsSubscriber aqsSubscriber;
 
@@ -36,7 +38,7 @@ public final class CrashlyticsAppQualitySessionsSubscriberTest extends Crashlyti
             mock(DataCollectionArbiter.class), new FileStore(getContext()));
   }
 
-  public void testGetAppQualitySessionId_returnsLatestAqsId() {
+  public void testGetAppQualitySessionId_returnsLatestAqsIdForSession() {
     aqsSubscriber.setSessionId(SESSION_ID);
 
     aqsSubscriber.onSessionChanged(createSessionDetails("aqs id 1"));
@@ -45,6 +47,54 @@ public final class CrashlyticsAppQualitySessionsSubscriberTest extends Crashlyti
     aqsSubscriber.onSessionChanged(createSessionDetails(APP_QUALITY_SESSION_ID));
 
     assertThat(aqsSubscriber.getAppQualitySessionId(SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
+  }
+
+  public void testGetAppQualitySessionId_returnsCorrectAqsIdForEachSession() {
+    String session_id_1 = "session id 1";
+    String session_id_2 = "session id 2";
+    String session_id_3 = "session id 3";
+    String new_session_id_1 = "new session id 1";
+    String new_session_id_2 = "new session id 2";
+    String new_session_id_3 = "new session id 3";
+
+    aqsSubscriber.onSessionChanged(createSessionDetails(APP_QUALITY_SESSION_ID));
+
+    // Rotate the session id multiple times for a single aqs id.
+    aqsSubscriber.setSessionId(session_id_1);
+    aqsSubscriber.setSessionId(session_id_2);
+    aqsSubscriber.setSessionId(session_id_3);
+    aqsSubscriber.setSessionId(SESSION_ID);
+
+    // Close the session.
+    aqsSubscriber.setSessionId(null);
+
+    // Rotate the aqs id.
+    aqsSubscriber.onSessionChanged(createSessionDetails(NEW_APP_QUALITY_SESSION_ID));
+
+    // Rotate the session id multiple times again for the rotated aqs id.
+    aqsSubscriber.setSessionId(new_session_id_1);
+    aqsSubscriber.setSessionId(new_session_id_2);
+    aqsSubscriber.setSessionId(new_session_id_3);
+    aqsSubscriber.setSessionId(NEW_SESSION_ID);
+
+    assertThat(aqsSubscriber.getAppQualitySessionId(session_id_1))
+        .isEqualTo(APP_QUALITY_SESSION_ID);
+    assertThat(aqsSubscriber.getAppQualitySessionId(session_id_2))
+        .isEqualTo(APP_QUALITY_SESSION_ID);
+    assertThat(aqsSubscriber.getAppQualitySessionId(session_id_3))
+        .isEqualTo(APP_QUALITY_SESSION_ID);
+
+    assertThat(aqsSubscriber.getAppQualitySessionId(SESSION_ID)).isEqualTo(APP_QUALITY_SESSION_ID);
+
+    assertThat(aqsSubscriber.getAppQualitySessionId(new_session_id_1))
+        .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
+    assertThat(aqsSubscriber.getAppQualitySessionId(new_session_id_2))
+        .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
+    assertThat(aqsSubscriber.getAppQualitySessionId(new_session_id_3))
+        .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
+
+    assertThat(aqsSubscriber.getAppQualitySessionId(NEW_SESSION_ID))
+        .isEqualTo(NEW_APP_QUALITY_SESSION_ID);
   }
 
   private static SessionDetails createSessionDetails(@NonNull String appQualitySessionId) {
