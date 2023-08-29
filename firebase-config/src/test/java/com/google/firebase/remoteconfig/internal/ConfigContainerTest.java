@@ -341,7 +341,7 @@ public class ConfigContainerTest {
     JSONArray activeRolloutMetadata = generateRolloutMetadata(1);
     JSONArray fetchedRolloutMetadata = generateRolloutMetadata(1);
 
-    fetchedRolloutMetadata.getJSONObject(0).put("variantID", "B");
+    fetchedRolloutMetadata.getJSONObject(0).put("variantId", "B");
 
     ConfigContainer config =
         ConfigContainer.newBuilder()
@@ -470,7 +470,7 @@ public class ConfigContainerTest {
     for (int i = 1; i <= numberOfMetadata; i++) {
       rolloutMetadata.put(
           new JSONObject()
-              .put("rolloutMetadata", "rollout_" + i)
+              .put("rolloutId", "rollout_" + i)
               .put("variantId", "A")
               .put("affectedParameterKeys", new JSONArray().put("key_1")));
     }
