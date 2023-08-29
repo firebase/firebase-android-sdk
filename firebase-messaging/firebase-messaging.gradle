@@ -15,18 +15,13 @@
 plugins {
     id 'com.google.protobuf'
     id 'firebase-library'
-<<<<<<< HEAD
     id 'kotlin-android'
-=======
-    id("kotlin-android")
-
->>>>>>> ce41667d6 (update everything)
 }
 
 protobuf {
     dependencies {
         // Include the project dependency directly
-        implementation project(':encoders:protoc-gen-firebase-encoders')
+        implementation project(path: ':encoders:protoc-gen-firebase-encoders', configuration: 'shadow')
     }
     protoc {
         artifact = "com.google.protobuf:protoc:$protocVersion"
