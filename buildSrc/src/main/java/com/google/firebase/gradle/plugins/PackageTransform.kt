@@ -186,9 +186,13 @@ abstract class PackageTransform : DefaultTask() {
             .map { x ->
               val p =
                 x.replace(
-                  "LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),",
-                  ""
-                )
+                    "LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),",
+                    ""
+                  )
+                  .replace(
+                    "LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME)",
+                    ""
+                  )
               if (p.trim().isEmpty() && !x.trim().isEmpty()) {
                 return@map "#REMOVE#REMOVE#REMOVE"
               } else {
@@ -196,7 +200,9 @@ abstract class PackageTransform : DefaultTask() {
               }
             }
             .filter {
-              !it.contains("#REMOVE#REMOVE#REMOVE") && !it.contains("contains(LIBRARY_NAME)")
+              !it.contains("#REMOVE#REMOVE#REMOVE") &&
+                !it.contains("contains(LIBRARY_NAME)") &&
+                !it.contains("internal const val LIBRARY_NAME: String =")
             }
         File(it.absolutePath).delete()
         val newFile = File(it.absolutePath)
