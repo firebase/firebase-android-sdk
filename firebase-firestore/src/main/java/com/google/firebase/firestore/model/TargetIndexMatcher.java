@@ -207,7 +207,10 @@ public class TargetIndexMatcher {
     return true;
   }
 
-  /** Returns a full matched field index for this target. */
+  /**
+   * Returns a full matched field index for this target. Currently multiple inequality query is not
+   * supported so function returns null.
+   */
   @Nullable
   public FieldIndex buildTargetIndex() {
     if (hasMultipleInequality()) {
