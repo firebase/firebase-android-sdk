@@ -760,6 +760,19 @@ public final class FirebaseRemoteConfigTest {
   }
 
   @Test
+  public void activate_publishesRolloutsStateToSubscribers() throws Exception {
+    ConfigContainer configContainer = ConfigContainer.newBuilder().build();
+
+    loadCacheWithConfig(mockFetchedCache, configContainer);
+    cachePutReturnsConfig(mockActivatedCache, configContainer);
+
+    Task<Boolean> activateTask = frc.activate();
+
+    assertThat(activateTask.getResult()).isTrue();
+    verify(mockRolloutsStateSubscriptionsHandler).publishActiveRolloutsState(configContainer);
+  }
+
+  @Test
   public void activate2p_hasNoAbtExperiments_doesNotCallAbt() throws Exception {
     ConfigContainer containerWithNoAbtExperiments =
         ConfigContainer.newBuilder().withFetchTime(new Date(1000L)).build();
