@@ -15,7 +15,12 @@
 plugins {
     id 'com.google.protobuf'
     id 'firebase-library'
+<<<<<<< HEAD
     id 'kotlin-android'
+=======
+    id("kotlin-android")
+
+>>>>>>> ce41667d6 (update everything)
 }
 
 protobuf {
