@@ -407,14 +407,12 @@ abstract class PackageTransform : DefaultTask() {
         output.add("plugins {")
         output.add("    id(\"firebase-library\")")
         output.add("    id(\"kotlin-android\")")
-        output.add("    id(\"com.google.gms.google-services\")")
         output.add("}")
         continue
       }
       output.add(line)
       if (line.contains("id(\"firebase-library\")") || line.contains("id 'firebase-library'")) {
         output.add("    id(\"kotlin-android\")")
-        output.add("    id(\"com.google.gms.google-services\")")
       }
       if (line.contains("dependencies {")) {
         output += deps
