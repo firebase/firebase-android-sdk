@@ -35,6 +35,11 @@ public class RolloutsStateSubscriptionsHandler {
   private RolloutsStateFactory rolloutsStateFactory;
   private Executor executor;
 
+  // Thread-safe implementation for subscribers, using a ConcurrentHashMap as the underlying
+  // implementation with set-like accessors.
+  private Set<RolloutsStateSubscriber> subscribers =
+      Collections.newSetFromMap(new ConcurrentHashMap<>());
+
   public RolloutsStateSubscriptionsHandler(
       @NonNull ConfigCacheClient activatedConfigsCache,
       @NonNull RolloutsStateFactory rolloutsStateFactory,
@@ -43,11 +48,6 @@ public class RolloutsStateSubscriptionsHandler {
     this.rolloutsStateFactory = rolloutsStateFactory;
     this.executor = executor;
   }
-
-  // Thread-safe implementation for subscribers, using a ConcurrentHashMap as the underlying
-  // implementation with set-like accessors.
-  private Set<RolloutsStateSubscriber> subscribers =
-      Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   public void registerRolloutsStateSubscriber(@NonNull RolloutsStateSubscriber subscriber) {
     subscribers.add(subscriber);
