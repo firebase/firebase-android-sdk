@@ -608,8 +608,10 @@ public class FirebaseRemoteConfig {
       // An activate call should only be made if there are fetched values to activate, which are
       // then put into the activated cache. So, if the put is called and succeeds, then the returned
       // values from the put task must be non-null.
-      if (putTask.getResult() != null) {
-        updateAbtWithActivatedExperiments(putTask.getResult().getAbtExperiments());
+      ConfigContainer activatedConfigs = putTask.getResult();
+      if (activatedConfigs != null) {
+        updateAbtWithActivatedExperiments(activatedConfigs.getAbtExperiments());
+        rolloutsStateSubscriptionsHandler.publishActiveRolloutsState(activatedConfigs);
       } else {
         // Should never happen.
         Log.e(TAG, "Activated configs written to disk are null.");
