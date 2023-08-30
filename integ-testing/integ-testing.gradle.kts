@@ -36,8 +36,8 @@ android {
 }
 
 dependencies {
-  implementation("com.google.firebase:firebase-common:20.3.2")
-  implementation("com.google.firebase:firebase-components:17.1.0")
+  implementation(project(":firebase-common"))
+  implementation(project(":firebase-components"))
 
   implementation(libs.junit)
   implementation(libs.androidx.test.runner)

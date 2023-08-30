@@ -201,7 +201,7 @@ abstract class PackageTransform : DefaultTask() {
             }
             .filter {
               !it.contains("#REMOVE#REMOVE#REMOVE") &&
-                !it.contains("contains(LIBRARY_NAME)") &&
+                !(it.contains("contains") && it.contains("LIBRARY_NAME")) &&
                 !it.contains("internal const val LIBRARY_NAME: String =")
             }
         File(it.absolutePath).delete()
