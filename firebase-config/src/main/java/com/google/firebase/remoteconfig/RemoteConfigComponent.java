@@ -40,6 +40,7 @@ import com.google.firebase.remoteconfig.internal.ConfigMetadataClient;
 import com.google.firebase.remoteconfig.internal.ConfigRealtimeHandler;
 import com.google.firebase.remoteconfig.internal.ConfigStorageClient;
 import com.google.firebase.remoteconfig.internal.Personalization;
+import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateFactory;
 import com.google.firebase.remoteconfig.internal.rollouts.RolloutsStateSubscriptionsHandler;
 import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutsStateSubscriber;
@@ -57,7 +58,6 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>A unique FRC instance is returned for each {{@link FirebaseApp}, {@code namespace}}
  * combination.
  *
- * @author Miraziz Yusupov
  * @hide
  */
 @KeepForSdk
@@ -173,7 +173,7 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
     }
 
     RolloutsStateSubscriptionsHandler rolloutsStateSubscriptionsHandler =
-        getRolloutsStateSubscriptionsHandler();
+        getRolloutsStateSubscriptionsHandler(activatedCacheClient);
 
     return get(
         firebaseApp,
@@ -320,8 +320,12 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
     return null;
   }
 
-  private RolloutsStateSubscriptionsHandler getRolloutsStateSubscriptionsHandler() {
-    return new RolloutsStateSubscriptionsHandler();
+  private RolloutsStateSubscriptionsHandler getRolloutsStateSubscriptionsHandler(
+      ConfigCacheClient activatedConfigsCache) {
+    RolloutsStateFactory rolloutsStateFactory = RolloutsStateFactory.create();
+
+    return new RolloutsStateSubscriptionsHandler(
+        activatedConfigsCache, rolloutsStateFactory, executor);
   }
 
   /**
@@ -357,6 +361,14 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
     }
   }
 
+  /**
+   * Register a {@link RolloutsStateSubscriber} {@code subscriber} in for the given Remote Config
+   * {@code namespace}.
+   *
+   * <p>This implements {@link FirebaseRemoteConfigInterop} for use by other Firebase SDKs. See
+   * {@link FirebaseRemoteConfigInterop#registerRolloutsStateSubscriber(String,
+   * RolloutsStateSubscriber)} for more details.
+   */
   @Override
   public void registerRolloutsStateSubscriber(
       @NonNull String namespace, @NonNull RolloutsStateSubscriber subscriber) {
