@@ -78,6 +78,7 @@ android {
 
 dependencies {
     implementation 'com.google.firebase:firebase-common:20.3.2'
+    implementation(project(":firebase-annotations"))
     implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation 'com.google.firebase:firebase-appcheck-interop:17.0.0'
 
