@@ -40,7 +40,7 @@ public abstract class RolloutAssignment {
 
   public abstract long getTemplateVersion();
 
-  static RolloutAssignment create(
+  public static RolloutAssignment create(
       String rolloutId,
       String parameterKey,
       String parameterValue,
@@ -64,10 +64,8 @@ public abstract class RolloutAssignment {
     String variantId = dataObj.getString("variantId");
     long templateVersion = dataObj.getLong("templateVersion");
 
-    String validatedParameterValue = validate(parameterValue);
-
-    return new AutoValue_RolloutAssignment(
-        rolloutId, parameterKey, validatedParameterValue, variantId, templateVersion);
+    return RolloutAssignment.create(
+        rolloutId, parameterKey, parameterValue, variantId, templateVersion);
   }
 
   public CrashlyticsReport.Session.Event.RolloutAssignment toReportProto() {
