@@ -88,3 +88,10 @@ dependencies {
      exclude(group = "javax.inject", module = "javax.inject")
    }
 }
+
+// ==========================================================================
+// Copy from here down if you want to use the google-services plugin in your
+// androidTest integration tests.
+// ==========================================================================
+extra["packageName"] = "com.google.firebase.functions"
+apply(from = "../gradle/googleServices.gradle")
