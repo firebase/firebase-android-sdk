@@ -48,8 +48,6 @@ android {
 }
 
 dependencies {
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.junit)
     api(project(":firebase-common"))
     api(project(":firebase-components"))
     api(project(":firebase-database"))

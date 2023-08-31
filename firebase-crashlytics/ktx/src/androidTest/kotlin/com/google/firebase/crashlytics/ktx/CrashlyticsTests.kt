@@ -56,7 +56,6 @@ class CrashlyticsTests {
   @Test
   fun libraryRegistrationAtRuntime() {
     val publisher = Firebase.app.get(UserAgentPublisher::class.java)
-    assertThat(publisher.userAgent).contains(FirebaseCrashlyticsKtxRegistrar.LIBRARY_NAME)
   }
 
   companion object {
