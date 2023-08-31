@@ -338,8 +338,8 @@ public class ConfigContainerTest {
 
   @Test
   public void getChangedParams_changedRolloutMetadata_returnsUpdatedKey() throws Exception {
-    JSONArray activeRolloutMetadata = generateRolloutMetadata(1);
-    JSONArray fetchedRolloutMetadata = generateRolloutMetadata(1);
+    JSONArray activeRolloutMetadata = generateNRolloutMetadataEntries(1);
+    JSONArray fetchedRolloutMetadata = generateNRolloutMetadataEntries(1);
 
     fetchedRolloutMetadata.getJSONObject(0).put("variantId", "B");
 
@@ -362,8 +362,8 @@ public class ConfigContainerTest {
 
   @Test
   public void getChangedParams_addedRolloutMetadataToSameKey_returnsUpdatedKey() throws Exception {
-    JSONArray activeRolloutMetadata = generateRolloutMetadata(1);
-    JSONArray fetchedRolloutMetadata = generateRolloutMetadata(2);
+    JSONArray activeRolloutMetadata = generateNRolloutMetadataEntries(1);
+    JSONArray fetchedRolloutMetadata = generateNRolloutMetadataEntries(2);
 
     ConfigContainer config =
         ConfigContainer.newBuilder()
@@ -384,7 +384,7 @@ public class ConfigContainerTest {
 
   @Test
   public void getChangedParams_deletedRolloutMetadata_returnsUpdatedKey() throws Exception {
-    JSONArray activeRolloutMetadata = generateRolloutMetadata(1);
+    JSONArray activeRolloutMetadata = generateNRolloutMetadataEntries(1);
     JSONArray fetchedRolloutMetadata = new JSONArray();
 
     ConfigContainer config =
@@ -405,9 +405,9 @@ public class ConfigContainerTest {
   }
 
   @Test
-  public void getChangedParams_addNewRolloutMetadata_returnsUpdatedKey() throws Exception {
-    JSONArray activeRolloutMetadata = generateRolloutMetadata(1);
-    JSONArray fetchedRolloutMetadata = generateRolloutMetadata(2);
+  public void getChangedParams_addNewKeyWithRolloutMetadata_returnsUpdatedKey() throws Exception {
+    JSONArray activeRolloutMetadata = generateNRolloutMetadataEntries(1);
+    JSONArray fetchedRolloutMetadata = generateNRolloutMetadataEntries(2);
 
     fetchedRolloutMetadata.getJSONObject(1).getJSONArray("affectedParameterKeys").put(0, "key_2");
 
@@ -430,8 +430,8 @@ public class ConfigContainerTest {
 
   @Test
   public void getChangedParams_unchangedRolloutMetadata_returnsNoKey() throws Exception {
-    JSONArray activeRolloutMetadata = generateRolloutMetadata(1);
-    JSONArray fetchedRolloutMetadata = generateRolloutMetadata(1);
+    JSONArray activeRolloutMetadata = generateNRolloutMetadataEntries(1);
+    JSONArray fetchedRolloutMetadata = generateNRolloutMetadataEntries(1);
 
     ConfigContainer config =
         ConfigContainer.newBuilder()
@@ -465,7 +465,8 @@ public class ConfigContainerTest {
         PERSONALIZATION_ID, p13nId, ARM_INDEX, armIndex, CHOICE_ID, choiceId, GROUP, group);
   }
 
-  private static JSONArray generateRolloutMetadata(int numberOfMetadata) throws JSONException {
+  private static JSONArray generateNRolloutMetadataEntries(int numberOfMetadata)
+      throws JSONException {
     JSONArray rolloutMetadata = new JSONArray();
     for (int i = 1; i <= numberOfMetadata; i++) {
       rolloutMetadata.put(
