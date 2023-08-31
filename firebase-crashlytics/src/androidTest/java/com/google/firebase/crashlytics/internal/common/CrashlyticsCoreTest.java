@@ -33,6 +33,7 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponentDeferredProxy;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.DevelopmentPlatformProvider;
+import com.google.firebase.crashlytics.internal.RemoteConfigDeferredProxy;
 import com.google.firebase.crashlytics.internal.analytics.UnavailableAnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbHandler;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
@@ -427,7 +428,8 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
               new UnavailableAnalyticsEventLogger(),
               new FileStore(context),
               new SameThreadExecutorService(),
-              mock(CrashlyticsAppQualitySessionsSubscriber.class));
+              mock(CrashlyticsAppQualitySessionsSubscriber.class),
+              mock(RemoteConfigDeferredProxy.class));
       return crashlyticsCore;
     }
   }
