@@ -15,7 +15,7 @@
 plugins {
     id 'com.google.protobuf'
     id 'firebase-library'
-    id 'kotlin-android'
+    id("kotlin-android")
 }
 
 protobuf {
@@ -99,20 +99,17 @@ dependencies {
     implementation 'com.google.android.gms:play-services-base:18.0.1'
     implementation 'com.google.android.gms:play-services-cloud-messaging:17.0.1'
     implementation 'com.google.android.gms:play-services-stats:17.0.2'
-    implementation('com.google.firebase:firebase-datatransport:18.1.7') {
-        exclude group: 'com.google.firebase', module: 'firebase-common'
-        exclude group: 'com.google.firebase', module: 'firebase-components'
-    }
     implementation 'com.google.firebase:firebase-encoders-json:18.0.0'
     implementation 'com.google.firebase:firebase-encoders:17.0.0'
+    implementation('com.google.firebase:firebase-datatransport:18.1.7') {
+         exclude group: 'com.google.firebase', module: 'firebase-common'
+         exclude group: 'com.google.firebase', module: 'firebase-components'
+     }
     implementation('com.google.firebase:firebase-installations-interop:17.1.0')
     implementation('com.google.firebase:firebase-measurement-connector:19.0.0')
     implementation(project(":firebase-common"))
     implementation(project(":firebase-components"))
-    implementation(project(":firebase-installations")) {
-        exclude group: 'com.google.firebase', module: 'firebase-common'
-        exclude group: 'com.google.firebase', module: 'firebase-components'
-    }
+    implementation(project(":firebase-installations"))
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
     testAnnotationProcessor "com.google.auto.value:auto-value:1.6.3"
     testCompileOnly 'com.google.auto.value:auto-value-annotations:1.6.3'
@@ -134,12 +131,12 @@ dependencies {
     testImplementation 'junit:junit:4.13-beta-2'
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation ("com.google.api-client:google-api-client:1.30.9") {
-        exclude group: "org.apache.httpcomponents", module: "httpclient"
-    }
+         exclude group: "org.apache.httpcomponents", module: "httpclient"
+     }
     testImplementation ("com.google.firebase:firebase-iid:21.1.0") {
-        exclude group: "com.google.firebase", module: "firebase-common"
-        exclude group: "com.google.firebase", module: "firebase-components"
-        exclude group: "com.google.firebase", module: "firebase-installations-interop"
-        exclude group: "com.google.firebase", module: "firebase-installations"
-    }
+         exclude group: "com.google.firebase", module: "firebase-common"
+         exclude group: "com.google.firebase", module: "firebase-components"
+         exclude group: "com.google.firebase", module: "firebase-installations-interop"
+         exclude group: "com.google.firebase", module: "firebase-installations"
+     }
 }

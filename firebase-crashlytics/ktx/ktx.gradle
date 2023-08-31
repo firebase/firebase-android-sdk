@@ -45,13 +45,10 @@ android {
 }
 
 dependencies {
-  implementation "com.google.firebase:firebase-common-ktx:20.3.2"
-  implementation "com.google.firebase:firebase-common:20.3.2"
-  implementation "com.google.firebase:firebase-components:17.1.0"
-  implementation(libs.androidx.annotation)
-  implementation project(":firebase-crashlytics")
-
-  androidTestImplementation(libs.androidx.test.junit)
-  androidTestImplementation(libs.androidx.test.runner)
-  androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.truth)
+    api(project(":firebase-common"))
+    api(project(":firebase-components"))
+    api(project(":firebase-crashlytics"))
 }

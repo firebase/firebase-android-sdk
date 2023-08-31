@@ -62,14 +62,14 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
    */
   @Deprecated
   public ComponentRuntime(
-          Executor defaultEventExecutor,
-          Iterable<ComponentRegistrar> registrars,
-          Component<?>... additionalComponents) {
+      Executor defaultEventExecutor,
+      Iterable<ComponentRegistrar> registrars,
+      Component<?>... additionalComponents) {
     this(
-            defaultEventExecutor,
-            toProviders(registrars),
-            Arrays.asList(additionalComponents),
-            ComponentRegistrarProcessor.NOOP);
+        defaultEventExecutor,
+        toProviders(registrars),
+        Arrays.asList(additionalComponents),
+        ComponentRegistrarProcessor.NOOP);
   }
 
   /** A builder for creating {@link ComponentRuntime} instances. */
@@ -78,10 +78,10 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
   }
 
   private ComponentRuntime(
-          Executor defaultEventExecutor,
-          Iterable<Provider<ComponentRegistrar>> registrars,
-          Collection<Component<?>> additionalComponents,
-          ComponentRegistrarProcessor componentRegistrarProcessor) {
+      Executor defaultEventExecutor,
+      Iterable<Provider<ComponentRegistrar>> registrars,
+      Collection<Component<?>> additionalComponents,
+      ComponentRegistrarProcessor componentRegistrarProcessor) {
     eventBus = new EventBus(defaultEventExecutor);
     this.componentRegistrarProcessor = componentRegistrarProcessor;
 
@@ -161,11 +161,11 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
 
       for (Component<?> component : componentsAdding) {
         Lazy<?> lazy =
-                new Lazy<>(
-                        () ->
-                                component
-                                        .getFactory()
-                                        .create(new RestrictedComponentContainer(component, this)));
+            new Lazy<>(
+                () ->
+                    component
+                        .getFactory()
+                        .create(new RestrictedComponentContainer(component, this)));
 
         components.put(component, lazy);
       }
@@ -189,7 +189,7 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
   }
 
   private static Iterable<Provider<ComponentRegistrar>> toProviders(
-          Iterable<ComponentRegistrar> registrars) {
+      Iterable<ComponentRegistrar> registrars) {
     List<Provider<ComponentRegistrar>> result = new ArrayList<>();
     for (ComponentRegistrar registrar : registrars) {
       result.add(() -> registrar);
@@ -322,7 +322,7 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
   }
 
   private void doInitializeEagerComponents(
-          Map<Component<?>, Provider<?>> componentsToInitialize, boolean isDefaultApp) {
+      Map<Component<?>, Provider<?>> componentsToInitialize, boolean isDefaultApp) {
     for (Map.Entry<Component<?>, Provider<?>> entry : componentsToInitialize.entrySet()) {
       Component<?> component = entry.getKey();
       Provider<?> provider = entry.getValue();
@@ -361,9 +361,9 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
         } else if (!lazyInstanceMap.containsKey(dependency.getInterface())) {
           if (dependency.isRequired()) {
             throw new MissingDependencyException(
-                    String.format(
-                            "Unsatisfied dependency for component %s: %s",
-                            component, dependency.getInterface()));
+                String.format(
+                    "Unsatisfied dependency for component %s: %s",
+                    component, dependency.getInterface()));
           } else if (!dependency.isSet()) {
             lazyInstanceMap.put(dependency.getInterface(), OptionalProvider.empty());
           }
@@ -382,7 +382,7 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
     private final List<Provider<ComponentRegistrar>> lazyRegistrars = new ArrayList<>();
     private final List<Component<?>> additionalComponents = new ArrayList<>();
     private ComponentRegistrarProcessor componentRegistrarProcessor =
-            ComponentRegistrarProcessor.NOOP;
+        ComponentRegistrarProcessor.NOOP;
 
     Builder(Executor defaultExecutor) {
       this.defaultExecutor = defaultExecutor;
@@ -414,7 +414,7 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
 
     public ComponentRuntime build() {
       return new ComponentRuntime(
-              defaultExecutor, lazyRegistrars, additionalComponents, componentRegistrarProcessor);
+          defaultExecutor, lazyRegistrars, additionalComponents, componentRegistrarProcessor);
     }
   }
 }
