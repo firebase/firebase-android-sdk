@@ -401,7 +401,8 @@ abstract class PackageTransform : DefaultTask() {
       if (ctr >= 1) {
         if (line.contains("{")) {
           ctr += 1
-        } else if (line.contains("}")) {
+        }
+        if (line.contains("}")) {
           ctr -= 1
         }
         continue
