@@ -396,7 +396,16 @@ abstract class PackageTransform : DefaultTask() {
     val deps = depsArg.sorted().map { x -> "    " + x }
     val lines = File(gradlePath).readLines()
     val output = mutableListOf<String>()
+    var ctr = 0
     for (line in lines) {
+      if (ctr == 1) {
+        if (line.contains("{")) {
+          ctr += 1
+        } else if (line.contains("}")) {
+          ctr -= 1
+        }
+        continue
+      }
       if (line.contains("id(\"kotlin-android\")") || line.contains("id 'kotlin-android'")) {
         continue
       }
@@ -417,7 +426,7 @@ abstract class PackageTransform : DefaultTask() {
       if (line.contains("dependencies {")) {
         output += deps
         output.add("}")
-        break
+        ctr += 1
       }
     }
     File(gradlePath).writeText(output.joinToString("\n"))
