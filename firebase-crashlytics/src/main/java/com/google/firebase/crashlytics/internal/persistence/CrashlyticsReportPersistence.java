@@ -59,7 +59,6 @@ public class CrashlyticsReportPersistence {
   // We use the lastModified timestamp of this file to quickly store and access the startTime in ms
   // of a session.
   private static final String SESSION_START_TIMESTAMP_FILE_NAME = "start-time";
-  private static final String AQS_SESSION_ID_FILENAME = "app-quality-session-id";
   private static final String EVENT_FILE_NAME_PREFIX = "event";
   private static final int EVENT_COUNTER_WIDTH = 10; // String width of maximum positive int value
   private static final String EVENT_COUNTER_FORMAT = "%0" + EVENT_COUNTER_WIDTH + "d";
@@ -140,14 +139,6 @@ public class CrashlyticsReportPersistence {
     final String fileName = generateEventFilename(eventCounter.getAndIncrement(), isHighPriority);
     try {
       writeTextFile(fileStore.getSessionFile(sessionId, fileName), json);
-
-      String appQualitySessionId = sessionsSubscriber.getAppQualitySessionId();
-      if (appQualitySessionId == null) {
-        Logger.getLogger().w("Missing AQS session id for Crashlytics session " + sessionId);
-      } else {
-        writeTextFile(
-            fileStore.getSessionFile(sessionId, AQS_SESSION_ID_FILENAME), appQualitySessionId);
-      }
     } catch (IOException ex) {
       Logger.getLogger().w("Could not persist event for session " + sessionId, ex);
     }
@@ -326,8 +317,7 @@ public class CrashlyticsReportPersistence {
     }
 
     String userId = UserMetadata.readUserId(sessionId, fileStore);
-    String appQualitySessionId =
-        tryReadTextFile(fileStore.getSessionFile(sessionId, AQS_SESSION_ID_FILENAME));
+    String appQualitySessionId = sessionsSubscriber.getAppQualitySessionId(sessionId);
 
     File reportFile = fileStore.getSessionFile(sessionId, REPORT_FILE_NAME);
     synthesizeReportFile(
@@ -339,12 +329,14 @@ public class CrashlyticsReportPersistence {
       @NonNull CrashlyticsReport.FilesPayload ndkPayload,
       @NonNull String previousSessionId,
       CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+    String appQualitySessionId = sessionsSubscriber.getAppQualitySessionId(previousSessionId);
     try {
       final CrashlyticsReport report =
           TRANSFORM
               .reportFromJson(readTextFile(reportFile))
               .withNdkPayload(ndkPayload)
-              .withApplicationExitInfo(applicationExitInfo);
+              .withApplicationExitInfo(applicationExitInfo)
+              .withAppQualitySessionId(appQualitySessionId);
 
       writeTextFile(fileStore.getNativeReport(previousSessionId), TRANSFORM.reportToJson(report));
     } catch (IOException e) {
@@ -443,16 +435,6 @@ public class CrashlyticsReportPersistence {
         bos.write(readBuffer, 0, read);
       }
       return new String(bos.toByteArray(), UTF_8);
-    }
-  }
-
-  /** Tries to read the given text file. Returns null on any io exception, e.g., file not found. */
-  @Nullable
-  private static String tryReadTextFile(@NonNull File file) {
-    try {
-      return readTextFile(file);
-    } catch (IOException ex) {
-      return null;
     }
   }
 

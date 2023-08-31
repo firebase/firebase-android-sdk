@@ -1,4 +1,7 @@
 # Unreleased
+* [feature] Include Firebase sessions with NDK crashes and ANRs.
+
+# 18.4.1
 * [changed] Updated `firebase-sessions` dependency to v1.0.2
 
 # 18.4.0

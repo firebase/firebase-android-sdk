@@ -1,8 +1,11 @@
 # Unreleased
 
+# 18.4.1
+* [changed] Updated `firebase-crashlytics` dependency to v18.4.1
+
 # 18.4.0
 * [changed] Updated `firebase-crashlytics` dependency to v18.4.0
-* 
+
 # 18.3.7
 * [changed] Updated `firebase-crashlytics` dependency to v18.3.7
 
@@ -13,7 +16,7 @@
 * [fixed] Updated `firebase-common` to its latest version (v20.3.0) to fix an
   issue that was causing a nondeterministic crash on startup.
 
-* [changed] Updated `firebase-crashlytics` dependency to v18.3.5.  
+* [changed] Updated `firebase-crashlytics` dependency to v18.3.5.
 # 18.3.4
 <aside class="caution">This version of <code>firebase-crashlytics-ndk</code> can
   cause a nondeterministic crash on startup. For more information, see
@@ -212,4 +215,3 @@ change. The following release notes describe changes in the new SDK.
  uploading symbol files to [crashlytics] servers. See the
  [[crashlytics] Gradle plugin documentation](/docs/crashlytics/ndk-reports-new-sdk)
  for more information.
-
