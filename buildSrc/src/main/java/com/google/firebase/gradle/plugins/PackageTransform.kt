@@ -398,7 +398,7 @@ abstract class PackageTransform : DefaultTask() {
     val output = mutableListOf<String>()
     var ctr = 0
     for (line in lines) {
-      if (ctr == 1) {
+      if (ctr >= 1) {
         if (line.contains("{")) {
           ctr += 1
         } else if (line.contains("}")) {
