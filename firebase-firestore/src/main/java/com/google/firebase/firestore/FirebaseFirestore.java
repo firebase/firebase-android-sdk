@@ -23,7 +23,6 @@ import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -356,7 +355,11 @@ public class FirebaseFirestore {
    * @param json The JSON format exported by the Firebase CLI.
    * @return A task that resolves once all indices are successfully configured.
    * @throws IllegalArgumentException if the JSON format is invalid
+   * @deprecated Instead of creating cache indexes manually, consider using {@link
+   *     PersistentCacheIndexManager#enableIndexAutoCreation()} to let SDK decide whether to create
+   *     cache indexes for queries running locally.
    */
+  @Deprecated
   @PreviewApi
   @NonNull
   public Task<Void> setIndexConfiguration(@NonNull String json) {
@@ -412,9 +415,6 @@ public class FirebaseFirestore {
    * @return The {@code PersistentCacheIndexManager} instance or null if local persistent storage is
    *     not in use.
    */
-  // TODO(csi): Remove the `hide` and scope annotations.
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public synchronized PersistentCacheIndexManager getPersistentCacheIndexManager() {
     ensureClientConfigured();

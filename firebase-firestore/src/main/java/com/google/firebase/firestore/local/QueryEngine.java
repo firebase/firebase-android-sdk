@@ -145,12 +145,6 @@ public class QueryEngine {
           "The SDK decides to create cache indexes for query: %s, as using cache indexes "
               + "may help improve performance.",
           query.toString());
-    } else {
-      Logger.debug(
-          LOG_TAG,
-          "The SDK decides not to create cache indexes for this query: %s, as using cache "
-              + "indexes may not help improve performance.",
-          query.toString());
     }
   }
 
