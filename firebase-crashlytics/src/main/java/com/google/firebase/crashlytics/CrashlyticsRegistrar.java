@@ -24,6 +24,7 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
+import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
 import com.google.firebase.sessions.FirebaseSessions;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import com.google.firebase.sessions.api.SessionSubscriber;
@@ -49,6 +50,7 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
             .add(Dependency.required(FirebaseSessions.class))
             .add(Dependency.deferred(CrashlyticsNativeComponent.class))
             .add(Dependency.deferred(AnalyticsConnector.class))
+            .add(Dependency.deferred(FirebaseRemoteConfigInterop.class))
             .factory(this::buildCrashlytics)
             .eagerInDefaultApp()
             .build(),
@@ -68,7 +70,15 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
 
     FirebaseSessions firebaseSessions = container.get(FirebaseSessions.class);
 
+    Deferred<FirebaseRemoteConfigInterop> remoteConfigInterop =
+        container.getDeferred(FirebaseRemoteConfigInterop.class);
+
     return FirebaseCrashlytics.init(
-        app, firebaseInstallations, firebaseSessions, nativeComponent, analyticsConnector);
+        app,
+        firebaseInstallations,
+        firebaseSessions,
+        nativeComponent,
+        analyticsConnector,
+        remoteConfigInterop);
   }
 }

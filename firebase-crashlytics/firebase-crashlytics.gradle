@@ -73,6 +73,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-measurement-connector:18.0.2'
     implementation "com.google.android.gms:play-services-tasks:18.0.1"
     implementation project(':firebase-sessions')
+    implementation project(':firebase-config-interop')
 
     javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
 
