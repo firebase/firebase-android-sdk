@@ -820,18 +820,18 @@ public class TargetIndexMatcherTest {
     Target target = query.toTarget();
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
     assertTrue(targetIndexMatcher.hasMultipleInequality());
-    FieldIndex expectedIndex = targetIndexMatcher.buildTargetIndex();
-    assertNull(expectedIndex);
+    FieldIndex actualIndex = targetIndexMatcher.buildTargetIndex();
+    assertNull(actualIndex);
   }
 
   private void validateBuildTargetIndexCreateFullMatchIndex(Query query) {
     Target target = query.toTarget();
     TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(target);
     assertFalse(targetIndexMatcher.hasMultipleInequality());
-    FieldIndex expectedIndex = targetIndexMatcher.buildTargetIndex();
-    assertNotNull(expectedIndex);
-    assertTrue(targetIndexMatcher.servedByIndex(expectedIndex));
+    FieldIndex actualIndex = targetIndexMatcher.buildTargetIndex();
+    assertNotNull(actualIndex);
+    assertTrue(targetIndexMatcher.servedByIndex(actualIndex));
     // Check the index created is a FULL MATCH index
-    assertTrue(expectedIndex.getSegments().size() >= target.getSegmentCount());
+    assertTrue(actualIndex.getSegments().size() >= target.getSegmentCount());
   }
 }
