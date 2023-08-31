@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal.persistence;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -65,10 +66,11 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
   private static CrashlyticsAppQualitySessionsSubscriber createSessionsSubscriberMock(
       String appQualitySessionId) {
-    CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber =
+    CrashlyticsAppQualitySessionsSubscriber mockSessionsSubscriber =
         mock(CrashlyticsAppQualitySessionsSubscriber.class);
-    when(sessionsSubscriber.getAppQualitySessionId()).thenReturn(appQualitySessionId);
-    return sessionsSubscriber;
+    when(mockSessionsSubscriber.getAppQualitySessionId(anyString()))
+        .thenReturn(appQualitySessionId);
+    return mockSessionsSubscriber;
   }
 
   @Override
@@ -752,7 +754,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
     // Simulate a new app quality sessions session before the last event.
     String latestAppQualitySessionId = "300";
-    when(mockSessionsSubscriber.getAppQualitySessionId()).thenReturn(latestAppQualitySessionId);
+    when(mockSessionsSubscriber.getAppQualitySessionId(anyString()))
+        .thenReturn(latestAppQualitySessionId);
     reportPersistence.persistEvent(testEvent3, sessionId);
 
     long endedAt = System.currentTimeMillis();
