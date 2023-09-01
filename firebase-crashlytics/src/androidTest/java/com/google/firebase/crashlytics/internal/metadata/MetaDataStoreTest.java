@@ -14,7 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.metadata;
 
-import com.google.common.truth.Truth;
+import static com.google.common.truth.Truth.assertThat;
+
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsBackgroundWorker;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
@@ -149,6 +150,55 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   public void testReadUserData_noStoredData() {
     UserMetadata userData = UserMetadata.loadFromExistingSession(SESSION_ID_1, fileStore, worker);
     assertNull(userData.getUserId());
+  }
+
+  @Test
+  public void testUpdateSessionId_notPersistUserIdToNewSessionIfNoUserIdSet() {
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+    userMetadata.setNewSession(SESSION_ID_2);
+    assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.USERDATA_FILENAME).exists())
+        .isFalse();
+  }
+
+  @Test
+  public void testUpdateSessionId_notPersistCustomKeysToNewSessionIfNoCustomKeysSet() {
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+    userMetadata.setNewSession(SESSION_ID_2);
+    assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.KEYDATA_FILENAME).exists())
+        .isFalse();
+  }
+
+  @Test
+  public void testUpdateSessionId_persistCustomKeysToNewSessionIfCustomKeysSet() {
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+    final Map<String, String> keys =
+        new HashMap<String, String>() {
+          {
+            put(KEY_1, VALUE_1);
+            put(KEY_2, VALUE_2);
+            put(KEY_3, VALUE_3);
+          }
+        };
+    userMetadata.setCustomKeys(keys);
+    userMetadata.setNewSession(SESSION_ID_2);
+    assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.KEYDATA_FILENAME).exists())
+        .isTrue();
+
+    MetaDataStore metaDataStore = new MetaDataStore(fileStore);
+    assertThat(metaDataStore.readKeyData(SESSION_ID_2)).isEqualTo(keys);
+  }
+
+  @Test
+  public void testUpdateSessionId_persistUserIdToNewSessionIfUserIdSet() {
+    String userId = "ThemisWang";
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+    userMetadata.setUserId(userId);
+    userMetadata.setNewSession(SESSION_ID_2);
+    assertThat(fileStore.getSessionFile(SESSION_ID_2, UserMetadata.USERDATA_FILENAME).exists())
+        .isTrue();
+
+    MetaDataStore metaDataStore = new MetaDataStore(fileStore);
+    assertThat(metaDataStore.readUserId(SESSION_ID_2)).isEqualTo(userId);
   }
 
   // Keys
@@ -299,7 +349,7 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     storeUnderTest.writeRolloutState(SESSION_ID_1, ROLLOUTS_STATE);
     List<RolloutAssignment> readRolloutsState = storeUnderTest.readRolloutsState(SESSION_ID_1);
 
-    Truth.assertThat(readRolloutsState).isEqualTo(ROLLOUTS_STATE);
+    assertThat(readRolloutsState).isEqualTo(ROLLOUTS_STATE);
   }
 
   public static void assertEqualMaps(Map<String, String> expected, Map<String, String> actual) {
