@@ -97,16 +97,13 @@ public class UserMetadata {
     synchronized (sessionIdentifier) {
       sessionIdentifier = sessionId;
       Map<String, String> keyData = customKeys.getKeys();
-      List<RolloutAssignment> rolloutAssignments = rolloutsState.getRolloutAssignmentList();
       if (getUserId() != null) {
         metaDataStore.writeUserData(sessionId, getUserId());
       }
       if (!keyData.isEmpty()) {
         metaDataStore.writeKeyData(sessionId, keyData);
       }
-      if (!rolloutAssignments.isEmpty()) {
-        metaDataStore.writeRolloutState(sessionId, rolloutAssignments);
-      }
+      // TODO(themis): adding feature rollouts later
     }
   }
 
