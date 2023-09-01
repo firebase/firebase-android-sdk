@@ -54,13 +54,9 @@ firebaseLibrary {
     testLab {
         enabled = true
 
-        device 'model=blueline,version=28' // Pixel3
-        device 'model=walleye,version=27' // Pixel2
-        device 'model=Nexus4,version=22'
-        device 'model=Nexus7,version=21'
-        device 'model=Nexus4,version=19'
-        device 'model=starqlteue,version=26' // Galaxy S9
-        device 'model=harpia,version=23' // Moto G Play
+        device 'model=panther,version=33' // Pixel7
+        device 'model=redfin,version=30' // Pixel5
+        device 'model=x1q,version=29'
     }
 }
 
