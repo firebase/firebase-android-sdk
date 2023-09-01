@@ -57,6 +57,7 @@ public abstract class RolloutAssignment {
   public static final DataEncoder ROLLOUT_ASSIGNMENT_JSON_ENCODER =
       new JsonDataEncoderBuilder().configureWith(AutoRolloutAssignmentEncoder.CONFIG).build();
 
+  /** Create a {@code RolloutAssignment} from its JSON representation. */
   @NonNull
   public static RolloutAssignment create(@NonNull JSONObject json) throws JSONException {
     return RolloutAssignment.builder()
