@@ -173,7 +173,7 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
     }
 
     RolloutsStateSubscriptionsHandler rolloutsStateSubscriptionsHandler =
-        getRolloutsStateSubscriptionsHandler(activatedCacheClient);
+        getRolloutsStateSubscriptionsHandler(activatedCacheClient, getHandler);
 
     return get(
         firebaseApp,
@@ -321,8 +321,10 @@ public class RemoteConfigComponent implements FirebaseRemoteConfigInterop {
   }
 
   private RolloutsStateSubscriptionsHandler getRolloutsStateSubscriptionsHandler(
-      ConfigCacheClient activatedConfigsCache) {
-    RolloutsStateFactory rolloutsStateFactory = RolloutsStateFactory.create();
+      ConfigCacheClient activatedConfigsCache,
+      ConfigGetParameterHandler configGetParameterHandler) {
+    RolloutsStateFactory rolloutsStateFactory =
+        RolloutsStateFactory.create(configGetParameterHandler);
 
     return new RolloutsStateSubscriptionsHandler(
         activatedConfigsCache, rolloutsStateFactory, executor);
