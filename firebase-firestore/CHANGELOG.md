@@ -1,5 +1,4 @@
 # Unreleased
-* * [feature] Added support for multiple inequality in compound queries. [#5194](https://github.com/firebase/firebase-android-sdk/pull/5194)
 
 # 24.7.1
 * [fixed] Implement equals method on Filter class. [#5210](//github.com/firebase/firebase-android-sdk/issues/5210)
