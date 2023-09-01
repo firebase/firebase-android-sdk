@@ -21,7 +21,7 @@ firebaseLibrary {
     libraryGroup "crashlytics"
     testLab {
         enabled = true
-        device 'model=redfin,version=30'
+        device 'model=panther,version=33'
     }
 }
 

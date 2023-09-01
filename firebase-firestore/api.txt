@@ -189,6 +189,7 @@ package com.google.firebase.firestore {
     method @NonNull public static com.google.firebase.firestore.FirebaseFirestore getInstance(@NonNull String);
     method @NonNull public static com.google.firebase.firestore.FirebaseFirestore getInstance(@NonNull com.google.firebase.FirebaseApp, @NonNull String);
     method @NonNull public com.google.android.gms.tasks.Task<com.google.firebase.firestore.Query> getNamedQuery(@NonNull String);
+    method @Nullable public com.google.firebase.firestore.PersistentCacheIndexManager getPersistentCacheIndexManager();
     method @NonNull public com.google.firebase.firestore.LoadBundleTask loadBundle(@NonNull java.io.InputStream);
     method @NonNull public com.google.firebase.firestore.LoadBundleTask loadBundle(@NonNull byte[]);
     method @NonNull public com.google.firebase.firestore.LoadBundleTask loadBundle(@NonNull java.nio.ByteBuffer);
@@ -355,6 +356,12 @@ package com.google.firebase.firestore {
 
   public interface OnProgressListener<ProgressT> {
     method public void onProgress(@NonNull ProgressT);
+  }
+
+  public final class PersistentCacheIndexManager {
+    method public void deleteAllIndexes();
+    method public void disableIndexAutoCreation();
+    method public void enableIndexAutoCreation();
   }
 
   public final class PersistentCacheSettings implements com.google.firebase.firestore.LocalCacheSettings {

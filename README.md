@@ -65,7 +65,7 @@ https://firebase.google.com.
 * Import the firebase-android-sdk gradle project into Android Studio using the
   **Import project(Gradle, Eclipse ADT, etc.)** option.
 * `firebase-crashlytics-ndk` must be built with NDK 21. See
-  [firebase-crashlytics-ndk](firebase-crashlytics-ndk/README.md) for more 
+  [firebase-crashlytics-ndk](firebase-crashlytics-ndk/README.md) for more
   details.
 
 ## Testing
@@ -143,7 +143,7 @@ Integration tests can be executed on the command line by running
 ```
 
 This will execute tests on devices that are configured per project, if nothing is configured for the
-project, the tests will run on `model=Pixel2,version=27,locale=en,orientation=portrait`.
+project, the tests will run on `model=panther,version=33,locale=en,orientation=portrait`.
 
 Projects can be configured in the following way:
 

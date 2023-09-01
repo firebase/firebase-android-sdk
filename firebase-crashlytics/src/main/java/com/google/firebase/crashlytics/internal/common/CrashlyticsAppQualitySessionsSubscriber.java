@@ -19,6 +19,7 @@ package com.google.firebase.crashlytics.internal.common;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.sessions.api.SessionSubscriber;
 
 /**
@@ -27,25 +28,30 @@ import com.google.firebase.sessions.api.SessionSubscriber;
  */
 public class CrashlyticsAppQualitySessionsSubscriber implements SessionSubscriber {
   private final DataCollectionArbiter dataCollectionArbiter;
+  private final CrashlyticsAppQualitySessionsStore appQualitySessionsStore;
 
-  @Nullable private String appQualitySessionId = null;
-
-  public CrashlyticsAppQualitySessionsSubscriber(DataCollectionArbiter dataCollectionArbiter) {
+  public CrashlyticsAppQualitySessionsSubscriber(
+      DataCollectionArbiter dataCollectionArbiter, FileStore fileStore) {
     this.dataCollectionArbiter = dataCollectionArbiter;
+    appQualitySessionsStore = new CrashlyticsAppQualitySessionsStore(fileStore);
   }
 
-  /**
-   * Gets the App Quality Sessions session id (which is different than the Crashlytics session id).
-   */
+  /** Gets the App Quality Sessions session id for the given Crashlytics session id. */
   @Nullable
-  public String getAppQualitySessionId() {
-    return appQualitySessionId;
+  public String getAppQualitySessionId(@NonNull String sessionId) {
+    return appQualitySessionsStore.getAppQualitySessionId(sessionId);
   }
 
+  /** Called when the Crashlytics session id changes or closes. */
+  public void setSessionId(@Nullable String sessionId) {
+    appQualitySessionsStore.rotateSessionId(sessionId);
+  }
+
+  /** Called by the Sessions sdk when the App Quality Sessions session id changes. */
   @Override
   public void onSessionChanged(@NonNull SessionDetails sessionDetails) {
     Logger.getLogger().d("App Quality Sessions session changed: " + sessionDetails);
-    appQualitySessionId = sessionDetails.getSessionId();
+    appQualitySessionsStore.rotateAppQualitySessionId(sessionDetails.getSessionId());
   }
 
   @Override
