@@ -1,9 +1,9 @@
 # Unreleased
 * [feature] Added support for multiple inequality in compound queries.
-* [feature] Add option to allow SDK create cache indexes automatically to improve query execution locally. [`db.getPersistentCacheIndexManager().enableIndexAutoCreation()`](//github.com/firebase/firebase-android-sdk/pull/4987)
 
 # 24.7.1
 * [fixed] Implement equals method on Filter class. [#5210](//github.com/firebase/firebase-android-sdk/issues/5210)
+* [feature] Add option to allow SDK create cache indexes automatically to improve query execution locally. [`db.getPersistentCacheIndexManager().enableIndexAutoCreation()`](//github.com/firebase/firebase-android-sdk/pull/4987)
 
 # 24.7.0
 * [feature] Expose MultiDb support in API. [#4015](//github.com/firebase/firebase-android-sdk/issues/4015)
