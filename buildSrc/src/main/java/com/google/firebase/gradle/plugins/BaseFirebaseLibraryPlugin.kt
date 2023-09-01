@@ -276,3 +276,18 @@ fun FirebaseLibraryExtension.resolveExternalAndroidLibraries() =
  */
 val FirebaseLibraryExtension.artifactName: String
   get() = "$mavenName:$version"
+
+/**
+ * Fetches the latest version for this SDK from GMaven.
+ *
+ * Uses [GmavenHelper] to make the request.
+ */
+val FirebaseLibraryExtension.latestVersion: ModuleVersion
+  get() {
+    val latestVersion = GmavenHelper(groupId.get(), artifactId.get()).getLatestReleasedVersion()
+
+    return ModuleVersion.fromStringOrNull(latestVersion)
+      ?: throw RuntimeException(
+        "Invalid format for ModuleVersion for module '$artifactName':\n $latestVersion"
+      )
+  }
