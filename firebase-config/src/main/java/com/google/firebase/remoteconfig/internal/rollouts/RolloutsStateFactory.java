@@ -19,28 +19,63 @@ package com.google.firebase.remoteconfig.internal.rollouts;
 import androidx.annotation.NonNull;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
+import com.google.firebase.remoteconfig.internal.ConfigGetParameterHandler;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutAssignment;
 import com.google.firebase.remoteconfig.interop.rollouts.RolloutsState;
 import java.util.HashSet;
 import java.util.Set;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class RolloutsStateFactory {
+  ConfigGetParameterHandler getParameterHandler;
 
-  RolloutsStateFactory() {}
+  private static final String ROLLOUT_ID_KEY = "rollout_id";
+  private static final String VARIANT_ID_KEY = "variant_id";
+  private static final String AFFECTED_PARAMETER_KEYS_KEY = "affected_parameter_keys";
 
-  // TODO: This is a stub.
+  RolloutsStateFactory(ConfigGetParameterHandler getParameterHandler) {
+    this.getParameterHandler = getParameterHandler;
+  }
+
   @NonNull
   RolloutsState getActiveRolloutsState(@NonNull ConfigContainer configContainer)
       throws FirebaseRemoteConfigClientException {
-    // TODO: Convert configContainer.getRolloutMetadata to RolloutsState with active parameter
-    // values.
+    JSONArray rolloutMetadata = configContainer.getRolloutMetadata();
+    long templateVersion = configContainer.getTemplateVersionNumber();
 
     Set<RolloutAssignment> rolloutAssignments = new HashSet<>();
+    for (int i = 0; i < rolloutMetadata.length(); i++) {
+      try {
+        JSONObject rollout = rolloutMetadata.getJSONObject(i);
+        JSONArray affectedParameterKeys = rollout.getJSONArray(AFFECTED_PARAMETER_KEYS_KEY);
+
+        for (int j = 0; j < affectedParameterKeys.length(); j++) {
+          String parameterKey = affectedParameterKeys.getString(j);
+          String parameterValue = getParameterHandler.getString(parameterKey);
+
+          rolloutAssignments.add(
+              RolloutAssignment.builder()
+                  .setRolloutId(rollout.getString(ROLLOUT_ID_KEY))
+                  .setVariantId(rollout.getString(VARIANT_ID_KEY))
+                  .setParameterKey(parameterKey)
+                  .setParameterValue(parameterValue)
+                  .setTemplateVersion(templateVersion)
+                  .build());
+        }
+      } catch (JSONException e) {
+        throw new FirebaseRemoteConfigClientException(
+            "Exception parsing rollouts metadata to create RolloutsState.", e);
+      }
+    }
+
     return RolloutsState.create(rolloutAssignments);
   }
 
   @NonNull
-  public static RolloutsStateFactory create() {
-    return new RolloutsStateFactory();
+  public static RolloutsStateFactory create(
+      @NonNull ConfigGetParameterHandler configGetParameterHandler) {
+    return new RolloutsStateFactory(configGetParameterHandler);
   }
 }
