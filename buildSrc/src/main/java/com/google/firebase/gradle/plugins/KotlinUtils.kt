@@ -188,6 +188,29 @@ fun <T : Any?> Iterable<T>.toPairOrFirst(): Pair<T, T?> = first() to last().take
 fun <T> List<T>.separateAt(index: Int) = slice(0 until index) to slice(index..lastIndex)
 
 /**
+ * Maps any instances of the [regex] found in this list to the provided [transform].
+ *
+ * For example:
+ * ```kotlin
+ * listOf("mom", "mommy", "momma", "dad").replaceMatches(Regex(".*mom.*")) {
+ *   it.value.takeUnless { it.contains("y") }?.drop(1)
+ * } // ["om", "mommy", "omma", "dad"]
+ * ```
+ *
+ * @param regex the [Regex] to use to match against values in this list
+ * @param transform a callback to call with [MathResults][MatchResult] when matches are found. If
+ * the [transform] returns null, then the value remains unchanged.
+ */
+fun List<String>.replaceMatches(regex: Regex, transform: (MatchResult) -> String?) = map {
+  val newValue = regex.find(it)?.let(transform)
+  if (newValue != null) {
+    it.replace(regex, newValue)
+  } else {
+    it
+  }
+}
+
+/**
  * Returns the value of the first capture group.
  *
  * Intended to be used in [MatchResult] that are only supposed to capture a single entry.
