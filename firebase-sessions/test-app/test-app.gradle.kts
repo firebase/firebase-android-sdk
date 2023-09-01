@@ -64,12 +64,15 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
 
+  api(project(":firebase-installations"))
+  api(project(":firebase-common"))
+  api(project(":firebase-components"))
+
   implementation("androidx.appcompat:appcompat:1.6.1")
   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
   implementation("androidx.core:core-ktx:1.9.0")
   implementation("com.google.android.material:material:1.8.0")
 
-  androidTestImplementation("com.google.firebase:firebase-common-ktx:20.3.2")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)
