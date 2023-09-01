@@ -36,19 +36,6 @@ android {
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
-    packagingOptions {
-        exclude("META-INF/kotlin-stdlib-common.kotlin_module")
-        exclude("META-INF/kotlin-stdlib-jdk7.kotlin_module")
-        exclude("META-INF/kotlin-stdlib-jdk8.kotlin_module")
-        exclude("META-INF/kotlin-stdlib.kotlin_module")
-        exclude("kotlin/annotation/annotation.kotlin_builtins")
-        exclude("kotlin/collections/collections.kotlin_builtins")
-        exclude("kotlin/coroutines/coroutines.kotlin_builtins")
-        exclude("kotlin/internal/internal.kotlin_builtins")
-        exclude("kotlin/kotlin.kotlin_builtins")
-        exclude("kotlin/ranges/ranges.kotlin_builtins")
-        exclude("kotlin/reflect/reflect.kotlin_builtins")
-    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
