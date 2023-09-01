@@ -216,7 +216,7 @@ class CrashlyticsController {
 
                 doWriteAppExceptionMarker(timestampMillis);
                 doCloseSessions(settingsProvider);
-                doOpenSession(new CLSUUID(idManager).toString());
+                doOpenSession(new CLSUUID(idManager).toString(), isOnDemand);
 
                 // If automatic data collection is disabled, we'll need to wait until the next run
                 // of the app.
@@ -498,7 +498,7 @@ class CrashlyticsController {
         new Callable<Void>() {
           @Override
           public Void call() throws Exception {
-            doOpenSession(sessionIdentifier);
+            doOpenSession(sessionIdentifier, /*isOnDemand=*/ false);
             return null;
           }
         });
@@ -550,7 +550,7 @@ class CrashlyticsController {
    * Not synchronized/locked. Must be executed from the single thread executor service used by this
    * class.
    */
-  private void doOpenSession(String sessionIdentifier) {
+  private void doOpenSession(String sessionIdentifier, Boolean isOnDemand) {
     final long startedAtSeconds = getCurrentTimestampSeconds();
 
     Logger.getLogger().d("Opening a new session with ID " + sessionIdentifier);
@@ -567,6 +567,14 @@ class CrashlyticsController {
         generator,
         startedAtSeconds,
         StaticSessionData.create(appData, osData, deviceData));
+
+    // If is on-demand fatal, we need to update the session id for userMetadata
+    // as well(since we don't really change the object to a new one for a new session).
+    // all the information in the previous session is still in memory, but we do need to
+    // manually writing them into persistence for the new session.
+    if (isOnDemand && sessionIdentifier != null) {
+      userMetadata.setNewSession(sessionIdentifier);
+    }
 
     logFileManager.setCurrentSession(sessionIdentifier);
     sessionsSubscriber.setSessionId(sessionIdentifier);
