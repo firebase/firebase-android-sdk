@@ -21,13 +21,28 @@ import org.gradle.kotlin.dsl.register
 /**
  * Facilitates the creation of Post Release Tasks.
  *
- * TODO() - Add Additional information. Will probably do such whenever we get closer to completion.
- * TODO() - Add a postReleaseCleanup task when all tasks are ready- as to avoid RO overlooking steps
+ * At the end of a release, we need to update the state of the master branch according to various
+ * "cleanup" tasks. These tasks are defined in this plugin, and attached to releasing SDKs.
+ *
+ * The primary parent task that this plugin creates is `postReleaseCleanup`- which runs all the
+ * clean up tasks in one go.
+ *
+ * *Note that this task should be ran on the release branch- or more appropriately the merge-back
+ * branch*
+ *
+ * @see registerVersionBumpTask
+ * @see registerMoveUnreleasedChangesTask
+ * @see registerUpdatePinnedDependenciesTask
  */
 class PostReleasePlugin : Plugin<Project> {
   override fun apply(project: Project) {
-    registerVersionBumpTask(project)
-    registerMoveUnreleasedChangesTask(project)
+    val versionBump = registerVersionBumpTask(project)
+    val moveUnreleasedChanges = registerMoveUnreleasedChangesTask(project)
+    val updatePinnedDependencies = registerUpdatePinnedDependenciesTask(project)
+
+    project.tasks.register("postReleaseCleanup") {
+      dependsOn(versionBump, moveUnreleasedChanges, updatePinnedDependencies)
+    }
   }
 
   /**
@@ -37,7 +52,7 @@ class PostReleasePlugin : Plugin<Project> {
    * is set to the current version of said module. After a release, this `version` should be bumped
    * up to differentiate between code at HEAD, and the latest released version.
    *
-   * @see [VersionBumpTask]
+   * @see VersionBumpTask
    *
    * @param project the [Project] to register this task to
    */
@@ -52,10 +67,28 @@ class PostReleasePlugin : Plugin<Project> {
    * moved into a seperate section that specifies the version it went out with, and the `Unreleased`
    * section should be wiped clear for new changes to come; for the next release.
    *
-   * @see [MoveUnreleasedChangesTask]
+   * @see MoveUnreleasedChangesTask
    *
    * @param project the [Project] to register this task to
    */
   fun registerMoveUnreleasedChangesTask(project: Project) =
     project.tasks.register<MoveUnreleasedChangesTask>("moveUnreleasedChanges")
+
+  /**
+   * Registers the `updatePinnedDependencies` for the provided [Project]
+   *
+   * If a given SDK needs to use unreleased features from a dependent SDK they change their pinned
+   * dependency to a project level dependency, until the features are released. After a release, we
+   * need to convert these project level dependencies back to pinned dependencies- with the latest
+   * released version attached.
+   *
+   * @see UpdatePinnedDependenciesTask
+   *
+   * @param project the [Project] to register this task to
+   */
+  fun registerUpdatePinnedDependenciesTask(project: Project) =
+    project.tasks.register<UpdatePinnedDependenciesTask>("updatePinnedDependencies") {
+      buildFile.set(project.buildFile)
+      outputFile.set(project.buildFile)
+    }
 }

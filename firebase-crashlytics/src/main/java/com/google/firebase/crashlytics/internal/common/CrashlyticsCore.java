@@ -26,6 +26,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.crashlytics.BuildConfig;
 import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.RemoteConfigDeferredProxy;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
 import com.google.firebase.crashlytics.internal.breadcrumbs.BreadcrumbSource;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
@@ -94,6 +95,8 @@ public class CrashlyticsCore {
 
   private final CrashlyticsNativeComponent nativeComponent;
 
+  private final RemoteConfigDeferredProxy remoteConfigDeferredProxy;
+
   // region Constructors
 
   public CrashlyticsCore(
@@ -105,7 +108,8 @@ public class CrashlyticsCore {
       AnalyticsEventLogger analyticsEventLogger,
       FileStore fileStore,
       ExecutorService crashHandlerExecutor,
-      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
+      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
+      RemoteConfigDeferredProxy remoteConfigDeferredProxy) {
     this.app = app;
     this.dataCollectionArbiter = dataCollectionArbiter;
     this.context = app.getApplicationContext();
@@ -117,6 +121,7 @@ public class CrashlyticsCore {
     this.fileStore = fileStore;
     this.backgroundWorker = new CrashlyticsBackgroundWorker(crashHandlerExecutor);
     this.sessionsSubscriber = sessionsSubscriber;
+    this.remoteConfigDeferredProxy = remoteConfigDeferredProxy;
 
     startTime = System.currentTimeMillis();
     onDemandCounter = new OnDemandCounter();
@@ -151,6 +156,8 @@ public class CrashlyticsCore {
           new MiddleOutFallbackStrategy(
               MAX_STACK_SIZE, new RemoveRepeatsStrategy(NUM_STACK_REPETITIONS_ALLOWED));
 
+      remoteConfigDeferredProxy.setupListener(userMetadata);
+
       final SessionReportingCoordinator sessionReportingCoordinator =
           SessionReportingCoordinator.create(
               context,
@@ -177,7 +184,8 @@ public class CrashlyticsCore {
               logFileManager,
               sessionReportingCoordinator,
               nativeComponent,
-              analyticsEventLogger);
+              analyticsEventLogger,
+              sessionsSubscriber);
 
       // If the file is present at this point, then the previous run's initialization
       // did not complete, and we want to perform initialization synchronously this time.
