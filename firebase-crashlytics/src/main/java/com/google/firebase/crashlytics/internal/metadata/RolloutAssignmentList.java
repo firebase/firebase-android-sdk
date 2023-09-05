@@ -42,6 +42,11 @@ public class RolloutAssignmentList {
     rolloutsState.clear();
     int nOverLimit = 0;
 
+    if (newMapList.isEmpty()) {
+      Logger.getLogger().w("Failed to update rollouts state, state is empty.");
+      return false;
+    }
+
     if (newMapList.size() > maxEntries) {
       Logger.getLogger()
           .w(

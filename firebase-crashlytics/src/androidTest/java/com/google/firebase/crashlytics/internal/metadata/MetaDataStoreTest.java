@@ -169,6 +169,15 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   }
 
   @Test
+  public void testUpdateSessionId_notPersistRolloutsToNewSessionIfNoRolloutsSet() {
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+    userMetadata.setNewSession(SESSION_ID_2);
+    assertThat(
+            fileStore.getSessionFile(SESSION_ID_2, UserMetadata.ROLLOUTS_STATE_FILENAME).exists())
+        .isFalse();
+  }
+
+  @Test
   public void testUpdateSessionId_persistCustomKeysToNewSessionIfCustomKeysSet() {
     UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
     final Map<String, String> keys =
@@ -199,6 +208,19 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
 
     MetaDataStore metaDataStore = new MetaDataStore(fileStore);
     assertThat(metaDataStore.readUserId(SESSION_ID_2)).isEqualTo(userId);
+  }
+
+  @Test
+  public void testUpdateSessionId_persistRolloutsToNewSessionIfRolloutsSet() {
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+    userMetadata.updateRolloutsState(ROLLOUTS_STATE);
+    userMetadata.setNewSession(SESSION_ID_2);
+    assertThat(
+            fileStore.getSessionFile(SESSION_ID_2, UserMetadata.ROLLOUTS_STATE_FILENAME).exists())
+        .isTrue();
+
+    MetaDataStore metaDataStore = new MetaDataStore(fileStore);
+    assertThat(metaDataStore.readRolloutsState(SESSION_ID_2)).isEqualTo(ROLLOUTS_STATE);
   }
 
   // Keys
