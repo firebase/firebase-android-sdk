@@ -653,6 +653,18 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       }
       TargetChange targetChange =
           remoteEvent == null ? null : remoteEvent.getTargetChanges().get(queryView.getTargetId());
+
+      QueryPurpose mismatchEntry = remoteEvent == null ? null
+          : remoteEvent.getTargetMismatches().get(queryView.getTargetId());
+
+      // Before we applyChanges and potentially remove docs from syncedDocuments,
+      // check if we have target mismatches so that we can set reset pending so that we can
+      // monitor those docs.
+      if (mismatchEntry != null) {
+        Logger.warn("Ben", "emitNewSnapsAndNotifyLocalStore calling resetPending");
+        queryView.getView().resetPending();
+      }
+
       ViewChange viewChange = queryView.getView().applyChanges(viewDocChanges, targetChange);
       updateTrackedLimboDocuments(viewChange.getLimboChanges(), queryView.getTargetId());
 
