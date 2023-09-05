@@ -374,6 +374,17 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     assertThat(readRolloutsState).isEqualTo(ROLLOUTS_STATE);
   }
 
+  @Test
+  public void testWriteReadRolloutState_writeValidThenEmpty() throws Exception {
+    storeUnderTest.writeRolloutState(SESSION_ID_1, ROLLOUTS_STATE);
+    List<RolloutAssignment> emptyState = new ArrayList<>();
+    storeUnderTest.writeRolloutState(SESSION_ID_1, emptyState);
+
+    assertThat(
+            fileStore.getSessionFile(SESSION_ID_1, UserMetadata.ROLLOUTS_STATE_FILENAME).exists())
+        .isFalse();
+  }
+
   public static void assertEqualMaps(Map<String, String> expected, Map<String, String> actual) {
     assertEquals(expected.size(), actual.size());
     for (String key : expected.keySet()) {
