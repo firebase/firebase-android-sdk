@@ -110,12 +110,10 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
 
   private fun findProjectLevelDependenciesToChange(
     libraryGroups: Map<String, List<FirebaseLibraryExtension>>
-  ): List<FirebaseLibraryExtension> {
-    val firebaseLibrary = project.firebaseLibrary
-
-    return firebaseLibrary.projectLevelDependencies -
-      libraryGroups.getOrDefault(firebaseLibrary.libraryGroupName, emptyList())
-  }
+  ) =
+    with(project.firebaseLibrary) {
+      projectLevelDependencies - libraryGroups.getOrDefault(libraryGroupName, emptyList())
+    }
 
   private val FirebaseLibraryExtension.projectLevelDependencies: List<FirebaseLibraryExtension>
     get() = resolveProjectLevelDependencies().filterNot { it.path in DEPENDENCIES_TO_IGNORE }

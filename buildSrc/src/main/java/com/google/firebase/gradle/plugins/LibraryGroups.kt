@@ -15,28 +15,24 @@ package com.google.firebase.gradle.plugins
 
 import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.kotlin.dsl.findByType
 
 fun computeLibraryGroups(project: Project): Map<String, List<FirebaseLibraryExtension>> {
   if (project != project.rootProject) {
     throw GradleException(
-      "Error trying to generate library groups from non root project." +
+      "Error trying to generate library groups from non root project. " +
         "Computing library groups for non root projects can generate incomplete views."
     )
   }
   val libraryGroups =
-    project.rootProject.allprojects
-      .mapNotNull { it.extensions.findByType<FirebaseLibraryExtension>() }
-      .groupBy { it.libraryGroupName }
+    project.subprojects.mapNotNull { it.firebaseLibraryOrNull }.groupBy { it.libraryGroupName }
+
+  // TODO(davidmotson): Confirm the right location for this functionality
   for (libraryGroup in libraryGroups.values) {
     val maxVersion =
-      libraryGroup
-        .mapNotNull { ModuleVersion.fromStringOrNull(it.project.version.toString()) }
-        .maxOrNull()
-        ?: continue
-    for (firebaseExtension in libraryGroup) {
-      if (ModuleVersion.fromStringOrNull(firebaseExtension.project.version.toString()) == null) {
-        firebaseExtension.project.version = maxVersion.toString()
+      libraryGroup.mapNotNull { it.moduleVersion }.maxOrNull()?.toString() ?: continue
+    for (library in libraryGroup) {
+      if (library.moduleVersion == null) {
+        library.project.version = maxVersion
       }
     }
   }
@@ -56,3 +52,6 @@ fun expandWithLibraryGroup(
   libraries
     .flatMap { libraryGroups.getOrDefault(it.libraryGroupName, emptyList()) }
     .distinctBy { it.artifactId.get() }
+
+val FirebaseLibraryExtension.moduleVersion: ModuleVersion?
+  get() = ModuleVersion.fromStringOrNull(version)
