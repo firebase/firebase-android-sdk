@@ -163,6 +163,10 @@ class MetaDataStore {
 
   public void writeRolloutState(String sessionId, List<RolloutAssignment> rolloutsState) {
     final File f = getRolloutsStateForSession(sessionId);
+    if (rolloutsState.isEmpty()) {
+      safeDeleteCorruptFile(f);
+      return;
+    }
 
     Writer writer = null;
     try {
