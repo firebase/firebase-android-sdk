@@ -16,6 +16,12 @@ package com.google.firebase.gradle.plugins
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 
+/**
+ * Returns a map of library group names to the list of libraries that belong to that group.
+ *
+ * Libraries, aka projects with `FirebaseLibraryExtension`, always belong to a library group. See
+ * [FirebaseLibraryExtension] to know more about library group names.
+ */
 fun computeLibraryGroups(project: Project): Map<String, List<FirebaseLibraryExtension>> {
   if (project != project.rootProject) {
     throw GradleException(
@@ -39,12 +45,19 @@ fun computeLibraryGroups(project: Project): Map<String, List<FirebaseLibraryExte
   return libraryGroups
 }
 
+/**
+ * Returns the list of libraries that should be transitively included in a release but are not.
+ *
+ * Based on [librariesToRelease], this function will find and return all libraries that belongs to
+ * the same library group of a releasing library and are not included.
+ */
 fun computeMissingLibrariesToRelease(
   librariesToRelease: List<FirebaseLibraryExtension>,
   libraryGroups: Map<String, List<FirebaseLibraryExtension>>
 ): List<FirebaseLibraryExtension> =
   expandWithLibraryGroup(librariesToRelease, libraryGroups) - librariesToRelease
 
+/** Returns a list that includes [libraries] and all their library group members. */
 fun expandWithLibraryGroup(
   libraries: List<FirebaseLibraryExtension>,
   libraryGroups: Map<String, List<FirebaseLibraryExtension>>
