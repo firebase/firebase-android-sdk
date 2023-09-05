@@ -23,6 +23,7 @@ import android.os.Environment;
 import android.os.StatFs;
 import android.text.TextUtils;
 import com.google.firebase.crashlytics.BuildConfig;
+import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Architecture;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
@@ -209,7 +210,7 @@ public class CrashlyticsReportDataCapture {
     final StatFs statFs = new StatFs(Environment.getDataDirectory().getPath());
     final int arch = getDeviceArchitecture();
     final int availableProcessors = Runtime.getRuntime().availableProcessors();
-    final long totalRam = CommonUtils.getTotalRamInBytes();
+    final long totalRam = CommonUtils.calculateTotalRamInBytes(context);
     final long diskSpace = (long) statFs.getBlockCount() * (long) statFs.getBlockSize();
     final boolean isEmulator = CommonUtils.isEmulator();
     final int state = CommonUtils.getDeviceState();
@@ -278,7 +279,9 @@ public class CrashlyticsReportDataCapture {
     final int batteryVelocity = battery.getBatteryVelocity();
     final boolean proximityEnabled = CommonUtils.getProximitySensorEnabled(context);
     final long usedRamBytes =
-        CommonUtils.getTotalRamInBytes() - CommonUtils.calculateFreeRamInBytes(context);
+        ensureNonNegative(
+            CommonUtils.calculateTotalRamInBytes(context)
+                - CommonUtils.calculateFreeRamInBytes(context));
     final long diskUsedBytes =
         CommonUtils.calculateUsedDiskSpaceInBytes(Environment.getDataDirectory().getPath());
 
@@ -465,5 +468,10 @@ public class CrashlyticsReportDataCapture {
     }
 
     return arch;
+  }
+
+  /** Returns the given value, or zero is the value is negative. */
+  private static long ensureNonNegative(long value) {
+    return value > 0 ? value : 0;
   }
 }
