@@ -29,7 +29,6 @@ import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.util.Logger;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -91,6 +90,7 @@ public class View {
 
   /** Documents included in the remote target, but waiting a reset */
   private ImmutableSortedSet<DocumentKey> pendingResetDocuments;
+
   private boolean resetComplete = true;
 
   /** Documents in the view but not in the remote target */
@@ -454,9 +454,7 @@ public class View {
     return syncedDocuments;
   }
 
-  /**
-   * Query reset is pending. Put all synced docs into pending reset list.
-   */
+  /** Query reset is pending. Put all synced docs into pending reset list. */
   public void resetPending() {
     pendingResetDocuments = syncedDocuments;
     resetComplete = false;
