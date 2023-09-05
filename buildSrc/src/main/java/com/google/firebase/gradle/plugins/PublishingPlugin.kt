@@ -160,7 +160,9 @@ abstract class PublishingPlugin : Plugin<Project> {
   ) {
     project.tasks.register("libraryGroups") {
       for (libraryGroup in libraryGroups) {
-        println("${libraryGroup.key} -> ${libraryGroup.value.joinToString(" | ") { it.artifactName }}")
+        println(
+          "${libraryGroup.key} -> ${libraryGroup.value.joinToString(" | ") { it.artifactName }}"
+        )
       }
     }
   }
