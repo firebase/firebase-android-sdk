@@ -169,6 +169,15 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
   }
 
   @Test
+  public void testUpdateSessionId_notPersistRolloutsToNewSessionIfNoRolloutsSet() {
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+    userMetadata.setNewSession(SESSION_ID_2);
+    assertThat(
+            fileStore.getSessionFile(SESSION_ID_2, UserMetadata.ROLLOUTS_STATE_FILENAME).exists())
+        .isFalse();
+  }
+
+  @Test
   public void testUpdateSessionId_persistCustomKeysToNewSessionIfCustomKeysSet() {
     UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
     final Map<String, String> keys =
@@ -199,6 +208,19 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
 
     MetaDataStore metaDataStore = new MetaDataStore(fileStore);
     assertThat(metaDataStore.readUserId(SESSION_ID_2)).isEqualTo(userId);
+  }
+
+  @Test
+  public void testUpdateSessionId_persistRolloutsToNewSessionIfRolloutsSet() {
+    UserMetadata userMetadata = new UserMetadata(SESSION_ID_1, fileStore, worker);
+    userMetadata.updateRolloutsState(ROLLOUTS_STATE);
+    userMetadata.setNewSession(SESSION_ID_2);
+    assertThat(
+            fileStore.getSessionFile(SESSION_ID_2, UserMetadata.ROLLOUTS_STATE_FILENAME).exists())
+        .isTrue();
+
+    MetaDataStore metaDataStore = new MetaDataStore(fileStore);
+    assertThat(metaDataStore.readRolloutsState(SESSION_ID_2)).isEqualTo(ROLLOUTS_STATE);
   }
 
   // Keys
@@ -350,6 +372,17 @@ public class MetaDataStoreTest extends CrashlyticsTestCase {
     List<RolloutAssignment> readRolloutsState = storeUnderTest.readRolloutsState(SESSION_ID_1);
 
     assertThat(readRolloutsState).isEqualTo(ROLLOUTS_STATE);
+  }
+
+  @Test
+  public void testWriteReadRolloutState_writeValidThenEmpty() throws Exception {
+    storeUnderTest.writeRolloutState(SESSION_ID_1, ROLLOUTS_STATE);
+    List<RolloutAssignment> emptyState = new ArrayList<>();
+    storeUnderTest.writeRolloutState(SESSION_ID_1, emptyState);
+
+    assertThat(
+            fileStore.getSessionFile(SESSION_ID_1, UserMetadata.ROLLOUTS_STATE_FILENAME).exists())
+        .isFalse();
   }
 
   public static void assertEqualMaps(Map<String, String> expected, Map<String, String> actual) {
