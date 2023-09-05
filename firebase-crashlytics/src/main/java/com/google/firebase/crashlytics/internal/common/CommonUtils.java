@@ -114,9 +114,7 @@ public class CommonUtils {
       matcher.put("x86", X86_32);
     }
 
-    /**
-     * @Return {@link CommonUtils.Architecture} enum based on @param String
-     */
+    /** @Return {@link CommonUtils.Architecture} enum based on @param String */
     static Architecture getValue() {
       String arch = Build.CPU_ABI;
 
@@ -272,9 +270,7 @@ public class CommonUtils {
     }
   }
 
-  /**
-   * @deprecated This method will now always return false. It should not be used.
-   */
+  /** @deprecated This method will now always return false. It should not be used. */
   @Deprecated
   public static boolean isLoggingEnabled(Context context) {
     return false;
@@ -558,9 +554,7 @@ public class CommonUtils {
     }
   }
 
-  /**
-   * @return if the given permission is granted
-   */
+  /** @return if the given permission is granted */
   public static boolean checkPermission(Context context, String permission) {
     final int res = context.checkCallingOrSelfPermission(permission);
     return (res == PackageManager.PERMISSION_GRANTED);
@@ -584,9 +578,7 @@ public class CommonUtils {
     }
   }
 
-  /**
-   * @return true if s1.equals(s2), or if both are null.
-   */
+  /** @return true if s1.equals(s2), or if both are null. */
   public static boolean nullSafeEquals(@Nullable String s1, @Nullable String s2) {
     // :TODO: replace calls to this method with Objects.equals(...) when minSdkVersion is 19+
     if (s1 == null) {
