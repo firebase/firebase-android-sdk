@@ -15,6 +15,7 @@
 package com.google.firebase.remoteconfig.internal;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -36,6 +37,9 @@ public class ConfigContainer {
   static final String PERSONALIZATION_METADATA_KEY = "personalization_metadata_key";
   static final String TEMPLATE_VERSION_NUMBER_KEY = "template_version_number_key";
   static final String ROLLOUT_METADATA_KEY = "rollout_metadata_key";
+  static final String ROLLOUT_METADATA_AFFECTED_KEYS = "affectedParameterKeys";
+  static final String ROLLOUT_METADATA_ID = "rolloutId";
+  static final String ROLLOUT_METADATA_VARIANT_ID = "variantId";
 
   private static final Date DEFAULTS_FETCH_TIME = new Date(0L);
 
@@ -185,6 +189,35 @@ public class ConfigContainer {
     return containerJson.toString().equals(that.toString());
   }
 
+  // Create a map of maps of parameter key to `rolloutId`/`variantId`.
+  private Map<String, Map<String, String>> createRolloutParameterKeyMap() throws JSONException {
+    // Create a map where the key is the parameter key and the value is a maps of
+    // rolloutId`/`variantId`.
+    Map<String, Map<String, String>> rolloutMetadataMap = new HashMap<>();
+    for (int i = 0; i < this.getRolloutMetadata().length(); i++) {
+      JSONObject rolloutMetadata = this.getRolloutMetadata().getJSONObject(i);
+      String rolloutId = rolloutMetadata.getString(ROLLOUT_METADATA_ID);
+      String variantId = rolloutMetadata.getString(ROLLOUT_METADATA_VARIANT_ID);
+      JSONArray parameterKeys = rolloutMetadata.getJSONArray(ROLLOUT_METADATA_AFFECTED_KEYS);
+
+      // Iterate through `affectedParameterKeys` and put `rolloutId`/`variantId` into the key's map.
+      for (int j = 0; j < parameterKeys.length(); j++) {
+        String parameterKey = parameterKeys.getString(j);
+        if (!rolloutMetadataMap.containsKey(parameterKey)) {
+          rolloutMetadataMap.put(parameterKey, new HashMap<>());
+        }
+
+        // Place `rolloutId`/`variantId` into parameterKey's map.
+        Map<String, String> parameterKeyRolloutMetadata = rolloutMetadataMap.get(parameterKey);
+        if (parameterKeyRolloutMetadata != null) {
+          parameterKeyRolloutMetadata.put(rolloutId, variantId);
+        }
+      }
+    }
+
+    return rolloutMetadataMap;
+  }
+
   /**
    * @param other The other {@link ConfigContainer} against which to compute the diff
    * @return The set of config keys that have changed between the this config and {@code other}
@@ -193,6 +226,10 @@ public class ConfigContainer {
   public Set<String> getChangedParams(ConfigContainer other) throws JSONException {
     // Make a deep copy of the other config before modifying it
     JSONObject otherConfig = ConfigContainer.deepCopyOf(other.containerJson).getConfigs();
+
+    // Config key to `rolloutMetadata` map.
+    Map<String, Map<String, String>> rolloutMetadataMap = this.createRolloutParameterKeyMap();
+    Map<String, Map<String, String>> otherRolloutMetadataMap = other.createRolloutParameterKeyMap();
 
     Set<String> changed = new HashSet<>();
     Iterator<String> keys = this.getConfigs().keys();
@@ -226,6 +263,21 @@ public class ConfigContainer {
               .getJSONObject(key)
               .toString()
               .equals(other.getPersonalizationMetadata().getJSONObject(key).toString())) {
+        changed.add(key);
+        continue;
+      }
+
+      // If only one of the configs has `rolloutMetadata` for the given key.
+      if (rolloutMetadataMap.containsKey(key) != otherRolloutMetadataMap.containsKey(key)) {
+        changed.add(key);
+        continue;
+      }
+
+      // If both of the configs have `rolloutMetadata` for the given key but the metadata has
+      // changed.
+      if (rolloutMetadataMap.containsKey(key)
+          && otherRolloutMetadataMap.containsKey(key)
+          && !rolloutMetadataMap.get(key).equals(otherRolloutMetadataMap.get(key))) {
         changed.add(key);
         continue;
       }
