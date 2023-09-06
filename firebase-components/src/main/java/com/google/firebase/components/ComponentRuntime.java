@@ -162,7 +162,6 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
       }
 
       runAfterDiscovery.addAll(processInstanceComponents(componentsToAdd));
-      processedComponents.addAll(componentsToAdd);
       runAfterDiscovery.addAll(processSetComponents());
       processDependencies();
     }
