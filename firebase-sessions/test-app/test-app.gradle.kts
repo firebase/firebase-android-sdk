@@ -62,6 +62,7 @@ dependencies {
   implementation(project(":firebase-sessions")){
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
+    exclude(group = "com.google.firebase", module = "firebase-installations")
   }
 
   api(project(":firebase-installations"))
