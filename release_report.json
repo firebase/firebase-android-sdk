@@ -1,0 +1,111 @@
+{
+    "changesByLibraryName": {
+        "firebase-components": [
+            {
+                "commitId": "b7a34fb108f1d619f5cc98677582e585c239048a",
+                "prId": "5300",
+                "author": "Vinay Guthal",
+                "message": "Update component runtime to pick up any one of the couroutine dispatcher interface (#5300)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b7a34fb108f1d619f5cc98677582e585c239048a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5300"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "fe84885ec87d7457926812ab4ecfa70bf8583581",
+                "prId": "5299",
+                "author": "Matthew Robertson",
+                "message": "Calculate total ram using MemoryInfo instead of `/proc/meminfo` (#5299)\n\nThis is to avoid a case where `/proc/meminfo` was not parsing correctly,\r\nresulting in reporting 0 bytes of total ram.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fe84885ec87d7457926812ab4ecfa70bf8583581",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5299"
+            },
+            {
+                "commitId": "de35ba063dccf3221d798590af3eb71c5f5c91bd",
+                "prId": "5289",
+                "author": "Rodrigo Lazo",
+                "message": "Update FTL default device to pixel7 api 33 (#5289)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/de35ba063dccf3221d798590af3eb71c5f5c91bd",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5289"
+            },
+            {
+                "commitId": "b76de4fdf48576eaf26160b4288ee404e664ac0b",
+                "prId": "5274",
+                "author": "Matthew Robertson",
+                "message": "Persist the aqs session id on new aqs session (#5274)\n\nPersist the aqs session id on new aqs session, instead of on event. This\r\nis needed for ANRs and native crashes that can't persist on event.\r\n\r\nThis also populates the aqs session id and fid in the Report.\r\nThe new `CrashlyticsAppQualitySessionsStore` class is based on the\r\nexisting `MetaDataStore` class but with the current session id not being\r\nfinal.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b76de4fdf48576eaf26160b4288ee404e664ac0b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5274"
+            }
+        ],
+        "firebase-firestore/ktx": [
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "7bfaf837c14bf398292207582e0cc0bf17372eaf",
+                "prId": "5298",
+                "author": "cherylEnkidu",
+                "message": "Improve auto cache index creation documentation readability (#5298)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7bfaf837c14bf398292207582e0cc0bf17372eaf",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5298"
+            },
+            {
+                "commitId": "66041ec8904e4664ae1d43b6916e78c82dd98b72",
+                "prId": "5293",
+                "author": "cherylEnkidu",
+                "message": "Fix Changelog Error (#5293)\n\nDuring auto rebase, the change log entry of auto creation cache index\r\nwas put inside the previous release cycle by mistake.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/66041ec8904e4664ae1d43b6916e78c82dd98b72",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5293"
+            },
+            {
+                "commitId": "6349a09155a82cead690230aa37578b3175b820d",
+                "prId": "5256",
+                "author": "cherylEnkidu",
+                "message": "Public Auto Persistent Index Creation API (#5256)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6349a09155a82cead690230aa37578b3175b820d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5256"
+            },
+            {
+                "commitId": "d27ff1545586a2767e7011fbde7534dc3deed992",
+                "prId": "5213",
+                "author": "cherylEnkidu",
+                "message": "Increase test coverage for persistent cache indexing (#5213)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d27ff1545586a2767e7011fbde7534dc3deed992",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5213"
+            }
+        ],
+        "firebase-inappmessaging-display/ktx": [
+        ],
+        "firebase-inappmessaging/ktx": [
+        ],
+        "firebase-inappmessaging": [
+            {
+                "commitId": "2d3b2be7d2d00d693eb74986f20a6265c918848f",
+                "prId": "5245",
+                "author": "Eldhose M Babu",
+                "message": "[FIAM] Firelog to clearcut migration (#5245)\n\n[FIAM] Firelog to clearcut migration",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2d3b2be7d2d00d693eb74986f20a6265c918848f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5245"
+            }
+        ],
+        "firebase-inappmessaging-display": [
+            {
+                "commitId": "2d3b2be7d2d00d693eb74986f20a6265c918848f",
+                "prId": "5245",
+                "author": "Eldhose M Babu",
+                "message": "[FIAM] Firelog to clearcut migration (#5245)\n\n[FIAM] Firelog to clearcut migration",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2d3b2be7d2d00d693eb74986f20a6265c918848f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5245"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-config:ktx",
+        ":firebase-config",
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":transport:transport-runtime"
+    ]
+}
