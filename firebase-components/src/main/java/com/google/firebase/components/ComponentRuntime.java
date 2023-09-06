@@ -134,7 +134,7 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
         for (Object anInterface : component.getProvidedInterfaces().toArray()) {
           if (anInterface.toString().contains("kotlinx.coroutines.CoroutineDispatcher")) {
             if (processedCoroutineDispatcherInterfaces) {
-              iterator.remove();
+              it.remove();
               break;
             }
             processedCoroutineDispatcherInterfaces = true;
