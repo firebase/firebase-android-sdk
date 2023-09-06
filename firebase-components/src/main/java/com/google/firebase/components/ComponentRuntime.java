@@ -50,6 +50,7 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
   private final Map<Qualified<?>, LazySet<?>> lazySetMap = new HashMap<>();
   private final List<Provider<ComponentRegistrar>> unprocessedRegistrarProviders;
   private final List<Component<?>> processedComponents = new ArrayList<>();
+  private Boolean processedCoroutineDispatcherInterfaces = false;
   private final EventBus eventBus;
   private final AtomicReference<Boolean> eagerComponentsInitializedWith = new AtomicReference<>();
   private final ComponentRegistrarProcessor componentRegistrarProcessor;
@@ -108,8 +109,6 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
     // instead of executing such code in the synchronized block below, we store it in a list and
     // execute right after the synchronized section.
     List<Runnable> runAfterDiscovery = new ArrayList<>();
-    List<Component<?>> componentsAdding = new ArrayList<>();
-    Set<String> existingInterfaces = new HashSet<>();
     synchronized (this) {
       Iterator<Provider<ComponentRegistrar>> iterator = unprocessedRegistrarProviders.iterator();
       while (iterator.hasNext()) {
@@ -125,41 +124,34 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
           Log.w(ComponentDiscovery.TAG, "Invalid component registrar.", ex);
         }
       }
-      for (int i = 0; i < processedComponents.size(); i++) {
-        Object[] interfaces = processedComponents.get(i).getProvidedInterfaces().toArray();
-        for (Object anInterface : interfaces) {
+
+      // kotlinx.coroutines.CoroutineDispatcher interface could be provided by both new version of
+      // firebase-common and old version of firebase-common-ktx. In this scenario take the first
+      // interface which was provided.
+
+      Iterator<Component<?>> it = componentsToAdd.iterator();
+      while (iterator.hasNext()) {
+        Component component = it.next();
+        for (Object anInterface : component.getProvidedInterfaces().toArray()) {
           if (anInterface.toString().contains("kotlinx.coroutines.CoroutineDispatcher")) {
-            existingInterfaces.add(anInterface.toString());
-          }
-        }
-      }
-      for (int i = 0; i < componentsToAdd.size(); i++) {
-        Object[] interfaces = componentsToAdd.get(i).getProvidedInterfaces().toArray();
-        boolean addComponent = true;
-        for (Object anInterface : interfaces) {
-          String interfaceString = anInterface.toString();
-          if (interfaceString.contains("kotlinx.coroutines.CoroutineDispatcher")) {
-            if (existingInterfaces.contains(interfaceString)) {
-              addComponent = false;
-            } else {
-              existingInterfaces.add(interfaceString);
+            if (processedCoroutineDispatcherInterfaces) {
+              iterator.remove();
+              break;
             }
+            processedCoroutineDispatcherInterfaces = true;
           }
-        }
-        if (addComponent) {
-          componentsAdding.add(componentsToAdd.get(i));
         }
       }
 
       if (components.isEmpty()) {
-        CycleDetector.detect(componentsAdding);
+        CycleDetector.detect(componentsToAdd);
       } else {
         ArrayList<Component<?>> allComponents = new ArrayList<>(this.components.keySet());
-        allComponents.addAll(componentsAdding);
+        allComponents.addAll(componentsToAdd);
         CycleDetector.detect(allComponents);
       }
 
-      for (Component<?> component : componentsAdding) {
+      for (Component<?> component : componentsToAdd) {
         Lazy<?> lazy =
             new Lazy<>(
                 () ->
@@ -170,8 +162,8 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
         components.put(component, lazy);
       }
 
-      runAfterDiscovery.addAll(processInstanceComponents(componentsAdding));
-      processedComponents.addAll(componentsAdding);
+      runAfterDiscovery.addAll(processInstanceComponents(componentsToAdd));
+      processedComponents.addAll(componentsToAdd);
       runAfterDiscovery.addAll(processSetComponents());
       processDependencies();
     }
