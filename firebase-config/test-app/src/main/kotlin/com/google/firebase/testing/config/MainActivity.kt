@@ -17,14 +17,31 @@
 package com.google.firebase.testing.config
 
 import android.os.Bundle
+import android.util.Log
+import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 
 class MainActivity : AppCompatActivity() {
+
+  private lateinit var remoteConfig: FirebaseRemoteConfig
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
 
     findViewById<TextView>(R.id.greeting_text).text = getText(R.string.firebase_greetings)
+    findViewById<Button>(R.id.crash_button).setOnClickListener {
+      throw RuntimeException("Test Crash")
+    }
+
+    findViewById<Button>(R.id.fetch_button).setOnClickListener {
+      remoteConfig = FirebaseRemoteConfig.getInstance()
+      remoteConfig.fetch(0).addOnCompleteListener {
+        Log.d("RolloutsTestApp", "Fetched config!")
+      }
+    }
   }
 }

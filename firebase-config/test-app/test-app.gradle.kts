@@ -48,6 +48,24 @@ android {
 dependencies {
   implementation(project(":firebase-crashlytics"))
   implementation(project(":firebase-config"))
+  implementation(project(":firebase-config:ktx"))
+
+  // This is required since a `project` dependency on frc does not expose the APIs of its
+  // "implementation" dependencies. The alternative would be to make common an "api" dep of remote-config.
+  // Released artifacts don't need these dependencies since they don't use `project` to refer
+  // to Remote Config.
+  implementation("com.google.firebase:firebase-common:20.3.2")
+  implementation("com.google.firebase:firebase-common-ktx:20.3.2")
+  implementation("com.google.firebase:firebase-components:17.1.0")
+
+  implementation(project(":firebase-installations-interop"))
+  runtimeOnly(project(":firebase-installations"))
+
+  implementation("com.google.android.gms:play-services-basement:18.1.0")
+  implementation("com.google.android.gms:play-services-tasks:18.0.1")
+  // End RC `project` transitive dependencies
+
+//  implementation("com.google.firebase:firebase-config-ktx:21.4.1")
 
   implementation("androidx.appcompat:appcompat:1.6.1")
   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
