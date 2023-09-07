@@ -4,14 +4,11 @@
 * Update component runtime to pick up any one of the couroutine dispatcher interface (#5300)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5300) [commit](https://github.com/firebase/firebase-android-sdk/commit/b7a34fb108f1d619f5cc98677582e585c239048a)  [Vinay Guthal]
 
-## firebase-crashlytics-ndk
-      
-
-## firebase-crashlytics/ktx
-      
-
 ## firebase-crashlytics
       
+* Update project level deps from M136 (#5305)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5305) [commit](https://github.com/firebase/firebase-android-sdk/commit/5a827465f10fa2fbe370493cfa72ed804748758d)  [Daymon]
+
 * Calculate total ram using MemoryInfo instead of `/proc/meminfo` (#5299)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5299) [commit](https://github.com/firebase/firebase-android-sdk/commit/fe84885ec87d7457926812ab4ecfa70bf8583581)  [Matthew Robertson]
 
@@ -20,6 +17,14 @@
 
 * Persist the aqs session id on new aqs session (#5274)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5274) [commit](https://github.com/firebase/firebase-android-sdk/commit/b76de4fdf48576eaf26160b4288ee404e664ac0b)  [Matthew Robertson]
+
+## firebase-crashlytics-ndk
+      
+* Add missing changelog entry to firebase-crashlytics-ndk (#5306)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5306) [commit](https://github.com/firebase/firebase-android-sdk/commit/c3b82109cfb09226edb20bb688dbef5140acc954)  [Daymon]
+
+## firebase-crashlytics/ktx
+      
 
 ## firebase-firestore
       
@@ -38,15 +43,10 @@
 ## firebase-firestore/ktx
       
 
-## firebase-inappmessaging
+## firebase-inappmessaging/ktx
       
-* [FIAM] Firelog to clearcut migration (#5245)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5245) [commit](https://github.com/firebase/firebase-android-sdk/commit/2d3b2be7d2d00d693eb74986f20a6265c918848f)  [Eldhose M Babu]
 
 ## firebase-inappmessaging-display/ktx
-      
-
-## firebase-inappmessaging/ktx
       
 
 ## firebase-inappmessaging-display
@@ -54,10 +54,18 @@
 * [FIAM] Firelog to clearcut migration (#5245)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5245) [commit](https://github.com/firebase/firebase-android-sdk/commit/2d3b2be7d2d00d693eb74986f20a6265c918848f)  [Eldhose M Babu]
 
+## firebase-inappmessaging
+      
+* Update project level deps from M136 (#5305)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5305) [commit](https://github.com/firebase/firebase-android-sdk/commit/5a827465f10fa2fbe370493cfa72ed804748758d)  [Daymon]
+
+* [FIAM] Firelog to clearcut migration (#5245)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5245) [commit](https://github.com/firebase/firebase-android-sdk/commit/2d3b2be7d2d00d693eb74986f20a6265c918848f)  [Eldhose M Babu]
+
 
 ## SDKs with changes, but no changelogs
-:firebase-config:ktx  
 :firebase-config  
-:firebase-perf:ktx  
+:firebase-config:ktx  
 :firebase-perf  
+:firebase-perf:ktx  
 :transport:transport-runtime

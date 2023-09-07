@@ -10,11 +10,15 @@
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5300"
             }
         ],
-        "firebase-crashlytics-ndk": [
-        ],
-        "firebase-crashlytics/ktx": [
-        ],
         "firebase-crashlytics": [
+            {
+                "commitId": "5a827465f10fa2fbe370493cfa72ed804748758d",
+                "prId": "5305",
+                "author": "Daymon",
+                "message": "Update project level deps from M136 (#5305)\n\nPer [b/299481147](https://b.corp.google.com/issues/299481147),\r\n\r\nThis updates some project level deps that should've been updated after\r\nM136, and will fix the error state occurring in M137.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a827465f10fa2fbe370493cfa72ed804748758d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5305"
+            },
             {
                 "commitId": "fe84885ec87d7457926812ab4ecfa70bf8583581",
                 "prId": "5299",
@@ -39,6 +43,18 @@
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b76de4fdf48576eaf26160b4288ee404e664ac0b",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5274"
             }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "c3b82109cfb09226edb20bb688dbef5140acc954",
+                "prId": "5306",
+                "author": "Daymon",
+                "message": "Add missing changelog entry to firebase-crashlytics-ndk (#5306)\n\nPer [b/299509129](https://b.corp.google.com/issues/299509129),\r\n\r\nThis adds a changelog entry to `firebase-crashlytics-ndk` that should've\r\nbeen added with #5274, as `firebase-crashlytics` is in the same library\r\ngroup.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c3b82109cfb09226edb20bb688dbef5140acc954",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5306"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
         ],
         "firebase-firestore": [
             {
@@ -76,7 +92,11 @@
         ],
         "firebase-firestore/ktx": [
         ],
-        "firebase-inappmessaging": [
+        "firebase-inappmessaging/ktx": [
+        ],
+        "firebase-inappmessaging-display/ktx": [
+        ],
+        "firebase-inappmessaging-display": [
             {
                 "commitId": "2d3b2be7d2d00d693eb74986f20a6265c918848f",
                 "prId": "5245",
@@ -86,11 +106,15 @@
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5245"
             }
         ],
-        "firebase-inappmessaging-display/ktx": [
-        ],
-        "firebase-inappmessaging/ktx": [
-        ],
-        "firebase-inappmessaging-display": [
+        "firebase-inappmessaging": [
+            {
+                "commitId": "5a827465f10fa2fbe370493cfa72ed804748758d",
+                "prId": "5305",
+                "author": "Daymon",
+                "message": "Update project level deps from M136 (#5305)\n\nPer [b/299481147](https://b.corp.google.com/issues/299481147),\r\n\r\nThis updates some project level deps that should've been updated after\r\nM136, and will fix the error state occurring in M137.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5a827465f10fa2fbe370493cfa72ed804748758d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5305"
+            },
             {
                 "commitId": "2d3b2be7d2d00d693eb74986f20a6265c918848f",
                 "prId": "5245",
@@ -102,10 +126,10 @@
         ]
     },
     "changedLibrariesWithNoChangelog": [
-        ":firebase-config:ktx",
         ":firebase-config",
-        ":firebase-perf:ktx",
+        ":firebase-config:ktx",
         ":firebase-perf",
+        ":firebase-perf:ktx",
         ":transport:transport-runtime"
     ]
 }
