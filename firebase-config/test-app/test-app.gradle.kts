@@ -30,7 +30,7 @@ android {
   namespace = "com.google.firebase.testing.config"
   compileSdk = 33
   defaultConfig {
-    applicationId = "com.google.firebase.testing.config"
+    applicationId = "com.google.testapp"
     minSdk = 16
     targetSdk = 33
     versionCode = 1

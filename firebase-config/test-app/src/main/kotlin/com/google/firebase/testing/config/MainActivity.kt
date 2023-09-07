@@ -34,13 +34,14 @@ class MainActivity : AppCompatActivity() {
 
     findViewById<TextView>(R.id.greeting_text).text = getText(R.string.firebase_greetings)
     findViewById<Button>(R.id.crash_button).setOnClickListener {
-      throw RuntimeException("Test Crash")
+      throw RuntimeException("JVM Crash")
     }
 
     findViewById<Button>(R.id.fetch_button).setOnClickListener {
       remoteConfig = FirebaseRemoteConfig.getInstance()
       remoteConfig.fetch(0).addOnCompleteListener {
         Log.d("RolloutsTestApp", "Fetched config!")
+        remoteConfig.activate()
       }
     }
   }

@@ -83,6 +83,9 @@ public class RolloutsStateSubscriptionsHandler {
       RolloutsState activeRolloutsState =
           rolloutsStateFactory.getActiveRolloutsState(configContainer);
 
+      Log.d(TAG, "Publishing RolloutsState to " + subscribers.size() + " subscribers");
+      Log.d(TAG, "RolloutsState: " + activeRolloutsState);
+
       for (RolloutsStateSubscriber subscriber : subscribers) {
         executor.execute(() -> subscriber.onRolloutsStateChanged(activeRolloutsState));
       }

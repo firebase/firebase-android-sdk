@@ -16,6 +16,13 @@
 
 package com.google.firebase.remoteconfig.internal.rollouts;
 
+import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
+import static com.google.firebase.remoteconfig.internal.ConfigContainer.ROLLOUT_METADATA_AFFECTED_KEYS;
+import static com.google.firebase.remoteconfig.internal.ConfigContainer.ROLLOUT_METADATA_ID;
+import static com.google.firebase.remoteconfig.internal.ConfigContainer.ROLLOUT_METADATA_VARIANT_ID;
+
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
@@ -31,10 +38,6 @@ import org.json.JSONObject;
 public class RolloutsStateFactory {
   ConfigGetParameterHandler getParameterHandler;
 
-  private static final String ROLLOUT_ID_KEY = "rollout_id";
-  private static final String VARIANT_ID_KEY = "variant_id";
-  private static final String AFFECTED_PARAMETER_KEYS_KEY = "affected_parameter_keys";
-
   RolloutsStateFactory(ConfigGetParameterHandler getParameterHandler) {
     this.getParameterHandler = getParameterHandler;
   }
@@ -49,7 +52,7 @@ public class RolloutsStateFactory {
     for (int i = 0; i < rolloutMetadata.length(); i++) {
       try {
         JSONObject rollout = rolloutMetadata.getJSONObject(i);
-        JSONArray affectedParameterKeys = rollout.getJSONArray(AFFECTED_PARAMETER_KEYS_KEY);
+        JSONArray affectedParameterKeys = rollout.getJSONArray(ROLLOUT_METADATA_AFFECTED_KEYS);
 
         for (int j = 0; j < affectedParameterKeys.length(); j++) {
           String parameterKey = affectedParameterKeys.getString(j);
@@ -57,14 +60,15 @@ public class RolloutsStateFactory {
 
           rolloutAssignments.add(
               RolloutAssignment.builder()
-                  .setRolloutId(rollout.getString(ROLLOUT_ID_KEY))
-                  .setVariantId(rollout.getString(VARIANT_ID_KEY))
+                  .setRolloutId(rollout.getString(ROLLOUT_METADATA_ID))
+                  .setVariantId(rollout.getString(ROLLOUT_METADATA_VARIANT_ID))
                   .setParameterKey(parameterKey)
                   .setParameterValue(parameterValue)
                   .setTemplateVersion(templateVersion)
                   .build());
         }
       } catch (JSONException e) {
+        Log.d(TAG, "Unable to parse rollouts metadata: " + rolloutMetadata);
         throw new FirebaseRemoteConfigClientException(
             "Exception parsing rollouts metadata to create RolloutsState.", e);
       }
