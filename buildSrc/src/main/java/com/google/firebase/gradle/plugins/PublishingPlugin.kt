@@ -99,7 +99,7 @@ abstract class PublishingPlugin : Plugin<Project> {
           releaseMetadata?.name.orEmpty()
         )
 
-      registerGenerateReleaseConfigFilesTask(project)
+      registerGenerateReleaseConfigFilesTask(project, libraryGroups)
       registerPublishReleasingLibrariesToMavenLocalTask(project, releasingProjects)
       registerSemverCheckForReleaseTask(project, releasingProjects)
       registerPublishAllToBuildDir(project, allFirebaseLibraries)
@@ -439,7 +439,10 @@ abstract class PublishingPlugin : Plugin<Project> {
    *
    * @see [ReleaseGenerator]
    */
-  private fun registerGenerateReleaseConfigFilesTask(project: Project) =
+  private fun registerGenerateReleaseConfigFilesTask(
+    project: Project,
+    libraryGroups: Map<String, List<FirebaseLibraryExtension>>
+  ) =
     project.tasks.register<ReleaseGenerator>(RELEASE_GENEATOR_TASK) {
       currentRelease.convention(project.provideProperty("currentRelease"))
       pastRelease.convention(project.provideProperty("pastRelease"))
@@ -451,6 +454,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       releaseReportJsonFile.convention(
         project.layout.projectDirectory.file(RELEASE_REPORT_JSON_FILE)
       )
+      this.libraryGroups = libraryGroups
     }
 
   /**
