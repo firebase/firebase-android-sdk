@@ -65,8 +65,6 @@ dependencies {
   implementation("com.google.android.gms:play-services-tasks:18.0.1")
   // End RC `project` transitive dependencies
 
-//  implementation("com.google.firebase:firebase-config-ktx:21.4.1")
-
   implementation("androidx.appcompat:appcompat:1.6.1")
   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
   implementation("androidx.core:core-ktx:1.9.0")

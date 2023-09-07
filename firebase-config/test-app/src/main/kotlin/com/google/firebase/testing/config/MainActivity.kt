@@ -21,7 +21,6 @@ import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 
 class MainActivity : AppCompatActivity() {
@@ -39,9 +38,7 @@ class MainActivity : AppCompatActivity() {
 
     findViewById<Button>(R.id.fetch_button).setOnClickListener {
       remoteConfig = FirebaseRemoteConfig.getInstance()
-      remoteConfig.fetch(0).addOnCompleteListener {
-        Log.d("RolloutsTestApp", "Fetched config!")
-      }
+      remoteConfig.fetch(0).addOnCompleteListener { Log.d("RolloutsTestApp", "Fetched config!") }
     }
   }
 }
