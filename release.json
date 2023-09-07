@@ -5,11 +5,20 @@
         ":firebase-crashlytics-ndk",
         ":firebase-crashlytics:ktx",
         ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-crashlytics:ktx",
+        ":firebase-crashlytics",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
         ":firebase-firestore:ktx",
         ":firebase-firestore",
+        ":firebase-inappmessaging",
         ":firebase-inappmessaging-display:ktx",
         ":firebase-inappmessaging:ktx",
-        ":firebase-inappmessaging",
-        ":firebase-inappmessaging-display"
+        ":firebase-inappmessaging-display",
+        ":firebase-inappmessaging-display:ktx",
+        ":firebase-inappmessaging-display",
+        ":firebase-inappmessaging:ktx",
+        ":firebase-inappmessaging"
     ]
 }

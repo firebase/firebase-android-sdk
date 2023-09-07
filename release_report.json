@@ -40,8 +40,6 @@
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5274"
             }
         ],
-        "firebase-firestore/ktx": [
-        ],
         "firebase-firestore": [
             {
                 "commitId": "7bfaf837c14bf398292207582e0cc0bf17372eaf",
@@ -76,9 +74,7 @@
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5213"
             }
         ],
-        "firebase-inappmessaging-display/ktx": [
-        ],
-        "firebase-inappmessaging/ktx": [
+        "firebase-firestore/ktx": [
         ],
         "firebase-inappmessaging": [
             {
@@ -89,6 +85,10 @@
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2d3b2be7d2d00d693eb74986f20a6265c918848f",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5245"
             }
+        ],
+        "firebase-inappmessaging-display/ktx": [
+        ],
+        "firebase-inappmessaging/ktx": [
         ],
         "firebase-inappmessaging-display": [
             {
@@ -104,8 +104,8 @@
     "changedLibrariesWithNoChangelog": [
         ":firebase-config:ktx",
         ":firebase-config",
-        ":firebase-perf",
         ":firebase-perf:ktx",
+        ":firebase-perf",
         ":transport:transport-runtime"
     ]
 }

@@ -21,9 +21,6 @@
 * Persist the aqs session id on new aqs session (#5274)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5274) [commit](https://github.com/firebase/firebase-android-sdk/commit/b76de4fdf48576eaf26160b4288ee404e664ac0b)  [Matthew Robertson]
 
-## firebase-firestore/ktx
-      
-
 ## firebase-firestore
       
 * Improve auto cache index creation documentation readability (#5298)   
@@ -38,16 +35,19 @@
 * Increase test coverage for persistent cache indexing (#5213)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5213) [commit](https://github.com/firebase/firebase-android-sdk/commit/d27ff1545586a2767e7011fbde7534dc3deed992)  [cherylEnkidu]
 
-## firebase-inappmessaging-display/ktx
-      
-
-## firebase-inappmessaging/ktx
+## firebase-firestore/ktx
       
 
 ## firebase-inappmessaging
       
 * [FIAM] Firelog to clearcut migration (#5245)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5245) [commit](https://github.com/firebase/firebase-android-sdk/commit/2d3b2be7d2d00d693eb74986f20a6265c918848f)  [Eldhose M Babu]
+
+## firebase-inappmessaging-display/ktx
+      
+
+## firebase-inappmessaging/ktx
+      
 
 ## firebase-inappmessaging-display
       
@@ -58,6 +58,6 @@
 ## SDKs with changes, but no changelogs
 :firebase-config:ktx  
 :firebase-config  
-:firebase-perf  
 :firebase-perf:ktx  
+:firebase-perf  
 :transport:transport-runtime
