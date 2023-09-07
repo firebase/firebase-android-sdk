@@ -20,6 +20,8 @@ import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 
 import android.util.Log;
 import androidx.annotation.NonNull;
+
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException;
 import com.google.firebase.remoteconfig.internal.ConfigCacheClient;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
@@ -52,15 +54,23 @@ public class RolloutsStateSubscriptionsHandler {
   public void registerRolloutsStateSubscriber(@NonNull RolloutsStateSubscriber subscriber) {
     subscribers.add(subscriber);
 
-    activatedConfigsCache
-        .get()
+    Task<ConfigContainer> activatedConfigsCacheTask = activatedConfigsCache.get();
+
+    activatedConfigsCacheTask
         .addOnSuccessListener(
             executor,
-            configContainer -> {
+            unused -> {
               try {
-                RolloutsState rolloutsState =
-                    rolloutsStateFactory.getActiveRolloutsState(configContainer);
-                executor.execute(() -> subscriber.onRolloutsStateChanged(rolloutsState));
+                ConfigContainer activatedConfigsCache = activatedConfigsCacheTask.getResult();
+
+                // If we try to read the cache before the Remote Config component has started up,
+                // the cache will return null. We don't need to publish any rollouts since none are
+                // assigned yet.
+                if (activatedConfigsCache != null) {
+                  RolloutsState rolloutsState =
+                          rolloutsStateFactory.getActiveRolloutsState(activatedConfigsCache);
+                  executor.execute(() -> subscriber.onRolloutsStateChanged(rolloutsState));
+                }
               } catch (FirebaseRemoteConfigException e) {
                 Log.w(
                     TAG,
