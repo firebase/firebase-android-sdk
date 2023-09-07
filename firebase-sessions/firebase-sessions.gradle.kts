@@ -50,11 +50,13 @@ android {
 dependencies {
   implementation("androidx.datastore:datastore-preferences:1.0.0")
   implementation("com.google.android.datatransport:transport-api:3.0.0")
-  implementation("com.google.firebase:firebase-common-ktx:20.3.3")
+  api(project(":firebase-common"))
   implementation("com.google.firebase:firebase-components:17.1.0")
   implementation("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation("com.google.firebase:firebase-encoders:17.0.0")
-  implementation("com.google.firebase:firebase-installations-interop:17.1.0")
+  api(project(":firebase-installations-interop"))
+  api(project(":firebase-annotations"))
+
   implementation(libs.androidx.annotation)
 
   runtimeOnly("com.google.firebase:firebase-datatransport:18.1.8"){
