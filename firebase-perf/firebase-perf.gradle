@@ -43,7 +43,7 @@ protobuf {
 
 android {
     namespace "com.google.firebase.perf"
-    compileSdk 30
+    compileSdk 33
 
     lintOptions {
         abortOnError true
