@@ -2106,7 +2106,7 @@ public class QueryTest {
     checkOnlineAndOfflineResultsMatch(query2, "doc2");
 
     // explicit AND: a < 3 && b not-in [2, 3]
-    // Implicitly ordered by: a asc, __name__ asc
+    // Implicitly ordered by: a asc, b asc, __name__ asc
     Query query3 = collection.where(and(lessThan("a", 3), notInArray("b", asList(2, 3))));
     checkOnlineAndOfflineResultsMatch(query3, "doc1", "doc5", "doc2");
 
