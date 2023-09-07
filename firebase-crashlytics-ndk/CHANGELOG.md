@@ -1,4 +1,5 @@
 # Unreleased
+* [changed] Updated `firebase-crashlytics` dependency to v18.4.2
 
 # 18.4.1
 * [changed] Updated `firebase-crashlytics` dependency to v18.4.1
