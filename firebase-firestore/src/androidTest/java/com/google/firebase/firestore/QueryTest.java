@@ -1170,7 +1170,7 @@ public class QueryTest {
       bloomFilterShouldAvertAFullRequeryWhenDocumentsWereAddedDeletedRemovedUpdatedAndUnchangedSinceTheResumeToken()
           throws Exception {
     // TODO(b/291365820): Stop skipping this test when running against the Firestore emulator once
-    // the emulator is improved to include a bloom filter in the existence filter "messages that it
+    // the emulator is improved to include a bloom filter in the existence filter messages that it
     // sends.
     assumeFalse(
         "Skip this test when running against the Firestore emulator because the emulator does not "
