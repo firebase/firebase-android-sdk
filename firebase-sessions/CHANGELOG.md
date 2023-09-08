@@ -1,5 +1,7 @@
 # Unreleased
 
+# 1.0.2
+
 * [fixed] Made Sessions more resilient to the FirebaseApp instance being deleted.
 
 # 1.0.1

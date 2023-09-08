@@ -92,7 +92,7 @@ public class FirebaseCrashlytics {
         ExecutorUtils.buildSingleThreadExecutorService("Crashlytics Exception Handler");
 
     CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber =
-        new CrashlyticsAppQualitySessionsSubscriber(arbiter);
+        new CrashlyticsAppQualitySessionsSubscriber(arbiter, fileStore);
     firebaseSessions.register(sessionsSubscriber);
 
     final CrashlyticsCore core =

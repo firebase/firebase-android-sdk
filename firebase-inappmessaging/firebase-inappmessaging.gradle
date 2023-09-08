@@ -113,6 +113,7 @@ dependencies {
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'org.awaitility:awaitility:3.1.0'
     androidTestImplementation project(':integ-testing')
+
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.6'
     annotationProcessor libs.dagger.compiler

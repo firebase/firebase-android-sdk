@@ -49,7 +49,7 @@ public class FirebaseTestLabExtension {
 
   Set<String> getDevices() {
     if (devices.get().isEmpty()) {
-      return Collections.singleton("model=Pixel2,version=27,locale=en,orientation=portrait");
+      return Collections.singleton("model=panther,version=33,locale=en,orientation=portrait");
     }
     return devices.get();
   }

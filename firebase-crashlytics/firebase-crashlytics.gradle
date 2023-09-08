@@ -22,7 +22,7 @@ firebaseLibrary {
     libraryGroup "crashlytics"
     testLab {
         enabled = true
-        device 'model=redfin,version=30'
+        device 'model=panther,version=33'
     }
 }
 
@@ -71,6 +71,7 @@ dependencies {
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.truth)
+
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     annotationProcessor project(":encoders:firebase-encoders-processor")
     compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
