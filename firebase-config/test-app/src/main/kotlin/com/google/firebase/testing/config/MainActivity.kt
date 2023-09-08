@@ -32,8 +32,8 @@ class MainActivity : AppCompatActivity() {
     setContentView(R.layout.activity_main)
 
     findViewById<TextView>(R.id.greeting_text).text = getText(R.string.firebase_greetings)
-    findViewById<Button>(R.id.crash_button).setOnClickListener {
-      throw RuntimeException("Test Crash")
+    findViewById<Button>(R.id.jvm_crash_button).setOnClickListener {
+      throw RuntimeException("JVM Crash")
     }
 
     findViewById<Button>(R.id.fetch_button).setOnClickListener {
