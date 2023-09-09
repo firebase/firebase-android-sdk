@@ -34,31 +34,31 @@
   <LinearLayout
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
+      android:layout_marginTop="376dp"
       android:orientation="horizontal"
-      tools:layout_editor_absoluteX="1dp"
-      tools:layout_editor_absoluteY="376dp">
+      app:layout_constraintStart_toStartOf="parent"
+      app:layout_constraintTop_toTopOf="parent">
 
     <Button
         android:id="@+id/fetch_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginRight="5dp"
-        android:layout_marginEnd="5dp"
-        android:layout_marginLeft="5dp"
         android:layout_marginStart="5dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginRight="5dp"
         android:layout_weight="1"
-        android:text="Fetch Config"
-         />
+        android:text="@string/fetch_config" />
 
     <Button
         android:id="@+id/jvm_crash_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginRight="5dp"
-        android:layout_marginEnd="5dp"
-        android:layout_marginLeft="5dp"
         android:layout_marginStart="5dp"
+        android:layout_marginLeft="5dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginRight="5dp"
         android:layout_weight="1"
-        android:text="Crash" />
+        android:text="@string/jvm_crash" />
   </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

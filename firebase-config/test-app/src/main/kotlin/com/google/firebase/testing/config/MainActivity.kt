@@ -38,7 +38,11 @@ class MainActivity : AppCompatActivity() {
 
     findViewById<Button>(R.id.fetch_button).setOnClickListener {
       remoteConfig = FirebaseRemoteConfig.getInstance()
-      remoteConfig.fetch(0).addOnCompleteListener { Log.d("RolloutsTestApp", "Fetched config!") }
+      remoteConfig.reset()
+      remoteConfig.fetch(0).addOnCompleteListener {
+        Log.d("RolloutsTestApp", "Fetched config!")
+        remoteConfig.activate()
+      }
     }
   }
 }
