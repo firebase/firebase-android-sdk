@@ -28,9 +28,9 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 class MainActivity : AppCompatActivity() {
 
   companion object {
-      init {
-         System.loadLibrary("mynativeapp")
-      }
+    init {
+      System.loadLibrary("mynativeapp")
+    }
   }
 
   private external fun stringFromJNI(): String
@@ -68,20 +68,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     findViewById<Button>(R.id.on_demand_fatal_button).setOnClickListener {
-      FirebaseCrashlytics.getInstance().recordFatalException(RuntimeException("This is an odf"))
+      FirebaseCrashlytics.getInstance()
+        .recordFatalException(RuntimeException("This is an on demand fatal"))
     }
 
-    findViewById<Button>(R.id.ndk_crash_button).setOnClickListener {
-      nativeCrash()
-    }
+    findViewById<Button>(R.id.ndk_crash_button).setOnClickListener { nativeCrash() }
 
-    findViewById<Button>(R.id.native_anr_button).setOnClickListener {
-      nativeAnr()
-    }
+    findViewById<Button>(R.id.native_anr_button).setOnClickListener { nativeAnr() }
 
     findViewById<Button>(R.id.non_fatal_button).setOnClickListener {
       FirebaseCrashlytics.getInstance().recordException(RuntimeException("This is an non-fatal"))
     }
-
   }
 }
