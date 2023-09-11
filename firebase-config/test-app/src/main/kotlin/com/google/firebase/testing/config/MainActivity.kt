@@ -21,9 +21,23 @@ import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.crashlytics.recordFatalException
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 
 class MainActivity : AppCompatActivity() {
+
+  companion object {
+      init {
+         System.loadLibrary("mynativeapp")
+      }
+  }
+
+  private external fun stringFromJNI(): String
+
+  private external fun nativeCrash()
+
+  private external fun nativeAnr()
 
   private lateinit var remoteConfig: FirebaseRemoteConfig
 
@@ -32,9 +46,6 @@ class MainActivity : AppCompatActivity() {
     setContentView(R.layout.activity_main)
 
     findViewById<TextView>(R.id.greeting_text).text = getText(R.string.firebase_greetings)
-    findViewById<Button>(R.id.jvm_crash_button).setOnClickListener {
-      throw RuntimeException("JVM Crash")
-    }
 
     findViewById<Button>(R.id.fetch_button).setOnClickListener {
       remoteConfig = FirebaseRemoteConfig.getInstance()
@@ -44,5 +55,33 @@ class MainActivity : AppCompatActivity() {
         remoteConfig.activate()
       }
     }
+
+    findViewById<Button>(R.id.jvm_crash_button).setOnClickListener {
+      throw RuntimeException("JVM Crash")
+    }
+
+    findViewById<Button>(R.id.anr_button).setOnClickListener {
+      // Cause an ANR
+      while (true) {
+        Thread.sleep(1000)
+      }
+    }
+
+    findViewById<Button>(R.id.on_demand_fatal_button).setOnClickListener {
+      FirebaseCrashlytics.getInstance().recordFatalException(RuntimeException("This is an odf"))
+    }
+
+    findViewById<Button>(R.id.ndk_crash_button).setOnClickListener {
+      nativeCrash()
+    }
+
+    findViewById<Button>(R.id.native_anr_button).setOnClickListener {
+      nativeAnr()
+    }
+
+    findViewById<Button>(R.id.non_fatal_button).setOnClickListener {
+      FirebaseCrashlytics.getInstance().recordException(RuntimeException("This is an non-fatal"))
+    }
+
   }
 }
