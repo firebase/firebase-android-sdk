@@ -19,4 +19,9 @@
   <string name="firebase_greetings">Greetings from Firebase!</string>
   <string name="fetch_config">Fetch Config</string>
   <string name="jvm_crash">JVM Crash</string>
+  <string name="anr">ANR</string>
+  <string name="on_demand_fatal">On-demand Fatal</string>
+  <string name="ndk_crash">NDK Crash</string>
+  <string name="native_anr">Native ANR</string>
+  <string name="non_fatal">Non Fatal</string>
 </resources>
