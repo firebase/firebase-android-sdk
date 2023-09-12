@@ -66,9 +66,9 @@ public class RolloutsStateFactoryTest {
                 new JSONArray(
                     "["
                         + "{"
-                        + "\"rollout_id\": \"rollout_1\","
-                        + "\"variant_id\": \"control\","
-                        + "\"affected_parameter_keys\": [\""
+                        + "\"rolloutId\": \"rollout_1\","
+                        + "\"variantId\": \"control\","
+                        + "\"affectedParameterKeys\": [\""
                         + PARAMETER_KEY
                         + "\"]"
                         + "}]"))
