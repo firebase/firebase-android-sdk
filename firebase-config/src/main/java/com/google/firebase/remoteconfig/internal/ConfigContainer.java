@@ -37,9 +37,9 @@ public class ConfigContainer {
   static final String PERSONALIZATION_METADATA_KEY = "personalization_metadata_key";
   static final String TEMPLATE_VERSION_NUMBER_KEY = "template_version_number_key";
   static final String ROLLOUT_METADATA_KEY = "rollout_metadata_key";
-  static final String ROLLOUT_METADATA_AFFECTED_KEYS = "affectedParameterKeys";
-  static final String ROLLOUT_METADATA_ID = "rolloutId";
-  static final String ROLLOUT_METADATA_VARIANT_ID = "variantId";
+  public static final String ROLLOUT_METADATA_AFFECTED_KEYS = "affectedParameterKeys";
+  public static final String ROLLOUT_METADATA_ID = "rolloutId";
+  public static final String ROLLOUT_METADATA_VARIANT_ID = "variantId";
 
   private static final Date DEFAULTS_FETCH_TIME = new Date(0L);
 
