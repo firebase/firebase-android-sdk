@@ -269,7 +269,7 @@ public class CrashlyticsReportJsonTransformTest {
             .build());
     ImmutableList<Event.RolloutAssignment> rolloutsState =
         ImmutableList.from(rolloutAssignmentList);
-    Event rolloutsEvent = baseEvent.toBuilder().setRolloutsState(rolloutsState).build();
+    Event rolloutsEvent = baseEvent.toBuilder().setRollouts(rolloutsState).build();
     return rolloutsEvent;
   }
 

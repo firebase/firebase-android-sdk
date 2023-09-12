@@ -250,14 +250,17 @@ class MetaDataStore {
   }
 
   private static String rolloutsStateToJson(List<RolloutAssignment> rolloutsState) {
-    List<String> rolloutsStateJson = new ArrayList<>();
+    HashMap<String, JSONArray> jsonObject = new HashMap<>();
+    JSONArray rolloutsStateJsonArray = new JSONArray();
     for (int i = 0; i < rolloutsState.size(); i++) {
       String rolloutAssignmentJson =
           RolloutAssignment.ROLLOUT_ASSIGNMENT_JSON_ENCODER.encode(rolloutsState.get(i));
-      rolloutsStateJson.add(rolloutAssignmentJson);
+      try {
+        rolloutsStateJsonArray.put(new JSONObject(rolloutAssignmentJson));
+      } catch (JSONException e) {
+        Logger.getLogger().w("Exception parsing rollout assignment!", e);
+      }
     }
-    HashMap<String, JSONArray> jsonObject = new HashMap<>();
-    JSONArray rolloutsStateJsonArray = new JSONArray(rolloutsStateJson);
     jsonObject.put(RolloutAssignmentList.ROLLOUTS_STATE, rolloutsStateJsonArray);
 
     return new JSONObject(jsonObject).toString();

@@ -345,7 +345,7 @@ public class CrashlyticsReportTest {
 
     final ImmutableList<Event.RolloutAssignment> rolloutsState =
         ImmutableList.from(rolloutAssignmentList);
-    final Event eventWithRolloutsState = event.toBuilder().setRolloutsState(rolloutsState).build();
+    final Event eventWithRolloutsState = event.toBuilder().setRollouts(rolloutsState).build();
     return eventWithRolloutsState;
   }
 
