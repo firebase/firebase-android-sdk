@@ -20,7 +20,7 @@ import com.google.firebase.firestore.core.FirestoreClient;
 
 /**
  * Persistent cache indexes can improve performance of local query execution. The
- * {@code PersistentCacheIndexManager} provides control of index creation and lifecycle.
+ * {@code PersistentCacheIndexManager} controls index creation and lifecycle.
  *
  * <p>This is not the same as Cloud Firestore Indexes. Persistent cache indexes are optional indexes
  * that only exist within the client to assist in local query execution.
