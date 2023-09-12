@@ -50,12 +50,15 @@ android {
 dependencies {
   implementation("androidx.datastore:datastore-preferences:1.0.0")
   implementation("com.google.android.datatransport:transport-api:3.0.0")
+  implementation("com.google.firebase:firebase-annotations:16.2.0")
   api(project(":firebase-common"))
-  implementation("com.google.firebase:firebase-components:17.1.0")
+  api(project(":firebase-components"))
   implementation("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation("com.google.firebase:firebase-encoders:17.0.0")
-  api(project(":firebase-installations-interop"))
-  api(project(":firebase-annotations"))
+  implementation("com.google.firebase:firebase-installations-interop:17.1.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
 
   implementation(libs.androidx.annotation)
 
@@ -66,7 +69,6 @@ dependencies {
   runtimeOnly(project(":firebase-installations")) {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
-    exclude(group = "com.google.firebase", module = "firebase-installations-interop")
   }
 
   kapt(project(":encoders:firebase-encoders-processor"))
