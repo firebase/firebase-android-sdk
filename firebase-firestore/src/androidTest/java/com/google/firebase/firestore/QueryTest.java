@@ -1178,6 +1178,170 @@ public class QueryTest {
     }
   }
 
+  @Test
+  public void
+      bloomFilterShouldAvertAFullRequeryWhenDocumentsWereAddedDeletedRemovedUpdatedAndUnchangedSinceTheResumeToken()
+          throws Exception {
+    // TODO(b/291365820): Stop skipping this test when running against the Firestore emulator once
+    // the emulator is improved to include a bloom filter in the existence filter messages that it
+    // sends.
+    assumeFalse(
+        "Skip this test when running against the Firestore emulator because the emulator does not "
+            + "include a bloom filter when it sends existence filter messages, making it "
+            + "impossible for this test to verify the correctness of the bloom filter.",
+        isRunningAgainstEmulator());
+
+    // Prepare the names and contents of the 20 documents to create.
+    Map<String, Map<String, Object>> testData = new HashMap<>();
+    for (int i = 0; i < 20; i++) {
+      testData.put("doc" + (1000 + i), map("key", 42, "removed", false));
+    }
+
+    // Each iteration of the "while" loop below runs a single iteration of the test. The test will
+    // be run multiple times only if a bloom filter false positive occurs.
+    int attemptNumber = 0;
+    while (true) {
+      attemptNumber++;
+
+      // Create 20 documents in a new collection.
+      CollectionReference collection = testCollectionWithDocs(testData);
+      Query query = collection.whereEqualTo("removed", false);
+
+      // Run a query to populate the local cache with the 20 documents and a resume token.
+      List<DocumentReference> createdDocuments = new ArrayList<>();
+      {
+        QuerySnapshot querySnapshot = waitFor(query.get());
+        assertWithMessage("querySnapshot1").that(querySnapshot.size()).isEqualTo(20);
+        for (DocumentSnapshot documentSnapshot : querySnapshot.getDocuments()) {
+          createdDocuments.add(documentSnapshot.getReference());
+        }
+      }
+      assertWithMessage("createdDocuments").that(createdDocuments).hasSize(20);
+
+      // Out of the 20 existing documents, leave 5 docs untouched, delete 5 docs, remove 5 docs,
+      // update 5 docs, and add 15 new docs.
+      HashSet<String> deletedDocumentIds = new HashSet<>();
+      HashSet<String> removedDocumentIds = new HashSet<>();
+      HashSet<String> updatedDocumentIds = new HashSet<>();
+      HashSet<String> addedDocumentIds = new HashSet<>();
+
+      {
+        FirebaseFirestore db2 = testFirestore();
+        WriteBatch batch = db2.batch();
+
+        for (int i = 0; i < createdDocuments.size(); i += 4) {
+          DocumentReference documentToDelete = db2.document(createdDocuments.get(i).getPath());
+          batch.delete(documentToDelete);
+          deletedDocumentIds.add(documentToDelete.getId());
+        }
+        assertWithMessage("deletedDocumentIds").that(deletedDocumentIds).hasSize(5);
+
+        // Update 5 documents to no longer match the query.
+        for (int i = 1; i < createdDocuments.size(); i += 4) {
+          DocumentReference documentToRemove = db2.document(createdDocuments.get(i).getPath());
+          batch.update(documentToRemove, map("removed", true));
+          removedDocumentIds.add(documentToRemove.getId());
+        }
+        assertWithMessage("removedDocumentIds").that(removedDocumentIds).hasSize(5);
+
+        // Update 5 documents, but ensure they still match the query.
+        for (int i = 2; i < createdDocuments.size(); i += 4) {
+          DocumentReference documentToUpdate = db2.document(createdDocuments.get(i).getPath());
+          batch.update(documentToUpdate, map("key", 43));
+          updatedDocumentIds.add(documentToUpdate.getId());
+        }
+        assertWithMessage("updatedDocumentIds").that(updatedDocumentIds).hasSize(5);
+
+        for (int i = 0; i < 15; i += 1) {
+          DocumentReference documentToUpdate =
+              db2.document(collection.getPath() + "/newDoc" + (1000 + i));
+          batch.set(documentToUpdate, map("key", 42, "removed", false));
+          addedDocumentIds.add(documentToUpdate.getId());
+        }
+
+        // Ensure the sets above are disjoint.
+        HashSet<String> mergedSet = new HashSet<>();
+        mergedSet.addAll(deletedDocumentIds);
+        mergedSet.addAll(removedDocumentIds);
+        mergedSet.addAll(updatedDocumentIds);
+        mergedSet.addAll(addedDocumentIds);
+        assertWithMessage("mergedSet").that(mergedSet).hasSize(30);
+
+        waitFor(batch.commit());
+      }
+
+      // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
+      // existence filter rather than "delete" events when the query is resumed.
+      Thread.sleep(10000);
+
+      // Resume the query and save the resulting snapshot for verification. Use some internal
+      // testing hooks to "capture" the existence filter mismatches to verify that Watch sent a
+      // bloom filter, and it was used to avert a full requery.
+      AtomicReference<QuerySnapshot> snapshot2Ref = new AtomicReference<>();
+      ArrayList<ExistenceFilterMismatchInfo> existenceFilterMismatches =
+          captureExistenceFilterMismatches(
+              () -> {
+                QuerySnapshot querySnapshot = waitFor(query.get());
+                snapshot2Ref.set(querySnapshot);
+              });
+      QuerySnapshot snapshot2 = snapshot2Ref.get();
+
+      // Verify that the snapshot from the resumed query contains the expected documents; that is,
+      // 10 existing documents that still match the query, and 15 documents that are newly added.
+      HashSet<String> actualDocumentIds = new HashSet<>();
+      for (DocumentSnapshot documentSnapshot : snapshot2.getDocuments()) {
+        actualDocumentIds.add(documentSnapshot.getId());
+      }
+      HashSet<String> expectedDocumentIds = new HashSet<>();
+      for (DocumentReference documentRef : createdDocuments) {
+        if (!deletedDocumentIds.contains(documentRef.getId())
+            && !removedDocumentIds.contains(documentRef.getId())) {
+          expectedDocumentIds.add(documentRef.getId());
+        }
+      }
+      expectedDocumentIds.addAll(addedDocumentIds);
+      assertWithMessage("snapshot2.docs")
+          .that(actualDocumentIds)
+          .containsExactlyElementsIn(expectedDocumentIds);
+      assertWithMessage("actualDocumentIds").that(actualDocumentIds).hasSize(25);
+
+      // Verify that Watch sent an existence filter with the correct counts when the query was
+      // resumed.
+      assertWithMessage("Watch should have sent exactly 1 existence filter")
+          .that(existenceFilterMismatches)
+          .hasSize(1);
+      ExistenceFilterMismatchInfo existenceFilterMismatchInfo = existenceFilterMismatches.get(0);
+      assertWithMessage("localCacheCount")
+          .that(existenceFilterMismatchInfo.localCacheCount())
+          .isEqualTo(35);
+      assertWithMessage("existenceFilterCount")
+          .that(existenceFilterMismatchInfo.existenceFilterCount())
+          .isEqualTo(25);
+
+      // Verify that Watch sent a valid bloom filter.
+      ExistenceFilterBloomFilterInfo bloomFilter = existenceFilterMismatchInfo.bloomFilter();
+      assertWithMessage("The bloom filter specified in the existence filter")
+          .that(bloomFilter)
+          .isNotNull();
+
+      // Verify that the bloom filter was successfully used to avert a full requery. If a false
+      // positive occurred then retry the entire test. Although statistically rare, false positives
+      // are expected to happen occasionally. When a false positive _does_ happen, just retry the
+      // test with a different set of documents. If that retry _also_ experiences a false positive,
+      // then fail the test because that is so improbable that something must have gone wrong.
+      if (attemptNumber == 1 && !bloomFilter.applied()) {
+        continue;
+      }
+
+      assertWithMessage("bloom filter successfully applied with attemptNumber=" + attemptNumber)
+          .that(bloomFilter.applied())
+          .isTrue();
+
+      // Break out of the test loop now that the test passes.
+      break;
+    }
+  }
+
   private static String unicodeNormalize(String s) {
     return Normalizer.normalize(s, Normalizer.Form.NFC);
   }

@@ -560,7 +560,7 @@ class CrashlyticsController {
 
     StaticSessionData.AppData appData = createAppData(idManager, this.appData);
     StaticSessionData.OsData osData = createOsData();
-    StaticSessionData.DeviceData deviceData = createDeviceData();
+    StaticSessionData.DeviceData deviceData = createDeviceData(context);
 
     nativeComponent.prepareNativeSession(
         sessionIdentifier,
@@ -770,7 +770,7 @@ class CrashlyticsController {
         VERSION.RELEASE, VERSION.CODENAME, CommonUtils.isRooted());
   }
 
-  private static StaticSessionData.DeviceData createDeviceData() {
+  private static StaticSessionData.DeviceData createDeviceData(Context context) {
     final StatFs statFs = new StatFs(Environment.getDataDirectory().getPath());
     final long diskSpace = (long) statFs.getBlockCount() * (long) statFs.getBlockSize();
 
@@ -778,7 +778,7 @@ class CrashlyticsController {
         CommonUtils.getCpuArchitectureInt(),
         Build.MODEL,
         Runtime.getRuntime().availableProcessors(),
-        CommonUtils.getTotalRamInBytes(),
+        CommonUtils.calculateTotalRamInBytes(context),
         diskSpace,
         CommonUtils.isEmulator(),
         CommonUtils.getDeviceState(),
