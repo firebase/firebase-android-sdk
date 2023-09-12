@@ -124,7 +124,6 @@ public class ComponentRuntime implements ComponentContainer, ComponentLoader {
         }
       }
 
-
       // kotlinx.coroutines.CoroutineDispatcher interfaces could be provided by both new version of
       // firebase-common and old version of firebase-common-ktx. In this scenario take the first
       // interface which was provided.

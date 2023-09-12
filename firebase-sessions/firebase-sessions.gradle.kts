@@ -63,9 +63,10 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  runtimeOnly("com.google.firebase:firebase-installations:17.1.3") {
+  runtimeOnly(project(":firebase-installations")) {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
+    exclude(group = "com.google.firebase", module = "firebase-installations-interop")
   }
 
   kapt(project(":encoders:firebase-encoders-processor"))
