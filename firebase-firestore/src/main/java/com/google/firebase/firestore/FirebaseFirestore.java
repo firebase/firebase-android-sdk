@@ -414,7 +414,7 @@ public class FirebaseFirestore {
    * object.
    *
    * <p>This is not the same as Cloud Firestore Indexes. Persistent cache indexes are optional
-   * indexes that only exist within the client to assist in local query execution.
+   * indexes that only exist within the SDK to assist in local query execution.
    *
    * @return The {@code PersistentCacheIndexManager} instance or null if local persistent storage is
    *     not in use.

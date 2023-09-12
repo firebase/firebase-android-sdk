@@ -23,7 +23,7 @@ import com.google.firebase.firestore.core.FirestoreClient;
  * PersistentCacheIndexManager} controls index creation and lifecycle.
  *
  * <p>This is not the same as Cloud Firestore Indexes. Persistent cache indexes are optional indexes
- * that only exist within the client to assist in local query execution.
+ * that only exist within the SDK to assist in local query execution.
  *
  * <p>To get an instance, call {@link FirebaseFirestore#getPersistentCacheIndexManager()}.
  */
@@ -38,7 +38,7 @@ public final class PersistentCacheIndexManager {
 
   /**
    * Enables the SDK to create persistent cache indexes automatically for local query execution when
-   * thr SDK believes cache indexes can help improves performance.
+   * the SDK believes cache indexes can help improves performance.
    *
    * <p>This feature is disabled by default.
    */
