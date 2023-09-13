@@ -55,7 +55,7 @@ dependencies {
   api(project(":firebase-components"))
   implementation("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation("com.google.firebase:firebase-encoders:17.0.0")
-  implementation("com.google.firebase:firebase-installations-interop:17.1.0") {
+  implementation(project(":firebase-installations-interop")) {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
