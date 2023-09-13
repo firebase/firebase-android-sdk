@@ -445,9 +445,8 @@ public class CrashlyticsReportJsonTransform {
         case "log":
           builder.setLog(parseEventLog(jsonReader));
           break;
-        case "rolloutsState":
-          builder.setRolloutsState(
-              parseArray(jsonReader, CrashlyticsReportJsonTransform::parseEventRolloutsState));
+        case "rollouts":
+          builder.setRollouts(parseEventRolloutsState(jsonReader));
           break;
         default:
           jsonReader.skipValue();
@@ -776,8 +775,30 @@ public class CrashlyticsReportJsonTransform {
   }
 
   @NonNull
-  private static Event.RolloutAssignment parseEventRolloutsState(@NonNull JsonReader jsonReader)
+  private static Event.RolloutsState parseEventRolloutsState(@NonNull JsonReader jsonReader)
       throws IOException {
+    Event.RolloutsState.Builder builder = Event.RolloutsState.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "assignments":
+          builder.setRolloutAssignments(
+              parseArray(jsonReader, CrashlyticsReportJsonTransform::parseEventRolloutsAssignment));
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
+      }
+    }
+    jsonReader.endObject();
+    return builder.build();
+  }
+
+  @NonNull
+  private static Event.RolloutAssignment parseEventRolloutsAssignment(
+      @NonNull JsonReader jsonReader) throws IOException {
     Event.RolloutAssignment.Builder builder = Event.RolloutAssignment.builder();
 
     jsonReader.beginObject();

@@ -56,6 +56,7 @@ public class RolloutAssignmentList {
     return rolloutsState.addAll(newMapList);
   }
 
+  // TODO: Nest assignments as a field in RolloutsState
   public List<CrashlyticsReport.Session.Event.RolloutAssignment> getReportRolloutsState() {
     List<RolloutAssignment> rolloutAssignments = getRolloutAssignmentList();
     List<CrashlyticsReport.Session.Event.RolloutAssignment> rolloutsState =
