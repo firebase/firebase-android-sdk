@@ -356,8 +356,8 @@ public class FirebaseFirestore {
    * @return A task that resolves once all indices are successfully configured.
    * @throws IllegalArgumentException if the JSON format is invalid
    * @deprecated Instead of creating cache indexes manually, consider using {@link
-   *     PersistentCacheIndexManager#enableIndexAutoCreation()} to let SDK decide whether to create
-   *     cache indexes for queries running locally.
+   *     PersistentCacheIndexManager#enableIndexAutoCreation()} to let the SDK decide whether to
+   *     create cache indexes for queries running locally.
    */
   @Deprecated
   @PreviewApi
