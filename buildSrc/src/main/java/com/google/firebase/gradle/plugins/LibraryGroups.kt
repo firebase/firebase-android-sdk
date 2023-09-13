@@ -32,17 +32,19 @@ fun computeLibraryGroups(project: Project): Map<String, List<FirebaseLibraryExte
   val libraryGroups =
     project.subprojects.mapNotNull { it.firebaseLibraryOrNull }.groupBy { it.libraryGroupName }
 
-  // TODO(davidmotson): Confirm the right location for this functionality
-  for (libraryGroup in libraryGroups.values) {
+  return libraryGroups
+}
+
+fun fixLibraryGroupVersions(libraryGroups: Map<String, List<FirebaseLibraryExtension>>) {
+  for ((name, libraryGroup) in libraryGroups) {
     val maxVersion =
       libraryGroup.mapNotNull { it.moduleVersion }.maxOrNull()?.toString() ?: continue
-    for (library in libraryGroup) {
-      if (library.moduleVersion == null) {
-        library.project.version = maxVersion
+    for (firebaseExtension in libraryGroup) {
+      if (ModuleVersion.fromStringOrNull(firebaseExtension.project.version.toString()) == null) {
+        firebaseExtension.project.version = maxVersion.toString()
       }
     }
   }
-  return libraryGroups
 }
 
 /**

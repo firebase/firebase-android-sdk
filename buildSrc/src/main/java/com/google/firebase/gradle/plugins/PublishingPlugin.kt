@@ -71,6 +71,7 @@ abstract class PublishingPlugin : Plugin<Project> {
     project.gradle.projectsEvaluated {
       val allFirebaseLibraries = project.subprojects.mapNotNull { it.firebaseLibraryOrNull }
       val libraryGroups = computeLibraryGroups(project)
+      fixLibraryGroupVersions(libraryGroups)
       val releaseMetadata = computeReleaseMetadata(project, allFirebaseLibraries, libraryGroups)
 
       val releasingFirebaseLibraries = releaseMetadata?.releasingLibraries.orEmpty()
