@@ -51,18 +51,22 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
     exclude(group = "com.google.firebase", module = "firebase-installations")
+    exclude(group = "com.google.firebase", module = "firebase-installations-interop")
   }
+  implementation(project(":firebase-installations-interop"))
 
   implementation(project(":firebase-perf")){
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
     exclude(group = "com.google.firebase", module = "firebase-installations")
+    exclude(group = "com.google.firebase", module = "firebase-installations-interop")
   }
 
   implementation(project(":firebase-sessions")){
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
     exclude(group = "com.google.firebase", module = "firebase-installations")
+    exclude(group = "com.google.firebase", module = "firebase-installations-interop")
   }
 
   api(project(":firebase-installations"))
