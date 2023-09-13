@@ -14,6 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static com.google.firebase.crashlytics.internal.stacktrace.TrimmedThrowableData.makeTrimmedThrowableData;
+
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
 import android.content.Context;
@@ -97,7 +99,7 @@ public class CrashlyticsReportDataCapture {
       boolean includeAllThreads) {
     final int orientation = context.getResources().getConfiguration().orientation;
     final TrimmedThrowableData trimmedEvent =
-        new TrimmedThrowableData(event, stackTraceTrimmingStrategy);
+        makeTrimmedThrowableData(event, stackTraceTrimmingStrategy);
 
     return Event.builder()
         .setType(type)
