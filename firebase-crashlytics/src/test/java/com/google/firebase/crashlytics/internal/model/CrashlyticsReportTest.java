@@ -43,7 +43,7 @@ public class CrashlyticsReportTest {
     assertNotNull(withEventsReport.getSession().getEvents());
     assertEquals(2, withEventsReport.getSession().getEvents().size());
     // no rollouts feature so we don't expect any rollouts state info within a event
-    assertNull(withEventsReport.getSession().getEvents().get(0).getRolloutsState());
+    assertNull(withEventsReport.getSession().getEvents().get(0).getRollouts());
   }
 
   @Test
@@ -206,7 +206,7 @@ public class CrashlyticsReportTest {
     assertNotNull(withEventsReport.getSession().getEvents());
     assertEquals(1, withEventsReport.getSession().getEvents().size());
 
-    assertNotNull(withEventsReport.getSession().getEvents().get(0).getRolloutsState());
+    assertNotNull(withEventsReport.getSession().getEvents().get(0).getRollouts());
   }
 
   private static CrashlyticsReport makeTestReport() {
@@ -344,9 +344,11 @@ public class CrashlyticsReportTest {
             .setTemplateVersion(4)
             .build());
 
-    final ImmutableList<Event.RolloutAssignment> rolloutsState =
-        ImmutableList.from(rolloutAssignmentList);
-    final Event eventWithRolloutsState = event.toBuilder().setRolloutsState(rolloutsState).build();
+    Event.RolloutsState rolloutsState =
+        Event.RolloutsState.builder()
+            .setRolloutAssignments(ImmutableList.from(rolloutAssignmentList))
+            .build();
+    final Event eventWithRolloutsState = event.toBuilder().setRollouts(rolloutsState).build();
     return eventWithRolloutsState;
   }
 
