@@ -251,7 +251,10 @@ final class SQLiteIndexManager implements IndexManager {
       IndexType type = getIndexType(subTarget);
       if (type == IndexType.NONE || type == IndexType.PARTIAL) {
         TargetIndexMatcher targetIndexMatcher = new TargetIndexMatcher(subTarget);
-        addFieldIndex(targetIndexMatcher.buildTargetIndex());
+        FieldIndex fieldIndex = targetIndexMatcher.buildTargetIndex();
+        if (fieldIndex != null) {
+          addFieldIndex(fieldIndex);
+        }
       }
     }
   }
