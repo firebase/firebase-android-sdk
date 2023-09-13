@@ -259,7 +259,10 @@ public class CrashlyticsReportJsonTransformTest {
             .setParameterKey("my_color_feature")
             .setTemplateVersion(2)
             .build());
-    Event rolloutsEvent = baseEvent.toBuilder().setRolloutsState(rolloutAssignmentList).build();
+
+    Event.RolloutsState rolloutsState =
+        Event.RolloutsState.builder().setRolloutAssignments(rolloutAssignmentList).build();
+    Event rolloutsEvent = baseEvent.toBuilder().setRollouts(rolloutsState).build();
     return rolloutsEvent;
   }
 
