@@ -94,7 +94,7 @@ dependencies {
          exclude group: "com.google.firebase", module: "firebase-components"
          exclude group: "com.google.firebase", module: "firebase-annotations"
      }
-    implementation(project(":firebase-annotations"))
+    implementation("com.google.firebase:firebase-annotations:16.2.0")
     implementation(project(":firebase-common"))
     implementation(project(":firebase-components"))
 
