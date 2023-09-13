@@ -310,7 +310,8 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     }
 
     CrashlyticsReport.Session.Event.Builder eventBuilder = capturedEvent.toBuilder();
-    eventBuilder.setRollouts(CrashlyticsReport.Session.Event.RolloutsState.builder()
+    eventBuilder.setRollouts(
+        CrashlyticsReport.Session.Event.RolloutsState.builder()
             .setRolloutAssignments(ImmutableList.from(reportRolloutAssignments))
             .build());
     return eventBuilder.build();

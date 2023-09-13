@@ -1068,9 +1068,11 @@ public abstract class CrashlyticsReport {
         @AutoValue.Builder
         public abstract static class Builder {
           @NonNull
-          public abstract RolloutsState.Builder setRolloutAssignments(@Nullable ImmutableList<RolloutAssignment> rolloutAssignments);
+          public abstract RolloutsState.Builder setRolloutAssignments(
+              @Nullable ImmutableList<RolloutAssignment> rolloutAssignments);
 
-          @NonNull public abstract RolloutsState build();
+          @NonNull
+          public abstract RolloutsState build();
         }
       }
 
@@ -1164,8 +1166,7 @@ public abstract class CrashlyticsReport {
         public abstract Builder setLog(@NonNull Log value);
 
         @Nullable
-        public abstract Builder setRollouts(
-           @NonNull RolloutsState rolloutsState);
+        public abstract Builder setRollouts(@NonNull RolloutsState rolloutsState);
 
         @NonNull
         public abstract Event build();
