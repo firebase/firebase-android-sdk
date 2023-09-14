@@ -240,7 +240,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       allFirebaseLibraries.filter { it.artifactId.get() in projectNames }.toSet()
     while (true) {
       val libraryGroupsToRelease =
-        librariesToRelease.flatMap { it.projectLevelDeps }.map { it.libraryGroupName }
+        librariesToRelease.flatMap { it.projectLevelDeps + it }.map { it.libraryGroupName }
       val newLibrariesToRelease =
         libraryGroups
           .filterKeys { it in libraryGroupsToRelease }

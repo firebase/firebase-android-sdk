@@ -113,7 +113,10 @@ class PublishingPluginTests {
         Project(name = "childProject2", version = "0.9", projectDependencies = setOf(project1))
 
       withProjects(project1, project2)
-      publishAndFail(project2)
+      publish(project2)
+
+      project1.pomOrNull().shouldNotBeNull()
+      project2.pom.dependencies shouldHaveSingleElement project1.toArtifact()
     }
   }
 
