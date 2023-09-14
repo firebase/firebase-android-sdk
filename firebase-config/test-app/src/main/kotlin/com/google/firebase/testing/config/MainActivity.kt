@@ -21,6 +21,7 @@ import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.tasks.Task
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.crashlytics.recordFatalException
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
@@ -51,7 +52,9 @@ class MainActivity : AppCompatActivity() {
       remoteConfig = FirebaseRemoteConfig.getInstance()
       remoteConfig.fetch(0).addOnCompleteListener {
         Log.d("RolloutsTestApp", "Fetched config!")
-        remoteConfig.activate()
+        remoteConfig.activate().addOnCompleteListener { didActivate: Task<Boolean> ->
+          Log.d("RolloutsTestApp", "Activate completed. Did activate? : " + didActivate.result)
+        }
       }
     }
 
