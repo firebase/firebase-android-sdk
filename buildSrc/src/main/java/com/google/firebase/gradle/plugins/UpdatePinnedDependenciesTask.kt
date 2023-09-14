@@ -60,7 +60,8 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
 
   @TaskAction
   fun updateBuildFileDependencies() {
-    val dependenciesToChange = findProjectLevelDependenciesToChange()
+    val libraryGroups = computeLibraryGroups(project.rootProject)
+    val dependenciesToChange = findProjectLevelDependenciesToChange(libraryGroups)
 
     if (dependenciesToChange.isEmpty()) throw StopExecutionException("No libraries to change.")
 
@@ -107,11 +108,12 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
       )
   }
 
-  private fun findProjectLevelDependenciesToChange(): List<FirebaseLibraryExtension> {
-    val firebaseLibrary = project.firebaseLibrary
-
-    return firebaseLibrary.projectLevelDependencies - firebaseLibrary.librariesToRelease
-  }
+  private fun findProjectLevelDependenciesToChange(
+    libraryGroups: Map<String, List<FirebaseLibraryExtension>>
+  ) =
+    with(project.firebaseLibrary) {
+      projectLevelDependencies - libraryGroups.getOrDefault(libraryGroupName, emptyList())
+    }
 
   private val FirebaseLibraryExtension.projectLevelDependencies: List<FirebaseLibraryExtension>
     get() = resolveProjectLevelDependencies().filterNot { it.path in DEPENDENCIES_TO_IGNORE }
