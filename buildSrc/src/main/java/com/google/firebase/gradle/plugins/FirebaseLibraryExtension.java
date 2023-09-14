@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.inject.Inject;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
@@ -107,9 +106,7 @@ public class FirebaseLibraryExtension {
     action.execute(testLab);
   }
 
-  /**
-   * Returns a set of all project level dependencies for this project.
-   */
+  /** Returns a set of all project level dependencies for this project. */
   public Set<FirebaseLibraryExtension> getProjectLevelDeps() {
     return this.project
         .getConfigurations()
