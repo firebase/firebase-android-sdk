@@ -218,10 +218,10 @@ abstract class PublishingPlugin : Plugin<Project> {
 
     if (projectsToPublish == null) return null
 
-    val projectNames = projectsToPublish.split(",")
+    val publishingProjects =
+      allFirebaseLibraries.filter { it.artifactId.get() in projectsToPublish.split(",") }
 
-    val librariesToRelease =
-      getDeepTransitiveReleases(allFirebaseLibraries, projectNames, libraryGroups).toList()
+    val librariesToRelease = getDeepTransitiveReleases(publishingProjects, libraryGroups)
 
     return ReleaseMetadata(librariesToRelease, releaseName)
   }
@@ -231,27 +231,21 @@ abstract class PublishingPlugin : Plugin<Project> {
    * can be released. This includes all project level dependencies, and anything in the same library
    * group.
    */
-  private fun getDeepTransitiveReleases(
-    allFirebaseLibraries: List<FirebaseLibraryExtension>,
-    projectNames: List<String>,
+  private tailrec fun getDeepTransitiveReleases(
+    inputProjects: List<FirebaseLibraryExtension>,
     libraryGroups: Map<String, List<FirebaseLibraryExtension>>
-  ): Set<FirebaseLibraryExtension> {
-    var librariesToRelease =
-      allFirebaseLibraries.filter { it.artifactId.get() in projectNames }.toSet()
-    while (true) {
-      val libraryGroupsToRelease =
-        librariesToRelease.flatMap { it.projectLevelDeps + it }.map { it.libraryGroupName }
-      val newLibrariesToRelease =
-        libraryGroups
-          .filterKeys { it in libraryGroupsToRelease }
-          .flatMap { it.value }
-          .distinctBy { it.artifactId.get() }
-          .toSet()
-      if (librariesToRelease.containsAll(newLibrariesToRelease)) {
-        return librariesToRelease
-      }
-      librariesToRelease = newLibrariesToRelease
-    }
+  ): List<FirebaseLibraryExtension> {
+    val libraryGroupsToRelease =
+      inputProjects
+        .flatMap { it.resolveProjectLevelDependencies() + it }
+        .map { it.libraryGroupName }
+    val projectsToRelease =
+      libraryGroups
+        .filterKeys { it in libraryGroupsToRelease }
+        .flatMap { it.value }
+        .distinctBy { it.artifactId.get() }
+    return if (inputProjects == projectsToRelease) inputProjects
+    else getDeepTransitiveReleases(projectsToRelease, libraryGroups)
   }
 
   private fun releaseMetadataFromReleaseConfig(
