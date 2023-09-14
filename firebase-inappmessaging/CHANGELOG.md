@@ -1,5 +1,5 @@
 # Unreleased
-* [changed] Firelog to clearcut migration.
+* [changed] Updated internal logging backend.
 
 # 20.3.3
 * [unchanged] Updated internal Dagger dependency.

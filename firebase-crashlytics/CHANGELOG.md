@@ -1,5 +1,5 @@
 # Unreleased
-* [feature] Include Firebase sessions with NDK crashes and ANRs.
+* [feature] Expanded `firebase-sessions` library integration to work with NDK crashes and ANRs.
 * [changed] Improved reliability when reporting memory usage.
 
 # 18.4.1
