@@ -1,8 +1,8 @@
 # Unreleased
-* [feature] Add the option to allow the SDK to create cache indexes automatically to
-  improve query execution locally. 
+* [feature] Added the option to allow the SDK to create cache indexes automatically to
+  improve query execution locally. See
   [`db.getPersistentCacheIndexManager().enableIndexAutoCreation()`](/docs/reference/android/com/google/firebase/firestore/PersistentCacheIndexManager#enableIndexAutoCreation())
-  ([GitHub [#4987](//github.com/firebase/firebase-android-sdk/pull/4987){: .external})
+  ([GitHub [#4987](//github.com/firebase/firebase-android-sdk/pull/4987){: .external}).
 
 # 24.7.1
 * [fixed] Implement equals method on Filter class. [#5210](//github.com/firebase/firebase-android-sdk/issues/5210)
