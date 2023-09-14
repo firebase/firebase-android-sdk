@@ -44,6 +44,8 @@
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5274"
             }
         ],
+        "firebase-crashlytics/ktx": [
+        ],
         "firebase-crashlytics-ndk": [
             {
                 "commitId": "c3b82109cfb09226edb20bb688dbef5140acc954",
@@ -54,9 +56,15 @@
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5306"
             }
         ],
-        "firebase-crashlytics/ktx": [
-        ],
         "firebase-firestore": [
+            {
+                "commitId": "87c1f02d724fd5387c0e45eb1e61720bdea76163",
+                "prId": "5309",
+                "author": "Daymon",
+                "message": "Minor bump for firestore (#5309)\n\nPer [b/299650417](https://b.corp.google.com/issues/299650417),\r\n\r\nThis bumps `firebase-firestore` by a minor version, as should've been\r\ndone by the deprecation of a public method in #5256.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/87c1f02d724fd5387c0e45eb1e61720bdea76163",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5309"
+            },
             {
                 "commitId": "7bfaf837c14bf398292207582e0cc0bf17372eaf",
                 "prId": "5298",
@@ -92,10 +100,6 @@
         ],
         "firebase-firestore/ktx": [
         ],
-        "firebase-inappmessaging/ktx": [
-        ],
-        "firebase-inappmessaging-display/ktx": [
-        ],
         "firebase-inappmessaging-display": [
             {
                 "commitId": "2d3b2be7d2d00d693eb74986f20a6265c918848f",
@@ -123,11 +127,15 @@
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2d3b2be7d2d00d693eb74986f20a6265c918848f",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5245"
             }
+        ],
+        "firebase-inappmessaging-display/ktx": [
+        ],
+        "firebase-inappmessaging/ktx": [
         ]
     },
     "changedLibrariesWithNoChangelog": [
-        ":firebase-config",
         ":firebase-config:ktx",
+        ":firebase-config",
         ":firebase-perf",
         ":firebase-perf:ktx",
         ":transport:transport-runtime"

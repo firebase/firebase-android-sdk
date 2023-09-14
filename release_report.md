@@ -18,16 +18,19 @@
 * Persist the aqs session id on new aqs session (#5274)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5274) [commit](https://github.com/firebase/firebase-android-sdk/commit/b76de4fdf48576eaf26160b4288ee404e664ac0b)  [Matthew Robertson]
 
+## firebase-crashlytics/ktx
+      
+
 ## firebase-crashlytics-ndk
       
 * Add missing changelog entry to firebase-crashlytics-ndk (#5306)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5306) [commit](https://github.com/firebase/firebase-android-sdk/commit/c3b82109cfb09226edb20bb688dbef5140acc954)  [Daymon]
 
-## firebase-crashlytics/ktx
-      
-
 ## firebase-firestore
       
+* Minor bump for firestore (#5309)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/5309) [commit](https://github.com/firebase/firebase-android-sdk/commit/87c1f02d724fd5387c0e45eb1e61720bdea76163)  [Daymon]
+
 * Improve auto cache index creation documentation readability (#5298)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5298) [commit](https://github.com/firebase/firebase-android-sdk/commit/7bfaf837c14bf398292207582e0cc0bf17372eaf)  [cherylEnkidu]
 
@@ -43,12 +46,6 @@
 ## firebase-firestore/ktx
       
 
-## firebase-inappmessaging/ktx
-      
-
-## firebase-inappmessaging-display/ktx
-      
-
 ## firebase-inappmessaging-display
       
 * [FIAM] Firelog to clearcut migration (#5245)   
@@ -62,10 +59,16 @@
 * [FIAM] Firelog to clearcut migration (#5245)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/5245) [commit](https://github.com/firebase/firebase-android-sdk/commit/2d3b2be7d2d00d693eb74986f20a6265c918848f)  [Eldhose M Babu]
 
+## firebase-inappmessaging-display/ktx
+      
+
+## firebase-inappmessaging/ktx
+      
+
 
 ## SDKs with changes, but no changelogs
-:firebase-config  
 :firebase-config:ktx  
+:firebase-config  
 :firebase-perf  
 :firebase-perf:ktx  
 :transport:transport-runtime
