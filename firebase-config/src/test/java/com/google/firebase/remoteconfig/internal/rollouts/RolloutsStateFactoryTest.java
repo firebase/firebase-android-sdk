@@ -96,6 +96,33 @@ public class RolloutsStateFactoryTest {
   }
 
   @Test
+  public void getActiveRolloutsState_rolloutsMetadataMultipleKeys_keepsFirstKey() throws Exception {
+    when(mockConfigGetParameterHandler.getString(PARAMETER_KEY)).thenReturn(PARAMETER_VALUE);
+
+    // Add a key to affectedParameterKeys in configContainerWithRollout
+    ConfigContainer configContainerWithRolloutWithMultipleKeys =
+        ConfigContainer.newBuilder()
+            .withRolloutMetadata(
+                new JSONArray(
+                    "["
+                        + "{"
+                        + "\"rolloutId\": \"rollout_1\","
+                        + "\"variantId\": \"control\","
+                        + "\"affectedParameterKeys\": [\""
+                        + PARAMETER_KEY
+                        + "\", \"second_key\""
+                        + "]"
+                        + "}]"))
+            .withTemplateVersionNumber(1L)
+            .build();
+
+    RolloutsState actual =
+        factory.getActiveRolloutsState(configContainerWithRolloutWithMultipleKeys);
+
+    assertThat(actual).isEqualTo(rolloutsState);
+  }
+
+  @Test
   public void getActiveRolloutsState_jsonException_throwsRemoteConfigException() throws Exception {
     when(mockConfigGetParameterHandler.getString(PARAMETER_KEY)).thenReturn(PARAMETER_VALUE);
     JSONArray rolloutMetadatamMissingVariantId =
