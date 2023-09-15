@@ -54,12 +54,12 @@ dependencies {
   // "implementation" dependencies. The alternative would be to make common an "api" dep of remote-config.
   // Released artifacts don't need these dependencies since they don't use `project` to refer
   // to Remote Config.
-  implementation("com.google.firebase:firebase-common:20.3.2")
-  implementation("com.google.firebase:firebase-common-ktx:20.3.2")
-  implementation("com.google.firebase:firebase-components:17.1.0")
+  implementation("com.google.firebase:firebase-common:20.3.3")
+  implementation("com.google.firebase:firebase-common-ktx:20.3.3")
+  implementation("com.google.firebase:firebase-components:17.1.1")
 
-  implementation(project(":firebase-installations-interop"))
-  runtimeOnly(project(":firebase-installations"))
+  implementation("com.google.firebase:firebase-installations-interop:17.1.0")
+  runtimeOnly("com.google.firebase:firebase-installations:17.1.4")
 
   implementation("com.google.android.gms:play-services-basement:18.1.0")
   implementation("com.google.android.gms:play-services-tasks:18.0.1")
