@@ -1,0 +1,64 @@
+{
+    "changesByLibraryName": {
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "8f845048dcef9595a24db2ea9d90f094740d3ac0",
+                "prId": "5337",
+                "author": "Vinay Guthal",
+                "message": "Fix m137 release (#5337)\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8f845048dcef9595a24db2ea9d90f094740d3ac0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5337"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "8f845048dcef9595a24db2ea9d90f094740d3ac0",
+                "prId": "5337",
+                "author": "Vinay Guthal",
+                "message": "Fix m137 release (#5337)\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8f845048dcef9595a24db2ea9d90f094740d3ac0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5337"
+            }
+        ],
+        "firebase-firestore/ktx": [
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "8f845048dcef9595a24db2ea9d90f094740d3ac0",
+                "prId": "5337",
+                "author": "Vinay Guthal",
+                "message": "Fix m137 release (#5337)\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8f845048dcef9595a24db2ea9d90f094740d3ac0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5337"
+            }
+        ],
+        "firebase-inappmessaging/ktx": [
+        ],
+        "firebase-inappmessaging-display/ktx": [
+        ],
+        "firebase-inappmessaging-display": [
+            {
+                "commitId": "8f845048dcef9595a24db2ea9d90f094740d3ac0",
+                "prId": "5337",
+                "author": "Vinay Guthal",
+                "message": "Fix m137 release (#5337)\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8f845048dcef9595a24db2ea9d90f094740d3ac0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5337"
+            }
+        ],
+        "firebase-inappmessaging": [
+            {
+                "commitId": "8f845048dcef9595a24db2ea9d90f094740d3ac0",
+                "prId": "5337",
+                "author": "Vinay Guthal",
+                "message": "Fix m137 release (#5337)\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8f845048dcef9595a24db2ea9d90f094740d3ac0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5337"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+    ]
+}
