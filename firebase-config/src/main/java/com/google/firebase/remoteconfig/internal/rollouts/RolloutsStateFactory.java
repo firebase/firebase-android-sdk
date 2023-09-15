@@ -16,10 +16,12 @@
 
 package com.google.firebase.remoteconfig.internal.rollouts;
 
+import static com.google.firebase.remoteconfig.FirebaseRemoteConfig.TAG;
 import static com.google.firebase.remoteconfig.internal.ConfigContainer.ROLLOUT_METADATA_AFFECTED_KEYS;
 import static com.google.firebase.remoteconfig.internal.ConfigContainer.ROLLOUT_METADATA_ID;
 import static com.google.firebase.remoteconfig.internal.ConfigContainer.ROLLOUT_METADATA_VARIANT_ID;
 
+import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigClientException;
 import com.google.firebase.remoteconfig.internal.ConfigContainer;
@@ -49,21 +51,31 @@ public class RolloutsStateFactory {
     for (int i = 0; i < rolloutMetadata.length(); i++) {
       try {
         JSONObject rollout = rolloutMetadata.getJSONObject(i);
+        String rolloutId = rollout.getString(ROLLOUT_METADATA_ID);
         JSONArray affectedParameterKeys = rollout.getJSONArray(ROLLOUT_METADATA_AFFECTED_KEYS);
 
-        for (int j = 0; j < affectedParameterKeys.length(); j++) {
-          String parameterKey = affectedParameterKeys.getString(j);
-          String parameterValue = getParameterHandler.getString(parameterKey);
-
-          rolloutAssignments.add(
-              RolloutAssignment.builder()
-                  .setRolloutId(rollout.getString(ROLLOUT_METADATA_ID))
-                  .setVariantId(rollout.getString(ROLLOUT_METADATA_VARIANT_ID))
-                  .setParameterKey(parameterKey)
-                  .setParameterValue(parameterValue)
-                  .setTemplateVersion(templateVersion)
-                  .build());
+        if (affectedParameterKeys.length() > 1) {
+          Log.w(
+              TAG,
+              String.format(
+                  "Rollout has multiple affected parameter keys."
+                      + "Only the first key will be included in RolloutsState. "
+                      + "rolloutId: %s, affectedParameterKeys: %s",
+                  rolloutId, affectedParameterKeys));
         }
+
+        // Fallback to empty string if (for some reason) there's no affected parameter key.
+        String parameterKey = affectedParameterKeys.optString(0, "");
+        String parameterValue = getParameterHandler.getString(parameterKey);
+
+        rolloutAssignments.add(
+            RolloutAssignment.builder()
+                .setRolloutId(rolloutId)
+                .setVariantId(rollout.getString(ROLLOUT_METADATA_VARIANT_ID))
+                .setParameterKey(parameterKey)
+                .setParameterValue(parameterValue)
+                .setTemplateVersion(templateVersion)
+                .build());
       } catch (JSONException e) {
         throw new FirebaseRemoteConfigClientException(
             "Exception parsing rollouts metadata to create RolloutsState.", e);
