@@ -1,0 +1,14 @@
+{
+    "name": "m137_1",
+    "libraries": [
+        ":firebase-crashlytics-ndk",
+        ":firebase-crashlytics:ktx",
+        ":firebase-crashlytics",
+        ":firebase-firestore:ktx",
+        ":firebase-firestore",
+        ":firebase-inappmessaging:ktx",
+        ":firebase-inappmessaging-display:ktx",
+        ":firebase-inappmessaging-display",
+        ":firebase-inappmessaging"
+    ]
+}
