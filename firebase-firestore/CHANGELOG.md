@@ -1,5 +1,5 @@
 # Unreleased
-* [fixed] Disable GradleMetadataPublishing to fix the Kotlin extensions SDKs.
+* [fixed] Disable GradleMetadataPublishing to fix the Kotlin extension SDKs.
 
 # 24.8.0
 * [feature] Added the option to allow the SDK to create cache indexes automatically to
