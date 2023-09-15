@@ -1,5 +1,5 @@
 # Unreleased
-* [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. #5337 
+* [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. [#5337] 
 
 # 18.4.2
 * [feature] Expanded `firebase-sessions` library integration to work with NDK crashes and ANRs.
