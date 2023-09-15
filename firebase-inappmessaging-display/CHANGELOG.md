@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. #5337 
 
 # 20.3.4
 * [changed] Updated internal logging backend.
