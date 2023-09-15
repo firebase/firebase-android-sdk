@@ -11,12 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package com.google.firebase.functions
 
-package com.google.firebase.functions;
-
-import com.google.android.gms.tasks.Task;
-
-/** The interface for getting metadata about the client. This is an interface for easier testing. */
-interface ContextProvider {
-  Task<HttpsCallableContext> getContext(boolean getLimitedUseAppCheckToken);
-}
+/** The metadata about the client that should automatically be included in function calls.  */
+internal class HttpsCallableContext(
+        val authToken: String?,
+        val instanceIdToken: String?,
+        val appCheckToken: String?)
