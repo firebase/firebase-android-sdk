@@ -27,18 +27,6 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 
 class MainActivity : AppCompatActivity() {
 
-  companion object {
-    init {
-      System.loadLibrary("mynativeapp")
-    }
-  }
-
-  private external fun stringFromJNI(): String
-
-  private external fun nativeCrash()
-
-  private external fun nativeAnr()
-
   private lateinit var remoteConfig: FirebaseRemoteConfig
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,10 +58,6 @@ class MainActivity : AppCompatActivity() {
       FirebaseCrashlytics.getInstance()
         .recordFatalException(RuntimeException("This is an on demand fatal"))
     }
-
-    findViewById<Button>(R.id.ndk_crash_button).setOnClickListener { nativeCrash() }
-
-    findViewById<Button>(R.id.native_anr_button).setOnClickListener { nativeAnr() }
 
     findViewById<Button>(R.id.non_fatal_button).setOnClickListener {
       FirebaseCrashlytics.getInstance().recordException(RuntimeException("This is an non-fatal"))
