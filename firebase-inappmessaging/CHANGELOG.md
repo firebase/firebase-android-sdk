@@ -1,5 +1,5 @@
 # Unreleased
-* [fixed] Disable GradleMetadataPublishing to fix breakage of the kotlin extensions sdk.
+* [fixed] Disable GradleMetadataPublishing to fix the Kotlin extensions SDKs.
 
 # 20.3.4
 * [changed] Updated internal logging backend.
