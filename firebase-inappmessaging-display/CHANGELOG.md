@@ -1,5 +1,14 @@
 # Unreleased
+
+
+# 20.3.4
 * [changed] Updated internal logging backend.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging-display` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.3.3
 * [unchanged] Updated internal Dagger dependency.
@@ -29,9 +38,7 @@ updates.
 # 20.3.0
 * [changed] Migrated [inappmessaging] Display to use standard Firebase
   executors.
-
 * [changed] Moved Task continuations off the main thread.
-
 * [feature] Added a new API for
   [removing a dismiss listener](/docs/reference/android/com/google/firebase/inappmessaging/FirebaseInAppMessaging#removeDismissListener(com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener)).
   (GitHub
@@ -154,7 +161,6 @@ additional updates.
 # 19.1.1
 * [fixed] Improved link handling on devices without any browser installed
   or without Chrome installed.
-
 * [feature] Added the ability to register a dismiss listener that reacts to
   message dismissal.
 
@@ -171,7 +177,6 @@ additional updates.
   No developer action is necessary.
 
 
-
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-inappmessaging-display` library. The Kotlin extensions library has no
@@ -181,12 +186,10 @@ additional updates.
 * [fixed] Improved handling of activity transitions.
   (GitHub [Issue #1410](//github.com/firebase/firebase-android-sdk/issues/1410)
   and [Issue #1092](//github.com/firebase/firebase-android-sdk/issues/1092))
-
 * [changed] Migrated to use the [firebase_installations] service _directly_
   instead of using an indirect dependency via the Firebase Instance ID SDK.
 
   {% include "docs/reference/android/client/_includes/_iid-indirect-dependency-solutions.html" %}
-
 
 
 ## Kotlin
@@ -216,9 +219,7 @@ additional updates.
 
 # 19.0.4
 * [fixed] Fixed issue with messages not being fetched on app first open.
-
 * [fixed] Fixed issue with first foreground trigger not being picked up.
-
 
 
 ## Kotlin
@@ -228,7 +229,6 @@ additional updates.
 
 # 19.0.3
 * [changed] Internal changes to enable future SDK improvements.
-
 
 
 ## Kotlin
@@ -292,3 +292,4 @@ additional updates.
 
 # 17.0.0
 * [feature] The initial public beta release of the Firebase In-App Messaging Display SDK for Android is now available. To learn more, see the [Firebase In-App Messaging documentation](/docs/in-app-messaging).
+
