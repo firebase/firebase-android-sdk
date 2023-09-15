@@ -1,5 +1,5 @@
 # Unreleased
-
+* [fixed] Disable GradleMetadataPublishing to fix breakage of the kotlin extensions sdk.
 
 # 18.4.2
 * [feature] Expanded `firebase-sessions` library integration to work with NDK crashes and ANRs.
