@@ -37,28 +37,16 @@ android {
     versionName = "1.0"
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    externalNativeBuild {
-      cmake {
-        cppFlags += ""
-      }
-    }
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
   kotlinOptions { jvmTarget = "1.8" }
-  externalNativeBuild {
-    cmake {
-      path = file("src/main/cpp/CMakeLists.txt")
-      version = "3.22.1"
-    }
-  }
 }
 
 dependencies {
   implementation(project(":firebase-crashlytics"))
-  implementation(project(":firebase-crashlytics-ndk"))
   implementation(project(":firebase-config"))
   implementation(project(":firebase-config:ktx"))
 

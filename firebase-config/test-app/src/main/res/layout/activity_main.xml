@@ -76,20 +76,6 @@
         android:text="@string/on_demand_fatal" />
 
     <Button
-        android:id="@+id/ndk_crash_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="@string/ndk_crash" />
-
-    <Button
-        android:id="@+id/native_anr_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:text="@string/native_anr" />
-
-    <Button
         android:id="@+id/non_fatal_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
