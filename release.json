@@ -1,6 +1,7 @@
 {
     "name": "m137_1",
     "libraries": [
+        ":firebase-components",
         ":firebase-crashlytics-ndk",
         ":firebase-crashlytics:ktx",
         ":firebase-crashlytics",
