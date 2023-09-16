@@ -47,6 +47,9 @@ android {
     }
 
     testOptions.unitTests.includeAndroidResources = true
+  buildFeatures {
+    aidl true
+  }
 }
 
 dependencies {

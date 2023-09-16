@@ -59,6 +59,7 @@ fun Project.runMetalavaWithArgs(
       "HiddenAbstractMethod"
     ) + arguments
 
+/*
   project.javaexec {
     main = "com.android.tools.metalava.Driver"
     classpath = project.metalavaConfig
@@ -66,6 +67,7 @@ fun Project.runMetalavaWithArgs(
     isIgnoreExitValue = ignoreFailure
     if (stdOut != null) errorOutput = stdOut
   }
+*/
 }
 
 abstract class GenerateStubsTask : DefaultTask() {

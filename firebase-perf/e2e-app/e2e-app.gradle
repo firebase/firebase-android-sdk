@@ -27,6 +27,7 @@ firebaseTestLab {
 }
 
 android {
+    namespace "com.google.firebase.testing.fireperf"
     compileSdkVersion 31
 
     // Specifies the build type that the Android plugin should use to run the instrumentation tests.

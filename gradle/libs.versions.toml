@@ -3,11 +3,15 @@
 # it needs to match the protobuf version which grpc has transitive dependency on.
 android-lint = "30.3.1"
 autovalue = "1.10.1"
+builder-test-api = "8.1.1"
 coroutines = "1.6.4"
 dagger = "2.43.2"
+google-gson = "2.8.9"
+gradle = "8.1.1"
 grpc = "1.52.1"
 javalite = "3.21.11"
-kotlin = "1.7.10"
+kotlin = "1.8.10"
+protobuf-gradle-plugin = "0.9.4"
 protoc = "3.21.11"
 robolectric = "4.9"
 truth = "1.1.2"
@@ -28,10 +32,13 @@ androidx-core = { module = "androidx.core:core", version = "1.2.0" }
 androidx-futures = { module = "androidx.concurrent:concurrent-futures", version = "1.1.0" }
 autovalue = { module = "com.google.auto.value:auto-value", version.ref = "autovalue" }
 autovalue-annotations = { module = "com.google.auto.value:auto-value-annotations", version.ref = "autovalue" }
+builder-test-api = { module = "com.android.tools.build:builder-test-api", version.ref = "builder-test-api" }
 dagger-dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version = "2.9.0" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
+google-gson = { module = "com.google.code.gson:gson", version.ref = "google-gson" }
+gradle = { module = "com.android.tools.build:gradle", version.ref = "gradle" }
 javax-inject = { module = "javax.inject:javax.inject", version = "1" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-coroutines-tasks = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
@@ -52,6 +59,7 @@ junit = { module = "junit:junit", version = "4.13.2" }
 kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 mockito-core = { module = "org.mockito:mockito-core", version = "2.28.2" }
 mockito-dexmaker = { module = "com.linkedin.dexmaker:dexmaker-mockito", version = "2.28.3" }
+protobuf-gradle-plugin = { module = "com.google.protobuf:protobuf-gradle-plugin", version.ref = "protobuf-gradle-plugin" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
 protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobufjavautil" }

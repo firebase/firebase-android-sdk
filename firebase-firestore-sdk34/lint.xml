@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!--A linter bug prevents us from being able to analyze this file.-->
+    <!--See: https://storage.googleapis.com/android-ci/pr-logs/pull/firebase_firebase-android-sdk/63/check/1049425133258674177/artifacts/firebase-firestore_build_reports/lint-results.html -->
+    <issue id="LintError">
+        <ignore path="src/test/java/com/google/firebase/firestore/local/LruGarbageCollectorTestCase.java"/>
+    </issue>
+
+    <!--Although usage of assert is not expected to work in the Android Runtime, since this is shared with the firebase backend, it would require significant plumbing to remove the assertions while sharing the code effectively.-->
+    <issue id="Assert">
+        <ignore path="src/main/java/com/google/cloud/datastore/core/number/*.java"/>
+    </issue>
+
+    <!--We have validated that HashMaps are better suited to the in memory workloads for these java files.-->
+    <issue id="UseSparseArrays">
+        <ignore path="src/main/java/com/google/firebase/firestore/remote/RemoteStore.java"/>
+        <ignore path="src/main/java/com/google/firebase/firestore/core/SyncEngine.java"/>
+        <ignore path="src/main/java/com/google/firebase/firestore/remote/WatchChangeAggregator.java"/>
+    </issue>
+
+
+    <!--gRPC's DNS name resolver checks for javax.naming at runtime to determine if it can be used, but fails gracefullt without it. This lint error is safe to ignore.-->
+    <!--See : https://github.com/grpc/grpc-java/blob/b0f423295b4674cb5247a6143fd211b050ef0065/core/src/main/java/io/grpc/internal/JndiResourceResolverFactory.java#L73-->
+    <issue id="InvalidPackage">
+        <ignore path="*/io.grpc/grpc-core/*"/>
+    </issue>
+</lint>

@@ -22,6 +22,7 @@ firebaseTestLab {
 }
 
 android {
+    namespace "com.googletest.firebase.perf.testapp.prod"
     compileSdkVersion 31
 
     compileOptions {
