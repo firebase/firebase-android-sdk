@@ -106,7 +106,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       registerSemverCheckForReleaseTask(project, releasingProjects)
       registerPublishAllToBuildDir(project, allFirebaseLibraries)
       registerPostReleasePlugin(releasingProjects)
-      registerLibraryGroupsTaks(project, libraryGroups)
+      registerLibraryGroupsTask(project, libraryGroups)
 
       val buildMavenZip =
         project.tasks.register<Zip>(BUILD_MAVEN_ZIP_TASK) {
