@@ -1,5 +1,14 @@
 # Unreleased
-* [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. #5337 
+
+
+# 20.3.5
+* [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. [#5337]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.3.4
 * [changed] Updated internal logging backend.

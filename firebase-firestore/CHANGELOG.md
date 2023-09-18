@@ -1,5 +1,14 @@
 # Unreleased
-* [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. #5337 
+
+
+# 24.8.1
+* [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. [#5337]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.8.0
 * [feature] Added the option to allow the SDK to create cache indexes automatically to
