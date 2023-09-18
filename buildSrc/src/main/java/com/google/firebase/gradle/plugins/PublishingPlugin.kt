@@ -61,6 +61,7 @@ import org.gradle.kotlin.dsl.register
  * - [PUBLISH_RELEASING_LIBS_TO_LOCAL_TASK][registerPublishReleasingLibrariesToMavenLocalTask]
  * - [SEMVER_CHECK_TASK][registerSemverCheckForReleaseTask]
  * - [PUBLISH_ALL_TO_BUILD_TASK][registerPublishAllToBuildDir]
+ * - [LIBRARY_GROUPS_TASK][registerLibraryGroupsTask]
  *
  * Additionally, this plugin registers the [PostReleasePlugin] via [registerPostReleasePlugin] for
  * each releasing library.
@@ -105,7 +106,7 @@ abstract class PublishingPlugin : Plugin<Project> {
       registerSemverCheckForReleaseTask(project, releasingProjects)
       registerPublishAllToBuildDir(project, allFirebaseLibraries)
       registerPostReleasePlugin(releasingProjects)
-      registerLibraryGroupsTaks(project, libraryGroups)
+      registerLibraryGroupsTask(project, libraryGroups)
 
       val buildMavenZip =
         project.tasks.register<Zip>(BUILD_MAVEN_ZIP_TASK) {
@@ -155,11 +156,11 @@ abstract class PublishingPlugin : Plugin<Project> {
     }
   }
 
-  protected fun registerLibraryGroupsTaks(
+  private fun registerLibraryGroupsTask(
     project: Project,
     libraryGroups: Map<String, List<FirebaseLibraryExtension>>
   ) {
-    project.tasks.register("libraryGroups") {
+    project.tasks.register(LIBRARY_GROUPS_TASK) {
       for (libraryGroup in libraryGroups) {
         println(
           "${libraryGroup.key} -> ${libraryGroup.value.joinToString(" | ") { it.artifactName }}"
@@ -555,6 +556,7 @@ abstract class PublishingPlugin : Plugin<Project> {
     const val SEMVER_CHECK_TASK = "semverCheckForRelease"
     const val RELEASE_GENEATOR_TASK = "generateReleaseConfig"
     const val VALIDATE_POM_TASK = "validatePomForRelease"
+    const val LIBRARY_GROUPS_TASK = "libraryGroups"
     const val PUBLISH_RELEASING_LIBS_TO_BUILD_TASK = "publishReleasingLibrariesToBuildDir"
     const val PUBLISH_RELEASING_LIBS_TO_LOCAL_TASK = "publishReleasingLibrariesToMavenLocal"
     const val GENERATE_KOTLINDOC_FOR_RELEASE_TASK = "generateKotlindocForRelease"
