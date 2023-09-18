@@ -61,7 +61,7 @@ import org.gradle.kotlin.dsl.register
  * - [PUBLISH_RELEASING_LIBS_TO_LOCAL_TASK][registerPublishReleasingLibrariesToMavenLocalTask]
  * - [SEMVER_CHECK_TASK][registerSemverCheckForReleaseTask]
  * - [PUBLISH_ALL_TO_BUILD_TASK][registerPublishAllToBuildDir]
- * - [LIBRARY_GROUPS_TASK][registerLibraryGroupsTaks]
+ * - [LIBRARY_GROUPS_TASK][registerLibraryGroupsTask]
  *
  * Additionally, this plugin registers the [PostReleasePlugin] via [registerPostReleasePlugin] for
  * each releasing library.
@@ -156,7 +156,7 @@ abstract class PublishingPlugin : Plugin<Project> {
     }
   }
 
-  private fun registerLibraryGroupsTaks(
+  private fun registerLibraryGroupsTask(
     project: Project,
     libraryGroups: Map<String, List<FirebaseLibraryExtension>>
   ) {
