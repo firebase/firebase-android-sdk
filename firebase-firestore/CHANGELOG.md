@@ -1,7 +1,40 @@
 # Unreleased
+
+
+# 24.8.1
+* [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. [#5337]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
+
+# 24.8.0
+* [feature] Added the option to allow the SDK to create cache indexes automatically to
+  improve query execution locally. See
+  [`db.getPersistentCacheIndexManager().enableIndexAutoCreation()`](/docs/reference/android/com/google/firebase/firestore/PersistentCacheIndexManager#enableIndexAutoCreation())
+  ([GitHub [#4987](//github.com/firebase/firebase-android-sdk/pull/4987){: .external}).
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
+
+# 24.7.1
+* [fixed] Implement equals method on Filter class. [#5210](//github.com/firebase/firebase-android-sdk/issues/5210)
+
+# 24.7.0
 * [feature] Expose MultiDb support in API. [#4015](//github.com/firebase/firebase-android-sdk/issues/4015)
 * [fixed] Fixed a thread interference issue that may lead to a ConcurrentModificationException.
-    (GitHub [#5091](//github.com/firebase/firebase-android-sdk/issues/5091){: .external})
+  (GitHub [#5091](//github.com/firebase/firebase-android-sdk/issues/5091){: .external})
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.6.1
 * [feature] Implemented an optimization in the local cache synchronization logic that reduces the number of billed document reads when documents were deleted on the server while the client was not actively listening to the query (e.g. while the client was offline). (GitHub [#4982](//github.com/firebase/firebase-android-sdk/pull/4982){: .external})
@@ -407,7 +440,7 @@ updates.
   and
   [`Query.whereNotEqualTo()`](/docs/reference/android/com/google/firebase/firestore/Query#whereNotEqualTo(java.lang.String,%20java.lang.Object))
   query operators.
-  
+
   * `Query.whereNotIn()` finds documents where a specified field's value is
     not in a specified array.
   * `Query.whereNotEqualTo()` finds documents where a specified field's value
@@ -759,7 +792,7 @@ updates.
   https://github.com/firebase/firebase-android-sdk/issues/134
 
 # 17.1.4
-* [fixed] Fixed a SQLite transaction-handling issue that occasionally masked 
+* [fixed] Fixed a SQLite transaction-handling issue that occasionally masked
   exceptions when Firestore closed a transaction that was never started. For
   more information, see the [issue report in GitHub](https://github.com/firebase/firebase-android-sdk/issues/115).
 * [fixed] Fixed a race condition that caused a `SQLiteDatabaseLockedException`

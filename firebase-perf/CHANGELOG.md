@@ -1,6 +1,18 @@
 # Unreleased
+
+# 20.4.1
+* [changed] Updated `firebase-sessions` dependency to v1.0.2
+* [fixed] Make fireperf data collection state is reliable for Firebase Sessions library.
+
+# 20.4.0
 * [feature] Integrated with Firebase sessions library to enable upcoming features related to
   session-based performance metrics.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-performance` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.3.3
 * [fixed] Fixed app start trace creation where some measured time could be NULL (#4730).
@@ -339,4 +351,3 @@ updates.
 
 # 16.1.0
 * [fixed] Fixed a `SecurityException` crash on certain devices that do not have Google Play Services on them.
-

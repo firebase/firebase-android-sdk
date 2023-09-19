@@ -70,6 +70,9 @@ android {
         def targetBackend = findProperty("targetBackend") ?: "emulator"
         buildConfigField("String", "TARGET_BACKEND", "\"$targetBackend\"")
 
+        def targetDatabaseId = findProperty('targetDatabaseId') ?: "(default)"
+        buildConfigField("String", "TARGET_DATABASE_ID", "\"$targetDatabaseId\"")
+
         def localProps = new Properties()
 
         try {
@@ -154,7 +157,7 @@ dependencies {
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
 
     androidTestImplementation 'junit:junit:4.13.2'
-    androidTestImplementation("com.google.truth:truth:$googleTruthVersion"){
+    androidTestImplementation("com.google.truth:truth:$googleTruthVersion") {
         exclude group: "org.codehaus.mojo", module: "animal-sniffer-annotations"
     }
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'

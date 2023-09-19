@@ -72,8 +72,8 @@ internal data class SessionInfo(
 
 /** Contains the data collection state for all dependent SDKs and sampling info */
 internal data class DataCollectionStatus(
-  val performance: DataCollectionState = DataCollectionState.COLLECTION_ENABLED,
-  val crashlytics: DataCollectionState = DataCollectionState.COLLECTION_ENABLED,
+  val performance: DataCollectionState = DataCollectionState.COLLECTION_SDK_NOT_INSTALLED,
+  val crashlytics: DataCollectionState = DataCollectionState.COLLECTION_SDK_NOT_INSTALLED,
   val sessionSamplingRate: Double = 1.0,
 )
 

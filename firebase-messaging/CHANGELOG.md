@@ -1,11 +1,21 @@
 # Unreleased
-* [deprecated] Deprecated FCM upstream messaging. See the
-  [FAQ](https://firebase.google.com/support/faq#fcm-23-deprecation) for more
-  details.
+
+# 23.2.1
 * [changed] Changed to finish a background broadcast after the message has been
   handled, subject to a timeout. This keeps the `FirebaseMessagingService`'s
   process in an active state while it is handling an FCM message, up to the
   20 seconds allowed.
+
+# 23.2.0
+* [deprecated] Deprecated FCM upstream messaging. See the
+  [FAQ](https://firebase.google.com/support/faq#fcm-23-deprecation) for more
+  details.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-messaging` library. The Kotlin extensions library has no additional
+updates.
 
 # 23.1.2
 * [fixed] Fixed a breakage related to Jetpack core library related to an
