@@ -1,0 +1,14 @@
+{
+    "name": "m138_test",
+    "libraries": [
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-crashlytics:ktx",
+        ":firebase-firestore",
+        ":firebase-firestore:ktx",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-inappmessaging:ktx",
+        ":firebase-inappmessaging-display:ktx"
+    ]
+}
