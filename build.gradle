@@ -58,10 +58,10 @@ ext {
     protobufJavaUtilVersion = libs.versions.protobufjavautil.get()
 }
 
+apply plugin: com.google.firebase.gradle.plugins.PublishingPlugin
+
 apply plugin: com.google.firebase.gradle.plugins.ci.ContinuousIntegrationPlugin
 apply plugin: com.google.firebase.gradle.plugins.ci.SmokeTestsPlugin
-
-apply plugin: com.google.firebase.gradle.plugins.PublishingPlugin
 
 firebaseContinuousIntegration {
     ignorePaths = [

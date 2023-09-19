@@ -173,14 +173,6 @@ public class FieldFilter extends Filter {
   }
 
   @Override
-  public FieldPath getFirstInequalityField() {
-    if (isInequality()) {
-      return getField();
-    }
-    return null;
-  }
-
-  @Override
   public String toString() {
     return getCanonicalId();
   }
