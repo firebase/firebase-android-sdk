@@ -712,4 +712,34 @@ public class SQLiteLocalStoreTest extends LocalStoreTestCase {
     assertOverlaysRead(/* byKey= */ 1, /* byCollection= */ 1);
     assertQueryReturned("coll/a", "coll/f");
   }
+
+  @Test
+  public void testIndexAutoCreationDoesnotWorkWithMultipleInequality() {
+    Query query = query("coll").filter(filter("field1", "<", 5)).filter(filter("field2", "<", 5));
+    int targetId = allocateQuery(query);
+
+    setIndexAutoCreationEnabled(true);
+    setMinCollectionSizeToAutoCreateIndex(0);
+    setRelativeIndexReadCostPerDocument(2);
+
+    applyRemoteEvent(addedRemoteEvent(doc("coll/a", 10, map("field1", 1, "field2", 2)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/b", 10, map("field1", 8, "field2", 2)), targetId));
+    applyRemoteEvent(
+        addedRemoteEvent(doc("coll/c", 10, map("field1", "string", "field2", 2)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/d", 10, map("field1", 2)), targetId));
+    applyRemoteEvent(addedRemoteEvent(doc("coll/e", 10, map("field1", 4, "field2", 4)), targetId));
+
+    // First time query is running without indexes.
+    // Based on current heuristic, collection document counts (5) > 2 * resultSize (2).
+    // Full matched index will not be created since FieldIndex does not support multiple inequality.
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+
+    backfillIndexes();
+
+    executeQuery(query);
+    assertRemoteDocumentsRead(/* byKey= */ 0, /* byCollection= */ 2);
+    assertQueryReturned("coll/a", "coll/e");
+  }
 }

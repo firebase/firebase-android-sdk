@@ -1,6 +1,24 @@
 # Unreleased
-* [feature] Include Firebase sessions with NDK crashes and ANRs.
+
+
+# 18.4.3
+* [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. [#5337]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
+
+# 18.4.2
+* [feature] Expanded `firebase-sessions` library integration to work with NDK crashes and ANRs.
 * [changed] Improved reliability when reporting memory usage.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
 
 # 18.4.1
 * [changed] Updated `firebase-sessions` dependency to v1.0.2
@@ -8,6 +26,7 @@
 # 18.4.0
 * [feature] Integrated with Firebase sessions library to enable upcoming features related to
   session-based crash metrics.
+
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
@@ -482,3 +501,4 @@ The following release notes describe changes in the new SDK.
  from your `AndroidManifest.xml` file.
  * [removed] The `fabric.properties` and `crashlytics.properties` files are no
  longer supported. Remove them from your app.
+

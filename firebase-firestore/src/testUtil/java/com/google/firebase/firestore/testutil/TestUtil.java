@@ -180,7 +180,7 @@ public class TestUtil {
   }
 
   public static FieldPath field(String path) {
-    return FieldPath.fromSegments(Arrays.asList(path.split("\\.")));
+    return FieldPath.fromServerFormat(path);
   }
 
   public static DocumentReference ref(String key) {

@@ -21,7 +21,6 @@ import java.io.File;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.gradle.api.Action;
 import org.gradle.api.Project;
@@ -50,8 +49,7 @@ public class FirebaseLibraryExtension {
   public Property<String> groupId;
   public Property<String> artifactId;
 
-  private String libraryGroupName;
-  private LibraryGroupRegistrar libraryGroupRegistrar;
+  String libraryGroupName;
 
   private Action<MavenPom> customizePomAction =
       pom -> {
@@ -86,8 +84,7 @@ public class FirebaseLibraryExtension {
       groupId.set(new DefaultProvider<>(() -> project.getGroup().toString()));
     }
     this.staticAnalysis = initializeStaticAnalysis(project);
-    this.libraryGroupRegistrar = LibraryGroupRegistrar.getInstance();
-    libraryGroupName = "";
+    libraryGroupName = this.artifactId.get();
   }
 
   private FirebaseStaticAnalysis initializeStaticAnalysis(Project project) {
@@ -115,18 +112,6 @@ public class FirebaseLibraryExtension {
    */
   public void libraryGroup(String libraryGroupName) {
     this.libraryGroupName = libraryGroupName;
-    libraryGroupRegistrar.registerLibrary(libraryGroupName, this);
-  }
-
-  public Set<Project> getProjectsToRelease() {
-    return getLibrariesToRelease().stream().map(l -> l.project).collect(Collectors.toSet());
-  }
-
-  public Set<FirebaseLibraryExtension> getLibrariesToRelease() {
-    return ImmutableSet.<FirebaseLibraryExtension>builder()
-        .addAll(libraryGroupRegistrar.getLibrariesForGroup(libraryGroupName))
-        .add(this)
-        .build();
   }
 
   /** Provides a hook to customize pom generation. */
