@@ -15,6 +15,7 @@
 plugins {
     id("firebase-library")
     id("firebase-vendor")
+    id("kotlin-android")
 }
 
 firebaseLibrary {
@@ -46,7 +47,7 @@ android {
 
 dependencies {
   implementation("com.google.firebase:firebase-annotations:16.2.0")
-  implementation("com.google.firebase:firebase-common:20.3.1")
+  implementation(project(":firebase-common"))
   implementation("com.google.firebase:firebase-components:17.1.0")
   implementation(project(":appcheck:firebase-appcheck-interop"))
   implementation(libs.playservices.base)

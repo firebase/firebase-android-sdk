@@ -14,6 +14,7 @@
 
 plugins {
     id("firebase-library")
+    id("kotlin-android")
 }
 
 firebaseLibrary {
@@ -56,6 +57,8 @@ dependencies {
     implementation(libs.androidx.futures)
     implementation(libs.playservices.basement)
     implementation(libs.playservices.tasks)
+    api(libs.kotlin.coroutines.tasks)
+    implementation(libs.kotlin.stdlib)
 
     annotationProcessor(libs.autovalue)
 
@@ -73,6 +76,8 @@ dependencies {
     testImplementation(libs.org.json)
     testImplementation(libs.robolectric)
     testImplementation(libs.truth)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.kotlin.coroutines.test)
 
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)

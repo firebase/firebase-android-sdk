@@ -8,6 +8,8 @@
         <service android:name="com.google.firebase.components.ComponentDiscoveryService" android:exported="false">
             <meta-data android:name="com.google.firebase.components:com.google.firebase.functions.FunctionsRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />
+            <meta-data android:name="com.google.firebase.components:com.google.firebase.functions.FirebaseFunctionsKtxRegistrar"
+                android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>
     </application>
 </manifest>
