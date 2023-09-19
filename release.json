@@ -2,6 +2,10 @@
     "name": "m138",
     "libraries": [
         ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":appcheck:firebase-appcheck-interop",
         ":appcheck:firebase-appcheck:ktx",
         ":firebase-appdistribution-api",
         ":firebase-appdistribution-api:ktx",
@@ -22,6 +26,7 @@
         ":firebase-firestore:ktx",
         ":firebase-functions",
         ":firebase-functions:ktx",
+        ":firebase-messaging-directboot",
         ":firebase-inappmessaging-display",
         ":firebase-inappmessaging-display:ktx",
         ":firebase-inappmessaging",
