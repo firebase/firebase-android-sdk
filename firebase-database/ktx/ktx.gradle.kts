@@ -14,7 +14,7 @@
 
 plugins {
   id("firebase-library")
-    id("kotlin-android")
+  id("kotlin-android")
   kotlin("android")
 }
 
@@ -22,7 +22,7 @@ group = "com.google.firebase"
 
 firebaseLibrary {
   libraryGroup("database")
-  publishJavadoc = true
+  publishJavadoc = false
   publishSources = true
 }
 

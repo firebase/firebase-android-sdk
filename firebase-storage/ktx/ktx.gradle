@@ -21,7 +21,7 @@ group = "com.google.firebase"
 
 firebaseLibrary {
     libraryGroup "storage"
-    publishJavadoc = true
+    publishJavadoc = false
     publishSources = true
 }
 
