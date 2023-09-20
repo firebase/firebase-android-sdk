@@ -140,7 +140,7 @@ dependencies {
      }
     implementation(project(":firebase-common"))
     implementation(project(":firebase-components"))
-    implementation(project(":firebase-datatransport")){
+    implementation("com.google.firebase:firebase-datatransport:18.2.0"){
          exclude group: 'com.google.firebase', module: 'firebase-common'
          exclude group: 'com.google.firebase', module: 'firebase-components'
      }
