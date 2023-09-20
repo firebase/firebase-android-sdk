@@ -113,7 +113,27 @@ class PublishingPluginTests {
         Project(name = "childProject2", version = "0.9", projectDependencies = setOf(project1))
 
       withProjects(project1, project2)
-      publishAndFail(project2)
+      publish(project2)
+
+      project1.pomOrNull().shouldNotBeNull()
+      project2.pom.dependencies shouldHaveSingleElement project1.toArtifact()
+    }
+  }
+
+  @Test
+  fun `Publish with very transitive dependency`() {
+    with(controller) {
+      val project1 = Project(name = "childProject1", version = "1.0", libraryGroup = "libraryGroup")
+      val project2 =
+        Project(name = "childProject2", version = "0.9", projectDependencies = setOf(project1))
+      val project3 = Project(name = "childProject3", version = "1.0", libraryGroup = "libraryGroup")
+
+      withProjects(project1, project2, project3)
+      publish(project2)
+
+      project1.pomOrNull().shouldNotBeNull()
+      project3.pomOrNull().shouldNotBeNull()
+      project2.pom.dependencies shouldHaveSingleElement project1.toArtifact()
     }
   }
 
