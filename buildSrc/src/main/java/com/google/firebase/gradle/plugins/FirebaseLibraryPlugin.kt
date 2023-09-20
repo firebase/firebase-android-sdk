@@ -179,7 +179,6 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     android: LibraryExtension
   ) {
     android.publishing.singleVariant("release") { withSourcesJar() }
-    project.tasks.withType<GenerateModuleMetadata> { isEnabled = false }
 
     configurePublishing(project, firebaseLibrary)
   }
