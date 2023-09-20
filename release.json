@@ -14,6 +14,7 @@
         ":firebase-common",
         ":firebase-common:ktx",
         ":firebase-config",
+        ":firebase-components",
         ":firebase-config:ktx",
         ":firebase-crashlytics-ndk",
         ":firebase-crashlytics",
