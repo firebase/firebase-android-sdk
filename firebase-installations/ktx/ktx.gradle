@@ -19,7 +19,7 @@ plugins {
 
 firebaseLibrary {
     libraryGroup "installations"
-    publishJavadoc = true
+    publishJavadoc = false
     publishSources = true
 }
 

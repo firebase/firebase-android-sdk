@@ -23,6 +23,7 @@ firebaseLibrary {
     libraryGroup "config"
     testLab.enabled = true
     publishSources = true
+
 }
 
 android {

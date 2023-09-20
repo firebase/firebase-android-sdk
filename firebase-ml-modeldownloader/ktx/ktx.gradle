@@ -19,7 +19,7 @@ plugins {
 
 firebaseLibrary {
     libraryGroup "ml-modeldownloader"
-    publishJavadoc = true
+    publishJavadoc = false
     publishSources = true
     testLab.enabled = false
 }
