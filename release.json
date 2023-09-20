@@ -11,6 +11,7 @@
         ":firebase-appdistribution-api:ktx",
         ":firebase-appdistribution",
         ":firebase-appdistribution:ktx",
+        ":firebase-installations-interop",
         ":firebase-common",
         ":firebase-common:ktx",
         ":firebase-config",
