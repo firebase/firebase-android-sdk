@@ -29,6 +29,7 @@ import static com.google.firebase.firestore.Filter.notEqualTo;
 import static com.google.firebase.firestore.Filter.notInArray;
 import static com.google.firebase.firestore.Filter.or;
 import static com.google.firebase.firestore.remote.TestingHooksUtil.captureExistenceFilterMismatches;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.checkOnlineAndOfflineResultsMatch;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
@@ -76,25 +77,6 @@ public class QueryTest {
   @After
   public void tearDown() {
     IntegrationTestUtil.tearDown();
-  }
-
-  /**
-   * Checks that running the query while online (against the backend/emulator) results in the same
-   * documents as running the query while offline. If `expectedDocs` is provided, it also checks
-   * that both online and offline query result is equal to the expected documents.
-   *
-   * @param query The query to check
-   * @param expectedDocs Ordered list of document keys that are expected to match the query
-   */
-  public void checkOnlineAndOfflineResultsMatch(Query query, String... expectedDocs) {
-    QuerySnapshot docsFromServer = waitFor(query.get(Source.SERVER));
-    QuerySnapshot docsFromCache = waitFor(query.get(Source.CACHE));
-
-    assertEquals(querySnapshotToIds(docsFromServer), querySnapshotToIds(docsFromCache));
-    List<String> expected = asList(expectedDocs);
-    if (!expected.isEmpty()) {
-      assertEquals(expected, querySnapshotToIds(docsFromCache));
-    }
   }
 
   @Test
