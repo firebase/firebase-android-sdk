@@ -24,8 +24,9 @@ import com.google.firebase.sessions.SessionEvents.SESSION_EVENT_ENCODER
 import com.google.firebase.sessions.api.SessionSubscriber
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
+import com.google.firebase.sessions.testing.FakeLocalSettingsProvider
+import com.google.firebase.sessions.testing.FakeRemoteSettingsProvider
 import com.google.firebase.sessions.testing.FakeSessionSubscriber
-import com.google.firebase.sessions.testing.FakeSettingsProvider
 import com.google.firebase.sessions.testing.TestSessionEventData
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -50,8 +51,8 @@ class SessionEventEncoderTest {
         fakeFirebaseApp.firebaseApp,
         TestSessionEventData.TEST_SESSION_DETAILS,
         SessionsSettings(
-          localOverrideSettings = FakeSettingsProvider(),
-          remoteSettings = FakeSettingsProvider(),
+          localOverrideSettings = FakeLocalSettingsProvider(),
+          remoteSettings = FakeRemoteSettingsProvider(),
         ),
         subscribers =
           mapOf(

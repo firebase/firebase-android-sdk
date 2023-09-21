@@ -22,7 +22,8 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.settings.LocalOverrideSettings
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
-import com.google.firebase.sessions.testing.FakeSettingsProvider
+import com.google.firebase.sessions.testing.FakeLocalSettingsProvider
+import com.google.firebase.sessions.testing.FakeRemoteSettingsProvider
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_DATA_COLLECTION_STATUS
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_DATA
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_DETAILS
@@ -45,8 +46,8 @@ class SessionEventTest {
         fakeFirebaseApp.firebaseApp,
         TEST_SESSION_DETAILS,
         SessionsSettings(
-          localOverrideSettings = FakeSettingsProvider(),
-          remoteSettings = FakeSettingsProvider(),
+          localOverrideSettings = FakeLocalSettingsProvider(),
+          remoteSettings = FakeRemoteSettingsProvider(),
         ),
       )
 
@@ -66,7 +67,7 @@ class SessionEventTest {
         TEST_SESSION_DETAILS,
         SessionsSettings(
           localOverrideSettings = LocalOverrideSettings(context),
-          remoteSettings = FakeSettingsProvider(),
+          remoteSettings = FakeRemoteSettingsProvider(),
         ),
       )
 

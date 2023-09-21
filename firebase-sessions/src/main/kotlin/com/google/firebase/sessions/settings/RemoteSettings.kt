@@ -40,7 +40,7 @@ internal class RemoteSettings(
   private val appInfo: ApplicationInfo,
   private val configsFetcher: CrashlyticsSettingsFetcher,
   dataStore: DataStore<Preferences>,
-) : SettingsProvider {
+) : RemoteSettingsProvider {
   private val settingsCache = SettingsCache(dataStore)
   private val fetchInProgress = Mutex()
 

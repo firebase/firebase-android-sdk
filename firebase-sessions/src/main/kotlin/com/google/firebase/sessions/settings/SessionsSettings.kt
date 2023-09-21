@@ -28,8 +28,8 @@ import kotlin.time.Duration.Companion.minutes
 
 /** [SessionsSettings] manages all the configs that are relevant to the sessions library. */
 internal class SessionsSettings(
-  private val localOverrideSettings: SettingsProvider,
-  private val remoteSettings: SettingsProvider,
+  private val localOverrideSettings: LocalSettingsProvider,
+  private val remoteSettings: RemoteSettingsProvider,
 ) {
   constructor(
     context: Context,

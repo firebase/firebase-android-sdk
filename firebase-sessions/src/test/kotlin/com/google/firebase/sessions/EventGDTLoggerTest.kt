@@ -23,8 +23,9 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
+import com.google.firebase.sessions.testing.FakeLocalSettingsProvider
 import com.google.firebase.sessions.testing.FakeProvider
-import com.google.firebase.sessions.testing.FakeSettingsProvider
+import com.google.firebase.sessions.testing.FakeRemoteSettingsProvider
 import com.google.firebase.sessions.testing.FakeTransportFactory
 import com.google.firebase.sessions.testing.TestSessionEventData
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -46,8 +47,8 @@ class EventGDTLoggerTest {
         fakeFirebaseApp.firebaseApp,
         TestSessionEventData.TEST_SESSION_DETAILS,
         SessionsSettings(
-          localOverrideSettings = FakeSettingsProvider(),
-          remoteSettings = FakeSettingsProvider(),
+          localOverrideSettings = FakeLocalSettingsProvider(),
+          remoteSettings = FakeRemoteSettingsProvider(),
         ),
       )
     val fakeTransportFactory = FakeTransportFactory()

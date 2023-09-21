@@ -16,12 +16,12 @@
 
 package com.google.firebase.sessions.testing
 
-import com.google.firebase.sessions.settings.SettingsProvider
+import com.google.firebase.sessions.settings.LocalSettingsProvider
 import kotlin.time.Duration
 
-/** Fake [SettingsProvider] that can set the settings fields. */
-internal class FakeSettingsProvider(
+/** Fake [LocalSettingsProvider] that can set the settings fields. */
+internal class FakeLocalSettingsProvider(
   override val sessionEnabled: Boolean? = null,
   override val sessionRestartTimeout: Duration? = null,
   override val samplingRate: Double? = null,
-) : SettingsProvider
+) : LocalSettingsProvider

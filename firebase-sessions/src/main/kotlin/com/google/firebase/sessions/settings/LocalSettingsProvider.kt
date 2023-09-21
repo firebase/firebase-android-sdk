@@ -18,7 +18,7 @@ package com.google.firebase.sessions.settings
 
 import kotlin.time.Duration
 
-internal interface SettingsProvider {
+internal interface LocalSettingsProvider {
   /** Setting to control if session collection is enabled. */
   val sessionEnabled: Boolean?
 

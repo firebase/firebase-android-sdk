@@ -25,8 +25,9 @@ import com.google.firebase.concurrent.TestOnlyExecutors
 import com.google.firebase.sessions.SessionEvents
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
+import com.google.firebase.sessions.testing.FakeLocalSettingsProvider
 import com.google.firebase.sessions.testing.FakeRemoteConfigFetcher
-import com.google.firebase.sessions.testing.FakeSettingsProvider
+import com.google.firebase.sessions.testing.FakeRemoteSettingsProvider
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -47,8 +48,8 @@ class SessionsSettingsTest {
   fun sessionSettings_fetchDefaults() {
     val sessionsSettings =
       SessionsSettings(
-        localOverrideSettings = FakeSettingsProvider(),
-        remoteSettings = FakeSettingsProvider(),
+        localOverrideSettings = FakeLocalSettingsProvider(),
+        remoteSettings = FakeRemoteSettingsProvider(),
       )
 
     assertThat(sessionsSettings.sessionsEnabled).isTrue()
@@ -68,7 +69,7 @@ class SessionsSettingsTest {
     val sessionsSettings =
       SessionsSettings(
         localOverrideSettings = LocalOverrideSettings(context),
-        remoteSettings = FakeSettingsProvider(),
+        remoteSettings = FakeRemoteSettingsProvider(),
       )
 
     assertThat(sessionsSettings.sessionsEnabled).isFalse()
@@ -87,7 +88,7 @@ class SessionsSettingsTest {
     val sessionsSettings =
       SessionsSettings(
         localOverrideSettings = LocalOverrideSettings(context),
-        remoteSettings = FakeSettingsProvider(),
+        remoteSettings = FakeRemoteSettingsProvider(),
       )
 
     runCurrent()

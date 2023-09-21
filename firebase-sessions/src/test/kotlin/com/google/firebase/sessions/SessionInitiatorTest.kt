@@ -20,7 +20,8 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.concurrent.TestOnlyExecutors
 import com.google.firebase.sessions.settings.SessionsSettings
-import com.google.firebase.sessions.testing.FakeSettingsProvider
+import com.google.firebase.sessions.testing.FakeLocalSettingsProvider
+import com.google.firebase.sessions.testing.FakeRemoteSettingsProvider
 import com.google.firebase.sessions.testing.FakeTimeProvider
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -50,8 +51,8 @@ class SessionInitiatorTest {
     val fakeTimeProvider = FakeTimeProvider()
     val settings =
       SessionsSettings(
-        localOverrideSettings = FakeSettingsProvider(),
-        remoteSettings = FakeSettingsProvider(),
+        localOverrideSettings = FakeLocalSettingsProvider(),
+        remoteSettings = FakeRemoteSettingsProvider(),
       )
 
     // Simulate a cold start by simply constructing the SessionInitiator object
@@ -76,8 +77,8 @@ class SessionInitiatorTest {
     val sessionInitiateCounter = SessionInitiateCounter()
     val settings =
       SessionsSettings(
-        localOverrideSettings = FakeSettingsProvider(),
-        remoteSettings = FakeSettingsProvider(),
+        localOverrideSettings = FakeLocalSettingsProvider(),
+        remoteSettings = FakeRemoteSettingsProvider(),
       )
 
     val sessionInitiator =
@@ -111,8 +112,8 @@ class SessionInitiatorTest {
     val sessionInitiateCounter = SessionInitiateCounter()
     val settings =
       SessionsSettings(
-        localOverrideSettings = FakeSettingsProvider(),
-        remoteSettings = FakeSettingsProvider(),
+        localOverrideSettings = FakeLocalSettingsProvider(),
+        remoteSettings = FakeRemoteSettingsProvider(),
       )
 
     val sessionInitiator =
@@ -146,8 +147,8 @@ class SessionInitiatorTest {
     val sessionInitiateCounter = SessionInitiateCounter()
     val settings =
       SessionsSettings(
-        localOverrideSettings = FakeSettingsProvider(),
-        remoteSettings = FakeSettingsProvider(),
+        localOverrideSettings = FakeLocalSettingsProvider(),
+        remoteSettings = FakeRemoteSettingsProvider(),
       )
 
     val sessionInitiator =
@@ -186,8 +187,8 @@ class SessionInitiatorTest {
     val sessionInitiateCounter = SessionInitiateCounter()
     val settings =
       SessionsSettings(
-        localOverrideSettings = FakeSettingsProvider(),
-        remoteSettings = FakeSettingsProvider(),
+        localOverrideSettings = FakeLocalSettingsProvider(),
+        remoteSettings = FakeRemoteSettingsProvider(),
       )
 
     val sessionInitiator =

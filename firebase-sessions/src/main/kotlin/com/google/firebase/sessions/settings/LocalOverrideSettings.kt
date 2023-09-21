@@ -23,7 +23,7 @@ import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-internal class LocalOverrideSettings(context: Context) : SettingsProvider {
+internal class LocalOverrideSettings(context: Context) : LocalSettingsProvider {
   @Suppress("DEPRECATION") // TODO(mrober): Use ApplicationInfoFlags when target sdk set to 33
   private val metadata =
     context.packageManager
