@@ -1,4 +1,11 @@
 # Unreleased
+* [unchanged] Updated to accommodate the release of the updated
+  [database] Kotlin extensions library.
+
+## Kotlin
+* [feature] Added
+  [`FirebaseAppCheck.tokenChanges`](/docs/reference/kotlin/com/google/firebase/appcheck/ktx/package-summary#tokenChanges)
+  Kotlin Flow to listen to changes in the token state.
 
 # 17.0.1
 * [changed] Internal updates to allow Firebase SDKs to obtain limited-use tokens.
