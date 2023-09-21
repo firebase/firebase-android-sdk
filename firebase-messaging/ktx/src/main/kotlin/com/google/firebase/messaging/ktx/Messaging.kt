@@ -19,8 +19,15 @@ import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import java.io.Closeable
+import kotlin.coroutines.CoroutineContext
 
 internal const val LIBRARY_NAME: String = "fire-fcm-ktx"
 
@@ -36,6 +43,32 @@ inline fun remoteMessage(
   val builder = RemoteMessage.Builder(to)
   builder.init()
   return builder.build()
+}
+
+/**
+ * [CoroutineScope] tied to this [FirebaseMessagingService].
+ * This scope will be canceled when the Service is destroyed,
+ * i.e [FirebaseMessagingService.onDestroy] is called
+ *
+ * This scope is bound to
+ * [Dispatchers.Main.immediate][kotlinx.coroutines.MainCoroutineDispatcher.immediate]
+ */
+val FirebaseMessagingService.coroutineScope: CoroutineScope
+    get() {
+        val scope: CoroutineScope? = this.getCoroutineScope()
+        if (scope != null) {
+            return scope
+        }
+        val coroutineContext = SupervisorJob() + Dispatchers.Main.immediate
+        return setCoroutineScope(CloseableCoroutineScope(coroutineContext))
+    }
+
+internal class CloseableCoroutineScope(context: CoroutineContext) : Closeable, CoroutineScope {
+    override val coroutineContext: CoroutineContext = context
+
+    override fun close() {
+        coroutineContext.cancel()
+    }
 }
 
 /** @suppress */

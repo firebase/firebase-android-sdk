@@ -19,12 +19,20 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
+
+import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import com.google.firebase.messaging.Constants.MessageTypes;
+
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
 
@@ -73,6 +81,10 @@ public class FirebaseMessagingService extends EnhancedIntentService {
   static final String EXTRA_TOKEN = "token";
 
   private static final int RECENTLY_RECEIVED_MESSAGE_IDS_MAX_SIZE = 10;
+
+  @Nullable
+  private Object closeableCoroutineScope = null;
+  private volatile boolean mDestroyed = false;
 
   /**
    * Last N message IDs that have been received by this app to prevent duplicate messages.
@@ -146,6 +158,40 @@ public class FirebaseMessagingService extends EnhancedIntentService {
    */
   @WorkerThread
   public void onNewToken(@NonNull String token) {}
+
+  @Override
+  @CallSuper
+  public void onDestroy() {
+    mDestroyed = true;
+    if (closeableCoroutineScope != null) {
+      closeWithRuntimeException(closeableCoroutineScope);
+    }
+    super.onDestroy();
+  }
+
+  /** @hide */
+  public <T> T setCoroutineScope(@NonNull T newScope) {
+    T previousScope;
+    previousScope = (T) closeableCoroutineScope;
+    if (previousScope == null) {
+      closeableCoroutineScope = newScope;
+    }
+
+    T result = previousScope == null ? newScope : previousScope;
+    if (mDestroyed) {
+      // It is possible that we'll call close() multiple times on the same object, but
+      // Closeable interface requires close method to be idempotent:
+      // "if the stream is already closed then invoking this method has no effect." (c)
+      closeWithRuntimeException(result);
+    }
+    return result;
+  }
+
+  /** @hide */
+  @Nullable
+  public <T> T getCoroutineScope() {
+    return (T) closeableCoroutineScope;
+  }
 
   /** @hide */
   @Override
@@ -261,6 +307,19 @@ public class FirebaseMessagingService extends EnhancedIntentService {
       messageId = intent.getStringExtra(MessagePayloadKeys.MSGID_SERVER);
     }
     return messageId;
+  }
+
+  private void closeWithRuntimeException(Object obj) {
+    if (obj instanceof Closeable) {
+      try {
+        ((Closeable) obj).close();
+      } catch (IOException e) {
+        // close() throws an IOException if an I/O error occurs.
+        // We convert it into an Unchecked Exception to
+        // let the developer know
+        throw new RuntimeException(e);
+      }
+    }
   }
 
   @VisibleForTesting

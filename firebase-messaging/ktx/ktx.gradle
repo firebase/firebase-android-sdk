@@ -49,6 +49,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation project(':firebase-messaging')
     implementation "com.google.android.gms:play-services-basement:18.1.0"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
 
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'
