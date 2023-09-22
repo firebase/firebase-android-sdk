@@ -51,26 +51,36 @@ internal constructor(
   private val sessionGenerator: SessionGenerator
   private val eventGDTLogger = EventGDTLogger(transportFactoryProvider)
   private val sessionCoordinator = SessionCoordinator(firebaseInstallations, eventGDTLogger)
-  private val isAppDefaultProcess: Boolean
 
   init {
     sessionGenerator = SessionGenerator(collectEvents = shouldCollectEvents(), timeProvider)
+
+    val sessionInitiateListener =
+      object : SessionInitiateListener {
+        // Avoid making a public function in FirebaseSessions for onInitiateSession.
+        override suspend fun onInitiateSession(sessionDetails: SessionDetails) {
+          initiateSessionStart(sessionDetails)
+        }
+      }
 
     val sessionInitiator =
       SessionInitiator(
         timeProvider,
         backgroundDispatcher,
-        this::initiateSessionStart,
+        sessionInitiateListener,
         sessionSettings,
         sessionGenerator,
       )
 
     val appContext = firebaseApp.applicationContext.applicationContext
     if (appContext is Application) {
-      isAppDefaultProcess = ProcessUtils.isDefaultProcess(appContext)
-      registerLifecycleCallbacks(appContext, sessionInitiator.activityLifecycleCallbacks)
+      appContext.registerActivityLifecycleCallbacks(sessionInitiator.activityLifecycleCallbacks)
+
+      firebaseApp.addLifecycleEventListener { _, _ ->
+        Log.w(TAG, "FirebaseApp instance deleted. Sessions library will not collect session data.")
+        appContext.unregisterActivityLifecycleCallbacks(sessionInitiator.activityLifecycleCallbacks)
+      }
     } else {
-      isAppDefaultProcess = false
       Log.e(
         TAG,
         "Failed to register lifecycle callbacks, unexpected context ${appContext.javaClass}."
@@ -97,24 +107,6 @@ internal constructor(
     }
   }
 
-  private fun registerLifecycleCallbacks(
-    application: Application,
-    activityLifecycleCallbacks: Application.ActivityLifecycleCallbacks,
-  ) {
-    if (!isAppDefaultProcess) {
-      val processName = ProcessUtils.getMyProcessName(application)
-      Log.d(TAG, "Skipped registering lifecycle callbacks on separate process: $processName")
-      return
-    }
-
-    application.registerActivityLifecycleCallbacks(activityLifecycleCallbacks)
-
-    firebaseApp.addLifecycleEventListener { _, _ ->
-      Log.w(TAG, "FirebaseApp instance deleted. Sessions library will not collect session data.")
-      application.unregisterActivityLifecycleCallbacks(activityLifecycleCallbacks)
-    }
-  }
-
   private suspend fun initiateSessionStart(sessionDetails: SessionDetails) {
     val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
 
@@ -129,11 +121,6 @@ internal constructor(
     subscribers.values.forEach { subscriber ->
       // Notify subscribers, regardless of sampling and data collection state.
       subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionDetails.sessionId))
-    }
-
-    if (!isAppDefaultProcess) {
-      Log.d(TAG, "Sessions SDK has dropped this session for not being on the app default process.")
-      return
     }
 
     if (subscribers.values.none { it.isDataCollectionEnabled }) {
