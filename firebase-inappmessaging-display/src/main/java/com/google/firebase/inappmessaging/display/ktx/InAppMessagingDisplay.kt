@@ -23,13 +23,13 @@ import com.google.firebase.ktx.Firebase
 
 /** Returns the [FirebaseInAppMessagingDisplay] instance of the default [FirebaseApp]. */
 @Deprecated(
-  "com.google.firebase.inappmessaging.displayktx.Firebase.inAppMessagingDisplay has been deprecated. Use `com.google.firebase.inappmessaging.displayFirebase.inAppMessagingDisplay` instead.",
+  "Use `com.google.firebase.Firebase.inAppMessagingDisplay` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-inappmessaging-display-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "Firebase.inAppMessagingDisplay",
     imports =
       [
         "com.google.firebase.Firebase",
-        "com.google.firebase.inappmessaging.displayinAppMessagingDisplay"
+        "com.google.firebase.inappmessaging.display.inAppMessagingDisplay"
       ]
   )
 )
@@ -38,13 +38,13 @@ val Firebase.inAppMessagingDisplay: FirebaseInAppMessagingDisplay
 
 /** @suppress */
 @Deprecated(
-  "com.google.firebase.inappmessaging.displayktx.FirebaseInAppMessagingDisplayKtxRegistrar has been deprecated. Use `com.google.firebase.inappmessaging.displayFirebaseInAppMessagingDisplayKtxRegistrar` instead.",
+  "Use `com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplayKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-inappmessaging-display-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "FirebaseInAppMessagingDisplayKtxRegistrar",
     imports =
       [
         "com.google.firebase.Firebase",
-        "com.google.firebase.inappmessaging.displayFirebaseInAppMessagingDisplayKtxRegistrar"
+        "com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplayKtxRegistrar"
       ]
   )
 )
