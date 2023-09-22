@@ -16,6 +16,18 @@ package com.google.firebase.firestore;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
+import static com.google.firebase.firestore.Filter.and;
+import static com.google.firebase.firestore.Filter.arrayContains;
+import static com.google.firebase.firestore.Filter.arrayContainsAny;
+import static com.google.firebase.firestore.Filter.equalTo;
+import static com.google.firebase.firestore.Filter.greaterThan;
+import static com.google.firebase.firestore.Filter.greaterThanOrEqualTo;
+import static com.google.firebase.firestore.Filter.inArray;
+import static com.google.firebase.firestore.Filter.lessThan;
+import static com.google.firebase.firestore.Filter.lessThanOrEqualTo;
+import static com.google.firebase.firestore.Filter.notEqualTo;
+import static com.google.firebase.firestore.Filter.notInArray;
+import static com.google.firebase.firestore.Filter.or;
 import static com.google.firebase.firestore.remote.TestingHooksUtil.captureExistenceFilterMismatches;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
@@ -28,6 +40,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1165,6 +1178,170 @@ public class QueryTest {
     }
   }
 
+  @Test
+  public void
+      bloomFilterShouldAvertAFullRequeryWhenDocumentsWereAddedDeletedRemovedUpdatedAndUnchangedSinceTheResumeToken()
+          throws Exception {
+    // TODO(b/291365820): Stop skipping this test when running against the Firestore emulator once
+    // the emulator is improved to include a bloom filter in the existence filter messages that it
+    // sends.
+    assumeFalse(
+        "Skip this test when running against the Firestore emulator because the emulator does not "
+            + "include a bloom filter when it sends existence filter messages, making it "
+            + "impossible for this test to verify the correctness of the bloom filter.",
+        isRunningAgainstEmulator());
+
+    // Prepare the names and contents of the 20 documents to create.
+    Map<String, Map<String, Object>> testData = new HashMap<>();
+    for (int i = 0; i < 20; i++) {
+      testData.put("doc" + (1000 + i), map("key", 42, "removed", false));
+    }
+
+    // Each iteration of the "while" loop below runs a single iteration of the test. The test will
+    // be run multiple times only if a bloom filter false positive occurs.
+    int attemptNumber = 0;
+    while (true) {
+      attemptNumber++;
+
+      // Create 20 documents in a new collection.
+      CollectionReference collection = testCollectionWithDocs(testData);
+      Query query = collection.whereEqualTo("removed", false);
+
+      // Run a query to populate the local cache with the 20 documents and a resume token.
+      List<DocumentReference> createdDocuments = new ArrayList<>();
+      {
+        QuerySnapshot querySnapshot = waitFor(query.get());
+        assertWithMessage("querySnapshot1").that(querySnapshot.size()).isEqualTo(20);
+        for (DocumentSnapshot documentSnapshot : querySnapshot.getDocuments()) {
+          createdDocuments.add(documentSnapshot.getReference());
+        }
+      }
+      assertWithMessage("createdDocuments").that(createdDocuments).hasSize(20);
+
+      // Out of the 20 existing documents, leave 5 docs untouched, delete 5 docs, remove 5 docs,
+      // update 5 docs, and add 15 new docs.
+      HashSet<String> deletedDocumentIds = new HashSet<>();
+      HashSet<String> removedDocumentIds = new HashSet<>();
+      HashSet<String> updatedDocumentIds = new HashSet<>();
+      HashSet<String> addedDocumentIds = new HashSet<>();
+
+      {
+        FirebaseFirestore db2 = testFirestore();
+        WriteBatch batch = db2.batch();
+
+        for (int i = 0; i < createdDocuments.size(); i += 4) {
+          DocumentReference documentToDelete = db2.document(createdDocuments.get(i).getPath());
+          batch.delete(documentToDelete);
+          deletedDocumentIds.add(documentToDelete.getId());
+        }
+        assertWithMessage("deletedDocumentIds").that(deletedDocumentIds).hasSize(5);
+
+        // Update 5 documents to no longer match the query.
+        for (int i = 1; i < createdDocuments.size(); i += 4) {
+          DocumentReference documentToRemove = db2.document(createdDocuments.get(i).getPath());
+          batch.update(documentToRemove, map("removed", true));
+          removedDocumentIds.add(documentToRemove.getId());
+        }
+        assertWithMessage("removedDocumentIds").that(removedDocumentIds).hasSize(5);
+
+        // Update 5 documents, but ensure they still match the query.
+        for (int i = 2; i < createdDocuments.size(); i += 4) {
+          DocumentReference documentToUpdate = db2.document(createdDocuments.get(i).getPath());
+          batch.update(documentToUpdate, map("key", 43));
+          updatedDocumentIds.add(documentToUpdate.getId());
+        }
+        assertWithMessage("updatedDocumentIds").that(updatedDocumentIds).hasSize(5);
+
+        for (int i = 0; i < 15; i += 1) {
+          DocumentReference documentToUpdate =
+              db2.document(collection.getPath() + "/newDoc" + (1000 + i));
+          batch.set(documentToUpdate, map("key", 42, "removed", false));
+          addedDocumentIds.add(documentToUpdate.getId());
+        }
+
+        // Ensure the sets above are disjoint.
+        HashSet<String> mergedSet = new HashSet<>();
+        mergedSet.addAll(deletedDocumentIds);
+        mergedSet.addAll(removedDocumentIds);
+        mergedSet.addAll(updatedDocumentIds);
+        mergedSet.addAll(addedDocumentIds);
+        assertWithMessage("mergedSet").that(mergedSet).hasSize(30);
+
+        waitFor(batch.commit());
+      }
+
+      // Wait for 10 seconds, during which Watch will stop tracking the query and will send an
+      // existence filter rather than "delete" events when the query is resumed.
+      Thread.sleep(10000);
+
+      // Resume the query and save the resulting snapshot for verification. Use some internal
+      // testing hooks to "capture" the existence filter mismatches to verify that Watch sent a
+      // bloom filter, and it was used to avert a full requery.
+      AtomicReference<QuerySnapshot> snapshot2Ref = new AtomicReference<>();
+      ArrayList<ExistenceFilterMismatchInfo> existenceFilterMismatches =
+          captureExistenceFilterMismatches(
+              () -> {
+                QuerySnapshot querySnapshot = waitFor(query.get());
+                snapshot2Ref.set(querySnapshot);
+              });
+      QuerySnapshot snapshot2 = snapshot2Ref.get();
+
+      // Verify that the snapshot from the resumed query contains the expected documents; that is,
+      // 10 existing documents that still match the query, and 15 documents that are newly added.
+      HashSet<String> actualDocumentIds = new HashSet<>();
+      for (DocumentSnapshot documentSnapshot : snapshot2.getDocuments()) {
+        actualDocumentIds.add(documentSnapshot.getId());
+      }
+      HashSet<String> expectedDocumentIds = new HashSet<>();
+      for (DocumentReference documentRef : createdDocuments) {
+        if (!deletedDocumentIds.contains(documentRef.getId())
+            && !removedDocumentIds.contains(documentRef.getId())) {
+          expectedDocumentIds.add(documentRef.getId());
+        }
+      }
+      expectedDocumentIds.addAll(addedDocumentIds);
+      assertWithMessage("snapshot2.docs")
+          .that(actualDocumentIds)
+          .containsExactlyElementsIn(expectedDocumentIds);
+      assertWithMessage("actualDocumentIds").that(actualDocumentIds).hasSize(25);
+
+      // Verify that Watch sent an existence filter with the correct counts when the query was
+      // resumed.
+      assertWithMessage("Watch should have sent exactly 1 existence filter")
+          .that(existenceFilterMismatches)
+          .hasSize(1);
+      ExistenceFilterMismatchInfo existenceFilterMismatchInfo = existenceFilterMismatches.get(0);
+      assertWithMessage("localCacheCount")
+          .that(existenceFilterMismatchInfo.localCacheCount())
+          .isEqualTo(35);
+      assertWithMessage("existenceFilterCount")
+          .that(existenceFilterMismatchInfo.existenceFilterCount())
+          .isEqualTo(25);
+
+      // Verify that Watch sent a valid bloom filter.
+      ExistenceFilterBloomFilterInfo bloomFilter = existenceFilterMismatchInfo.bloomFilter();
+      assertWithMessage("The bloom filter specified in the existence filter")
+          .that(bloomFilter)
+          .isNotNull();
+
+      // Verify that the bloom filter was successfully used to avert a full requery. If a false
+      // positive occurred then retry the entire test. Although statistically rare, false positives
+      // are expected to happen occasionally. When a false positive _does_ happen, just retry the
+      // test with a different set of documents. If that retry _also_ experiences a false positive,
+      // then fail the test because that is so improbable that something must have gone wrong.
+      if (attemptNumber == 1 && !bloomFilter.applied()) {
+        continue;
+      }
+
+      assertWithMessage("bloom filter successfully applied with attemptNumber=" + attemptNumber)
+          .that(bloomFilter.applied())
+          .isTrue();
+
+      // Break out of the test loop now that the test passes.
+      break;
+    }
+  }
+
   private static String unicodeNormalize(String s) {
     return Normalizer.normalize(s, Normalizer.Form.NFC);
   }
@@ -1319,41 +1496,30 @@ public class QueryTest {
 
     // Two equalities: a==1 || b==1.
     checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.equalTo("a", 1), Filter.equalTo("b", 1))),
-        "doc1",
-        "doc2",
-        "doc4",
-        "doc5");
+        collection.where(or(equalTo("a", 1), equalTo("b", 1))), "doc1", "doc2", "doc4", "doc5");
 
     // (a==1 && b==0) || (a==3 && b==2)
     checkOnlineAndOfflineResultsMatch(
         collection.where(
-            Filter.or(
-                Filter.and(Filter.equalTo("a", 1), Filter.equalTo("b", 0)),
-                Filter.and(Filter.equalTo("a", 3), Filter.equalTo("b", 2)))),
+            or(and(equalTo("a", 1), equalTo("b", 0)), and(equalTo("a", 3), equalTo("b", 2)))),
         "doc1",
         "doc3");
 
     // a==1 && (b==0 || b==3).
     checkOnlineAndOfflineResultsMatch(
-        collection.where(
-            Filter.and(
-                Filter.equalTo("a", 1), Filter.or(Filter.equalTo("b", 0), Filter.equalTo("b", 3)))),
+        collection.where(and(equalTo("a", 1), or(equalTo("b", 0), equalTo("b", 3)))),
         "doc1",
         "doc4");
 
     // (a==2 || b==2) && (a==3 || b==3)
     checkOnlineAndOfflineResultsMatch(
         collection.where(
-            Filter.and(
-                Filter.or(Filter.equalTo("a", 2), Filter.equalTo("b", 2)),
-                Filter.or(Filter.equalTo("a", 3), Filter.equalTo("b", 3)))),
+            and(or(equalTo("a", 2), equalTo("b", 2)), or(equalTo("a", 3), equalTo("b", 3)))),
         "doc3");
 
     // Test with limits without orderBy (the __name__ ordering is the tie breaker).
     checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.equalTo("a", 2), Filter.equalTo("b", 1))).limit(1),
-        "doc2");
+        collection.where(or(equalTo("a", 2), equalTo("b", 1))).limit(1), "doc2");
   }
 
   @Test
@@ -1374,42 +1540,26 @@ public class QueryTest {
 
     // with one inequality: a>2 || b==1.
     checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.greaterThan("a", 2), Filter.equalTo("b", 1))),
-        "doc5",
-        "doc2",
-        "doc3");
+        collection.where(or(greaterThan("a", 2), equalTo("b", 1))), "doc5", "doc2", "doc3");
 
     // Test with limits (implicit order by ASC): (a==1) || (b > 0) LIMIT 2
     checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.equalTo("a", 1), Filter.greaterThan("b", 0))).limit(2),
-        "doc1",
-        "doc2");
+        collection.where(or(equalTo("a", 1), greaterThan("b", 0))).limit(2), "doc1", "doc2");
 
     // Test with limits (explicit order by): (a==1) || (b > 0) LIMIT_TO_LAST 2
     // Note: The public query API does not allow implicit ordering when limitToLast is used.
     checkOnlineAndOfflineResultsMatch(
-        collection
-            .where(Filter.or(Filter.equalTo("a", 1), Filter.greaterThan("b", 0)))
-            .limitToLast(2)
-            .orderBy("b"),
+        collection.where(or(equalTo("a", 1), greaterThan("b", 0))).limitToLast(2).orderBy("b"),
         "doc3",
         "doc4");
 
     // Test with limits (explicit order by ASC): (a==2) || (b == 1) ORDER BY a LIMIT 1
     checkOnlineAndOfflineResultsMatch(
-        collection
-            .where(Filter.or(Filter.equalTo("a", 2), Filter.equalTo("b", 1)))
-            .limit(1)
-            .orderBy("a"),
-        "doc5");
+        collection.where(or(equalTo("a", 2), equalTo("b", 1))).limit(1).orderBy("a"), "doc5");
 
     // Test with limits (explicit order by DESC): (a==2) || (b == 1) ORDER BY a LIMIT_TO_LAST 1
     checkOnlineAndOfflineResultsMatch(
-        collection
-            .where(Filter.or(Filter.equalTo("a", 2), Filter.equalTo("b", 1)))
-            .limitToLast(1)
-            .orderBy("a"),
-        "doc2");
+        collection.where(or(equalTo("a", 2), equalTo("b", 1))).limitToLast(1).orderBy("a"), "doc2");
   }
 
   @Test
@@ -1426,10 +1576,7 @@ public class QueryTest {
 
     // a==2 || b in [2,3]
     checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.equalTo("a", 2), Filter.inArray("b", asList(2, 3)))),
-        "doc3",
-        "doc4",
-        "doc6");
+        collection.where(or(equalTo("a", 2), inArray("b", asList(2, 3)))), "doc3", "doc4", "doc6");
   }
 
   @Test
@@ -1452,9 +1599,7 @@ public class QueryTest {
     // a==2 || b not-in [2,3]
     // Has implicit orderBy b.
     checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.equalTo("a", 2), Filter.notInArray("b", asList(2, 3)))),
-        "doc1",
-        "doc2");
+        collection.where(or(equalTo("a", 2), notInArray("b", asList(2, 3)))), "doc1", "doc2");
   }
 
   @Test
@@ -1471,15 +1616,11 @@ public class QueryTest {
 
     // a==2 || b array-contains 7
     checkOnlineAndOfflineResultsMatch(
-        collection.where(Filter.or(Filter.equalTo("a", 2), Filter.arrayContains("b", 7))),
-        "doc3",
-        "doc4",
-        "doc6");
+        collection.where(or(equalTo("a", 2), arrayContains("b", 7))), "doc3", "doc4", "doc6");
 
     // a==2 || b array-contains-any [0, 3]
     checkOnlineAndOfflineResultsMatch(
-        collection.where(
-            Filter.or(Filter.equalTo("a", 2), Filter.arrayContainsAny("b", asList(0, 3)))),
+        collection.where(or(equalTo("a", 2), arrayContainsAny("b", asList(0, 3)))),
         "doc1",
         "doc4",
         "doc6");
@@ -1502,16 +1643,12 @@ public class QueryTest {
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
     // Two IN operations on different fields with disjunction.
-    Query query1 =
-        collection.where(
-            Filter.or(Filter.inArray("a", asList(2, 3)), Filter.inArray("b", asList(0, 2))));
+    Query query1 = collection.where(or(inArray("a", asList(2, 3)), inArray("b", asList(0, 2))));
     checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc3", "doc6");
 
     // Two IN operations on the same field with disjunction.
     // a IN [0,3] || a IN [0,2] should union them (similar to: a IN [0,2,3]).
-    Query query2 =
-        collection.where(
-            Filter.or(Filter.inArray("a", asList(0, 3)), Filter.inArray("a", asList(0, 2))));
+    Query query2 = collection.where(or(inArray("a", asList(0, 3)), inArray("a", asList(0, 2))));
     checkOnlineAndOfflineResultsMatch(query2, "doc3", "doc6");
   }
 
@@ -1532,16 +1669,14 @@ public class QueryTest {
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
     Query query1 =
-        collection.where(
-            Filter.or(
-                Filter.inArray("a", asList(2, 3)), Filter.arrayContainsAny("b", asList(0, 7))));
+        collection.where(or(inArray("a", asList(2, 3)), arrayContainsAny("b", asList(0, 7))));
     checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc3", "doc4", "doc6");
 
     Query query2 =
         collection.where(
-            Filter.or(
-                Filter.and(Filter.inArray("a", asList(2, 3)), Filter.equalTo("c", 10)),
-                Filter.arrayContainsAny("b", asList(0, 7))));
+            or(
+                and(inArray("a", asList(2, 3)), equalTo("c", 10)),
+                arrayContainsAny("b", asList(0, 7))));
     checkOnlineAndOfflineResultsMatch(query2, "doc1", "doc3", "doc4");
   }
 
@@ -1557,28 +1692,20 @@ public class QueryTest {
             "doc6", map("a", 2));
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
-    Query query1 =
-        collection.where(
-            Filter.or(Filter.inArray("a", asList(2, 3)), Filter.arrayContains("b", 3)));
+    Query query1 = collection.where(or(inArray("a", asList(2, 3)), arrayContains("b", 3)));
     checkOnlineAndOfflineResultsMatch(query1, "doc3", "doc4", "doc6");
 
-    Query query2 =
-        collection.where(
-            Filter.and(Filter.inArray("a", asList(2, 3)), Filter.arrayContains("b", 7)));
+    Query query2 = collection.where(and(inArray("a", asList(2, 3)), arrayContains("b", 7)));
     checkOnlineAndOfflineResultsMatch(query2, "doc3");
 
     Query query3 =
         collection.where(
-            Filter.or(
-                Filter.inArray("a", asList(2, 3)),
-                Filter.and(Filter.arrayContains("b", 3), Filter.equalTo("a", 1))));
+            or(inArray("a", asList(2, 3)), and(arrayContains("b", 3), equalTo("a", 1))));
     checkOnlineAndOfflineResultsMatch(query3, "doc3", "doc4", "doc6");
 
     Query query4 =
         collection.where(
-            Filter.and(
-                Filter.inArray("a", asList(2, 3)),
-                Filter.or(Filter.arrayContains("b", 7), Filter.equalTo("a", 1))));
+            and(inArray("a", asList(2, 3)), or(arrayContains("b", 7), equalTo("a", 1))));
     checkOnlineAndOfflineResultsMatch(query4, "doc3");
   }
 
@@ -1599,10 +1726,565 @@ public class QueryTest {
             "doc6", map("a", 2, "c", 20));
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
-    Query query1 = collection.where(Filter.equalTo("a", 1)).orderBy("a");
+    Query query1 = collection.where(equalTo("a", 1)).orderBy("a");
     checkOnlineAndOfflineResultsMatch(query1, "doc1", "doc4", "doc5");
 
-    Query query2 = collection.where(Filter.inArray("a", asList(2, 3))).orderBy("a");
+    Query query2 = collection.where(inArray("a", asList(2, 3))).orderBy("a");
     checkOnlineAndOfflineResultsMatch(query2, "doc6", "doc3");
+  }
+
+  /** Multiple Inequality */
+  @Test
+  public void testMultipleInequalityOnDifferentFields() {
+    // TODO(MIEQ): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", map("key", "a", "sort", 0, "v", 0),
+                "doc2", map("key", "b", "sort", 3, "v", 1),
+                "doc3", map("key", "c", "sort", 1, "v", 3),
+                "doc4", map("key", "d", "sort", 2, "v", 2)));
+
+    QuerySnapshot snapshot1 =
+        waitFor(
+            collection
+                .whereNotEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .whereGreaterThan("v", 2)
+                .get());
+    assertEquals(asList("doc3"), querySnapshotToIds(snapshot1));
+
+    // Duplicate inequality fields
+    QuerySnapshot snapshot2 =
+        waitFor(
+            collection
+                .whereNotEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .whereGreaterThan("sort", 1)
+                .get());
+    assertEquals(asList("doc4"), querySnapshotToIds(snapshot2));
+
+    // With multiple IN
+    QuerySnapshot snapshot3 =
+        waitFor(
+            collection
+                .whereGreaterThanOrEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .whereIn("v", asList(2, 3, 4))
+                .whereIn("sort", asList(2, 3))
+                .get());
+    assertEquals(asList("doc4"), querySnapshotToIds(snapshot3));
+
+    // With NOT-IN
+    QuerySnapshot snapshot4 =
+        waitFor(
+            collection
+                .whereGreaterThanOrEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .whereNotIn("v", asList(2, 4, 5))
+                .get());
+    assertEquals(asList("doc1", "doc3"), querySnapshotToIds(snapshot4));
+
+    // With orderby
+    QuerySnapshot snapshot5 =
+        waitFor(
+            collection
+                .whereGreaterThanOrEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .orderBy("v", Direction.DESCENDING)
+                .get());
+    assertEquals(asList("doc3", "doc4", "doc1"), querySnapshotToIds(snapshot5));
+
+    // With limit
+    QuerySnapshot snapshot6 =
+        waitFor(
+            collection
+                .whereGreaterThanOrEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .orderBy("v", Direction.DESCENDING)
+                .limit(2)
+                .get());
+    assertEquals(asList("doc3", "doc4"), querySnapshotToIds(snapshot6));
+
+    // With limitToLast
+    QuerySnapshot snapshot7 =
+        waitFor(
+            collection
+                .whereGreaterThanOrEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .orderBy("v", Direction.DESCENDING)
+                .limitToLast(2)
+                .get());
+    assertEquals(asList("doc4", "doc1"), querySnapshotToIds(snapshot7));
+  }
+
+  @Test
+  public void testMultipleInequalityOnSpecialValues() {
+    // TODO(MIEQ): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", map("key", "a", "sort", 0, "v", 0),
+                "doc2", map("key", "b", "sort", Double.NaN, "v", 1),
+                "doc3", map("key", "c", "sort", null, "v", 3),
+                "doc4", map("key", "d", "v", 2),
+                "doc5", map("key", "e", "sort", 0),
+                "doc6", map("key", "f", "sort", 1, "v", 1)));
+
+    QuerySnapshot snapshot1 =
+        waitFor(collection.whereNotEqualTo("key", "a").whereLessThanOrEqualTo("sort", 2).get());
+    assertEquals(asList("doc5", "doc6"), querySnapshotToIds(snapshot1));
+
+    QuerySnapshot snapshot2 =
+        waitFor(
+            collection
+                .whereNotEqualTo("key", "a")
+                .whereLessThanOrEqualTo("sort", 2)
+                .whereLessThanOrEqualTo("v", 1)
+                .get());
+    assertEquals(asList("doc6"), querySnapshotToIds(snapshot2));
+  }
+
+  @Test
+  public void testMultipleInequalityWithArrayMembership() {
+    // TODO(MIEQ): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", map("key", "a", "sort", 0, "v", asList(0)),
+                "doc2", map("key", "b", "sort", 1, "v", asList(0, 1, 3)),
+                "doc3", map("key", "c", "sort", 1, "v", emptyList()),
+                "doc4", map("key", "d", "sort", 2, "v", asList(1)),
+                "doc5", map("key", "e", "sort", 3, "v", asList(2, 4)),
+                "doc6", map("key", "f", "sort", 4, "v", asList(Double.NaN)),
+                "doc7", map("key", "g", "sort", 4, "v", nullList())));
+
+    QuerySnapshot snapshot1 =
+        waitFor(
+            collection
+                .whereNotEqualTo("key", "a")
+                .whereGreaterThanOrEqualTo("sort", 1)
+                .whereArrayContains("v", 0)
+                .get());
+    assertEquals(asList("doc2"), querySnapshotToIds(snapshot1));
+
+    QuerySnapshot snapshot2 =
+        waitFor(
+            collection
+                .whereNotEqualTo("key", "a")
+                .whereGreaterThanOrEqualTo("sort", 1)
+                .whereArrayContainsAny("v", asList(0, 1))
+                .get());
+    assertEquals(asList("doc2", "doc4"), querySnapshotToIds(snapshot2));
+  }
+
+  private static Map<String, Object> nestedObject(int number) {
+    return map(
+        "name",
+        String.format("room %d", number),
+        "metadata",
+        map("createdAt", number),
+        "field",
+        String.format("field %d", number),
+        "field.dot",
+        number,
+        "field\\slash",
+        number);
+  }
+
+  @Test
+  public void testMultipleInequalityWithNestedField() {
+    // TODO(MIEQ): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", nestedObject(400),
+                "doc2", nestedObject(200),
+                "doc3", nestedObject(100),
+                "doc4", nestedObject(300)));
+
+    QuerySnapshot snapshot1 =
+        waitFor(
+            collection
+                .whereLessThanOrEqualTo("metadata.createdAt", 500)
+                .whereGreaterThan("metadata.createdAt", 100)
+                .whereNotEqualTo("name", "room 200")
+                .orderBy("name")
+                .get());
+    assertEquals(asList("doc4", "doc1"), querySnapshotToIds(snapshot1));
+
+    QuerySnapshot snapshot2 =
+        waitFor(
+            collection
+                .whereGreaterThanOrEqualTo("field", "field 100")
+                .whereNotEqualTo(FieldPath.of("field.dot"), 300)
+                .whereLessThan("field\\slash", 400)
+                .orderBy("name", Direction.DESCENDING)
+                .get());
+    assertEquals(asList("doc2", "doc3"), querySnapshotToIds(snapshot2));
+  }
+
+  @Test
+  public void testMultipleInequalityWithCompositeFilters() {
+    // TODO(MIEQ): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1",
+                map("key", "a", "sort", 0, "v", 5),
+                "doc2",
+                map("key", "aa", "sort", 4, "v", 4),
+                "doc3",
+                map("key", "c", "sort", 3, "v", 3),
+                "doc4",
+                map("key", "b", "sort", 2, "v", 2),
+                "doc5",
+                map("key", "b", "sort", 2, "v", 1),
+                "doc6",
+                map("key", "b", "sort", 0, "v", 0)));
+
+    QuerySnapshot snapshot1 =
+        waitFor(
+            collection
+                .where(
+                    or(
+                        and(equalTo("key", "b"), lessThanOrEqualTo("sort", 2)),
+                        and(notEqualTo("key", "b"), greaterThan("v", 4))))
+                .get());
+    // Implicitly ordered by: 'key' asc, 'sort' asc, 'v' asc, __name__ asc
+    assertEquals(asList("doc1", "doc6", "doc5", "doc4"), querySnapshotToIds(snapshot1));
+
+    QuerySnapshot snapshot2 =
+        waitFor(
+            collection
+                .where(
+                    or(
+                        and(equalTo("key", "b"), lessThanOrEqualTo("sort", 2)),
+                        and(notEqualTo("key", "b"), greaterThan("v", 4))))
+                .orderBy("sort", Direction.DESCENDING)
+                .orderBy("key")
+                .get());
+    // Ordered by: 'sort' desc, 'key' asc, 'v' asc, __name__ asc
+    assertEquals(asList("doc5", "doc4", "doc1", "doc6"), querySnapshotToIds(snapshot2));
+
+    QuerySnapshot snapshot3 =
+        waitFor(
+            collection
+                .where(
+                    and(
+                        or(
+                            and(equalTo("key", "b"), lessThanOrEqualTo("sort", 4)),
+                            and(notEqualTo("key", "b"), greaterThanOrEqualTo("v", 4))),
+                        or(
+                            and(greaterThan("key", "b"), greaterThanOrEqualTo("sort", 1)),
+                            and(lessThan("key", "b"), greaterThan("v", 0)))))
+                .get());
+    // Implicitly ordered by: 'key' asc, 'sort' asc, 'v' asc, __name__ asc
+    assertEquals(asList("doc1", "doc2"), querySnapshotToIds(snapshot3));
+  }
+
+  @Test
+  public void testMultipleInequalityFieldsWillBeImplicitlyOrderedLexicographically() {
+    // TODO(MIEQ): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", map("key", "a", "sort", 0, "v", 5),
+                "doc2", map("key", "aa", "sort", 4, "v", 4),
+                "doc3", map("key", "b", "sort", 3, "v", 3),
+                "doc4", map("key", "b", "sort", 2, "v", 2),
+                "doc5", map("key", "b", "sort", 2, "v", 1),
+                "doc6", map("key", "b", "sort", 0, "v", 0)));
+
+    QuerySnapshot snapshot1 =
+        waitFor(
+            collection
+                .whereNotEqualTo("key", "a")
+                .whereGreaterThan("sort", 1)
+                .whereIn("v", asList(1, 2, 3, 4))
+                .get());
+    // Implicitly ordered by: 'key' asc, 'sort' asc, __name__ asc
+    assertEquals(asList("doc2", "doc4", "doc5", "doc3"), querySnapshotToIds(snapshot1));
+
+    QuerySnapshot snapshot2 =
+        waitFor(
+            collection
+                .whereGreaterThan("sort", 1)
+                .whereNotEqualTo("key", "a")
+                .whereIn("v", asList(1, 2, 3, 4))
+                .get());
+    // Implicitly ordered by: 'key' asc, 'sort' asc, __name__ asc
+    assertEquals(asList("doc2", "doc4", "doc5", "doc3"), querySnapshotToIds(snapshot2));
+  }
+
+  @Test
+  public void testMultipleInequalityWithMultipleExplicitOrderBy() {
+    // TODO(MIEQ): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1",
+                map("key", "a", "sort", 5, "v", 0),
+                "doc2",
+                map("key", "aa", "sort", 4, "v", 0),
+                "doc3",
+                map("key", "b", "sort", 3, "v", 1),
+                "doc4",
+                map("key", "b", "sort", 2, "v", 1),
+                "doc5",
+                map("key", "bb", "sort", 1, "v", 1),
+                "doc6",
+                map("key", "c", "sort", 0, "v", 2)));
+
+    QuerySnapshot snapshot1 =
+        waitFor(
+            collection
+                .whereGreaterThan("key", "a")
+                .whereGreaterThanOrEqualTo("sort", 1)
+                .orderBy("v")
+                .get());
+    // Ordered by: 'v' asc, 'key' asc, 'sort' asc, __name__ asc
+    assertEquals(asList("doc2", "doc4", "doc3", "doc5"), querySnapshotToIds(snapshot1));
+
+    QuerySnapshot snapshot2 =
+        waitFor(
+            collection
+                .whereGreaterThan("key", "a")
+                .whereGreaterThanOrEqualTo("sort", 1)
+                .orderBy("v")
+                .orderBy("sort")
+                .get());
+    // Ordered by: 'v asc, 'sort' asc, 'key' asc,  __name__ asc
+    assertEquals(asList("doc2", "doc5", "doc4", "doc3"), querySnapshotToIds(snapshot2));
+
+    QuerySnapshot snapshot3 =
+        waitFor(
+            collection
+                .whereGreaterThan("key", "a")
+                .whereGreaterThanOrEqualTo("sort", 1)
+                .orderBy("v", Direction.DESCENDING)
+                .get());
+    // Implicit order by matches the direction of last explicit order by.
+    // Ordered by: 'v' desc, 'key' desc, 'sort' desc, __name__ desc
+    assertEquals(asList("doc5", "doc3", "doc4", "doc2"), querySnapshotToIds(snapshot3));
+
+    QuerySnapshot snapshot4 =
+        waitFor(
+            collection
+                .whereGreaterThan("key", "a")
+                .whereGreaterThanOrEqualTo("sort", 1)
+                .orderBy("v", Direction.DESCENDING)
+                .orderBy("sort")
+                .get());
+    // Ordered by: 'v desc, 'sort' asc, 'key' asc,  __name__ asc
+    assertEquals(asList("doc5", "doc4", "doc3", "doc2"), querySnapshotToIds(snapshot4));
+  }
+
+  @Test
+  public void testMultipleInequalityInAggregateQuery() {
+    // TODO(MIEQ): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", map("key", "a", "sort", 5, "v", 0),
+                "doc2", map("key", "aa", "sort", 4, "v", 0),
+                "doc3", map("key", "b", "sort", 3, "v", 1),
+                "doc4", map("key", "b", "sort", 2, "v", 1),
+                "doc5", map("key", "bb", "sort", 1, "v", 1)));
+
+    AggregateQuerySnapshot snapshot1 =
+        waitFor(
+            collection
+                .whereGreaterThan("key", "a")
+                .whereGreaterThanOrEqualTo("sort", 1)
+                .orderBy("v")
+                .count()
+                .get(AggregateSource.SERVER));
+    assertEquals(4L, snapshot1.getCount());
+
+    AggregateQuerySnapshot snapshot2 =
+        waitFor(
+            collection
+                .whereGreaterThan("key", "a")
+                .whereGreaterThanOrEqualTo("sort", 1)
+                .whereNotEqualTo("v", 0)
+                .aggregate(
+                    AggregateField.count(), AggregateField.sum("sort"), AggregateField.average("v"))
+                .get(AggregateSource.SERVER));
+    assertEquals(3L, snapshot2.get(AggregateField.count()));
+    assertEquals(6L, snapshot2.get(AggregateField.sum("sort")));
+    assertEquals((Double) 1.0, snapshot2.get(AggregateField.average("v")));
+  }
+
+  @Test
+  public void testMultipleInequalityFieldsWithDocumentKey() {
+    // TODO(MIEQ): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", map("key", "a", "sort", 5),
+                "doc2", map("key", "aa", "sort", 4),
+                "doc3", map("key", "b", "sort", 3),
+                "doc4", map("key", "b", "sort", 2),
+                "doc5", map("key", "bb", "sort", 1)));
+
+    QuerySnapshot snapshot1 =
+        waitFor(
+            collection
+                .whereGreaterThan("sort", 1)
+                .whereNotEqualTo("key", "a")
+                .whereLessThan(FieldPath.documentId(), "doc5")
+                .get());
+    // Document Key in inequality field will implicitly ordered to the last.
+    // Implicitly ordered by: 'key' asc, 'sort' asc, __name__ asc
+    assertEquals(asList("doc2", "doc4", "doc3"), querySnapshotToIds(snapshot1));
+
+    QuerySnapshot snapshot2 =
+        waitFor(
+            collection
+                .whereLessThan(FieldPath.documentId(), "doc5")
+                .whereGreaterThan("sort", 1)
+                .whereNotEqualTo("key", "a")
+                .get());
+    // Changing filters order will not effect implicit order.
+    // Implicitly ordered by: 'key' asc, 'sort' asc, __name__ asc
+    assertEquals(asList("doc2", "doc4", "doc3"), querySnapshotToIds(snapshot2));
+
+    QuerySnapshot snapshot3 =
+        waitFor(
+            collection
+                .whereLessThan(FieldPath.documentId(), "doc5")
+                .whereGreaterThan("sort", 1)
+                .whereNotEqualTo("key", "a")
+                .orderBy("sort", Direction.DESCENDING)
+                .get());
+    // Ordered by: 'sort' desc,'key' desc,  __name__ desc
+    assertEquals(asList("doc2", "doc3", "doc4"), querySnapshotToIds(snapshot3));
+  }
+
+  @Test
+  public void testMultipleInequalityReadFromCacheWhenOffline() {
+    // TODO(MIEQ): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", map("key", "a", "sort", 1),
+                "doc2", map("key", "aa", "sort", 4),
+                "doc3", map("key", "b", "sort", 3),
+                "doc4", map("key", "b", "sort", 2)));
+
+    Query query = collection.whereNotEqualTo("key", "a").whereLessThanOrEqualTo("sort", 3);
+
+    // populate the cache.
+    QuerySnapshot snapshot1 = waitFor(query.get());
+    assertEquals(2L, snapshot1.size());
+    assertFalse(snapshot1.getMetadata().isFromCache());
+
+    waitFor(collection.firestore.getClient().disableNetwork());
+
+    QuerySnapshot snapshot2 = waitFor(query.get());
+    assertEquals(2L, snapshot2.size());
+    assertTrue(snapshot2.getMetadata().isFromCache());
+    // Implicitly ordered by: 'key' asc, 'sort' asc, __name__ asc
+    assertEquals(asList("doc4", "doc3"), querySnapshotToIds(snapshot2));
+  }
+
+  @Test
+  public void testMultipleInequalityFromCacheAndFromServer() {
+    // TODO(MIEQ): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1",
+                map("a", 1, "b", 0),
+                "doc2",
+                map("a", 2, "b", 1),
+                "doc3",
+                map("a", 3, "b", 2),
+                "doc4",
+                map("a", 1, "b", 3),
+                "doc5",
+                map("a", 1, "b", 1)));
+
+    // implicit AND: a != 1 && b < 2
+    Query query1 = collection.whereNotEqualTo("a", 1).whereLessThan("b", 2);
+    checkOnlineAndOfflineResultsMatch(query1, "doc2");
+
+    // explicit AND: a != 1 && b < 2
+    Query query2 = collection.where(and(notEqualTo("a", 1), lessThan("b", 2)));
+    checkOnlineAndOfflineResultsMatch(query2, "doc2");
+
+    // explicit AND: a < 3 && b not-in [2, 3]
+    // Implicitly ordered by: a asc, b asc, __name__ asc
+    Query query3 = collection.where(and(lessThan("a", 3), notInArray("b", asList(2, 3))));
+    checkOnlineAndOfflineResultsMatch(query3, "doc1", "doc5", "doc2");
+
+    // a <3 && b != 0, ordered by: b desc, a desc, __name__ desc
+    Query query4 =
+        collection
+            .whereLessThan("a", 3)
+            .whereNotEqualTo("b", 0)
+            .orderBy("b", Direction.DESCENDING)
+            .limit(2);
+    checkOnlineAndOfflineResultsMatch(query4, "doc4", "doc2");
+
+    // explicit OR: a>2 || b<1.
+    Query query5 = collection.where(or(greaterThan("a", 2), lessThan("b", 1)));
+    checkOnlineAndOfflineResultsMatch(query5, "doc1", "doc3");
   }
 }
