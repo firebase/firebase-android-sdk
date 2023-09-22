@@ -129,7 +129,7 @@ jobs:
         continue-on-error: true
       - name: Terraform Apply
         if: github.event_name == 'pull_request'
-        run: terraform apply -var-file=${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }} -auto-approve
+        run: terraform apply -var-file=google-services.json -auto-approve
         continue-on-error: true
       - name: ${{ matrix.module }} Integ Tests
         env:
