@@ -28,6 +28,7 @@ import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.emulators.EmulatedServiceSettings;
+import com.google.firebase.storage.BuildConfig;
 import com.google.firebase.storage.StorageException;
 import com.google.firebase.storage.internal.StorageReferenceUri;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
@@ -80,7 +81,6 @@ public abstract class NetworkRequest {
 
   private StorageReferenceUri storageReferenceUri;
 
-  private static String gmsCoreVersion;
   private Context context;
   private Map<String, List<String>> resultHeaders;
   private int resultCode;
@@ -321,23 +321,6 @@ public abstract class NetworkRequest {
     return conn;
   }
 
-  @NonNull
-  private static String getGmsCoreVersion(Context context) {
-    if (gmsCoreVersion == null) {
-      PackageManager packageManager = context.getPackageManager();
-      try {
-        PackageInfo info = packageManager.getPackageInfo("com.google.android.gms", 0);
-        gmsCoreVersion = info.versionName;
-      } catch (PackageManager.NameNotFoundException e) {
-        Log.e(TAG, "Unable to find gmscore in package manager", e);
-      }
-      if (gmsCoreVersion == null) {
-        gmsCoreVersion = "[No Gmscore]";
-      }
-    }
-    return gmsCoreVersion;
-  }
-
   @SuppressWarnings("TryFinallyCanBeTryWithResources")
   private void constructMessage(
       @NonNull HttpURLConnection conn, @Nullable String authToken, @Nullable String appCheckToken)
@@ -356,12 +339,9 @@ public abstract class NetworkRequest {
       Log.w(TAG, "No App Check token for request.");
     }
 
-    StringBuilder userAgent = new StringBuilder("Android/");
-    String gmsCore = getGmsCoreVersion(context);
-    if (!TextUtils.isEmpty(gmsCore)) {
-      userAgent.append(gmsCore);
-    }
-    conn.setRequestProperty("X-Firebase-Storage-Version", userAgent.toString());
+    String userAgent = "Android/" + BuildConfig.VERSION_NAME;
+
+    conn.setRequestProperty("X-Firebase-Storage-Version", userAgent);
 
     Map<String, String> requestProperties = requestHeaders;
     for (Map.Entry<String, String> entry : requestProperties.entrySet()) {
