@@ -121,14 +121,16 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v0
-          # create composite indexes with Terraform
+      # create composite indexes with Terraform
       - name: Setup Terraform 
+        if: contains(fromJSON(needs.determine_changed.outputs.modules), ':firebase-firestore')
         uses: hashicorp/setup-terraform@v2
       - name: Terraform Init
+        if: contains(fromJSON(needs.determine_changed.outputs.modules), ':firebase-firestore')
         run: terraform init
         continue-on-error: true
       - name: Terraform Apply
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && contains(fromJSON(needs.determine_changed.outputs.modules), ':firebase-firestore')
         run: terraform apply -var-file=google-services.json -auto-approve
         continue-on-error: true
       - name: ${{ matrix.module }} Integ Tests
