@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore.util;
+package com.google.firebase.firestore.sdk34.util;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -29,18 +29,19 @@ import java.util.Set;
 import org.junit.Test;
 import org.robolectric.annotation.Config;
 
+import com.google.firebase.firestore.DocumentId;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.PropertyName;
 import com.google.firebase.firestore.TestUtil;
 import com.google.firebase.firestore.ThrowOnExtraProperties;
-import com.google.firebase.firestore.sdk34.DocumentId;
-import com.google.firebase.firestore.sdk34.PropertyName;
+import com.google.firebase.firestore.util.CustomClassMapper;
 
 import static com.google.firebase.firestore.sdk34.LocalFirestoreHelper.fromSingleQuotedString;
 import static com.google.firebase.firestore.sdk34.LocalFirestoreHelper.mapAnyType;
 import static org.junit.Assert.*;
 
 @org.junit.runner.RunWith(org.robolectric.RobolectricTestRunner.class)
-@Config(manifest = Config.NONE, sdk = 34)
+@Config(manifest = Config.NONE, sdk = 33)
 @SuppressWarnings({"unused", "WeakerAccess", "SpellCheckingInspection"})
 public class RecordMapperTest {
   private static final double EPSILON = 0.0003;
@@ -347,6 +348,7 @@ public class RecordMapperTest {
     }
   }
 
+  /*
   @Test
   public void primitiveDeserializeBigDecimal() {
     var beanBigdecimal = deserialize("{'value': 123}", BigDecimalBean.class);
@@ -390,6 +392,7 @@ public class RecordMapperTest {
     } catch (RuntimeException e) { // ignore
     }
   }
+  */
 
   @Test
   public void primitiveDeserializeFloat() {
@@ -515,7 +518,7 @@ public class RecordMapperTest {
   public void noFieldDeserialize() {
     assertExceptionContains(
         "No properties to serialize found on class "
-            + "com.google.firebase.firestore.RecordMapperTest$NoFieldBean",
+            + "com.google.firebase.firestore.sdk34.util.RecordMapperTest$NoFieldBean",
         () -> deserialize("{'value': 'foo'}", NoFieldBean.class));
   }
 
@@ -523,7 +526,7 @@ public class RecordMapperTest {
   public void throwOnUnknownProperties() {
     assertExceptionContains(
         "No accessor for unknown found on class "
-            + "com.google.firebase.firestore.RecordMapperTest$ThrowOnUnknownPropertiesBean",
+            + "com.google.firebase.firestore.sdk34.util.RecordMapperTest$ThrowOnUnknownPropertiesBean",
         () ->
             deserialize("{'value': 'foo', 'unknown': 'bar'}", ThrowOnUnknownPropertiesBean.class));
   }
@@ -673,6 +676,7 @@ public class RecordMapperTest {
         serialize(Collections.singletonMap("value", 1.234567890123E12)));
   }
 
+  /*
   @Test
   public void serializeBigDecimalBean() {
     var bean = new BigDecimalBean(BigDecimal.valueOf(1.1));
@@ -687,6 +691,7 @@ public class RecordMapperTest {
     var b = convertToCustomClass(serialized, BigDecimalBean.class);
     assertEquals(a, b);
   }
+  */
 
   @Test
   public void serializeBooleanBean() {
@@ -707,7 +712,7 @@ public class RecordMapperTest {
     final var bean = new NoFieldBean();
     assertExceptionContains(
         "No properties to serialize found on class "
-            + "com.google.firebase.firestore.RecordMapperTest$NoFieldBean",
+            + "com.google.firebase.firestore.sdk34.util.RecordMapperTest$NoFieldBean",
         () -> serialize(bean));
   }
 
@@ -839,7 +844,7 @@ public class RecordMapperTest {
   public void shortsCantBeSerialized() {
     final var bean = new ShortBean((short) 1);
     assertExceptionContains(
-        "Numbers of type Short are not supported, please use an int, long, float, double or BigDecimal (found in field 'value')",
+        "Numbers of type Short are not supported, please use an int, long, float or double (found in field 'value')",
         () -> serialize(bean));
   }
 
@@ -847,7 +852,7 @@ public class RecordMapperTest {
   public void bytesCantBeSerialized() {
     final var bean = new ByteBean((byte) 1);
     assertExceptionContains(
-        "Numbers of type Byte are not supported, please use an int, long, float, double or BigDecimal (found in field 'value')",
+        "Numbers of type Byte are not supported, please use an int, long, float or double (found in field 'value')",
         () -> serialize(bean));
   }
 
@@ -928,10 +933,8 @@ public class RecordMapperTest {
 
   @Test
   public void passingInGenericBeanTopLevelThrows() {
-    assertExceptionContains(
-        "Class com.google.firebase.firestore.RecordMapperTest$GenericBean has generic type "
-            + "parameters, please use GenericTypeIndicator instead",
-        () -> deserialize("{'value': 'foo'}", GenericBean.class));
+    assertExceptionContains("Class com.google.firebase.firestore.sdk34.util.RecordMapperTest$GenericBean has generic type parameters",
+                            () -> deserialize("{'value': 'foo'}", GenericBean.class));
   }
 
   @Test

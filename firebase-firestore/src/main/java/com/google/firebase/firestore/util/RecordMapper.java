@@ -16,15 +16,13 @@
 
 package com.google.firebase.firestore.util;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -32,23 +30,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.FieldValue;
+
 
 /**
  * Serializes java records. Uses automatic record constructors and accessors only. Therefore,
  * exclusion of fields is not supported. Supports DocumentId, PropertyName, and ServerTimestamp
- * annotations on record components. However, those annotations have to
- * include @Target(ElementType.RECORD_COMPONENT), so the ones defined in the
- * firebase-firestore-sdk34 module should be used, rather than the ones defined in this module.
- * Since records are not supported in JDK8, reflection is used for inspecting record metadata. This
- * class will fail to load on java versions that don't support records.
+ * annotations on record components.
  *
  * @author Eran Leshem
  */
 class RecordMapper<T> extends BeanMapper<T> {
   private static final Logger LOGGER = Logger.getLogger(RecordMapper.class.getName());
-  private static final RecordInspector RECORD_INSPECTOR = new RecordInspector();
+  private static final Class<?>[] CLASSES_ARRAY_TYPE = new Class<?>[0];
 
   // Below are maps to find an accessor and constructor parameter index from a given property name.
   // A property name is the name annotated by @PropertyName, if exists; or the component name.
@@ -56,29 +50,23 @@ class RecordMapper<T> extends BeanMapper<T> {
   private final Map<String, Method> accessors = new HashMap<>();
   private final Constructor<T> constructor;
   private final Map<String, Integer> constructorParamIndexes = new HashMap<>();
-  // A set of property names that were annotated with @ServerTimestamp.
-  private final Set<String> serverTimestamps = new HashSet<>();
-  // A set of property names that were annotated with @DocumentId. These properties will be
-  // populated with document ID values during deserialization, and be skipped during
-  // serialization.
-  private final Set<String> documentIdPropertyNames = new HashSet<>();
 
   RecordMapper(Class<T> clazz) {
     super(clazz);
 
-    constructor = RECORD_INSPECTOR.getCanonicalConstructor(clazz);
+    constructor = getCanonicalConstructor(clazz);
 
-    AnnotatedElement[] recordComponents = RECORD_INSPECTOR.getRecordComponents(clazz);
+    Field[] recordComponents = clazz.getDeclaredFields();
     if (recordComponents.length == 0) {
       throw new RuntimeException("No properties to serialize found on class " + clazz.getName());
     }
 
     for (int i = 0; i < recordComponents.length; i++) {
-      AnnotatedElement recordComponent = recordComponents[i];
+      Field recordComponent = recordComponents[i];
       String propertyName = propertyName(recordComponent);
       constructorParamIndexes.put(propertyName, i);
-      accessors.put(propertyName, RECORD_INSPECTOR.getAccessor(recordComponent));
-      applyComponentAnnotations(recordComponent);
+      accessors.put(propertyName, getAccessor(clazz, recordComponent));
+      applyFieldAnnotations(recordComponent);
     }
   }
 
@@ -153,54 +141,34 @@ class RecordMapper<T> extends BeanMapper<T> {
     }
   }
 
-  private void applyComponentAnnotations(AnnotatedElement component) {
-    if (isAnnotationPresent(component, "ServerTimestamp")) {
-      Class<?> componentType = RECORD_INSPECTOR.getType(component);
-      if (componentType != Date.class && componentType != Timestamp.class) {
-        throw new IllegalArgumentException(
-            "Component "
-                + RECORD_INSPECTOR.getName(component)
-                + " is annotated with @ServerTimestamp but is "
-                + componentType
-                + " instead of Date or Timestamp.");
-      }
-      serverTimestamps.add(propertyName(component));
-    }
-
-    if (isAnnotationPresent(component, "DocumentId")) {
-      Class<?> type = RECORD_INSPECTOR.getType(component);
-      ensureValidDocumentIdType("Component", "is", type);
-      documentIdPropertyNames.add(propertyName(component));
+  private static <T> Constructor<T> getCanonicalConstructor(Class<T> cls) {
+    try {
+      Class<?>[] paramTypes = getParamTypes(cls);
+      Constructor<T> constructor = cls.getDeclaredConstructor(paramTypes);
+      constructor.setAccessible(true);
+      return constructor;
+    } catch (NoSuchMethodException e) {
+      throw new IllegalStateException(e);
     }
   }
 
-  private static String propertyName(AnnotatedElement component) {
-    Annotation annotation = getAnnotation(component, "PropertyName");
-    if (annotation != null) {
-      try {
-        return (String) annotation.getClass().getMethod("value").invoke(annotation);
-      } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-        throw new IllegalArgumentException("Failed to get PropertyName annotation value", e);
-      }
+  private static <T> Class<?>[] getParamTypes(Class<T> cls) {
+    Field[] recordComponents = cls.getDeclaredFields();
+    List<Class<?>> types = new ArrayList<>(recordComponents.length);
+    for (Field element : recordComponents) {
+      types.add(element.getType());
     }
-
-    return RECORD_INSPECTOR.getName(component);
+    return types.toArray(CLASSES_ARRAY_TYPE);
   }
 
-  private static boolean isAnnotationPresent(AnnotatedElement element, String annotationName) {
-    return getAnnotation(element, annotationName) != null;
-  }
-
-  private static Annotation getAnnotation(
-      AnnotatedElement element, String annotationName) {
-    Annotation[] annotations = element.getAnnotations();
-    for (Annotation annotation : annotations) {
-      if (annotation.annotationType().getSimpleName().equals(annotationName)) {
-        return annotation;
-      }
+  private static Method getAccessor(Class<?> clazz, Field recordComponent) {
+    try {
+      Method accessor = clazz.getDeclaredMethod(recordComponent.getName(), CLASSES_ARRAY_TYPE);
+      accessor.setAccessible(true);
+      return accessor;
+    } catch (NoSuchMethodException e) {
+      throw new IllegalArgumentException("Failed to get record component accessor", e);
     }
-
-    return null;
   }
 
   // Populate @DocumentId annotated components. If there is a conflict (@DocumentId annotation is
@@ -224,83 +192,6 @@ class RecordMapper<T> extends BeanMapper<T> {
           id = context.documentRef;
         }
         params[constructorParamIndexes.get(docIdPropertyName).intValue()] = id;
-      }
-    }
-  }
-
-  private static final class RecordInspector {
-    static final Class<?>[] CLASSES_ARRAY_TYPE = new Class<?>[0];
-    private final Method _getRecordComponents;
-    private final Method _getName;
-    private final Method _getType;
-    private final Method _getAccessor;
-
-    @SuppressWarnings("JavaReflectionMemberAccess")
-    private RecordInspector() {
-      try {
-        _getRecordComponents = Class.class.getMethod("getRecordComponents");
-        Class<?> recordComponentClass = Class.forName("java.lang.reflect.RecordComponent");
-        _getName = recordComponentClass.getMethod("getName");
-        _getType = recordComponentClass.getMethod("getType");
-        _getAccessor = recordComponentClass.getMethod("getAccessor");
-      } catch (ClassNotFoundException | NoSuchMethodException e) {
-        throw new IllegalStateException(
-            "Failed to access class or methods needed to support record serialization", e);
-      }
-    }
-
-    private <T> Constructor<T> getCanonicalConstructor(Class<T> cls) {
-      try {
-        Class<?>[] paramTypes = getParamTypes(cls);
-        Constructor<T> constructor = cls.getDeclaredConstructor(paramTypes);
-        constructor.setAccessible(true);
-        return constructor;
-      } catch (NoSuchMethodException e) {
-        throw new IllegalStateException(e);
-      }
-    }
-
-    private <T> Class<?>[] getParamTypes(Class<T> cls) {
-      AnnotatedElement[] recordComponents = getRecordComponents(cls);
-      List<Class<?>> types = new ArrayList<>(recordComponents.length);
-      for (AnnotatedElement element: recordComponents) {
-        types.add(getType(element));
-      }
-      return types.toArray(CLASSES_ARRAY_TYPE);
-    }
-
-    private AnnotatedElement[] getRecordComponents(Class<?> recordType) {
-      try {
-        return (AnnotatedElement[]) _getRecordComponents.invoke(recordType);
-      } catch (InvocationTargetException | IllegalAccessException e) {
-        throw new IllegalArgumentException(
-            "Failed to load components of record " + recordType.getName(), e);
-      }
-    }
-
-    private Class<?> getType(AnnotatedElement recordComponent) {
-      try {
-        return (Class<?>) _getType.invoke(recordComponent);
-      } catch (InvocationTargetException | IllegalAccessException e) {
-        throw new IllegalArgumentException("Failed to get record component type", e);
-      }
-    }
-
-    private String getName(AnnotatedElement recordComponent) {
-      try {
-        return (String) _getName.invoke(recordComponent);
-      } catch (InvocationTargetException | IllegalAccessException e) {
-        throw new IllegalArgumentException("Failed to get record component name", e);
-      }
-    }
-
-    private Method getAccessor(AnnotatedElement recordComponent) {
-      try {
-        Method accessor = (Method) _getAccessor.invoke(recordComponent);
-        accessor.setAccessible(true);
-        return accessor;
-      } catch (InvocationTargetException | IllegalAccessException e) {
-        throw new IllegalArgumentException("Failed to get record component accessor", e);
       }
     }
   }
