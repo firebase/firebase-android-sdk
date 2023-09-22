@@ -35,17 +35,14 @@ import kotlinx.coroutines.asCoroutineDispatcher
  * <p>Acts as a target for extension methods provided by sdks.
  */
 @Deprecated(
-  "com.google.firebase.ktx.Firebase has been deprecated. Use `com.google.firebase.Firebase` instead.",
-  ReplaceWith(
-    expression = "Firebase",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.Firebase"]
-  )
+  "Use `com.google.firebase.Firebase` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase:firebase-common-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  ReplaceWith(expression = "Firebase", imports = ["com.google.firebase.Firebase"])
 )
 object Firebase
 
 /** Returns the default firebase app instance. */
 @Deprecated(
-  "com.google.firebase.ktx.Firebase.app has been deprecated. Use `com.google.firebase.Firebase.app` instead.",
+  "Use `com.google.firebase.Firebase.app` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase:firebase-common-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "Firebase.app",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.app"]
@@ -56,7 +53,7 @@ val Firebase.app: FirebaseApp
 
 /** Returns a named firebase app instance. */
 @Deprecated(
-  "com.google.firebase.ktx.Firebase.app(name) has been deprecated. Use `com.google.firebase.Firebase.app(name)` instead.",
+  "Use `com.google.firebase.Firebase.app(name)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase:firebase-common-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "Firebase.app(name)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.app"]
@@ -66,7 +63,7 @@ fun Firebase.app(name: String): FirebaseApp = FirebaseApp.getInstance(name)
 
 /** Initializes and returns a FirebaseApp. */
 @Deprecated(
-  "com.google.firebase.ktx.Firebase.initialize(context) has been deprecated. Use `com.google.firebase.Firebase.initialize(context)` instead.",
+  "Use `com.google.firebase.Firebase.initialize(context)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase:firebase-common-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "Firebase.initialize(context)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.initialize"]
@@ -76,7 +73,7 @@ fun Firebase.initialize(context: Context): FirebaseApp? = FirebaseApp.initialize
 
 /** Initializes and returns a FirebaseApp. */
 @Deprecated(
-  "com.google.firebase.ktx.Firebase.initialize(context, options) has been deprecated. Use `com.google.firebase.Firebase.initialize(context, options)` instead.",
+  "Use `com.google.firebase.Firebase.initialize(context, options)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase:firebase-common-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "Firebase.initialize(context, options)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.initialize"]
@@ -87,7 +84,7 @@ fun Firebase.initialize(context: Context, options: FirebaseOptions): FirebaseApp
 
 /** Initializes and returns a FirebaseApp. */
 @Deprecated(
-  "com.google.firebase.ktx.Firebase.initialize(context, options, name) has been deprecated. Use `com.google.firebase.Firebase.initialize(context, options, name)` instead.",
+  "Use `com.google.firebase.Firebase.initialize(context, options, name)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase:firebase-common-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "Firebase.initialize(context, options, name)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.initialize"]
@@ -98,7 +95,7 @@ fun Firebase.initialize(context: Context, options: FirebaseOptions, name: String
 
 /** Returns options of default FirebaseApp */
 @Deprecated(
-  "com.google.firebase.ktx.Firebase.options has been deprecated. Use `com.google.firebase.Firebase.options` instead.",
+  "Use `com.google.firebase.Firebase.options` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase:firebase-common-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "Firebase.options",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.options"]
@@ -109,7 +106,7 @@ val Firebase.options: FirebaseOptions
 
 /** @suppress */
 @Deprecated(
-  "com.google.firebase.ktx.FirebaseCommonKtxRegistrar has been deprecated. Use `com.google.firebase.FirebaseCommonKtxRegistrar` instead.",
+  "Use `com.google.firebase.FirebaseCommonKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase:firebase-common-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "FirebaseCommonKtxRegistrar",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.FirebaseCommonKtxRegistrar"]

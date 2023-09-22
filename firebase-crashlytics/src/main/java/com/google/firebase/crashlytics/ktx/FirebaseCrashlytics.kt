@@ -23,10 +23,10 @@ import com.google.firebase.ktx.Firebase
 
 /** Returns the [FirebaseCrashlytics] instance of the default [FirebaseApp]. */
 @Deprecated(
-  "com.google.firebase.crashlyticsktx.Firebase.crashlytics has been deprecated. Use `com.google.firebase.crashlyticsFirebase.crashlytics` instead.",
+  "Use `com.google.firebase.Firebase.crashlytics` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "Firebase.crashlytics",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.crashlyticscrashlytics"]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.crashlytics.crashlytics"]
   )
 )
 val Firebase.crashlytics: FirebaseCrashlytics
@@ -34,13 +34,13 @@ val Firebase.crashlytics: FirebaseCrashlytics
 
 /** Associates all key-value parameters with the reports */
 @Deprecated(
-  "com.google.firebase.crashlyticsktx.FirebaseCrashlytics.setCustomKeys(init) -> Unit) { has been deprecated. Use `com.google.firebase.crashlyticsFirebaseCrashlytics.setCustomKeys(init) -> Unit) {` instead.",
+  "Use `com.google.firebase.crashlytics.FirebaseCrashlytics.setCustomKeys(init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
-    expression = "FirebaseCrashlytics.setCustomKeys(init) -> Unit) {",
+    expression = "FirebaseCrashlytics.setCustomKeys(init)",
     imports =
       [
         "com.google.firebase.Firebase",
-        "com.google.firebase.crashlyticsFirebaseCrashlytics.setCustomKeys"
+        "com.google.firebase.crashlytics.FirebaseCrashlytics.setCustomKeys"
       ]
   )
 )
@@ -51,10 +51,14 @@ fun FirebaseCrashlytics.setCustomKeys(init: KeyValueBuilder.() -> Unit) {
 
 /** @suppress */
 @Deprecated(
-  "com.google.firebase.crashlyticsktx. has been deprecated. Use `com.google.firebase.crashlytics` instead.",
+  "Use `com.google.firebase.crashlytics.FirebaseCrashlyticsKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
-    expression = "",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.crashlytics"]
+    expression = "FirebaseCrashlyticsKtxRegistrar",
+    imports =
+      [
+        "com.google.firebase.Firebase",
+        "com.google.firebase.crashlytics.FirebaseCrashlyticsKtxRegistrar"
+      ]
   )
 )
 @Keep
