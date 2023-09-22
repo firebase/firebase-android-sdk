@@ -25,7 +25,7 @@ import com.google.firebase.ktx.Firebase
 
 /** Returns the [FirebaseAppDistribution] instance of the default [FirebaseApp]. */
 @Deprecated(
-  "Use `com.google.firebase.Firebase.appDistribution` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.Firebase.appDistribution` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "Firebase.appDistribution",
     imports =
@@ -41,7 +41,7 @@ val Firebase.appDistribution: FirebaseAppDistribution
  * @return the binaryType of the [AppDistributionRelease]
  */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.AppDistributionRelease.component1` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.appdistribution.AppDistributionRelease.component1` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "AppDistributionRelease.component1",
     imports =
@@ -59,7 +59,7 @@ operator fun AppDistributionRelease.component1() = binaryType
  * @return the displayVersion of the [AppDistributionRelease]
  */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.AppDistributionRelease.component2` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.appdistribution.AppDistributionRelease.component2` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "AppDistributionRelease.component2",
     imports =
@@ -77,7 +77,7 @@ operator fun AppDistributionRelease.component2() = displayVersion
  * @return the versionCode of the [AppDistributionRelease]
  */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.AppDistributionRelease.component3` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.appdistribution.AppDistributionRelease.component3` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "AppDistributionRelease.component3",
     imports =
@@ -95,7 +95,7 @@ operator fun AppDistributionRelease.component3() = versionCode
  * @return the releaseNotes of the [AppDistributionRelease]
  */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.AppDistributionRelease.component4` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.appdistribution.AppDistributionRelease.component4` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "AppDistributionRelease.component4",
     imports =
@@ -113,7 +113,7 @@ operator fun AppDistributionRelease.component4() = releaseNotes
  * @return the apkBytesDownloaded of the [UpdateProgress]
  */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.UpdateProgress.component1` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.appdistribution.UpdateProgress.component1` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "UpdateProgress.component1",
     imports =
@@ -131,7 +131,7 @@ operator fun UpdateProgress.component1() = apkBytesDownloaded
  * @return the apkFileTotalBytes of the [UpdateProgress]
  */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.UpdateProgress.component2` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.appdistribution.UpdateProgress.component2` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "UpdateProgress.component2",
     imports =
@@ -149,7 +149,7 @@ operator fun UpdateProgress.component2() = apkFileTotalBytes
  * @return the updateStatus of the [UpdateProgress]
  */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.UpdateProgress.component3` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.appdistribution.UpdateProgress.component3` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "UpdateProgress.component3",
     imports =
@@ -163,7 +163,7 @@ operator fun UpdateProgress.component3() = updateStatus
 
 /** @suppress */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.FirebaseAppDistributionKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.appdistribution.FirebaseAppDistributionKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "FirebaseAppDistributionKtxRegistrar",
     imports =

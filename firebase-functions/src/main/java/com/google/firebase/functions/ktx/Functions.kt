@@ -26,7 +26,7 @@ import java.net.URL
 
 /** Returns the [FirebaseFunctions] instance of the default [FirebaseApp]. */
 @Deprecated(
-  "Use `com.google.firebase.Firebase.functions` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-functions-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.Firebase.functions` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-functions-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "Firebase.functions",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.functionsfunctions"]
@@ -37,7 +37,7 @@ val Firebase.functions: FirebaseFunctions
 
 /** Returns the [FirebaseFunctions] instance of a given [regionOrCustomDomain]. */
 @Deprecated(
-  "Use `com.google.firebase.Firebase.functions(regionOrCustomDomain)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-functions-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.Firebase.functions(regionOrCustomDomain)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-functions-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "Firebase.functions(regionOrCustomDomain)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.functions.functions"]
@@ -48,7 +48,7 @@ fun Firebase.functions(regionOrCustomDomain: String): FirebaseFunctions =
 
 /** Returns the [FirebaseFunctions] instance of a given [FirebaseApp]. */
 @Deprecated(
-  "Use `com.google.firebase.functions.Firebase.functions(app)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-functions-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.functions.Firebase.functions(app)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-functions-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "Firebase.functions(app)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.functions.functions"]
@@ -58,7 +58,7 @@ fun Firebase.functions(app: FirebaseApp): FirebaseFunctions = FirebaseFunctions.
 
 /** Returns the [FirebaseFunctions] instance of a given [FirebaseApp] and [regionOrCustomDomain]. */
 @Deprecated(
-  "Use `com.google.firebase.functions.Firebase.functions(app, regionOrCustomDomain)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-functions-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.functions.Firebase.functions(app, regionOrCustomDomain)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-functions-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "Firebase.functions(app, regionOrCustomDomain)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.functions.functions"]
@@ -69,7 +69,7 @@ fun Firebase.functions(app: FirebaseApp, regionOrCustomDomain: String): Firebase
 
 /** @suppress */
 @Deprecated(
-  "Use `com.google.firebase.functions.FirebaseFunctionsKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-functions-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.functions.FirebaseFunctionsKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-functions-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "FirebaseFunctionsKtxRegistrar",
     imports =
@@ -83,7 +83,7 @@ class FirebaseFunctionsKtxRegistrar : ComponentRegistrar {
 
 /** Returns a reference to the Callable HTTPS trigger with the given name and call options. */
 @Deprecated(
-  "Use `com.google.firebase.functions.FirebaseFunctions.getHttpsCallable(name, init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-functions-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.functions.FirebaseFunctions.getHttpsCallable(name, init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-functions-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "FirebaseFunctions.getHttpsCallable(name, init)",
     imports =
@@ -104,7 +104,7 @@ fun FirebaseFunctions.getHttpsCallable(
 
 /** Returns a reference to the Callable HTTPS trigger with the given URL and call options. */
 @Deprecated(
-  "Use `com.google.firebase.functions.FirebaseFunctions.getHttpsCallableFromUrl(url, init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-functions-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.functions.FirebaseFunctions.getHttpsCallableFromUrl(url, init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-functions-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "FirebaseFunctions.getHttpsCallableFromUrl(url, init)",
     imports =

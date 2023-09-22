@@ -39,7 +39,7 @@ import kotlinx.coroutines.flow.callbackFlow
 
 /** Returns the [FirebaseStorage] instance of the default [FirebaseApp]. */
 @Deprecated(
-  "Use `com.google.firebase.Firebase.storage` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.Firebase.storage` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "Firebase.storage",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.storage.storage"]
@@ -50,7 +50,7 @@ val Firebase.storage: FirebaseStorage
 
 /** Returns the [FirebaseStorage] instance for a custom storage bucket at [url]. */
 @Deprecated(
-  "Use `com.google.firebase.Firebase.storage(url)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.Firebase.storage(url)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "Firebase.storage(url)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.storage.storage"]
@@ -60,7 +60,7 @@ fun Firebase.storage(url: String): FirebaseStorage = FirebaseStorage.getInstance
 
 /** Returns the [FirebaseStorage] instance of a given [FirebaseApp]. */
 @Deprecated(
-  "Use `com.google.firebase.Firebase.storage(app)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.Firebase.storage(app)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "Firebase.storage(app)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.storage.storage"]
@@ -70,7 +70,7 @@ fun Firebase.storage(app: FirebaseApp): FirebaseStorage = FirebaseStorage.getIns
 
 /** Returns the [FirebaseStorage] instance of a given [FirebaseApp] and storage bucket [url]. */
 @Deprecated(
-  "Use `com.google.firebase.Firebase.storage(app, url)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.Firebase.storage(app, url)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "Firebase.storage(app, url)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.storage.storage"]
@@ -81,7 +81,7 @@ fun Firebase.storage(app: FirebaseApp, url: String): FirebaseStorage =
 
 /** Returns a [StorageMetadata] object initialized using the [init] function. */
 @Deprecated(
-  "Use `com.google.firebase.storage.storageMetadata(init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.storage.storageMetadata(init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "storageMetadata(init)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.storage.storageMetadata"]
@@ -99,7 +99,7 @@ fun storageMetadata(init: StorageMetadata.Builder.() -> Unit): StorageMetadata {
  * @return the bytesTransferred of the [UploadTask.TaskSnapshot]
  */
 @Deprecated(
-  "Use `com.google.firebase.storage.UploadTask.TaskSnapshot.component1` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.storage.UploadTask.TaskSnapshot.component1` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "UploadTask.TaskSnapshot.component1",
     imports =
@@ -117,7 +117,7 @@ operator fun UploadTask.TaskSnapshot.component1() = bytesTransferred
  * @return the totalByteCount of the [UploadTask.TaskSnapshot]
  */
 @Deprecated(
-  "Use `com.google.firebase.storage.UploadTask.TaskSnapshot.component2` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.storage.UploadTask.TaskSnapshot.component2` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "UploadTask.TaskSnapshot.component2",
     imports =
@@ -135,7 +135,7 @@ operator fun UploadTask.TaskSnapshot.component2() = totalByteCount
  * @return the metadata of the [UploadTask.TaskSnapshot]
  */
 @Deprecated(
-  "Use `com.google.firebase.storage.UploadTask.TaskSnapshot.component3` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.storage.UploadTask.TaskSnapshot.component3` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "UploadTask.TaskSnapshot.component3",
     imports =
@@ -153,7 +153,7 @@ operator fun UploadTask.TaskSnapshot.component3() = metadata
  * @return the uploadSessionUri of the [UploadTask.TaskSnapshot]
  */
 @Deprecated(
-  "Use `com.google.firebase.storage.UploadTask.TaskSnapshot.component4` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.storage.UploadTask.TaskSnapshot.component4` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "UploadTask.TaskSnapshot.component4",
     imports =
@@ -171,7 +171,7 @@ operator fun UploadTask.TaskSnapshot.component4() = uploadSessionUri
  * @return the bytesTransferred of the [StreamDownloadTask.TaskSnapshot]
  */
 @Deprecated(
-  "Use `com.google.firebase.storage.StreamDownloadTask.TaskSnapshot.component1` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.storage.StreamDownloadTask.TaskSnapshot.component1` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "StreamDownloadTask.TaskSnapshot.component1",
     imports =
@@ -189,7 +189,7 @@ operator fun StreamDownloadTask.TaskSnapshot.component1() = bytesTransferred
  * @return the totalByteCount of the [StreamDownloadTask.TaskSnapshot]
  */
 @Deprecated(
-  "Use `com.google.firebase.storage.StreamDownloadTask.TaskSnapshot.component2` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.storage.StreamDownloadTask.TaskSnapshot.component2` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "StreamDownloadTask.TaskSnapshot.component2",
     imports =
@@ -207,7 +207,7 @@ operator fun StreamDownloadTask.TaskSnapshot.component2() = totalByteCount
  * @return the stream of the [StreamDownloadTask.TaskSnapshot]
  */
 @Deprecated(
-  "Use `com.google.firebase.storage.StreamDownloadTask.TaskSnapshot.component3` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.storage.StreamDownloadTask.TaskSnapshot.component3` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "StreamDownloadTask.TaskSnapshot.component3",
     imports =
@@ -225,7 +225,7 @@ operator fun StreamDownloadTask.TaskSnapshot.component3() = stream
  * @return the bytesTransferred of the [FileDownloadTask.TaskSnapshot]
  */
 @Deprecated(
-  "Use `com.google.firebase.storage.FileDownloadTask.TaskSnapshot.component1` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.storage.FileDownloadTask.TaskSnapshot.component1` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "FileDownloadTask.TaskSnapshot.component1",
     imports =
@@ -243,7 +243,7 @@ operator fun FileDownloadTask.TaskSnapshot.component1() = bytesTransferred
  * @return the totalByteCount of the [FileDownloadTask.TaskSnapshot]
  */
 @Deprecated(
-  "Use `com.google.firebase.storage.FileDownloadTask.TaskSnapshot.component2` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.storage.FileDownloadTask.TaskSnapshot.component2` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "FileDownloadTask.TaskSnapshot.component2",
     imports =
@@ -261,7 +261,7 @@ operator fun FileDownloadTask.TaskSnapshot.component2() = totalByteCount
  * @return the items of the [ListResult]
  */
 @Deprecated(
-  "Use `com.google.firebase.storage.ListResult.component1` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.storage.ListResult.component1` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "ListResult.component1",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.storage.ListResult.component1"]
@@ -275,7 +275,7 @@ operator fun ListResult.component1(): List<StorageReference> = items
  * @return the prefixes of the [ListResult]
  */
 @Deprecated(
-  "Use `com.google.firebase.storage.ListResult.component2` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.storage.ListResult.component2` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "ListResult.component2",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.storage.ListResult.component2"]
@@ -289,7 +289,7 @@ operator fun ListResult.component2(): List<StorageReference> = prefixes
  * @return the pageToken of the [ListResult]
  */
 @Deprecated(
-  "Use `com.google.firebase.storage.ListResult.component3` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.storage.ListResult.component3` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "ListResult.component3",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.storage.ListResult.component3"]
@@ -305,7 +305,7 @@ operator fun ListResult.component3(): String? = pageToken
  * - When the flow completes the listeners will be removed.
  */
 @Deprecated(
-  "Use `com.google.firebase.storage.StorageTask.taskState` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.storage.StorageTask.taskState` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "StorageTask<T>.taskState",
     imports =
@@ -354,7 +354,7 @@ val <T : StorageTask<T>.SnapshotBase> StorageTask<T>.taskState: Flow<TaskState<T
 
 /** @suppress */
 @Deprecated(
-  "Use `com.google.firebase.storage.FirebaseStorageKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.storage.FirebaseStorageKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "FirebaseStorageKtxRegistrar",
     imports =
