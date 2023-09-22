@@ -121,6 +121,16 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v0
+          # create composite indexes with Terraform
+      - name: Setup Terraform 
+        uses: hashicorp/setup-terraform@v2
+      - name: Terraform Init
+        run: terraform init
+        continue-on-error: true
+      - name: Terraform Apply
+        if: github.event_name == 'pull_request'
+        run: terraform apply -var-file=${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }} -auto-approve
+        continue-on-error: true
       - name: ${{ matrix.module }} Integ Tests
         env:
           FIREBASE_CI: 1
