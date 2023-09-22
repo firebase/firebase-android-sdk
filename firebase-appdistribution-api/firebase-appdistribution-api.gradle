@@ -21,8 +21,9 @@ firebaseLibrary {
 }
 
 android {
+    namespace "com.google.firebase.appdistribution"
     compileSdkVersion project.targetSdkVersion
-
+    
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion project.targetSdkVersion
@@ -48,7 +49,7 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation 'org.mockito:mockito-inline:3.4.0'
     testImplementation project(':firebase-appdistribution-api')
     androidTestImplementation "org.mockito:mockito-android:3.4.0"

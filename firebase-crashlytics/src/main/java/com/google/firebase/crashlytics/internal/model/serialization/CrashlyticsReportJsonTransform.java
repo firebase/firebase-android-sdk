@@ -102,6 +102,12 @@ public class CrashlyticsReportJsonTransform {
         case "installationUuid":
           builder.setInstallationUuid(jsonReader.nextString());
           break;
+        case "firebaseInstallationId":
+          builder.setFirebaseInstallationId(jsonReader.nextString());
+          break;
+        case "appQualitySessionId":
+          builder.setAppQualitySessionId(jsonReader.nextString());
+          break;
         case "buildVersion":
           builder.setBuildVersion(jsonReader.nextString());
           break;
@@ -141,6 +147,9 @@ public class CrashlyticsReportJsonTransform {
         case "identifier":
           builder.setIdentifierFromUtf8Bytes(
               Base64.decode(jsonReader.nextString(), Base64.NO_WRAP));
+          break;
+        case "appQualitySessionId":
+          builder.setAppQualitySessionId(jsonReader.nextString());
           break;
         case "startedAt":
           builder.setStartedAt(jsonReader.nextLong());

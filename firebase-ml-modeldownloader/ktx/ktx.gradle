@@ -25,6 +25,7 @@ firebaseLibrary {
 }
 
 android {
+    namespace "com.google.firebase.ml.modeldownloader.ktx"    
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16
@@ -53,5 +54,5 @@ dependencies {
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:3.6.0'
     testImplementation 'androidx.test:runner:1.5.1'
-    testImplementation 'androidx.test.ext:junit:1.1.4'
+    testImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
 }

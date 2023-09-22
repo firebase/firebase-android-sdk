@@ -1,0 +1,17 @@
+name: Version Check
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - 'releases/**'
+
+jobs:
+  version-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3.5.3
+
+      - name: Build
+        run: |
+          ./gradlew gmavenVersionCheck

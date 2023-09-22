@@ -1,5 +1,11 @@
 # Unreleased
 
+# 16.0.0-beta10
+* [fixed] Updated the third-party license file to include Dagger's license.
+
+# 16.0.0-beta09
+* [feature] Improved development mode to allow all API calls to be made without having to sign in.
+
 # 16.0.0-beta08
 * [fixed] Fixed an issue where a crash happened whenever a feedback
   notification was shown on devices running Android 4.4 and lower.
@@ -44,10 +50,8 @@
 # 16.0.0-beta02
 * [fixed] Fixed a bug that prevented testers from signing in when the app had
 an underscore in the package name.
-
 * [fixed] Fixed a UI bug where the APK download notification displayed the
 incorrect error message.
-
 * [changed] Internal improvements to tests.
 
 
@@ -68,4 +72,3 @@ The [appdistro] Android library with Kotlin extensions is now available in
 beta. The Kotlin extensions library transitively includes the base
 `firebase-app-distribution` library. To learn more, visit the
 [[appdistro] KTX reference documentation](/docs/reference/kotlin/com/google/firebase/appdistribution/ktx/package-summary).
-

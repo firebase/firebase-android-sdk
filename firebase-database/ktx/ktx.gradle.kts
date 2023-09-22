@@ -31,6 +31,7 @@ android {
 
   compileSdk = targetSdkVersion
 
+  namespace = "com.google.firebase.database.ktx"
   defaultConfig {
     minSdk = minSdkVersion
     targetSdk = targetSdkVersion

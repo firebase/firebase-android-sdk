@@ -40,6 +40,7 @@ protobuf {
 }
 
 android {
+    namespace "com.google.firebase.ml.modeldownloader"
     compileSdkVersion project.targetSdkVersion
 
     defaultConfig {
@@ -58,6 +59,13 @@ android {
             includeAndroidResources = true
         }
     }
+    lint {
+        baseline = file("lint-baseline.xml")
+    }
+}
+
+thirdPartyLicenses {
+    add 'Dagger', "${rootDir}/third_party/licenses/apache-2.0.txt"
 }
 
 dependencies {
@@ -76,21 +84,20 @@ dependencies {
 
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation 'com.google.auto.service:auto-service-annotations:1.0-rc6'
+    implementation 'com.google.auto.service:auto-service-annotations:1.0.1'
     implementation 'javax.inject:javax.inject:1'
 
-    implementation 'javax.inject:javax.inject:1'
-    vendor ('com.google.dagger:dagger:2.43.2') {
+    vendor (libs.dagger.dagger) {
         exclude group: "javax.inject", module: "javax.inject"
     }
-    annotationProcessor 'com.google.dagger:dagger-compiler:2.43.2'
+    annotationProcessor libs.dagger.compiler
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"
     annotationProcessor project(":encoders:firebase-encoders-processor")
 
     testImplementation(project(":integ-testing"))
-    testImplementation 'androidx.test:core:1.3.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation 'com.github.tomakehurst:wiremock-standalone:2.26.3'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
@@ -105,7 +112,7 @@ dependencies {
     androidTestImplementation 'junit:junit:4.13.1'
     androidTestImplementation "androidx.annotation:annotation:1.1.0"
     androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
 }
 

@@ -49,10 +49,8 @@ abstract class VersionBumpTask : DefaultTask() {
 
   @TaskAction
   fun build() {
-    with(versionFile.get()) {
-      readLines()
-        .map { it.takeUnless { it.startsWith("version=") } ?: "version=${newVersion.get()}" }
-        .also { writeText(it.joinToString("\n") + '\n') }
+    versionFile.get().rewriteLines {
+      if (it.startsWith("version=")) "version=${newVersion.get()}" else it
     }
   }
 

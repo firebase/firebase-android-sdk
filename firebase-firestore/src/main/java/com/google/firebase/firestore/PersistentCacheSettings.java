@@ -24,7 +24,7 @@ import androidx.annotation.NonNull;
  * <p>To use, create an instance using {@link PersistentCacheSettings#newBuilder().build()}, then
  * set the instance to {@link
  * FirebaseFirestoreSettings.Builder#setLocalCacheSettings(LocalCacheSettings)}, and use the built
- * `FirebaseFirestoreSettings` instance to configure Firestore SDK.
+ * {@code FirebaseFirestoreSettings} instance to configure the Firestore SDK.
  */
 public final class PersistentCacheSettings implements LocalCacheSettings {
   /**

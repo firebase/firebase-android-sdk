@@ -28,7 +28,7 @@ protobuf {
     generateProtoTasks {
         all().each { task ->
 
-	    task.addIncludeDir(files('fix-javalite/proto'))
+            task.addIncludeDir(files('fix-javalite/proto'))
 
             task.builtins {
                 java {
@@ -39,6 +39,7 @@ protobuf {
     }
 }
 android {
+    namespace "firebase.com.protolitewrapper"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion

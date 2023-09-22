@@ -50,11 +50,13 @@ protobuf {
         }
     }
 }
+
 android {
     adbOptions {
         timeOutInMs 60 * 1000
     }
 
+    namespace "com.google.firebase.firestore"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
@@ -63,14 +65,26 @@ android {
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'proguard.txt'
+
+        // Acceptable values are: 'emulator', 'qa', 'nightly', and 'prod'.
+        def targetBackend = findProperty("targetBackend") ?: "emulator"
+        buildConfigField("String", "TARGET_BACKEND", "\"$targetBackend\"")
+
+        def targetDatabaseId = findProperty('targetDatabaseId') ?: "(default)"
+        buildConfigField("String", "TARGET_DATABASE_ID", "\"$targetDatabaseId\"")
+
+        def localProps = new Properties()
+
+        try {
+            file("local.properties").withInputStream { localProps.load(it) }
+        } catch (FileNotFoundException e) {
+        }
     }
 
     sourceSets {
         main {
             proto {
                 srcDir 'src/proto'
-            }
-            java {
             }
         }
         test {
@@ -91,28 +105,10 @@ android {
     }
     testOptions.unitTests.includeAndroidResources = true
 
-    // Acceptable values are: 'emulator', 'qa', 'nightly', and 'prod'.
-    ext.targetBackend = 'emulator'
 }
 
 tasks.withType(Test) {
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
-}
-
-android.libraryVariants.all { variant ->
-    if (findProperty('targetBackend')) {
-        variant.buildConfigField("String", "TARGET_BACKEND", "\"${property("targetBackend")}\"")
-    } else {
-        // By default set the target backend to 'emulator'
-        variant.buildConfigField("String", "TARGET_BACKEND", "\"emulator\"")
-    }
-
-    def localProps = new Properties()
-
-    try {
-    file("local.properties").withInputStream { localProps.load(it) }
-    } catch (FileNotFoundException e) {
-    }
 }
 
 googleJavaFormat {
@@ -152,7 +148,7 @@ dependencies {
 
     testImplementation project(':firebase-firestore')
     testImplementation 'junit:junit:4.13.2'
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "org.hamcrest:hamcrest-junit:2.0.0.0"
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
@@ -160,18 +156,17 @@ dependencies {
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
 
-    androidTestImplementation project(':firebase-firestore')
     androidTestImplementation 'junit:junit:4.13.2'
-    androidTestImplementation("com.google.truth:truth:$googleTruthVersion"){
+    androidTestImplementation("com.google.truth:truth:$googleTruthVersion") {
         exclude group: "org.codehaus.mojo", module: "animal-sniffer-annotations"
     }
     androidTestImplementation 'org.mockito:mockito-core:2.25.0'
     androidTestImplementation 'org.mockito:mockito-android:2.25.0'
     androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
     androidTestImplementation "androidx.annotation:annotation:1.1.0"
-    androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'androidx.test:rules:1.2.0'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation 'androidx.test:runner:1.5.2'
+    androidTestImplementation 'androidx.test:rules:1.5.0'
+    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
 }
 
 gradle.projectsEvaluated {

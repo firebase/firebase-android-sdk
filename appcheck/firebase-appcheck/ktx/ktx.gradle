@@ -25,6 +25,7 @@ firebaseLibrary {
 }
 
 android {
+    namespace "com.google.firebase.appcheck.ktx"    
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 16
@@ -68,5 +69,5 @@ dependencies {
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'androidx.test:core:1.2.0'
+    androidTestImplementation "androidx.test:core:$androidxTestCoreVersion"
 }

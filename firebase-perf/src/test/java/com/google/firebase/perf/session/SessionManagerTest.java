@@ -16,9 +16,8 @@ package com.google.firebase.perf.session;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -30,13 +29,14 @@ import android.content.Context;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.session.gauges.GaugeManager;
-import com.google.firebase.perf.v1.ApplicationProcessState;
+import com.google.firebase.perf.util.Clock;
+import com.google.firebase.perf.util.Timer;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.AdditionalMatchers;
 import org.mockito.ArgumentMatchers;
 import org.mockito.InOrder;
 import org.mockito.Mock;
@@ -51,6 +51,8 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
   @Mock private PerfSession mockPerfSession;
   @Mock private AppStateMonitor mockAppStateMonitor;
   @Mock private Context mockApplicationContext;
+
+  @Mock private Clock mockClock;
 
   @Before
   public void setUp() {
@@ -81,124 +83,9 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     inOrder.verify(mockGaugeManager).logGaugeMetadata(any(), any());
   }
 
-  @Test
-  public void testOnUpdateAppStateDoesNothingDuringAppStart() {
-    String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
-
-    assertThat(oldSessionId).isNotNull();
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
-
-    AppStateMonitor.getInstance().setIsColdStart(true);
-
-    SessionManager.getInstance().onUpdateAppState(ApplicationProcessState.FOREGROUND);
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
-  }
-
-  @Test
-  public void testOnUpdateAppStateGeneratesNewSessionIdOnForegroundState() {
-    String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
-
-    assertThat(oldSessionId).isNotNull();
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
-
-    SessionManager.getInstance().onUpdateAppState(ApplicationProcessState.FOREGROUND);
-    assertThat(oldSessionId).isNotEqualTo(SessionManager.getInstance().perfSession().sessionId());
-  }
-
-  @Test
-  public void testOnUpdateAppStateDoesntGenerateNewSessionIdOnBackgroundState() {
-    String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
-
-    assertThat(oldSessionId).isNotNull();
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
-
-    SessionManager.getInstance().onUpdateAppState(ApplicationProcessState.BACKGROUND);
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
-  }
-
-  @Test
-  public void testOnUpdateAppStateGeneratesNewSessionIdOnBackgroundStateIfPerfSessionExpires() {
-    when(mockPerfSession.isExpired()).thenReturn(true);
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    String oldSessionId = testSessionManager.perfSession().sessionId();
-
-    assertThat(oldSessionId).isNotNull();
-    assertThat(oldSessionId).isEqualTo(testSessionManager.perfSession().sessionId());
-
-    testSessionManager.onUpdateAppState(ApplicationProcessState.BACKGROUND);
-    assertThat(oldSessionId).isNotEqualTo(testSessionManager.perfSession().sessionId());
-  }
-
-  @Test
-  public void
-      testOnUpdateAppStateMakesGaugeManagerLogGaugeMetadataOnForegroundStateIfSessionIsVerbose() {
-    forceVerboseSession();
-
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.onUpdateAppState(ApplicationProcessState.FOREGROUND);
-
-    verify(mockGaugeManager)
-        .logGaugeMetadata(
-            anyString(), nullable(com.google.firebase.perf.v1.ApplicationProcessState.class));
-  }
-
-  @Test
-  public void
-      testOnUpdateAppStateDoesntMakeGaugeManagerLogGaugeMetadataOnForegroundStateIfSessionIsNonVerbose() {
-    forceNonVerboseSession();
-
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.onUpdateAppState(ApplicationProcessState.FOREGROUND);
-
-    verify(mockGaugeManager, never())
-        .logGaugeMetadata(
-            anyString(), nullable(com.google.firebase.perf.v1.ApplicationProcessState.class));
-  }
-
-  @Test
-  public void
-      testOnUpdateAppStateDoesntMakeGaugeManagerLogGaugeMetadataOnBackgroundStateEvenIfSessionIsVerbose() {
-    forceVerboseSession();
-
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.onUpdateAppState(ApplicationProcessState.BACKGROUND);
-
-    verify(mockGaugeManager, never())
-        .logGaugeMetadata(
-            anyString(), nullable(com.google.firebase.perf.v1.ApplicationProcessState.class));
-  }
-
-  @Test
-  public void
-      testOnUpdateAppStateMakesGaugeManagerLogGaugeMetadataOnBackgroundAppStateIfSessionIsVerboseAndTimedOut() {
-    when(mockPerfSession.isExpired()).thenReturn(true);
-    forceVerboseSession();
-
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.onUpdateAppState(ApplicationProcessState.BACKGROUND);
-
-    verify(mockGaugeManager)
-        .logGaugeMetadata(
-            anyString(), nullable(com.google.firebase.perf.v1.ApplicationProcessState.class));
-  }
-
-  @Test
-  public void testOnUpdateAppStateMakesGaugeManagerStartCollectingGaugesIfSessionIsVerbose() {
-    forceVerboseSession();
-
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.onUpdateAppState(ApplicationProcessState.FOREGROUND);
-
-    verify(mockGaugeManager)
-        .startCollectingGauges(
-            AdditionalMatchers.not(eq(mockPerfSession)), eq(ApplicationProcessState.FOREGROUND));
-  }
+  // LogGaugeData on new perf session when Verbose
+  // NotLogGaugeData on new perf session when not Verbose
+  // Mark Session as expired after time limit.
 
   @Test
   public void testOnUpdateAppStateMakesGaugeManagerStopCollectingGaugesIfSessionIsNonVerbose() {
@@ -206,7 +93,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
 
     SessionManager testSessionManager =
         new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.onUpdateAppState(ApplicationProcessState.FOREGROUND);
+    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId"));
 
     verify(mockGaugeManager).stopCollectingGauges();
   }
@@ -216,140 +103,74 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     forceSessionsFeatureDisabled();
 
     SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, PerfSession.create(), mockAppStateMonitor);
-    testSessionManager.onUpdateAppState(ApplicationProcessState.FOREGROUND);
+        new SessionManager(
+            mockGaugeManager, PerfSession.createWithId("testSessionId"), mockAppStateMonitor);
+    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId2"));
 
     verify(mockGaugeManager).stopCollectingGauges();
   }
 
   @Test
   public void testGaugeMetadataIsFlushedOnlyWhenNewVerboseSessionIsCreated() {
-    when(mockPerfSession.isExpired()).thenReturn(false);
+    when(mockPerfSession.isSessionRunningTooLong()).thenReturn(false);
+
+    // Start with a non verbose session
+    forceNonVerboseSession();
+    SessionManager testSessionManager =
+        new SessionManager(
+            mockGaugeManager, PerfSession.createWithId("testSessionId1"), mockAppStateMonitor);
+
+    verify(mockGaugeManager, times(0))
+        .logGaugeMetadata(
+            eq("testSessionId1"),
+            eq(com.google.firebase.perf.v1.ApplicationProcessState.FOREGROUND));
 
     // Forcing a verbose session will enable Gauge collection
     forceVerboseSession();
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, PerfSession.create(), mockAppStateMonitor);
+    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId2"));
+    verify(mockGaugeManager, times(1)).logGaugeMetadata(eq("testSessionId2"), any());
 
-    // A new session is created when the app comes to foreground
-    testSessionManager.onUpdateAppState(ApplicationProcessState.FOREGROUND);
-    String sessionId1 = testSessionManager.perfSession().sessionId();
-
-    // Session ID should remain unchanged when the app goes to background
-    testSessionManager.onUpdateAppState(ApplicationProcessState.BACKGROUND);
-    String sessionId2 = testSessionManager.perfSession().sessionId();
-    assertThat(sessionId2).matches(sessionId1);
-
-    // Forcing a non-verbose session will disable Gauge collection
-    forceNonVerboseSession();
-
-    // A new session is created when the app comes to foreground
-    testSessionManager.onUpdateAppState(ApplicationProcessState.FOREGROUND);
-    String sessionId3 = testSessionManager.perfSession().sessionId();
-    assertThat(sessionId3).doesNotMatch(sessionId2);
-
-    verify(mockGaugeManager, times(1))
-        .logGaugeMetadata(
-            eq(sessionId1), eq(com.google.firebase.perf.v1.ApplicationProcessState.FOREGROUND));
-  }
-
-  @Test
-  public void testSessionIdUpdatesIfPerfSessionExpires() {
-    when(mockPerfSession.isExpired()).thenReturn(true);
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    String oldSessionId = testSessionManager.perfSession().sessionId();
-
-    assertThat(oldSessionId).isNotNull();
-    assertThat(oldSessionId).isEqualTo(testSessionManager.perfSession().sessionId());
-
-    testSessionManager.updatePerfSessionIfExpired();
-    assertThat(oldSessionId).isNotEqualTo(testSessionManager.perfSession().sessionId());
-  }
-
-  @Test
-  public void testSessionIdDoesntUpdateIfPerfSessionDoesntExpires() {
-    when(mockPerfSession.isExpired()).thenReturn(false);
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    String oldSessionId = testSessionManager.perfSession().sessionId();
-
-    assertThat(oldSessionId).isNotNull();
-    assertThat(oldSessionId).isEqualTo(testSessionManager.perfSession().sessionId());
-
-    testSessionManager.updatePerfSessionIfExpired();
-    assertThat(oldSessionId).isEqualTo(testSessionManager.perfSession().sessionId());
-  }
-
-  @Test
-  public void testPerfSessionExpiredMakesGaugeManagerLogGaugeMetadataIfSessionIsVerbose() {
-    when(mockPerfSession.isExpired()).thenReturn(true);
+    // Force a non-verbose session and verify if we are not logging metadata
     forceVerboseSession();
-
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.updatePerfSessionIfExpired();
-
-    verify(mockGaugeManager)
-        .logGaugeMetadata(
-            anyString(), nullable(com.google.firebase.perf.v1.ApplicationProcessState.class));
+    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId3"));
+    verify(mockGaugeManager, times(1)).logGaugeMetadata(eq("testSessionId3"), any());
   }
 
   @Test
-  public void testPerfSessionExpiredDoesntMakeGaugeManagerLogGaugeMetadataIfSessionIsNonVerbose() {
-    when(mockPerfSession.isExpired()).thenReturn(true);
-    forceNonVerboseSession();
+  public void testSessionIdDoesNotUpdateIfPerfSessionRunsTooLong() {
+    Timer mockTimer = mock(Timer.class);
+    when(mockClock.getTime()).thenReturn(mockTimer);
 
+    PerfSession session = new PerfSession("sessionId", mockClock);
     SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.updatePerfSessionIfExpired();
+        new SessionManager(mockGaugeManager, session, mockAppStateMonitor);
 
-    verify(mockGaugeManager, never())
-        .logGaugeMetadata(
-            anyString(), nullable(com.google.firebase.perf.v1.ApplicationProcessState.class));
+    assertThat(session.isSessionRunningTooLong()).isFalse();
+
+    when(mockTimer.getDurationMicros())
+        .thenReturn(TimeUnit.HOURS.toMicros(5)); // Default Max Session Length is 4 hours
+    assertThat(session.isSessionRunningTooLong()).isTrue();
+
+    assertThat(testSessionManager.perfSession().sessionId()).isEqualTo("sessionId");
   }
 
   @Test
-  public void testPerfSessionExpiredMakesGaugeManagerStartCollectingGaugesIfSessionIsVerbose() {
-    when(mockPerfSession.isExpired()).thenReturn(true);
+  public void testPerfSessionExpiredMakesGaugeManagerStopsCollectingGaugesIfSessionIsVerbose() {
     forceVerboseSession();
+    Timer mockTimer = mock(Timer.class);
+    when(mockClock.getTime()).thenReturn(mockTimer);
 
+    PerfSession session = new PerfSession("sessionId", mockClock);
     SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.updatePerfSessionIfExpired();
+        new SessionManager(mockGaugeManager, session, mockAppStateMonitor);
 
-    verify(mockGaugeManager)
-        .startCollectingGauges(
-            AdditionalMatchers.not(eq(mockPerfSession)),
-            nullable(com.google.firebase.perf.v1.ApplicationProcessState.class));
-  }
+    assertThat(session.isSessionRunningTooLong()).isFalse();
 
-  @Test
-  public void
-      testPerfSessionExpiredDoesntMakeGaugeManagerStartCollectingGaugesIfSessionIsNonVerbose() {
-    when(mockPerfSession.isExpired()).thenReturn(true);
-    forceNonVerboseSession();
+    when(mockTimer.getDurationMicros())
+        .thenReturn(TimeUnit.HOURS.toMicros(5)); // Default Max Session Length is 4 hours
 
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.updatePerfSessionIfExpired();
-
-    verify(mockGaugeManager, never())
-        .startCollectingGauges(
-            eq(mockPerfSession),
-            nullable(com.google.firebase.perf.v1.ApplicationProcessState.class));
-  }
-
-  @Test
-  public void testPerfSessionExpiredMakesGaugeManagerStopCollectingGaugesIfSessionIsNonVerbose() {
-    when(mockPerfSession.isExpired()).thenReturn(true);
-    forceNonVerboseSession();
-
-    SessionManager testSessionManager =
-        new SessionManager(mockGaugeManager, mockPerfSession, mockAppStateMonitor);
-    testSessionManager.updatePerfSessionIfExpired();
-
-    verify(mockGaugeManager).stopCollectingGauges();
+    assertThat(session.isSessionRunningTooLong()).isTrue();
+    verify(mockGaugeManager, times(0)).logGaugeMetadata(any(), any());
   }
 
   @Test
@@ -360,7 +181,7 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     FakeSessionAwareObject spySessionAwareObjectOne = spy(new FakeSessionAwareObject());
     FakeSessionAwareObject spySessionAwareObjectTwo = spy(new FakeSessionAwareObject());
 
-    testSessionManager.updatePerfSession(ApplicationProcessState.FOREGROUND);
+    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId1"));
 
     verify(spySessionAwareObjectOne, never())
         .updateSession(ArgumentMatchers.nullable(PerfSession.class));
@@ -379,8 +200,8 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     testSessionManager.registerForSessionUpdates(new WeakReference<>(spySessionAwareObjectOne));
     testSessionManager.registerForSessionUpdates(new WeakReference<>(spySessionAwareObjectTwo));
 
-    testSessionManager.updatePerfSession(ApplicationProcessState.FOREGROUND);
-    testSessionManager.updatePerfSession(ApplicationProcessState.BACKGROUND);
+    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId1"));
+    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId2"));
 
     verify(spySessionAwareObjectOne, times(2))
         .updateSession(ArgumentMatchers.nullable(PerfSession.class));
@@ -404,11 +225,11 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     testSessionManager.registerForSessionUpdates(weakSpySessionAwareObjectOne);
     testSessionManager.registerForSessionUpdates(weakSpySessionAwareObjectTwo);
 
-    testSessionManager.updatePerfSession(ApplicationProcessState.FOREGROUND);
+    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId1"));
 
     testSessionManager.unregisterForSessionUpdates(weakSpySessionAwareObjectOne);
     testSessionManager.unregisterForSessionUpdates(weakSpySessionAwareObjectTwo);
-    testSessionManager.updatePerfSession(ApplicationProcessState.BACKGROUND);
+    testSessionManager.updatePerfSession(PerfSession.createWithId("testSessionId2"));
 
     verify(spySessionAwareObjectOne, times(1))
         .updateSession(ArgumentMatchers.nullable(PerfSession.class));

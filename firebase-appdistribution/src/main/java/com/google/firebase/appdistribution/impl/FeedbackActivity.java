@@ -198,8 +198,8 @@ public class FeedbackActivity extends AppCompatActivity {
   public void submitFeedback(View view) {
     setSubmittingStateEnabled(true);
     if (releaseName == null) {
-      // Don't actually send feedback in development-mode
       Toast.makeText(this, R.string.feedback_no_release, Toast.LENGTH_LONG).show();
+      LogWrapper.w(TAG, "Not submitting feedback because development mode is enabled.");
       finish();
       return;
     }

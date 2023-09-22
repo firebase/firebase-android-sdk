@@ -15,11 +15,13 @@
 package com.google.firebase.gradle.plugins
 
 import java.io.FileNotFoundException
+import java.net.HttpURLConnection
 import java.net.URL
 import javax.xml.parsers.DocumentBuilder
 import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Document
 
+/** TODO(b/279466888) - Make GmavenHelper testable */
 class GmavenHelper(val groupId: String, val artifactId: String) {
   val GMAVEN_ROOT = "https://dl.google.com/dl/android/maven2"
 
@@ -29,6 +31,16 @@ class GmavenHelper(val groupId: String, val artifactId: String) {
     return "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/${version}/${pomFileName}"
   }
 
+  fun isPresentInGmaven(): Boolean {
+    val groupIdAsPath = groupId.replace(".", "/")
+    val u = URL("${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/maven-metadata.xml")
+    val huc: HttpURLConnection = u.openConnection() as HttpURLConnection
+    huc.setRequestMethod("GET") // OR  huc.setRequestMethod ("HEAD");
+    huc.connect()
+    val code: Int = huc.getResponseCode()
+    return code == HttpURLConnection.HTTP_OK
+  }
+
   fun getArtifactForVersion(version: String, isJar: Boolean): String {
     val fileName =
       if (isJar == true) "${artifactId}-${version}.jar" else "${artifactId}-${version}.aar"
@@ -36,17 +48,35 @@ class GmavenHelper(val groupId: String, val artifactId: String) {
     return "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/${version}/${fileName}"
   }
 
+  fun hasReleasedVersion(version: String): Boolean {
+    val doc: Document? = getMavenMetadata()
+    if (doc != null) {
+      val versions = doc.getElementsByTagName("version")
+      for (i in 0..versions.length - 1) {
+        if (versions.item(i).textContent == version) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
   fun getLatestReleasedVersion(): String {
+    val doc: Document? = getMavenMetadata()
+    return doc?.getElementsByTagName("latest")?.item(0)?.getTextContent() ?: ""
+  }
+
+  fun getMavenMetadata(): Document? {
+    val groupIdAsPath = groupId.replace(".", "/")
+    val mavenMetadataUrl = "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/maven-metadata.xml"
+    val factory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
+    val builder: DocumentBuilder = factory.newDocumentBuilder()
     try {
-      val groupIdAsPath = groupId.replace(".", "/")
-      val mavenMetadataUrl = "${GMAVEN_ROOT}/${groupIdAsPath}/${artifactId}/maven-metadata.xml"
-      val factory: DocumentBuilderFactory = DocumentBuilderFactory.newInstance()
-      val builder: DocumentBuilder = factory.newDocumentBuilder()
       val doc: Document = builder.parse(URL(mavenMetadataUrl).openStream())
       doc.documentElement.normalize()
-      return doc.getElementsByTagName("latest").item(0).getTextContent()
+      return doc
     } catch (e: FileNotFoundException) {
-      return ""
+      return null
     }
   }
 }

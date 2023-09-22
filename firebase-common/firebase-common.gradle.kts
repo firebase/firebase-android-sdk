@@ -27,6 +27,7 @@ android {
   val minSdkVersion : Int by rootProject
 
   compileSdk = targetSdkVersion
+  namespace = "com.google.firebase"
   defaultConfig {
     minSdk = minSdkVersion
     targetSdk = targetSdkVersion

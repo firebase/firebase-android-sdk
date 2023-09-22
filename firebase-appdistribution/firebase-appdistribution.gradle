@@ -22,6 +22,7 @@ firebaseLibrary {
 }
 
 android {
+    namespace "com.google.firebase.appdistribution.impl"
     compileSdkVersion project.targetSdkVersion
 
     defaultConfig {
@@ -45,6 +46,10 @@ android {
     }
 }
 
+thirdPartyLicenses {
+    add 'Dagger', "${rootDir}/third_party/licenses/apache-2.0.txt"
+}
+
 dependencies {
     implementation project(':firebase-appdistribution-api')
     implementation 'com.google.firebase:firebase-components:17.1.0'
@@ -64,7 +69,7 @@ dependencies {
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-inline:3.4.0'
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
 
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
 
@@ -75,7 +80,7 @@ dependencies {
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
 
     androidTestImplementation project(':integ-testing')
-    androidTestImplementation 'androidx.test.ext:junit:1.1.1'
+    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'junit:junit:4.12'

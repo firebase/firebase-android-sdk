@@ -282,11 +282,22 @@ public class IntegrationTestUtil {
       Logger.Level logLevel,
       FirebaseFirestoreSettings settings,
       String persistenceKey) {
+    return testFirestore(
+        DatabaseId.forDatabase(projectId, BuildConfig.TARGET_DATABASE_ID),
+        logLevel,
+        settings,
+        persistenceKey);
+  }
+
+  public static FirebaseFirestore testFirestore(
+      DatabaseId databaseId,
+      Logger.Level logLevel,
+      FirebaseFirestoreSettings settings,
+      String persistenceKey) {
     // This unfortunately is a global setting that affects existing Firestore clients.
     Logger.setLogLevel(logLevel);
 
     Context context = ApplicationProvider.getApplicationContext();
-    DatabaseId databaseId = DatabaseId.forDatabase(projectId, DatabaseId.DEFAULT_DATABASE_ID);
 
     ensureStrictMode();
 

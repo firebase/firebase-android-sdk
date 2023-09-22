@@ -26,7 +26,7 @@ jobs:
   create-pull-request:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 0
 
@@ -39,7 +39,7 @@ jobs:
         with:
           base: 'releases/${{ inputs.name }}'
           branch: 'releases/${{ inputs.name }}.release'
-          add-paths: release.cfg,release_report.md
+          add-paths: release.json,release_report.md,release_report.json
           title: '${{ inputs.name}} release'
           body: 'Auto-generated PR for release ${{ inputs.name}}'
           commit-message: 'Create release config for ${{ inputs.name }}'

@@ -24,7 +24,12 @@ import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.plugins.JavaLibraryPlugin
 import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.kotlin.dsl.*
+import org.gradle.kotlin.dsl.apply
+import org.gradle.kotlin.dsl.create
+import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.getPlugin
+import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
@@ -36,6 +41,7 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     project.extensions.getByType<GoogleJavaFormatExtension>().toolVersion = "1.10.0"
 
     setupFirebaseLibraryExtension(project)
+    registerMakeReleaseNotesTask(project)
 
     // reduce the likelihood of kotlin module files colliding.
     project.tasks.withType<KotlinCompile> {
@@ -50,11 +56,17 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     setupStaticAnalysis(project, firebaseLibrary)
     setupApiInformationAnalysis(project)
     getIsPomValidTask(project, firebaseLibrary)
-    getSemverTaskJar(project, firebaseLibrary)
+    setupVersionCheckTasks(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary)
   }
 
-  private fun getSemverTaskJar(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+  private fun setupVersionCheckTasks(project: Project, firebaseLibrary: FirebaseLibraryExtension) {
+    project.tasks.register<GmavenVersionChecker>("gmavenVersionCheck") {
+      groupId.value(firebaseLibrary.groupId.get())
+      artifactId.value(firebaseLibrary.artifactId.get())
+      version.value(firebaseLibrary.version)
+      latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElseGet { "" })
+    }
     project.mkdir("semver")
     project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {
       dependsOn("jar")

@@ -15,10 +15,12 @@
 package com.google.firebase.crashlytics.internal.persistence;
 
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import com.google.firebase.crashlytics.internal.common.CrashlyticsAppQualitySessionsSubscriber;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session;
@@ -42,8 +44,8 @@ import java.util.SortedSet;
 import org.mockito.internal.util.collections.Sets;
 
 public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
-
   private static final int VERY_LARGE_UPPER_LIMIT = 9999;
+  private static final String APP_QUALITY_SESSION_ID = "9";
 
   private CrashlyticsReportPersistence reportPersistence;
   private FileStore fileStore;
@@ -62,12 +64,23 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     return settingsProvider;
   }
 
+  private static CrashlyticsAppQualitySessionsSubscriber createSessionsSubscriberMock(
+      String appQualitySessionId) {
+    CrashlyticsAppQualitySessionsSubscriber mockSessionsSubscriber =
+        mock(CrashlyticsAppQualitySessionsSubscriber.class);
+    when(mockSessionsSubscriber.getAppQualitySessionId(anyString()))
+        .thenReturn(appQualitySessionId);
+    return mockSessionsSubscriber;
+  }
+
   @Override
   public void setUp() throws Exception {
     fileStore = new FileStore(getContext());
     reportPersistence =
         new CrashlyticsReportPersistence(
-            fileStore, createSettingsProviderMock(VERY_LARGE_UPPER_LIMIT, VERY_LARGE_UPPER_LIMIT));
+            fileStore,
+            createSettingsProviderMock(VERY_LARGE_UPPER_LIMIT, VERY_LARGE_UPPER_LIMIT),
+            createSessionsSubscriberMock(APP_QUALITY_SESSION_ID));
   }
 
   public void testListSortedOpenSessionIds() {
@@ -147,6 +160,7 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     assertEquals(
         testReport
             .withSessionEndFields(endedAt, false, null)
+            .withAppQualitySessionId(APP_QUALITY_SESSION_ID)
             .withEvents(ImmutableList.from(testEvent)),
         finalizedReport);
   }
@@ -172,6 +186,7 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     assertEquals(
         testReport
             .withSessionEndFields(endedAt, false, null)
+            .withAppQualitySessionId(APP_QUALITY_SESSION_ID)
             .withEvents(ImmutableList.from(testEvent, testEvent2)),
         finalizedReport);
   }
@@ -201,12 +216,14 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     assertEquals(
         testReport1
             .withSessionEndFields(endedAt, false, null)
+            .withAppQualitySessionId(APP_QUALITY_SESSION_ID)
             .withEvents(ImmutableList.from(testEvent1)),
         finalizedReport1);
     final CrashlyticsReport finalizedReport2 = finalizedReports.get(0).getReport();
     assertEquals(
         testReport2
             .withSessionEndFields(endedAt, false, null)
+            .withAppQualitySessionId(APP_QUALITY_SESSION_ID)
             .withEvents(ImmutableList.from(testEvent2)),
         finalizedReport2);
   }
@@ -274,7 +291,9 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
   public void testFinalizeReports_capsReports() {
     reportPersistence =
         new CrashlyticsReportPersistence(
-            fileStore, createSettingsProviderMock(4, VERY_LARGE_UPPER_LIMIT));
+            fileStore,
+            createSettingsProviderMock(4, VERY_LARGE_UPPER_LIMIT),
+            createSessionsSubscriberMock(APP_QUALITY_SESSION_ID));
     for (int i = 0; i < 10; i++) {
       persistReportWithEvent(reportPersistence, "testSession" + i, true);
     }
@@ -298,7 +317,9 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
         new Settings(0, sessionData2, new FeatureFlagData(true, true, false), 3, 0, 1.0, 1.0, 1);
 
     when(settingsProvider.getSettingsSync()).thenReturn(settings1);
-    reportPersistence = new CrashlyticsReportPersistence(fileStore, settingsProvider);
+    reportPersistence =
+        new CrashlyticsReportPersistence(
+            fileStore, settingsProvider, createSessionsSubscriberMock(APP_QUALITY_SESSION_ID));
 
     DecimalFormat format = new DecimalFormat("00");
     for (int i = 0; i < 16; i++) {
@@ -324,7 +345,9 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
   public void testFinalizeReports_removesLowPriorityReportsFirst() throws IOException {
     reportPersistence =
         new CrashlyticsReportPersistence(
-            fileStore, createSettingsProviderMock(4, VERY_LARGE_UPPER_LIMIT));
+            fileStore,
+            createSettingsProviderMock(4, VERY_LARGE_UPPER_LIMIT),
+            createSessionsSubscriberMock(APP_QUALITY_SESSION_ID));
 
     for (int i = 0; i < 10; i++) {
       boolean priority = i >= 3 && i <= 8;
@@ -347,7 +370,9 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     CrashlyticsReport.FilesPayload filesPayload = makeFilePayload();
     reportPersistence =
         new CrashlyticsReportPersistence(
-            fileStore, createSettingsProviderMock(4, VERY_LARGE_UPPER_LIMIT));
+            fileStore,
+            createSettingsProviderMock(4, VERY_LARGE_UPPER_LIMIT),
+            createSessionsSubscriberMock(APP_QUALITY_SESSION_ID));
 
     persistReportWithEvent(reportPersistence, "testSession1", true);
     reportPersistence.finalizeSessionWithNativeEvent("testSession1", filesPayload, null);
@@ -370,7 +395,9 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
   public void testFinalizeReports_removesOldestReportsFirst() throws IOException {
     reportPersistence =
         new CrashlyticsReportPersistence(
-            fileStore, createSettingsProviderMock(4, VERY_LARGE_UPPER_LIMIT));
+            fileStore,
+            createSettingsProviderMock(4, VERY_LARGE_UPPER_LIMIT),
+            createSessionsSubscriberMock(APP_QUALITY_SESSION_ID));
     for (int i = 0; i < 8; i++) {
       String sessionId = "testSession" + i;
       persistReportWithEvent(reportPersistence, sessionId, true);
@@ -519,7 +546,9 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
   public void testPersistEvent_keepsAppropriateNumberOfMostRecentEvents() throws IOException {
     reportPersistence =
         new CrashlyticsReportPersistence(
-            fileStore, createSettingsProviderMock(VERY_LARGE_UPPER_LIMIT, 4));
+            fileStore,
+            createSettingsProviderMock(VERY_LARGE_UPPER_LIMIT, 4),
+            createSessionsSubscriberMock(APP_QUALITY_SESSION_ID));
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
     final CrashlyticsReport.Session.Event testEvent1 = makeTestEvent("type1", "reason1");
@@ -547,6 +576,7 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     assertEquals(
         testReport
             .withSessionEndFields(endedAt, false, null)
+            .withAppQualitySessionId(APP_QUALITY_SESSION_ID)
             .withEvents(ImmutableList.from(testEvent2, testEvent3, testEvent4, testEvent5)),
         finalizedReport);
   }
@@ -563,7 +593,9 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
         new Settings(0, sessionData2, new FeatureFlagData(true, true, false), 3, 0, 1.0, 1.0, 1);
 
     when(settingsProvider.getSettingsSync()).thenReturn(settings1);
-    reportPersistence = new CrashlyticsReportPersistence(fileStore, settingsProvider);
+    reportPersistence =
+        new CrashlyticsReportPersistence(
+            fileStore, settingsProvider, createSessionsSubscriberMock(APP_QUALITY_SESSION_ID));
 
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
@@ -592,6 +624,7 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     assertEquals(
         testReport
             .withSessionEndFields(endedAt, false, null)
+            .withAppQualitySessionId(APP_QUALITY_SESSION_ID)
             .withEvents(ImmutableList.from(testEvent2, testEvent3, testEvent4, testEvent5)),
         finalizedReport);
 
@@ -629,6 +662,7 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     assertEquals(
         testReport2
             .withSessionEndFields(endedAt, false, null)
+            .withAppQualitySessionId(APP_QUALITY_SESSION_ID)
             .withEvents(
                 ImmutableList.from(
                     testEvent3,
@@ -645,7 +679,9 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
   public void testPersistReportWithAnrEvent() throws IOException {
     reportPersistence =
         new CrashlyticsReportPersistence(
-            fileStore, createSettingsProviderMock(VERY_LARGE_UPPER_LIMIT, 4));
+            fileStore,
+            createSettingsProviderMock(VERY_LARGE_UPPER_LIMIT, 4),
+            createSessionsSubscriberMock(APP_QUALITY_SESSION_ID));
     final String sessionId = "testSession";
     final CrashlyticsReport testReport = makeTestReport(sessionId);
     final Event testEvent = makeTestAnrEvent();
@@ -661,6 +697,82 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     assertEquals(1, finalizedReports.size());
     final CrashlyticsReport finalizedReport = finalizedReports.get(0).getReport();
     assertEquals(1, finalizedReport.getSession().getEvents().size());
+  }
+
+  public void testFinalizeReports_missingAppQualitySessionId() {
+    reportPersistence =
+        new CrashlyticsReportPersistence(
+            fileStore,
+            createSettingsProviderMock(4, VERY_LARGE_UPPER_LIMIT),
+            // Simulate Sessions subscriber failure by setting appQualitySessionId to null.
+            createSessionsSubscriberMock(/* appQualitySessionId= */ null));
+
+    String sessionId = "testSession";
+    CrashlyticsReport testReport = makeTestReport(sessionId);
+    CrashlyticsReport.Session.Event testEvent = makeTestEvent();
+
+    reportPersistence.persistReport(testReport);
+    reportPersistence.persistEvent(testEvent, sessionId);
+
+    long endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("skippedSession", endedAt);
+
+    List<CrashlyticsReportWithSessionId> finalizedReports =
+        reportPersistence.loadFinalizedReports();
+    assertEquals(1, finalizedReports.size());
+    CrashlyticsReport finalizedReport = finalizedReports.get(0).getReport();
+    assertNotNull(finalizedReport.getSession());
+    assertEquals(
+        testReport
+            .withSessionEndFields(endedAt, false, null)
+            .withEvents(ImmutableList.from(testEvent)),
+        finalizedReport);
+
+    // getAppQualitySessionId should return null since sessions subscriber never got an id.
+    assertNull(finalizedReport.getSession().getAppQualitySessionId());
+  }
+
+  public void testPersistEvent_updatesLatestAppQualitySession() {
+    CrashlyticsAppQualitySessionsSubscriber mockSessionsSubscriber =
+        createSessionsSubscriberMock(APP_QUALITY_SESSION_ID);
+    CrashlyticsReportPersistence reportPersistence =
+        new CrashlyticsReportPersistence(
+            fileStore,
+            createSettingsProviderMock(VERY_LARGE_UPPER_LIMIT, VERY_LARGE_UPPER_LIMIT),
+            mockSessionsSubscriber);
+
+    String sessionId = "testSession";
+    CrashlyticsReport testReport = makeTestReport(sessionId);
+    CrashlyticsReport.Session.Event testEvent1 = makeTestEvent("type1", "reason1");
+    CrashlyticsReport.Session.Event testEvent2 = makeTestEvent("type2", "reason2");
+    CrashlyticsReport.Session.Event testEvent3 = makeTestEvent("type3", "reason3");
+
+    reportPersistence.persistReport(testReport);
+    reportPersistence.persistEvent(testEvent1, sessionId);
+    reportPersistence.persistEvent(testEvent2, sessionId);
+
+    // Simulate a new app quality sessions session before the last event.
+    String latestAppQualitySessionId = "300";
+    when(mockSessionsSubscriber.getAppQualitySessionId(anyString()))
+        .thenReturn(latestAppQualitySessionId);
+    reportPersistence.persistEvent(testEvent3, sessionId);
+
+    long endedAt = System.currentTimeMillis();
+
+    reportPersistence.finalizeReports("skippedSession", endedAt);
+
+    List<CrashlyticsReportWithSessionId> finalizedReports =
+        reportPersistence.loadFinalizedReports();
+    assertEquals(1, finalizedReports.size());
+    CrashlyticsReport finalizedReport = finalizedReports.get(0).getReport();
+    assertNotNull(finalizedReport.getSession());
+    assertEquals(
+        testReport
+            .withSessionEndFields(endedAt, false, null)
+            .withAppQualitySessionId(latestAppQualitySessionId)
+            .withEvents(ImmutableList.from(testEvent1, testEvent2, testEvent3)),
+        finalizedReport);
   }
 
   private static void persistReportWithEvent(

@@ -24,6 +24,7 @@ firebaseLibrary {
 }
 
 android {
+        namespace "com.google.firebase.dynamiclinks.ktx"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         minSdkVersion 19
@@ -55,5 +56,5 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
 }

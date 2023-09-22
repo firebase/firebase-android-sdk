@@ -473,6 +473,8 @@ public final class RemoteSerializer {
         return null;
       case EXISTENCE_FILTER_MISMATCH:
         return "existence-filter-mismatch";
+      case EXISTENCE_FILTER_MISMATCH_BLOOM:
+        return "existence-filter-mismatch-bloom";
       case LIMBO_RESOLUTION:
         return "limbo-document";
       default:
@@ -499,6 +501,12 @@ public final class RemoteSerializer {
       builder.setReadTime(encodeTimestamp(targetData.getSnapshotVersion().getTimestamp()));
     } else {
       builder.setResumeToken(targetData.getResumeToken());
+    }
+
+    if (targetData.getExpectedCount() != null
+        && (!targetData.getResumeToken().isEmpty()
+            || targetData.getSnapshotVersion().compareTo(SnapshotVersion.NONE) > 0)) {
+      builder.setExpectedCount(Int32Value.newBuilder().setValue(targetData.getExpectedCount()));
     }
 
     return builder.build();
@@ -633,14 +641,27 @@ public final class RemoteSerializer {
   }
 
   StructuredAggregationQuery encodeStructuredAggregationQuery(
-      QueryTarget encodedQueryTarget, List<AggregateField> aggregateFields) {
+      QueryTarget encodedQueryTarget,
+      List<AggregateField> aggregateFields,
+      HashMap<String, String> aliasMap) {
     StructuredAggregationQuery.Builder structuredAggregationQuery =
         StructuredAggregationQuery.newBuilder();
     structuredAggregationQuery.setStructuredQuery(encodedQueryTarget.getStructuredQuery());
 
-    // We use a Set here to automatically remove duplicates.
-    Set<StructuredAggregationQuery.Aggregation> aggregations = new HashSet<>();
+    List<StructuredAggregationQuery.Aggregation> aggregations = new ArrayList<>();
+
+    HashSet<String> uniqueFields = new HashSet<>();
+    int aliasID = 1;
     for (AggregateField aggregateField : aggregateFields) {
+      // The code block below is used to deduplicate the same aggregate fields.
+      if (uniqueFields.contains(aggregateField.getAlias())) {
+        continue;
+      }
+      uniqueFields.add(aggregateField.getAlias());
+
+      String serverAlias = "aggregate_" + aliasID++;
+      aliasMap.put(serverAlias, aggregateField.getAlias());
+
       StructuredAggregationQuery.Aggregation.Builder aggregation =
           StructuredAggregationQuery.Aggregation.newBuilder();
       StructuredQuery.FieldReference fieldPath =
@@ -660,7 +681,7 @@ public final class RemoteSerializer {
         throw new RuntimeException("Unsupported aggregation");
       }
 
-      aggregation.setAlias(aggregateField.getAlias());
+      aggregation.setAlias(serverAlias);
       aggregations.add(aggregation.build());
     }
     structuredAggregationQuery.addAllAggregations(aggregations);
@@ -975,8 +996,8 @@ public final class RemoteSerializer {
         break;
       case FILTER:
         com.google.firestore.v1.ExistenceFilter protoFilter = protoChange.getFilter();
-        // TODO: implement existence filter parsing (see b/33076578)
-        ExistenceFilter filter = new ExistenceFilter(protoFilter.getCount());
+        ExistenceFilter filter =
+            new ExistenceFilter(protoFilter.getCount(), protoFilter.getUnchangedNames());
         int targetId = protoFilter.getTargetId();
         watchChange = new ExistenceFilterWatchChange(targetId, filter);
         break;

@@ -14,6 +14,8 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static com.google.firebase.crashlytics.internal.stacktrace.TrimmedThrowableData.makeTrimmedThrowableData;
+
 import android.app.ActivityManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
 import android.content.Context;
@@ -97,7 +99,7 @@ public class CrashlyticsReportDataCapture {
       boolean includeAllThreads) {
     final int orientation = context.getResources().getConfiguration().orientation;
     final TrimmedThrowableData trimmedEvent =
-        new TrimmedThrowableData(event, stackTraceTrimmingStrategy);
+        makeTrimmedThrowableData(event, stackTraceTrimmingStrategy);
 
     return Event.builder()
         .setType(type)
@@ -164,7 +166,8 @@ public class CrashlyticsReportDataCapture {
     return CrashlyticsReport.builder()
         .setSdkVersion(BuildConfig.VERSION_NAME)
         .setGmpAppId(appData.googleAppId)
-        .setInstallationUuid(idManager.getCrashlyticsInstallId())
+        .setInstallationUuid(idManager.getInstallIds().getCrashlyticsInstallId())
+        .setFirebaseInstallationId(idManager.getInstallIds().getFirebaseInstallationId())
         .setBuildVersion(appData.versionCode)
         .setDisplayVersion(appData.versionName)
         .setPlatform(REPORT_ANDROID_PLATFORM);
@@ -188,7 +191,7 @@ public class CrashlyticsReportDataCapture {
             .setIdentifier(idManager.getAppIdentifier())
             .setVersion(appData.versionCode)
             .setDisplayVersion(appData.versionName)
-            .setInstallationUuid(idManager.getCrashlyticsInstallId())
+            .setInstallationUuid(idManager.getInstallIds().getCrashlyticsInstallId())
             .setDevelopmentPlatform(appData.developmentPlatformProvider.getDevelopmentPlatform())
             .setDevelopmentPlatformVersion(
                 appData.developmentPlatformProvider.getDevelopmentPlatformVersion());
@@ -208,7 +211,7 @@ public class CrashlyticsReportDataCapture {
     final StatFs statFs = new StatFs(Environment.getDataDirectory().getPath());
     final int arch = getDeviceArchitecture();
     final int availableProcessors = Runtime.getRuntime().availableProcessors();
-    final long totalRam = CommonUtils.getTotalRamInBytes();
+    final long totalRam = CommonUtils.calculateTotalRamInBytes(context);
     final long diskSpace = (long) statFs.getBlockCount() * (long) statFs.getBlockSize();
     final boolean isEmulator = CommonUtils.isEmulator();
     final int state = CommonUtils.getDeviceState();
@@ -277,7 +280,9 @@ public class CrashlyticsReportDataCapture {
     final int batteryVelocity = battery.getBatteryVelocity();
     final boolean proximityEnabled = CommonUtils.getProximitySensorEnabled(context);
     final long usedRamBytes =
-        CommonUtils.getTotalRamInBytes() - CommonUtils.calculateFreeRamInBytes(context);
+        ensureNonNegative(
+            CommonUtils.calculateTotalRamInBytes(context)
+                - CommonUtils.calculateFreeRamInBytes(context));
     final long diskUsedBytes =
         CommonUtils.calculateUsedDiskSpaceInBytes(Environment.getDataDirectory().getPath());
 
@@ -464,5 +469,10 @@ public class CrashlyticsReportDataCapture {
     }
 
     return arch;
+  }
+
+  /** Returns the given value, or zero is the value is negative. */
+  private static long ensureNonNegative(long value) {
+    return value > 0 ? value : 0;
   }
 }

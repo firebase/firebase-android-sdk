@@ -1,11 +1,40 @@
 # Unreleased
+
+
+# 20.3.5
+* [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. [#5337]
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging` library. The Kotlin extensions library has no additional
+updates.
+
+# 20.3.4
+* [changed] Updated internal logging backend.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging` library. The Kotlin extensions library has no additional
+updates.
+
+# 20.3.3
+* [unchanged] Updated internal Dagger dependency.
+
+# 20.3.2
 * [fixed] Fixed nullpointer crash when using experiments
-  ([GitHub Issue #4716](//github.com/firebase/firebase-android-sdk/issues/4716))
+  (GitHub [#4716](//github.com/firebase/firebase-android-sdk/issues/4716){: .external})
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.3.1
 * [fixed] Fixed nullpointer crash
   ([GitHub Issue #4214](//github.com/firebase/firebase-android-sdk/issues/4214))
-
 * [changed] Updated gRPC to 1.52.1, and updated JavaLite, protoc,
   protobuf-java-util to 3.21.11.
 
@@ -17,9 +46,7 @@ updates.
 
 # 20.3.0
 * [changed] Migrated [inappmessaging] to use standard Firebase executors.
-
 * [changed] Moved Task continuations off the main thread.
-
 * [feature] Added a new API for
   [removing a dismiss listener](/docs/reference/android/com/google/firebase/inappmessaging/FirebaseInAppMessaging#removeDismissListener(com.google.firebase.inappmessaging.FirebaseInAppMessagingDismissListener)).
   (GitHub
@@ -73,7 +100,7 @@ The Kotlin extensions library transitively includes the updated
 additional updates.
 
 # 20.1.1
-- [changed] Updated the gRPC dependency version.
+* [changed] Updated the gRPC dependency version.
 
 
 ## Kotlin
@@ -142,7 +169,6 @@ additional updates.
 # 19.1.1
 * [fixed] Improved link handling on devices without any browser installed
   or without Chrome installed.
-
 * [feature] Added the ability to register a dismiss listener that reacts to
   message dismissal.
 
@@ -168,12 +194,10 @@ additional updates.
 * [fixed] Improved handling of activity transitions.
   (GitHub [Issue #1410](//github.com/firebase/firebase-android-sdk/issues/1410)
   and [Issue #1092](//github.com/firebase/firebase-android-sdk/issues/1092))
-
 * [changed] Migrated to use the [firebase_installations] service _directly_
   instead of using an indirect dependency via the Firebase Instance ID SDK.
 
   {% include "docs/reference/android/client/_includes/_iid-indirect-dependency-solutions.html" %}
-
 
 
 ## Kotlin
@@ -203,11 +227,8 @@ additional updates.
 
 # 19.0.4
 * [fixed] Fixed issue with messages not being fetched on app first open.
-
 * [fixed] Fixed issue with first foreground trigger not being picked up.
-
 * [changed] Internal migration to use the [firebase_installations] service.
-
 
 
 ## Kotlin
@@ -217,7 +238,6 @@ additional updates.
 
 # 19.0.3
 * [changed] Internal changes to enable future SDK improvements.
-
 
 
 ## Kotlin
@@ -264,7 +284,7 @@ additional updates.
 
 # 17.1.0
 * [feature] Adds functionality to programmatically register listeners for
-  updates on in-app engagement (for example, impression, click, display errors). 
+  updates on in-app engagement (for example, impression, click, display errors).
   See
   [`FirebaseInAppMessaging.addClickListener()`](/docs/reference/android/com/google/firebase/inappmessaging/FirebaseInAppMessaging.addClickListener())
   for more details.
@@ -276,7 +296,7 @@ additional updates.
 * [fixed] Improved caching logic, added safeguards for cache expiration, and cleaned up API surface to prepare for open sourcing the [inappmessaging]-display SDK.
 
 # 17.0.1
-* [fixed] Fixed an issue where [fiam] and Firestore could not be included/built into the same app, because of an obfuscation collision. 
+* [fixed] Fixed an issue where [fiam] and Firestore could not be included/built into the same app, because of an obfuscation collision.
 
 # 17.0.0
 * [feature] The initial public beta release of the Firebase In-App Messaging SDK for Android is now available. To learn more, see the [Firebase In-App Messaging documentation](/docs/in-app-messaging).

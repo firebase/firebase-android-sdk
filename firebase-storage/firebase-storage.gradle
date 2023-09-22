@@ -29,6 +29,7 @@ android {
         timeOutInMs 60 * 1000
     }
 
+    namespace "com.google.firebase.storage"
     compileSdkVersion project.targetSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
@@ -101,7 +102,7 @@ dependencies {
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation 'androidx.test:rules:1.2.0'
-    testImplementation 'androidx.test:core:1.2.0'
+    testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation project(':appcheck:firebase-appcheck')
 }
 

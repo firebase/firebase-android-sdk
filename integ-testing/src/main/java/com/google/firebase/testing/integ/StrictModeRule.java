@@ -14,6 +14,7 @@
 
 package com.google.firebase.testing.integ;
 
+import android.annotation.SuppressLint;
 import android.os.Build;
 import android.os.StrictMode;
 import android.os.StrictMode.ThreadPolicy;
@@ -64,6 +65,7 @@ public class StrictModeRule implements TestRule {
   private static final Executor penaltyListenerExecutor = Runnable::run;
 
   /** Runs {@code runnable} on Main thread. */
+  @SuppressLint("RestrictedApi")
   public <E extends Throwable> void runOnMainThread(MaybeThrowingRunnable<E> runnable) throws E {
     try {
       new UiThreadStatement(
@@ -83,6 +85,7 @@ public class StrictModeRule implements TestRule {
   }
 
   /** Runs {@code callable} on Main thread and returns it result. */
+  @SuppressLint("RestrictedApi")
   public <T, E extends Throwable> T runOnMainThread(MaybeThrowingCallable<T, E> callable) throws E {
     try {
       AtomicReference<T> result = new AtomicReference<>();

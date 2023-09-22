@@ -1,8 +1,23 @@
 # Unreleased
 * [fixed] Fixed an issue where the wrong SDK version was being reported to the backend.
 
+# 20.2.1
+* [changed] Migrated `firebase-storage` SDK to use standard Firebase executors.
+  (GitHub [#4830](//github.com/firebase/firebase-android-sdk/pull/4830){: .external})
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-storage` library. The Kotlin extensions library has no additional
+updates.
+
 # 20.2.0
-* [changed] Replaced custom Thread implementation with Firebase Core executors.
+* [changed] Internal changes to ensure alignment with other SDK releases.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-storage` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.1.0
 * [fixed] Fixed an issue that caused an infinite number of retries with no
@@ -65,7 +80,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.2.2
-- [fixed] Fixed an issue that caused the SDK to report incorrect values for
+* [fixed] Fixed an issue that caused the SDK to report incorrect values for
 [`getTotalByteCount()`](docs/reference/android/com/google/firebase/storage/FileDownloadTask.TaskSnapshot#getTotalByteCount())
 after a download was paused and resumed.
 
@@ -76,7 +91,7 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.2.1
-- [fixed] Fixed an issue that caused the SDK to crash if the download location
+* [fixed] Fixed an issue that caused the SDK to crash if the download location
  was deleted before the download completed. Instead, the download now fails.
 
 
@@ -90,20 +105,20 @@ updates.
 
 
 # 19.2.0
-- [changed] Updated to support improvements in the KTX library (see below).
+* [changed] Updated to support improvements in the KTX library (see below).
 
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-storage` library and has the following additional updates:
 
-- [feature] Added API support for destructuring of
+* [feature] Added API support for destructuring of
   [`TaskSnapshot`](/docs/reference/kotlin/com/google/firebase/storage/StreamDownloadTask.TaskSnapshot)
   and
   [`ListResult`](/docs/reference/kotlin/com/google/firebase/storage/ListResult).
 
 # 19.1.1
-- [changed] Internal changes to ensure functionality alignment with other SDK releases.
+* [changed] Internal changes to ensure functionality alignment with other SDK releases.
 
 
 
@@ -113,12 +128,12 @@ The Kotlin extensions library transitively includes the updated
 updates.
 
 # 19.1.0
-- [feature] Added `getCacheControl()`, `getContentDisposition()`,
+* [feature] Added `getCacheControl()`, `getContentDisposition()`,
   `getContentEncoding()`, `getContentLanguage()`, and `getContentType()` to
   [`StorageMetadata.Builder`](/docs/reference/android/com/google/firebase/storage/StorageMetadata.Builder)
   to provide access to the current state of the metadata.
 
-- [fixed] Fixed an encoding issue in
+* [fixed] Fixed an encoding issue in
   [`StorageReference.list()`](/docs/reference/android/com/google/firebase/storage/StorageReference.html#list(int))
   that caused the API to miss entries for prefixes that contained special
   characters.
@@ -132,7 +147,7 @@ updates.
   [[firebase_storage_full] KTX documentation](/docs/reference/kotlin/com/google/firebase/storage/ktx/package-summary).
 
 # 19.0.1
-- [fixed] [`StorageReference.listAll()`](/docs/reference/android/com/google/firebase/storage/StorageReference.html#listAll())
+* [fixed] [`StorageReference.listAll()`](/docs/reference/android/com/google/firebase/storage/StorageReference.html#listAll())
   now propagates the error messages if the List operation was denied by a
   Security Rule.
 
@@ -141,7 +156,7 @@ updates.
   developer experience. No other changes.
 
 # 18.1.1
-- [changed] Internal changes to ensure functionality alignment with other SDK
+* [changed] Internal changes to ensure functionality alignment with other SDK
   releases.
 
 # 18.1.0

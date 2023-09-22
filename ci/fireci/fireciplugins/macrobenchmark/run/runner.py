@@ -132,6 +132,7 @@ def _process_changed_modules(path: Path) -> List[str]:
     ":firebase-messaging-directboot": ["fire-fcm"],
     ":firebase-ml-modeldownloader": ["firebase-ml-modeldownloader"],
     ":firebase-perf": ["fire-perf"],
+    ":firebase-sessions": ["fire-sessions"],
     ":firebase-storage": ["fire-gcs"],
     ":transport": ["fire-transport"],
   }
