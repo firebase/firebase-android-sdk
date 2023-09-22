@@ -98,7 +98,7 @@ public class IntegrationTestUtil {
   // Note: DO NOT change this variable except for local testing.
   private static final TargetBackend backendForLocalTesting = null;
 
-  private static final TargetBackend backend =  getTargetBackend();
+  private static final TargetBackend backend = getTargetBackend();
   private static final String EMULATOR_HOST = "10.0.2.2";
   private static final int EMULATOR_PORT = 8080;
 
