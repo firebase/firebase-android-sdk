@@ -1,4 +1,6 @@
 # Unreleased
+* [fixed] Fixed an issue where the wrong SDK version was being reported to the backend.
+
 # 20.2.0
 * [changed] Replaced custom Thread implementation with Firebase Core executors.
 
