@@ -23,6 +23,7 @@ import android.content.Intent;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
 import android.net.Uri;
+import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.MotionEvent;
 import android.view.View;
@@ -33,13 +34,13 @@ import androidx.annotation.VisibleForTesting;
 import androidx.browser.customtabs.CustomTabsIntent;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.inappmessaging.FirebaseInAppMessaging;
+import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks.InAppMessagingDismissType;
 import com.google.firebase.inappmessaging.display.internal.BindingWrapperFactory;
 import com.google.firebase.inappmessaging.display.internal.FiamAnimator;
 import com.google.firebase.inappmessaging.display.internal.FiamImageLoader;
 import com.google.firebase.inappmessaging.display.internal.FiamWindowManager;
-import com.google.firebase.inappmessaging.display.internal.FirebaseInAppMessagingDisplayImpl;
 import com.google.firebase.inappmessaging.display.internal.InAppMessageLayoutConfig;
 import com.google.firebase.inappmessaging.display.internal.Logging;
 import com.google.firebase.inappmessaging.display.internal.RenewableTimer;
@@ -76,7 +77,8 @@ import javax.inject.Provider;
  * </ul>
  */
 @FirebaseAppScope
-public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplayImpl {
+public class FirebaseInAppMessagingDefaultDisplay
+    implements FirebaseInAppMessagingDisplay, Application.ActivityLifecycleCallbacks {
   static final long IMPRESSION_THRESHOLD_MILLIS = 5 * 1000; // 5 seconds is a valid impression
   static final long DISMISS_THRESHOLD_MILLIS =
       20 * 1000; // auto dismiss after 20 seconds for banner
@@ -100,7 +102,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   @VisibleForTesting @Nullable String currentlyBoundActivityName;
 
   @Inject
-  FirebaseInAppMessagingDisplay(
+  FirebaseInAppMessagingDefaultDisplay(
       FirebaseInAppMessaging headlessInAppMessaging,
       Map<String, Provider<InAppMessageLayoutConfig>> layoutConfigs,
       FiamImageLoader imageLoader,
@@ -127,8 +129,8 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
    * FirebaseApp#getInstance()}
    */
   @NonNull
-  public static FirebaseInAppMessagingDisplay getInstance() {
-    return FirebaseApp.getInstance().get(FirebaseInAppMessagingDisplay.class);
+  public static FirebaseInAppMessagingDefaultDisplay getInstance() {
+    return FirebaseApp.getInstance().get(FirebaseInAppMessagingDefaultDisplay.class);
   }
 
   private static int getScreenOrientation(Application app) {
@@ -167,6 +169,16 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
     this.fiamListener = null;
   }
 
+  @Override
+  public void displayMessage(@NonNull InAppMessage inAppMessage,
+      @NonNull FirebaseInAppMessagingDisplayCallbacks callbacks) {}
+
+  @Override
+  public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle bundle) {}
+
+  @Override
+  public void onActivityStarted(@NonNull Activity activity) {}
+
   /**
    * Bind FIAM listener on Activity resume.
    *
@@ -189,6 +201,15 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
     headlessInAppMessaging.removeAllListeners();
     super.onActivityPaused(activity);
   }
+
+  @Override
+  public void onActivityStopped(@NonNull Activity activity) {}
+
+  @Override
+  public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle bundle) {}
+
+  @Override
+  public void onActivityDestroyed(@NonNull Activity activity) {}
 
   private void bindFiamToActivity(Activity activity) {
     // If we have no currently bound activity or are currently bound to a different activity then

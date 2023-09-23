@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Registers {@link FirebaseInAppMessagingDisplay}.
+ * Registers {@link FirebaseInAppMessagingDefaultDisplay}.
  *
  * @hide
  */
@@ -45,7 +45,7 @@ public class FirebaseInAppMessagingDisplayRegistrar implements ComponentRegistra
   @Keep
   public List<Component<?>> getComponents() {
     return Arrays.asList(
-        Component.builder(FirebaseInAppMessagingDisplay.class)
+        Component.builder(FirebaseInAppMessagingDefaultDisplay.class)
             .name(LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.required(FirebaseInAppMessaging.class))
@@ -55,7 +55,7 @@ public class FirebaseInAppMessagingDisplayRegistrar implements ComponentRegistra
         LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME));
   }
 
-  private FirebaseInAppMessagingDisplay buildFirebaseInAppMessagingUI(
+  private FirebaseInAppMessagingDefaultDisplay buildFirebaseInAppMessagingUI(
       ComponentContainer container) {
     FirebaseApp firebaseApp = container.get(FirebaseApp.class);
     FirebaseInAppMessaging headless = container.get(FirebaseInAppMessaging.class);
@@ -71,9 +71,9 @@ public class FirebaseInAppMessagingDisplayRegistrar implements ComponentRegistra
             .headlessInAppMessagingModule(new HeadlessInAppMessagingModule(headless))
             .build();
 
-    FirebaseInAppMessagingDisplay firebaseInAppMessagingDisplay =
+    FirebaseInAppMessagingDefaultDisplay firebaseInAppMessagingDefaultDisplay =
         instance.providesFirebaseInAppMessagingUI();
-    firebaseApplication.registerActivityLifecycleCallbacks(firebaseInAppMessagingDisplay);
-    return firebaseInAppMessagingDisplay;
+    firebaseApplication.registerActivityLifecycleCallbacks(firebaseInAppMessagingDefaultDisplay);
+    return firebaseInAppMessagingDefaultDisplay;
   }
 }

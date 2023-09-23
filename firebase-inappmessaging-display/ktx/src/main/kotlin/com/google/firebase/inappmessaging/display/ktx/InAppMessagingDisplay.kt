@@ -18,13 +18,13 @@ import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
-import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay
+import com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDefaultDisplay
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.platforminfo.LibraryVersionComponent
 
-/** Returns the [FirebaseInAppMessagingDisplay] instance of the default [FirebaseApp]. */
-val Firebase.inAppMessagingDisplay: FirebaseInAppMessagingDisplay
-  get() = FirebaseInAppMessagingDisplay.getInstance()
+/** Returns the [FirebaseInAppMessagingDefaultDisplay] instance of the default [FirebaseApp]. */
+val Firebase.inAppMessagingDisplay: FirebaseInAppMessagingDefaultDisplay
+  get() = FirebaseInAppMessagingDefaultDisplay.getInstance()
 
 internal const val LIBRARY_NAME: String = "fire-iamd-ktx"
 
