@@ -18,6 +18,7 @@ import android.app.Activity;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.concurrent.Executor;
 
 /**
@@ -50,6 +51,7 @@ public abstract class CancellableTask<StateT> extends Task<StateT> {
    * @return this Task
    */
   @NonNull
+  @CanIgnoreReturnValue
   public abstract CancellableTask<StateT> addOnProgressListener(
       @NonNull OnProgressListener<? super StateT> listener);
 
@@ -60,6 +62,7 @@ public abstract class CancellableTask<StateT> extends Task<StateT> {
    * @return this Task
    */
   @NonNull
+  @CanIgnoreReturnValue
   public abstract CancellableTask<StateT> addOnProgressListener(
       @NonNull Executor executor, @NonNull OnProgressListener<? super StateT> listener);
 
@@ -71,6 +74,7 @@ public abstract class CancellableTask<StateT> extends Task<StateT> {
    * @return this Task
    */
   @NonNull
+  @CanIgnoreReturnValue
   public abstract CancellableTask<StateT> addOnProgressListener(
       @NonNull Activity activity, @NonNull OnProgressListener<? super StateT> listener);
 }

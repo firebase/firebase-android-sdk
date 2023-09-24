@@ -16,6 +16,7 @@ package com.google.firebase.storage;
 
 import android.app.Activity;
 import androidx.annotation.NonNull;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.concurrent.Executor;
 
 /**
@@ -52,6 +53,7 @@ public abstract class ControllableTask<StateT> extends CancellableTask<StateT> {
    * @return this Task
    */
   @NonNull
+  @CanIgnoreReturnValue
   public abstract ControllableTask<StateT> addOnPausedListener(
       @NonNull OnPausedListener<? super StateT> listener);
 
@@ -62,6 +64,7 @@ public abstract class ControllableTask<StateT> extends CancellableTask<StateT> {
    * @return this Task
    */
   @NonNull
+  @CanIgnoreReturnValue
   public abstract ControllableTask<StateT> addOnPausedListener(
       @NonNull Executor executor, @NonNull OnPausedListener<? super StateT> listener);
 
@@ -73,6 +76,7 @@ public abstract class ControllableTask<StateT> extends CancellableTask<StateT> {
    * @return this Task
    */
   @NonNull
+  @CanIgnoreReturnValue
   public abstract ControllableTask<StateT> addOnPausedListener(
       @NonNull Activity activity, @NonNull OnPausedListener<? super StateT> listener);
 }

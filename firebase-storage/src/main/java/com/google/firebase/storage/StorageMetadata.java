@@ -19,6 +19,7 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.gms.common.internal.Preconditions;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.storage.internal.Slashes;
 import com.google.firebase.storage.internal.Util;
 import java.util.Collections;
@@ -382,6 +383,7 @@ public class StorageMetadata {
      * @param contentLanguage the new content language.
      */
     @NonNull
+    @CanIgnoreReturnValue
     public Builder setContentLanguage(@Nullable String contentLanguage) {
       mMetadata.mContentLanguage = MetadataValue.withUserValue(contentLanguage);
       return this;
@@ -399,6 +401,7 @@ public class StorageMetadata {
      * @param contentEncoding the new encoding to use.
      */
     @NonNull
+    @CanIgnoreReturnValue
     public Builder setContentEncoding(@Nullable String contentEncoding) {
       mMetadata.mContentEncoding = MetadataValue.withUserValue(contentEncoding);
       return this;
@@ -416,6 +419,7 @@ public class StorageMetadata {
      * @param contentDisposition the new content disposition to use.
      */
     @NonNull
+    @CanIgnoreReturnValue
     public Builder setContentDisposition(@Nullable String contentDisposition) {
       mMetadata.mContentDisposition = MetadataValue.withUserValue(contentDisposition);
       return this;
@@ -433,6 +437,7 @@ public class StorageMetadata {
      * @param cacheControl the new Cache Control setting.
      */
     @NonNull
+    @CanIgnoreReturnValue
     public Builder setCacheControl(@Nullable String cacheControl) {
       mMetadata.mCacheControl = MetadataValue.withUserValue(cacheControl);
       return this;
@@ -451,6 +456,7 @@ public class StorageMetadata {
      * @param value the value to set.
      */
     @NonNull
+    @CanIgnoreReturnValue
     public Builder setCustomMetadata(@NonNull String key, @Nullable String value) {
       if (!mMetadata.mCustomMetadata.isUserProvided()) {
         mMetadata.mCustomMetadata = MetadataValue.withUserValue(new HashMap<>());
@@ -465,6 +471,7 @@ public class StorageMetadata {
      * @param contentType the new Content Type.
      */
     @NonNull
+    @CanIgnoreReturnValue
     public Builder setContentType(@Nullable String contentType) {
       mMetadata.mContentType = MetadataValue.withUserValue(contentType);
       return this;
