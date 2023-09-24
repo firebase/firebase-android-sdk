@@ -219,18 +219,34 @@ abstract class PublishingPlugin : Plugin<Project> {
 
     if (projectsToPublish == null) return null
 
-    val projectNames = projectsToPublish.split(",")
+    val publishingProjects =
+      allFirebaseLibraries.filter { it.artifactId.get() in projectsToPublish.split(",") }
 
+    val librariesToRelease = getDeepTransitiveReleases(publishingProjects, libraryGroups)
+
+    return ReleaseMetadata(librariesToRelease, releaseName)
+  }
+
+  /**
+   * Finds all transitive libraries that need to be released so that the input list of project names
+   * can be released. This includes all project level dependencies, and anything in the same library
+   * group.
+   */
+  private tailrec fun getDeepTransitiveReleases(
+    inputProjects: List<FirebaseLibraryExtension>,
+    libraryGroups: Map<String, List<FirebaseLibraryExtension>>
+  ): List<FirebaseLibraryExtension> {
     val libraryGroupsToRelease =
-      allFirebaseLibraries
-        .filter { it.artifactId.get() in projectNames }
+      inputProjects
+        .flatMap { it.resolveProjectLevelDependencies() + it }
         .map { it.libraryGroupName }
-    val librariesToRelease =
+    val projectsToRelease =
       libraryGroups
         .filterKeys { it in libraryGroupsToRelease }
         .flatMap { it.value }
         .distinctBy { it.artifactId.get() }
-    return ReleaseMetadata(librariesToRelease, releaseName)
+    return if (inputProjects == projectsToRelease) inputProjects
+    else getDeepTransitiveReleases(projectsToRelease, libraryGroups)
   }
 
   private fun releaseMetadataFromReleaseConfig(
