@@ -1,4 +1,4 @@
-name: FirePerf E2E Tests
+54 name: FirePerf E2E Tests
 
 on:
   schedule:
