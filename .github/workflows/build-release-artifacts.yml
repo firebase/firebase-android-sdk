@@ -32,3 +32,26 @@ jobs:
           name: release_artifacts
           path: build/*.zip
           retention-days: 15
+      - name: Run test on Autify for Mobile
+  # You may pin to the exact commit or the version.
+  # uses: autifyhq/actions-mobile-test-run@8fd7241f47244c8050ca2665828fc4a0b3c02e4e
+  uses: autifyhq/actions-mobile-test-run@v2.4.0
+   with:
+    # Access token of Autify for Mobile.
+    access-token: 
+    # URL of a test plan e.g. https://moible-app.autify.com/projects/<ID>/test_plans/<ID>
+    autify-test-url: 
+    # ID of the already uploaded build. (Note: Either build-id or build-path is required but not both)
+    build-id: # optional
+    # File path to the iOS app (*.app) or Android app (*.apk). (Note: Either build-id or build-path is required but not both)
+    build-path: # optional
+    # When true, the action waits until the test finishes.
+    wait: # optional, default is false
+    # Timeout seconds when waiting.
+    timeout: # optional
+    # Maximum retry count while waiting. The command can take up to `timeout * (max-retry-count + 1)`. Only effective with `wait`
+    max-retry-count: # optional
+    # A path to `autify` which will be used to invoke Autify CLI internally. Default is searching from PATH.
+    autify-path: # optional, default is autify
+    # Autify CLI installer URL
+    autify-cli-installer-url: # optional, default is https://autify-cli-assets.s3.amazonaws.com/autify-cli/channels/stable/install-cicd.bash
