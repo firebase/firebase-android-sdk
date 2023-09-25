@@ -53,7 +53,7 @@ Available Options:
   error: Fail the action with an error message
   ignore: Do not output any warnings or errors, the action does not fail
 
-    if-no-files-found: # optional, default is warn
+    if-no-files-found:# optional, default is warn
     # Duration after which artifact will expire in days. 0 means using default retention.
 Minimum 1 day. Maximum 90 days unless changed from the repository settings page.
 
