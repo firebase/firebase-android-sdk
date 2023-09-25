@@ -39,7 +39,7 @@ jobs:
         env:
           FTL_RESULTS_BUCKET: fireescape
         run: |
-          - ./gradlew :firebase-sessions:test-app:deviceCheck withErrorProne -PtargetBackend="prod"
+          - ./gradlew :firebase-sessions:test-app:device Check with Error Prone -PtargetBackend="prod"
 - name: Upload a Build Artifact
   uses: actions/upload-artifact@v3.1.3
   with:
