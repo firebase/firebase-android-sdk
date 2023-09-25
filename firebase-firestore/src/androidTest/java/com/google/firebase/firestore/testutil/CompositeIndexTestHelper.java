@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.util.Util.autoId;
 
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.Query;
@@ -49,7 +50,7 @@ public class CompositeIndexTestHelper {
   @NonNull
   public CollectionReference withTestDocs(@NonNull Map<String, Map<String, Object>> docs) {
     CollectionReference writer = testFirestore().collection(COMPOSITE_INDEX_TEST_COLLECTION);
-    writeAllDocs(writer, hashDocs(docs));
+    writeAllDocs(writer, hashDocIdsAndAddCompositeTestFields(docs));
     CollectionReference reader = testFirestore().collection(writer.getPath());
     return reader;
   }
@@ -60,25 +61,38 @@ public class CompositeIndexTestHelper {
     return query_.whereEqualTo(TEST_ID_FIELD, testId);
   }
 
-  // Hash the document key and add testId to documents created under a specific test to support data
-  // isolation in parallel testing.
-  private Map<String, Map<String, Object>> hashDocs(Map<String, Map<String, Object>> docs) {
-    Map<String, Map<String, Object>> result = new HashMap<>();
-    for (String key : docs.keySet()) {
-      Map<String, Object> doc = docs.get(key);
-      doc.put(TEST_ID_FIELD, this.testId);
-      result.put(key + "-" + this.testId, doc);
-    }
-    return result;
+  private String toHashedId(String docId) {
+    return docId + '-' + testId;
   }
 
   // Hash the document keys with testId.
-  public String[] toHashedIds(String[] docs) {
+  private String[] toHashedIds(String[] docs) {
     String[] hashedIds = new String[docs.length];
     for (int i = 0; i < docs.length; i++) {
-      hashedIds[i] = docs[i] + "-" + this.testId;
+      hashedIds[i] = toHashedId(docs[i]);
     }
     return hashedIds;
+  }
+
+  private void addCompositeTestFieldsToDoc(Map<String, Object> doc) {
+    doc.put(TEST_ID_FIELD, testId);
+    doc.put(
+        "expireAt",
+        new Timestamp( // Expire test data after 24 hours
+            Timestamp.now().getSeconds() + 24 * 60 * 60, Timestamp.now().getNanoseconds()));
+  }
+
+  // Hash the document key and add testId to documents created under a specific test to support data
+  // isolation in parallel testing.
+  private Map<String, Map<String, Object>> hashDocIdsAndAddCompositeTestFields(
+      Map<String, Map<String, Object>> docs) {
+    Map<String, Map<String, Object>> result = new HashMap<>();
+    for (String key : docs.keySet()) {
+      Map<String, Object> doc = docs.get(key);
+      addCompositeTestFieldsToDoc(doc);
+      result.put(toHashedId(key), doc);
+    }
+    return result;
   }
 
   // Checks that running the query while online (against the backend/emulator) results in the same
@@ -89,18 +103,18 @@ public class CompositeIndexTestHelper {
     checkOnlineAndOfflineResultsMatch(query, toHashedIds(expectedDocs));
   }
 
-  // Add a document with test id.
+  // Add a document with test id and expire date.
   @NonNull
   public Task<DocumentReference> addDoc(
       @NonNull CollectionReference collection, @NonNull Map<String, Object> data) {
-    data.put(TEST_ID_FIELD, testId);
+    addCompositeTestFieldsToDoc(data);
     return collection.add(data);
   }
 
-  // Set a document with test id.
+  // Set a document with test id and expire date.
   @NonNull
   public Task<Void> setDoc(@NonNull DocumentReference document, @NonNull Map<String, Object> data) {
-    data.put(TEST_ID_FIELD, testId);
+    addCompositeTestFieldsToDoc(data);
     return document.set(data);
   }
 }
