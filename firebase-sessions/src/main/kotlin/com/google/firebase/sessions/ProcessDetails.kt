@@ -33,7 +33,7 @@ internal interface ProcessDetails {
 }
 
 /** Android implementation of [ProcessDetails]. */
-internal class AndroidProcessDetails(private val context: Context) : ProcessDetails {
+internal class AndroidProcessDetails(context: Context) : ProcessDetails {
   /**
    * The default process name.
    *
@@ -42,9 +42,16 @@ internal class AndroidProcessDetails(private val context: Context) : ProcessDeta
    */
   private val defaultProcessName: String = context.applicationInfo.processName
 
+  /** The name of the current process, or null if it couldn't be found. */
+  private val currentProcessName: String? =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      Application.getProcessName()
+    } else {
+      findProcessName(context, Process.myPid())
+    }
+
   /** Returns whether the current process is the app's default process or not. */
-  override val isDefaultProcess: Boolean
-    get() = getCurrentProcessName() == defaultProcessName
+  override val isDefaultProcess: Boolean = currentProcessName == defaultProcessName
 
   /** Returns whether the current process or service is running in the foreground or not. */
   override val isForegroundImportance: Boolean
@@ -54,16 +61,8 @@ internal class AndroidProcessDetails(private val context: Context) : ProcessDeta
       return isForegroundProcess(runningProcessInfo) || isForegroundService(runningProcessInfo)
     }
 
-  /** Returns the name of the current process. */
-  private fun getCurrentProcessName(): String? =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-      Application.getProcessName()
-    } else {
-      findProcessName(Process.myPid())
-    }
-
   /** Finds the process name for the given pid, or returns null if not found. */
-  private fun findProcessName(pid: Int): String? {
+  private fun findProcessName(context: Context, pid: Int): String? {
     val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
     return activityManager.runningAppProcesses?.find { it.pid == pid }?.processName
   }
