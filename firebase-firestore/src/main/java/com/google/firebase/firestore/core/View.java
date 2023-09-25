@@ -28,7 +28,6 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
 import com.google.firebase.firestore.remote.TargetChange;
-import com.google.firebase.firestore.util.Logger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
