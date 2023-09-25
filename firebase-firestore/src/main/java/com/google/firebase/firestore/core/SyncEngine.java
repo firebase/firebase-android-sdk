@@ -661,10 +661,12 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
 
       // Before we applyChanges and potentially remove docs from syncedDocuments,
       // check if we have target mismatches so that we can set reset pending so that we can
-      // monitor those docs.
+      // monitor those docs. If reset is already in progress, then this is the update we
+      // have been waiting for.
       if (mismatchEntry != null) {
-        Logger.warn("Ben", "emitNewSnapsAndNotifyLocalStore calling resetPending");
-        queryView.getView().resetPending();
+        queryView.getView().setResetPending();
+      } else if (queryView.getView().isResetInProgress()) {
+        queryView.getView().setResetComplete();
       }
 
       ViewChange viewChange = queryView.getView().applyChanges(viewDocChanges, targetChange);

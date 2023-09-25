@@ -353,8 +353,6 @@ public class View {
         if (pendingResetDocuments.contains(documentKey)) {
           // The query reset contains this document, so remove it from the pending list.
           pendingResetDocuments = pendingResetDocuments.remove(documentKey);
-          resetComplete = true;
-          Logger.warn("Ben", "applyTargetChange setting reset Complete true");
         }
       }
       for (DocumentKey documentKey : targetChange.getModifiedDocuments()) {
@@ -389,9 +387,7 @@ public class View {
     if (resetComplete) {
       // Reset is complete, so any documents left in pendingResetDocuments should be marked
       // as limbo and will need a listen to re-sync
-      Logger.warn("Ben", "updateLimboDocuments reset Complete");
       for (DocumentKey documentKey : pendingResetDocuments) {
-        Logger.warn("Ben", "updateLimboDocuments limbo doc");
         limboDocuments = limboDocuments.insert(documentKey);
         pendingResetDocuments = pendingResetDocuments.remove(documentKey);
       }
@@ -455,9 +451,19 @@ public class View {
   }
 
   /** Query reset is pending. Put all synced docs into pending reset list. */
-  public void resetPending() {
+  public void setResetPending() {
     pendingResetDocuments = syncedDocuments;
     resetComplete = false;
+  }
+
+  /** Query reset is complete. */
+  public void setResetComplete() {
+    resetComplete = true;
+  }
+
+  /** Status of the query reset. */
+  public boolean isResetInProgress() {
+    return !resetComplete;
   }
 
   /** Helper function to determine order of changes */
