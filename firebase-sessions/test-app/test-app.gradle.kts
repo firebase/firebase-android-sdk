@@ -70,7 +70,8 @@ dependencies {
   }
 
   api(project(":firebase-installations"))
-  api(project(":firebase-common:ktx"))
+  api(project(":firebase-common"))
+    api(project(":firebase-common:ktx"))
   api(project(":firebase-components"))
 
   implementation("androidx.appcompat:appcompat:1.6.1")

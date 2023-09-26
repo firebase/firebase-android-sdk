@@ -48,6 +48,7 @@ android {
 }
 
 dependencies {
+    api(project(":firebase-common"))
     api(project(":firebase-common:ktx"))
     api(project(":firebase-components"))
     api(project(":firebase-database"))
