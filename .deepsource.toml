@@ -1,4 +1,30 @@
 version = 1
 
 [[analyzers]]
+<< deepsource-config-35ef329a
 name = "javascript"
+name = "secrets"
+
+[[analyzers]]
+name = "terraform"
+
+[[analyzers]]
+name = "shell"
+
+[[analyzers]]
+name = "javascript"
+
+  [analyzers.meta]
+  plugins = [
+    "react",
+    "angularjs",
+    "angular"
+  ]
+  environment = [
+    "nodejs",
+    "mongo"
+  ]
+
+[[transformers]]
+name = "prettier"
+>> master
