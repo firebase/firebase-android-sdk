@@ -71,5 +71,5 @@ apply(from = "../../gradle/googleServices.gradle")
 apply<FirebaseTestLabPlugin>()
 
 configure<FirebaseTestLabExtension> {
-  device("model=panther,version=33")
+  device("model=panther,version=33") // Pixel7
 }

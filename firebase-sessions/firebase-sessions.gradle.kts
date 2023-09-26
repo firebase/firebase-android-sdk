@@ -29,13 +29,11 @@ firebaseLibrary {
 }
 
 android {
-  val targetSdkVersion: Int by rootProject
-
   namespace = "com.google.firebase.sessions"
   compileSdk = 33
   defaultConfig {
     minSdk = 16
-    targetSdk = targetSdkVersion
+    targetSdk = 33
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
