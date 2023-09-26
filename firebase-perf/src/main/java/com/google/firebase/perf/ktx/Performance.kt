@@ -27,7 +27,7 @@ import com.google.firebase.perf.metrics.Trace
 @Deprecated(
   "Use `com.google.firebase.Firebase.performance` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-perf-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Firebase.performance",
+    expression = "com.google.firebase.Firebase.performance",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.perf.performance"]
   )
 )

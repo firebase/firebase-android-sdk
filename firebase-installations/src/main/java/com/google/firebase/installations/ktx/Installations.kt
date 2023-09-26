@@ -24,7 +24,7 @@ import com.google.firebase.ktx.Firebase
 @Deprecated(
   "com.google.firebase.installationsktx.Firebase.installations has been deprecated. Use `com.google.firebase.installationsFirebase.installations` instead.",
   ReplaceWith(
-    expression = "Firebase.installations",
+    expression = "com.google.firebase.Firebase.installations",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.installationsinstallations"]
   )
 )
@@ -35,7 +35,7 @@ val Firebase.installations: FirebaseInstallations
 @Deprecated(
   "com.google.firebase.installationsktx.Firebase.installations(app) has been deprecated. Use `com.google.firebase.installationsFirebase.installations(app)` instead.",
   ReplaceWith(
-    expression = "Firebase.installations(app)",
+    expression = "com.google.firebase.Firebase.installations(app)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.installationsinstallations"]
   )
 )

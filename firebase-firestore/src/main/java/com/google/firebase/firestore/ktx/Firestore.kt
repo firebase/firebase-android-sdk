@@ -32,7 +32,7 @@ import kotlinx.coroutines.flow.map
 @Deprecated(
   "Use `com.google.firebase.Firebase.firestore` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Firebase.firestore",
+    expression = "com.google.firebase.Firebase.firestore",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.firestore"]
   )
 )
@@ -43,7 +43,7 @@ val Firebase.firestore: FirebaseFirestore
 @Deprecated(
   "Use `com.google.firebase.Firebase.firestore(app)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Firebase.firestore(app)",
+    expression = "com.google.firebase.Firebase.firestore(app)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.firestore"]
   )
 )
@@ -53,7 +53,7 @@ fun Firebase.firestore(app: FirebaseApp): FirebaseFirestore = FirebaseFirestore.
 @Deprecated(
   "Use `com.google.firebase.Firebase.firestore(app, database)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Firebase.firestore(app, database)",
+    expression = "com.google.firebase.Firebase.firestore(app, database)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.firestore"]
   )
 )
@@ -66,7 +66,7 @@ fun Firebase.firestore(app: FirebaseApp, database: String): FirebaseFirestore =
 @Deprecated(
   "Use `com.google.firebase.Firebase.firestore(database)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Firebase.firestore(database)",
+    expression = "com.google.firebase.Firebase.firestore(database)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.firestore"]
   )
 )

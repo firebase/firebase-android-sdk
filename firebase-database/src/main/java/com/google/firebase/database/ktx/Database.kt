@@ -38,7 +38,7 @@ import kotlinx.coroutines.flow.map
 @Deprecated(
   "Use `com.google.firebase.Firebase.database` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Firebase.database",
+    expression = "com.google.firebase.Firebase.database",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.database.database"]
   )
 )
@@ -49,7 +49,7 @@ val Firebase.database: FirebaseDatabase
 @Deprecated(
   "Use `com.google.firebase.Firebase.database(url)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Firebase.database(url)",
+    expression = "com.google.firebase.Firebase.database(url)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.database.database"]
   )
 )
@@ -59,7 +59,7 @@ fun Firebase.database(url: String): FirebaseDatabase = FirebaseDatabase.getInsta
 @Deprecated(
   "Use `com.google.firebase.Firebase.database(app)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Firebase.database(app)",
+    expression = "com.google.firebase.Firebase.database(app)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.database.database"]
   )
 )
@@ -69,7 +69,7 @@ fun Firebase.database(app: FirebaseApp): FirebaseDatabase = FirebaseDatabase.get
 @Deprecated(
   "Use `com.google.firebase.Firebase.database(app, url)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Firebase.database(app, url)",
+    expression = "com.google.firebase.Firebase.database(app, url)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.database.database"]
   )
 )

@@ -41,7 +41,7 @@ import kotlinx.coroutines.flow.callbackFlow
 @Deprecated(
   "Use `com.google.firebase.Firebase.storage` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Firebase.storage",
+    expression = "com.google.firebase.Firebase.storage",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.storage.storage"]
   )
 )
@@ -52,7 +52,7 @@ val Firebase.storage: FirebaseStorage
 @Deprecated(
   "Use `com.google.firebase.Firebase.storage(url)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Firebase.storage(url)",
+    expression = "com.google.firebase.Firebase.storage(url)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.storage.storage"]
   )
 )
@@ -62,7 +62,7 @@ fun Firebase.storage(url: String): FirebaseStorage = FirebaseStorage.getInstance
 @Deprecated(
   "Use `com.google.firebase.Firebase.storage(app)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Firebase.storage(app)",
+    expression = "com.google.firebase.Firebase.storage(app)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.storage.storage"]
   )
 )
@@ -72,7 +72,7 @@ fun Firebase.storage(app: FirebaseApp): FirebaseStorage = FirebaseStorage.getIns
 @Deprecated(
   "Use `com.google.firebase.Firebase.storage(app, url)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Firebase.storage(app, url)",
+    expression = "com.google.firebase.Firebase.storage(app, url)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.storage.storage"]
   )
 )
