@@ -1,2 +1,3 @@
 # Unreleased
-* [unchanged] Updated internal Dagger dependency.
+
+- [unchanged] Updated internal Dagger dependency.

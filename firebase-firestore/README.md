@@ -17,6 +17,7 @@ from this folder). See the README.md in the source root for instructions on
 publishing/testing Cloud Firestore.
 
 To build Cloud Firestore, from the source root run:
+
 ```bash
 ./gradlew :firebase-firestore:assembleRelease
 ```
@@ -24,6 +25,7 @@ To build Cloud Firestore, from the source root run:
 ## Unit Testing
 
 To run unit tests for Cloud Firestore, from the source root run:
+
 ```bash
 ./gradlew :firebase-firestore:check
 ```
@@ -48,21 +50,21 @@ By default, integration tests run against the Firestore emulator.
 The integration tests require that the Firestore emulator is running on port
 8080, which is default when running it via CLI.
 
-  * [Install the Firebase CLI](https://firebase.google.com/docs/cli/).
-    ```
-    npm install -g firebase-tools
-    ```
-  * [Install the Firestore
-    emulator](https://firebase.google.com/docs/firestore/security/test-rules-emulator#install_the_emulator).
-    ```
-    firebase setup:emulators:firestore
-    ```
-  * Run the emulator
-    ```
-    firebase emulators:start --only firestore
-    ```
-  * Select the `Firestore Integration Tests (Firestore Emulator)` run
-    configuration to run all integration tests.
+- [Install the Firebase CLI](https://firebase.google.com/docs/cli/).
+  ```
+  npm install -g firebase-tools
+  ```
+- [Install the Firestore
+  emulator](https://firebase.google.com/docs/firestore/security/test-rules-emulator#install_the_emulator).
+  ```
+  firebase setup:emulators:firestore
+  ```
+- Run the emulator
+  ```
+  firebase emulators:start --only firestore
+  ```
+- Select the `Firestore Integration Tests (Firestore Emulator)` run
+  configuration to run all integration tests.
 
 To run the integration tests against prod, select `FirestoreProdIntegrationTest`
 run configuration.
@@ -70,6 +72,7 @@ run configuration.
 ### Run on Local Android Emulator
 
 Then simply run:
+
 ```bash
 ./gradlew :firebase-firestore:connectedCheck
 ```
@@ -83,6 +86,7 @@ See [here](../README.md#running-integration-tests-on-firebase-test-lab) for
 instructions of how to setup Firebase Test Lab for your project.
 
 Run:
+
 ```bash
 ./gradlew :firebase-firestore:deviceCheck
 ```
@@ -90,6 +94,7 @@ Run:
 ## Code Formatting
 
 Run below to format Java code:
+
 ```bash
 ./gradlew :firebase-firestore:googleJavaFormat
 ```
@@ -100,6 +105,7 @@ from within Android Studio.
 ## Build Local Jar of Firestore SDK
 
 Run:
+
 ```bash
 ./gradlew publishAllToLocal
 ```
@@ -114,6 +120,7 @@ block](https://docs.gradle.org/current/userguide/declaring_repositories.html) in
 your app module's build.gradle.
 
 ## Misc
+
 After importing the project into Android Studio and building successfully
 for the first time, Android Studio will delete the run configuration xml files
 in `./idea/runConfigurations`. Undo these changes with the command:

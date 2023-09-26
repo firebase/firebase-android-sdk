@@ -8,16 +8,16 @@ While [Firebase Components]({{ site.baseurl }}{% link components/components.md %
 Dependency Injection capabilities for interop between Firebase SDKs, it's not ideal as a general purpose
 DI framework for a few reasons, to name some:
 
-* It's verbose, i.e. requires manually specifying dependencies and constructing instances of components in Component
+- It's verbose, i.e. requires manually specifying dependencies and constructing instances of components in Component
   definitions.
-* It has a runtime cost, i.e. initialization time is linear in the number of Components present in the graph
+- It has a runtime cost, i.e. initialization time is linear in the number of Components present in the graph
 
 As a result using [Firebase Components]({{ site.baseurl }}{% link components/components.md %}) is appropriate only
 for inter-SDK injection and scoping instances per `FirebaseApp`.
 
 On the other hand, manually instantiating SDKs is often tedious, errorprone, and leads to code smells
 that make code less testable and couples it to the implementation rather than the interface. For more context see
-[Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection) and  [Motivation](https://github.com/google/guice/wiki/Motivation).
+[Dependency Injection](https://en.wikipedia.org/wiki/Dependency_injection) and [Motivation](https://github.com/google/guice/wiki/Motivation).
 
 {: .important }
 It's recommended to use [Dagger](https://dagger.dev) for internal dependency injection within the SDKs and
@@ -143,7 +143,7 @@ flowchart LR
       direction BT
       subgraph GlobalComponents[Outside of SDK]
         direction LR
-        
+
         FirebaseOptions
         SomeInterop
         Executor["@Background Executor"]
@@ -155,7 +155,7 @@ flowchart LR
           SomeImpl -.-> SomeInterop
           SomeImpl -.-> Executor
         end
-          
+
         subgraph Default["@DbScope SDK(default)"]
           MainClassDefault[FirebaseDatabase] --> SomeImpl
           SomeOtherImplDefault[SomeOtherImpl] -.-> FirebaseOptions
@@ -169,7 +169,7 @@ flowchart LR
       end
     end
   end
-  
+
   classDef green fill:#4db6ac
   classDef blue fill:#1a73e8
   class GlobalComponents green
@@ -235,7 +235,7 @@ Implementing `DatabaseMultiDb`:
 @Singleton
 class DatabaseMultiDb @Inject constructor(private val factory: DbInstanceComponent.Factory) {
   private val instances = mutableMapOf<String, FirebaseDatabase>()
-  
+
   @Synchronized
   fun get(dbName: String) : FirebaseDatabase {
     if (!instances.containsKey(dbName)) {

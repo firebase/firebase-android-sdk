@@ -14,6 +14,7 @@ This directory contains tooling used to run Continuous Integration tasks.
   source ~/.venvs/fireci/bin/activate
   ```
 - At the root of the firebase sdk repo, run
+
   ```
   pip3 install -e ./ci/fireci/
   ```

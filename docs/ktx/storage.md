@@ -16,12 +16,14 @@ implementation 'com.google.firebase:firebase-storage-ktx:$VERSION'
 ### Get an instance of FirebaseStorage
 
 **Kotlin**
+
 ```kotlin
 val storage = FirebaseStorage.getInstance()
 val anotherStorage = FirebaseStorage.getInstance(FirebaseApp.getInstance("myApp"))
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val storage = Firebase.storage
 val anotherStorage = Firebase.storage(Firebase.app("myApp"))
@@ -30,12 +32,14 @@ val anotherStorage = Firebase.storage(Firebase.app("myApp"))
 ### Get the FirebaseStorage for a custom storage bucket url
 
 **Kotlin**
+
 ```kotlin
 val storage = FirebaseStorage.getInstance("gs://my-custom-bucket")
 val anotherStorage = FirebaseStorage.getInstance(FirebaseApp.getInstance("myApp"), "gs://my-custom-bucket")
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val storage = Firebase.storage("gs://my-custom-bucket")
 val anotherStorage = Firebase.storage(Firebase.app("myApp"), "gs://my-custom-bucket")
@@ -44,6 +48,7 @@ val anotherStorage = Firebase.storage(Firebase.app("myApp"), "gs://my-custom-buc
 ### Create file metadata
 
 **Kotlin**
+
 ```kotlin
 val metadata = StorageMetadata.Builder()
         .setContentType("image/jpg")
@@ -53,6 +58,7 @@ val metadata = StorageMetadata.Builder()
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val metadata = storageMetadata {
     contentType = "image/jpg"

@@ -3,10 +3,11 @@ parent: Firebase Components
 ---
 
 # Dependencies
+
 {: .no_toc}
 
 1. TOC
-{:toc}
+   {:toc}
 
 This page gives an overview of the different dependency types supported by the Components Framework.
 
@@ -101,7 +102,7 @@ The provider will return `null` if the dependency is not present in the app.
 
 {: .warning }
 When the app uses [Play's dynamic feature delivery](https://developer.android.com/guide/playcore/feature-delivery),
-`provider.get()` will return your dependency when it becomes available.  To support this use case, don't store references to the result of `provider.get()` calls.
+`provider.get()` will return your dependency when it becomes available. To support this use case, don't store references to the result of `provider.get()` calls.
 
 See [Dynamic Module Support]({{ site.baseurl }}{% link components/dynamic_modules.md %}) for details
 
@@ -162,8 +163,8 @@ With the above setup each SDK contributes a value of `SomeType` into a `Set<Some
 
 To consume such a set the interested `Component` needs to declare a special kind of dependency in one of 2 ways:
 
-* `Dependency.setOf(SomeType.class)`, a dependency of type `Set<SomeType>`.
-* `Dependency.setOfProvider(SomeType.class)`, a dependency of type `Provider<Set<SomeType>>`. The advantage of this
+- `Dependency.setOf(SomeType.class)`, a dependency of type `Set<SomeType>`.
+- `Dependency.setOfProvider(SomeType.class)`, a dependency of type `Provider<Set<SomeType>>`. The advantage of this
   is that the `Set` is not initialized until the first call to `provider.get()` at which point all elements of the
   set will get initialized.
 

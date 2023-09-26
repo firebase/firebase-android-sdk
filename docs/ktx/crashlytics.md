@@ -16,11 +16,13 @@ implementation 'com.google.firebase:firebase-crashlytics-ktx:$VERSION'
 ### Get an instance of FirebaseCrashlytics
 
 **Kotlin**
+
 ```kotlin
 val crashlytics = FirebaseCrashlytics.getInstance()
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val crashlytics = Firebase.crashlytics
 ```
@@ -28,6 +30,7 @@ val crashlytics = Firebase.crashlytics
 ### Set custom keys
 
 **Kotlin**
+
 ```kotlin
 crashlytics.setCustomKey("str_key", "hello")
 crashlytics.setCustomKey("bool_key", true)
@@ -38,6 +41,7 @@ crashlytics.setCustomKey("double_key", 1.0)
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 crashlytics.setCustomKeys {
     key("str_key", "hello")

@@ -21,7 +21,7 @@ Before upgrading your application(s) to the latest SDK version, please **make su
 
 1. **Open** the [Google Cloud Platform Console](https://console.cloud.google.com/apis/credentials?folder).
 1. **Choose** the project you use for your application(s).
-1. **Open**  `APIs & Services` and **select** `Credentials`.
+1. **Open** `APIs & Services` and **select** `Credentials`.
 1. **Click** `Edit API Key` (pencil icon) for the API key in question.
 1. **Scroll down** to the `API restrictions` section.
 1. From the dropdown menu, **add** the `Firebase Installations API` to the list of permitted APIs, and click `Save`.

@@ -10,9 +10,9 @@ nav_order: 3
 
 One of the biggest strengths for Firebase clients is the ease of integration. In a common case, a developer has very few things to do to integrate with Firebase. There is no need to initialize/configure Firebase at runtime. Firebase automatically initializes at application start and begins providing value to developers. A few notable examples:
 
-* `Analytics` automatically tracks app events
-* `Firebase Performance` automatically tracks app startup time, all network requests and screen performance
-* `Crashlytics` automatically captures all application crashes, ANRs and non-fatals
+- `Analytics` automatically tracks app events
+- `Firebase Performance` automatically tracks app startup time, all network requests and screen performance
+- `Crashlytics` automatically captures all application crashes, ANRs and non-fatals
 
 This feature makes onboarding and adoption very simple. However, comes with the great responsibility of keeping the application snappy. We shouldn't slow down application startup for 3p developers as it can stand in the way of user adoption of their application.
 
@@ -20,8 +20,8 @@ This feature makes onboarding and adoption very simple. However, comes with the 
 
 When present together in an application, Firebase products can detect each other and automatically provide additional functionality to the developer, e.g.:
 
-* `Firestore` automatically detects `Auth` and `AppCheck` to protect read/write access to the database
-* `Crashlytics` integrates with `Analytics`, when available, to provide additional insights into the application behavior and enables safe app rollouts
+- `Firestore` automatically detects `Auth` and `AppCheck` to protect read/write access to the database
+- `Crashlytics` integrates with `Analytics`, when available, to provide additional insights into the application behavior and enables safe app rollouts
 
 ## FirebaseApp at the Core of Firebase
 
@@ -41,10 +41,10 @@ During initialization, `FirebaseApp` discovers all Firebase SDKs present in the 
 
 In addition to `FirebaseOptions`, `FirebaseApp` registers additional components that product SDKs can request via dependency injection. To name a few:
 
-* `android.content.Context`(Application context)
-* [Common Executors]({{ site.baseurl }}{% link components/executors.md %})
-* `FirebaseOptions`
-* Various internal components
+- `android.content.Context`(Application context)
+- [Common Executors]({{ site.baseurl }}{% link components/executors.md %})
+- `FirebaseOptions`
+- Various internal components
 
 ## Discovery and Dependency Injection
 
