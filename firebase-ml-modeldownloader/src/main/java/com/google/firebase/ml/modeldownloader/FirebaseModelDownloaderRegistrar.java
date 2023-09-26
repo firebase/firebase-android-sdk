@@ -19,6 +19,7 @@ import android.os.Build.VERSION_CODES;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import com.google.android.datatransport.TransportFactory;
+import com.google.firebase.datatransport.TransportBackend;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.concurrent.Background;
 import com.google.firebase.annotations.concurrent.Blocking;
@@ -47,13 +48,15 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     Qualified<Executor> bgExecutor = Qualified.qualified(Background.class, Executor.class);
     Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
+    Qualified<TransportFactory> clearcutTransport =
+        Qualified.qualified(TransportBackend.class, TransportFactory.class);
     return Arrays.asList(
         Component.builder(FirebaseModelDownloader.class)
             .name(LIBRARY_NAME)
             .add(Dependency.required(Context.class))
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
-            .add(Dependency.requiredProvider(TransportFactory.class))
+            .add(Dependency.requiredProvider(clearcutTransport))
             .add(Dependency.required(bgExecutor))
             .add(Dependency.required(blockingExecutor))
             .factory(
@@ -64,7 +67,7 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
                         .setFis(c.getProvider(FirebaseInstallationsApi.class))
                         .setBlockingExecutor(c.get(blockingExecutor))
                         .setBgExecutor(c.get(bgExecutor))
-                        .setTransportFactory(c.getProvider(TransportFactory.class))
+                        .setTransportFactory(c.getProvider(clearcutTransport))
                         .build()
                         .getModelDownloader())
             .build(),
