@@ -192,6 +192,7 @@ public class IntegrationTestUtil {
 
   /** Initializes a new Firestore instance that uses the default project. */
   public static FirebaseFirestore testFirestore() {
+    Logger.debug("testEnvDatabaseInfo", "target backend is=============: %s", provider.projectId());
     return testFirestore(newTestSettings());
   }
 
