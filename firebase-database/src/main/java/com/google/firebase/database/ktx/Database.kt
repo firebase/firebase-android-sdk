@@ -85,8 +85,8 @@ fun Firebase.database(app: FirebaseApp, url: String): FirebaseDatabase =
 @Deprecated(
   "Use `com.google.firebase.database.DataSnapshot.getValue` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "DataSnapshot.getValue",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.DataSnapshot.getValue"]
+    expression = "getValue<T>()",
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.getValue"]
   )
 )
 inline fun <reified T> DataSnapshot.getValue(): T? {
@@ -102,8 +102,8 @@ inline fun <reified T> DataSnapshot.getValue(): T? {
 @Deprecated(
   "Use `com.google.firebase.database.MutableData.getValue` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "MutableData.getValue",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.MutableData.getValue"]
+    expression = "getValue<T>()",
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.getValue"]
   )
 )
 inline fun <reified T> MutableData.getValue(): T? {
@@ -119,8 +119,8 @@ inline fun <reified T> MutableData.getValue(): T? {
 @Deprecated(
   "Use `com.google.firebase.database.Query.snapshots` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Query.snapshots",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.Query.snapshots"]
+    expression = "snapshots",
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.snapshots"]
   )
 )
 val Query.snapshots
@@ -140,7 +140,6 @@ val Query.snapshots
         )
       awaitClose { removeEventListener(listener) }
     }
-
 /**
  * Starts listening to this query's child events and emits its values via a [Flow].
  *
@@ -150,8 +149,8 @@ val Query.snapshots
 @Deprecated(
   "Use `com.google.firebase.database.Query.childEvents` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Query.childEvents",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.Query.childEvents"]
+    expression = "childEvents",
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.childEvents"]
   )
 )
 val Query.childEvents
@@ -191,11 +190,11 @@ val Query.childEvents
  * - When the flow completes, the listener will be removed.
  */
 @Deprecated(
-  "Use `com.google.firebase.database.FirebaseDatabaseKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
+  "Use `com.google.firebase.database.Query.values` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "FirebaseDatabaseKtxRegistrar",
+    expression = "values<T>()",
     imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.database.FirebaseDatabaseKtxRegistrar"]
+      ["com.google.firebase.Firebase", "com.google.firebase.database.values"]
   )
 )
 inline fun <reified T : Any> Query.values(): Flow<T?> {

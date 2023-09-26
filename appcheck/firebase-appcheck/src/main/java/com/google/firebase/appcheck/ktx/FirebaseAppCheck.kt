@@ -17,16 +17,18 @@ package com.google.firebase.appcheck.ktx
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.AppCheckToken
 import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.appcheck.appCheck
 import com.google.firebase.components.Component
 import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.ktx.app
 
 /** Returns the [FirebaseAppCheck] instance of the default [FirebaseApp]. */
 @Deprecated(
   "com.google.firebase.appcheckktx.Firebase.appCheck has been deprecated. Use `com.google.firebase.appcheckFirebase.appCheck` instead.",
   ReplaceWith(
     expression = "com.google.firebase.Firebase.appCheck",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.appcheckappCheck"]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.appcheck.appCheck"]
   )
 )
 val Firebase.appCheck: FirebaseAppCheck
@@ -37,7 +39,7 @@ val Firebase.appCheck: FirebaseAppCheck
   "com.google.firebase.appcheckktx.Firebase.appCheck(app) has been deprecated. Use `com.google.firebase.appcheckFirebase.appCheck(app)` instead.",
   ReplaceWith(
     expression = "com.google.firebase.Firebase.appCheck(app)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.appcheckappCheck"]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.appcheck.appCheck"]
   )
 )
 fun Firebase.appCheck(app: FirebaseApp) = FirebaseAppCheck.getInstance(app)
@@ -50,9 +52,9 @@ fun Firebase.appCheck(app: FirebaseApp) = FirebaseAppCheck.getInstance(app)
 @Deprecated(
   "com.google.firebase.appcheckktx.FirebaseAppCheckKtxRegistrar has been deprecated. Use `com.google.firebase.appcheckFirebaseAppCheckKtxRegistrar` instead.",
   ReplaceWith(
-    expression = "FirebaseAppCheckKtxRegistrar",
+    expression = "component1()",
     imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.appcheckFirebaseAppCheckKtxRegistrar"]
+      ["com.google.firebase.appcheck.component1"]
   )
 )
 operator fun AppCheckToken.component1() = token
@@ -65,9 +67,9 @@ operator fun AppCheckToken.component1() = token
 @Deprecated(
   "com.google.firebase.appcheckktx.FirebaseAppCheckKtxRegistrar has been deprecated. Use `com.google.firebase.appcheckFirebaseAppCheckKtxRegistrar` instead.",
   ReplaceWith(
-    expression = "FirebaseAppCheckKtxRegistrar",
+    expression = "component1()",
     imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.appcheckFirebaseAppCheckKtxRegistrar"]
+    ["com.google.firebase.appcheck.component2"]
   )
 )
 operator fun AppCheckToken.component2() = expireTimeMillis

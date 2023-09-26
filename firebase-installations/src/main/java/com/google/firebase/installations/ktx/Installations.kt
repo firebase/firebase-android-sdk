@@ -33,10 +33,10 @@ val Firebase.installations: FirebaseInstallations
 
 /** Returns the [FirebaseInstallations] instance of a given [FirebaseApp]. */
 @Deprecated(
-  "com.google.firebase.installationsktx.Firebase.installations(app) has been deprecated. Use `com.google.firebase.installationsFirebase.installations(app)` instead.",
+  "com.google.firebase.installations.Firebase.installations(app) has been deprecated. Use `com.google.firebase.installationsFirebase.installations(app)` instead.",
   ReplaceWith(
     expression = "com.google.firebase.Firebase.installations(app)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.installationsinstallations"]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.installations.installations"]
   )
 )
 fun Firebase.installations(app: FirebaseApp): FirebaseInstallations =
@@ -44,13 +44,13 @@ fun Firebase.installations(app: FirebaseApp): FirebaseInstallations =
 
 /** @suppress */
 @Deprecated(
-  "com.google.firebase.installationsktx.FirebaseInstallationsKtxRegistrar has been deprecated. Use `com.google.firebase.installationsFirebaseInstallationsKtxRegistrar` instead.",
+  "com.google.firebase.installations.FirebaseInstallationsKtxRegistrar has been deprecated. Use `com.google.firebase.installationsFirebaseInstallationsKtxRegistrar` instead.",
   ReplaceWith(
     expression = "FirebaseInstallationsKtxRegistrar",
     imports =
       [
         "com.google.firebase.Firebase",
-        "com.google.firebase.installationsFirebaseInstallationsKtxRegistrar"
+        "com.google.firebase.installations.FirebaseInstallationsKtxRegistrar"
       ]
   )
 )

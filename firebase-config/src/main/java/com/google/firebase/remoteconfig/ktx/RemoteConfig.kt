@@ -25,11 +25,13 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigException
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigValue
+import com.google.firebase.remoteconfig.configUpdates
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.last
 
 /** Returns the [FirebaseRemoteConfig] instance of the default [FirebaseApp]. */
 @Deprecated(
@@ -57,8 +59,8 @@ fun Firebase.remoteConfig(app: FirebaseApp): FirebaseRemoteConfig =
 @Deprecated(
   "Use `com.google.firebase.remoteconfig.FirebaseRemoteConfig.get(key).` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-config-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "FirebaseRemoteConfig.get(key)",
-    imports = ["com.google.firebase.remoteconfig.FirebaseRemoteConfig.get"]
+    expression = "get(key)",
+    imports = ["com.google.firebase.remoteconfig.get"]
   )
 )
 operator fun FirebaseRemoteConfig.get(key: String): FirebaseRemoteConfigValue {
@@ -84,8 +86,8 @@ fun remoteConfigSettings(
 @Deprecated(
   "Use `com.google.firebase.remoteconfig.FirebaseRemoteConfig.configUpdates` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-config-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "FirebaseRemoteConfig.configUpdates",
-    imports = ["com.google.firebase.remoteconfig.FirebaseRemoteConfig.configUpdates"]
+    expression = "configUpdates",
+    imports = ["com.google.firebase.remoteconfig.configUpdates"]
   )
 )
 val FirebaseRemoteConfig.configUpdates
@@ -104,6 +106,7 @@ val FirebaseRemoteConfig.configUpdates
       )
     awaitClose { registration.remove() }
   }
+
 
 /** @suppress */
 @Deprecated(
