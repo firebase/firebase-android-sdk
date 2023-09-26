@@ -110,6 +110,7 @@ dependencies {
     implementation 'com.google.firebase:protolite-well-known-types:18.0.0'
     implementation 'com.squareup.okhttp3:okhttp:3.12.1'
     implementation(project(":firebase-common"))
+    implementation(project(":firebase-common:ktx"))
     implementation(project(":firebase-components"))
     implementation(project(":firebase-config"))
     implementation(project(":firebase-installations"))

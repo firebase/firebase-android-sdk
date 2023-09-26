@@ -63,6 +63,7 @@ dependencies {
     implementation project(':appcheck:firebase-appcheck-interop')
     implementation project(path: ':appcheck:firebase-appcheck-interop')
     implementation(project(":firebase-common"))
+    implementation(project(":firebase-common:ktx"))
     implementation(project(":firebase-components"))
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
     testImplementation "androidx.test:core:$androidxTestCoreVersion"

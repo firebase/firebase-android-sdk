@@ -109,6 +109,7 @@ dependencies {
     implementation 'com.google.auto.value:auto-value-annotations:1.6.6'
     implementation 'javax.inject:javax.inject:1'
     implementation(project(":firebase-common"))
+    implementation(project(":firebase-common:ktx"))
     implementation(project(":firebase-components"))
     implementation(project(":firebase-inappmessaging"))
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
