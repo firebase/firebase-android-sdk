@@ -28,11 +28,11 @@ plugins {
 
 android {
   namespace = "com.google.firebase.testing.sessions"
-  compileSdk = 34
+  compileSdk = 33
   defaultConfig {
     applicationId = "com.google.firebase.testing.sessions"
     minSdk = 16
-    targetSdk = 34
+    targetSdk = 33
     versionCode = 1
     versionName = "1.0"
     multiDexEnabled = true
@@ -53,9 +53,9 @@ dependencies {
 
   implementation("androidx.appcompat:appcompat:1.6.1")
   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-  implementation("androidx.core:core-ktx:1.12.0")
   implementation("androidx.multidex:multidex:2.0.1")
   implementation("com.google.android.material:material:1.9.0")
+  implementation(libs.androidx.core)
 
   androidTestImplementation("com.google.firebase:firebase-common-ktx:20.3.3")
   androidTestImplementation(libs.androidx.test.junit)
