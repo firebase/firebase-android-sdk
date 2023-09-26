@@ -21,5 +21,5 @@ import com.google.firebase.sessions.ProcessDetails
 /** Fake implementation of [ProcessDetails] that always returns the provided values. */
 class FakeProcessDetails(
   override val isDefaultProcess: Boolean = true,
-  override val isForegroundImportance: Boolean = true,
+  override val isForegroundProcess: Boolean = true,
 ) : ProcessDetails

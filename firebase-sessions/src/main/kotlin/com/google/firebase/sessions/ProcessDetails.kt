@@ -25,11 +25,11 @@ import android.os.Process
 
 /** Provides details about the current process. */
 internal interface ProcessDetails {
-  /** Returns whether the current process is the app's default process or not. */
+  /** Whether the current process is the app's default process or not. */
   val isDefaultProcess: Boolean
 
-  /** Returns whether the current process or service is running in the foreground or not. */
-  val isForegroundImportance: Boolean
+  /** Whether the current process is running in the foreground or not. */
+  val isForegroundProcess: Boolean
 }
 
 /** Android implementation of [ProcessDetails]. */
@@ -50,15 +50,13 @@ internal class AndroidProcessDetails(context: Context) : ProcessDetails {
       findProcessName(context, Process.myPid())
     }
 
-  /** Returns whether the current process is the app's default process or not. */
   override val isDefaultProcess: Boolean = currentProcessName == defaultProcessName
 
-  /** Returns whether the current process or service is running in the foreground or not. */
-  override val isForegroundImportance: Boolean
+  override val isForegroundProcess: Boolean
     get() {
-      val runningProcessInfo = RunningAppProcessInfo()
-      ActivityManager.getMyMemoryState(runningProcessInfo)
-      return isForegroundProcess(runningProcessInfo) || isForegroundService(runningProcessInfo)
+      val runningAppProcessInfo = RunningAppProcessInfo()
+      ActivityManager.getMyMemoryState(runningAppProcessInfo)
+      return runningAppProcessInfo.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND
     }
 
   /** Finds the process name for the given pid, or returns null if not found. */
@@ -67,30 +65,10 @@ internal class AndroidProcessDetails(context: Context) : ProcessDetails {
     return activityManager.runningAppProcesses?.find { it.pid == pid }?.processName
   }
 
-  /**
-   * Returns if the current process is at the top of the screen that the user is interacting with.
-   */
-  private fun isForegroundProcess(runningProcessInfo: RunningAppProcessInfo): Boolean {
-    return runningProcessInfo.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND
-  }
-
-  /**
-   * Returns if the current process is running as a foreground service.
-   *
-   * This generally indicates that the process is doing something the user actively cares about.
-   */
-  private fun isForegroundService(runningProcessInfo: RunningAppProcessInfo): Boolean =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-      runningProcessInfo.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
-    } else {
-      // Default to false if the api level is too low to check.
-      false
-    }
-
   // TODO(mrober): Move this to somewhere session specific.
   internal companion object {
     /** Returns whether the current process should generate a new session or not. */
     fun shouldProcessGenerateNewSession(processDetails: ProcessDetails): Boolean =
-      processDetails.isDefaultProcess && processDetails.isForegroundImportance
+      processDetails.isDefaultProcess && processDetails.isForegroundProcess
   }
 }
