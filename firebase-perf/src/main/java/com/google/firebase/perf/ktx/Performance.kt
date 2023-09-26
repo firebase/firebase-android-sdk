@@ -41,8 +41,8 @@ val Firebase.performance: FirebasePerformance
 @Deprecated(
   "Use `com.google.firebase.perf.HttpMetric.trace(block)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-perf-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
-    expression = "HttpMetric.trace(block)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.perf.HttpMetric.trace"]
+    expression = "trace(block)",
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.perf.trace"]
   )
 )
 inline fun HttpMetric.trace(block: HttpMetric.() -> Unit) {
@@ -59,10 +59,10 @@ inline fun HttpMetric.trace(block: HttpMetric.() -> Unit) {
  * [Trace].
  */
 @Deprecated(
-  "Use `com.google.firebase.perf.Trace.trace(block)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-perf-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.perf.Trace.trace<T>(block)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-perf-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Trace.trace(block)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.perf.Trace.trace"]
+    expression = "Trace.trace<T>(block)",
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.perf.trace"]
   )
 )
 inline fun <T> Trace.trace(block: Trace.() -> T): T {
@@ -79,10 +79,10 @@ inline fun <T> Trace.trace(block: Trace.() -> T): T {
  * wrapped by calls to [start] and [stop].
  */
 @Deprecated(
-  "Use `com.google.firebase.perf.Trace.trace(name, block)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-perf-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.perf.Trace.trace<T>(name, block)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-perf-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Trace.trace(name, block)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.perf.Trace.trace"]
+    expression = "trace<T>(name, block)",
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.perf.trace"]
   )
 )
 inline fun <T> trace(name: String, block: Trace.() -> T): T = Trace.create(name).trace(block)

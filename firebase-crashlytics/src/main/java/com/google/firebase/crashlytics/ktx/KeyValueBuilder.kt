@@ -19,10 +19,6 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 /** Helper class to enable fluent syntax in [setCustomKeys] */
 @Deprecated(
   "com.google.firebase.crashlyticsktx.KeyValueBuilder(private has been deprecated. Use `com.google.firebase.crashlyticsKeyValueBuilder(private` instead.",
-  ReplaceWith(
-    expression = "KeyValueBuilder(private",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.crashlyticsKeyValueBuilder"]
-  )
 )
 class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
 
