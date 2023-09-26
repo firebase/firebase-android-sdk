@@ -5,17 +5,18 @@ nav_order: 4
 ---
 
 # Firebase Components
+
 {: .no_toc}
 
 1. TOC
-{:toc}
+   {:toc}
 
 Firebase is known for being easy to use and requiring no/minimal configuration at runtime.
 Just adding SDKs to the app makes them discover each other to provide additional functionality,
 e.g. `Firestore` automatically integrates with `Auth` if present in the app.
 
-* Firebase SDKs have required and optional dependencies on other Firebase SDKs
-* SDKs have different initialization requirements, e.g. `Analytics` and `Crashlytics` must be
+- Firebase SDKs have required and optional dependencies on other Firebase SDKs
+- SDKs have different initialization requirements, e.g. `Analytics` and `Crashlytics` must be
   initialized upon application startup, while some are initialized on demand only.
 
 To accommodate these requirements Firebase uses a component model that discovers SDKs present in the app,
@@ -34,10 +35,10 @@ and start using it right away.
 
 ### Simple to use and integrate with for component developers
 
-* The component model is lightweight in terms of integration effort. It is not opinionated on how components are structured.
-* The component model should require as little cooperation from components runtime as possible.
-* It provides component developers with an API that is easy to use correctly, and hard to use incorrectly.
-* Does not sacrifice testability of individual components in isolation
+- The component model is lightweight in terms of integration effort. It is not opinionated on how components are structured.
+- The component model should require as little cooperation from components runtime as possible.
+- It provides component developers with an API that is easy to use correctly, and hard to use incorrectly.
+- Does not sacrifice testability of individual components in isolation
 
 ### Performant at startup and initialization
 
@@ -47,10 +48,10 @@ The runtime does as little work as possible during initialization.
 
 A Firebase Component is an entity that:
 
-* Implements one or more interfaces
-* Has a list of dependencies(required or optional). See [Dependencies]({{ site.baseurl }}{% link components/dependencies.md %})
-* Has initialization requirements(e.g. eager in default app)
-* Defines a factory creates an instance of the component’s interface given it's dependencies.
+- Implements one or more interfaces
+- Has a list of dependencies(required or optional). See [Dependencies]({{ site.baseurl }}{% link components/dependencies.md %})
+- Has initialization requirements(e.g. eager in default app)
+- Defines a factory creates an instance of the component’s interface given it's dependencies.
   (In other words describes how to create the given component.)
 
 Example:
@@ -130,13 +131,13 @@ At this point `FirebaseApp` will instantiate them and use the `ComponentRuntime`
 
 ### Definitions and constraints
 
-* **Component A depends on Component B** if `B` depends on an `interface` that `A` implements.
-* **For any Interface I, only one component is allowed to implement I**(with the exception of
+- **Component A depends on Component B** if `B` depends on an `interface` that `A` implements.
+- **For any Interface I, only one component is allowed to implement I**(with the exception of
   [Set Dependencies]({{ site.baseurl }}{% link components/dependencies.md %}#set-dependencies)). If this invariant is violated, the container will
   fail to start at runtime.
-* **There must not be any dependency cycles** among components. See Dependency Cycle Resolution on how this limitation can
+- **There must not be any dependency cycles** among components. See Dependency Cycle Resolution on how this limitation can
   be mitigated
-* **Components are initialized lazily by default**(unless a component is declared eager) and are initialized when requested
+- **Components are initialized lazily by default**(unless a component is declared eager) and are initialized when requested
   by an application either directly or transitively.
 
 The initialization phase of the FirebaseApp will consist of the following steps:
@@ -172,12 +173,12 @@ flowchart TD
     RemoteConfig --> FirebaseApp
     RemoteConfig --> Context
     RemoteConfig --> Installations
-    
-    
+
+
     classDef eager fill:#4db66e,stroke:#4db6ac,color:#000;
     classDef transitive fill:#4db6ac,stroke:#4db6ac,color:#000;
     classDef always fill:#1a73e8,stroke:#7baaf7,color:#fff;
-    
+
     class Analytics eager
     class Crashlytics eager
     class Context always
@@ -191,8 +192,8 @@ These components are initialized when `FirebaseApp` is initialized. `Installatio
 eager components depends on it(see Prefer Lazy dependencies to avoid this as mush as possible).
 `FirebaseApp`, `FirebaseOptions` and `Android Context` are always present in the Component Container and are considered initialized as well.
 
-*The rest of the components are left uninitialized and will remain so until the client application requests them or an eager
-component initializes them by using a Lazy dependency.*
+_The rest of the components are left uninitialized and will remain so until the client application requests them or an eager
+component initializes them by using a Lazy dependency._
 For example, if the application calls `FirebaseDatabase.getInstance()`, the container will initialize `Auth` and `Database`
 and will return `Database` to the user.
 
@@ -202,14 +203,14 @@ Some SDKs support multi-resource mode of operation, where it's possible to creat
 
 Examples:
 
-* RTDB allows more than one database in a single Firebase project, so it's possible to instantiate one instance of the sdk per datbase
+- RTDB allows more than one database in a single Firebase project, so it's possible to instantiate one instance of the sdk per datbase
 
 ```kotlin
 val rtdbOne = Firebase.database(app) // uses default database
 val rtdbTwo = Firebase.database(app, "dbName")
 ```
 
-* Firestore, functions, and others support the same usage pattern
+- Firestore, functions, and others support the same usage pattern
 
 To allow for that, such SDKs register a singleton "MultiResource" [Firebase component]({{ site.baseurl }}{% link components/components.md %}),
 which creates instances per resource(e.g. db name).
@@ -236,7 +237,7 @@ class FirebaseDatabase(
 
     companion object {
       fun getInstance(app : FirebaseApp) = getInstance("default")
-      fun getInstance(app : FirebaseApp, dbName: String) = 
+      fun getInstance(app : FirebaseApp, dbName: String) =
         app.get(DatabaseComponent::class.java).get("default")
     }
 

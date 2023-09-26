@@ -16,11 +16,13 @@ implementation 'com.google.firebase:firebase-inappmessaging-ktx:$VERSION'
 ### Get an instance of FirebaseInAppMessaging
 
 **Kotlin**
+
 ```kotlin
 val fiamUI = FirebaseInAppMessaging.getInstance()
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val fiamUI = Firebase.inAppMessaging
 ```

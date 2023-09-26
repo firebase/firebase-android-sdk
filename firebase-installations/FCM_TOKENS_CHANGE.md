@@ -2,7 +2,7 @@
 
 ## What happened?
 
-The latest Cloud Messaging SDK i.e firebase-messaging:20.1.1 updates introduce a transitive dependency on the [Firebase Installations SDK](https://console.cloud.google.com/apis/library/firebaseinstallations.googleapis.com), a new infrastructure service for Firebase. Different to before, the Firebase Installations SDK supports [multiple projects in your application](https://firebase.google.com/docs/projects/multiprojects). 
+The latest Cloud Messaging SDK i.e firebase-messaging:20.1.1 updates introduce a transitive dependency on the [Firebase Installations SDK](https://console.cloud.google.com/apis/library/firebaseinstallations.googleapis.com), a new infrastructure service for Firebase. Different to before, the Firebase Installations SDK supports [multiple projects in your application](https://firebase.google.com/docs/projects/multiprojects).
 
 If you use a Firebase application instance different to the default instance, the FCM registration tokens of installed instances of your applications may change one time after the migration.
 

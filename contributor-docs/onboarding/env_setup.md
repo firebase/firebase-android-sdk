@@ -43,8 +43,8 @@ After that configure github keys as usual using this
 ## Importing the repository
 
 1. Clone the repository with `git clone --recurse-submodules
-    git@github.com:firebase/firebase-android-sdk.git`.
+git@github.com:firebase/firebase-android-sdk.git`.
 1. Open Android Studio and click "Open an existing project".
-    ![Open an existing project](as_open_project.png)
+   ![Open an existing project](as_open_project.png)
 1. Find the `firebase-android-sdk` directory and open.
 1. To run integration/device tests you will need a `google-services.json` file.

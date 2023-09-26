@@ -16,12 +16,14 @@ implementation 'com.google.firebase:firebase-dynamic-links-ktx:$VERSION'
 ### Get an instance of FirebaseDynamicLinks
 
 **Kotlin**
+
 ```kotlin
 val dynamicLinks = FirebaseDynamicLinks.getInstance()
 val anotherDynamicLinks = FirebaseDynamicLinks.getInstance(FirebaseApp.getInstance("myApp"))
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val dynamicLinks = Firebase.dynamicLinks
 val anotherDynamicLinks = Firebase.dynamicLinks(Firebase.app("myApp"))
@@ -30,6 +32,7 @@ val anotherDynamicLinks = Firebase.dynamicLinks(Firebase.app("myApp"))
 ### Create a Dynamic Link from parameters
 
 **Kotlin**
+
 ```kotlin
 val dynamicLink = FirebaseDynamicLinks.getInstance().createDynamicLink()
         .setLink(Uri.parse("https://www.example.com/"))
@@ -63,6 +66,7 @@ val dynamicLink = FirebaseDynamicLinks.getInstance().createDynamicLink()
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val dynamicLink = Firebase.dynamicLinks.dynamicLink {
     link = Uri.parse("https://www.example.com/")
@@ -93,6 +97,7 @@ val dynamicLink = Firebase.dynamicLinks.dynamicLink {
 ### Shorten a long Dynamic Link
 
 **Kotlin**
+
 ```kotlin
 FirebaseDynamicLinks.getInstance().createDynamicLink()
         .setLongLink(Uri.parse("https://example.page.link/?link=" +
@@ -115,6 +120,7 @@ FirebaseDynamicLinks.getInstance().createDynamicLink()
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 Firebase.dynamicLinks.shortLinkAsync {
     longLink = Uri.parse("https://example.page.link/?link=" +
@@ -132,6 +138,7 @@ Firebase.dynamicLinks.shortLinkAsync {
 ### Create a Dynamic Link with a shorter link suffix
 
 **Kotlin**
+
 ```kotlin
 val shortLinkTask = FirebaseDynamicLinks.getInstance().createDynamicLink()
         // ...
@@ -139,6 +146,7 @@ val shortLinkTask = FirebaseDynamicLinks.getInstance().createDynamicLink()
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val shortLinkTask = Firebase.dynamicLinks.shortLinkAsync(ShortDynamicLink.Suffix.SHORT) {
     // ...
@@ -148,6 +156,7 @@ val shortLinkTask = Firebase.dynamicLinks.shortLinkAsync(ShortDynamicLink.Suffix
 ### Receive deep links
 
 **Kotlin**
+
 ```kotlin
 Firebase.dynamicLinks
         .getDynamicLink(intent)
@@ -161,6 +170,7 @@ Firebase.dynamicLinks
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 Firebase.dynamicLinks
         .getDynamicLink(intent)
