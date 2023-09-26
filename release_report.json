@@ -1,0 +1,91 @@
+{
+    "changesByLibraryName": {
+        "firebase-crashlytics": [
+            {
+                "commitId": "43eec0e4d8660d12cd2649444d3866a13676b853",
+                "prId": "5337",
+                "author": "Vinay Guthal",
+                "message": "Fix m137 release (#5337)\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/43eec0e4d8660d12cd2649444d3866a13676b853",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5337"
+            },
+            {
+                "commitId": "785f669f0dbe9a433b5c128a5dd7e8d2b86ea242",
+                "prId": "5310",
+                "author": "Matthew Robertson",
+                "message": "Don't use recursion in TrimmedThrowableData to avoid stack overflow (#5310)\n\nDon't use recursion in TrimmedThrowableData. This fixes an issue when\r\nexceptions with long caused by chains cause a stack overflow.\r\n\r\nPair with PolinaGo",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/785f669f0dbe9a433b5c128a5dd7e8d2b86ea242",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5310"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "43eec0e4d8660d12cd2649444d3866a13676b853",
+                "prId": "5337",
+                "author": "Vinay Guthal",
+                "message": "Fix m137 release (#5337)\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/43eec0e4d8660d12cd2649444d3866a13676b853",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5337"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "43eec0e4d8660d12cd2649444d3866a13676b853",
+                "prId": "5337",
+                "author": "Vinay Guthal",
+                "message": "Fix m137 release (#5337)\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/43eec0e4d8660d12cd2649444d3866a13676b853",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5337"
+            },
+            {
+                "commitId": "c5a894cad768eb37a34c82892f32373692a52442",
+                "prId": "5194",
+                "author": "Mila",
+                "message": "Multiple inequality support (#5194)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c5a894cad768eb37a34c82892f32373692a52442",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5194"
+            },
+            {
+                "commitId": "dfa22c76a90acd8de75e8750253e7e8914fc5f52",
+                "prId": "5308",
+                "author": "Mila",
+                "message": "Add test cases for existence filter with updated, removed, added documents (#5308)\n\nported from: https://github.com/firebase/firebase-js-sdk/pull/7457",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/dfa22c76a90acd8de75e8750253e7e8914fc5f52",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5308"
+            }
+        ],
+        "firebase-firestore/ktx": [
+        ],
+        "firebase-inappmessaging": [
+            {
+                "commitId": "43eec0e4d8660d12cd2649444d3866a13676b853",
+                "prId": "5337",
+                "author": "Vinay Guthal",
+                "message": "Fix m137 release (#5337)\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/43eec0e4d8660d12cd2649444d3866a13676b853",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5337"
+            }
+        ],
+        "firebase-inappmessaging-display": [
+            {
+                "commitId": "43eec0e4d8660d12cd2649444d3866a13676b853",
+                "prId": "5337",
+                "author": "Vinay Guthal",
+                "message": "Fix m137 release (#5337)\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\r\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/43eec0e4d8660d12cd2649444d3866a13676b853",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5337"
+            }
+        ],
+        "firebase-inappmessaging/ktx": [
+        ],
+        "firebase-inappmessaging-display/ktx": [
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-perf",
+        ":firebase-perf:ktx",
+        ":firebase-sessions"
+    ]
+}
