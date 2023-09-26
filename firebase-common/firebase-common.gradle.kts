@@ -71,6 +71,10 @@ dependencies {
     implementation(libs.playservices.basement)
     implementation(libs.playservices.tasks)
     implementation(project(":firebase-components"))
+    api("com.google.firebase:firebase-common-ktx:20.3.3") {
+        exclude(group = "com.google.firebase", module = "firebase-common")
+        exclude(group = "com.google.firebase", module = "firebase-components")
+    }
     testImplementation("com.google.guava:guava-testlib:12.0-rc2")
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.junit)
