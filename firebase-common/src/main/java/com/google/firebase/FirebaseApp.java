@@ -63,7 +63,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * The entry point of Firebase SDKs. It holds common configuration and state for Firebase APIs. Most
+ * The entry point of Firebase SDK. It holds common configuration and state for Firebase APIs. Most
  * applications don't need to directly interact with FirebaseApp.
  *
  * <p>For a vast majority of apps, {@link FirebaseInitProvider} will handle the initialization of
