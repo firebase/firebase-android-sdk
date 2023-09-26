@@ -1,5 +1,6 @@
 @file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
 
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
 /*
@@ -46,39 +47,26 @@ android {
 }
 
 dependencies {
-  // TODO(mrober): Remove when we have configurable deps on Crashlytics and Fireperf.
-  implementation(project(":firebase-crashlytics")){
-    exclude(group = "com.google.firebase", module = "firebase-common")
-    exclude(group = "com.google.firebase", module = "firebase-components")
-    exclude(group = "com.google.firebase", module = "firebase-installations")
-    exclude(group = "com.google.firebase", module = "firebase-installations-interop")
+  if (project.hasProperty("useReleasedVersions")) {
+    val latestReleasedVersion: String by project
+    println("Using sessions released version: $latestReleasedVersion")
+    // TODO(mrober): How to find the released versions of crashlytics and perf?
+    implementation("com.google.firebase:firebase-crashlytics:18.4.3")
+    implementation("com.google.firebase:firebase-perf:20.4.1")
+    implementation("com.google.firebase:firebase-sessions:$latestReleasedVersion")
+  } else {
+    implementation(project(":firebase-crashlytics"))
+    implementation(project(":firebase-perf"))
+    implementation(project(":firebase-sessions"))
   }
-  implementation(project(":firebase-installations-interop"))
-
-  implementation(project(":firebase-perf")){
-    exclude(group = "com.google.firebase", module = "firebase-common")
-    exclude(group = "com.google.firebase", module = "firebase-components")
-    exclude(group = "com.google.firebase", module = "firebase-installations")
-    exclude(group = "com.google.firebase", module = "firebase-installations-interop")
-  }
-
-  implementation(project(":firebase-sessions")){
-    exclude(group = "com.google.firebase", module = "firebase-common")
-    exclude(group = "com.google.firebase", module = "firebase-components")
-    exclude(group = "com.google.firebase", module = "firebase-installations")
-    exclude(group = "com.google.firebase", module = "firebase-installations-interop")
-  }
-
-  api(project(":firebase-installations"))
-  api(project(":firebase-common"))
-    api(project(":firebase-common:ktx"))
-  api(project(":firebase-components"))
 
   implementation("androidx.appcompat:appcompat:1.6.1")
   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-  implementation("androidx.core:core-ktx:1.9.0")
-  implementation("com.google.android.material:material:1.8.0")
+  implementation("androidx.multidex:multidex:2.0.1")
+  implementation("com.google.android.material:material:1.9.0")
+  implementation(libs.androidx.core)
 
+  androidTestImplementation("com.google.firebase:firebase-common-ktx:20.3.3")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)
@@ -89,3 +77,7 @@ extra["packageName"] = "com.google.firebase.testing.sessions"
 apply(from = "../../gradle/googleServices.gradle")
 
 apply<FirebaseTestLabPlugin>()
+
+configure<FirebaseTestLabExtension> {
+  device("model=panther,version=33") // Pixel7
+}
