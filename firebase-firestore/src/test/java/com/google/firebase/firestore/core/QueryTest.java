@@ -628,6 +628,136 @@ public class QueryTest {
   }
 
   @Test
+  public void testImplicitOrderByInMultipleInequality() {
+    Query baseQuery = Query.atPath(path("foo"));
+    assertEquals(
+        asList(
+            orderBy("A", "asc"),
+            orderBy("a", "asc"),
+            orderBy("aa", "asc"),
+            orderBy("b", "asc"),
+            orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery
+            .filter(filter("a", "<", 5))
+            .filter(filter("a", ">=", 5))
+            .filter(filter("aa", "<", 5))
+            .filter(filter("b", "<", 5))
+            .filter(filter("A", "<", 5))
+            .getOrderBy());
+
+    // numbers
+    assertEquals(
+        asList(
+            orderBy("1", "asc"),
+            orderBy("19", "asc"),
+            orderBy("2", "asc"),
+            orderBy("a", "asc"),
+            orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery
+            .filter(filter("a", "<", 5))
+            .filter(filter("1", "<", 5))
+            .filter(filter("2", "<", 5))
+            .filter(filter("19", "<", 5))
+            .getOrderBy());
+
+    // nested fields
+    assertEquals(
+        asList(
+            orderBy("a", "asc"),
+            orderBy("a.a", "asc"),
+            orderBy("aa", "asc"),
+            orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery
+            .filter(filter("a", "<", 5))
+            .filter(filter("aa", "<", 5))
+            .filter(filter("a.a", "<", 5))
+            .getOrderBy());
+
+    // special characters
+    assertEquals(
+        asList(
+            orderBy("_a", "asc"),
+            orderBy("a", "asc"),
+            orderBy("a.a", "asc"),
+            orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery
+            .filter(filter("a", "<", 5))
+            .filter(filter("_a", "<", 5))
+            .filter(filter("a.a", "<", 5))
+            .getOrderBy());
+
+    // field name with dot
+    assertEquals(
+        asList(
+            orderBy("a", "asc"),
+            orderBy("a.z", "asc"),
+            orderBy("`a.a`", "asc"),
+            orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery
+            .filter(filter("a", "<", 5))
+            .filter(filter("`a.a`", "<", 5)) // Field name with dot
+            .filter(filter("a.z", "<", 5)) // Nested field
+            .getOrderBy());
+
+    // composite filter
+    assertEquals(
+        asList(
+            orderBy("a", "asc"),
+            orderBy("b", "asc"),
+            orderBy("c", "asc"),
+            orderBy("d", "asc"),
+            orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery
+            .filter(filter("a", "<", 5))
+            .filter(
+                andFilters(
+                    orFilters(filter("b", ">=", 1), filter("c", "<=", 1)),
+                    orFilters(filter("d", "<=", 1), filter("e", "==", 1))))
+            .getOrderBy());
+
+    // OrderBy
+    assertEquals(
+        asList(
+            orderBy("z", "asc"),
+            orderBy("a", "asc"),
+            orderBy("b", "asc"),
+            orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery
+            .filter(filter("b", "<", 5))
+            .filter(filter("a", "<", 5))
+            .filter(filter("z", "<", 5))
+            .orderBy(orderBy("z"))
+            .getOrderBy());
+
+    // last explicit order by direction
+    assertEquals(
+        asList(
+            orderBy("z", "desc"),
+            orderBy("a", "desc"),
+            orderBy("b", "desc"),
+            orderBy(KEY_FIELD_NAME, "desc")),
+        baseQuery
+            .filter(filter("b", "<", 5))
+            .filter(filter("a", "<", 5))
+            .orderBy(orderBy("z", "desc"))
+            .getOrderBy());
+
+    assertEquals(
+        asList(
+            orderBy("z", "desc"),
+            orderBy("c", "asc"),
+            orderBy("a", "asc"),
+            orderBy("b", "asc"),
+            orderBy(KEY_FIELD_NAME, "asc")),
+        baseQuery
+            .filter(filter("b", "<", 5))
+            .filter(filter("a", "<", 5))
+            .orderBy(orderBy("z", "desc"))
+            .orderBy(orderBy("c"))
+            .getOrderBy());
+  }
+
+  @Test
   public void testMatchesAllDocuments() {
     Query baseQuery = Query.atPath(ResourcePath.fromString("collection"));
     assertTrue(baseQuery.matchesAllDocuments());

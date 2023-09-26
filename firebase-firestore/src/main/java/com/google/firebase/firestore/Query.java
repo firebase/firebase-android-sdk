@@ -486,14 +486,6 @@ public class Query {
     return parseCompositeFilter((Filter.CompositeFilter) filter);
   }
 
-  private void validateOrderByField(com.google.firebase.firestore.model.FieldPath field) {
-    com.google.firebase.firestore.model.FieldPath inequalityField = query.inequalityField();
-    if (query.getFirstOrderByField() == null && inequalityField != null) {
-
-      validateOrderByFieldMatchesInequality(field, inequalityField);
-    }
-  }
-
   /**
    * Parses the given documentIdValue into a ReferenceValue, throwing appropriate errors if the
    * value is anything other than a DocumentReference or String, or if the string is malformed.
@@ -543,21 +535,6 @@ public class Query {
     }
   }
 
-  private void validateOrderByFieldMatchesInequality(
-      com.google.firebase.firestore.model.FieldPath orderBy,
-      com.google.firebase.firestore.model.FieldPath inequality) {
-    if (!orderBy.equals(inequality)) {
-      String inequalityString = inequality.canonicalString();
-      throw new IllegalArgumentException(
-          String.format(
-              "Invalid query. You have an inequality where filter (whereLessThan(), "
-                  + "whereGreaterThan(), etc.) on field '%s' and so you must also have '%s' as "
-                  + "your first orderBy() field, but your first orderBy() is currently on field "
-                  + "'%s' instead.",
-              inequalityString, inequalityString, orderBy.canonicalString()));
-    }
-  }
-
   /**
    * Given an operator, returns the set of operators that cannot be used with it.
    *
@@ -591,24 +568,7 @@ public class Query {
       com.google.firebase.firestore.core.Query query,
       com.google.firebase.firestore.core.FieldFilter fieldFilter) {
     Operator filterOp = fieldFilter.getOperator();
-    if (fieldFilter.isInequality()) {
-      com.google.firebase.firestore.model.FieldPath existingInequality = query.inequalityField();
-      com.google.firebase.firestore.model.FieldPath newInequality = fieldFilter.getField();
 
-      if (existingInequality != null && !existingInequality.equals(newInequality)) {
-        throw new IllegalArgumentException(
-            String.format(
-                "All where filters with an inequality (notEqualTo, notIn, lessThan, "
-                    + "lessThanOrEqualTo, greaterThan, or greaterThanOrEqualTo) must be on the "
-                    + "same field. But you have filters on '%s' and '%s'",
-                existingInequality.canonicalString(), newInequality.canonicalString()));
-      }
-      com.google.firebase.firestore.model.FieldPath firstOrderByField =
-          query.getFirstOrderByField();
-      if (firstOrderByField != null) {
-        validateOrderByFieldMatchesInequality(firstOrderByField, newInequality);
-      }
-    }
     Operator conflictingOp = findOpInsideFilters(query.getFilters(), conflictingOps(filterOp));
     if (conflictingOp != null) {
       // We special case when it's a duplicate op to give a slightly clearer error message.
@@ -716,7 +676,6 @@ public class Query {
           "Invalid query. You must not call Query.endAt() or Query.endBefore() before "
               + "calling Query.orderBy().");
     }
-    validateOrderByField(fieldPath);
     OrderBy.Direction dir =
         direction == Direction.ASCENDING
             ? OrderBy.Direction.ASCENDING

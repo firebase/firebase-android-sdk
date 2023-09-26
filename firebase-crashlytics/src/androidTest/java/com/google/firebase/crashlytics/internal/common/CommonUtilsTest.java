@@ -49,24 +49,6 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
 
   private static final String ABC_EXPECTED_HASH = "a9993e364706816aba3e25717850c26c9cd0d89d";
 
-  public void testConvertMemInfoToBytesFromKb() {
-    assertEquals(
-        1055760384,
-        CommonUtils.convertMemInfoToBytes("1031016 KB", "KB", CommonUtils.BYTES_IN_A_KILOBYTE));
-  }
-
-  public void testConvertMemInfoToBytesFromMb() {
-    assertEquals(
-        1081081856,
-        CommonUtils.convertMemInfoToBytes("1031 MB", "MB", CommonUtils.BYTES_IN_A_MEGABYTE));
-  }
-
-  public void testConvertMemInfoToBytesFromGb() {
-    assertEquals(
-        10737418240L,
-        CommonUtils.convertMemInfoToBytes("10 GB", "GB", CommonUtils.BYTES_IN_A_GIGABYTE));
-  }
-
   public void testCreateInstanceIdFromNullInput() {
     assertNull(CommonUtils.createInstanceIdFrom(((String[]) null)));
   }
@@ -151,7 +133,7 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
   }
 
   public void testGetTotalRamInBytes() {
-    final long bytes = CommonUtils.getTotalRamInBytes();
+    final long bytes = CommonUtils.calculateTotalRamInBytes(getContext());
     // can't check complete string because emulators & devices may be different.
     assertTrue(bytes > 0);
     Log.d(Logger.TAG, "testGetTotalRam: " + bytes);
