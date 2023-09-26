@@ -48,7 +48,6 @@ object Firebase
     imports = ["com.google.firebase.Firebase", "com.google.firebase.app"],
   )
 )
-
 val Firebase.app: FirebaseApp
   get() = FirebaseApp.getInstance()
 
