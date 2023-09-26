@@ -59,6 +59,7 @@ dependencies {
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'junit:junit:4.12'
+    api(project(":firebase-common"))
     api(project(":firebase-common:ktx"))
     api(project(":firebase-components"))
     api(project(":firebase-storage"))
