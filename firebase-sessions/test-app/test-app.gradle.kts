@@ -1,5 +1,6 @@
 @file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
 
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
 /*
@@ -24,6 +25,10 @@ plugins {
   id("com.google.gms.google-services")
   id("com.google.firebase.crashlytics")
   id("com.google.firebase.firebase-perf")
+}
+
+configure<FirebaseTestLabExtension> {
+  device("model=Pixel2,version=28,locale=en,orientation=portrait")
 }
 
 android {
