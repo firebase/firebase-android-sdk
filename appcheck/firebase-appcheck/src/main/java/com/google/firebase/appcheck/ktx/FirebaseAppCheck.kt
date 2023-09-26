@@ -25,7 +25,7 @@ import com.google.firebase.ktx.Firebase
 @Deprecated(
   "com.google.firebase.appcheckktx.Firebase.appCheck has been deprecated. Use `com.google.firebase.appcheckFirebase.appCheck` instead.",
   ReplaceWith(
-    expression = "Firebase.appCheck",
+    expression = "com.google.firebase.Firebase.appCheck",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.appcheckappCheck"]
   )
 )
@@ -36,7 +36,7 @@ val Firebase.appCheck: FirebaseAppCheck
 @Deprecated(
   "com.google.firebase.appcheckktx.Firebase.appCheck(app) has been deprecated. Use `com.google.firebase.appcheckFirebase.appCheck(app)` instead.",
   ReplaceWith(
-    expression = "Firebase.appCheck(app)",
+    expression = "com.google.firebase.Firebase.appCheck(app)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.appcheckappCheck"]
   )
 )

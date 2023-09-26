@@ -27,7 +27,7 @@ import java.io.File
 @Deprecated(
   "com.google.firebase.ml.modeldownloaderktx.Firebase.modelDownloader has been deprecated. Use `com.google.firebase.ml.modeldownloaderFirebase.modelDownloader` instead.",
   ReplaceWith(
-    expression = "Firebase.modelDownloader",
+    expression = "com.google.firebase.Firebase.modelDownloader",
     imports =
       ["com.google.firebase.Firebase", "com.google.firebase.ml.modeldownloadermodelDownloader"]
   )
@@ -39,7 +39,7 @@ val Firebase.modelDownloader: FirebaseModelDownloader
 @Deprecated(
   "com.google.firebase.ml.modeldownloaderktx.Firebase.modelDownloader(app) has been deprecated. Use `com.google.firebase.ml.modeldownloaderFirebase.modelDownloader(app)` instead.",
   ReplaceWith(
-    expression = "Firebase.modelDownloader(app)",
+    expression = "com.google.firebase.Firebase.modelDownloader(app)",
     imports =
       ["com.google.firebase.Firebase", "com.google.firebase.ml.modeldownloadermodelDownloader"]
   )

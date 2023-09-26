@@ -29,7 +29,7 @@ import com.google.firebase.ktx.Firebase
 @Deprecated(
   "Use `com.google.firebase.Firebase.dynamicLinks` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
-    expression = "Firebase.dynamicLinks",
+    expression = "com.google.firebase.Firebase.dynamicLinks",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.dynamicLinks"]
   )
 )
@@ -40,7 +40,7 @@ val Firebase.dynamicLinks: FirebaseDynamicLinks
 @Deprecated(
   "Use `com.google.firebase.Firebase.dynamicLinks(app)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
-    expression = "Firebase.dynamicLinks(app)",
+    expression = "com.google.firebase.Firebase.dynamicLinks(app)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.dynamicLinks"]
   )
 )

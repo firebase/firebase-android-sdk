@@ -25,7 +25,7 @@ import com.google.firebase.ktx.Firebase
 @Deprecated(
   "Use `com.google.firebase.Firebase.crashlytics` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
-    expression = "Firebase.crashlytics",
+    expression = "com.google.firebase.Firebase.crashlytics",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.crashlytics.crashlytics"]
   )
 )
