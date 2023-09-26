@@ -47,10 +47,8 @@ android {
 }
 
 dependencies {
-  // TODO(mrober): Remove when we have configurable deps on Crashlytics and Fireperf.
-  implementation(project(":firebase-crashlytics"))
-  implementation(project(":firebase-perf"))
-  implementation(project(":firebase-sessions"))
+  implementation("com.google.firebase:firebase-crashlytics:18.4.3")
+  implementation("com.google.firebase:firebase-perf:20.4.1")
 
   implementation("androidx.appcompat:appcompat:1.6.1")
   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
