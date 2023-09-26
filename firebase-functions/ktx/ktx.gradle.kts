@@ -44,15 +44,18 @@ android {
 }
 
 dependencies {
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.truth)
     api(project(":firebase-common"))
     api(project(":firebase-common:ktx"))
-    implementation(project(":firebase-components"))
     api(project(":firebase-functions"))
+
+    implementation(project(":firebase-components"))
+
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.truth)
+
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.truth)
 }

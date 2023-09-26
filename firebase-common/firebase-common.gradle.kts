@@ -52,25 +52,22 @@ android {
 }
 
 dependencies {
-    androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.mockito.core)
-    androidTestImplementation(libs.mockito.dexmaker)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(project(":integ-testing"))
-    annotationProcessor(libs.autovalue)
     api(libs.kotlin.coroutines.tasks)
-    compileOnly(libs.autovalue.annotations)
-    compileOnly(libs.findbugs.jsr305)
-    compileOnly(libs.kotlin.stdlib)
+
+    implementation(project(":firebase-components"))
     implementation("com.google.firebase:firebase-annotations:16.2.0")
     implementation(libs.androidx.annotation)
     implementation(libs.androidx.futures)
     implementation(libs.kotlin.stdlib)
     implementation(libs.playservices.basement)
     implementation(libs.playservices.tasks)
-    implementation(project(":firebase-components"))
+
+    compileOnly(libs.autovalue.annotations)
+    compileOnly(libs.findbugs.jsr305)
+    compileOnly(libs.kotlin.stdlib)
+
+    annotationProcessor(libs.autovalue)
+
     testImplementation("com.google.guava:guava-testlib:12.0-rc2")
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.junit)
@@ -81,4 +78,12 @@ dependencies {
     testImplementation(libs.org.json)
     testImplementation(libs.robolectric)
     testImplementation(libs.truth)
+
+    androidTestImplementation(project(":integ-testing"))
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.mockito.core)
+    androidTestImplementation(libs.mockito.dexmaker)
+    androidTestImplementation(libs.truth)
 }

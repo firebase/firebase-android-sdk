@@ -37,10 +37,9 @@ android {
 
 dependencies {
   implementation(project(":firebase-common"))
-    implementation(project(":firebase-common:ktx"))
+  implementation(project(":firebase-common:ktx"))
   implementation(project(":firebase-components"))
-
-  implementation(libs.junit)
   implementation(libs.androidx.test.runner)
+  implementation(libs.junit)
   implementation(libs.kotlin.coroutines.test)
 }

@@ -55,15 +55,10 @@ android {
 }
 
 dependencies {
-    androidTestImplementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
-    androidTestImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
-    androidTestImplementation("org.hamcrest:hamcrest-library:2.2")
-    androidTestImplementation("org.hamcrest:hamcrest:2.2")
-    androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.quickcheck)
-    androidTestImplementation(libs.truth)
+    implementation(project(":appcheck:firebase-appcheck-interop"))
+    implementation(project(":firebase-common"))
+    implementation(project(":firebase-common:ktx"))
+    implementation(project(":firebase-components"))
     implementation("com.google.firebase:firebase-auth-interop:20.0.0") {
      exclude(group = "com.google.firebase", module = "firebase-common")
      exclude(group = "com.google.firebase", module = "firebase-components")
@@ -74,10 +69,7 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.playservices.tasks)
-    implementation(project(":appcheck:firebase-appcheck-interop"))
-    implementation(project(":firebase-common"))
-    implementation(project(":firebase-common:ktx"))
-    implementation(project(":firebase-components"))
+
     testImplementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
     testImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
     testImplementation("com.firebase:firebase-token-generator:2.0.0")
@@ -88,6 +80,16 @@ dependencies {
     testImplementation(libs.quickcheck)
     testImplementation(libs.robolectric)
     testImplementation(libs.truth)
+
+    androidTestImplementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
+    androidTestImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")
+    androidTestImplementation("org.hamcrest:hamcrest:2.2")
+    androidTestImplementation("org.hamcrest:hamcrest-library:2.2")
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.quickcheck)
+    androidTestImplementation(libs.truth)
 }
 
 ext["packageName"] = "com.google.firebase.database"

@@ -48,39 +48,39 @@ android {
 }
 
 dependencies {
-  implementation("androidx.datastore:datastore-preferences:1.0.0")
-  implementation("com.google.android.datatransport:transport-api:3.0.0")
-  implementation("com.google.firebase:firebase-annotations:16.2.0")
   api(project(":firebase-common"))
-    api(project(":firebase-common:ktx"))
+  api(project(":firebase-common:ktx"))
+
   implementation(project(":firebase-components"))
-  implementation("com.google.firebase:firebase-encoders-json:18.0.1")
-  implementation("com.google.firebase:firebase-encoders:17.0.0")
   implementation(project(":firebase-installations-interop")) {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-
+  implementation("androidx.datastore:datastore-preferences:1.0.0")
+  implementation("com.google.android.datatransport:transport-api:3.0.0")
+  implementation("com.google.firebase:firebase-annotations:16.2.0")
+  implementation("com.google.firebase:firebase-encoders:17.0.0")
+  implementation("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation(libs.androidx.annotation)
 
-  runtimeOnly("com.google.firebase:firebase-datatransport:18.1.8"){
+  runtimeOnly(project(":firebase-installations")) {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  runtimeOnly(project(":firebase-installations")) {
+  runtimeOnly("com.google.firebase:firebase-datatransport:18.1.8"){
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
 
   kapt(project(":encoders:firebase-encoders-processor"))
 
+  testImplementation(project(":integ-testing"))
   testImplementation(libs.androidx.test.junit)
   testImplementation(libs.androidx.test.runner)
   testImplementation(libs.junit)
   testImplementation(libs.kotlin.coroutines.test)
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
-  testImplementation(project(":integ-testing"))
 
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)

@@ -46,24 +46,23 @@ android {
 }
 
 dependencies {
-    androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.mockito.core)
-    androidTestImplementation(libs.mockito.dexmaker)
-    androidTestImplementation(libs.truth)
-    androidTestImplementation(project(":integ-testing"))
-    annotationProcessor(libs.autovalue)
-    annotationProcessor(libs.dagger.compiler)
+    javadocClasspath("org.codehaus.mojo:animal-sniffer-annotations:1.21")
+    javadocClasspath(libs.autovalue.annotations)
+    javadocClasspath(libs.findbugs.jsr305)
+
+    implementation(project(":appcheck:firebase-appcheck-interop"))
+    implementation(project(":firebase-common"))
+    implementation(project(":firebase-common:ktx"))
+    implementation(project(":firebase-components"))
     implementation("com.google.firebase:firebase-annotations:16.2.0")
     implementation("com.google.firebase:firebase-auth-interop:18.0.0") {
        exclude(group = "com.google.firebase", module = "firebase-common")
    }
-    implementation("com.google.firebase:firebase-iid-interop:17.1.0")
     implementation("com.google.firebase:firebase-iid:21.1.0") {
        exclude(group = "com.google.firebase", module = "firebase-common")
        exclude(group = "com.google.firebase", module = "firebase-components")
    }
+    implementation("com.google.firebase:firebase-iid-interop:17.1.0")
     implementation(libs.androidx.annotation)
     implementation(libs.javax.inject)
     implementation(libs.kotlin.stdlib)
@@ -71,13 +70,10 @@ dependencies {
     implementation(libs.playservices.base)
     implementation(libs.playservices.basement)
     implementation(libs.playservices.tasks)
-    implementation(project(":appcheck:firebase-appcheck-interop"))
-    implementation(project(":firebase-common"))
-    implementation(project(":firebase-common:ktx"))
-    implementation(project(":firebase-components"))
-    javadocClasspath("org.codehaus.mojo:animal-sniffer-annotations:1.21")
-    javadocClasspath(libs.autovalue.annotations)
-    javadocClasspath(libs.findbugs.jsr305)
+
+    annotationProcessor(libs.autovalue)
+    annotationProcessor(libs.dagger.compiler)
+
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.rules)
     testImplementation(libs.junit)
@@ -88,6 +84,14 @@ dependencies {
     vendor(libs.dagger.dagger) {
      exclude(group = "javax.inject", module = "javax.inject")
    }
+
+    androidTestImplementation(project(":integ-testing"))
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.mockito.core)
+    androidTestImplementation(libs.mockito.dexmaker)
+    androidTestImplementation(libs.truth)
 }
 
 // ==========================================================================
