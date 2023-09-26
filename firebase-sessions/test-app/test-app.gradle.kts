@@ -47,8 +47,18 @@ android {
 }
 
 dependencies {
-  implementation("com.google.firebase:firebase-crashlytics:18.4.3")
-  implementation("com.google.firebase:firebase-perf:20.4.1")
+  if (project.hasProperty("useReleasedVersions")) {
+    val latestReleasedVersion: String by project
+    println("Using sessions released version: $latestReleasedVersion")
+    // TODO(mrober): How to find the released versions of crashlytics and perf?
+    implementation("com.google.firebase:firebase-crashlytics:18.4.3")
+    implementation("com.google.firebase:firebase-perf:20.4.1")
+    implementation("com.google.firebase:firebase-sessions:$latestReleasedVersion")
+  } else {
+    implementation(project(":firebase-crashlytics"))
+    implementation(project(":firebase-perf"))
+    implementation(project(":firebase-sessions"))
+  }
 
   implementation("androidx.appcompat:appcompat:1.6.1")
   implementation("androidx.constraintlayout:constraintlayout:2.1.4")
