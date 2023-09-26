@@ -16,12 +16,14 @@ implementation 'com.google.firebase:firebase-common-ktx:$VERSION'
 ### Get the default FirebaseApp and FirebaseOptions
 
 **Kotlin**
+
 ```kotlin
 val defaultApp = FirebaseApp.getInstance()
 val defaultOptions = defaultApp.options
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val defaultApp = Firebase.app
 val defaultOptions = Firebase.options
@@ -30,13 +32,14 @@ val defaultOptions = Firebase.options
 ### Initialize a FirebaseApp
 
 **Kotlin**
+
 ```kotlin
 val options = FirebaseApp.getInstance().options
 val anotherApp = FirebaseApp.initializeApp(context, options, "myApp")
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 var anotherApp = Firebase.initialize(context, Firebase.options, "myApp")
 ```
-

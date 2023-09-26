@@ -11,7 +11,7 @@ Initialize them by running the following commands:
 
 ## Building
 
-* All Gradle commands should be run from the root of this repository:
+- All Gradle commands should be run from the root of this repository:
   `./gradlew :firebase-crashlytics-ndk:assemble`
 
 ## Running Tests

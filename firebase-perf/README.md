@@ -1,7 +1,8 @@
 # Firebase Performance Monitoring Development Workflow
-[Firebase Performance Monitoring](https://firebase.google.com/docs/perf-mon/get-started-android) is 
-a free mobile app performance analytics service that helps you to gain insight into the performance 
-characteristics of your app. 
+
+[Firebase Performance Monitoring](https://firebase.google.com/docs/perf-mon/get-started-android) is
+a free mobile app performance analytics service that helps you to gain insight into the performance
+characteristics of your app.
 
 For more information about app performance and many other cool mobile services, check out [Firebase](https://firebase.google.com/).
 
@@ -15,12 +16,14 @@ to clone the repository.
 Add the following lines to your `~/.bash_profile`:
 
 For Mac:
+
 ```
 export ANDROID_HOME=~/Library/Android/sdk
 export ANDROID_SDK_ROOT=~/Library/Android/sdk
 ```
 
 For Linux:
+
 ```
 export ANDROID_HOME=~/Android/Sdk
 export ANDROID_SDK_ROOT=~/Android/Sdk
@@ -44,7 +47,7 @@ firebase-android-sdk$ ./gradlew :clean :firebase-perf:build --stacktrace
 ```
 
 Please note that `:clean` and `--stacktrace` are optional. The build output will be generated in
- `firebase-android-sdk/firebase-perf/build/outputs/aar`.
+`firebase-android-sdk/firebase-perf/build/outputs/aar`.
 
 ## Run Unit Tests
 
@@ -61,11 +64,11 @@ firebase-android-sdk$ ./gradlew :clean :firebase-perf:testDebugUnitTest --tests 
 ```
 
 > `TestMethodName` is optional, if not provided, all tests under `PackageName.ClassName` will be run.
-Similar mechanism applies to `ClassName` as well.
+> Similar mechanism applies to `ClassName` as well.
 
 ## Run Integration Tests
 
-Follow the instructions [here](https://github.com/firebase/firebase-android-sdk/blob/master/README.md#integration-testing) 
+Follow the instructions [here](https://github.com/firebase/firebase-android-sdk/blob/master/README.md#integration-testing)
 for the initial one time setup.
 
 ### Running Integration Tests on Local Emulator
@@ -90,9 +93,9 @@ firebase-android-sdk$ ./gradlew -PpublishMode=SNAPSHOT -PprojectsToPublish="fire
 
 ### Publish project locally
 
-The simplest way to publish a project and all its associated dependencies is to just publish all 
-projects. The following command builds **SNAPSHOT** dependencies of all projects. All pom level 
-dependencies within the published artifacts will also point to SNAPSHOT versions that are 
+The simplest way to publish a project and all its associated dependencies is to just publish all
+projects. The following command builds **SNAPSHOT** dependencies of all projects. All pom level
+dependencies within the published artifacts will also point to SNAPSHOT versions that are
 co-published.
 
 ```
@@ -118,7 +121,7 @@ buildscript {
         google()
         jcenter()
     }
-   
+
     dependencies {
         .       .       .
 

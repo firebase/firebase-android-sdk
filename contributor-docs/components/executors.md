@@ -3,10 +3,11 @@ parent: Firebase Components
 ---
 
 # Executors
+
 {: .no_toc}
 
 1. TOC
-{:toc}
+   {:toc}
 
 ## Intro
 
@@ -25,7 +26,7 @@ public class MyRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     Qualified<Executor> backgroundExecutor = Qualified.qualified(Background.class, Executor.class);
     Qualified<ExecutorService> liteExecutorService = Qualified.qualified(Lightweight.class, ExecutorService.class);
-    
+
     return Collections.singletonList(
       Component.builder(MyComponent.class)
         .add(Dependency.required(backgroundExecutor))
@@ -38,10 +39,10 @@ public class MyRegistrar implements ComponentRegistrar {
 
 All executors(with the exception of `@UiThread`) are available as the following interfaces:
 
-* `Executor`
-* `ExecutorService`
-* `ScheduledExecutorService`
-* `CoroutineDispatcher`
+- `Executor`
+- `ExecutorService`
+- `ScheduledExecutorService`
+- `CoroutineDispatcher`
 
 `@UiThread` is provided only as a plain `Executor`.
 
@@ -65,17 +66,17 @@ flowchart TD
     DoesBlock --> |Yes| DiskIO{Does it block only\n on disk IO?}
     DiskIO --> |Yes| BgExecutor
     DiskIO --> |No| BlockExecutor[[Blocking Executor]]
-    
-    
+
+
     classDef start fill:#4db6ac,stroke:#4db6ac,color:#000;
     class Start start
-    
+
     classDef condition fill:#f8f9fa,stroke:#bdc1c6,color:#000;
     class DoesBlock condition;
     class NeedUi condition;
     class TakesLong condition;
     class DiskIO condition;
-    
+
     classDef executor fill:#1a73e8,stroke:#7baaf7,color:#fff;
     class UiExecutor executor;
     class LiteExecutor executor;
@@ -180,11 +181,11 @@ Executor sequentialExecutor = FirebaseExecutors.newSequentialExecutor(c.get(bgEx
 ## Proper Kotlin usage
 
 A `CoroutineContext` should be preferred when possible over an explicit `Executor`
-or `CoroutineDispatcher`. You should only use an `Executor` at the highest 
-(or inversely the lowest) level of your implementations. Most classes should not 
+or `CoroutineDispatcher`. You should only use an `Executor` at the highest
+(or inversely the lowest) level of your implementations. Most classes should not
 be concerned with the existence of an `Executor`.
 
-Keep in mind that you can combine `CoroutineContext` with other `CoroutineScope` 
+Keep in mind that you can combine `CoroutineContext` with other `CoroutineScope`
 or `CoroutineContext`. And that all `suspend` functions inherent their `coroutineContext`:
 
 ```kotlin
@@ -208,13 +209,13 @@ With that in mind, when it comes to writing tests, prefer to use the common exec
 your own thread pools. This will ensure that your code uses the appropriate executor and does not slow down
 all of Firebase by using the wrong one.
 
-To do that, you should prefer relying on Components to inject the right executor even in tests. 
+To do that, you should prefer relying on Components to inject the right executor even in tests.
 This will ensure your tests are always using the executor that is actually used in your SDK build.
 If your SDK uses Dagger, see [Dependency Injection]({{ site.baseurl }}{% link
 best_practices/dependency_injection.md %})
 and [Dagger's testing guide](https://dagger.dev/dev-guide/testing).
 
-When the above is not an option, you can use `TestOnlyExecutors`, but make sure you're testing your code with 
+When the above is not an option, you can use `TestOnlyExecutors`, but make sure you're testing your code with
 the same executor that is used in production code:
 
 ```kotlin

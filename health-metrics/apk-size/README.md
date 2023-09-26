@@ -23,5 +23,5 @@ example, in this project: `build/m2repository/`) in order for gradle to find the
 
 ## Toolchains
 
-* Gradle 6.5.1 ([`gradle-wrapper.properties`](./gradle/wrapper/gradle-wrapper.properties))
-* Android Gradle Plugin 4.1.0-beta02 ([`apk-size.gradle`](./apk-size.gradle))
+- Gradle 6.5.1 ([`gradle-wrapper.properties`](./gradle/wrapper/gradle-wrapper.properties))
+- Android Gradle Plugin 4.1.0-beta02 ([`apk-size.gradle`](./apk-size.gradle))

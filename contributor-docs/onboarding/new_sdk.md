@@ -3,10 +3,11 @@ parent: Onboarding
 ---
 
 # Creating a new Firebase SDK
+
 {: .no_toc}
 
 1. TOC
-{:toc}
+   {:toc}
 
 Want to create a new SDK in
 [firebase/firebase-android-sdk](https://github.com/firebase/firebase-android-sdk)?
@@ -73,34 +74,34 @@ plugins {
 }
 
 firebaseLibrary {
-    // enable this only if you have tests in `androidTest`.
-    testLab.enabled = true
-    publishSources = true
-    publishJavadoc = true
+// enable this only if you have tests in `androidTest`.
+testLab.enabled = true
+publishSources = true
+publishJavadoc = true
 }
 
 android {
-  val targetSdkVersion : Int by rootProject
-  val minSdkVersion : Int by rootProject
+val targetSdkVersion : Int by rootProject
+val minSdkVersion : Int by rootProject
 
-  compileSdk = targetSdkVersion
-  defaultConfig {
-    namespace = "com.google.firebase.foo"
-    // change this if you have custom needs.
-    minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
-    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-  }
+compileSdk = targetSdkVersion
+defaultConfig {
+namespace = "com.google.firebase.foo"
+// change this if you have custom needs.
+minSdk = minSdkVersion
+targetSdk = targetSdkVersion
+testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+}
 
-  testOptions.unitTests.isIncludeAndroidResources = true
+testOptions.unitTests.isIncludeAndroidResources = true
 }
 
 dependencies {
-  implementation(project(":firebase-common"))
-  implementation(project(":firebase-components"))
+implementation(project(":firebase-common"))
+implementation(project(":firebase-components"))
 }
 
-```
+````
 </details>
 
 ### Create `src/main/AndroidManifest.xml` with the following content:
@@ -135,13 +136,14 @@ dependencies {
       </service>
   </application>
 </manifest>
-```
+````
 
 </details>
 
 ### Create `com.google.firebase.foo.FirebaseFoo`
 
 For Kotlin
+
 <details open markdown="block">
   <summary>
     src/main/kotlin/com/google/firebase/foo/FirebaseFoo.kt
@@ -162,6 +164,7 @@ class FirebaseFoo {
 </details>
 
 For Java
+
 <details markdown="block">
   <summary>
     src/main/java/com/google/firebase/foo/FirebaseFoo.java
@@ -183,6 +186,7 @@ public class FirebaseFoo {
 ### Create `com.google.firebase.foo.FirebaseFooRegistrar`
 
 For Kotlin
+
 <details open markdown="block">
   <summary>
     src/main/kotlin/com/google/firebase/foo/FirebaseFooRegistrar.kt
@@ -205,6 +209,7 @@ class FirebaseFooRegistrar : ComponentRegistrar {
 </details>
 
 For Java
+
 <details markdown="block">
   <summary>
     src/main/java/com/google/firebase/foo/FirebaseFooRegistrar.java
