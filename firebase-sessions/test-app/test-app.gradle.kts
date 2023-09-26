@@ -27,10 +27,6 @@ plugins {
   id("com.google.firebase.firebase-perf")
 }
 
-configure<FirebaseTestLabExtension> {
-  device("model=Pixel2,version=28,locale=en,orientation=portrait")
-}
-
 android {
   namespace = "com.google.firebase.testing.sessions"
   compileSdk = 33
@@ -73,3 +69,7 @@ extra["packageName"] = "com.google.firebase.testing.sessions"
 apply(from = "../../gradle/googleServices.gradle")
 
 apply<FirebaseTestLabPlugin>()
+
+configure<FirebaseTestLabExtension> {
+  device("model=Pixel2,version=28,locale=en,orientation=portrait")
+}
