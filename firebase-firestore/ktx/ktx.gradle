@@ -55,7 +55,7 @@ tasks.withType(Test) {
 dependencies {
     api(project(":firebase-common"))
     api(project(":firebase-common:ktx"))
-    api(project(":firebase-components"))
+    implementation(project(":firebase-components"))
     api(project(":firebase-firestore"))
     testCompileOnly "com.google.protobuf:protobuf-java:$protocVersion"
     testImplementation "androidx.test:core:$androidxTestCoreVersion"

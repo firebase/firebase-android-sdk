@@ -61,7 +61,7 @@ dependencies {
     androidTestImplementation 'junit:junit:4.12'
     api(project(":firebase-common"))
     api(project(":firebase-common:ktx"))
-    api(project(":firebase-components"))
+    implementation(project(":firebase-components"))
     api(project(":firebase-storage"))
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"

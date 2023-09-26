@@ -45,7 +45,7 @@ android {
 dependencies {
     api(project(":firebase-common"))
     api(project(":firebase-common:ktx"))
-    api(project(":firebase-components"))
+    implementation(project(":firebase-components"))
     api(project(":firebase-perf"))
     testCompileOnly "com.google.protobuf:protobuf-java:3.21.9"
     testImplementation "androidx.test:core:$androidxTestCoreVersion"

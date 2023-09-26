@@ -53,7 +53,7 @@ dependencies {
   implementation("com.google.firebase:firebase-annotations:16.2.0")
   api(project(":firebase-common"))
     api(project(":firebase-common:ktx"))
-  api(project(":firebase-components"))
+  implementation(project(":firebase-components"))
   implementation("com.google.firebase:firebase-encoders-json:18.0.1")
   implementation("com.google.firebase:firebase-encoders:17.0.0")
   implementation(project(":firebase-installations-interop")) {

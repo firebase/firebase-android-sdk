@@ -46,7 +46,7 @@ android {
 dependencies {
     api(project(":firebase-common"))
     api(project(":firebase-common:ktx"))
-    api(project(":firebase-components"))
+    implementation(project(":firebase-components"))
     api(project(":firebase-inappmessaging"))
     api(project(":firebase-inappmessaging-display"))
     testImplementation "androidx.test:core:$androidxTestCoreVersion"

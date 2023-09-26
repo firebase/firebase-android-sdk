@@ -101,6 +101,8 @@ fun FirebaseFunctions.getHttpsCallable(
   return getHttpsCallable(name, builder.build())
 }
 
+val x = Firebase.functions.getHttpsCallable("Vinay") { println("Vinay")}
+
 /** Returns a reference to the Callable HTTPS trigger with the given URL and call options. */
 @Deprecated(
   "Use `com.google.firebase.functions.FirebaseFunctions.getHttpsCallableFromUrl(url, init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-functions-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
@@ -118,3 +120,5 @@ fun FirebaseFunctions.getHttpsCallableFromUrl(
   builder.init()
   return getHttpsCallableFromUrl(url, builder.build())
 }
+
+

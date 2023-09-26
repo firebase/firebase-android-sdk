@@ -59,7 +59,7 @@ dependencies {
     api(project(":firebase-appdistribution-api"))
     api(project(":firebase-common"))
     api(project(":firebase-common:ktx"))
-    api(project(":firebase-components"))
+    implementation(project(":firebase-components"))
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
     testImplementation 'junit:junit:4.12'

@@ -49,7 +49,7 @@ dependencies {
     androidTestImplementation(libs.truth)
     api(project(":firebase-common"))
     api(project(":firebase-common:ktx"))
-    api(project(":firebase-components"))
+    implementation(project(":firebase-components"))
     api(project(":firebase-functions"))
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.junit)

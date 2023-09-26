@@ -50,7 +50,7 @@ android {
 dependencies {
     api(project(":firebase-common"))
     api(project(":firebase-common:ktx"))
-    api(project(":firebase-components"))
+    implementation(project(":firebase-components"))
     api(project(":firebase-database"))
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.junit)
