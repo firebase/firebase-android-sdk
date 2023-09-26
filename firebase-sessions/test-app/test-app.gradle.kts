@@ -71,5 +71,5 @@ apply(from = "../../gradle/googleServices.gradle")
 apply<FirebaseTestLabPlugin>()
 
 configure<FirebaseTestLabExtension> {
-  device("model=Pixel2,version=28,locale=en,orientation=portrait")
+  device("model=panther,version=33")
 }
