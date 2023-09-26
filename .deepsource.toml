@@ -1,0 +1,27 @@
+version = 1
+
+[[analyzers]]
+name = "secrets"
+
+[[analyzers]]
+name = "terraform"
+
+[[analyzers]]
+name = "shell"
+
+[[analyzers]]
+name = "javascript"
+
+  [analyzers.meta]
+  plugins = [
+    "react",
+    "angularjs",
+    "angular"
+  ]
+  environment = [
+    "nodejs",
+    "mongo"
+  ]
+
+[[transformers]]
+name = "prettier"
