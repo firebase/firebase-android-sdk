@@ -349,7 +349,7 @@ public class QueryTest {
             });
 
     waitFor(testCounter);
-    waitFor(testCounterFull, 2);
+    waitFor(testCounterFull, 1);
     assertEquals(1, snapshots.size());
     assertEquals(asList(map("v", "a"), map("v", "b")), querySnapshotToValues(snapshots.get(0)));
     assertEquals(2, snapshotsFull.size());
