@@ -32,7 +32,8 @@ import kotlinx.coroutines.CoroutineDispatcher
  * The [FirebaseSessions] API provides methods to register a [SessionSubscriber] and delegates to a
  * [SessionMaintainer].
  */
-class FirebaseSessions(
+class FirebaseSessions
+internal constructor(
   firebaseApp: FirebaseApp,
   firebaseInstallations: FirebaseInstallationsApi,
   backgroundDispatcher: CoroutineDispatcher,
