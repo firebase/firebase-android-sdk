@@ -28,10 +28,11 @@ exports.addNumbers = functions.https.onCall((data) => {
 
   if (!Number.isFinite(firstNumber) || !Number.isFinite(secondNumber)) {
     throw new functions.https.HttpsError(
-        "invalid-argument",
-        "The function must be called with " +
-        "two arguments \"firstNumber\" and \"secondNumber\" " +
-        "which must both be numbers.");
+      "invalid-argument",
+      "The function must be called with " +
+        'two arguments "firstNumber" and "secondNumber" ' +
+        "which must both be numbers.",
+    );
   }
 
   return {

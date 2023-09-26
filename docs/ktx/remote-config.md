@@ -16,11 +16,13 @@ implementation 'com.google.firebase:firebase-config-ktx:$VERSION'
 ### Get the FirebaseRemoteConfig instance of the default app
 
 **Kotlin**
+
 ```kotlin
 val remoteConfig = FirebaseRemoteConfig.getInstance()
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val remoteConfig = Firebase.remoteConfig
 ```
@@ -28,11 +30,13 @@ val remoteConfig = Firebase.remoteConfig
 ### Get the FirebaseRemoteConfig of a given FirebaseApp
 
 **Kotlin**
+
 ```kotlin
 val remoteConfig = FirebaseRemoteConfig.getInstance(app)
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val remoteConfig = Firebase.remoteConfig(app)
 ```
@@ -40,6 +44,7 @@ val remoteConfig = Firebase.remoteConfig(app)
 ### Get parameter values from FirebaseRemoteConfig
 
 **Kotlin**
+
 ```kotlin
 val isEnabled = remoteConfig.getBoolean("is_enabled")
 
@@ -53,6 +58,7 @@ val accessKey = remoteConfig.getString("access_key")
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val isEnabled = remoteConfig["is_enabled"].asBoolean()
 
@@ -68,6 +74,7 @@ val accessKey = remoteConfig["access_key"].asString()
 ### Set Remote Config Settings
 
 **Kotlin**
+
 ```kotlin
 val configSettings = FirebaseRemoteConfigSettings.Builder()
         .setMinimumFetchIntervalInSeconds(3600)
@@ -77,6 +84,7 @@ remoteConfig.setConfigSettingsAsync(configSettings)
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val configSettings = remoteConfigSettings {
     minimumFetchIntervalInSeconds = 3600

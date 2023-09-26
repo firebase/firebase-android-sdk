@@ -16,12 +16,14 @@ implementation 'com.google.firebase:firebase-database-ktx:$VERSION'
 ### Get an instance of FirebaseDatabase
 
 **Kotlin**
+
 ```kotlin
 val database = FirebaseDatabase.getInstance()
 val anotherDatabase = FirebaseDatabase.getInstance(FirebaseApp.getInstance("myApp"))
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val database = Firebase.database
 val anotherDatabase = Firebase.database(Firebase.app("myApp"))
@@ -30,24 +32,27 @@ val anotherDatabase = Firebase.database(Firebase.app("myApp"))
 ### Get the FirebaseDatabase for the specified url
 
 **Kotlin**
+
 ```kotlin
 val database = FirebaseDatabase.getInstance(url)
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val database = Firebase.database(url)
 ```
 
-
 ### Get the FirebaseDatabase of the given FirebaseApp and url
 
 **Kotlin**
+
 ```kotlin
 val database = FirebaseDatabase.getInstance(app, url)
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val database = Firebase.database(app, url)
 ```
@@ -55,12 +60,14 @@ val database = Firebase.database(app, url)
 ### Convert a DataSnapshot to a POJO
 
 **Kotlin**
+
 ```kotlin
 val snapshot: DataSnapshot = ...
 val myObject = snapshot.getValue(MyClass::class.java)
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val snapshot: DocumentSnapshot = ...
 val myObject = snapshot.getValue<MyClass>()
@@ -69,6 +76,7 @@ val myObject = snapshot.getValue<MyClass>()
 ### Convert a DataSnapshot to generic types such as List or Map
 
 **Kotlin**
+
 ```kotlin
 val snapshot: DataSnapshot = ...
 val typeIndicator = object : GenericTypeIndicator<List<Message>>() {}
@@ -76,6 +84,7 @@ val messages: List<Message> = snapshot.getValue(typeIndicator)
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 val snapshot: DocumentSnapshot = ...
 val messages: List<Message> = snapshot.getValue<List<@JvmSuppressWildcards Message>>()
@@ -84,6 +93,7 @@ val messages: List<Message> = snapshot.getValue<List<@JvmSuppressWildcards Messa
 ### Convert a MutableData to a POJO in a Transaction
 
 **Kotlin**
+
 ```kotlin
 override fun doTransaction(mutableData: MutableData): Transaction.Result {
     val post = mutableData.getValue(Post::class.java)
@@ -92,6 +102,7 @@ override fun doTransaction(mutableData: MutableData): Transaction.Result {
 ```
 
 **Kotlin + KTX**
+
 ```kotlin
 override fun doTransaction(mutableData: MutableData): Transaction.Result {
     val post = mutableData.getValue<Post>()

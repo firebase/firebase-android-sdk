@@ -4,7 +4,7 @@
 
 This file defines the interface for the `FirestoreProvider` class. An
 implementation of this interface is statically injected at build time. The
-implementation *must* have the following name or else it will not be found:
+implementation _must_ have the following name or else it will not be found:
 `com.google.firebase.firestore.testutil.provider.FirestoreProvider`.
 
 The provider enables the test suite to access closed-source, integration testing

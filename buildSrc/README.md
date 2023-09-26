@@ -7,5 +7,4 @@ currently documented systems below:
 
 [Dackka Plugin](src/main/java/com/google/firebase/gradle/plugins/DackkaPlugin.kt)
 
-
-* Note that this file currently only serves as a table of contents until sufficient documentation has been created.
+- Note that this file currently only serves as a table of contents until sufficient documentation has been created.
