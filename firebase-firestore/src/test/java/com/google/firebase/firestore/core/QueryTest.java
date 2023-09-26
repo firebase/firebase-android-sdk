@@ -643,7 +643,7 @@ public class QueryTest {
             .filter(filter("aa", "<", 5))
             .filter(filter("b", "<", 5))
             .filter(filter("A", "<", 5))
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     // numbers
     assertEquals(
@@ -658,7 +658,7 @@ public class QueryTest {
             .filter(filter("1", "<", 5))
             .filter(filter("2", "<", 5))
             .filter(filter("19", "<", 5))
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     // nested fields
     assertEquals(
@@ -671,7 +671,7 @@ public class QueryTest {
             .filter(filter("a", "<", 5))
             .filter(filter("aa", "<", 5))
             .filter(filter("a.a", "<", 5))
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     // special characters
     assertEquals(
@@ -684,7 +684,7 @@ public class QueryTest {
             .filter(filter("a", "<", 5))
             .filter(filter("_a", "<", 5))
             .filter(filter("a.a", "<", 5))
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     // field name with dot
     assertEquals(
@@ -697,7 +697,7 @@ public class QueryTest {
             .filter(filter("a", "<", 5))
             .filter(filter("`a.a`", "<", 5)) // Field name with dot
             .filter(filter("a.z", "<", 5)) // Nested field
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     // composite filter
     assertEquals(
@@ -713,7 +713,7 @@ public class QueryTest {
                 andFilters(
                     orFilters(filter("b", ">=", 1), filter("c", "<=", 1)),
                     orFilters(filter("d", "<=", 1), filter("e", "==", 1))))
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     // OrderBy
     assertEquals(
@@ -727,7 +727,7 @@ public class QueryTest {
             .filter(filter("a", "<", 5))
             .filter(filter("z", "<", 5))
             .orderBy(orderBy("z"))
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     // last explicit order by direction
     assertEquals(
@@ -740,7 +740,7 @@ public class QueryTest {
             .filter(filter("b", "<", 5))
             .filter(filter("a", "<", 5))
             .orderBy(orderBy("z", "desc"))
-            .getOrderBy());
+            .getNormalizedOrderBy());
 
     assertEquals(
         asList(
@@ -754,7 +754,7 @@ public class QueryTest {
             .filter(filter("a", "<", 5))
             .orderBy(orderBy("z", "desc"))
             .orderBy(orderBy("c"))
-            .getOrderBy());
+            .getNormalizedOrderBy());
   }
 
   @Test
