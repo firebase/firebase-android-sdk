@@ -1,6 +1,9 @@
 version = 1
 
 [[analyzers]]
+<< deepsource-config-dc794d08
+name = "secrets"
+
 << deepsource-config-bc693d3d
 name = "cxx"
 
@@ -30,5 +33,6 @@ name = "javascript"
 
 [[transformers]]
 name = "prettier"
+>> master
 >> master
 >> master
