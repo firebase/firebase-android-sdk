@@ -139,6 +139,7 @@ dependencies {
          exclude group: 'com.google.firebase', module: 'firebase-common'
      }
     implementation(project(":firebase-common"))
+    implementation(project(":firebase-common:ktx"))
     implementation(project(":firebase-components"))
     implementation("com.google.firebase:firebase-datatransport:18.2.0"){
          exclude group: 'com.google.firebase', module: 'firebase-common'

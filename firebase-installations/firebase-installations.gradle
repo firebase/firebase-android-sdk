@@ -60,6 +60,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-annotations:16.2.0'
     implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
     implementation(project(":firebase-common"))
+    implementation(project(":firebase-common:ktx"))
     implementation(project(":firebase-components"))
     javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
     testImplementation "androidx.test:core:$androidxTestCoreVersion"

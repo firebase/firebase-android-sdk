@@ -95,6 +95,7 @@ dependencies {
          exclude group: 'com.google.firebase', module: 'firebase-components'
      }
     implementation(project(":firebase-common"))
+    implementation(project(":firebase-common:ktx"))
     implementation(project(":firebase-components"))
     implementation(project(":firebase-installations"))
     javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
