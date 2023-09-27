@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.google.firebase.sessions
+package com.google.firebase.sessions.leader
 
 import android.util.Log
 import com.google.firebase.installations.FirebaseInstallationsApi
+import com.google.firebase.sessions.EventGDTLoggerInterface
 import kotlinx.coroutines.tasks.await
 
 /**

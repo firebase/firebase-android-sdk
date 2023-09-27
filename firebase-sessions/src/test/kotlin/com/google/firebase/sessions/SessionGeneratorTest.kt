@@ -17,6 +17,8 @@
 package com.google.firebase.sessions
 
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.sessions.leader.SessionDetails
+import com.google.firebase.sessions.leader.SessionGenerator
 import com.google.firebase.sessions.testing.FakeTimeProvider
 import com.google.firebase.sessions.testing.TestSessionEventData.TEST_SESSION_TIMESTAMP_US
 import java.util.UUID

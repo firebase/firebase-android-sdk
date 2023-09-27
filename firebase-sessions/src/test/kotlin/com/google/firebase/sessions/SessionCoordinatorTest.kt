@@ -19,6 +19,7 @@ package com.google.firebase.sessions
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
+import com.google.firebase.sessions.leader.SessionCoordinator
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeEventGDTLogger
 import com.google.firebase.sessions.testing.FakeFirebaseApp

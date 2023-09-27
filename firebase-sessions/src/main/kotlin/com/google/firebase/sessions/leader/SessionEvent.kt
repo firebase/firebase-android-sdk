@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.google.firebase.sessions
+package com.google.firebase.sessions.leader
 
 import com.google.firebase.encoders.annotations.Encodable
 import com.google.firebase.encoders.json.NumberedEnum
+import com.google.firebase.sessions.ApplicationInfo
 
 /**
  * Contains the relevant information around a Firebase Session Event.

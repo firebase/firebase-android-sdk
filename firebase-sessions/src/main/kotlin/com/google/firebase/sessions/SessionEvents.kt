@@ -21,6 +21,13 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.encoders.DataEncoder
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder
 import com.google.firebase.sessions.api.SessionSubscriber
+import com.google.firebase.sessions.leader.AutoSessionEventEncoder
+import com.google.firebase.sessions.leader.DataCollectionState
+import com.google.firebase.sessions.leader.DataCollectionStatus
+import com.google.firebase.sessions.leader.EventType
+import com.google.firebase.sessions.leader.SessionDetails
+import com.google.firebase.sessions.leader.SessionEvent
+import com.google.firebase.sessions.leader.SessionInfo
 import com.google.firebase.sessions.settings.SessionsSettings
 
 /** Contains functions for [SessionEvent]s. */

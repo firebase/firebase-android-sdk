@@ -22,4 +22,6 @@ import com.google.firebase.sessions.ProcessDetails
 class FakeProcessDetails(
   override val isDefaultProcess: Boolean = true,
   override val isForegroundProcess: Boolean = true,
+  override val processName: String? = "defaultProcessName",
+  override val defaultProcessName: String = "defaultProcessName"
 ) : ProcessDetails

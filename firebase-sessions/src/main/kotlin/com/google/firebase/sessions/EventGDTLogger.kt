@@ -21,6 +21,7 @@ import com.google.android.datatransport.Encoding
 import com.google.android.datatransport.Event
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.inject.Provider
+import com.google.firebase.sessions.leader.SessionEvent
 
 /**
  * The [EventGDTLoggerInterface] is for testing purposes so that we can mock EventGDTLogger in other

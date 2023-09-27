@@ -17,7 +17,7 @@
 package com.google.firebase.sessions.testing
 
 import com.google.android.datatransport.*
-import com.google.firebase.sessions.SessionEvent
+import com.google.firebase.sessions.leader.SessionEvent
 
 /** Fake [Transport] that implements [send]. */
 internal class FakeTransport<T>() : Transport<T> {

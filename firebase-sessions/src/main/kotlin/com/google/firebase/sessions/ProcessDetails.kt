@@ -30,6 +30,12 @@ internal interface ProcessDetails {
 
   /** Whether the current process is running in the foreground or not. */
   val isForegroundProcess: Boolean
+
+  /** Name of this process */
+  val processName: String?
+
+  /** Name of the default process */
+  val defaultProcessName: String
 }
 
 /** Android implementation of [ProcessDetails]. */
@@ -40,23 +46,23 @@ internal class AndroidProcessDetails(context: Context) : ProcessDetails {
    * This is the app's package name unless the app overrides the android:process attribute in the
    * application block of its Android manifest file.
    */
-  private val defaultProcessName: String = context.applicationInfo.processName
+  override val defaultProcessName: String = context.applicationInfo.processName
 
-  /** The name of the current process, or null if it couldn't be found. */
-  private val currentProcessName: String? =
+  /** The name of this process, or null if it couldn't be found. */
+  override val processName: String? =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
       Application.getProcessName()
     } else {
       findProcessName(context, Process.myPid())
     }
 
-  override val isDefaultProcess: Boolean = currentProcessName == defaultProcessName
+  override val isDefaultProcess: Boolean = processName == defaultProcessName
 
   override val isForegroundProcess: Boolean
     get() {
       val runningAppProcessInfo = RunningAppProcessInfo()
       ActivityManager.getMyMemoryState(runningAppProcessInfo)
-      return runningAppProcessInfo.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+      return runningAppProcessInfo.importance <= RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
     }
 
   /** Finds the process name for the given pid, or returns null if not found. */

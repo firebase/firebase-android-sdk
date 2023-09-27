@@ -23,17 +23,13 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.inject.Provider
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.EventGDTLogger
-import com.google.firebase.sessions.SessionCoordinator
-import com.google.firebase.sessions.SessionDetails
 import com.google.firebase.sessions.SessionEvents
-import com.google.firebase.sessions.SessionGenerator
-import com.google.firebase.sessions.SessionInitiateListener
-import com.google.firebase.sessions.SessionInitiator
 import com.google.firebase.sessions.SessionMaintainer
 import com.google.firebase.sessions.Time
 import com.google.firebase.sessions.TimeProvider
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
+import com.google.firebase.sessions.follower.SessionsDataRepository
 import com.google.firebase.sessions.settings.SessionsSettings
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -47,6 +43,7 @@ class SessionMaintainerLeader(
   backgroundDispatcher: CoroutineDispatcher,
   blockingDispatcher: CoroutineDispatcher,
   transportFactoryProvider: Provider<TransportFactory>,
+  private val sessionsDataRepository: SessionsDataRepository,
 ) : SessionMaintainer {
 
   private val applicationInfo = SessionEvents.getApplicationInfo(firebaseApp)
@@ -64,7 +61,7 @@ class SessionMaintainerLeader(
   private val eventGDTLogger = EventGDTLogger(transportFactoryProvider)
   private val sessionCoordinator = SessionCoordinator(firebaseInstallations, eventGDTLogger)
 
-  private val TAG = "SessionMaintainerLeader"
+  private val tag = "SessionMaintainerLeader"
 
   override fun start(backgroundDispatcher: CoroutineDispatcher) {
     val sessionInitiateListener =
@@ -89,12 +86,12 @@ class SessionMaintainerLeader(
       appContext.registerActivityLifecycleCallbacks(sessionInitiator.activityLifecycleCallbacks)
 
       firebaseApp.addLifecycleEventListener { _, _ ->
-        Log.w(TAG, "FirebaseApp instance deleted. Sessions library will not collect session data.")
+        Log.w(tag, "FirebaseApp instance deleted. Sessions library will not collect session data.")
         appContext.unregisterActivityLifecycleCallbacks(sessionInitiator.activityLifecycleCallbacks)
       }
     } else {
       Log.e(
-        TAG,
+        tag,
         "Failed to register lifecycle callbacks, unexpected context ${appContext.javaClass}."
       )
     }
@@ -116,7 +113,7 @@ class SessionMaintainerLeader(
 
     if (subscribers.isEmpty()) {
       Log.d(
-        TAG,
+        tag,
         "Sessions SDK did not have any dependent SDKs register as dependencies. Events will not be sent."
       )
       return
@@ -128,33 +125,35 @@ class SessionMaintainerLeader(
     }
 
     if (subscribers.values.none { it.isDataCollectionEnabled }) {
-      Log.d(TAG, "Data Collection is disabled for all subscribers. Skipping this Session Event")
+      Log.d(tag, "Data Collection is disabled for all subscribers. Skipping this Session Event")
       return
     }
 
-    Log.d(TAG, "Data Collection is enabled for at least one Subscriber")
+    Log.d(tag, "Data Collection is enabled for at least one Subscriber")
 
     // This will cause remote settings to be fetched if the cache is expired.
     sessionSettings.updateSettings()
 
     if (!sessionSettings.sessionsEnabled) {
-      Log.d(TAG, "Sessions SDK disabled. Events will not be sent.")
+      Log.d(tag, "Sessions SDK disabled. Events will not be sent.")
       return
     }
 
     if (!sessionGenerator.collectEvents) {
-      Log.d(TAG, "Sessions SDK has dropped this session due to sampling.")
+      Log.d(tag, "Sessions SDK has dropped this session due to sampling.")
       return
     }
 
     try {
       val sessionEvent =
         SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings, subscribers)
+      Log.d(tag, "Writing session id ${sessionEvent.sessionData.sessionId} to repository")
+      sessionsDataRepository.updateSessionId(sessionEvent.sessionData.sessionId)
       sessionCoordinator.attemptLoggingSessionEvent(sessionEvent)
     } catch (ex: IllegalStateException) {
       // This can happen if the app suddenly deletes the instance of FirebaseApp.
       Log.w(
-        TAG,
+        tag,
         "FirebaseApp is not initialized. Sessions library will not collect session data.",
         ex
       )

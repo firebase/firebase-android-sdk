@@ -22,13 +22,13 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.firebase.sessions.AndroidApplicationInfo
 import com.google.firebase.sessions.ApplicationInfo
 import com.google.firebase.sessions.BuildConfig
-import com.google.firebase.sessions.DataCollectionState
-import com.google.firebase.sessions.DataCollectionStatus
-import com.google.firebase.sessions.EventType
 import com.google.firebase.sessions.LogEnvironment
-import com.google.firebase.sessions.SessionDetails
-import com.google.firebase.sessions.SessionEvent
-import com.google.firebase.sessions.SessionInfo
+import com.google.firebase.sessions.leader.DataCollectionState
+import com.google.firebase.sessions.leader.DataCollectionStatus
+import com.google.firebase.sessions.leader.EventType
+import com.google.firebase.sessions.leader.SessionDetails
+import com.google.firebase.sessions.leader.SessionEvent
+import com.google.firebase.sessions.leader.SessionInfo
 
 internal object TestSessionEventData {
   const val TEST_SESSION_TIMESTAMP_US: Long = 12340000

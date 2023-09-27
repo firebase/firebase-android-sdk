@@ -25,6 +25,8 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.app
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
+import com.google.firebase.sessions.follower.SessionMaintainerFollower
+import com.google.firebase.sessions.follower.SessionsDataRepository
 import com.google.firebase.sessions.leader.SessionMaintainerLeader
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -39,21 +41,35 @@ internal constructor(
   backgroundDispatcher: CoroutineDispatcher,
   blockingDispatcher: CoroutineDispatcher,
   transportFactoryProvider: Provider<TransportFactory>,
+  processDetails: ProcessDetails = AndroidProcessDetails(firebaseApp.applicationContext)
 ) {
 
   private val sessionMaintainer: SessionMaintainer
   private val tag = "FirebaseSessions"
-
+  private val sessionsDataRepository: SessionsDataRepository
   init {
-    // TODO(rothbutter): create a different maintainer based on the characteristics of this process
+    Log.d(tag, "Initializing data repository")
+    sessionsDataRepository = SessionsDataRepository(firebaseApp.applicationContext)
+
+    Log.d(
+      tag,
+      "Initializing data maintainer. Default process is: ${processDetails.defaultProcessName}"
+    )
     sessionMaintainer =
-      SessionMaintainerLeader(
-        firebaseApp,
-        firebaseInstallations,
-        backgroundDispatcher,
-        blockingDispatcher,
-        transportFactoryProvider
-      )
+      if (AndroidProcessDetails.shouldProcessGenerateNewSession(processDetails)) {
+        Log.d(tag, "Initializing leader maintainer on process: ${processDetails.processName}")
+        SessionMaintainerLeader(
+          firebaseApp,
+          firebaseInstallations,
+          backgroundDispatcher,
+          blockingDispatcher,
+          transportFactoryProvider,
+          sessionsDataRepository
+        )
+      } else {
+        Log.d(tag, "Initializing follower maintainer on process: ${processDetails.processName}")
+        SessionMaintainerFollower(sessionsDataRepository)
+      }
 
     sessionMaintainer.start(backgroundDispatcher)
   }

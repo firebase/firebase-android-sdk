@@ -18,7 +18,7 @@ package com.google.firebase.sessions.testing
 
 import com.google.firebase.sessions.EventGDTLogger
 import com.google.firebase.sessions.EventGDTLoggerInterface
-import com.google.firebase.sessions.SessionEvent
+import com.google.firebase.sessions.leader.SessionEvent
 
 /**
  * The [FakeEventGDTLogger] is for mocking [EventGDTLogger].
