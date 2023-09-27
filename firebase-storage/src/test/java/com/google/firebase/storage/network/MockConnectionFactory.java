@@ -20,7 +20,7 @@ import static org.mockito.Mockito.when;
 
 import android.util.Base64;
 import androidx.annotation.NonNull;
-import com.google.firebase.BuildConfig;
+import com.google.firebase.storage.BuildConfig;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
