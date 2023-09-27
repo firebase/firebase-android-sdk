@@ -61,7 +61,7 @@ val Firebase.firestore: FirebaseFirestore
  * Returns the [FirebaseFirestore] instance of a given [FirebaseApp].
  */
 
-@Deprecated("[FirebaseFirestore] gone gone gone", ReplaceWith(""))
+@Deprecated("", ReplaceWith(""))
 fun Firebase.firestore(app: FirebaseApp): FirebaseFirestore = FirebaseFirestore.getInstance(app)
 
 /** Returns the [FirebaseFirestore] instance of a given [FirebaseApp] and database name. */
