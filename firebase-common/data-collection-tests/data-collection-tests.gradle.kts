@@ -37,12 +37,13 @@ android {
 dependencies {
     implementation("com.google.firebase:firebase-common:20.3.1")
     implementation("com.google.firebase:firebase-components:17.1.0")
-    testImplementation(libs.androidx.test.runner)
+
+    testImplementation(libs.androidx.core)
     testImplementation(libs.androidx.test.junit)
-    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.runner)
     testImplementation(libs.autovalue.annotations)
     testImplementation(libs.junit)
-    testImplementation(libs.truth)
     testImplementation(libs.mockito.core)
-    testImplementation(libs.androidx.core)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.truth)
 }

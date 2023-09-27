@@ -35,6 +35,7 @@ jar {
     manifest.attributes "Main-Class": "com.google.firebase.encoders.proto.codegen.MainKt"
 }
 
+
 dependencies {
 
     implementation "com.google.protobuf:protobuf-java:3.21.9"
