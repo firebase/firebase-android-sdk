@@ -16,6 +16,8 @@
 
 package com.google.firebase.sessions.testing
 
+import android.app.ActivityManager
+import android.app.ActivityManager.RunningAppProcessInfo
 import android.content.Context
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
@@ -26,24 +28,28 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.ktx.initialize
 import org.robolectric.Shadows
 
-internal class FakeFirebaseApp(metadata: Bundle? = null) {
+internal class FakeFirebaseApp(
+  metadata: Bundle? = null,
+  importance: Int = RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
+) {
   val firebaseApp: FirebaseApp
 
   init {
-    val shadowPackageManager =
-      Shadows.shadowOf(ApplicationProvider.getApplicationContext<Context>().packageManager)
-    val packageInfo =
-      PackageInfoBuilder.newBuilder()
-        .setPackageName(ApplicationProvider.getApplicationContext<Context>().packageName)
-        .build()
-    packageInfo.versionName = MOCK_APP_VERSION
+    val context: Context = ApplicationProvider.getApplicationContext()
 
+    val packageInfo = PackageInfoBuilder.newBuilder().setPackageName(context.packageName).build()
+    packageInfo.versionName = MOCK_APP_VERSION
     metadata?.let { packageInfo.applicationInfo.metaData = it }
-    shadowPackageManager.installPackage(packageInfo)
+    Shadows.shadowOf(context.packageManager).installPackage(packageInfo)
+
+    val runningAppProcessInfo = RunningAppProcessInfo()
+    runningAppProcessInfo.importance = importance
+    val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    Shadows.shadowOf(activityManager).setProcesses(listOf(runningAppProcessInfo))
 
     firebaseApp =
       Firebase.initialize(
-        ApplicationProvider.getApplicationContext(),
+        context,
         FirebaseOptions.Builder()
           .setApplicationId(MOCK_APP_ID)
           .setApiKey(MOCK_API_KEY)
