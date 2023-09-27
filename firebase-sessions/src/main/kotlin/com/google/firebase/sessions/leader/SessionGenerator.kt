@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.google.firebase.sessions
+package com.google.firebase.sessions.leader
 
+import com.google.firebase.sessions.TimeProvider
 import java.util.UUID
 
 /**

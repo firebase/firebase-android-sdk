@@ -22,6 +22,9 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.SessionEvents.SESSION_EVENT_ENCODER
 import com.google.firebase.sessions.api.SessionSubscriber
+import com.google.firebase.sessions.leader.EventType
+import com.google.firebase.sessions.leader.SessionEvent
+import com.google.firebase.sessions.leader.SessionInfo
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeSessionSubscriber

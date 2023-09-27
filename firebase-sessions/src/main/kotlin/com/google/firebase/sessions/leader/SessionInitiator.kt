@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.google.firebase.sessions
+package com.google.firebase.sessions.leader
 
 import android.app.Activity
 import android.app.Application.ActivityLifecycleCallbacks
 import android.os.Bundle
+import com.google.firebase.sessions.TimeProvider
 import com.google.firebase.sessions.settings.SessionsSettings
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.sessions
+package com.google.firebase.sessions.leader
 
 /** Interface for listening to the initiation of a new session. */
 internal interface SessionInitiateListener {

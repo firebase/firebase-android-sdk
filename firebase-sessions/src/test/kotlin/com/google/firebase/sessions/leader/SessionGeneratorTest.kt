@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.sessions
+package com.google.firebase.sessions.leader
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.sessions.testing.FakeTimeProvider
