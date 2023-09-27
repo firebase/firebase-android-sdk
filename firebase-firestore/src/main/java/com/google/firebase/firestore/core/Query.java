@@ -22,12 +22,13 @@ import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
-import com.google.firebase.firestore.util.Assert;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Encapsulates all the query attributes we support in the SDK. It can be run against the
@@ -139,7 +140,8 @@ public final class Query {
         && startAt == null
         && endAt == null
         && (getExplicitOrderBy().isEmpty()
-            || (getExplicitOrderBy().size() == 1 && getFirstOrderByField().isKeyField()));
+            || (getExplicitOrderBy().size() == 1
+                && getExplicitOrderBy().get(0).field.isKeyField()));
   }
 
   /** The filters on the documents returned by the query. */
@@ -170,24 +172,19 @@ public final class Query {
     return endAt;
   }
 
-  /** Returns the first field in an order-by constraint, or null if none. */
-  public FieldPath getFirstOrderByField() {
-    if (explicitSortOrder.isEmpty()) {
-      return null;
-    }
-    return explicitSortOrder.get(0).getField();
-  }
+  /** Returns the sorted set of inequality filter fields used in this query. */
+  public SortedSet<FieldPath> getInequalityFilterFields() {
+    SortedSet<FieldPath> result = new TreeSet<FieldPath>();
 
-  /** Returns the field of the first filter on this Query that's an inequality, or null if none. */
-  @Nullable
-  public FieldPath inequalityField() {
-    for (Filter filter : filters) {
-      FieldPath result = filter.getFirstInequalityField();
-      if (result != null) {
-        return result;
+    for (Filter filter : getFilters()) {
+      for (FieldFilter subFilter : filter.getFlattenedFilters()) {
+        if (subFilter.isInequality()) {
+          result.add(subFilter.getField());
+        }
       }
     }
-    return null;
+
+    return result;
   }
 
   /**
@@ -198,19 +195,6 @@ public final class Query {
    */
   public Query filter(Filter filter) {
     hardAssert(!isDocumentQuery(), "No filter is allowed for document query");
-    FieldPath newInequalityField = filter.getFirstInequalityField();
-    FieldPath queryInequalityField = inequalityField();
-    Assert.hardAssert(
-        queryInequalityField == null
-            || newInequalityField == null
-            || queryInequalityField.equals(newInequalityField),
-        "Query must only have one inequality field");
-
-    Assert.hardAssert(
-        explicitSortOrder.isEmpty()
-            || newInequalityField == null
-            || explicitSortOrder.get(0).field.equals(newInequalityField),
-        "First orderBy must match inequality field");
 
     List<Filter> updatedFilter = new ArrayList<>(filters);
     updatedFilter.add(filter);
@@ -226,12 +210,7 @@ public final class Query {
    */
   public Query orderBy(OrderBy order) {
     hardAssert(!isDocumentQuery(), "No ordering is allowed for document query");
-    if (explicitSortOrder.isEmpty()) {
-      FieldPath inequality = inequalityField();
-      if (inequality != null && !inequality.equals(order.field)) {
-        throw Assert.fail("First orderBy must match inequality field");
-      }
-    }
+
     List<OrderBy> updatedSortOrder = new ArrayList<>(explicitSortOrder);
     updatedSortOrder.add(order);
     return new Query(
@@ -335,40 +314,40 @@ public final class Query {
    */
   public synchronized List<OrderBy> getOrderBy() {
     if (memoizedOrderBy == null) {
-      FieldPath inequalityField = inequalityField();
-      FieldPath firstOrderByField = getFirstOrderByField();
-      if (inequalityField != null && firstOrderByField == null) {
-        // In order to implicitly add key ordering, we must also add the inequality filter field for
-        // it to be a valid query. Note that the default inequality field and key ordering is
-        // ascending.
-        if (inequalityField.isKeyField()) {
-          this.memoizedOrderBy = Collections.singletonList(KEY_ORDERING_ASC);
-        } else {
-          memoizedOrderBy =
-              Collections.unmodifiableList(
-                  Arrays.asList(
-                      OrderBy.getInstance(Direction.ASCENDING, inequalityField), KEY_ORDERING_ASC));
-        }
-      } else {
-        List<OrderBy> res = new ArrayList<>();
-        boolean foundKeyOrdering = false;
-        for (OrderBy explicit : explicitSortOrder) {
-          res.add(explicit);
-          if (explicit.getField().equals(FieldPath.KEY_PATH)) {
-            foundKeyOrdering = true;
-          }
-        }
-        if (!foundKeyOrdering) {
-          // The direction of the implicit key ordering always matches the direction of the last
-          // explicit sort order
-          Direction lastDirection =
-              explicitSortOrder.size() > 0
-                  ? explicitSortOrder.get(explicitSortOrder.size() - 1).getDirection()
-                  : Direction.ASCENDING;
-          res.add(lastDirection.equals(Direction.ASCENDING) ? KEY_ORDERING_ASC : KEY_ORDERING_DESC);
-        }
-        memoizedOrderBy = Collections.unmodifiableList(res);
+      List<OrderBy> res = new ArrayList<>();
+      HashSet<String> fieldsNormalized = new HashSet<String>();
+
+      /** Any explicit order by fields should be added as is. */
+      for (OrderBy explicit : explicitSortOrder) {
+        res.add(explicit);
+        fieldsNormalized.add(explicit.field.canonicalString());
       }
+
+      /** The order of the implicit ordering always matches the last explicit order by. */
+      Direction lastDirection =
+          explicitSortOrder.size() > 0
+              ? explicitSortOrder.get(explicitSortOrder.size() - 1).getDirection()
+              : Direction.ASCENDING;
+
+      /**
+       * Any inequality fields not explicitly ordered should be implicitly ordered in a
+       * lexicographical order. When there are multiple inequality filters on the same field, the
+       * field should be added only once. Note: `SortedSet<FieldPath>` sorts the key field before
+       * other fields. However, we want the key field to be sorted last.
+       */
+      SortedSet<FieldPath> inequalityFields = getInequalityFilterFields();
+      for (FieldPath field : inequalityFields) {
+        if (!fieldsNormalized.contains(field.canonicalString()) && !field.isKeyField()) {
+          res.add(OrderBy.getInstance(lastDirection, field));
+        }
+      }
+
+      /** Add the document key field to the last if it is not explicitly ordered. */
+      if (!fieldsNormalized.contains(FieldPath.KEY_PATH.canonicalString())) {
+        res.add(lastDirection.equals(Direction.ASCENDING) ? KEY_ORDERING_ASC : KEY_ORDERING_DESC);
+      }
+
+      memoizedOrderBy = Collections.unmodifiableList(res);
     }
     return memoizedOrderBy;
   }

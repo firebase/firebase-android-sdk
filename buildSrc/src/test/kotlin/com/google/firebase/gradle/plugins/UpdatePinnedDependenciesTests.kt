@@ -62,7 +62,7 @@ class UpdatePinnedDependenciesTests : FunSpec() {
         )
 
       withProjects(fakeFirestore, testProject)
-      createReleaseWithProjects(testProject)
+      createReleaseWithProjects(fakeFirestore, testProject)
       buildProject()
 
       testProject.buildFile.readText() shouldContain fakeFirestore.toDependency(true)
@@ -88,7 +88,7 @@ class UpdatePinnedDependenciesTests : FunSpec() {
         )
 
       withProjects(fakeFirestore, testProject)
-      createReleaseWithProjects(testProject)
+      createReleaseWithProjects(testProject, fakeFirestore)
       buildProject()
 
       testProject.buildFile.readText() shouldContain fakeFirestore.toDependency(false)
