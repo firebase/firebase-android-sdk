@@ -15,8 +15,6 @@
 package com.google.firebase.storage.network;
 
 import android.content.Context;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.text.TextUtils;
@@ -71,7 +69,7 @@ public abstract class NetworkRequest {
 
   // For test purposes only.
   /*package*/ static HttpURLConnectionFactory connectionFactory =
-      new HttpURLConnectionFactoryImpl();
+          new HttpURLConnectionFactoryImpl();
   protected Exception mException;
 
   private StorageReferenceUri storageReferenceUri;
@@ -86,7 +84,7 @@ public abstract class NetworkRequest {
   private Map<String, String> requestHeaders = new HashMap<>();
 
   public NetworkRequest(
-      @NonNull StorageReferenceUri storageReferenceUri, @NonNull FirebaseApp app) {
+          @NonNull StorageReferenceUri storageReferenceUri, @NonNull FirebaseApp app) {
     Preconditions.checkNotNull(storageReferenceUri);
     Preconditions.checkNotNull(app);
     this.storageReferenceUri = storageReferenceUri;
@@ -99,7 +97,7 @@ public abstract class NetworkRequest {
   public static Uri getBaseUrl(@Nullable EmulatedServiceSettings emulatorSettings) {
     if (emulatorSettings != null) {
       return Uri.parse(
-          "http://" + emulatorSettings.getHost() + ":" + emulatorSettings.getPort() + "/v0");
+              "http://" + emulatorSettings.getHost() + ":" + emulatorSettings.getPort() + "/v0");
     } else {
       return PROD_BASE_URL;
     }
@@ -229,7 +227,7 @@ public abstract class NetworkRequest {
       Log.d(TAG, "sending network request " + getAction() + " " + getURL());
     }
     ConnectivityManager connMgr =
-        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
     android.net.NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
     if (networkInfo == null || !networkInfo.isConnected()) {
       resultCode = NETWORK_UNAVAILABLE;
@@ -275,9 +273,9 @@ public abstract class NetworkRequest {
   }
 
   public void performRequest(
-      @Nullable String authToken,
-      @Nullable String appCheckToken,
-      @NonNull Context applicationContext) {
+          @Nullable String authToken,
+          @Nullable String appCheckToken,
+          @NonNull Context applicationContext) {
     if (!ensureNetworkAvailable(applicationContext)) {
       return;
     }
@@ -287,7 +285,7 @@ public abstract class NetworkRequest {
   @SuppressWarnings("deprecation")
   private boolean ensureNetworkAvailable(Context context) {
     ConnectivityManager connMgr =
-        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
     android.net.NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
     if (networkInfo == null || !networkInfo.isConnected()) {
       mException = new SocketException("Network subsystem is unavailable");
@@ -318,8 +316,8 @@ public abstract class NetworkRequest {
 
   @SuppressWarnings("TryFinallyCanBeTryWithResources")
   private void constructMessage(
-      @NonNull HttpURLConnection conn, @Nullable String authToken, @Nullable String appCheckToken)
-      throws IOException {
+          @NonNull HttpURLConnection conn, @Nullable String authToken, @Nullable String appCheckToken)
+          throws IOException {
     Preconditions.checkNotNull(conn);
 
     if (!TextUtils.isEmpty(authToken)) {
@@ -333,10 +331,8 @@ public abstract class NetworkRequest {
     } else {
       Log.w(TAG, "No App Check token for request.");
     }
-
     String userAgent = "Android/" + BuildConfig.VERSION_NAME;
     conn.setRequestProperty("X-Firebase-Storage-Version", userAgent);
-
     Map<String, String> requestProperties = requestHeaders;
     for (Map.Entry<String, String> entry : requestProperties.entrySet()) {
       conn.setRequestProperty(entry.getKey(), entry.getValue());
