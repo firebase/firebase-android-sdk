@@ -41,7 +41,6 @@ fun FirebaseCrashlytics.setCustomKeys(init: KeyValueBuilder.() -> Unit) {
   builder.init()
 }
 
-
 /** @suppress */
 @Deprecated(
   "Use `com.google.firebase.crashlytics.FirebaseCrashlyticsKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",

@@ -44,16 +44,10 @@ val Firebase.appDistribution: FirebaseAppDistribution
   "Use `com.google.firebase.appdistribution.AppDistributionRelease.component1()` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "component1()",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.appdistribution.component1"
-      ]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.appdistribution.component1"]
   )
 )
 operator fun AppDistributionRelease.component1() = binaryType
-
-
 
 /**
  * Destructuring declaration for [AppDistributionRelease] to provide displayVersion.
@@ -64,11 +58,7 @@ operator fun AppDistributionRelease.component1() = binaryType
   "Use `com.google.firebase.appdistribution.AppDistributionRelease.component2()` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "component2()",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.appdistribution.component2"
-      ]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.appdistribution.component2"]
   )
 )
 operator fun AppDistributionRelease.component2() = displayVersion
@@ -82,11 +72,7 @@ operator fun AppDistributionRelease.component2() = displayVersion
   "Use `com.google.firebase.appdistribution.AppDistributionRelease.component3()` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "component3()",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.appdistribution.component3"
-      ]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.appdistribution.component3"]
   )
 )
 operator fun AppDistributionRelease.component3() = versionCode
@@ -100,11 +86,7 @@ operator fun AppDistributionRelease.component3() = versionCode
   "Use `com.google.firebase.appdistribution.AppDistributionRelease.component4()` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "component4()",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.appdistribution.component4"
-      ]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.appdistribution.component4"]
   )
 )
 operator fun AppDistributionRelease.component4() = releaseNotes
@@ -118,15 +100,10 @@ operator fun AppDistributionRelease.component4() = releaseNotes
   "Use `com.google.firebase.appdistribution.UpdateProgress.component1()` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "component1()",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.appdistribution.component1"
-      ]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.appdistribution.component1"]
   )
 )
 operator fun UpdateProgress.component1() = apkBytesDownloaded
-
 
 /**
  * Destructuring declaration for [UpdateProgress] to provide apkFileTotalBytes.
@@ -137,11 +114,7 @@ operator fun UpdateProgress.component1() = apkBytesDownloaded
   "Use `com.google.firebase.appdistribution.UpdateProgress.component2()` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "component2()",
-    imports =
-    [
-      "com.google.firebase.Firebase",
-      "com.google.firebase.appdistribution.component2"
-    ]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.appdistribution.component2"]
   )
 )
 operator fun UpdateProgress.component2() = apkFileTotalBytes
@@ -155,11 +128,7 @@ operator fun UpdateProgress.component2() = apkFileTotalBytes
   "Use `com.google.firebase.appdistribution.UpdateProgress.component3()` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-appdistribution-api-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "component3()",
-    imports =
-    [
-      "com.google.firebase.Firebase",
-      "com.google.firebase.appdistribution.component3"
-    ]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.appdistribution.component3"]
   )
 )
 operator fun UpdateProgress.component3() = updateStatus
