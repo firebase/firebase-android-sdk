@@ -20,7 +20,7 @@ plugins {
 firebaseLibrary {
     libraryGroup "appcheck"
     testLab.enabled = true
-    publishJavadoc = true
+    publishJavadoc = false
     publishSources = true
 }
 
@@ -59,6 +59,7 @@ dependencies {
     api(project(":appcheck:firebase-appcheck"))
     androidTestImplementation(project(":appcheck:firebase-appcheck-interop"))
     api(project(":firebase-common"))
+    api(project(":firebase-common:ktx"))
     api(project(":firebase-components"))
     testImplementation "com.google.truth:truth:$googleTruthVersion"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"

@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.playservices.tasks)
     implementation(project(":appcheck:firebase-appcheck-interop"))
     implementation(project(":firebase-common"))
+    implementation(project(":firebase-common:ktx"))
     implementation(project(":firebase-components"))
     javadocClasspath("org.codehaus.mojo:animal-sniffer-annotations:1.21")
     javadocClasspath(libs.autovalue.annotations)

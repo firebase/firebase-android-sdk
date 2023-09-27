@@ -96,6 +96,7 @@ dependencies {
      }
     implementation("com.google.firebase:firebase-annotations:16.2.0")
     implementation(project(":firebase-common"))
+    implementation(project(":firebase-common:ktx"))
     implementation(project(":firebase-components"))
 
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'

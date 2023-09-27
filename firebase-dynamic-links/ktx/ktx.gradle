@@ -19,7 +19,7 @@ plugins {
 
 firebaseLibrary {
     libraryGroup "dynamic-links"
-    publishJavadoc = true
+    publishJavadoc = false
     publishSources = true
 }
 
@@ -44,6 +44,7 @@ android {
 
 dependencies {
     api(project(":firebase-common"))
+    api(project(":firebase-common:ktx"))
     api(project(":firebase-components"))
     api(project(":firebase-dynamic-links"))
     testImplementation "androidx.test:core:$androidxTestCoreVersion"

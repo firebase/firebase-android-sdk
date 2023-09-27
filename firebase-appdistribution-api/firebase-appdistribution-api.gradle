@@ -55,6 +55,7 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
     implementation(project(":firebase-common"))
+    implementation(project(":firebase-common:ktx"))
     implementation(project(":firebase-components"))
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
     testImplementation "com.google.truth:truth:$googleTruthVersion"

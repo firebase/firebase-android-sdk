@@ -27,7 +27,7 @@ import java.io.File
 @Deprecated(
   "com.google.firebase.ml.modeldownloaderktx.Firebase.modelDownloader has been deprecated. Use `com.google.firebase.ml.modeldownloaderFirebase.modelDownloader` instead.",
   ReplaceWith(
-    expression = "Firebase.modelDownloader",
+    expression = "com.google.firebase.Firebase.modelDownloader",
     imports =
       ["com.google.firebase.Firebase", "com.google.firebase.ml.modeldownloadermodelDownloader"]
   )
@@ -39,7 +39,7 @@ val Firebase.modelDownloader: FirebaseModelDownloader
 @Deprecated(
   "com.google.firebase.ml.modeldownloaderktx.Firebase.modelDownloader(app) has been deprecated. Use `com.google.firebase.ml.modeldownloaderFirebase.modelDownloader(app)` instead.",
   ReplaceWith(
-    expression = "Firebase.modelDownloader(app)",
+    expression = "com.google.firebase.Firebase.modelDownloader(app)",
     imports =
       ["com.google.firebase.Firebase", "com.google.firebase.ml.modeldownloadermodelDownloader"]
   )
@@ -48,13 +48,13 @@ fun Firebase.modelDownloader(app: FirebaseApp) = FirebaseModelDownloader.getInst
 
 /** Returns a [CustomModelDownloadConditions] initialized using the [init] function. */
 @Deprecated(
-  "com.google.firebase.ml.modeldownloaderktx.customModelDownloadConditions( has been deprecated. Use `com.google.firebase.ml.modeldownloadercustomModelDownloadConditions(` instead.",
+  "Use `com.google.firebase.ml.modeldownloader.customModelDownloadConditions(init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-ml-modeldownloade-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "customModelDownloadConditions(",
+    expression = "customModelDownloadConditions(init)",
     imports =
       [
         "com.google.firebase.Firebase",
-        "com.google.firebase.ml.modeldownloadercustomModelDownloadConditions"
+        "com.google.firebase.ml.modeldownloader.customModelDownloadConditions"
       ]
   )
 )
@@ -78,13 +78,13 @@ operator fun CustomModel.component5() = name
 
 /** @suppress */
 @Deprecated(
-  "com.google.firebase.ml.modeldownloaderktx.FirebaseMlModelDownloaderKtxRegistrar has been deprecated. Use `com.google.firebase.ml.modeldownloaderFirebaseMlModelDownloaderKtxRegistrar` instead.",
+  "Use `com.google.firebase.ml.modeldownloader.FirebaseMlModelDownloaderKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-ml-modeldownloade-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "FirebaseMlModelDownloaderKtxRegistrar",
     imports =
       [
         "com.google.firebase.Firebase",
-        "com.google.firebase.ml.modeldownloaderFirebaseMlModelDownloaderKtxRegistrar"
+        "com.google.firebase.ml.modeldownloader.FirebaseMlModelDownloaderKtxRegistrar"
       ]
   )
 )

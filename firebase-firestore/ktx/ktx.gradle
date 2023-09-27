@@ -22,6 +22,7 @@ group = "com.google.firebase"
 firebaseLibrary {
     libraryGroup "firestore"
     publishSources = true
+    publishJavadoc = false
 }
 
 android {
@@ -53,6 +54,7 @@ tasks.withType(Test) {
 
 dependencies {
     api(project(":firebase-common"))
+    api(project(":firebase-common:ktx"))
     api(project(":firebase-components"))
     api(project(":firebase-firestore"))
     testCompileOnly "com.google.protobuf:protobuf-java:$protocVersion"

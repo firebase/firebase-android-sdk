@@ -89,6 +89,7 @@ dependencies {
      }
     implementation(libs.androidx.annotation)
     implementation(project(":firebase-common"))
+    implementation(project(":firebase-common:ktx"))
     implementation(project(":firebase-components"))
     implementation(project(":firebase-installations"))
     implementation(project(':firebase-sessions')) {

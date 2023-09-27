@@ -19,7 +19,7 @@ plugins {
 
 firebaseLibrary {
   libraryGroup("functions")
-  publishJavadoc = true
+  publishJavadoc = false
   publishSources = true
   testLab.enabled = true
 }
@@ -48,6 +48,7 @@ dependencies {
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.truth)
     api(project(":firebase-common"))
+    api(project(":firebase-common:ktx"))
     api(project(":firebase-components"))
     api(project(":firebase-functions"))
     testImplementation(libs.androidx.test.core)

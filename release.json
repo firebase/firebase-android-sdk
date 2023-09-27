@@ -1,0 +1,7 @@
+{
+    "name": "m138",
+    "libraries": [
+        ":firebase-firestore",
+        ":firebase-firestore:ktx"
+    ]
+}

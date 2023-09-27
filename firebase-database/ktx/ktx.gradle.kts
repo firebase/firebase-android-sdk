@@ -14,7 +14,7 @@
 
 plugins {
   id("firebase-library")
-    id("kotlin-android")
+  id("kotlin-android")
   kotlin("android")
 }
 
@@ -22,7 +22,7 @@ group = "com.google.firebase"
 
 firebaseLibrary {
   libraryGroup("database")
-  publishJavadoc = true
+  publishJavadoc = false
   publishSources = true
 }
 
@@ -49,6 +49,7 @@ android {
 
 dependencies {
     api(project(":firebase-common"))
+    api(project(":firebase-common:ktx"))
     api(project(":firebase-components"))
     api(project(":firebase-database"))
     testImplementation(libs.androidx.test.core)

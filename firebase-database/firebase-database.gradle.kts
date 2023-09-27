@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.playservices.tasks)
     implementation(project(":appcheck:firebase-appcheck-interop"))
     implementation(project(":firebase-common"))
+    implementation(project(":firebase-common:ktx"))
     implementation(project(":firebase-components"))
     testImplementation("com.fasterxml.jackson.core:jackson-core:2.13.1")
     testImplementation("com.fasterxml.jackson.core:jackson-databind:2.13.1")

@@ -21,7 +21,7 @@ group = "com.google.firebase"
 
 firebaseLibrary {
     libraryGroup "storage"
-    publishJavadoc = true
+    publishJavadoc = false
     publishSources = true
 }
 
@@ -60,6 +60,7 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'junit:junit:4.12'
     api(project(":firebase-common"))
+    api(project(":firebase-common:ktx"))
     api(project(":firebase-components"))
     api(project(":firebase-storage"))
     testImplementation "androidx.test:core:$androidxTestCoreVersion"

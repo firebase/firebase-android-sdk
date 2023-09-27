@@ -33,10 +33,10 @@ import kotlinx.coroutines.flow.callbackFlow
 
 /** Returns the [FirebaseRemoteConfig] instance of the default [FirebaseApp]. */
 @Deprecated(
-  "com.google.firebase.remoteconfigktx.Firebase.remoteConfig has been deprecated. Use `com.google.firebase.remoteconfigFirebase.remoteConfig` instead.",
+  "Use `com.google.firebase.Firebase.remoteConfig` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-config-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Firebase.remoteConfig",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.remoteconfigremoteConfig"]
+    expression = "com.google.firebase.Firebase.remoteConfig",
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.remoteconfig.remoteConfig"]
   )
 )
 val Firebase.remoteConfig: FirebaseRemoteConfig
@@ -44,10 +44,10 @@ val Firebase.remoteConfig: FirebaseRemoteConfig
 
 /** Returns the [FirebaseRemoteConfig] instance of a given [FirebaseApp]. */
 @Deprecated(
-  "com.google.firebase.remoteconfigktx.Firebase.remoteConfig(app) has been deprecated. Use `com.google.firebase.remoteconfigFirebase.remoteConfig(app)` instead.",
+  "Use `com.google.firebase.Firebase.remoteConfig(app)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-config-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "Firebase.remoteConfig(app)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.remoteconfigremoteConfig"]
+    expression = "com.google.firebase.Firebase.remoteConfig(app)",
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.remoteconfig.remoteConfig"]
   )
 )
 fun Firebase.remoteConfig(app: FirebaseApp): FirebaseRemoteConfig =
@@ -55,12 +55,8 @@ fun Firebase.remoteConfig(app: FirebaseApp): FirebaseRemoteConfig =
 
 /** See [FirebaseRemoteConfig#getValue] */
 @Deprecated(
-  "com.google.firebase.remoteconfigktx.remoteConfigSettings( has been deprecated. Use `com.google.firebase.remoteconfigremoteConfigSettings(` instead.",
-  ReplaceWith(
-    expression = "remoteConfigSettings(",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.remoteconfigremoteConfigSettings"]
-  )
+  "Use `com.google.firebase.remoteconfig.FirebaseRemoteConfig.get(key).` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-config-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
+  ReplaceWith(expression = "get(key)", imports = ["com.google.firebase.remoteconfig.get"])
 )
 operator fun FirebaseRemoteConfig.get(key: String): FirebaseRemoteConfigValue {
   return this.getValue(key)
@@ -83,14 +79,10 @@ fun remoteConfigSettings(
  * connection to the Remote Config backend will be closed.
  */
 @Deprecated(
-  "com.google.firebase.remoteconfigktx.FirebaseRemoteConfig.configUpdates has been deprecated. Use `com.google.firebase.remoteconfigFirebaseRemoteConfig.configUpdates` instead.",
+  "Use `com.google.firebase.remoteconfig.FirebaseRemoteConfig.configUpdates` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-config-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
-    expression = "FirebaseRemoteConfig.configUpdates",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.remoteconfigFirebaseRemoteConfig.configUpdates"
-      ]
+    expression = "configUpdates",
+    imports = ["com.google.firebase.remoteconfig.configUpdates"]
   )
 )
 val FirebaseRemoteConfig.configUpdates
@@ -112,13 +104,13 @@ val FirebaseRemoteConfig.configUpdates
 
 /** @suppress */
 @Deprecated(
-  "com.google.firebase.remoteconfigktx.FirebaseRemoteConfigKtxRegistrar has been deprecated. Use `com.google.firebase.remoteconfigFirebaseRemoteConfigKtxRegistrar` instead.",
+  "Use `com.google.firebase.remoteconfig.FirebaseRemoteConfigKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase firebase-config-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
   ReplaceWith(
     expression = "FirebaseRemoteConfigKtxRegistrar",
     imports =
       [
         "com.google.firebase.Firebase",
-        "com.google.firebase.remoteconfigFirebaseRemoteConfigKtxRegistrar"
+        "com.google.firebase.remoteconfig.FirebaseRemoteConfigKtxRegistrar"
       ]
   )
 )

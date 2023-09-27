@@ -79,6 +79,7 @@ dependencies {
     // to Remote Config.
     implementation(project(":firebase-common"))
     implementation(project(":firebase-common:ktx"))
+    implementation(project(":firebase-common:ktx"))
     implementation(project(":firebase-components"))
 
     implementation(project(":firebase-installations-interop")) {
