@@ -31,5 +31,8 @@ jobs:
             **/*.gradle
             **/*.gradle.kts
           title: '${{ inputs.name}} mergeback'
-          body: 'Auto-generated PR for cleaning up release ${{ inputs.name}}'
+          body: |
+            Auto-generated PR for cleaning up release ${{ inputs.name}}
+            
+            NO_RELEASE_CHANGE
           commit-message: 'Post release cleanup for ${{ inputs.name }}'
