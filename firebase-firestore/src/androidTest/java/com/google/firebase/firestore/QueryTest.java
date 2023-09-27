@@ -1505,46 +1505,6 @@ public class QueryTest {
   }
 
   @Test
-  public void testOrQueriesWithCompositeIndexes() {
-    assumeTrue(
-        "Skip this test if running against production because it results in a "
-            + "'missing index' error. The Firestore Emulator, however, does serve these "
-            + " queries.",
-        isRunningAgainstEmulator());
-    Map<String, Map<String, Object>> testDocs =
-        map(
-            "doc1", map("a", 1, "b", 0),
-            "doc2", map("a", 2, "b", 1),
-            "doc3", map("a", 3, "b", 2),
-            "doc4", map("a", 1, "b", 3),
-            "doc5", map("a", 1, "b", 1));
-    CollectionReference collection = testCollectionWithDocs(testDocs);
-
-    // with one inequality: a>2 || b==1.
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(or(greaterThan("a", 2), equalTo("b", 1))), "doc5", "doc2", "doc3");
-
-    // Test with limits (implicit order by ASC): (a==1) || (b > 0) LIMIT 2
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(or(equalTo("a", 1), greaterThan("b", 0))).limit(2), "doc1", "doc2");
-
-    // Test with limits (explicit order by): (a==1) || (b > 0) LIMIT_TO_LAST 2
-    // Note: The public query API does not allow implicit ordering when limitToLast is used.
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(or(equalTo("a", 1), greaterThan("b", 0))).limitToLast(2).orderBy("b"),
-        "doc3",
-        "doc4");
-
-    // Test with limits (explicit order by ASC): (a==2) || (b == 1) ORDER BY a LIMIT 1
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(or(equalTo("a", 2), equalTo("b", 1))).limit(1).orderBy("a"), "doc5");
-
-    // Test with limits (explicit order by DESC): (a==2) || (b == 1) ORDER BY a LIMIT_TO_LAST 1
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(or(equalTo("a", 2), equalTo("b", 1))).limitToLast(1).orderBy("a"), "doc2");
-  }
-
-  @Test
   public void testOrQueriesWithIn() {
     Map<String, Map<String, Object>> testDocs =
         map(

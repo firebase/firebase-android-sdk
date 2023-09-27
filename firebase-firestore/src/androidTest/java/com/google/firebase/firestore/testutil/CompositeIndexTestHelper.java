@@ -33,16 +33,17 @@ import java.util.Map;
  * composite indexes within a controlled testing environment.
  *
  * <p>Key Features: - Runs tests against the dedicated test collection with predefined composite
- * indexes. - Automatically associates a test ID with documents for data isolation. - Constructs
- * Firestore queries with test ID filters.
+ * indexes. - Automatically associates a test ID with documents for data isolation. - Utilizes TTL
+ * policy for automatic test data cleanup. - Constructs Firestore queries with test ID filters.
  */
 public class CompositeIndexTestHelper {
   private final String testId;
   private static final String TEST_ID_FIELD = "testId";
   private static final String COMPOSITE_INDEX_TEST_COLLECTION = "composite-index-test-collection";
 
+  // Creates a new instance of the CompositeIndexTestHelper class, with a unique test
+  // identifier for data isolation.
   public CompositeIndexTestHelper() {
-    // Initialize the testId when an instance of the class is created.
     this.testId = "test-id-" + autoId();
   }
 
@@ -50,7 +51,7 @@ public class CompositeIndexTestHelper {
   @NonNull
   public CollectionReference withTestDocs(@NonNull Map<String, Map<String, Object>> docs) {
     CollectionReference writer = testFirestore().collection(COMPOSITE_INDEX_TEST_COLLECTION);
-    writeAllDocs(writer, hashDocIdsAndAddCompositeTestFields(docs));
+    writeAllDocs(writer, prepareTestDocuments(docs));
     CollectionReference reader = testFirestore().collection(writer.getPath());
     return reader;
   }
@@ -61,11 +62,11 @@ public class CompositeIndexTestHelper {
     return query_.whereEqualTo(TEST_ID_FIELD, testId);
   }
 
+  // Hash the document key with testId.
   private String toHashedId(String docId) {
     return docId + '-' + testId;
   }
 
-  // Hash the document keys with testId.
   private String[] toHashedIds(String[] docs) {
     String[] hashedIds = new String[docs.length];
     for (int i = 0; i < docs.length; i++) {
@@ -74,47 +75,47 @@ public class CompositeIndexTestHelper {
     return hashedIds;
   }
 
-  private void addCompositeTestFieldsToDoc(Map<String, Object> doc) {
-    doc.put(TEST_ID_FIELD, testId);
-    doc.put(
+  // Adds test-specific fields to a document, including the testId and expiration date.
+  private Map<String, Object> addTestSpecificFieldsToDoc(Map<String, Object> doc) {
+    Map<String, Object> updatedDoc = new HashMap<>(doc);
+    updatedDoc.put(TEST_ID_FIELD, testId);
+    updatedDoc.put(
         "expireAt",
         new Timestamp( // Expire test data after 24 hours
             Timestamp.now().getSeconds() + 24 * 60 * 60, Timestamp.now().getNanoseconds()));
+    return updatedDoc;
   }
 
-  // Hash the document key and add testId to documents created under a specific test to support data
-  // isolation in parallel testing.
-  private Map<String, Map<String, Object>> hashDocIdsAndAddCompositeTestFields(
+  // Helper method to hash document keys and add test-specific fields for the provided documents.
+  private Map<String, Map<String, Object>> prepareTestDocuments(
       Map<String, Map<String, Object>> docs) {
     Map<String, Map<String, Object>> result = new HashMap<>();
     for (String key : docs.keySet()) {
-      Map<String, Object> doc = docs.get(key);
-      addCompositeTestFieldsToDoc(doc);
+      Map<String, Object> doc = addTestSpecificFieldsToDoc(docs.get(key));
       result.put(toHashedId(key), doc);
     }
     return result;
   }
 
-  // Checks that running the query while online (against the backend/emulator) results in the same
-  // as running it while offline. The expected document Ids are hashed to match the actual document
-  // IDs created by the test helper.
+  // Asserts that the result of running the query while online (against the backend/emulator) is
+  // the same as running it while offline. The expected document Ids are hashed to match the
+  // actual document IDs created by the test helper.
   @NonNull
-  public void checkOnlineAndOfflineResults(@NonNull Query query, @NonNull String... expectedDocs) {
+  public void assertOnlineAndOfflineResultsMatch(
+      @NonNull Query query, @NonNull String... expectedDocs) {
     checkOnlineAndOfflineResultsMatch(query, toHashedIds(expectedDocs));
   }
 
-  // Add a document with test id and expire date.
+  // Adds a document to a Firestore collection with test-specific fields.
   @NonNull
   public Task<DocumentReference> addDoc(
       @NonNull CollectionReference collection, @NonNull Map<String, Object> data) {
-    addCompositeTestFieldsToDoc(data);
-    return collection.add(data);
+    return collection.add(addTestSpecificFieldsToDoc(data));
   }
 
-  // Set a document with test id and expire date.
+  // Sets a document in Firestore with test-specific fields.
   @NonNull
   public Task<Void> setDoc(@NonNull DocumentReference document, @NonNull Map<String, Object> data) {
-    addCompositeTestFieldsToDoc(data);
-    return document.set(data);
+    return document.set(addTestSpecificFieldsToDoc(data));
   }
 }
