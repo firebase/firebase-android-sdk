@@ -31,11 +31,13 @@ import com.google.firebase.storage.StorageTask
 import com.google.firebase.storage.StorageTaskScheduler
 import com.google.firebase.storage.StreamDownloadTask
 import com.google.firebase.storage.UploadTask
+import com.google.firebase.storage.taskState
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.take
 
 /** Returns the [FirebaseStorage] instance of the default [FirebaseApp]. */
 @Deprecated(
@@ -271,11 +273,11 @@ operator fun ListResult.component3(): String? = pageToken
 @Deprecated(
   "Use `com.google.firebase.storage.StorageTask.taskState` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
-    expression = "StorageTask<T>.taskState",
+    expression = "taskState",
     imports =
       [
         "com.google.firebase.Firebase",
-        "com.google.firebase.storage.ListResult.StorageTask.taskState"
+        "com.google.firebase.storage.taskState"
       ]
   )
 )
@@ -315,6 +317,8 @@ val <T : StorageTask<T>.SnapshotBase> StorageTask<T>.taskState: Flow<TaskState<T
       removeOnCompleteListener(completionListener)
     }
   }
+
+val x = StorageReference().putStream("Vinay".byteInputStream()).taskState.take(1)
 
 /** @suppress */
 @Deprecated(
