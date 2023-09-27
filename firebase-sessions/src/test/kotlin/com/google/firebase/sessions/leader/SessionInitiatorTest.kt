@@ -14,15 +14,11 @@
  * limitations under the License.
  */
 
-package com.google.firebase.sessions
+package com.google.firebase.sessions.leader
 
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.concurrent.TestOnlyExecutors
-import com.google.firebase.sessions.leader.SessionDetails
-import com.google.firebase.sessions.leader.SessionGenerator
-import com.google.firebase.sessions.leader.SessionInitiateListener
-import com.google.firebase.sessions.leader.SessionInitiator
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeSettingsProvider
 import com.google.firebase.sessions.testing.FakeTimeProvider

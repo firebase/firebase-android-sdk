@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.google.firebase.sessions
+package com.google.firebase.sessions.leader
 
 import android.os.Bundle
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
+import com.google.firebase.sessions.SessionEvents
 import com.google.firebase.sessions.settings.LocalOverrideSettings
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeFirebaseApp
