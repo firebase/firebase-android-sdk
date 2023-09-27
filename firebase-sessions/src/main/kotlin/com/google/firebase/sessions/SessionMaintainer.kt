@@ -24,7 +24,7 @@ import kotlinx.coroutines.CoroutineDispatcher
  * that includes data synchronizing across processes, sending events to our backend, and
  * broadcasting AQS related events to listeners
  */
-interface SessionMaintainer {
+internal interface SessionMaintainer {
 
   /** Register a listener for updates to the session being maintained by this class */
   fun register(subscriber: SessionSubscriber)

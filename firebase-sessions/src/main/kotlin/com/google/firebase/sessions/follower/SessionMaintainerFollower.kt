@@ -24,13 +24,12 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-class SessionMaintainerFollower(private val sessionsDataRepository: SessionsDataRepository) :
-  SessionMaintainer {
+internal class SessionMaintainerFollower(
+  private val sessionsDataRepository: SessionsDataRepository
+) : SessionMaintainer {
   val tag = "SessionMaintainerFollow"
 
-  override fun register(subscriber: SessionSubscriber) {
-    // NOOP
-  }
+  override fun register(subscriber: SessionSubscriber) = Unit
 
   override fun start(backgroundDispatcher: CoroutineDispatcher) {
     CoroutineScope(backgroundDispatcher).launch {

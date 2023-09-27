@@ -28,10 +28,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
-data class FirebaseSessionsData(val sessionId: String?)
+internal data class FirebaseSessionsData(val sessionId: String?)
 
 /** Persists session data that needs to be synchronized across processes */
-class SessionsDataRepository(private val context: Context) {
+internal class SessionsDataRepository(private val context: Context) {
   private val tag = "FirebaseSessionsRepo"
 
   private object FirebaseSessionDataKeys {
@@ -56,7 +56,5 @@ class SessionsDataRepository(private val context: Context) {
     FirebaseSessionsData(preferences[FirebaseSessionDataKeys.SESSION_ID])
 }
 
-const val SESSION_CONFIGS_NAME = "firebase_session_settings"
-
 private val Context.dataStore: DataStore<Preferences> by
-  preferencesDataStore(name = SESSION_CONFIGS_NAME)
+  preferencesDataStore(name = "firebase_session_settings")

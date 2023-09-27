@@ -37,7 +37,7 @@ import kotlinx.coroutines.CoroutineDispatcher
  * Maintainer that will manage the full lifecycle of a session including sending this to our
  * backend. It will also notify followers when there is a change
  */
-class SessionMaintainerLeader(
+internal class SessionMaintainerLeader(
   private val firebaseApp: FirebaseApp,
   firebaseInstallations: FirebaseInstallationsApi,
   backgroundDispatcher: CoroutineDispatcher,

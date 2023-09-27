@@ -25,9 +25,6 @@ import android.os.Process
 
 /** Provides details about the current process. */
 internal interface ProcessDetails {
-  /** Whether the current process is the app's default process or not. */
-  val isDefaultProcess: Boolean
-
   /** Whether the current process is running in the foreground or not. */
   val isForegroundProcess: Boolean
 
@@ -56,13 +53,11 @@ internal class AndroidProcessDetails(context: Context) : ProcessDetails {
       findProcessName(context, Process.myPid())
     }
 
-  override val isDefaultProcess: Boolean = processName == defaultProcessName
-
   override val isForegroundProcess: Boolean
     get() {
       val runningAppProcessInfo = RunningAppProcessInfo()
       ActivityManager.getMyMemoryState(runningAppProcessInfo)
-      return runningAppProcessInfo.importance <= RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE
+      return runningAppProcessInfo.importance == RunningAppProcessInfo.IMPORTANCE_FOREGROUND
     }
 
   /** Finds the process name for the given pid, or returns null if not found. */
@@ -75,6 +70,7 @@ internal class AndroidProcessDetails(context: Context) : ProcessDetails {
   internal companion object {
     /** Returns whether the current process should generate a new session or not. */
     fun shouldProcessGenerateNewSession(processDetails: ProcessDetails): Boolean =
-      processDetails.isDefaultProcess && processDetails.isForegroundProcess
+      (processDetails.processName == processDetails.defaultProcessName) &&
+        processDetails.isForegroundProcess
   }
 }
