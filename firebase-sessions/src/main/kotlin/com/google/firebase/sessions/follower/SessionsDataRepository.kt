@@ -57,4 +57,4 @@ internal class SessionsDataRepository(private val context: Context) {
 }
 
 private val Context.dataStore: DataStore<Preferences> by
-  preferencesDataStore(name = "firebase_session_settings")
+  preferencesDataStore(name = "firebase_session_data_repository")
