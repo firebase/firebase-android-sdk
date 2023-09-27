@@ -51,23 +51,18 @@ import org.json.JSONObject;
 /** Encapsulates a single network request and response */
 @SuppressWarnings("unused")
 public abstract class NetworkRequest {
-  private static final String TAG = "NetworkRequest";
-
-  private static final String X_FIREBASE_GMPID = "x-firebase-gmpid";
-  private static final String X_FIREBASE_APPCHECK = "x-firebase-appcheck";
-
   public static final Uri PROD_BASE_URL = Uri.parse("https://firebasestorage.googleapis.com/v0");
-
   /* Do not change these values without changing corresponding logic on the SDK side*/
   public static final int INITIALIZATION_EXCEPTION = -1;
   public static final int NETWORK_UNAVAILABLE = -2;
-
   /*package*/ static final String GET = "GET";
   /*package*/ static final String DELETE = "DELETE";
   /*package*/ static final String POST = "POST";
   /*package*/ static final String PATCH = "PATCH";
   /*package*/ static final String PUT = "PUT";
-
+  private static final String TAG = "NetworkRequest";
+  private static final String X_FIREBASE_GMPID = "x-firebase-gmpid";
+  private static final String X_FIREBASE_APPCHECK = "x-firebase-appcheck";
   private static final int MAXIMUM_TOKEN_WAIT_TIME_MS = 30000;
   private static final String CONTENT_TYPE = "Content-Type";
   private static final String APPLICATION_JSON = "application/json";
@@ -340,7 +335,6 @@ public abstract class NetworkRequest {
     }
 
     String userAgent = "Android/" + BuildConfig.VERSION_NAME;
-
     conn.setRequestProperty("X-Firebase-Storage-Version", userAgent);
 
     Map<String, String> requestProperties = requestHeaders;
