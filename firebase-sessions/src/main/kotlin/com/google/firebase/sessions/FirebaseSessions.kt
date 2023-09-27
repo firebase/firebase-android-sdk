@@ -41,9 +41,8 @@ internal constructor(
   backgroundDispatcher: CoroutineDispatcher,
   blockingDispatcher: CoroutineDispatcher,
   transportFactoryProvider: Provider<TransportFactory>,
-  processDetails: ProcessDetails = AndroidProcessDetails(firebaseApp.applicationContext)
 ) {
-
+  private val processDetails: ProcessDetails = AndroidProcessDetails(firebaseApp.applicationContext)
   private val sessionMaintainer: SessionMaintainer
   private val tag = "FirebaseSessions"
   private val sessionsDataRepository: SessionsDataRepository
