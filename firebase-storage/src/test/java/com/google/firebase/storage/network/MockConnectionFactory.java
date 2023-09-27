@@ -19,8 +19,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.util.Base64;
+
 import androidx.annotation.NonNull;
+
+import com.google.firebase.BuildConfig;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
+
+import org.junit.Assert;
+import org.junit.ComparisonFailure;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.mockito.exceptions.base.MockitoAssertionError;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -36,18 +46,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Semaphore;
-import org.junit.Assert;
-import org.junit.ComparisonFailure;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-import org.mockito.exceptions.base.MockitoAssertionError;
 
 public class MockConnectionFactory implements HttpURLConnectionFactory {
   private final boolean binaryBody;
-  private HttpURLConnection oldMock;
-  private List<String> verifications = new ArrayList<>();
   private final BufferedReader br;
   private final Semaphore pauseSemaphore = new Semaphore(0);
+  private HttpURLConnection oldMock;
+  private List<String> verifications = new ArrayList<>();
   private int lineCount = 0;
   private int pauseRecord = Integer.MAX_VALUE;
   private int currentRecord = 0;
@@ -69,17 +74,17 @@ public class MockConnectionFactory implements HttpURLConnectionFactory {
     }
   }
 
+  private static InputStream getResFile(String fileName) {
+    ClassLoader classLoader = MockConnectionFactory.class.getClassLoader();
+    return classLoader.getResourceAsStream("activitylogs/" + fileName);
+  }
+
   public void setPauseRecord(int pauseRecord) {
     this.pauseRecord = pauseRecord;
   }
 
   public Semaphore getSemaphore() {
     return pauseSemaphore;
-  }
-
-  private static InputStream getResFile(String fileName) {
-    ClassLoader classLoader = MockConnectionFactory.class.getClassLoader();
-    return classLoader.getResourceAsStream("activitylogs/" + fileName);
   }
 
   @Override
@@ -206,7 +211,11 @@ public class MockConnectionFactory implements HttpURLConnectionFactory {
             key = value.substring(0, comma);
             value = value.substring(comma + 1);
             requestPropertyKeys.add(key);
-            requestPropertyValues.add(value);
+            if(key.equals("X-Firebase-Storage-Version")) {
+              requestPropertyValues.add("Android/" + BuildConfig.VERSION_NAME);
+            } else {
+              requestPropertyValues.add(value);
+            }
           }
         } else if (key.equalsIgnoreCase("setDoOutput")) {
           verify(oldMock).setDoOutput("true".equals(value));

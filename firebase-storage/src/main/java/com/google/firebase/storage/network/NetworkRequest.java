@@ -19,9 +19,11 @@ import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
@@ -31,6 +33,10 @@ import com.google.firebase.storage.StorageException;
 import com.google.firebase.storage.internal.StorageReferenceUri;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactoryImpl;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -43,8 +49,6 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 /** Encapsulates a single network request and response */
 @SuppressWarnings("unused")
