@@ -66,7 +66,7 @@ fun Firebase.firestore(app: FirebaseApp): FirebaseFirestore = FirebaseFirestore.
 
 /** Returns the [FirebaseFirestore] instance of a given [FirebaseApp] and database name. */
 @Deprecated(
-  "Use `com.google.firebase.Firebase.firestore(app, database)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use <code>com.google.firebase.Firebase.firestore(app, database)</code> from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "com.google.firebase.Firebase.firestore(app, database)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.firestore"]
