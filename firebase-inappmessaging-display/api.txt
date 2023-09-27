@@ -13,5 +13,17 @@ package com.google.firebase.inappmessaging.display {
     method public void onActivityStopped(android.app.Activity);
   }
 
+  public final class InAppMessagingDisplayKt {
+    method @NonNull public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay getInAppMessagingDisplay(@NonNull com.google.firebase.Firebase);
+  }
+
+}
+
+package com.google.firebase.inappmessaging.display.ktx {
+
+  public final class InAppMessagingDisplayKt {
+    method @Deprecated @NonNull public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay getInAppMessagingDisplay(@NonNull com.google.firebase.ktx.Firebase);
+  }
+
 }
 
