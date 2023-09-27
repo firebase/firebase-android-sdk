@@ -19,11 +19,9 @@ import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-
 import com.google.android.gms.common.internal.Preconditions;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.firebase.FirebaseApp;
@@ -33,10 +31,6 @@ import com.google.firebase.storage.StorageException;
 import com.google.firebase.storage.internal.StorageReferenceUri;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactoryImpl;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -49,6 +43,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /** Encapsulates a single network request and response */
 @SuppressWarnings("unused")
@@ -73,7 +69,7 @@ public abstract class NetworkRequest {
 
   // For test purposes only.
   /*package*/ static HttpURLConnectionFactory connectionFactory =
-          new HttpURLConnectionFactoryImpl();
+      new HttpURLConnectionFactoryImpl();
   protected Exception mException;
 
   private StorageReferenceUri storageReferenceUri;
@@ -88,7 +84,7 @@ public abstract class NetworkRequest {
   private Map<String, String> requestHeaders = new HashMap<>();
 
   public NetworkRequest(
-          @NonNull StorageReferenceUri storageReferenceUri, @NonNull FirebaseApp app) {
+      @NonNull StorageReferenceUri storageReferenceUri, @NonNull FirebaseApp app) {
     Preconditions.checkNotNull(storageReferenceUri);
     Preconditions.checkNotNull(app);
     this.storageReferenceUri = storageReferenceUri;
@@ -101,7 +97,7 @@ public abstract class NetworkRequest {
   public static Uri getBaseUrl(@Nullable EmulatedServiceSettings emulatorSettings) {
     if (emulatorSettings != null) {
       return Uri.parse(
-              "http://" + emulatorSettings.getHost() + ":" + emulatorSettings.getPort() + "/v0");
+          "http://" + emulatorSettings.getHost() + ":" + emulatorSettings.getPort() + "/v0");
     } else {
       return PROD_BASE_URL;
     }
@@ -231,7 +227,7 @@ public abstract class NetworkRequest {
       Log.d(TAG, "sending network request " + getAction() + " " + getURL());
     }
     ConnectivityManager connMgr =
-            (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
     android.net.NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
     if (networkInfo == null || !networkInfo.isConnected()) {
       resultCode = NETWORK_UNAVAILABLE;
@@ -277,9 +273,9 @@ public abstract class NetworkRequest {
   }
 
   public void performRequest(
-          @Nullable String authToken,
-          @Nullable String appCheckToken,
-          @NonNull Context applicationContext) {
+      @Nullable String authToken,
+      @Nullable String appCheckToken,
+      @NonNull Context applicationContext) {
     if (!ensureNetworkAvailable(applicationContext)) {
       return;
     }
@@ -289,7 +285,7 @@ public abstract class NetworkRequest {
   @SuppressWarnings("deprecation")
   private boolean ensureNetworkAvailable(Context context) {
     ConnectivityManager connMgr =
-            (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
     android.net.NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
     if (networkInfo == null || !networkInfo.isConnected()) {
       mException = new SocketException("Network subsystem is unavailable");
@@ -320,8 +316,8 @@ public abstract class NetworkRequest {
 
   @SuppressWarnings("TryFinallyCanBeTryWithResources")
   private void constructMessage(
-          @NonNull HttpURLConnection conn, @Nullable String authToken, @Nullable String appCheckToken)
-          throws IOException {
+      @NonNull HttpURLConnection conn, @Nullable String authToken, @Nullable String appCheckToken)
+      throws IOException {
     Preconditions.checkNotNull(conn);
 
     if (!TextUtils.isEmpty(authToken)) {

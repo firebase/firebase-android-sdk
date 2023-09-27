@@ -19,18 +19,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.util.Base64;
-
 import androidx.annotation.NonNull;
-
 import com.google.firebase.BuildConfig;
 import com.google.firebase.storage.network.connection.HttpURLConnectionFactory;
-
-import org.junit.Assert;
-import org.junit.ComparisonFailure;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-import org.mockito.exceptions.base.MockitoAssertionError;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -46,6 +37,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Semaphore;
+import org.junit.Assert;
+import org.junit.ComparisonFailure;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.mockito.exceptions.base.MockitoAssertionError;
 
 public class MockConnectionFactory implements HttpURLConnectionFactory {
   private final boolean binaryBody;
@@ -211,7 +207,7 @@ public class MockConnectionFactory implements HttpURLConnectionFactory {
             key = value.substring(0, comma);
             value = value.substring(comma + 1);
             requestPropertyKeys.add(key);
-            if(key.equals("X-Firebase-Storage-Version")) {
+            if (key.equals("X-Firebase-Storage-Version")) {
               requestPropertyValues.add("Android/" + BuildConfig.VERSION_NAME);
             } else {
               requestPropertyValues.add(value);

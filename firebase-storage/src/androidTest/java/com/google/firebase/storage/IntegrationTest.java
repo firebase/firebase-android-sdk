@@ -18,26 +18,22 @@ import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 import static com.google.common.truth.Truth.assertThat;
 
 import android.net.Uri;
-
 import androidx.annotation.NonNull;
 import androidx.test.rule.GrantPermissionRule;
 import androidx.test.runner.AndroidJUnit4;
-
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.storage.StreamDownloadTask.TaskSnapshot;
-
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /** Integration tests for {@link FirebaseStorage}. */
 @RunWith(AndroidJUnit4.class)
@@ -46,15 +42,19 @@ public class IntegrationTest {
   private static final int LARGE_FILE_SIZE_BYTES = 10 * 1024;
   private final String randomPrefix = UUID.randomUUID().toString();
   private final String unicodePrefix = "prefix/\\%:😊 ";
+
   @Rule
   public GrantPermissionRule grantPermissionRule =
       GrantPermissionRule.grant(WRITE_EXTERNAL_STORAGE);
+
   private FirebaseStorage storageClient;
 
   @Before
   public void before() throws ExecutionException, InterruptedException {
     if (storageClient == null) {
-      FirebaseApp app = FirebaseApp.initializeApp(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().getContext());
+      FirebaseApp app =
+          FirebaseApp.initializeApp(
+              androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().getContext());
       storageClient = FirebaseStorage.getInstance(app);
 
       Tasks.await(getReference("metadata.dat").putBytes(new byte[0]));
@@ -65,17 +65,19 @@ public class IntegrationTest {
   }
 
   public File createFile(String fileName) {
-    return new File(androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().getContext().getFilesDir(), fileName);
+    return new File(
+        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation()
+            .getContext()
+            .getFilesDir(),
+        fileName);
   }
-
 
   @Test
   public void downloadFile() throws ExecutionException, InterruptedException, IOException {
     String fileName = "download.dat";
     File tempFile = createFile(fileName);
 
-    FileDownloadTask.TaskSnapshot fileTask =
-        Tasks.await(getReference(fileName).getFile(tempFile));
+    FileDownloadTask.TaskSnapshot fileTask = Tasks.await(getReference(fileName).getFile(tempFile));
 
     assertThat(tempFile.exists()).isTrue();
     assertThat(tempFile.length()).isEqualTo(LARGE_FILE_SIZE_BYTES);
