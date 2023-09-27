@@ -52,16 +52,15 @@ import kotlinx.coroutines.flow.map
 val Firebase.firestore: FirebaseFirestore
   get() = FirebaseFirestore.getInstance()
 
-/** @deprecated Use `com.google.firebase.Firebase.firestore` from the main module instead. The Kotlin
- * extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension
- * (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April
- * 2024, we'll no longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules),
- *
- * Returns the [FirebaseFirestore] instance of a given [FirebaseApp].
+/**Returns the [FirebaseFirestore] instance of a given [FirebaseApp].
+ * @deprecated **DeprecationNotice:** The Kotlin
+ *  extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension
+ *  (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April
+ *  2024, we'll no longer release KTX modules. For details, see the
+ *  [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules),
  */
 
-@Deprecated("", ReplaceWith(""))
+@Deprecated("Use `com.google.firebase.Firebase.firestore` from the main module instead.", ReplaceWith(""))
 fun Firebase.firestore(app: FirebaseApp): FirebaseFirestore = FirebaseFirestore.getInstance(app)
 
 /** Returns the [FirebaseFirestore] instance of a given [FirebaseApp] and database name. */
