@@ -24,7 +24,7 @@ import com.google.firebase.ktx.app
 
 /** Returns the [FirebaseAppCheck] instance of the default [FirebaseApp]. */
 @Deprecated(
-  "com.google.firebase.appcheckktx.Firebase.appCheck has been deprecated. Use `com.google.firebase.appcheckFirebase.appCheck` instead.",
+  "Use `com.google.firebase.appcheck.Firebase.appCheck` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-appcheck-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "com.google.firebase.Firebase.appCheck",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.appcheck.appCheck"]
@@ -35,7 +35,7 @@ val Firebase.appCheck: FirebaseAppCheck
 
 /** Returns the [FirebaseAppCheck] instance of a given [FirebaseApp]. */
 @Deprecated(
-  "com.google.firebase.appcheckktx.Firebase.appCheck(app) has been deprecated. Use `com.google.firebase.appcheckFirebase.appCheck(app)` instead.",
+  "Use `com.google.firebase.appcheck.Firebase.appCheck(app)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-appcheck-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "com.google.firebase.Firebase.appCheck(app)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.appcheck.appCheck"]
@@ -49,7 +49,7 @@ fun Firebase.appCheck(app: FirebaseApp) = FirebaseAppCheck.getInstance(app)
  * @return the token of the [AppCheckToken]
  */
 @Deprecated(
-  "com.google.firebase.appcheckktx.FirebaseAppCheckKtxRegistrar has been deprecated. Use `com.google.firebase.appcheckFirebaseAppCheckKtxRegistrar` instead.",
+  "Use `com.google.firebase.appcheck.AppCheckToken.component1` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-appcheck-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(expression = "component1()", imports = ["com.google.firebase.appcheck.component1"])
 )
 operator fun AppCheckToken.component1() = token
@@ -60,18 +60,18 @@ operator fun AppCheckToken.component1() = token
  * @return the expireTimeMillis of the [AppCheckToken]
  */
 @Deprecated(
-  "com.google.firebase.appcheckktx.FirebaseAppCheckKtxRegistrar has been deprecated. Use `com.google.firebase.appcheckFirebaseAppCheckKtxRegistrar` instead.",
-  ReplaceWith(expression = "component1()", imports = ["com.google.firebase.appcheck.component2"])
+  "Use `com.google.firebase.appcheck.AppCheckToken.component2` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-appcheck-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  ReplaceWith(expression = "component2()", imports = ["com.google.firebase.appcheck.component2"])
 )
 operator fun AppCheckToken.component2() = expireTimeMillis
 
 /** @suppress */
 @Deprecated(
-  "com.google.firebase.appcheckktx.FirebaseAppCheckKtxRegistrar has been deprecated. Use `com.google.firebase.appcheckFirebaseAppCheckKtxRegistrar` instead.",
+  "Use `com.google.firebase.appcheck.FirebaseAppCheckKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-appcheck-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "FirebaseAppCheckKtxRegistrar",
     imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.appcheckFirebaseAppCheckKtxRegistrar"]
+      ["com.google.firebase.Firebase", "com.google.firebase.appcheck.FirebaseAppCheckKtxRegistrar"]
   )
 )
 class FirebaseAppCheckKtxRegistrar : ComponentRegistrar {

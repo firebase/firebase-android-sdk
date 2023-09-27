@@ -99,8 +99,7 @@ fun Firebase.firestore(database: String): FirebaseFirestore =
   "Use `com.google.firebase.firestore.DocumentSnapshot.toObject` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "toObject<T>()",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObject"]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObject"]
   )
 )
 inline fun <reified T> DocumentSnapshot.toObject(): T? = toObject(T::class.java)
@@ -123,8 +122,7 @@ inline fun <reified T> DocumentSnapshot.toObject(): T? = toObject(T::class.java)
   "Use `com.google.firebase.firestore.DocumentSnapshot.toObject(serverTimestampBehavior).` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "toObject<T>(serverTimestampBehavior)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObject"]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObject"]
   )
 )
 inline fun <reified T> DocumentSnapshot.toObject(
@@ -143,8 +141,7 @@ inline fun <reified T> DocumentSnapshot.toObject(
   "Use `com.google.firebase.firestore.DocumentSnapshot.getField(field)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "getField<T>(field)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.firestore.getField"]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.getField"]
   )
 )
 inline fun <reified T> DocumentSnapshot.getField(field: String): T? = get(field, T::class.java)
@@ -166,8 +163,7 @@ inline fun <reified T> DocumentSnapshot.getField(field: String): T? = get(field,
   "Use `com.google.firebase.firestore.DocumentSnapshot.getField(field, serverTimestampBehavior) ` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "getField<T>(field, serverTimestampBehavior)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.firestore.getField"]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.getField"]
   )
 )
 inline fun <reified T> DocumentSnapshot.getField(
@@ -187,8 +183,7 @@ inline fun <reified T> DocumentSnapshot.getField(
   "Use `com.google.firebase.firestore.DocumentSnapshot.getField(fieldPath) ` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "getField<T>(fieldPath)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.firestore.getField"]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.getField"]
   )
 )
 inline fun <reified T> DocumentSnapshot.getField(fieldPath: FieldPath): T? =
@@ -211,8 +206,7 @@ inline fun <reified T> DocumentSnapshot.getField(fieldPath: FieldPath): T? =
   "Use `com.google.firebase.firestore.DocumentSnapshot.getField(fieldPath, serverTimestampBehavior) ` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "getField<T>(fieldPath, serverTimestampBehavior)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.firestore.getField"]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.getField"]
   )
 )
 inline fun <reified T> DocumentSnapshot.getField(
@@ -230,11 +224,7 @@ inline fun <reified T> DocumentSnapshot.getField(
   "Use `com.google.firebase.firestore.QueryDocumentSnapshot.toObject` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "toObject<T>()",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.firestore.toObject"
-      ]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObject"]
   )
 )
 inline fun <reified T : Any> QueryDocumentSnapshot.toObject(): T = toObject(T::class.java)
@@ -254,11 +244,7 @@ inline fun <reified T : Any> QueryDocumentSnapshot.toObject(): T = toObject(T::c
   "Use `com.google.firebase.firestore.QueryDocumentSnapshot.toObject(serverTimestampBehavior)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "toObject<T>(serverTimestampBehavior)",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.firestore.toObject"
-      ]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObject"]
   )
 )
 inline fun <reified T : Any> QueryDocumentSnapshot.toObject(
@@ -275,8 +261,7 @@ inline fun <reified T : Any> QueryDocumentSnapshot.toObject(
   "Use `com.google.firebase.firestore.QuerySnapshot.toObjects` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "toObjects<T>()",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObjects"]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObjects"]
   )
 )
 inline fun <reified T : Any> QuerySnapshot.toObjects(): List<T> = toObjects(T::class.java)
@@ -295,14 +280,12 @@ inline fun <reified T : Any> QuerySnapshot.toObjects(): List<T> = toObjects(T::c
   "Use `com.google.firebase.firestore.QuerySnapshot.toObjects(serverTimestampBehavior)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "toObjects<T>(serverTimestampBehavior)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObjects"]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObjects"]
   )
 )
 inline fun <reified T : Any> QuerySnapshot.toObjects(
   serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior
 ): List<T> = toObjects(T::class.java, serverTimestampBehavior)
-
 
 /** Returns a [FirebaseFirestoreSettings] instance initialized using the [init] function. */
 @Deprecated(
@@ -376,8 +359,7 @@ class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
   "com.google.firebase.firestore..DocumentReference.snapshots(metadataChanges) has been deprecated. Use `com.google.firebase.firestoreDocumentReference.snapshots(` instead.",
   ReplaceWith(
     expression = "snapshots(metadataChanges)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.firestore.snapshots"]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.snapshots"]
   )
 )
 fun DocumentReference.snapshots(
@@ -462,11 +444,7 @@ inline fun <reified T : Any> Query.dataObjects(
   "Use `com.google.firebase.firestore.DocumentReference.dataObjects(metadataChanges)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
   ReplaceWith(
     expression = "dataObjects<T>(metadataChanges)",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.firestore.dataObjects"
-      ]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.dataObjects"]
   )
 )
 inline fun <reified T : Any> DocumentReference.dataObjects(
