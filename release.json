@@ -3,16 +3,5 @@
     "libraries": [
         ":firebase-common",
         ":firebase-common:ktx",
-        ":firebase-crashlytics",
-        ":firebase-crashlytics-ndk",
-        ":firebase-crashlytics:ktx",
-        ":firebase-firestore",
-        ":firebase-firestore:ktx",
-        ":firebase-inappmessaging",
-        ":firebase-inappmessaging-display",
-        ":firebase-inappmessaging:ktx",
-        ":firebase-inappmessaging-display:ktx",
-        ":firebase-storage",
-        ":firebase-storage:ktx"
     ]
 }
