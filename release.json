@@ -3,6 +3,6 @@
     "libraries": [
         ":firebase-common",
         ":firebase-common:ktx",
-        ":firebase-components",
+        ":firebase-components"
     ]
 }
