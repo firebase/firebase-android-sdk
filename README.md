@@ -255,6 +255,11 @@ To run formatting on your entire project you can run
 ./gradlew :<firebase-project>:googleJavaFormat
 ```
 
+To auto-format, just run
+```bash
+./gradlew :<firebase-project>:gJf
+```
+
 #### Kotlin
 
 Kotlin code in this repo is formatted with the `ktfmt` tool. You can enable

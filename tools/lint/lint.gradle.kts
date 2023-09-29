@@ -17,14 +17,14 @@ plugins {
 }
 
 dependencies {
-  compileOnly(libs.kotlin.stdlib)
   compileOnly(libs.android.lint.api)
   compileOnly(libs.android.lint.checks)
+  compileOnly(libs.kotlin.stdlib)
 
-  testImplementation(libs.junit)
   testImplementation(libs.android.lint)
   testImplementation(libs.android.lint.tests)
   testImplementation(libs.android.lint.testutils)
+  testImplementation(libs.junit)
 }
 
 tasks.jar {
