@@ -17,7 +17,7 @@
         <service android:exported="false"
             android:name="com.google.firebase.components.ComponentDiscoveryService">
             <meta-data
-                android:name="com.google.firebase.components:com.google.firebase.ml.modeldownloader.ktx.FirebaseMlModelDownloaderKtxRegistrar"
+                android:name="com.google.firebase.components:com.google.firebase.ml.modeldownloader.ktx.FirebaseMlModeldownloaderLegacyRegistrar"
                 android:value="com.google.firebase.components.ComponentRegistrar" />
         </service>
     </application>

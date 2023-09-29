@@ -1,13 +1,7 @@
 // Signature format: 2.0
 package com.google.firebase.functions.ktx {
 
-  public final class FunctionsKt {
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctions functions(@NonNull com.google.firebase.ktx.Firebase, @NonNull String regionOrCustomDomain);
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctions functions(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctions functions(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app, @NonNull String regionOrCustomDomain);
-    method @NonNull public static com.google.firebase.functions.FirebaseFunctions getFunctions(@NonNull com.google.firebase.ktx.Firebase);
-    method @NonNull public static com.google.firebase.functions.HttpsCallableReference getHttpsCallable(@NonNull com.google.firebase.functions.FirebaseFunctions, @NonNull String name, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.functions.HttpsCallableOptions.Builder,kotlin.Unit> init);
-    method @NonNull public static com.google.firebase.functions.HttpsCallableReference getHttpsCallableFromUrl(@NonNull com.google.firebase.functions.FirebaseFunctions, @NonNull java.net.URL url, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.functions.HttpsCallableOptions.Builder,kotlin.Unit> init);
+  public final class LoggingKt {
   }
 
 }

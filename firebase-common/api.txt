@@ -1,6 +1,10 @@
 // Signature format: 2.0
 package com.google.firebase {
 
+  public final class Firebase {
+    field @NonNull public static final com.google.firebase.Firebase INSTANCE;
+  }
+
   public class FirebaseApp {
     method @NonNull public android.content.Context getApplicationContext();
     method @NonNull public static java.util.List<com.google.firebase.FirebaseApp> getApps(@NonNull android.content.Context);
@@ -13,6 +17,15 @@ package com.google.firebase {
     method @NonNull public static com.google.firebase.FirebaseApp initializeApp(@NonNull android.content.Context, @NonNull com.google.firebase.FirebaseOptions, @NonNull String);
     method public void setAutomaticResourceManagementEnabled(boolean);
     field @NonNull public static final String DEFAULT_APP_NAME = "[DEFAULT]";
+  }
+
+  public final class FirebaseKt {
+    method @NonNull public static com.google.firebase.FirebaseApp app(@NonNull com.google.firebase.Firebase, @NonNull String name);
+    method @NonNull public static com.google.firebase.FirebaseApp getApp(@NonNull com.google.firebase.Firebase);
+    method @NonNull public static com.google.firebase.FirebaseOptions getOptions(@NonNull com.google.firebase.Firebase);
+    method @Nullable public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.Firebase, @NonNull android.content.Context context);
+    method @NonNull public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.Firebase, @NonNull android.content.Context context, @NonNull com.google.firebase.FirebaseOptions options);
+    method @NonNull public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.Firebase, @NonNull android.content.Context context, @NonNull com.google.firebase.FirebaseOptions options, @NonNull String name);
   }
 
   public class FirebaseNetworkException extends com.google.firebase.FirebaseException {
@@ -43,6 +56,23 @@ package com.google.firebase {
 
   public class FirebaseTooManyRequestsException extends com.google.firebase.FirebaseException {
     ctor public FirebaseTooManyRequestsException(@NonNull String);
+  }
+
+}
+
+package com.google.firebase.ktx {
+
+  @Deprecated public final class Firebase {
+    field @Deprecated @NonNull public static final com.google.firebase.ktx.Firebase INSTANCE;
+  }
+
+  public final class FirebaseKt {
+    method @Deprecated @NonNull public static com.google.firebase.FirebaseApp app(@NonNull com.google.firebase.ktx.Firebase, @NonNull String name);
+    method @Deprecated @NonNull public static com.google.firebase.FirebaseApp getApp(@NonNull com.google.firebase.ktx.Firebase);
+    method @Deprecated @NonNull public static com.google.firebase.FirebaseOptions getOptions(@NonNull com.google.firebase.ktx.Firebase);
+    method @Deprecated @Nullable public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull android.content.Context context);
+    method @Deprecated @NonNull public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull android.content.Context context, @NonNull com.google.firebase.FirebaseOptions options);
+    method @Deprecated @NonNull public static com.google.firebase.FirebaseApp initialize(@NonNull com.google.firebase.ktx.Firebase, @NonNull android.content.Context context, @NonNull com.google.firebase.FirebaseOptions options, @NonNull String name);
   }
 
 }
