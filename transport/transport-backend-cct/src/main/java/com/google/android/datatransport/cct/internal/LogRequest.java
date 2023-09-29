@@ -48,6 +48,9 @@ public abstract class LogRequest {
   @Nullable
   public abstract QosTier getQosTier();
 
+  @Nullable
+  public abstract ComplianceData getComplianceData();
+
   @NonNull
   public static Builder builder() {
     return new AutoValue_LogRequest.Builder();
@@ -86,6 +89,9 @@ public abstract class LogRequest {
 
     @NonNull
     public abstract Builder setQosTier(@Nullable QosTier value);
+
+    @NonNull
+    public abstract Builder setComplianceData(@Nullable ComplianceData value);
 
     @NonNull
     public abstract LogRequest build();

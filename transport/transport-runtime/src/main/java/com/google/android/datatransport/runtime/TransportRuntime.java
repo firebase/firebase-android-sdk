@@ -161,6 +161,7 @@ public class TransportRuntime implements TransportInternal {
         .setTransportName(request.getTransportName())
         .setEncodedPayload(new EncodedPayload(request.getEncoding(), request.getPayload()))
         .setCode(request.getEvent().getCode())
+        .setProductId(request.getEvent().getProductId())
         .build();
   }
 }

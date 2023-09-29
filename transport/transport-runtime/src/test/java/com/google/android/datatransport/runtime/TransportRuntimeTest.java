@@ -55,6 +55,7 @@ import org.robolectric.RobolectricTestRunner;
 public class TransportRuntimeTest {
   private static final String TEST_KEY = "test";
   private static final String TEST_VALUE = "test-value";
+  private static int TEST_PRODUCT_ID = 98765;
   private static final Encoding PROTOBUF_ENCODING = Encoding.of("proto");
   private static final long EVENT_MILLIS = 3;
   private static final long UPTIME_MILLIS = 1;
@@ -96,7 +97,7 @@ public class TransportRuntimeTest {
     TransportFactory factory =
         new TransportFactoryImpl(
             Collections.singleton(PROTOBUF_ENCODING), transportContext, transportInternalMock);
-    Event<String> event = Event.ofTelemetry("TelemetryData");
+    Event<String> event = Event.ofTelemetry("TelemetryData", TEST_PRODUCT_ID);
     Transformer<String, byte[]> transformer = String::getBytes;
     Transport<String> transport = factory.getTransport(testTransport, String.class, transformer);
 
@@ -137,7 +138,7 @@ public class TransportRuntimeTest {
     TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
-    Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData");
+    Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData", TEST_PRODUCT_ID);
     EventInternal expectedEvent =
         EventInternal.builder()
             .setEventMillis(EVENT_MILLIS)
@@ -147,6 +148,7 @@ public class TransportRuntimeTest {
                 new EncodedPayload(
                     PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .setCode(12)
+            .setProductId(TEST_PRODUCT_ID)
             .build();
 
     StatefulTransportScheduleCallback callback = new StatefulTransportScheduleCallback();
@@ -183,7 +185,7 @@ public class TransportRuntimeTest {
     TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
-    Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData");
+    Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData", TEST_PRODUCT_ID);
 
     StatefulTransportScheduleCallback callback = new StatefulTransportScheduleCallback();
     transport.schedule(stringEvent, callback);
@@ -218,7 +220,7 @@ public class TransportRuntimeTest {
     TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
-    Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData");
+    Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData", TEST_PRODUCT_ID);
     EventInternal expectedEvent =
         EventInternal.builder()
             .setEventMillis(EVENT_MILLIS)
@@ -228,6 +230,7 @@ public class TransportRuntimeTest {
                 new EncodedPayload(
                     PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .setCode(12)
+            .setProductId(TEST_PRODUCT_ID)
             .build();
 
     StatefulTransportScheduleCallback callback = new StatefulTransportScheduleCallback();
@@ -261,7 +264,7 @@ public class TransportRuntimeTest {
     TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
-    Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData");
+    Event<String> stringEvent = Event.ofTelemetry(12, "TelemetryData", TEST_PRODUCT_ID);
 
     StatefulTransportScheduleCallback callback = new StatefulTransportScheduleCallback();
     transport.schedule(stringEvent, callback);
