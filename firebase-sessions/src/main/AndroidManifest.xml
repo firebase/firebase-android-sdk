@@ -18,7 +18,14 @@
   <!--<uses-sdk android:minSdkVersion="16"/>-->
 
   <application>
-    <service android:name="com.google.firebase.components.ComponentDiscoveryService"
+    <provider
+      android:name="com.google.firebase.sessions.provider.FirebaseSessionsProvider"
+      android:authorities="${applicationId}.firebasesessionsprovider"
+      android:directBootAware="true"
+      android:exported="false"
+      android:initOrder="100" />
+    <service
+      android:name="com.google.firebase.components.ComponentDiscoveryService"
       android:exported="false">
       <meta-data
         android:name="com.google.firebase.components:com.google.firebase.sessions.FirebaseSessionsRegistrar"
