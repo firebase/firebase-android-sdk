@@ -45,10 +45,10 @@ dependencies {
   implementation(libs.androidx.annotation)
   implementation(libs.errorprone.annotations)
 
-  testImplementation(libs.androidx.test.runner)
   testImplementation(libs.androidx.test.junit)
-  testImplementation(libs.robolectric)
+  testImplementation(libs.androidx.test.runner)
   testImplementation(libs.junit)
-  testImplementation(libs.truth)
   testImplementation(libs.mockito.core)
+  testImplementation(libs.robolectric)
+  testImplementation(libs.truth)
 }

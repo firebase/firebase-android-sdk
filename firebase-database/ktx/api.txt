@@ -1,60 +1,7 @@
 // Signature format: 2.0
 package com.google.firebase.database.ktx {
 
-  public abstract sealed class ChildEvent {
-  }
-
-  public static final class ChildEvent.Added extends com.google.firebase.database.ktx.ChildEvent {
-    ctor public ChildEvent.Added(@NonNull com.google.firebase.database.DataSnapshot snapshot, @Nullable String previousChildName);
-    method @NonNull public com.google.firebase.database.DataSnapshot component1();
-    method @Nullable public String component2();
-    method @NonNull public com.google.firebase.database.ktx.ChildEvent.Added copy(@NonNull com.google.firebase.database.DataSnapshot snapshot, @Nullable String previousChildName);
-    method @Nullable public String getPreviousChildName();
-    method @NonNull public com.google.firebase.database.DataSnapshot getSnapshot();
-    property @Nullable public final String previousChildName;
-    property @NonNull public final com.google.firebase.database.DataSnapshot snapshot;
-  }
-
-  public static final class ChildEvent.Changed extends com.google.firebase.database.ktx.ChildEvent {
-    ctor public ChildEvent.Changed(@NonNull com.google.firebase.database.DataSnapshot snapshot, @Nullable String previousChildName);
-    method @NonNull public com.google.firebase.database.DataSnapshot component1();
-    method @Nullable public String component2();
-    method @NonNull public com.google.firebase.database.ktx.ChildEvent.Changed copy(@NonNull com.google.firebase.database.DataSnapshot snapshot, @Nullable String previousChildName);
-    method @Nullable public String getPreviousChildName();
-    method @NonNull public com.google.firebase.database.DataSnapshot getSnapshot();
-    property @Nullable public final String previousChildName;
-    property @NonNull public final com.google.firebase.database.DataSnapshot snapshot;
-  }
-
-  public static final class ChildEvent.Moved extends com.google.firebase.database.ktx.ChildEvent {
-    ctor public ChildEvent.Moved(@NonNull com.google.firebase.database.DataSnapshot snapshot, @Nullable String previousChildName);
-    method @NonNull public com.google.firebase.database.DataSnapshot component1();
-    method @Nullable public String component2();
-    method @NonNull public com.google.firebase.database.ktx.ChildEvent.Moved copy(@NonNull com.google.firebase.database.DataSnapshot snapshot, @Nullable String previousChildName);
-    method @Nullable public String getPreviousChildName();
-    method @NonNull public com.google.firebase.database.DataSnapshot getSnapshot();
-    property @Nullable public final String previousChildName;
-    property @NonNull public final com.google.firebase.database.DataSnapshot snapshot;
-  }
-
-  public static final class ChildEvent.Removed extends com.google.firebase.database.ktx.ChildEvent {
-    ctor public ChildEvent.Removed(@NonNull com.google.firebase.database.DataSnapshot snapshot);
-    method @NonNull public com.google.firebase.database.DataSnapshot component1();
-    method @NonNull public com.google.firebase.database.ktx.ChildEvent.Removed copy(@NonNull com.google.firebase.database.DataSnapshot snapshot);
-    method @NonNull public com.google.firebase.database.DataSnapshot getSnapshot();
-    property @NonNull public final com.google.firebase.database.DataSnapshot snapshot;
-  }
-
-  public final class DatabaseKt {
-    method @NonNull public static com.google.firebase.database.FirebaseDatabase database(@NonNull com.google.firebase.ktx.Firebase, @NonNull String url);
-    method @NonNull public static com.google.firebase.database.FirebaseDatabase database(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
-    method @NonNull public static com.google.firebase.database.FirebaseDatabase database(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app, @NonNull String url);
-    method @NonNull public static kotlinx.coroutines.flow.Flow<com.google.firebase.database.ktx.ChildEvent> getChildEvents(@NonNull com.google.firebase.database.Query);
-    method @NonNull public static com.google.firebase.database.FirebaseDatabase getDatabase(@NonNull com.google.firebase.ktx.Firebase);
-    method @NonNull public static kotlinx.coroutines.flow.Flow<com.google.firebase.database.DataSnapshot> getSnapshots(@NonNull com.google.firebase.database.Query);
-    method public static inline <reified T> T getValue(@NonNull com.google.firebase.database.DataSnapshot);
-    method public static inline <reified T> T getValue(@NonNull com.google.firebase.database.MutableData);
-    method public static inline <reified T> kotlinx.coroutines.flow.Flow<? extends T> values(@NonNull com.google.firebase.database.Query);
+  public final class LoggingKt {
   }
 
 }

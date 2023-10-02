@@ -1,0 +1,38 @@
+name: Post release cleanup
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: 'Release name'
+        required: true
+        type: string
+
+jobs:
+  create-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3.5.3
+        with:
+          fetch-depth: 0
+
+      - name: Run post release cleanup task
+        run: |
+          ./gradlew postReleaseCleanup
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          base: 'master'
+          branch: 'releases/${{ inputs.name }}.mergeback'
+          add-paths: |
+            **/CHANGELOG.md
+            **/gradle.properties
+            **/*.gradle
+            **/*.gradle.kts
+          title: '${{ inputs.name}} mergeback'
+          body: |
+            Auto-generated PR for cleaning up release ${{ inputs.name}}
+            
+            NO_RELEASE_CHANGE
+          commit-message: 'Post release cleanup for ${{ inputs.name }}'
