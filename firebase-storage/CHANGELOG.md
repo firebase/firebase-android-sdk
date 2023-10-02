@@ -1,5 +1,16 @@
 # Unreleased
 * [fixed] Fixed an issue where the wrong SDK version was being reported to the backend.
+* [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-perf-ktx`
+  to `com.google.firebase:firebase-perf` under the `com.google.firebase.perf` package.
+  For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+
+* [deprecated] All the APIs from `com.google.firebase:firebase-perf-ktx` have been added to
+  `com.google.firebase:firebase-perf` under the `com.google.firebase.perf` package,
+  and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-perf-ktx` are
+  now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+
 
 # 20.2.1
 * [changed] Migrated `firebase-storage` SDK to use standard Firebase executors.
