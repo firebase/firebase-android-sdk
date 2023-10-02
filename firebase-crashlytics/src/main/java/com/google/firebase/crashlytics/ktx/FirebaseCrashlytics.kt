@@ -21,9 +21,16 @@ import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.ktx.Firebase
 
-/** Returns the [FirebaseCrashlytics] instance of the default [FirebaseApp]. */
+/**
+ * Returns the [FirebaseCrashlytics] instance of the default [FirebaseApp].
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll
+ * no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ */
 @Deprecated(
-  "Use `com.google.firebase.Firebase.crashlytics` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.Firebase.crashlytics` from the main module instead.",
   ReplaceWith(
     expression = "com.google.firebase.Firebase.crashlytics",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.crashlytics.crashlytics"]
@@ -32,9 +39,16 @@ import com.google.firebase.ktx.Firebase
 val Firebase.crashlytics: FirebaseCrashlytics
   get() = FirebaseCrashlytics.getInstance()
 
-/** Associates all key-value parameters with the reports */
+/**
+ * Associates all key-value parameters with the reports
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll
+ * no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ */
 @Deprecated(
-  "Use `com.google.firebase.crashlytics.FirebaseCrashlytics.setCustomKeys(init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.crashlytics.FirebaseCrashlytics.setCustomKeys(init)` from the main module instead.",
   ReplaceWith(
     expression = "FirebaseCrashlytics.setCustomKeys(init)",
     imports =
@@ -49,9 +63,16 @@ fun FirebaseCrashlytics.setCustomKeys(init: KeyValueBuilder.() -> Unit) {
   builder.init()
 }
 
-/** @suppress */
+/**
+ * @suppress
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll
+ * no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ */
 @Deprecated(
-  "Use `com.google.firebase.crashlytics.FirebaseCrashlyticsKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.crashlytics.FirebaseCrashlyticsKtxRegistrar` from the main module instead.",
   ReplaceWith(
     expression = "FirebaseCrashlyticsKtxRegistrar",
     imports =

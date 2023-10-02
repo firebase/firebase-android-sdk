@@ -20,9 +20,30 @@ import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.ktx.Firebase
 
-/** Returns the [FirebaseInstallations] instance of the default [FirebaseApp]. */
+/**
+ * Returns the [FirebaseInstallations] instance of the default [FirebaseApp].
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in Licensed under the Apache
+ * License, Version 2.0 (the "License"); // you may not use this file except in compliance with the
+ * License. // You may obtain a copy of the License at // //
+ * http://www.apache.org/licenses/LICENSE-2.0 // // Unless required by applicable law or agreed to
+ * in writing, software // distributed under the License is distributed on an "AS IS" BASIS, //
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. // See the License for
+ * the specific language governing permissions and // limitations under the License.
+ *
+ * package com.google.firebase.installations.ktx
+ *
+ * import com.google.firebase.FirebaseApp import com.google.firebase.components.Component import
+ * com.google.firebase.components.ComponentRegistrar import
+ * com.google.firebase.installations.FirebaseInstallations import com.google.firebase.ktx.Firebase
+ *
+ * /** Returns the [FirebaseInstallations] instance of the default [FirebaseApp]. */ @Deprecated(
+ * "com.google.firebase.installationsktx.Firebase.installations has been deprecated. Use ` are now
+ * deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ */
 @Deprecated(
-  "com.google.firebase.installationsktx.Firebase.installations has been deprecated. Use `com.google.firebase.installationsFirebase.installations` instead.",
+  "com.google.firebase.insta",
   ReplaceWith(
     expression = "com.google.firebase.Firebase.installations",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.installationsinstallations"]
@@ -31,9 +52,30 @@ import com.google.firebase.ktx.Firebase
 val Firebase.installations: FirebaseInstallations
   get() = FirebaseInstallations.getInstance()
 
-/** Returns the [FirebaseInstallations] instance of a given [FirebaseApp]. */
+/**
+ * Returns the [FirebaseInstallations] instance of a given [FirebaseApp].
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in Licensed under the Apache
+ * License, Version 2.0 (the "License"); // you may not use this file except in compliance with the
+ * License. // You may obtain a copy of the License at // //
+ * http://www.apache.org/licenses/LICENSE-2.0 // // Unless required by applicable law or agreed to
+ * in writing, software // distributed under the License is distributed on an "AS IS" BASIS, //
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. // See the License for
+ * the specific language governing permissions and // limitations under the License.
+ *
+ * package com.google.firebase.installations.ktx
+ *
+ * import com.google.firebase.FirebaseApp import com.google.firebase.components.Component import
+ * com.google.firebase.components.ComponentRegistrar import
+ * com.google.firebase.installations.FirebaseInstallations import com.google.firebase.ktx.Firebase
+ *
+ * /** Returns the [FirebaseInstallations] instance of the default [FirebaseApp]. */ @Deprecated(
+ * "com.google.firebase.installationsktx.Firebase.installations has been deprecated. Use ` are now
+ * deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ */
 @Deprecated(
-  "com.google.firebase.installations.Firebase.installations(app) has been deprecated. Use `com.google.firebase.installationsFirebase.installations(app)` instead.",
+  "com.google.firebase.insta",
   ReplaceWith(
     expression = "com.google.firebase.Firebase.installations(app)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.installations.installations"]
@@ -42,9 +84,30 @@ val Firebase.installations: FirebaseInstallations
 fun Firebase.installations(app: FirebaseApp): FirebaseInstallations =
   FirebaseInstallations.getInstance(app)
 
-/** @suppress */
+/**
+ * @suppress
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in Licensed under the Apache
+ * License, Version 2.0 (the "License"); // you may not use this file except in compliance with the
+ * License. // You may obtain a copy of the License at // //
+ * http://www.apache.org/licenses/LICENSE-2.0 // // Unless required by applicable law or agreed to
+ * in writing, software // distributed under the License is distributed on an "AS IS" BASIS, //
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. // See the License for
+ * the specific language governing permissions and // limitations under the License.
+ *
+ * package com.google.firebase.installations.ktx
+ *
+ * import com.google.firebase.FirebaseApp import com.google.firebase.components.Component import
+ * com.google.firebase.components.ComponentRegistrar import
+ * com.google.firebase.installations.FirebaseInstallations import com.google.firebase.ktx.Firebase
+ *
+ * /** Returns the [FirebaseInstallations] instance of the default [FirebaseApp]. */ @Deprecated(
+ * "com.google.firebase.installationsktx.Firebase.installations has been deprecated. Use ` are now
+ * deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ */
 @Deprecated(
-  "com.google.firebase.installations.FirebaseInstallationsKtxRegistrar has been deprecated. Use `com.google.firebase.installationsFirebaseInstallationsKtxRegistrar` instead.",
+  "com.google.firebase.insta",
   ReplaceWith(
     expression = "FirebaseInstallationsKtxRegistrar",
     imports =
