@@ -109,9 +109,9 @@ dependencies {
      }
     implementation('com.google.firebase:firebase-installations-interop:17.1.0')
     implementation('com.google.firebase:firebase-measurement-connector:19.0.0')
-    implementation(project(":firebase-common"))
-    implementation(project(":firebase-common:ktx"))
-    implementation(project(":firebase-components"))
+    implementation("com.google.firebase:firebase-common:20.4.0")
+    implementation("com.google.firebase:firebase-common-ktx:20.4.0")
+    implementation("com.google.firebase:firebase-components:17.1.3")
     implementation(project(":firebase-installations"))
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
     testAnnotationProcessor "com.google.auto.value:auto-value:1.6.3"

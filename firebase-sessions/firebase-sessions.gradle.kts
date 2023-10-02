@@ -48,10 +48,10 @@ android {
 }
 
 dependencies {
-  api(project(":firebase-common"))
-  api(project(":firebase-common:ktx"))
+  api("com.google.firebase:firebase-common:20.4.0")
+  api("com.google.firebase:firebase-common-ktx:20.4.0")
 
-  implementation(project(":firebase-components"))
+  implementation("com.google.firebase:firebase-components:17.1.3")
   implementation(project(":firebase-installations-interop")) {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
