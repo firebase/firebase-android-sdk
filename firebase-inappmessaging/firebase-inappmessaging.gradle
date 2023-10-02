@@ -112,7 +112,10 @@ dependencies {
     androidTestImplementation 'com.linkedin.dexmaker:dexmaker:2.28.1'
     androidTestImplementation 'junit:junit:4.12'
     androidTestImplementation 'org.awaitility:awaitility:3.1.0'
-    androidTestImplementation project(':integ-testing')
+    androidTestImplementation(project(":integ-testing")){
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
 
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.6'
@@ -159,7 +162,10 @@ dependencies {
     testImplementation ("org.robolectric:robolectric:$robolectricVersion") {
          exclude group: 'com.google.protobuf', module: 'protobuf-java'
      }
-    testImplementation project(":integ-testing")
+    testImplementation(project(":integ-testing")){
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
     vendor (libs.dagger.dagger) {
          exclude group: "javax.inject", module: "javax.inject"
      }

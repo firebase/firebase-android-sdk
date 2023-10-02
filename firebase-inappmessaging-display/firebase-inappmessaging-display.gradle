@@ -92,7 +92,10 @@ dependencies {
          exclude group: "com.google.firebase", module: "firebase-installations-interop"
          exclude group: "com.google.firebase", module: "firebase-installations"
      }
-    androidTestImplementation project(':integ-testing')
+    androidTestImplementation(project(":integ-testing")){
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
     annotationProcessor 'com.github.bumptech.glide:compiler:4.11.0'
     annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
     annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.6'

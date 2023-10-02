@@ -112,7 +112,10 @@ dependencies {
     testImplementation 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
     testImplementation 'org.mockito:mockito-core:3.3.3'
     testImplementation 'org.mockito:mockito-core:3.6.0'
-    testImplementation(project(":integ-testing"))
+    testImplementation(project(":integ-testing")) {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
     vendor (libs.dagger.dagger) {
          exclude group: "javax.inject", module: "javax.inject"
      }

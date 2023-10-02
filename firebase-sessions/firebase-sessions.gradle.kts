@@ -74,7 +74,10 @@ dependencies {
 
   kapt(project(":encoders:firebase-encoders-processor"))
 
-  testImplementation(project(":integ-testing"))
+  testImplementation(project(":integ-testing")) {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
   testImplementation(libs.androidx.test.junit)
   testImplementation(libs.androidx.test.runner)
   testImplementation(libs.junit)
