@@ -21,9 +21,16 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.RemoteMessage
 
-/** Returns the [FirebaseMessaging] instance of the default [FirebaseApp]. */
+/**
+ * Returns the [FirebaseMessaging] instance of the default [FirebaseApp].
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-messaging-ktx` are now deprecated. As early as April 2024, we'll no
+ * longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ */
 @Deprecated(
-  "Use `com.google.firebase.messaging` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-messaging-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.messaging` from the main module instead.",
   ReplaceWith(
     expression = "com.google.firebase.Firebase.messaging",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.messaging.messaging"]
@@ -32,9 +39,16 @@ import com.google.firebase.messaging.RemoteMessage
 val Firebase.messaging: FirebaseMessaging
   get() = FirebaseMessaging.getInstance()
 
-/** Returns a [RemoteMessage] instance initialized using the [init] function. */
+/**
+ * Returns a [RemoteMessage] instance initialized using the [init] function.
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-messaging-ktx` are now deprecated. As early as April 2024, we'll no
+ * longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ */
 @Deprecated(
-  "Use `com.google.firebase.messaging.remoteMessage(to, init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-messaging-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.messaging.remoteMessage(to, init)` from the main module instead.",
   ReplaceWith(
     expression = "remoteMessage(to, init)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.messaging.remoteMessage"]
@@ -49,9 +63,16 @@ inline fun remoteMessage(
   return builder.build()
 }
 
-/** @suppress */
+/**
+ * @suppress
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-messaging-ktx` are now deprecated. As early as April 2024, we'll no
+ * longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ */
 @Deprecated(
-  "Use `com.google.firebase.messaging.FirebaseMessagingKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-messaging-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
+  "Use `com.google.firebase.messaging.FirebaseMessagingKtxRegistrar` from the main module instead.",
   ReplaceWith(
     expression = "FirebaseMessagingKtxRegistrar",
     imports =
