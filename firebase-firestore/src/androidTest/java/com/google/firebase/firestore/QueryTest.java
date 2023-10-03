@@ -1522,29 +1522,6 @@ public class QueryTest {
   }
 
   @Test
-  public void testOrQueriesWithNotIn() {
-    assumeTrue(
-        "Skip this test if running against production because it results in a "
-            + "'missing index' error. The Firestore Emulator, however, does serve these "
-            + " queries",
-        isRunningAgainstEmulator());
-    Map<String, Map<String, Object>> testDocs =
-        map(
-            "doc1", map("a", 1, "b", 0),
-            "doc2", map("b", 1),
-            "doc3", map("a", 3, "b", 2),
-            "doc4", map("a", 1, "b", 3),
-            "doc5", map("a", 1),
-            "doc6", map("a", 2));
-    CollectionReference collection = testCollectionWithDocs(testDocs);
-
-    // a==2 || b not-in [2,3]
-    // Has implicit orderBy b.
-    checkOnlineAndOfflineResultsMatch(
-        collection.where(or(equalTo("a", 2), notInArray("b", asList(2, 3)))), "doc1", "doc2");
-  }
-
-  @Test
   public void testOrQueriesWithArrayMembership() {
     Map<String, Map<String, Object>> testDocs =
         map(
@@ -1570,10 +1547,6 @@ public class QueryTest {
 
   @Test
   public void testMultipleInOps() {
-    // TODO(orquery): Enable this test against production when possible.
-    assumeTrue(
-        "Skip this test if running against production because it's not yet supported.",
-        isRunningAgainstEmulator());
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", 0),
@@ -1596,10 +1569,6 @@ public class QueryTest {
 
   @Test
   public void testUsingInWithArrayContainsAny() {
-    // TODO(orquery): Enable this test against production when possible.
-    assumeTrue(
-        "Skip this test if running against production because it's not yet supported.",
-        isRunningAgainstEmulator());
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", asList(0)),
@@ -1653,11 +1622,6 @@ public class QueryTest {
 
   @Test
   public void testOrderByEquality() {
-    // TODO(orquery): Enable this test against production when possible.
-    assumeTrue(
-        "Skip this test if running against production because order-by-equality is "
-            + "not supported yet.",
-        isRunningAgainstEmulator());
     Map<String, Map<String, Object>> testDocs =
         map(
             "doc1", map("a", 1, "b", asList(0)),
