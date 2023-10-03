@@ -79,7 +79,10 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.truth)
 
-    androidTestImplementation(project(":integ-testing"))
+    androidTestImplementation(project(":integ-testing")) {
+        exclude("com.google.firebase","firebase-common")
+        exclude("com.google.firebase","firebase-common-ktx")
+    }
     androidTestImplementation(libs.androidx.test.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.junit)

@@ -20,20 +20,34 @@ import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.ktx.Firebase
 
-/** Returns the [FirebaseInstallations] instance of the default [FirebaseApp]. */
+/**
+ * Returns the [FirebaseInstallations] instance of the default [FirebaseApp].
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no
+ * longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ */
 @Deprecated(
-  "com.google.firebase.installationsktx.Firebase.installations has been deprecated. Use `com.google.firebase.installationsFirebase.installations` instead.",
+  "Use `com.google.firebase.Firebase.installations` from the main module instead.",
   ReplaceWith(
     expression = "com.google.firebase.Firebase.installations",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.installationsinstallations"]
+    imports = ["com.google.firebase.Firebase", "com.google.firebase.installations.installations"]
   )
 )
 val Firebase.installations: FirebaseInstallations
   get() = FirebaseInstallations.getInstance()
 
-/** Returns the [FirebaseInstallations] instance of a given [FirebaseApp]. */
+/**
+ * Returns the [FirebaseInstallations] instance of a given [FirebaseApp].
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no
+ * longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ */
 @Deprecated(
-  "com.google.firebase.installations.Firebase.installations(app) has been deprecated. Use `com.google.firebase.installationsFirebase.installations(app)` instead.",
+  "Use `com.google.firebase.Firebase.installations(app)` from the main module instead.",
   ReplaceWith(
     expression = "com.google.firebase.Firebase.installations(app)",
     imports = ["com.google.firebase.Firebase", "com.google.firebase.installations.installations"]
