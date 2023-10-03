@@ -127,11 +127,17 @@ jobs:
         uses: hashicorp/setup-terraform@v2
       - name: Terraform Init
         if: contains(matrix.module, ':firebase-firestore')
-        run: terraform init
+        run: |
+          pwd
+          cd firebase-firestore
+          terraform init
         continue-on-error: true
       - name: Terraform Apply
         if: github.event_name == 'pull_request' && contains(matrix.module, ':firebase-firestore')
-        run: terraform apply -var-file=google-services.json -auto-approve
+        run: |
+          pwd
+          cd firebase-firestore
+          terraform apply -var-file=../google-services.json -auto-approve
         continue-on-error: true
       - name: ${{ matrix.module }} Integ Tests
         env:

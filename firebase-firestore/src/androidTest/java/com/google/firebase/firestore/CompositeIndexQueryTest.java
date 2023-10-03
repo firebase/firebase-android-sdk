@@ -59,37 +59,25 @@ public class CompositeIndexQueryTest {
             "doc5", map("a", 1, "b", 1));
     CollectionReference collection = testHelper.withTestDocs(testDocs);
 
+    Query query = collection.where(or(greaterThan("a", 2), equalTo("b", 1)));
     // with one inequality: a>2 || b==1.
-    testHelper.assertOnlineAndOfflineResultsMatch(
-        testHelper.query(collection.where(or(greaterThan("a", 2), equalTo("b", 1)))),
-        "doc5",
-        "doc2",
-        "doc3");
+    testHelper.assertOnlineAndOfflineResultsMatch(testHelper.query(query), "doc5", "doc2", "doc3");
 
     // Test with limits (implicit order by ASC): (a==1) || (b > 0) LIMIT 2
-    testHelper.assertOnlineAndOfflineResultsMatch(
-        testHelper.query(collection.where(or(equalTo("a", 1), greaterThan("b", 0))).limit(2)),
-        "doc1",
-        "doc2");
+    query = collection.where(or(equalTo("a", 1), greaterThan("b", 0))).limit(2);
+    testHelper.assertOnlineAndOfflineResultsMatch(testHelper.query(query), "doc1", "doc2");
 
     // Test with limits (explicit order by): (a==1) || (b > 0) LIMIT_TO_LAST 2
     // Note: The public query API does not allow implicit ordering when limitToLast is used.
-    testHelper.assertOnlineAndOfflineResultsMatch(
-        testHelper.query(
-            collection.where(or(equalTo("a", 1), greaterThan("b", 0))).limitToLast(2).orderBy("b")),
-        "doc3",
-        "doc4");
+    query = collection.where(or(equalTo("a", 1), greaterThan("b", 0))).limitToLast(2).orderBy("b");
+    testHelper.assertOnlineAndOfflineResultsMatch(testHelper.query(query), "doc3", "doc4");
 
     // Test with limits (explicit order by ASC): (a==2) || (b == 1) ORDER BY a LIMIT 1
-    testHelper.assertOnlineAndOfflineResultsMatch(
-        testHelper.query(
-            collection.where(or(equalTo("a", 2), equalTo("b", 1))).limit(1).orderBy("a")),
-        "doc5");
+    query = collection.where(or(equalTo("a", 2), equalTo("b", 1))).limit(1).orderBy("a");
+    testHelper.assertOnlineAndOfflineResultsMatch(testHelper.query(query), "doc5");
 
     // Test with limits (explicit order by DESC): (a==2) || (b == 1) ORDER BY a LIMIT_TO_LAST 1
-    testHelper.assertOnlineAndOfflineResultsMatch(
-        testHelper.query(
-            collection.where(or(equalTo("a", 2), equalTo("b", 1))).limitToLast(1).orderBy("a")),
-        "doc2");
+    query = collection.where(or(equalTo("a", 2), equalTo("b", 1))).limitToLast(1).orderBy("a");
+    testHelper.assertOnlineAndOfflineResultsMatch(testHelper.query(query), "doc2");
   }
 }

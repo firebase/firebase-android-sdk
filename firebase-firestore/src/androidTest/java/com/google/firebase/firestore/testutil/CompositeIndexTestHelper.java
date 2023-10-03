@@ -16,6 +16,7 @@ package com.google.firebase.firestore.testutil;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.checkOnlineAndOfflineResultsMatch;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.writeAllDocs;
 import static com.google.firebase.firestore.util.Util.autoId;
 
@@ -24,21 +25,31 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QuerySnapshot;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
  * This helper class is designed to facilitate integration testing of Firestore queries that require
  * composite indexes within a controlled testing environment.
  *
- * <p>Key Features: - Runs tests against the dedicated test collection with predefined composite
- * indexes. - Automatically associates a test ID with documents for data isolation. - Utilizes TTL
- * policy for automatic test data cleanup. - Constructs Firestore queries with test ID filters.
+ * <p>Key Features:
+ *
+ * <ul>
+ *   <li>Runs tests against the dedicated test collection with predefined composite indexes.
+ *   <li>Automatically associates a test ID with documents for data isolation.
+ *   <li>Utilizes TTL policy for automatic test data cleanup.
+ *   <li>Constructs Firestore queries with test ID filters.
+ * </ul>
  */
 public class CompositeIndexTestHelper {
   private final String testId;
   private static final String TEST_ID_FIELD = "testId";
+  private static final String TTL_FIELD = "expireAt";
   private static final String COMPOSITE_INDEX_TEST_COLLECTION = "composite-index-test-collection";
 
   // Creates a new instance of the CompositeIndexTestHelper class, with a unique test
@@ -54,12 +65,6 @@ public class CompositeIndexTestHelper {
     writeAllDocs(writer, prepareTestDocuments(docs));
     CollectionReference reader = testFirestore().collection(writer.getPath());
     return reader;
-  }
-
-  // Adds a filter on test id for a query.
-  @NonNull
-  public Query query(@NonNull Query query_) {
-    return query_.whereEqualTo(TEST_ID_FIELD, testId);
   }
 
   // Hash the document key with testId.
@@ -80,10 +85,17 @@ public class CompositeIndexTestHelper {
     Map<String, Object> updatedDoc = new HashMap<>(doc);
     updatedDoc.put(TEST_ID_FIELD, testId);
     updatedDoc.put(
-        "expireAt",
+        TTL_FIELD,
         new Timestamp( // Expire test data after 24 hours
             Timestamp.now().getSeconds() + 24 * 60 * 60, Timestamp.now().getNanoseconds()));
     return updatedDoc;
+  }
+
+  // Remove test-specific fields from a document.
+  private Map<String, Object> removeTestSpecificFieldsFromDoc(Map<String, Object> doc) {
+    doc.remove(TTL_FIELD);
+    doc.remove(TEST_ID_FIELD);
+    return doc;
   }
 
   // Helper method to hash document keys and add test-specific fields for the provided documents.
@@ -106,6 +118,22 @@ public class CompositeIndexTestHelper {
     checkOnlineAndOfflineResultsMatch(query, toHashedIds(expectedDocs));
   }
 
+  // Adds a filter on test id for a query.
+  @NonNull
+  public Query query(@NonNull Query query_) {
+    return query_.whereEqualTo(TEST_ID_FIELD, testId);
+  }
+
+  // Get document reference from a document key.
+  @NonNull
+  public DocumentReference getDocRef(
+      @NonNull CollectionReference collection, @NonNull String docId) {
+    if (!docId.contains("test-id-")) {
+      docId = toHashedId(docId);
+    }
+    return collection.document(docId);
+  }
+
   // Adds a document to a Firestore collection with test-specific fields.
   @NonNull
   public Task<DocumentReference> addDoc(
@@ -117,5 +145,34 @@ public class CompositeIndexTestHelper {
   @NonNull
   public Task<Void> setDoc(@NonNull DocumentReference document, @NonNull Map<String, Object> data) {
     return document.set(addTestSpecificFieldsToDoc(data));
+  }
+
+  @NonNull
+  public Task<Void> updateDoc(
+      @NonNull DocumentReference document, @NonNull Map<String, Object> data) {
+    return document.update(data);
+  }
+
+  @NonNull
+  public Task<Void> deleteDoc(@NonNull DocumentReference document) {
+    return document.delete();
+  }
+
+  // Retrieves a single document from Firestore with test-specific fields removed.
+  @NonNull
+  public Map<String, Object> getDoc(@NonNull DocumentReference document) {
+    DocumentSnapshot docSnapshot = waitFor(document.get());
+    return removeTestSpecificFieldsFromDoc(docSnapshot.getData());
+  }
+
+  // Retrieves multiple documents from Firestore with test-specific fields removed.
+  @NonNull
+  public List<Map<String, Object>> getDocs(@NonNull Query query_) {
+    QuerySnapshot querySnapshot = waitFor(query(query_).get());
+    List<Map<String, Object>> res = new ArrayList<>();
+    for (DocumentSnapshot doc : querySnapshot) {
+      res.add(removeTestSpecificFieldsFromDoc(doc.getData()));
+    }
+    return res;
   }
 }
