@@ -14,63 +14,40 @@
  * limitations under the License.
  */
 
-package com.google.firebase.sessions
+package com.google.firebase.sessions.provider
 
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
-import com.google.firebase.FirebaseApp
-import com.google.firebase.FirebaseOptions
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.ktx.initialize
-import com.google.firebase.sessions.provider.FirebaseSessionsProvider
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Instrumented test, which will execute on an Android device.
- *
- * See [testing documentation](http://d.android.com/tools/testing).
- */
 @RunWith(AndroidJUnit4::class)
-class FirebaseSessionsTests {
+class FirebaseSessionsProviderTest {
   @Before
   fun setUp() {
-    Firebase.initialize(
-      ApplicationProvider.getApplicationContext(),
-      FirebaseOptions.Builder()
-        .setApplicationId(APP_ID)
-        .setApiKey(API_KEY)
-        .setProjectId(PROJECT_ID)
-        .build()
-    )
+    FirebaseSessionsProvider.reset()
   }
 
   @After
   fun cleanUp() {
-    FirebaseApp.clearInstancesForTest()
+    FirebaseSessionsProvider.reset()
   }
 
   @Test
-  fun firebaseSessionsDoesInitialize() {
-    assertThat(FirebaseSessions.instance).isNotNull()
-  }
+  fun isColdStart() {
+    // It is not a cold start when the provider has not been created yet.
+    assertThat(FirebaseSessionsProvider.isColdStart()).isFalse()
 
-  @Test
-  fun firebaseSessionsProvider_isColdStarts_returnsTrueExactlyOnce() {
+    // Create the provider, this happens in an app exactly once regardless of multiple processes.
+    FirebaseSessionsProvider().onCreate()
+
     // The first time we check, it's a cold start.
     assertThat(FirebaseSessionsProvider.isColdStart()).isTrue()
 
     // Every check after, it's not a cold start.
     assertThat(FirebaseSessionsProvider.isColdStart()).isFalse()
     assertThat(FirebaseSessionsProvider.isColdStart()).isFalse()
-  }
-
-  companion object {
-    private const val APP_ID = "1:1:android:1a"
-    private const val API_KEY = "API-KEY-API-KEY-API-KEY-API-KEY-API-KEY"
-    private const val PROJECT_ID = "PROJECT-ID"
   }
 }
