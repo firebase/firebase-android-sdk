@@ -20,6 +20,7 @@ import android.content.ContentProvider
 import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
+import androidx.annotation.VisibleForTesting
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -54,9 +55,15 @@ internal class FirebaseSessionsProvider : ContentProvider() {
   ): Int = 0
 
   internal companion object {
-    private lateinit var coldStart: AtomicBoolean
+    private var coldStart: AtomicBoolean? = null
 
     /** Returns true exactly once per app instance, false otherwise. */
-    fun isColdStart(): Boolean = ::coldStart.isInitialized && coldStart.getAndSet(false)
+    fun isColdStart(): Boolean = coldStart?.getAndSet(false) ?: false
+
+    /** Reset the cold start state for testing purposes. */
+    @VisibleForTesting
+    fun reset() {
+      coldStart = null
+    }
   }
 }
