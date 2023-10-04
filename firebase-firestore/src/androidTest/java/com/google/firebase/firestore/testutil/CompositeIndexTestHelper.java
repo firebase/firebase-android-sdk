@@ -158,16 +158,18 @@ public class CompositeIndexTestHelper {
     return document.delete();
   }
 
-  // Retrieves a single document from Firestore with test-specific fields removed.
+  // Retrieve a single document from Firestore with test-specific fields removed.
+  // TODO(composite-index-testing) Return sanitized DocumentSnapshot instead of its data.
   @NonNull
-  public Map<String, Object> getDoc(@NonNull DocumentReference document) {
+  public Map<String, Object> getSanitizedDocumentData(@NonNull DocumentReference document) {
     DocumentSnapshot docSnapshot = waitFor(document.get());
     return removeTestSpecificFieldsFromDoc(docSnapshot.getData());
   }
 
-  // Retrieves multiple documents from Firestore with test-specific fields removed.
+  // Retrieve multiple documents from Firestore with test-specific fields removed.
+  // TODO(composite-index-testing) Return sanitized QuerySnapshot instead of its data.
   @NonNull
-  public List<Map<String, Object>> getDocs(@NonNull Query query_) {
+  public List<Map<String, Object>> getSanitizedQueryData(@NonNull Query query_) {
     QuerySnapshot querySnapshot = waitFor(query(query_).get());
     List<Map<String, Object>> res = new ArrayList<>();
     for (DocumentSnapshot doc : querySnapshot) {
