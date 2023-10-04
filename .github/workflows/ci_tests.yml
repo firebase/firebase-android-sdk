@@ -128,14 +128,12 @@ jobs:
       - name: Terraform Init
         if: contains(matrix.module, ':firebase-firestore')
         run: |
-          pwd
           cd firebase-firestore
           terraform init
         continue-on-error: true
       - name: Terraform Apply
         if: github.event_name == 'pull_request' && contains(matrix.module, ':firebase-firestore')
         run: |
-          pwd
           cd firebase-firestore
           terraform apply -var-file=../google-services.json -auto-approve
         continue-on-error: true
