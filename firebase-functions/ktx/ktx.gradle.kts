@@ -14,12 +14,12 @@
 
 plugins {
   id("firebase-library")
-  id("kotlin-android")
+    id("kotlin-android")
 }
 
 firebaseLibrary {
   libraryGroup("functions")
-  publishJavadoc = true
+  publishJavadoc = false
   publishSources = true
   testLab.enabled = true
 }
@@ -44,20 +44,18 @@ android {
 }
 
 dependencies {
-  implementation("com.google.firebase:firebase-common:20.3.1")
-  implementation("com.google.firebase:firebase-components:17.1.0")
-  implementation("com.google.firebase:firebase-common-ktx:20.3.1")
-  implementation(project(":firebase-functions"))
-  implementation(libs.kotlin.stdlib)
-  implementation(libs.androidx.annotation)
-  implementation(libs.playservices.tasks)
+    api("com.google.firebase:firebase-common:20.4.0")
+    api("com.google.firebase:firebase-common-ktx:20.4.0")
+    api(project(":firebase-functions"))
 
-  androidTestImplementation(libs.junit)
-  androidTestImplementation(libs.truth)
-  androidTestImplementation(libs.androidx.test.runner)
+    implementation("com.google.firebase:firebase-components:17.1.3")
 
-  testImplementation(libs.robolectric)
-  testImplementation(libs.junit)
-  testImplementation(libs.truth)
-  testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.truth)
+
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.junit)
+    androidTestImplementation(libs.truth)
 }
