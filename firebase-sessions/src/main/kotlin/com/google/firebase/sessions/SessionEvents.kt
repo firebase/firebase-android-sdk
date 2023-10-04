@@ -57,7 +57,9 @@ internal object SessionEvents {
             sessionSamplingRate = sessionsSettings.samplingRate,
           ),
         ),
-      applicationInfo = getApplicationInfo(firebaseApp)
+      applicationInfo = getApplicationInfo(firebaseApp),
+      currentProcess = ProcessDetails.currentProcess(firebaseApp),
+      allRunningAppProcesses = ProcessDetails.allRunningAppProcesses(firebaseApp)
     )
 
   fun getApplicationInfo(firebaseApp: FirebaseApp): ApplicationInfo {

@@ -35,6 +35,12 @@ internal data class SessionEvent(
 
   /** Information about the application that is generating the session events. */
   val applicationInfo: ApplicationInfo,
+
+  /** Information about the current running process. */
+  val currentProcess: ProcessDetails,
+
+  /** Information about all of the running app processes. */
+  val allRunningAppProcesses: List<ProcessDetails>,
 )
 
 /** Enum denoting all possible session event types. */

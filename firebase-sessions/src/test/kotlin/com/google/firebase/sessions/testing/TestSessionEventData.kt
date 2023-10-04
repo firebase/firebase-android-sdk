@@ -26,6 +26,7 @@ import com.google.firebase.sessions.DataCollectionState
 import com.google.firebase.sessions.DataCollectionStatus
 import com.google.firebase.sessions.EventType
 import com.google.firebase.sessions.LogEnvironment
+import com.google.firebase.sessions.ProcessDetails
 import com.google.firebase.sessions.SessionDetails
 import com.google.firebase.sessions.SessionEvent
 import com.google.firebase.sessions.SessionInfo
@@ -73,10 +74,20 @@ internal object TestSessionEventData {
       ),
     )
 
+  val TEST_PROCESS_DETAILS =
+    ProcessDetails(
+      pid = 0,
+      processName = "com.google.firebase.sessions.test",
+      importance = 100,
+      isDefaultProcess = false,
+    )
+
   val TEST_SESSION_EVENT =
     SessionEvent(
       eventType = EventType.SESSION_START,
       sessionData = TEST_SESSION_DATA,
-      applicationInfo = TEST_APPLICATION_INFO
+      applicationInfo = TEST_APPLICATION_INFO,
+      currentProcess = TEST_PROCESS_DETAILS,
+      allRunningAppProcesses = listOf(TEST_PROCESS_DETAILS),
     )
 }

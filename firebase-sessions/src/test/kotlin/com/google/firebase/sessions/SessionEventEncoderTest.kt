@@ -36,7 +36,6 @@ import org.junit.runner.RunWith
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class SessionEventEncoderTest {
-
   @After
   fun cleanUp() {
     FirebaseApp.clearInstancesForTest()
@@ -95,7 +94,21 @@ class SessionEventEncoderTest {
                 "appBuildVersion":"0",
                 "deviceManufacturer":"${Build.MANUFACTURER}"
               }
-            }
+            },
+            "currentProcess":{
+              "pid":0,
+              "processName":"com.google.firebase.sessions.test",
+              "importance":100,
+              "defaultProcess":false
+            },
+            "allRunningAppProcesses":[
+              {
+                "pid":0,
+                "processName":"com.google.firebase.sessions.test",
+                "importance":100,
+                "defaultProcess":false
+              }
+            ]
           }
         """
           .lines()
@@ -128,7 +141,15 @@ class SessionEventEncoderTest {
               appBuildVersion = "",
               deviceManufacturer = "",
             ),
-          )
+          ),
+        currentProcess =
+          ProcessDetails(
+            pid = 0,
+            processName = "",
+            importance = 0,
+            isDefaultProcess = false,
+          ),
+        allRunningAppProcesses = listOf()
       )
 
     val json = SESSION_EVENT_ENCODER.encode(sessionEvent)
@@ -162,7 +183,14 @@ class SessionEventEncoderTest {
                 "appBuildVersion":"",
                 "deviceManufacturer":""
               }
-            }
+            },
+            "currentProcess":{
+              "pid":0,
+              "processName":"",
+              "importance":0,
+              "defaultProcess":false
+            },
+            "allRunningAppProcesses":[]
           }
         """
           .lines()
