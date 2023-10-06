@@ -32,7 +32,7 @@ class FirebaseDataConnectTest {
     val managedChannel =
       createManagedChannel(
         getApplicationContext(),
-        "10.0.2.2:3628",
+        "10.0.2.2:9510",
         GrpcConnectionEncryption.PLAINTEXT,
         logger
       )

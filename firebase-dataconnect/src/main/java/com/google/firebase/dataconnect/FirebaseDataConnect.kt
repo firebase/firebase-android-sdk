@@ -32,7 +32,7 @@ enum class GrpcConnectionEncryption {
  * therefore, specifying a transient context, such as an `Activity`, will _not_ result in that
  * context being leaked.
  * @param host The host name of the server to which to connect. (e.g. `"firestore.googleapis.com"`,
- * `"10.0.2.2:3628"`)
+ * `"10.0.2.2:9510"`)
  * @param encryption The encryption to use.
  * @param logger A logger to use.
  */
