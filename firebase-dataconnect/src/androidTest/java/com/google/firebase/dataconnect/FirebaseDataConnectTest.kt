@@ -22,7 +22,10 @@ import com.google.firebase.Firebase
 import com.google.firebase.app
 import com.google.firebase.initialize
 import com.google.firebase.options
+import com.google.protobuf.Struct
+import com.google.protobuf.Value
 import google.internal.firebase.firemat.v0.DataServiceGrpc
+import google.internal.firebase.firemat.v0.DataServiceOuterClass.ExecuteMutationRequest
 import google.internal.firebase.firemat.v0.DataServiceOuterClass.ExecuteQueryRequest
 import java.util.UUID
 import org.junit.Test
@@ -89,17 +92,52 @@ class FirebaseDataConnectTest {
     val projectId = "ZzyzxTestProject"
     val location = "ZzyzxTestLocation"
 
-    val request =
-      ExecuteQueryRequest.newBuilder().run {
-        name =
-          "projects/${projectId}/locations/${location}/services/s/operationSets/crud/revisions/r"
-        operationName = "listPosts"
-        build()
-      }
+    run {
+      val request =
+        ExecuteMutationRequest.newBuilder().run {
+          name =
+            "projects/${projectId}/locations/${location}/services/s/operationSets/crud/revisions/r"
+          operationName = "createPost"
+          variables =
+            Struct.newBuilder().run {
+              putFields(
+                "data",
+                Value.newBuilder().run {
+                  setStructValue(
+                    Struct.newBuilder().run {
+                      putFields(
+                        "content",
+                        Value.newBuilder().setStringValue("${System.currentTimeMillis()}").build()
+                      )
+                      build()
+                    }
+                  )
+                  build()
+                }
+              )
+              build()
+            }
+          build()
+        }
 
-    Log.w("zzyzx", "Sending request: ${request}")
-    val response = stub.executeQuery(request)
-    Log.w("zzyzx", "Got response: ${response}")
+      Log.w("zzyzx", "Sending mutation request: ${request}")
+      val response = stub.executeMutation(request)
+      Log.w("zzyzx", "Got mutation response: ${response}")
+    }
+
+    run {
+      val request =
+        ExecuteQueryRequest.newBuilder().run {
+          name =
+            "projects/${projectId}/locations/${location}/services/s/operationSets/crud/revisions/r"
+          operationName = "listPosts"
+          build()
+        }
+
+      Log.w("zzyzx", "Sending query request: ${request}")
+      val response = stub.executeQuery(request)
+      Log.w("zzyzx", "Got query response: ${response}")
+    }
   }
 }
 
