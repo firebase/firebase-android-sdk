@@ -17,14 +17,62 @@ package com.google.firebase.dataconnect
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.common.truth.Truth.assertThat
+import com.google.firebase.Firebase
+import com.google.firebase.app
+import com.google.firebase.initialize
+import com.google.firebase.options
 import google.internal.firebase.firemat.v0.DataServiceGrpc
 import google.internal.firebase.firemat.v0.DataServiceOuterClass.ExecuteQueryRequest
+import java.util.UUID
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
 
 @RunWith(AndroidJUnit4::class)
 class FirebaseDataConnectTest {
+
+  @Test
+  fun instance_should_return_a_non_null_instance() {
+    assertThat(FirebaseDataConnect.instance).isNotNull()
+  }
+
+  @Test
+  fun instance_should_always_return_the_same_instance() {
+    val instance1 = FirebaseDataConnect.instance
+    val instance2 = FirebaseDataConnect.instance
+    assertThat(instance1).isSameInstanceAs(instance2)
+  }
+
+  @Test
+  fun getInstance_with_default_app_should_return_same_instance_as_the_instance_getter() {
+    val instanceFromGetInstance = FirebaseDataConnect.getInstance(Firebase.app)
+    assertThat(instanceFromGetInstance).isSameInstanceAs(FirebaseDataConnect.instance)
+  }
+
+  @Test
+  fun getInstance_with_non_default_app_should_return_non_default_instance() {
+    val nonDefaultApp = createNonDefaultFirebaseApp()
+    val nonDefaultInstanceFromGetInstance = FirebaseDataConnect.getInstance(nonDefaultApp)
+    assertThat(nonDefaultInstanceFromGetInstance).isNotSameInstanceAs(FirebaseDataConnect.instance)
+  }
+
+  @Test
+  fun getInstance_with_the_same_non_default_apps_should_return_the_same_instances() {
+    val nonDefaultApp = createNonDefaultFirebaseApp()
+    val nonDefaultInstance1 = FirebaseDataConnect.getInstance(nonDefaultApp)
+    val nonDefaultInstance2 = FirebaseDataConnect.getInstance(nonDefaultApp)
+    assertThat(nonDefaultInstance1).isSameInstanceAs(nonDefaultInstance2)
+  }
+
+  @Test
+  fun getInstance_with_distinct_non_default_apps_should_return_distinct_instances() {
+    val nonDefaultApp1 = createNonDefaultFirebaseApp()
+    val nonDefaultApp2 = createNonDefaultFirebaseApp()
+    val nonDefaultInstance1 = FirebaseDataConnect.getInstance(nonDefaultApp1)
+    val nonDefaultInstance2 = FirebaseDataConnect.getInstance(nonDefaultApp2)
+    assertThat(nonDefaultInstance1).isNotSameInstanceAs(nonDefaultInstance2)
+  }
 
   @Test
   fun helloWorld() {
@@ -54,3 +102,10 @@ class FirebaseDataConnectTest {
     Log.w("zzyzx", "Got response: ${response}")
   }
 }
+
+private fun createNonDefaultFirebaseApp() =
+  Firebase.initialize(
+    Firebase.app.applicationContext,
+    Firebase.app.options,
+    UUID.randomUUID().toString()
+  )

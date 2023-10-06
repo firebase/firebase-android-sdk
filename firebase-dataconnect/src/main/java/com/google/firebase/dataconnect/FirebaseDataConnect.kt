@@ -15,10 +15,32 @@ package com.google.firebase.dataconnect
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
+import com.google.firebase.app
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.android.AndroidChannelBuilder
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineDispatcher
+
+class FirebaseDataConnect
+internal constructor(
+  private val firebaseApp: FirebaseApp,
+  private val backgroundDispatcher: CoroutineDispatcher,
+  private val blockingDispatcher: CoroutineDispatcher,
+) {
+
+  companion object {
+    @JvmStatic
+    val instance: FirebaseDataConnect
+      get() = getInstance(Firebase.app)
+
+    @JvmStatic
+    fun getInstance(app: FirebaseApp): FirebaseDataConnect =
+      app.get(FirebaseDataConnect::class.java)
+  }
+}
 
 enum class GrpcConnectionEncryption {
   PLAINTEXT,
