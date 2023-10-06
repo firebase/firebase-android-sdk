@@ -24,5 +24,11 @@
         android:name="com.google.firebase.components:com.google.firebase.sessions.FirebaseSessionsRegistrar"
         android:value="com.google.firebase.components.ComponentRegistrar" />
     </service>
+
+    <service
+        android:name=".SessionDataService"
+        android:process=":boundServiceProcess"
+        android:enabled="true"
+        android:exported="false" />
   </application>
 </manifest>
