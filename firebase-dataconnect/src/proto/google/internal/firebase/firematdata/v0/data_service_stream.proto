@@ -1,0 +1,42 @@
+// Adapted from http://google3/google/internal/firebase/firematdata/v0/data_service_stream.proto;rcl=553315079
+
+// API protos for the FireMAT Private API DataService streaming API.
+
+syntax = "proto3";
+
+package google.internal.firebase.firemat.v0;
+
+import "google/api/annotations.proto";
+import "google/internal/firebase/firematdata/v0/data_service.proto";
+
+service DataServiceStreaming {
+  // Bi-directional streaming API used by client SDKs.
+  // Use `operationSets/*/revisions/latest` to reference the most recent
+  // revision.
+  rpc Stream(stream StreamRequest) returns (stream StreamResponse) {
+    option (google.api.http) = {
+      post: "/v0/{name=projects/*/locations/*/services/*/operationSets/*/revisions/*}:stream"
+      body: "*"
+    };
+  }
+}
+
+message StreamRequest {
+  // The resource name of the operation set revision to execute, in the format:
+  // ```
+  // projects/{project}/locations/{location}/services/{service}/operationSets/{operation_set}/revisions/{revision}
+  // ```
+  string name = 1;
+
+  oneof operation {
+    ExecuteQueryRequest query = 2;
+    ExecuteMutationRequest mutation = 3;
+  }
+}
+
+message StreamResponse {
+  oneof operation_response {
+    ExecuteQueryResponse query = 1;
+    ExecuteMutationResponse mutation = 2;
+  }
+}
