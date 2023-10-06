@@ -106,6 +106,10 @@ class FirebaseDataConnectTest {
                   setStructValue(
                     Struct.newBuilder().run {
                       putFields(
+                        "id",
+                        Value.newBuilder().setStringValue(UUID.randomUUID().toString()).build()
+                      )
+                      putFields(
                         "content",
                         Value.newBuilder().setStringValue("${System.currentTimeMillis()}").build()
                       )
