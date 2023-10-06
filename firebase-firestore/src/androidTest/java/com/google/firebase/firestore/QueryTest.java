@@ -38,6 +38,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCol
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
 import static com.google.firebase.firestore.testutil.TestUtil.expectError;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
 import static java.util.Arrays.asList;
@@ -2192,5 +2193,46 @@ public class QueryTest {
     // explicit OR: a>2 || b<1.
     Query query5 = collection.where(or(greaterThan("a", 2), lessThan("b", 1)));
     checkOnlineAndOfflineResultsMatch(query5, "doc1", "doc3");
+  }
+
+  @Test
+  public void testMultipleInequalityRejectsIfDocumentKeyIsNotTheLastOrderByField() {
+    // TODO(MIEQ): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection = testCollection();
+
+    // Implicitly ordered by:  __name__ asc, 'key' asc,
+    Query query = collection.whereNotEqualTo("key", 42).orderBy(FieldPath.documentId());
+    Exception e = waitForException(query.get());
+    FirebaseFirestoreException firestoreException = (FirebaseFirestoreException) e;
+    assertTrue(
+        firestoreException
+            .getMessage()
+            .contains("order by clause cannot contain more fields after the key"));
+  }
+
+  @Test
+  public void testMultipleInequalityRejectsIfDocumentKeyAppearsOnlyInEqualityFilter() {
+    // TODO(MIEQ): Enable this test against production when possible.
+    assumeTrue(
+        "Skip this test if running against production because multiple inequality is "
+            + "not supported yet.",
+        isRunningAgainstEmulator());
+
+    CollectionReference collection = testCollection();
+
+    Query query =
+        collection.whereNotEqualTo("key", 42).whereEqualTo(FieldPath.documentId(), "doc1");
+    Exception e = waitForException(query.get());
+    FirebaseFirestoreException firestoreException = (FirebaseFirestoreException) e;
+    assertTrue(
+        firestoreException
+            .getMessage()
+            .contains(
+                "Equality on key is not allowed if there are other inequality fields and key does not appear in inequalities."));
   }
 }
