@@ -20,7 +20,7 @@ package com.google.firebase.storage.ktx
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.storage.TaskState` from the main module instead.",
@@ -37,7 +37,7 @@ abstract class TaskState<T> private constructor() {
    * respective main modules, and the Kotlin extension (KTX) APIs in
    * `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no
    * longer release KTX modules. For details, see the
-   * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
     "Use `com.google.firebase.storage.TaskState.InProgress(snapshot)` from the main module instead.",
@@ -54,7 +54,7 @@ abstract class TaskState<T> private constructor() {
    * respective main modules, and the Kotlin extension (KTX) APIs in
    * `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no
    * longer release KTX modules. For details, see the
-   * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
     "Use `com.google.firebase.storage.TaskState.Paused(snapshot)` from the main module instead.",
