@@ -28,7 +28,7 @@ class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
    * respective main modules, and the Kotlin extension (KTX) APIs in
    * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024,
    * we'll no longer release KTX modules. For details, see the
-   * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
     "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
@@ -46,7 +46,7 @@ class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
    * respective main modules, and the Kotlin extension (KTX) APIs in
    * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024,
    * we'll no longer release KTX modules. For details, see the
-   * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
     "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
@@ -64,7 +64,7 @@ class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
    * respective main modules, and the Kotlin extension (KTX) APIs in
    * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024,
    * we'll no longer release KTX modules. For details, see the
-   * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
     "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
@@ -82,7 +82,7 @@ class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
    * respective main modules, and the Kotlin extension (KTX) APIs in
    * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024,
    * we'll no longer release KTX modules. For details, see the
-   * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
     "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
@@ -100,7 +100,7 @@ class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
    * respective main modules, and the Kotlin extension (KTX) APIs in
    * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024,
    * we'll no longer release KTX modules. For details, see the
-   * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
     "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
@@ -118,7 +118,7 @@ class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
    * respective main modules, and the Kotlin extension (KTX) APIs in
    * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024,
    * we'll no longer release KTX modules. For details, see the
-   * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
     "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",

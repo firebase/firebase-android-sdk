@@ -37,7 +37,7 @@ import kotlinx.coroutines.flow.callbackFlow
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase:firebase-config-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.Firebase.remoteConfig` from the main module instead.",
@@ -55,7 +55,7 @@ val Firebase.remoteConfig: FirebaseRemoteConfig
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase:firebase-config-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.Firebase.remoteConfig(app)` from the main module instead.",
@@ -73,7 +73,7 @@ fun Firebase.remoteConfig(app: FirebaseApp): FirebaseRemoteConfig =
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase:firebase-config-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.remoteconfig.FirebaseRemoteConfig.get(key).` from the main module instead.",
@@ -102,7 +102,7 @@ fun remoteConfigSettings(
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase:firebase-config-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.remoteconfig.FirebaseRemoteConfig.configUpdates` from the main module instead.",
@@ -134,7 +134,7 @@ val FirebaseRemoteConfig.configUpdates
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase:firebase-config-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.remoteconfig.FirebaseRemoteConfigKtxRegistrar` from the main module instead.",

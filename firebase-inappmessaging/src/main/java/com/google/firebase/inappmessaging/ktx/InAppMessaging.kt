@@ -27,7 +27,7 @@ import com.google.firebase.ktx.Firebase
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-inappmessaging-ktx` are now deprecated. As early as April 2024,
  * we'll no longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.Firebase.inAppMessaging` from the main module instead.",
@@ -45,7 +45,7 @@ val Firebase.inAppMessaging: FirebaseInAppMessaging
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-inappmessaging-ktx` are now deprecated. As early as April 2024,
  * we'll no longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.inappmessaging.FirebaseInAppMessagingKtxRegistrar` from the main module instead.",
