@@ -96,7 +96,7 @@ android {
 }
 
 dependencies {
-  implementation("com.google.firebase:firebase-common:20.4.0")
+  implementation("com.google.firebase:firebase-common:20.4.1")
   implementation("com.google.firebase:firebase-components:17.1.3")
 }
 

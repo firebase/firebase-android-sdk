@@ -83,8 +83,8 @@ dependencies {
     if (project.hasProperty("fireperfBuildForAutopush")) {
         println("Building with HEAD version ':firebase-perf' of SDK")
         implementation project(":firebase-perf")
-        implementation "com.google.firebase:firebase-common:20.4.0"
-        implementation "com.google.firebase:firebase-common-ktx:20.4.0"
+        implementation "com.google.firebase:firebase-common:20.4.1"
+        implementation "com.google.firebase:firebase-common-ktx:20.4.1"
         implementation project(":firebase-config")
 
     } else {
