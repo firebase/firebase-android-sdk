@@ -30,11 +30,16 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asCoroutineDispatcher
 
 /**
- * @deprecated Use `com.google.firebase.Firebase` instead. All fields in this object are deprecated.
- * For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * All fields in this object are deprecated; Use `com.google.firebase.Firebase` instead.
  *
- * Single access point to all firebase SDKs from Kotlin.
+ * Single access point to all firebase SDKs from Kotlin. Acts as a target for extension methods
+ * provided by sdks.
+ *
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-common-ktx` are now deprecated. As early as April 2024, we'll no
+ * longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
  */
 object Firebase
 
