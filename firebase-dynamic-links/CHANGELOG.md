@@ -2,13 +2,13 @@
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-dynamic-links-ktx`
   to `com.google.firebase:firebase-dynamic-links` under the `com.google.firebase.dynamiclinks` package.
   For details, see the
-  [FAQ about this initiative](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 * [deprecated] All the APIs from `com.google.firebase:firebase-dynamic-links-ktx` have been added to
   `com.google.firebase:firebase-dynamic-links` under the `com.google.firebase.dynamiclinks` package,
   and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-dynamic-links-ktx` are
   now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
-  [FAQ about this initiative](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 
 # 21.1.0

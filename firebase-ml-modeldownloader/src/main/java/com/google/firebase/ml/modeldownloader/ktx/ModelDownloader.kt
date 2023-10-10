@@ -29,7 +29,7 @@ import java.io.File
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-ml-modeldownloade-ktx` are now deprecated. As early as April 2024,
  * we'll no longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "com.google.firebase.ml.mo",
@@ -48,7 +48,7 @@ val Firebase.modelDownloader: FirebaseModelDownloader
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-ml-modeldownloade-ktx` are now deprecated. As early as April 2024,
  * we'll no longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "com.google.firebase.ml.mo",
@@ -66,7 +66,7 @@ fun Firebase.modelDownloader(app: FirebaseApp) = FirebaseModelDownloader.getInst
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-ml-modeldownloade-ktx` are now deprecated. As early as April 2024,
  * we'll no longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.ml.modeldownloader.customModelDownloadConditions(init)` from the main module instead.",
@@ -103,7 +103,7 @@ operator fun CustomModel.component5() = name
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-ml-modeldownloade-ktx` are now deprecated. As early as April 2024,
  * we'll no longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.ml.modeldownloader.FirebaseMlModelDownloaderKtxRegistrar` from the main module instead.",
