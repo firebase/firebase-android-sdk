@@ -78,6 +78,7 @@ val Firebase.app: FirebaseApp
 )
 fun Firebase.app(name: String): FirebaseApp = FirebaseApp.getInstance(name)
 
+val x = Firebase.app("vinay")
 /**
  * Initializes and returns a FirebaseApp.
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their

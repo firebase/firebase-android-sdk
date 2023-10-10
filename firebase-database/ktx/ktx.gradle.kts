@@ -52,7 +52,7 @@ dependencies {
     api("com.google.firebase:firebase-common-ktx:20.4.1")
     api(project(":firebase-database"))
 
-    implementation("com.google.firebase:firebase-components:17.1.3")
+    implementation("com.google.firebase:firebase-components:17.1.4")
 
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.junit)
