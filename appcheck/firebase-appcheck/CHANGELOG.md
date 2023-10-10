@@ -2,13 +2,13 @@
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-appcheck-ktx`
   to `com.google.firebase:firebase-appcheck` under the `com.google.firebase.appcheck` package.
   For details, see the
-  [FAQ about this initiative](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 * [deprecated] All the APIs from `com.google.firebase:firebase-appcheck-ktx` have been added to
   `com.google.firebase:firebase-appcheck` under the `com.google.firebase.appcheck` package,
   and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-appcheck-ktx` are
   now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
-  [FAQ about this initiative](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 
 
