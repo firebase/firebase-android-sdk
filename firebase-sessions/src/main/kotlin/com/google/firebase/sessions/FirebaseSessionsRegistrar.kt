@@ -29,7 +29,7 @@ import com.google.firebase.platforminfo.LibraryVersionComponent
 import kotlinx.coroutines.CoroutineDispatcher
 
 /**
- * [ComponentRegistrar] for setting up [FirebaseSessions].
+ * [ComponentRegistrar] for setting up [FirebaseSessions] and [SessionMaintainer].
  *
  * @hide
  */
@@ -38,12 +38,13 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
   override fun getComponents() =
     listOf(
       Component.builder(FirebaseSessions::class.java)
-        .name(LIBRARY_NAME)
+        .name(SESSIONS_LIBRARY_NAME)
         .add(Dependency.required(firebaseApp))
         .add(Dependency.required(firebaseInstallationsApi))
         .add(Dependency.required(backgroundDispatcher))
         .add(Dependency.required(blockingDispatcher))
         .add(Dependency.requiredProvider(transportFactory))
+        .add(Dependency.required(sessionMaintainer))
         .factory { container ->
           FirebaseSessions(
             container.get(firebaseApp),
@@ -51,15 +52,22 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
             container.get(backgroundDispatcher),
             container.get(blockingDispatcher),
             container.getProvider(transportFactory),
+            container.get(sessionMaintainer)
           )
         }
         .build(),
-      LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME)
+      Component.builder(SessionMaintainer::class.java)
+        .name(MAINTAINER_LIBRARY_NAME)
+        .factory { SessionMaintainer() }
+        .build(),
+      LibraryVersionComponent.create(SESSIONS_LIBRARY_NAME, BuildConfig.VERSION_NAME),
     )
 
-  companion object {
-    private const val LIBRARY_NAME = "fire-sessions"
+  private companion object {
+    private const val SESSIONS_LIBRARY_NAME = "fire-sessions"
+    private const val MAINTAINER_LIBRARY_NAME = "fire-session-maintainer"
 
+    private val sessionMaintainer = unqualified(SessionMaintainer::class.java)
     private val firebaseApp = unqualified(FirebaseApp::class.java)
     private val firebaseInstallationsApi = unqualified(FirebaseInstallationsApi::class.java)
     private val backgroundDispatcher =

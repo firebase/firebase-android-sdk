@@ -37,6 +37,7 @@ internal constructor(
   backgroundDispatcher: CoroutineDispatcher,
   blockingDispatcher: CoroutineDispatcher,
   transportFactoryProvider: Provider<TransportFactory>,
+  @Suppress("UNUSED_PARAMETER") sessionMaintainer: SessionMaintainer,
 ) {
   private val applicationInfo = SessionEvents.getApplicationInfo(firebaseApp)
   private val sessionSettings =
