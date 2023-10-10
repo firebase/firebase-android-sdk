@@ -443,6 +443,12 @@ abstract class PublishingPlugin : Plugin<Project> {
 
           from(releaseNotesTask) { into("android/client/$directory/_releases") }
           rename { "$releaseName.md" }
+
+          if (firebaseLibrary.publishJavadoc && inputs.files.isEmpty) {
+            throw GradleException(
+              "Project ${firebaseLibrary.artifactId.get()} is missing release notes."
+            )
+          }
         }
       }
 
