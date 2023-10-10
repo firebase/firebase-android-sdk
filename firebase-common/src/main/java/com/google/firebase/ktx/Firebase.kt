@@ -39,7 +39,7 @@ import kotlinx.coroutines.asCoroutineDispatcher
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-common-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 object Firebase
 
@@ -49,7 +49,7 @@ object Firebase
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-common-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules).
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration).
  */
 @Deprecated(
   "Use `com.google.firebase.Firebase.app` from the main module instead.",
@@ -67,7 +67,7 @@ val Firebase.app: FirebaseApp
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-common-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules).
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration).
  */
 @Deprecated(
   "Use `com.google.firebase.Firebase.app(name)` from the main module instead.",
@@ -84,7 +84,7 @@ fun Firebase.app(name: String): FirebaseApp = FirebaseApp.getInstance(name)
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-common-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.Firebase.initialize(context)` from the main module instead.",
@@ -101,7 +101,7 @@ fun Firebase.initialize(context: Context): FirebaseApp? = FirebaseApp.initialize
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-common-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.Firebase.initialize(context, options)` from the main module instead.",
@@ -119,7 +119,7 @@ fun Firebase.initialize(context: Context, options: FirebaseOptions): FirebaseApp
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-common-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.Firebase.initialize(context, options, name)` from the main module instead.",
@@ -137,7 +137,7 @@ fun Firebase.initialize(context: Context, options: FirebaseOptions, name: String
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-common-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.Firebase.options` from the main module instead.",

@@ -29,7 +29,7 @@ import com.google.firebase.perf.metrics.Trace
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-perf-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.Firebase.performance` from the main module instead.",
@@ -48,7 +48,7 @@ val Firebase.performance: FirebasePerformance
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-perf-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.perf.HttpMetric.trace(block)` from the main module instead.",
@@ -73,7 +73,7 @@ inline fun HttpMetric.trace(block: HttpMetric.() -> Unit) {
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-perf-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.perf.Trace.trace<T>(block)` from the main module instead.",
@@ -98,7 +98,7 @@ inline fun <T> Trace.trace(block: Trace.() -> T): T {
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-perf-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.perf.Trace.trace<T>(name, block)` from the main module instead.",
@@ -115,7 +115,7 @@ inline fun <T> trace(name: String, block: Trace.() -> T): T = Trace.create(name)
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-perf-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.perf.FirebasePerfKtxRegistrar` from the main module instead.",

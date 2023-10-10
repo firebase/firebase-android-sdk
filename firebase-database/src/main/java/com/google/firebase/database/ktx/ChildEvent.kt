@@ -23,7 +23,7 @@ import com.google.firebase.database.DataSnapshot
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.database.ChildEvent` from the main module instead.",
@@ -42,7 +42,7 @@ sealed class ChildEvent {
    * respective main modules, and the Kotlin extension (KTX) APIs in
    * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll
    * no longer release KTX modules. For details, see the
-   * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
     "Use `com.google.firebase.database.ChildEvent.Added` from the main module instead.",
@@ -65,7 +65,7 @@ sealed class ChildEvent {
    * respective main modules, and the Kotlin extension (KTX) APIs in
    * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll
    * no longer release KTX modules. For details, see the
-   * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
     "Use `com.google.firebase.database.ChildEvent.Changed` from the main module instead.",
@@ -84,7 +84,7 @@ sealed class ChildEvent {
    * respective main modules, and the Kotlin extension (KTX) APIs in
    * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll
    * no longer release KTX modules. For details, see the
-   * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
     "Use `com.google.firebase.database.ChildEvent.Removed` from the main module instead.",
@@ -107,7 +107,7 @@ sealed class ChildEvent {
    * respective main modules, and the Kotlin extension (KTX) APIs in
    * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll
    * no longer release KTX modules. For details, see the
-   * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
     "Use `com.google.firebase.database.ChildEvent.Moved` from the main module instead.",
