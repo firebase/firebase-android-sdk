@@ -1,6 +1,7 @@
 {
     "name": "m138",
     "libraries": [
+      ":firebase-components",  
       ":firebase-common",
       ":firebase-common:ktx"
     ]
