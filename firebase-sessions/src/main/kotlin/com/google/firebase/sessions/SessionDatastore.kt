@@ -25,31 +25,26 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import java.io.IOException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
 /** Datastore for sessions information */
-internal data class FirebaseSessionsData(val sessionId: String?, val timestampMs: Long?)
+internal data class FirebaseSessionsData(val sessionId: String?, val timestampMicroseconds: Long?)
 
 internal class SessionDatastore(private val context: Context) {
   private val tag = "FirebaseSessionsRepo"
 
   private object FirebaseSessionDataKeys {
     val SESSION_ID = stringPreferencesKey("session_id")
-    val TIMESTAMP_MS = longPreferencesKey("timestamp_ms")
+    val TIMESTAMP_MICROSECONDS = longPreferencesKey("timestamp_microseconds")
   }
 
   internal val firebaseSessionDataFlow: Flow<FirebaseSessionsData> =
     context.dataStore.data
       .catch { exception ->
-        if (exception is IOException) {
-          Log.e(tag, "Error reading stored session data.", exception)
-          emit(emptyPreferences())
-        } else {
-          throw exception
-        }
+        Log.e(tag, "Error reading stored session data.", exception)
+        emit(emptyPreferences())
       }
       .map { preferences -> mapSessionsData(preferences) }
 
@@ -59,16 +54,16 @@ internal class SessionDatastore(private val context: Context) {
     }
   }
 
-  suspend fun updateTimestampMs(timestampMs: Long) {
+  suspend fun updateTimestamp(timestampMicroseconds: Long) {
     context.dataStore.edit { preferences ->
-      preferences[FirebaseSessionDataKeys.TIMESTAMP_MS] = timestampMs
+      preferences[FirebaseSessionDataKeys.TIMESTAMP_MICROSECONDS] = timestampMicroseconds
     }
   }
 
   private fun mapSessionsData(preferences: Preferences): FirebaseSessionsData =
     FirebaseSessionsData(
       preferences[FirebaseSessionDataKeys.SESSION_ID],
-      preferences[FirebaseSessionDataKeys.TIMESTAMP_MS]
+      preferences[FirebaseSessionDataKeys.TIMESTAMP_MICROSECONDS]
     )
 }
 
