@@ -23,6 +23,8 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.initialize
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.ktx.initialize
 import org.junit.After
 import org.junit.Before
 import org.junit.Test

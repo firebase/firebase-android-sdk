@@ -75,6 +75,7 @@ internal constructor(
 
     val appContext = firebaseApp.applicationContext.applicationContext
     if (appContext is Application) {
+      SessionDataService.bind(appContext)
       appContext.registerActivityLifecycleCallbacks(sessionInitiator.activityLifecycleCallbacks)
 
       firebaseApp.addLifecycleEventListener { _, _ ->
