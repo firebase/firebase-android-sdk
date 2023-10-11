@@ -37,28 +37,27 @@ import kotlinx.coroutines.CoroutineDispatcher
 internal class FirebaseSessionsRegistrar : ComponentRegistrar {
   override fun getComponents() =
     listOf(
-      Component.builder(FirebaseSessions::class.java)
-        .name(SESSIONS_LIBRARY_NAME)
+      Component.builder(SessionMaintainer::class.java)
+        .name(MAINTAINER_LIBRARY_NAME)
         .add(Dependency.required(firebaseApp))
         .add(Dependency.required(firebaseInstallationsApi))
         .add(Dependency.required(backgroundDispatcher))
         .add(Dependency.required(blockingDispatcher))
         .add(Dependency.requiredProvider(transportFactory))
-        .add(Dependency.required(sessionMaintainer))
         .factory { container ->
-          FirebaseSessions(
+          SessionMaintainer(
             container.get(firebaseApp),
             container.get(firebaseInstallationsApi),
             container.get(backgroundDispatcher),
             container.get(blockingDispatcher),
-            container.getProvider(transportFactory),
-            container.get(sessionMaintainer)
+            container.getProvider(transportFactory)
           )
         }
         .build(),
-      Component.builder(SessionMaintainer::class.java)
-        .name(MAINTAINER_LIBRARY_NAME)
-        .factory { SessionMaintainer() }
+      Component.builder(FirebaseSessions::class.java)
+        .name(SESSIONS_LIBRARY_NAME)
+        .add(Dependency.required(sessionMaintainer))
+        .factory { container -> FirebaseSessions(container.get(sessionMaintainer)) }
         .build(),
       LibraryVersionComponent.create(SESSIONS_LIBRARY_NAME, BuildConfig.VERSION_NAME),
     )

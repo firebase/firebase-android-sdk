@@ -26,6 +26,7 @@ import kotlinx.coroutines.tasks.await
  *
  * @hide
  */
+// TODO(mrober): Merge this with SessionMaintainer.
 internal class SessionCoordinator(
   private val firebaseInstallations: FirebaseInstallationsApi,
   private val eventGDTLogger: EventGDTLoggerInterface,
