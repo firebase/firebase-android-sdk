@@ -19,7 +19,7 @@
 
   <application>
     <service
-      android:name=".SessionDataService"
+      android:name="com.google.firebase.sessions.SessionDataService"
       android:enabled="true"
       android:exported="false" />
     <service android:name="com.google.firebase.components.ComponentDiscoveryService"
