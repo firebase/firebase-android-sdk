@@ -66,9 +66,9 @@ internal class SessionInitiator(
 
   internal val activityLifecycleCallbacks =
     object : ActivityLifecycleCallbacks {
-      override fun onActivityResumed(activity: Activity) = appForegrounded()
+      override fun onActivityResumed(activity: Activity) = SessionDataService.foregrounded(activity)
 
-      override fun onActivityPaused(activity: Activity) = appBackgrounded()
+      override fun onActivityPaused(activity: Activity) = SessionDataService.backgrounded(activity)
 
       override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
 
