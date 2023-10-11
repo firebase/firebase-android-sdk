@@ -18,6 +18,10 @@
   <!--<uses-sdk android:minSdkVersion="16"/>-->
 
   <application>
+    <service
+      android:name="com.google.firebase.sessions.SessionDataService"
+      android:enabled="true"
+      android:exported="false" />
     <service android:name="com.google.firebase.components.ComponentDiscoveryService"
       android:exported="false">
       <meta-data
