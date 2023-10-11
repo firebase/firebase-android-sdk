@@ -1,0 +1,78 @@
+/*
+ * Copyright 2023 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.google.firebase.sessions
+
+import android.content.Context
+import android.util.Log
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import java.io.IOException
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
+
+/** Datastore for sessions information */
+data class FirebaseSessionsData(val sessionId: String?, val timestampMs: Long?)
+
+class SessionDatastore(private val context: Context) {
+  private val tag = "FirebaseSessionsRepo"
+
+  private object FirebaseSessionDataKeys {
+    val SESSION_ID = stringPreferencesKey("session_id")
+    val TIMESTAMP_MS = longPreferencesKey("timestamp_ms")
+  }
+
+  val firebaseSessionDataFlow: Flow<FirebaseSessionsData> =
+    context.dataStore.data
+      .catch { exception ->
+        if (exception is IOException) {
+          Log.e(tag, "Error reading stored session data.", exception)
+          emit(emptyPreferences())
+        } else {
+          throw exception
+        }
+      }
+      .map { preferences -> mapSessionsData(preferences) }
+
+  suspend fun updateSessionId(sessionId: String) {
+    context.dataStore.edit { preferences ->
+      preferences[FirebaseSessionDataKeys.SESSION_ID] = sessionId
+    }
+  }
+
+  suspend fun updateTimestampMs(timestampMs: Long) {
+    context.dataStore.edit { preferences ->
+      preferences[FirebaseSessionDataKeys.TIMESTAMP_MS] = timestampMs
+    }
+  }
+
+  private fun mapSessionsData(preferences: Preferences): FirebaseSessionsData =
+    FirebaseSessionsData(
+      preferences[FirebaseSessionDataKeys.SESSION_ID],
+      preferences[FirebaseSessionDataKeys.TIMESTAMP_MS]
+    )
+}
+
+const val SESSION_CONFIGS_NAME = "firebase_session_settings"
+
+private val Context.dataStore: DataStore<Preferences> by
+  preferencesDataStore(name = SESSION_CONFIGS_NAME)
