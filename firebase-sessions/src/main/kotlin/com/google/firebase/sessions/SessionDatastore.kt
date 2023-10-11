@@ -31,9 +31,9 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
 /** Datastore for sessions information */
-data class FirebaseSessionsData(val sessionId: String?, val timestampMs: Long?)
+internal data class FirebaseSessionsData(val sessionId: String?, val timestampMs: Long?)
 
-class SessionDatastore(private val context: Context) {
+internal class SessionDatastore(private val context: Context) {
   private val tag = "FirebaseSessionsRepo"
 
   private object FirebaseSessionDataKeys {
@@ -41,7 +41,7 @@ class SessionDatastore(private val context: Context) {
     val TIMESTAMP_MS = longPreferencesKey("timestamp_ms")
   }
 
-  val firebaseSessionDataFlow: Flow<FirebaseSessionsData> =
+  internal val firebaseSessionDataFlow: Flow<FirebaseSessionsData> =
     context.dataStore.data
       .catch { exception ->
         if (exception is IOException) {
@@ -72,7 +72,5 @@ class SessionDatastore(private val context: Context) {
     )
 }
 
-const val SESSION_CONFIGS_NAME = "firebase_session_settings"
-
 private val Context.dataStore: DataStore<Preferences> by
-  preferencesDataStore(name = SESSION_CONFIGS_NAME)
+  preferencesDataStore(name = "firebase_session_settings")
