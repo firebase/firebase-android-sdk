@@ -325,7 +325,7 @@ public class NetworkClientTest {
     verify(mockOutputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
     verify(mockRetryManager, never()).updateBackoffOnFailure(anyInt());
-    verify(mockRetryManager).resetBackoffOnSuccess();
+    verify(mockRetryManager, never()).resetBackoffOnSuccess();
     verifyRequestHeaders();
   }
 
@@ -350,7 +350,7 @@ public class NetworkClientTest {
     verify(networkClient).createHttpUrlConnection(expectedUrl);
     verify(mockOutputStream)
         .write(JSON_REQUEST.getBytes(), /* off= */ 0, JSON_REQUEST.getBytes().length);
-    verify(mockRetryManager).updateBackoffOnFailure(ERROR_CODE);
+    verify(mockRetryManager, never()).updateBackoffOnFailure(anyInt());
     verify(mockRetryManager, never()).resetBackoffOnSuccess();
     verifyRequestHeaders();
   }

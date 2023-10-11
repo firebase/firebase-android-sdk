@@ -10,6 +10,7 @@
   now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
+* [fixed] Fixed retry manager logic to not reset the backoff period for successful `GeneratePlayIntegrityChallenge` requests.
 
 
 # 17.0.1
