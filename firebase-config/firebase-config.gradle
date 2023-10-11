@@ -63,8 +63,8 @@ dependencies {
     annotationProcessor 'com.google.auto.value:auto-value:1.6.6'
     compileOnly 'com.google.auto.value:auto-value-annotations:1.6.6'
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
-    // TODO: Switch to a versioned dependency once released.
-    implementation project(':firebase-config-interop')
+
+    implementation 'com.google.firebase:firebase-config-interop:0.1.0'
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
