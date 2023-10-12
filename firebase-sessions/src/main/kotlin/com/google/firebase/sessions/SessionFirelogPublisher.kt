@@ -54,11 +54,9 @@ internal class SessionFirelogPublisher(
   internal companion object {
     const val TAG = "SessionFirelogPublisher"
 
-    @JvmStatic
     fun getInstance(app: FirebaseApp): SessionFirelogPublisher =
       app.get(SessionFirelogPublisher::class.java)
 
-    @JvmStatic
     val instance: SessionFirelogPublisher
       get() = getInstance(Firebase.app)
   }
