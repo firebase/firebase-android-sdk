@@ -60,7 +60,7 @@ class SessionInitiatorTest {
       TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
       sessionInitiateListener = sessionInitiateCounter,
       settings,
-      SessionGenerator(collectEvents = false, fakeTimeProvider),
+      SessionGenerator(fakeTimeProvider),
     )
 
     // Run onInitiateSession suspend function.
@@ -86,7 +86,7 @@ class SessionInitiatorTest {
         TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         sessionInitiateListener = sessionInitiateCounter,
         settings,
-        SessionGenerator(collectEvents = false, fakeTimeProvider),
+        SessionGenerator(fakeTimeProvider),
       )
 
     // Run onInitiateSession suspend function.
@@ -121,7 +121,7 @@ class SessionInitiatorTest {
         TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         sessionInitiateListener = sessionInitiateCounter,
         settings,
-        SessionGenerator(collectEvents = false, fakeTimeProvider),
+        SessionGenerator(fakeTimeProvider),
       )
 
     // Run onInitiateSession suspend function.
@@ -156,7 +156,7 @@ class SessionInitiatorTest {
         TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         sessionInitiateListener = sessionInitiateCounter,
         settings,
-        SessionGenerator(collectEvents = false, fakeTimeProvider),
+        SessionGenerator(fakeTimeProvider),
       )
 
     // Run onInitiateSession suspend function.
@@ -196,7 +196,7 @@ class SessionInitiatorTest {
         TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
         sessionInitiateListener = sessionInitiateCounter,
         settings,
-        SessionGenerator(collectEvents = false, fakeTimeProvider),
+        SessionGenerator(fakeTimeProvider),
       )
 
     // Run onInitiateSession suspend function.

@@ -33,7 +33,6 @@ internal data class SessionDetails(
  * [SessionDetails] up to date with the latest values.
  */
 internal class SessionGenerator(
-  val collectEvents: Boolean,
   private val timeProvider: TimeProvider,
   private val uuidGenerator: () -> UUID = UUID::randomUUID
 ) {

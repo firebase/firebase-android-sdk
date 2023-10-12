@@ -47,10 +47,13 @@ internal constructor(
       applicationInfo,
     )
   private val timeProvider: TimeProvider = Time()
-  private val sessionGenerator: SessionGenerator
+  private val sessionGenerator = SessionGenerator(timeProvider)
+
+  // TODO: This needs to be moved into the service to be consistent across multiple processes.
+  private val collectEvents: Boolean
 
   init {
-    sessionGenerator = SessionGenerator(collectEvents = shouldCollectEvents(), timeProvider)
+    collectEvents = shouldCollectEvents()
 
     val sessionInitiateListener =
       object : SessionInitiateListener {
@@ -136,7 +139,7 @@ internal constructor(
       return
     }
 
-    if (!sessionGenerator.collectEvents) {
+    if (!collectEvents) {
       Log.d(TAG, "Sessions SDK has dropped this session due to sampling.")
       return
     }
