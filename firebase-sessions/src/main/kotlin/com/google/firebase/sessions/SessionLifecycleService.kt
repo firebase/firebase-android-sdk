@@ -124,13 +124,11 @@ internal class SessionLifecycleService : Service() {
           it.setData(Bundle().also { it.putString(SESSION_UPDATE_EXTRA, curSessionId) })
         }
       )
+    } catch (e: DeadObjectException) {
+      Log.i(TAG, "Removing dead client from list: $client")
+      boundClients.remove(client)
     } catch (e: Exception) {
-      if (e is DeadObjectException) {
-        Log.i(TAG, "Removing dead client from list: $client")
-        boundClients.remove(client)
-      } else {
-        Log.e(TAG, "Unable to push new session to $client.", e)
-      }
+      Log.e(TAG, "Unable to push new session to $client.", e)
     }
   }
 
