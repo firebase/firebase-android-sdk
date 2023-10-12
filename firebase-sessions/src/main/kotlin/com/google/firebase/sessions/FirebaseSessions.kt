@@ -46,8 +46,7 @@ internal constructor(
       firebaseInstallations,
       applicationInfo,
     )
-  private val timeProvider: TimeProvider = Time()
-  private val sessionGenerator = SessionGenerator(timeProvider)
+  private val sessionGenerator = SessionGenerator(WallClock)
 
   // TODO: This needs to be moved into the service to be consistent across multiple processes.
   private val collectEvents: Boolean
@@ -65,7 +64,7 @@ internal constructor(
 
     val sessionInitiator =
       SessionInitiator(
-        timeProvider,
+        WallClock,
         backgroundDispatcher,
         sessionInitiateListener,
         sessionSettings,
