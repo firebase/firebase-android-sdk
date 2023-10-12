@@ -25,7 +25,7 @@ import com.google.firebase.perf.metrics.Trace
 
 /**
  * Accessing this object for Kotlin apps has changed; see
- * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebasePerformance] instance of the default [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their

@@ -24,7 +24,7 @@ import com.google.firebase.ktx.app
 
 /**
  * Accessing this object for Kotlin apps has changed; see
- * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseAppCheck] instance of the default [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -38,7 +38,7 @@ val Firebase.appCheck: FirebaseAppCheck
 
 /**
  * Accessing this object for Kotlin apps has changed; see
- * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseAppCheck] instance of a given [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their

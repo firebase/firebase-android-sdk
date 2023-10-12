@@ -39,7 +39,7 @@ import kotlinx.coroutines.flow.callbackFlow
 
 /**
  * Accessing this object for Kotlin apps has changed; see
- * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseStorage] instance of the default [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -53,7 +53,7 @@ val Firebase.storage: FirebaseStorage
 
 /**
  * Accessing this object for Kotlin apps has changed; see
- * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseStorage] instance for a custom storage bucket at [url].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -66,7 +66,7 @@ fun Firebase.storage(url: String): FirebaseStorage = FirebaseStorage.getInstance
 
 /**
  * Accessing this object for Kotlin apps has changed; see
- * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseStorage] instance of a given [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -79,7 +79,7 @@ fun Firebase.storage(app: FirebaseApp): FirebaseStorage = FirebaseStorage.getIns
 
 /**
  * Accessing this object for Kotlin apps has changed; see
- * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseStorage] instance of a given [FirebaseApp] and storage bucket [url].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their

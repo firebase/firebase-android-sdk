@@ -36,7 +36,7 @@ import kotlinx.coroutines.flow.map
 
 /**
  * Accessing this object for Kotlin apps has changed; see
- * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseDatabase] instance of the default [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -50,7 +50,7 @@ val Firebase.database: FirebaseDatabase
 
 /**
  * Accessing this object for Kotlin apps has changed; see
- * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseDatabase] instance for the specified [url].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -63,7 +63,7 @@ fun Firebase.database(url: String): FirebaseDatabase = FirebaseDatabase.getInsta
 
 /**
  * Accessing this object for Kotlin apps has changed; see
- * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseDatabase] instance of the given [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -76,7 +76,7 @@ fun Firebase.database(app: FirebaseApp): FirebaseDatabase = FirebaseDatabase.get
 
 /**
  * Accessing this object for Kotlin apps has changed; see
- * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseDatabase] instance of the given [FirebaseApp] and [url].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their

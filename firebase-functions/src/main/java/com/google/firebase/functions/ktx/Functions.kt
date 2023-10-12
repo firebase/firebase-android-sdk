@@ -26,7 +26,7 @@ import java.net.URL
 
 /**
  * Accessing this object for Kotlin apps has changed; see
- * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseFunctions] instance of the default [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -40,7 +40,7 @@ val Firebase.functions: FirebaseFunctions
 
 /**
  * Accessing this object for Kotlin apps has changed; see
- * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseFunctions] instance of a given [regionOrCustomDomain].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -54,7 +54,7 @@ fun Firebase.functions(regionOrCustomDomain: String): FirebaseFunctions =
 
 /**
  * Accessing this object for Kotlin apps has changed; see
- * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseFunctions] instance of a given [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -67,7 +67,7 @@ fun Firebase.functions(app: FirebaseApp): FirebaseFunctions = FirebaseFunctions.
 
 /**
  * Accessing this object for Kotlin apps has changed; see
- * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseFunctions] instance of a given [FirebaseApp] and [regionOrCustomDomain].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
