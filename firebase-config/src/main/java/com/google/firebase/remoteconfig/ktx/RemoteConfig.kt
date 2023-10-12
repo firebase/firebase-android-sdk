@@ -32,8 +32,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 
 /**
- * Accessing this object for Kotlin apps has changed; see the migration guide:
- * https://firebase.google.com/docs/android/kotlin-migration.
+ * Accessing this object for Kotlin apps has changed; see
+ * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseRemoteConfig] instance of the default [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -46,8 +46,8 @@ val Firebase.remoteConfig: FirebaseRemoteConfig
   get() = FirebaseRemoteConfig.getInstance()
 
 /**
- * Accessing this object for Kotlin apps has changed; see the migration guide:
- * https://firebase.google.com/docs/android/kotlin-migration.
+ * Accessing this object for Kotlin apps has changed; see
+ * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseRemoteConfig] instance of a given [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their

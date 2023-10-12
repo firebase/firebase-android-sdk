@@ -21,8 +21,8 @@ import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.ktx.Firebase
 
 /**
- * Accessing this object for Kotlin apps has changed; see the migration guide:
- * https://firebase.google.com/docs/android/kotlin-migration.
+ * Accessing this object for Kotlin apps has changed; see
+ * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseInstallations] instance of the default [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -35,8 +35,8 @@ val Firebase.installations: FirebaseInstallations
   get() = FirebaseInstallations.getInstance()
 
 /**
- * Accessing this object for Kotlin apps has changed; see the migration guide:
- * https://firebase.google.com/docs/android/kotlin-migration.
+ * Accessing this object for Kotlin apps has changed; see
+ * [the migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseInstallations] instance of a given [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
