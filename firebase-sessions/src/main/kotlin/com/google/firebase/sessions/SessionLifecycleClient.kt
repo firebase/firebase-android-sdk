@@ -38,7 +38,7 @@ import java.util.concurrent.LinkedBlockingDeque
  * Note: this client will be connected in every application process that uses Firebase, and is
  * intended to maintain that connection for the lifetime of the process.
  */
-object SessionLifecycleClient {
+internal object SessionLifecycleClient {
   const val TAG = "SessionLifecycleClient"
 
   /**
