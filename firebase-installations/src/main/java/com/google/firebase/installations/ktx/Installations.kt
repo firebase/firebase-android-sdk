@@ -21,6 +21,9 @@ import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.ktx.Firebase
 
 /**
+ * Accessing this object for Kotlin apps has changed; see the migration guide:
+ * https://firebase.google.com/docs/android/kotlin-migration.
+ *
  * Returns the [FirebaseInstallations] instance of the default [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
  * respective main modules, and the Kotlin extension (KTX) APIs in
@@ -28,17 +31,13 @@ import com.google.firebase.ktx.Firebase
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "Use `com.google.firebase.Firebase.installations` from the main module instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.installations",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.installations.installations"]
-  )
-)
 val Firebase.installations: FirebaseInstallations
   get() = FirebaseInstallations.getInstance()
 
 /**
+ * Accessing this object for Kotlin apps has changed; see the migration guide:
+ * https://firebase.google.com/docs/android/kotlin-migration.
+ *
  * Returns the [FirebaseInstallations] instance of a given [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
  * respective main modules, and the Kotlin extension (KTX) APIs in
@@ -46,13 +45,6 @@ val Firebase.installations: FirebaseInstallations
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "Use `com.google.firebase.Firebase.installations(app)` from the main module instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.installations(app)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.installations.installations"]
-  )
-)
 fun Firebase.installations(app: FirebaseApp): FirebaseInstallations =
   FirebaseInstallations.getInstance(app)
 

@@ -24,6 +24,9 @@ import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.ktx.Firebase
 
 /**
+ * Accessing this object for Kotlin apps has changed; see the migration guide:
+ * https://firebase.google.com/docs/android/kotlin-migration.
+ *
  * Returns the [FirebaseAppDistribution] instance of the default [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
  * respective main modules, and the Kotlin extension (KTX) APIs in
@@ -31,14 +34,6 @@ import com.google.firebase.ktx.Firebase
  * 2024, we'll no longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "Use `com.google.firebase.Firebase.appDistribution` from the main module instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.appDistribution",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.appdistribution.appDistribution"]
-  )
-)
 val Firebase.appDistribution: FirebaseAppDistribution
   get() = FirebaseAppDistribution.getInstance()
 
@@ -53,11 +48,8 @@ val Firebase.appDistribution: FirebaseAppDistribution
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.AppDistributionRelease.component1()` from the main module instead.",
-  ReplaceWith(
-    expression = "component1()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.appdistribution.component1"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 operator fun AppDistributionRelease.component1() = binaryType
 
@@ -72,11 +64,8 @@ operator fun AppDistributionRelease.component1() = binaryType
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.AppDistributionRelease.component2()` from the main module instead.",
-  ReplaceWith(
-    expression = "component2()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.appdistribution.component2"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 operator fun AppDistributionRelease.component2() = displayVersion
 
@@ -91,11 +80,8 @@ operator fun AppDistributionRelease.component2() = displayVersion
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.AppDistributionRelease.component3()` from the main module instead.",
-  ReplaceWith(
-    expression = "component3()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.appdistribution.component3"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 operator fun AppDistributionRelease.component3() = versionCode
 
@@ -110,11 +96,8 @@ operator fun AppDistributionRelease.component3() = versionCode
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.AppDistributionRelease.component4()` from the main module instead.",
-  ReplaceWith(
-    expression = "component4()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.appdistribution.component4"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 operator fun AppDistributionRelease.component4() = releaseNotes
 
@@ -129,11 +112,8 @@ operator fun AppDistributionRelease.component4() = releaseNotes
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.UpdateProgress.component1()` from the main module instead.",
-  ReplaceWith(
-    expression = "component1()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.appdistribution.component1"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 operator fun UpdateProgress.component1() = apkBytesDownloaded
 
@@ -148,11 +128,8 @@ operator fun UpdateProgress.component1() = apkBytesDownloaded
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.UpdateProgress.component2()` from the main module instead.",
-  ReplaceWith(
-    expression = "component2()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.appdistribution.component2"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 operator fun UpdateProgress.component2() = apkFileTotalBytes
 
@@ -167,11 +144,8 @@ operator fun UpdateProgress.component2() = apkFileTotalBytes
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.UpdateProgress.component3()` from the main module instead.",
-  ReplaceWith(
-    expression = "component3()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.appdistribution.component3"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 operator fun UpdateProgress.component3() = updateStatus
 
@@ -184,7 +158,7 @@ operator fun UpdateProgress.component3() = updateStatus
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.appdistribution.FirebaseAppDistributionKtxRegistrar` from the main module instead.",
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
   ReplaceWith(
     expression = "FirebaseAppDistributionKtxRegistrar",
     imports =

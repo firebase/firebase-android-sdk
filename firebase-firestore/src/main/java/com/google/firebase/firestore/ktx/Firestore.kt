@@ -42,6 +42,9 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
 
 /**
+ * Accessing this object for Kotlin apps has changed; see the migration guide:
+ * https://firebase.google.com/docs/android/kotlin-migration.
+ *
  * Returns the [FirebaseFirestore] instance of the default [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
  * respective main modules, and the Kotlin extension (KTX) APIs in
@@ -49,17 +52,13 @@ import kotlinx.coroutines.flow.map
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "Use `com.google.firebase.Firebase.firestore` from the main module instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.firestore",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.firestore"]
-  )
-)
 val Firebase.firestore: FirebaseFirestore
   get() = FirebaseFirestore.getInstance()
 
 /**
+ * Accessing this object for Kotlin apps has changed; see the migration guide:
+ * https://firebase.google.com/docs/android/kotlin-migration.
+ *
  * Returns the [FirebaseFirestore] instance of a given [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
  * respective main modules, and the Kotlin extension (KTX) APIs in
@@ -67,16 +66,12 @@ val Firebase.firestore: FirebaseFirestore
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "Use `com.google.firebase.Firebase.firestore(app)` from the main module instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.firestore(app)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.firestore"]
-  )
-)
 fun Firebase.firestore(app: FirebaseApp): FirebaseFirestore = FirebaseFirestore.getInstance(app)
 
 /**
+ * Accessing this object for Kotlin apps has changed; see the migration guide:
+ * https://firebase.google.com/docs/android/kotlin-migration.
+ *
  * Returns the [FirebaseFirestore] instance of a given [FirebaseApp] and database name.
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
  * respective main modules, and the Kotlin extension (KTX) APIs in
@@ -84,17 +79,13 @@ fun Firebase.firestore(app: FirebaseApp): FirebaseFirestore = FirebaseFirestore.
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "Use `com.google.firebase.Firebase.firestore(app, database)` from the main module instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.firestore(app, database)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.firestore"]
-  )
-)
 fun Firebase.firestore(app: FirebaseApp, database: String): FirebaseFirestore =
   FirebaseFirestore.getInstance(app, database)
 
 /**
+ * Accessing this object for Kotlin apps has changed; see the migration guide:
+ * https://firebase.google.com/docs/android/kotlin-migration.
+ *
  * Returns the [FirebaseFirestore] instance of the default [FirebaseApp], given the database name.
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
  * respective main modules, and the Kotlin extension (KTX) APIs in
@@ -102,13 +93,6 @@ fun Firebase.firestore(app: FirebaseApp, database: String): FirebaseFirestore =
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "Use `com.google.firebase.Firebase.firestore(database)` from the main module instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.firestore(database)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.firestore"]
-  )
-)
 fun Firebase.firestore(database: String): FirebaseFirestore =
   FirebaseFirestore.getInstance(database)
 
@@ -127,11 +111,8 @@ fun Firebase.firestore(database: String): FirebaseFirestore =
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.firestore.DocumentSnapshot.toObject` from the main module instead.",
-  ReplaceWith(
-    expression = "toObject<T>()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObject"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 inline fun <reified T> DocumentSnapshot.toObject(): T? = toObject(T::class.java)
 
@@ -155,11 +136,8 @@ inline fun <reified T> DocumentSnapshot.toObject(): T? = toObject(T::class.java)
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.firestore.DocumentSnapshot.toObject(serverTimestampBehavior).` from the main module instead.",
-  ReplaceWith(
-    expression = "toObject<T>(serverTimestampBehavior)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObject"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 inline fun <reified T> DocumentSnapshot.toObject(
   serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior
@@ -179,11 +157,8 @@ inline fun <reified T> DocumentSnapshot.toObject(
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.firestore.DocumentSnapshot.getField(field)` from the main module instead.",
-  ReplaceWith(
-    expression = "getField<T>(field)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.getField"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 inline fun <reified T> DocumentSnapshot.getField(field: String): T? = get(field, T::class.java)
 
@@ -206,11 +181,8 @@ inline fun <reified T> DocumentSnapshot.getField(field: String): T? = get(field,
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.firestore.DocumentSnapshot.getField(field, serverTimestampBehavior) ` from the main module instead.",
-  ReplaceWith(
-    expression = "getField<T>(field, serverTimestampBehavior)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.getField"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 inline fun <reified T> DocumentSnapshot.getField(
   field: String,
@@ -231,11 +203,8 @@ inline fun <reified T> DocumentSnapshot.getField(
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.firestore.DocumentSnapshot.getField(fieldPath) ` from the main module instead.",
-  ReplaceWith(
-    expression = "getField<T>(fieldPath)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.getField"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 inline fun <reified T> DocumentSnapshot.getField(fieldPath: FieldPath): T? =
   get(fieldPath, T::class.java)
@@ -259,11 +228,8 @@ inline fun <reified T> DocumentSnapshot.getField(fieldPath: FieldPath): T? =
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.firestore.DocumentSnapshot.getField(fieldPath, serverTimestampBehavior) ` from the main module instead.",
-  ReplaceWith(
-    expression = "getField<T>(fieldPath, serverTimestampBehavior)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.getField"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 inline fun <reified T> DocumentSnapshot.getField(
   fieldPath: FieldPath,
@@ -282,11 +248,8 @@ inline fun <reified T> DocumentSnapshot.getField(
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.firestore.QueryDocumentSnapshot.toObject` from the main module instead.",
-  ReplaceWith(
-    expression = "toObject<T>()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObject"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 inline fun <reified T : Any> QueryDocumentSnapshot.toObject(): T = toObject(T::class.java)
 
@@ -307,11 +270,8 @@ inline fun <reified T : Any> QueryDocumentSnapshot.toObject(): T = toObject(T::c
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.firestore.QueryDocumentSnapshot.toObject(serverTimestampBehavior)` from the main module instead.",
-  ReplaceWith(
-    expression = "toObject<T>(serverTimestampBehavior)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObject"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 inline fun <reified T : Any> QueryDocumentSnapshot.toObject(
   serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior
@@ -329,11 +289,8 @@ inline fun <reified T : Any> QueryDocumentSnapshot.toObject(
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.firestore.QuerySnapshot.toObjects` from the main module instead.",
-  ReplaceWith(
-    expression = "toObjects<T>()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObjects"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 inline fun <reified T : Any> QuerySnapshot.toObjects(): List<T> = toObjects(T::class.java)
 
@@ -353,11 +310,8 @@ inline fun <reified T : Any> QuerySnapshot.toObjects(): List<T> = toObjects(T::c
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.firestore.QuerySnapshot.toObjects(serverTimestampBehavior)` from the main module instead.",
-  ReplaceWith(
-    expression = "toObjects<T>(serverTimestampBehavior)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.toObjects"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 inline fun <reified T : Any> QuerySnapshot.toObjects(
   serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior
@@ -372,11 +326,8 @@ inline fun <reified T : Any> QuerySnapshot.toObjects(
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.firestore.firestoreSettings(init)` from the main module instead.",
-  ReplaceWith(
-    expression = "firestoreSettings(init)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.firestoreSettings"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 fun firestoreSettings(
   init: FirebaseFirestoreSettings.Builder.() -> Unit
@@ -421,15 +372,8 @@ fun persistentCacheSettings(
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.firestore.Firebase.FirestoreKtxRegistrar` from the main module instead.",
-  ReplaceWith(
-    expression = "FirebaseFirestoreKtxRegistrar",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.firestore.FirebaseFirestoreKtxRegistrar"
-      ]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 @Keep
 class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
@@ -450,13 +394,7 @@ class FirebaseFirestoreKtxRegistrar : ComponentRegistrar {
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "com.google.firebase.fires",
-  ReplaceWith(
-    expression = "snapshots(metadataChanges)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.snapshots"]
-  )
-)
+@Deprecated("com.google.firebase.fires", ReplaceWith(""))
 fun DocumentReference.snapshots(
   metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
 ): Flow<DocumentSnapshot> {
@@ -487,11 +425,8 @@ fun DocumentReference.snapshots(
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.firestore.Query.snapshots(metadataChanges)` from the main module instead.",
-  ReplaceWith(
-    expression = "snapshots(metadataChanges)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.snapshots"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 fun Query.snapshots(
   metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
@@ -525,11 +460,8 @@ fun Query.snapshots(
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.firestore.Query.dataObjects(metadataChanges)` from the main module instead.",
-  ReplaceWith(
-    expression = "dataObjects<T>(metadataChanges)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.dataObjects"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 inline fun <reified T : Any> Query.dataObjects(
   metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE
@@ -551,11 +483,8 @@ inline fun <reified T : Any> Query.dataObjects(
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.firestore.DocumentReference.dataObjects(metadataChanges)` from the main module instead.",
-  ReplaceWith(
-    expression = "dataObjects<T>(metadataChanges)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.firestore.dataObjects"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 inline fun <reified T : Any> DocumentReference.dataObjects(
   metadataChanges: MetadataChanges = MetadataChanges.EXCLUDE

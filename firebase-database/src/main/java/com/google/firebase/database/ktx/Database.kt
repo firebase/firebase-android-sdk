@@ -35,6 +35,9 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
 
 /**
+ * Accessing this object for Kotlin apps has changed; see the migration guide:
+ * https://firebase.google.com/docs/android/kotlin-migration.
+ *
  * Returns the [FirebaseDatabase] instance of the default [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
  * respective main modules, and the Kotlin extension (KTX) APIs in
@@ -42,17 +45,13 @@ import kotlinx.coroutines.flow.map
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "Use `com.google.firebase.Firebase.database` from the main module instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.database",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.database"]
-  )
-)
 val Firebase.database: FirebaseDatabase
   get() = FirebaseDatabase.getInstance()
 
 /**
+ * Accessing this object for Kotlin apps has changed; see the migration guide:
+ * https://firebase.google.com/docs/android/kotlin-migration.
+ *
  * Returns the [FirebaseDatabase] instance for the specified [url].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
  * respective main modules, and the Kotlin extension (KTX) APIs in
@@ -60,16 +59,12 @@ val Firebase.database: FirebaseDatabase
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "Use `com.google.firebase.Firebase.database(url)` from the main module instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.database(url)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.database"]
-  )
-)
 fun Firebase.database(url: String): FirebaseDatabase = FirebaseDatabase.getInstance(url)
 
 /**
+ * Accessing this object for Kotlin apps has changed; see the migration guide:
+ * https://firebase.google.com/docs/android/kotlin-migration.
+ *
  * Returns the [FirebaseDatabase] instance of the given [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
  * respective main modules, and the Kotlin extension (KTX) APIs in
@@ -77,16 +72,12 @@ fun Firebase.database(url: String): FirebaseDatabase = FirebaseDatabase.getInsta
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "Use `com.google.firebase.Firebase.database(app)` from the main module instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.database(app)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.database"]
-  )
-)
 fun Firebase.database(app: FirebaseApp): FirebaseDatabase = FirebaseDatabase.getInstance(app)
 
 /**
+ * Accessing this object for Kotlin apps has changed; see the migration guide:
+ * https://firebase.google.com/docs/android/kotlin-migration.
+ *
  * Returns the [FirebaseDatabase] instance of the given [FirebaseApp] and [url].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
  * respective main modules, and the Kotlin extension (KTX) APIs in
@@ -94,13 +85,6 @@ fun Firebase.database(app: FirebaseApp): FirebaseDatabase = FirebaseDatabase.get
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "Use `com.google.firebase.Firebase.database(app, url)` from the main module instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.database(app, url)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.database"]
-  )
-)
 fun Firebase.database(app: FirebaseApp, url: String): FirebaseDatabase =
   FirebaseDatabase.getInstance(app, url)
 
@@ -116,11 +100,8 @@ fun Firebase.database(app: FirebaseApp, url: String): FirebaseDatabase =
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.database.DataSnapshot.getValue` from the main module instead.",
-  ReplaceWith(
-    expression = "getValue<T>()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.getValue"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 inline fun <reified T> DataSnapshot.getValue(): T? {
   return getValue(object : GenericTypeIndicator<T>() {})
@@ -138,11 +119,8 @@ inline fun <reified T> DataSnapshot.getValue(): T? {
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.database.MutableData.getValue` from the main module instead.",
-  ReplaceWith(
-    expression = "getValue<T>()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.getValue"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 inline fun <reified T> MutableData.getValue(): T? {
   return getValue(object : GenericTypeIndicator<T>() {})
@@ -160,11 +138,8 @@ inline fun <reified T> MutableData.getValue(): T? {
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.database.Query.snapshots` from the main module instead.",
-  ReplaceWith(
-    expression = "snapshots",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.snapshots"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 val Query.snapshots
   get() =
@@ -195,11 +170,8 @@ val Query.snapshots
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.database.Query.childEvents` from the main module instead.",
-  ReplaceWith(
-    expression = "childEvents",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.childEvents"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 val Query.childEvents
   get() =
@@ -243,11 +215,8 @@ val Query.childEvents
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.database.Query.values` from the main module instead.",
-  ReplaceWith(
-    expression = "values<T>()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.database.values"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 inline fun <reified T : Any> Query.values(): Flow<T?> {
   return snapshots.map { it.getValue(T::class.java) }
@@ -262,7 +231,7 @@ inline fun <reified T : Any> Query.values(): Flow<T?> {
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.database.FirebaseDatabaseKtxRegistrar` from the main module instead.",
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
   ReplaceWith(
     expression = "FirebaseDatabaseKtxRegistrar",
     imports =
