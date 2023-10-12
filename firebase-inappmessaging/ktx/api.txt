@@ -1,8 +1,7 @@
 // Signature format: 2.0
 package com.google.firebase.inappmessaging.ktx {
 
-  public final class InAppMessagingKt {
-    method @NonNull public static com.google.firebase.inappmessaging.FirebaseInAppMessaging getInAppMessaging(@NonNull com.google.firebase.ktx.Firebase);
+  public final class LoggingKt {
   }
 
 }

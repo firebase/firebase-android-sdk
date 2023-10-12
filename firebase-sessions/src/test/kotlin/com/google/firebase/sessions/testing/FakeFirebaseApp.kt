@@ -20,10 +20,10 @@ import android.content.Context
 import android.os.Bundle
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.core.content.pm.PackageInfoBuilder
+import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.ktx.initialize
+import com.google.firebase.initialize
 import org.robolectric.Shadows
 
 internal class FakeFirebaseApp(metadata: Bundle? = null) {

@@ -1,4 +1,18 @@
 # Unreleased
+* [changed] Added metadata to FirebaseInstanceIdReceiver to signal that it
+  finishes background broadcasts after the message has been handled.
+
+* [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-messaging-ktx`
+  to `com.google.firebase:firebase-messaging` under the `com.google.firebase.messaging` package.
+  For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
+* [deprecated] All the APIs from `com.google.firebase:firebase-messaging-ktx` have been added to
+  `com.google.firebase:firebase-messaging` under the `com.google.firebase.messaging` package,
+  and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-messaging-ktx` are
+  now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
 
 # 23.2.1
 * [changed] Changed to finish a background broadcast after the message has been

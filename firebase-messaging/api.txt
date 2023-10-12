@@ -8,7 +8,7 @@ package com.google.firebase.messaging {
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.String> getToken();
     method public boolean isAutoInitEnabled();
     method public boolean isNotificationDelegationEnabled();
-    method public void send(@NonNull com.google.firebase.messaging.RemoteMessage);
+    method @Deprecated public void send(@NonNull com.google.firebase.messaging.RemoteMessage);
     method public void setAutoInitEnabled(boolean);
     method public void setDeliveryMetricsExportToBigQuery(boolean);
     method @NonNull public com.google.android.gms.tasks.Task<java.lang.Void> setNotificationDelegationEnabled(boolean);
@@ -26,6 +26,11 @@ package com.google.firebase.messaging {
     method @WorkerThread public void onNewToken(@NonNull String);
     method @WorkerThread public void onSendError(@NonNull String, @NonNull Exception);
     method public final int onStartCommand(android.content.Intent, int, int);
+  }
+
+  public final class MessagingKt {
+    method @NonNull public static com.google.firebase.messaging.FirebaseMessaging getMessaging(@NonNull com.google.firebase.Firebase);
+    method @NonNull public static inline com.google.firebase.messaging.RemoteMessage remoteMessage(@NonNull String to, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.messaging.RemoteMessage.Builder,kotlin.Unit> init);
   }
 
   @com.google.android.gms.common.internal.safeparcel.SafeParcelable.Class(creator="RemoteMessageCreator") @com.google.android.gms.common.internal.safeparcel.SafeParcelable.Reserved({1}) public final class RemoteMessage extends com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable {
@@ -98,6 +103,15 @@ package com.google.firebase.messaging {
     field public static final int ERROR_TOO_MANY_MESSAGES = 4; // 0x4
     field public static final int ERROR_TTL_EXCEEDED = 3; // 0x3
     field public static final int ERROR_UNKNOWN = 0; // 0x0
+  }
+
+}
+
+package com.google.firebase.messaging.ktx {
+
+  public final class MessagingKt {
+    method @Deprecated @NonNull public static com.google.firebase.messaging.FirebaseMessaging getMessaging(@NonNull com.google.firebase.ktx.Firebase);
+    method @Deprecated @NonNull public static inline com.google.firebase.messaging.RemoteMessage remoteMessage(@NonNull String to, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.messaging.RemoteMessage.Builder,kotlin.Unit> init);
   }
 
 }

@@ -1,4 +1,15 @@
 # Unreleased
+* [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-installations-ktx`
+  to `com.google.firebase:firebase-installations` under the `com.google.firebase.installations` package.
+  For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
+* [deprecated] All the APIs from `com.google.firebase:firebase-installations-ktx` have been added to
+  `com.google.firebase:firebase-installations` under the `com.google.firebase.installations` package,
+  and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-installations-ktx` are
+  now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
 
 # 17.1.3
 * [changed] Internal changes to improve startup time

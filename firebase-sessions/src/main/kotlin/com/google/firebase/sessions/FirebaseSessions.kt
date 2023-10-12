@@ -19,11 +19,11 @@ package com.google.firebase.sessions
 import android.app.Application
 import android.util.Log
 import com.google.android.datatransport.TransportFactory
+import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.app
 import com.google.firebase.inject.Provider
 import com.google.firebase.installations.FirebaseInstallationsApi
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.ktx.app
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
 import com.google.firebase.sessions.settings.SessionsSettings

@@ -1,4 +1,15 @@
 # Unreleased
+* [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-functions-ktx`
+  to `com.google.firebase:firebase-functions` under the `com.google.firebase.functions` package.
+  For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
+* [deprecated] All the APIs from `com.google.firebase:firebase-functions-ktx` have been added to
+  `com.google.firebase:firebase-functions` under the `com.google.firebase.functions` package,
+  and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-functions-ktx` are
+  now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
 
 # 20.3.1
 * [changed] Added support for App Check limited-use tokens in HTTPS Callable Functions.
