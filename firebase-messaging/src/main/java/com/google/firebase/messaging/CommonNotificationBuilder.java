@@ -20,7 +20,6 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
@@ -71,7 +70,7 @@ public final class CommonNotificationBuilder {
   // resource file exists (possibly stripped by Progurad). Note this name is set purposefully
   // different from FM's default resource channel name "Miscellaneous" for debugability.
   private static final String FCM_FALLBACK_NOTIFICATION_CHANNEL_NAME_NO_RESOURCE = "Misc";
-  private static final String ACTION_MESSAGING_EVENT = "com.google.firebase.MESSAGING_EVENT";
+  private static final String ACTION_RECEIVER = "com.google.android.c2dm.intent.RECEIVE";
 
   // Getting illegal resouce id from context will throw NotFoundException.
   // See: https://developer.android.com/reference/android/content/res/Resources#ID_NULL
@@ -559,15 +558,14 @@ public final class CommonNotificationBuilder {
     return createMessagingPendingIntent(callingContext, appContext, dismissIntent);
   }
 
-  /** Create a PendingIntent to start the app's messaging service via FirebaseInstanceIdReceiver */
+  /** Create a PendingIntent for the app's messaging receiver. */
   private static PendingIntent createMessagingPendingIntent(
       Context callingContext, Context appContext, Intent intent) {
     return PendingIntent.getBroadcast(
         callingContext,
         generatePendingIntentRequestCode(),
-        new Intent(ACTION_MESSAGING_EVENT)
-            .setComponent(
-                new ComponentName(appContext, "com.google.firebase.iid.FirebaseInstanceIdReceiver"))
+        new Intent(ACTION_RECEIVER)
+            .setPackage(appContext.getPackageName())
             .putExtra(IntentKeys.WRAPPED_INTENT, intent),
         getPendingIntentFlags(PendingIntent.FLAG_ONE_SHOT));
   }

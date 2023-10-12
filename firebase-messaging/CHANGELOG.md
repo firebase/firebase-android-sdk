@@ -1,4 +1,7 @@
 # Unreleased
+* [changed] Specified notification's dismiss intent target via action instead of
+  component name.
+
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-messaging-ktx`
   to `com.google.firebase:firebase-messaging` under the `com.google.firebase.messaging` package.
   For details, see the
