@@ -1,5 +1,5 @@
 # Unreleased
-* [changed] Upgraded the transport backend to the more modern versions
+* [changed] Internal infrastructure improvements.
 
 # 24.1.3
 * [unchanged] Updated internal Dagger dependency.
