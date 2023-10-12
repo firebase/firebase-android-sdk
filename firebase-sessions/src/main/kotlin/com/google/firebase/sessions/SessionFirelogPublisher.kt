@@ -17,16 +17,18 @@
 package com.google.firebase.sessions
 
 import android.util.Log
+import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
+import com.google.firebase.app
 import com.google.firebase.installations.FirebaseInstallationsApi
 import kotlinx.coroutines.tasks.await
 
 /**
- * [SessionCoordinator] is responsible for coordinating the systems in this SDK involved with
- * sending a [SessionEvent].
+ * [SessionFirelogPublisher] is responsible for publishing sessions to firelog
  *
  * @hide
  */
-internal class SessionCoordinator(
+internal class SessionFirelogPublisher(
   private val firebaseInstallations: FirebaseInstallationsApi,
   private val eventGDTLogger: EventGDTLoggerInterface,
 ) {
@@ -49,7 +51,15 @@ internal class SessionCoordinator(
     }
   }
 
-  companion object {
-    private const val TAG = "SessionCoordinator"
+  internal companion object {
+    const val TAG = "SessionFirelogPublisher"
+
+    @JvmStatic
+    fun getInstance(app: FirebaseApp): SessionFirelogPublisher =
+      app.get(SessionFirelogPublisher::class.java)
+
+    @JvmStatic
+    val instance: SessionFirelogPublisher
+      get() = getInstance(Firebase.app)
   }
 }

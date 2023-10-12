@@ -34,13 +34,13 @@ import org.junit.runner.RunWith
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
-class SessionCoordinatorTest {
+class SessionFirelogPublisherTest {
   @Test
   fun attemptLoggingSessionEvent_populatesFid() = runTest {
     val fakeEventGDTLogger = FakeEventGDTLogger()
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
     val sessionCoordinator =
-      SessionCoordinator(
+      SessionFirelogPublisher(
         firebaseInstallations,
         eventGDTLogger = fakeEventGDTLogger,
       )
