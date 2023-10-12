@@ -36,6 +36,7 @@ internal constructor(
   blockingDispatcher: CoroutineDispatcher,
   private val sessionFirelogPublisher: SessionFirelogPublisher,
   @Suppress("UNUSED_PARAMETER") sessionMaintainer: SessionMaintainer,
+  private val sessionGenerator: SessionGenerator,
 ) {
   private val applicationInfo = SessionEvents.getApplicationInfo(firebaseApp)
   private val sessionSettings =
@@ -46,7 +47,6 @@ internal constructor(
       firebaseInstallations,
       applicationInfo,
     )
-  private val sessionGenerator = SessionGenerator(WallClock)
 
   // TODO: This needs to be moved into the service to be consistent across multiple processes.
   private val collectEvents: Boolean
@@ -64,7 +64,7 @@ internal constructor(
 
     val sessionInitiator =
       SessionInitiator(
-        WallClock,
+        timeProvider = WallClock,
         backgroundDispatcher,
         sessionInitiateListener,
         sessionSettings,

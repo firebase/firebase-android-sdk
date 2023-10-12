@@ -45,6 +45,7 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .add(Dependency.required(blockingDispatcher))
         .add(Dependency.required(sessionMaintainer))
         .add(Dependency.required(sessionFirelogPublisher))
+        .add(Dependency.required(sessionGenerator))
         .factory { container ->
           FirebaseSessions(
             container.get(firebaseApp),
@@ -52,13 +53,18 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
             container.get(backgroundDispatcher),
             container.get(blockingDispatcher),
             container.get(sessionFirelogPublisher),
-            container.get(sessionMaintainer)
+            container.get(sessionMaintainer),
+            container.get(sessionGenerator),
           )
         }
         .build(),
       Component.builder(SessionMaintainer::class.java)
         .name(MAINTAINER_LIBRARY_NAME)
         .factory { SessionMaintainer() }
+        .build(),
+      Component.builder(SessionGenerator::class.java)
+        .name(SESSION_GENERATOR)
+        .factory { SessionGenerator(timeProvider = WallClock) }
         .build(),
       Component.builder(SessionFirelogPublisher::class.java)
         .name(SESSIONS_PUBLISHER)
@@ -78,6 +84,7 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
     private const val SESSIONS_LIBRARY_NAME = "fire-sessions"
     private const val MAINTAINER_LIBRARY_NAME = "fire-session-maintainer"
     private const val SESSIONS_PUBLISHER = "sessions-publisher"
+    private const val SESSION_GENERATOR = "session-generator"
 
     private val sessionMaintainer = unqualified(SessionMaintainer::class.java)
     private val firebaseApp = unqualified(FirebaseApp::class.java)
@@ -88,5 +95,6 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
       qualified(Blocking::class.java, CoroutineDispatcher::class.java)
     private val transportFactory = unqualified(TransportFactory::class.java)
     private val sessionFirelogPublisher = unqualified(SessionFirelogPublisher::class.java)
+    private val sessionGenerator = unqualified(SessionGenerator::class.java)
   }
 }

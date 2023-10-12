@@ -16,6 +16,9 @@
 
 package com.google.firebase.sessions
 
+import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
+import com.google.firebase.app
 import java.util.UUID
 
 /**
@@ -61,4 +64,11 @@ internal class SessionGenerator(
   }
 
   private fun generateSessionId() = uuidGenerator().toString().replace("-", "").lowercase()
+
+  internal companion object {
+    val instance: SessionGenerator
+      get() = getInstance(Firebase.app)
+
+    fun getInstance(app: FirebaseApp): SessionGenerator = app.get(SessionGenerator::class.java)
+  }
 }
