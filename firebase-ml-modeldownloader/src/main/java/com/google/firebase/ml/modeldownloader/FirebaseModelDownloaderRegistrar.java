@@ -48,7 +48,7 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
   public List<Component<?>> getComponents() {
     Qualified<Executor> bgExecutor = Qualified.qualified(Background.class, Executor.class);
     Qualified<Executor> blockingExecutor = Qualified.qualified(Blocking.class, Executor.class);
-    Qualified<TransportFactory> clearcutTransport =
+    Qualified<TransportFactory> transportFactory =
         Qualified.qualified(TransportBackend.class, TransportFactory.class);
     return Arrays.asList(
         Component.builder(FirebaseModelDownloader.class)
@@ -56,7 +56,7 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
             .add(Dependency.required(Context.class))
             .add(Dependency.required(FirebaseApp.class))
             .add(Dependency.requiredProvider(FirebaseInstallationsApi.class))
-            .add(Dependency.requiredProvider(clearcutTransport))
+            .add(Dependency.requiredProvider(transportFactory))
             .add(Dependency.required(bgExecutor))
             .add(Dependency.required(blockingExecutor))
             .factory(
@@ -67,7 +67,7 @@ public class FirebaseModelDownloaderRegistrar implements ComponentRegistrar {
                         .setFis(c.getProvider(FirebaseInstallationsApi.class))
                         .setBlockingExecutor(c.get(blockingExecutor))
                         .setBgExecutor(c.get(bgExecutor))
-                        .setTransportFactory(c.getProvider(clearcutTransport))
+                        .setTransportFactory(c.getProvider(transportFactory))
                         .build()
                         .getModelDownloader())
             .build(),
