@@ -43,15 +43,15 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .add(Dependency.required(firebaseInstallationsApi))
         .add(Dependency.required(backgroundDispatcher))
         .add(Dependency.required(blockingDispatcher))
-        .add(Dependency.requiredProvider(transportFactory))
         .add(Dependency.required(sessionMaintainer))
+        .add(Dependency.required(sessionFirelogPublisher))
         .factory { container ->
           FirebaseSessions(
             container.get(firebaseApp),
             container.get(firebaseInstallationsApi),
             container.get(backgroundDispatcher),
             container.get(blockingDispatcher),
-            container.getProvider(transportFactory),
+            container.get(sessionFirelogPublisher),
             container.get(sessionMaintainer)
           )
         }
@@ -60,12 +60,24 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .name(MAINTAINER_LIBRARY_NAME)
         .factory { SessionMaintainer() }
         .build(),
+      Component.builder(SessionFirelogPublisher::class.java)
+        .name(SESSIONS_PUBLISHER)
+        .add(Dependency.required(firebaseInstallationsApi))
+        .add(Dependency.requiredProvider(transportFactory))
+        .factory { container ->
+          SessionFirelogPublisher(
+            container.get(firebaseInstallationsApi),
+            EventGDTLogger(container.getProvider(transportFactory))
+          )
+        }
+        .build(),
       LibraryVersionComponent.create(SESSIONS_LIBRARY_NAME, BuildConfig.VERSION_NAME),
     )
 
   private companion object {
     private const val SESSIONS_LIBRARY_NAME = "fire-sessions"
     private const val MAINTAINER_LIBRARY_NAME = "fire-session-maintainer"
+    private const val SESSIONS_PUBLISHER = "sessions-publisher"
 
     private val sessionMaintainer = unqualified(SessionMaintainer::class.java)
     private val firebaseApp = unqualified(FirebaseApp::class.java)
@@ -75,5 +87,6 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
     private val blockingDispatcher =
       qualified(Blocking::class.java, CoroutineDispatcher::class.java)
     private val transportFactory = unqualified(TransportFactory::class.java)
+    private val sessionFirelogPublisher = unqualified(SessionFirelogPublisher::class.java)
   }
 }

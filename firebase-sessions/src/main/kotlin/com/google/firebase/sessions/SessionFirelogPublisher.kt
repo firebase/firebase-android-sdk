@@ -17,16 +17,16 @@
 package com.google.firebase.sessions
 
 import android.util.Log
+import com.google.firebase.FirebaseApp
 import com.google.firebase.installations.FirebaseInstallationsApi
 import kotlinx.coroutines.tasks.await
 
 /**
- * [SessionCoordinator] is responsible for coordinating the systems in this SDK involved with
- * sending a [SessionEvent].
+ * [SessionFirelogPublisher] is responsible for publishing sessions to firelog
  *
  * @hide
  */
-internal class SessionCoordinator(
+internal class SessionFirelogPublisher(
   private val firebaseInstallations: FirebaseInstallationsApi,
   private val eventGDTLogger: EventGDTLoggerInterface,
 ) {
@@ -35,7 +35,7 @@ internal class SessionCoordinator(
       try {
         firebaseInstallations.id.await()
       } catch (ex: Exception) {
-        Log.e(TAG, "Error getting Firebase Installation ID: ${ex}. Using an empty ID")
+        Log.e(tag, "Error getting Firebase Installation ID: ${ex}. Using an empty ID")
         // Use an empty fid if there is any failure.
         ""
       }
@@ -43,13 +43,16 @@ internal class SessionCoordinator(
     try {
       eventGDTLogger.log(sessionEvent)
 
-      Log.i(TAG, "Successfully logged Session Start event: ${sessionEvent.sessionData.sessionId}")
+      Log.i(tag, "Successfully logged Session Start event: ${sessionEvent.sessionData.sessionId}")
     } catch (ex: RuntimeException) {
-      Log.e(TAG, "Error logging Session Start event to DataTransport: ", ex)
+      Log.e(tag, "Error logging Session Start event to DataTransport: ", ex)
     }
   }
+  val tag = "SessionFirelogPublisher"
 
-  companion object {
-    private const val TAG = "SessionCoordinator"
+  internal companion object {
+    @JvmStatic
+    fun getInstance(app: FirebaseApp): SessionFirelogPublisher =
+      app.get(SessionFirelogPublisher::class.java)
   }
 }

@@ -18,11 +18,9 @@ package com.google.firebase.sessions
 
 import android.app.Application
 import android.util.Log
-import com.google.android.datatransport.TransportFactory
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
-import com.google.firebase.inject.Provider
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
@@ -36,7 +34,7 @@ internal constructor(
   firebaseInstallations: FirebaseInstallationsApi,
   backgroundDispatcher: CoroutineDispatcher,
   blockingDispatcher: CoroutineDispatcher,
-  transportFactoryProvider: Provider<TransportFactory>,
+  private val sessionFirelogPublisher: SessionFirelogPublisher,
   @Suppress("UNUSED_PARAMETER") sessionMaintainer: SessionMaintainer,
 ) {
   private val applicationInfo = SessionEvents.getApplicationInfo(firebaseApp)
@@ -50,8 +48,6 @@ internal constructor(
     )
   private val timeProvider: TimeProvider = Time()
   private val sessionGenerator: SessionGenerator
-  private val eventGDTLogger = EventGDTLogger(transportFactoryProvider)
-  private val sessionCoordinator = SessionCoordinator(firebaseInstallations, eventGDTLogger)
 
   init {
     sessionGenerator = SessionGenerator(collectEvents = shouldCollectEvents(), timeProvider)
@@ -148,7 +144,7 @@ internal constructor(
     try {
       val sessionEvent =
         SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings, subscribers)
-      sessionCoordinator.attemptLoggingSessionEvent(sessionEvent)
+      sessionFirelogPublisher.attemptLoggingSessionEvent(sessionEvent)
     } catch (ex: IllegalStateException) {
       // This can happen if the app suddenly deletes the instance of FirebaseApp.
       Log.w(
