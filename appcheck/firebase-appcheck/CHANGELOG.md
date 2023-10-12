@@ -1,4 +1,6 @@
 # Unreleased
+* [fixed] Fixed a bug causing internal tests to depend directly on `firebase-common`.
+
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-appcheck-ktx`
   to `com.google.firebase:firebase-appcheck` under the `com.google.firebase.appcheck` package.
   For details, see the
@@ -106,4 +108,3 @@ additional updates:
 # 16.0.0-beta01
 * [feature] Initial beta release of the [app_check] SDK with abuse reduction
   features.
-
