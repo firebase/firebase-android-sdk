@@ -16,7 +16,6 @@
 
 package com.google.firebase.sessions
 
-import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -45,7 +44,7 @@ internal object SessionLifecycleClient {
    * The maximum number of messages that we should queue up for delivery to the
    * [SessionLifecycleService] in the event that we have lost the connection.
    */
-  const val MAX_QUEUED_MESSAGES = 20
+  private const val MAX_QUEUED_MESSAGES = 20
 
   private var service: Messenger? = null
   private var serviceBound: Boolean = false
@@ -56,7 +55,7 @@ internal object SessionLifecycleClient {
    * The callback class that will be used to receive updated session events from the
    * [SessionLifecycleService].
    */
-  internal class ClientUpdateHandler() : Handler(Looper.getMainLooper()) {
+  internal class ClientUpdateHandler : Handler(Looper.getMainLooper()) {
     override fun handleMessage(msg: Message) {
       when (msg.what) {
         SessionLifecycleService.SESSION_UPDATED ->
@@ -70,7 +69,7 @@ internal object SessionLifecycleClient {
       }
     }
 
-    fun handleSessionUpdate(sessionId: String) {
+    private fun handleSessionUpdate(sessionId: String) {
       Log.i(TAG, "Session update received: $sessionId")
       curSessionId = sessionId
     }
@@ -97,11 +96,11 @@ internal object SessionLifecycleClient {
    * Binds to the [SessionLifecycleService] and passes a callback [Messenger] that will be used to
    * relay session updates to this client.
    */
-  fun bindToService(appContext: Context): Unit {
+  fun bindToService(appContext: Context) {
     Intent(appContext, SessionLifecycleService::class.java).also { intent ->
       Log.i(TAG, "Binding service to application.")
       // This is necessary for the onBind() to be called by each process
-      intent.setAction(android.os.Process.myPid().toString())
+      intent.action = android.os.Process.myPid().toString()
       intent.putExtra(
         SessionLifecycleService.CLIENT_CALLBACK_MESSENGER,
         Messenger(ClientUpdateHandler())
@@ -119,7 +118,7 @@ internal object SessionLifecycleClient {
    * will relay the event to the [SessionLifecycleService] where it can make the determination of
    * whether or not this foregrounding event should result in a new session being generated.
    */
-  fun foregrounded(activity: Activity): Unit {
+  fun foregrounded() {
     sendLifecycleEvent(SessionLifecycleService.FOREGROUNDED)
   }
 
@@ -128,14 +127,14 @@ internal object SessionLifecycleClient {
    * background. This will relay the event to the [SessionLifecycleService] where it will be used to
    * determine when a new session should be generated.
    */
-  fun backgrounded(activity: Activity): Unit {
+  fun backgrounded() {
     sendLifecycleEvent(SessionLifecycleService.BACKGROUNDED)
   }
 
   /**
    * Sends a message to the [SessionLifecycleService] with the given event code. This will
    * potentially also send any messages that have been queued up but not successfully delivered to
-   * thes service since the previous send.
+   * this service since the previous send.
    */
   private fun sendLifecycleEvent(messageCode: Int) {
     val allMessages = drainQueue()
