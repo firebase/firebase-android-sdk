@@ -128,11 +128,7 @@ fun DynamicLink.Builder.iosParameters(
  */
 @Deprecated(
   "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith(
-    expression = "googleAnalyticsParameters(init)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.googleAnalyticsParameters"]
-  )
+  ReplaceWith("")
 )
 fun DynamicLink.Builder.googleAnalyticsParameters(
   init: DynamicLink.GoogleAnalyticsParameters.Builder.() -> Unit
@@ -151,14 +147,7 @@ fun DynamicLink.Builder.googleAnalyticsParameters(
  * we'll no longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "com.google.firebase.dynam",
-  ReplaceWith(
-    expression = "googleAnalyticsParameters(source, medium, campaign, init)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.googleAnalyticsParameters"]
-  )
-)
+@Deprecated("com.google.firebase.dynam", ReplaceWith(""))
 fun DynamicLink.Builder.googleAnalyticsParameters(
   source: String,
   medium: String,
@@ -181,14 +170,7 @@ fun DynamicLink.Builder.googleAnalyticsParameters(
  */
 @Deprecated(
   "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith(
-    expression = "itunesConnectAnalyticsParameters(init)",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.dynamiclinks.itunesConnectAnalyticsParameters"
-      ]
-  )
+  ReplaceWith("")
 )
 fun DynamicLink.Builder.itunesConnectAnalyticsParameters(
   init: DynamicLink.ItunesConnectAnalyticsParameters.Builder.() -> Unit
@@ -209,11 +191,7 @@ fun DynamicLink.Builder.itunesConnectAnalyticsParameters(
  */
 @Deprecated(
   "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith(
-    expression = "socialMetaTagParameters(init)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.socialMetaTagParameters"]
-  )
+  ReplaceWith("")
 )
 fun DynamicLink.Builder.socialMetaTagParameters(
   init: DynamicLink.SocialMetaTagParameters.Builder.() -> Unit
@@ -234,11 +212,7 @@ fun DynamicLink.Builder.socialMetaTagParameters(
  */
 @Deprecated(
   "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith(
-    expression = "navigationInfoParameters(init)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.navigationInfoParameters"]
-  )
+  ReplaceWith("")
 )
 fun DynamicLink.Builder.navigationInfoParameters(
   init: DynamicLink.NavigationInfoParameters.Builder.() -> Unit
@@ -401,14 +375,7 @@ operator fun PendingDynamicLinkData.component3() = clickTimestamp
  */
 @Deprecated(
   "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith(
-    expression = "FirebaseDynamicLinksKtxRegistrar",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.dynamiclinks.FirebaseDynamicLinksKtxRegistrar"
-      ]
-  )
+  ReplaceWith("")
 )
 @Keep
 class FirebaseDynamicLinksKtxRegistrar : ComponentRegistrar {

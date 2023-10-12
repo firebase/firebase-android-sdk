@@ -45,14 +45,7 @@ val Firebase.inAppMessaging: FirebaseInAppMessaging
  */
 @Deprecated(
   "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith(
-    expression = "FirebaseInAppMessagingKtxRegistrar",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.inappmessaging.FirebaseInAppMessagingKtxRegistrar"
-      ]
-  )
+  ReplaceWith("")
 )
 @Keep
 class FirebaseInAppMessagingKtxRegistrar : ComponentRegistrar {

@@ -60,14 +60,7 @@ fun Firebase.modelDownloader(app: FirebaseApp) = FirebaseModelDownloader.getInst
  */
 @Deprecated(
   "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith(
-    expression = "customModelDownloadConditions(init)",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.ml.modeldownloader.customModelDownloadConditions"
-      ]
-  )
+  ReplaceWith("")
 )
 fun customModelDownloadConditions(
   init: CustomModelDownloadConditions.Builder.() -> Unit
@@ -97,14 +90,7 @@ operator fun CustomModel.component5() = name
  */
 @Deprecated(
   "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith(
-    expression = "FirebaseMlModelDownloaderKtxRegistrar",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.ml.modeldownloader.FirebaseMlModelDownloaderKtxRegistrar"
-      ]
-  )
+  ReplaceWith("")
 )
 class FirebaseMlModelDownloaderKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> = listOf()

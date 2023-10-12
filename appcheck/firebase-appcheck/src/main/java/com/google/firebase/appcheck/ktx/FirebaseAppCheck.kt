@@ -91,11 +91,7 @@ operator fun AppCheckToken.component2() = expireTimeMillis
  */
 @Deprecated(
   "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith(
-    expression = "FirebaseAppCheckKtxRegistrar",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.appcheck.FirebaseAppCheckKtxRegistrar"]
-  )
+  ReplaceWith("")
 )
 class FirebaseAppCheckKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> = listOf()

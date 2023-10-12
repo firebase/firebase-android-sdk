@@ -45,14 +45,7 @@ val Firebase.crashlytics: FirebaseCrashlytics
  */
 @Deprecated(
   "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith(
-    expression = "FirebaseCrashlytics.setCustomKeys(init)",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.crashlytics.FirebaseCrashlytics.setCustomKeys"
-      ]
-  )
+  ReplaceWith("")
 )
 fun FirebaseCrashlytics.setCustomKeys(init: KeyValueBuilder.() -> Unit) {
   val builder = KeyValueBuilder(this)
@@ -69,14 +62,7 @@ fun FirebaseCrashlytics.setCustomKeys(init: KeyValueBuilder.() -> Unit) {
  */
 @Deprecated(
   "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith(
-    expression = "FirebaseCrashlyticsKtxRegistrar",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.crashlytics.FirebaseCrashlyticsKtxRegistrar"
-      ]
-  )
+  ReplaceWith("")
 )
 @Keep
 internal class FirebaseCrashlyticsKtxRegistrar : ComponentRegistrar {

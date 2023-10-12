@@ -51,14 +51,7 @@ fun Firebase.installations(app: FirebaseApp): FirebaseInstallations =
 /** @suppress */
 @Deprecated(
   "com.google.firebase.installations.FirebaseInstallationsKtxRegistrar has been deprecated. Use `com.google.firebase.installationsFirebaseInstallationsKtxRegistrar` instead.",
-  ReplaceWith(
-    expression = "FirebaseInstallationsKtxRegistrar",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.installations.FirebaseInstallationsKtxRegistrar"
-      ]
-  )
+  ReplaceWith("")
 )
 class FirebaseInstallationsKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> = listOf()

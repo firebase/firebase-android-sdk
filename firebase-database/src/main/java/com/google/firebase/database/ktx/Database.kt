@@ -232,11 +232,7 @@ inline fun <reified T : Any> Query.values(): Flow<T?> {
  */
 @Deprecated(
   "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith(
-    expression = "FirebaseDatabaseKtxRegistrar",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.database.FirebaseDatabaseKtxRegistrar"]
-  )
+  ReplaceWith("")
 )
 @Keep
 class FirebaseDatabaseKtxRegistrar : ComponentRegistrar {

@@ -159,14 +159,7 @@ operator fun UpdateProgress.component3() = updateStatus
  */
 @Deprecated(
   "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith(
-    expression = "FirebaseAppDistributionKtxRegistrar",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.appdistribution.FirebaseAppDistributionKtxRegistrar"
-      ]
-  )
+  ReplaceWith("")
 )
 @Keep
 class FirebaseAppDistributionKtxRegistrar : ComponentRegistrar {
