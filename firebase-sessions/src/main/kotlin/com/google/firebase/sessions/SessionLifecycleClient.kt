@@ -12,7 +12,7 @@ import android.os.Message
 import android.os.Messenger
 import android.os.RemoteException
 import android.util.Log
-import java.util.LinkedList
+import java.util.concurrent.LinkedBlockingDeque
 
 /**
  * Client for binding to the [SessionLifecycleService]. This client will receive updated sessions
@@ -33,7 +33,7 @@ object SessionLifecycleClient {
 
   private var service: Messenger? = null
   private var serviceBound: Boolean = false
-  private val queuedMessages = LinkedList<Message>()
+  private val queuedMessages = LinkedBlockingDeque<Message>(MAX_QUEUED_MESSAGES)
   private var curSessionId: String = ""
 
   /**
@@ -67,12 +67,9 @@ object SessionLifecycleClient {
         Log.i(TAG, "Connected to SessionLifecycleService. Queue size ${queuedMessages.size}")
         service = Messenger(serviceBinder)
         serviceBound = true
-        val queueItr = queuedMessages.iterator()
-        for (msg in queueItr) {
-          Log.i(TAG, "sending queued message ${msg.what}")
-          sendLifecycleEvent(msg)
-          queueItr.remove()
-        }
+        val messagesToSend = ArrayList<Message>()
+        queuedMessages.drainTo(messagesToSend)
+        sendLifecycleEvents(messagesToSend)
       }
 
       override fun onServiceDisconnected(className: ComponentName) {
@@ -121,15 +118,38 @@ object SessionLifecycleClient {
     sendLifecycleEvent(SessionLifecycleService.BACKGROUNDED)
   }
 
-  /** Sends a message to the [SessionLifecycleService] with the given event code. */
+  /**
+   * Sends a message to the [SessionLifecycleService] with the given event code. This will
+   * potentially also send any messages that have been queued up but not successfully delivered to
+   * thes service since the previous send.
+   */
   private fun sendLifecycleEvent(messageCode: Int) {
-    sendLifecycleEvent(Message.obtain(null, messageCode, 0, 0))
+    val allMessages = ArrayList<Message>()
+    queuedMessages.drainTo(allMessages)
+    allMessages.add(Message.obtain(null, messageCode, 0, 0))
+    sendLifecycleEvents(allMessages)
+  }
+
+  /**
+   * Sends lifecycle events to the [SessionLifecycleService]. This will only send the latest
+   * FOREGROUND and BACKGROUND events to the service that are included in the given list. Running
+   * through the full backlog of messages is not useful since the service only cares about the
+   * current state and transitions from background -> foreground.
+   */
+  private fun sendLifecycleEvents(messages: List<Message>) {
+    val latest = ArrayList<Message>()
+    getLatestByCode(messages, SessionLifecycleService.BACKGROUNDED)?.let { latest.add(it) }
+    getLatestByCode(messages, SessionLifecycleService.FOREGROUNDED)?.let { latest.add(it) }
+    latest.sortBy { it.getWhen() }
+
+    latest.forEach { sendMessageToServer(it) }
   }
 
   /** Sends the given [Message] to the [SessionLifecycleService]. */
-  private fun sendLifecycleEvent(msg: Message) {
+  private fun sendMessageToServer(msg: Message) {
     if (service != null) {
       try {
+        Log.i(TAG, "Sending lifecycle ${msg.what} at time ${msg.getWhen()} to service")
         service?.send(msg)
       } catch (e: RemoteException) {
         Log.e(TAG, "Unable to deliver message: ${msg.what}")
@@ -146,9 +166,16 @@ object SessionLifecycleClient {
    */
   private fun queueMessage(msg: Message) {
     Log.i(TAG, "Queueing message ${msg.what}")
-    queuedMessages.add(msg)
-    while (queuedMessages.size > MAX_QUEUED_MESSAGES) {
+    while (queuedMessages.size >= MAX_QUEUED_MESSAGES) {
       queuedMessages.removeFirst()
     }
+    // Note: it is possible this still fails to insert if another thread inserts in the meantime.
+    // However this indicates that many lifecycle events are ocurring and so a missed message is
+    // very unlikely to result in a missed session.
+    queuedMessages.offer(msg)
   }
+
+  /** Gets the message in the given list with the given code that has the latest timestamp. */
+  private fun getLatestByCode(messages: List<Message>, msgCode: Int): Message? =
+    messages.filter { it.what == msgCode }.maxByOrNull { it.getWhen() }
 }
