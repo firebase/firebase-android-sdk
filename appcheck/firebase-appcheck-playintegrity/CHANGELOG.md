@@ -1,6 +1,8 @@
 # Unreleased
 * [fixed] Fixed client-side throttling in Play Integrity flows.
 
+* [unchanged] Updated to keep [app_check] SDK versions aligned.
+
 # 17.0.0
 * [unchanged] Updated to keep [app_check] SDK versions aligned.
 
