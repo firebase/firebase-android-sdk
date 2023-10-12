@@ -35,7 +35,7 @@ internal class SessionFirelogPublisher(
       try {
         firebaseInstallations.id.await()
       } catch (ex: Exception) {
-        Log.e(tag, "Error getting Firebase Installation ID: ${ex}. Using an empty ID")
+        Log.e(TAG, "Error getting Firebase Installation ID: ${ex}. Using an empty ID")
         // Use an empty fid if there is any failure.
         ""
       }
@@ -43,14 +43,15 @@ internal class SessionFirelogPublisher(
     try {
       eventGDTLogger.log(sessionEvent)
 
-      Log.i(tag, "Successfully logged Session Start event: ${sessionEvent.sessionData.sessionId}")
+      Log.i(TAG, "Successfully logged Session Start event: ${sessionEvent.sessionData.sessionId}")
     } catch (ex: RuntimeException) {
-      Log.e(tag, "Error logging Session Start event to DataTransport: ", ex)
+      Log.e(TAG, "Error logging Session Start event to DataTransport: ", ex)
     }
   }
-  val tag = "SessionFirelogPublisher"
 
   internal companion object {
+    const val TAG = "SessionFirelogPublisher"
+
     @JvmStatic
     fun getInstance(app: FirebaseApp): SessionFirelogPublisher =
       app.get(SessionFirelogPublisher::class.java)
