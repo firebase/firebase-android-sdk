@@ -39,7 +39,6 @@ internal class SessionLifecycleService : Service() {
 
   private val boundClients = mutableListOf<Messenger>()
   private var curSessionId: String? = null
-  private var isAppInForeground: Boolean = false
   private var lastMsgTimeMs: Long = 0
 
   /**
@@ -60,7 +59,10 @@ internal class SessionLifecycleService : Service() {
       when (msg.what) {
         FOREGROUNDED -> handleForegrounding(msg)
         BACKGROUNDED -> handleBackgrounding(msg)
-        else -> super.handleMessage(msg)
+        else -> {
+          Log.w(TAG, "Received unexpected event from the SessionLifecycleClient: $msg")
+          super.handleMessage(msg)
+        }
       }
       lastMsgTimeMs = msg.getWhen()
     }
@@ -90,12 +92,10 @@ internal class SessionLifecycleService : Service() {
     if (curSessionId == null) {
       Log.i(TAG, "Cold start detected.")
       newSession()
-    } else if (!isAppInForeground && msg.getWhen() - lastMsgTimeMs > MAX_BACKGROUND_MS) {
+    } else if (msg.getWhen() - lastMsgTimeMs > MAX_BACKGROUND_MS) {
       Log.i(TAG, "Session too long in background. Creating new session.")
       newSession()
     }
-
-    isAppInForeground = true
   }
 
   /**
@@ -105,7 +105,6 @@ internal class SessionLifecycleService : Service() {
    */
   private fun handleBackgrounding(msg: Message) {
     Log.i(TAG, "Activity backgrounding at ${msg.getWhen()}")
-    isAppInForeground = false
   }
 
   /**

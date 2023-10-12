@@ -83,9 +83,7 @@ internal object SessionLifecycleClient {
         Log.i(TAG, "Connected to SessionLifecycleService. Queue size ${queuedMessages.size}")
         service = Messenger(serviceBinder)
         serviceBound = true
-        val messagesToSend = ArrayList<Message>()
-        queuedMessages.drainTo(messagesToSend)
-        sendLifecycleEvents(messagesToSend)
+        sendLifecycleEvents(drainQueue())
       }
 
       override fun onServiceDisconnected(className: ComponentName) {
@@ -140,8 +138,7 @@ internal object SessionLifecycleClient {
    * thes service since the previous send.
    */
   private fun sendLifecycleEvent(messageCode: Int) {
-    val allMessages = ArrayList<Message>()
-    queuedMessages.drainTo(allMessages)
+    val allMessages = drainQueue()
     allMessages.add(Message.obtain(null, messageCode, 0, 0))
     sendLifecycleEvents(allMessages)
   }
@@ -181,14 +178,18 @@ internal object SessionLifecycleClient {
    * is established.
    */
   private fun queueMessage(msg: Message) {
-    Log.i(TAG, "Queueing message ${msg.what}")
-    while (queuedMessages.size >= MAX_QUEUED_MESSAGES) {
-      queuedMessages.removeFirst()
+    if (queuedMessages.offer(msg)) {
+      Log.i(TAG, "Queued message ${msg.what} at ${msg.getWhen()}")
+    } else {
+      Log.i(TAG, "Failed to enqueue message ${msg.what} at ${msg.getWhen()}. Dropping.")
     }
-    // Note: it is possible this still fails to insert if another thread inserts in the meantime.
-    // However this indicates that many lifecycle events are ocurring and so a missed message is
-    // very unlikely to result in a missed session.
-    queuedMessages.offer(msg)
+  }
+
+  /** Drains the queue of messages into a new list in a thread-safe manner. */
+  private fun drainQueue(): MutableList<Message> {
+    val messages = ArrayList<Message>()
+    queuedMessages.drainTo(messages)
+    return messages
   }
 
   /** Gets the message in the given list with the given code that has the latest timestamp. */
