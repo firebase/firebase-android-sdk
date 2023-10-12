@@ -17,7 +17,9 @@
 package com.google.firebase.sessions
 
 import android.util.Log
+import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.app
 import com.google.firebase.installations.FirebaseInstallationsApi
 import kotlinx.coroutines.tasks.await
 
@@ -55,5 +57,9 @@ internal class SessionFirelogPublisher(
     @JvmStatic
     fun getInstance(app: FirebaseApp): SessionFirelogPublisher =
       app.get(SessionFirelogPublisher::class.java)
+
+    @JvmStatic
+    val instance: SessionFirelogPublisher
+      get() = getInstance(Firebase.app)
   }
 }
