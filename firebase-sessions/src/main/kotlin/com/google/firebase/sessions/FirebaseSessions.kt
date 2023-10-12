@@ -32,7 +32,7 @@ class FirebaseSessions
 internal constructor(
   private val firebaseApp: FirebaseApp,
   firebaseInstallations: FirebaseInstallationsApi,
-  val backgroundDispatcher: CoroutineDispatcher,
+  internal val backgroundDispatcher: CoroutineDispatcher,
   blockingDispatcher: CoroutineDispatcher,
   private val sessionFirelogPublisher: SessionFirelogPublisher,
   @Suppress("UNUSED_PARAMETER") sessionMaintainer: SessionMaintainer,
