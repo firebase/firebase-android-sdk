@@ -22,6 +22,9 @@ import com.google.firebase.inappmessaging.FirebaseInAppMessaging
 import com.google.firebase.ktx.Firebase
 
 /**
+ * Accessing this object for Kotlin apps has changed; see the
+ * [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ *
  * Returns the [FirebaseInAppMessaging] instance of the default [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
  * respective main modules, and the Kotlin extension (KTX) APIs in
@@ -29,13 +32,6 @@ import com.google.firebase.ktx.Firebase
  * we'll no longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "Use `com.google.firebase.Firebase.inAppMessaging` from the main module instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.inAppMessaging",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.inappmessaging.inAppMessaging"]
-  )
-)
 val Firebase.inAppMessaging: FirebaseInAppMessaging
   get() = FirebaseInAppMessaging.getInstance()
 
@@ -48,15 +44,8 @@ val Firebase.inAppMessaging: FirebaseInAppMessaging
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.inappmessaging.FirebaseInAppMessagingKtxRegistrar` from the main module instead.",
-  ReplaceWith(
-    expression = "FirebaseInAppMessagingKtxRegistrar",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.inappmessaging.FirebaseInAppMessagingKtxRegistrar"
-      ]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 @Keep
 class FirebaseInAppMessagingKtxRegistrar : ComponentRegistrar {
