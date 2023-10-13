@@ -135,7 +135,7 @@ jobs:
         if: github.event_name == 'pull_request' && contains(matrix.module, ':firebase-firestore')
         run: |
           cd firebase-firestore
-          terraform apply -var-file=../google-services.json -auto-approve
+          terraform apply -var-file=../google-services.json -auto-approve &> /dev/null
         continue-on-error: true
       - name: ${{ matrix.module }} Integ Tests
         env:
