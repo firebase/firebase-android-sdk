@@ -22,6 +22,9 @@ import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.android.AndroidChannelBuilder
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
+import kotlin.concurrent.write
 import kotlinx.coroutines.CoroutineDispatcher
 
 class FirebaseDataConnect
@@ -30,6 +33,18 @@ internal constructor(
   private val backgroundDispatcher: CoroutineDispatcher,
   private val blockingDispatcher: CoroutineDispatcher,
 ) {
+
+  private val settingsLock = ReentrantReadWriteLock()
+
+  var settings: FirebaseDataConnectSettings = FirebaseDataConnectSettings.defaultInstance
+    get() {
+      settingsLock.read {
+        return field
+      }
+    }
+    set(value) {
+      settingsLock.write { field = value }
+    }
 
   companion object {
     @JvmStatic
