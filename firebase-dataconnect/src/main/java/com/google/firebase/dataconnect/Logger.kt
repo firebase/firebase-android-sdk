@@ -32,7 +32,7 @@ interface Logger {
   }
 }
 
-class LoggerImpl(override val name: String, override var level: Logger.Level) : Logger {
+internal class LoggerImpl(override val name: String, override var level: Logger.Level) : Logger {
 
   override fun info(message: () -> Any?) {
     if (level == Logger.Level.INFO || level == Logger.Level.DEBUG) {

@@ -32,14 +32,36 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
         )
   }
 
-  fun withHostName(hostName: String) = FirebaseDataConnectSettings(values.copy(hostName = hostName))
+  class Builder constructor(initialValues: FirebaseDataConnectSettings) {
 
-  fun withPort(port: Int) = FirebaseDataConnectSettings(values.copy(port = port))
+    private var values = initialValues.values
 
-  fun withSslEnabled(sslEnabled: Boolean) =
-    FirebaseDataConnectSettings(values.copy(sslEnabled = sslEnabled))
+    var hostName: String
+      get() = values.hostName
+      set(value) {
+        values = values.copy(hostName = value)
+      }
 
-  fun withEmulatorValues() = this.withHostName("10.0.2.2").withPort(9510).withSslEnabled(false)
+    var port: Int
+      get() = values.port
+      set(value) {
+        values = values.copy(port = value)
+      }
+
+    var sslEnabled: Boolean
+      get() = values.sslEnabled
+      set(value) {
+        values = values.copy(sslEnabled = value)
+      }
+
+    fun connectToEmulator() {
+      hostName = "10.0.2.2"
+      port = 9510
+      sslEnabled = false
+    }
+
+    fun build() = FirebaseDataConnectSettings(values)
+  }
 
   override fun equals(other: Any?) =
     when (other) {
@@ -53,6 +75,11 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
   override fun toString() =
     "FirebaseDataConnectSettings{hostName=$hostName, port=$port, sslEnabled=$sslEnabled}"
 }
+
+fun dataConnectSettings(block: FirebaseDataConnectSettings.Builder.() -> Unit) =
+  FirebaseDataConnectSettings.Builder(FirebaseDataConnectSettings.defaultInstance)
+    .apply(block)
+    .build()
 
 // Use a data class internally to store the settings to get the conveninence of the equals(),
 // hashCode(), and copy() auto-generated methods.

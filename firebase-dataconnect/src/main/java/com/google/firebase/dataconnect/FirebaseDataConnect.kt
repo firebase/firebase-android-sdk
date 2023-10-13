@@ -13,11 +13,17 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
+import com.google.protobuf.NullValue
+import com.google.protobuf.Struct
+import com.google.protobuf.Value
+import google.internal.firebase.firemat.v0.DataServiceGrpc
+import google.internal.firebase.firemat.v0.DataServiceGrpc.DataServiceBlockingStub
+import google.internal.firebase.firemat.v0.DataServiceOuterClass.ExecuteMutationRequest
+import google.internal.firebase.firemat.v0.DataServiceOuterClass.ExecuteQueryRequest
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.android.AndroidChannelBuilder
@@ -33,8 +39,49 @@ internal constructor(
   private val backgroundDispatcher: CoroutineDispatcher,
   private val blockingDispatcher: CoroutineDispatcher,
 ) {
+  private val logger = LoggerImpl("FirebaseDataConnect", Logger.Level.DEBUG)
 
   private val settingsLock = ReentrantReadWriteLock()
+  private var settingsFrozen = false
+
+  private val grpcChannel: ManagedChannel by lazy {
+    // Make sure that no further changes can be made to the settings.
+    settingsLock.write { settingsFrozen = true }
+
+    // Upgrade the Android security provider using Google Play Services.
+    //
+    // We need to upgrade the Security Provider before any network channels are initialized because
+    // okhttp maintains a list of supported providers that is initialized when the JVM first
+    // resolves the static dependencies of ManagedChannel.
+    //
+    // If initialization fails for any reason, then a warning is logged and the original,
+    // un-upgraded security provider is used.
+    try {
+      ProviderInstaller.installIfNeeded(firebaseApp.applicationContext)
+    } catch (e: Exception) {
+      logger.warn(e) { "Failed to update ssl context" }
+    }
+
+    val channelBuilder = ManagedChannelBuilder.forAddress(settings.hostName, settings.port)
+    if (!settings.sslEnabled) {
+      channelBuilder.usePlaintext()
+    }
+
+    // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
+    // the OS will  usually notify gRPC when a connection dies. But not always. This acts as a
+    // failsafe.
+    channelBuilder.keepAliveTime(30, TimeUnit.SECONDS)
+
+    // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel to
+    // respond more gracefully to network change events, such as switching from cellular to wifi.
+    AndroidChannelBuilder.usingBuilder(channelBuilder)
+      .context(firebaseApp.applicationContext)
+      .build()
+  }
+
+  private val grpcStub: DataServiceBlockingStub by lazy {
+    DataServiceGrpc.newBlockingStub(grpcChannel)
+  }
 
   var settings: FirebaseDataConnectSettings = FirebaseDataConnectSettings.defaultInstance
     get() {
@@ -43,8 +90,65 @@ internal constructor(
       }
     }
     set(value) {
-      settingsLock.write { field = value }
+      settingsLock.write {
+        if (settingsFrozen) {
+          throw IllegalStateException("settings cannot be modified after they are used")
+        }
+        field = value
+      }
     }
+
+  fun executeQuery(
+    projectId: String,
+    location: String,
+    operationName: String,
+    variables: Map<String, Any?>
+  ): Struct {
+    val request =
+      ExecuteQueryRequest.newBuilder().let {
+        it.name =
+          "projects/${projectId}/locations/${location}/services/s/operationSets/crud/revisions/r"
+        it.operationName = operationName
+        it.variables = structFromMap(variables)
+        it.build()
+      }
+
+    logger.debug { "executeQuery() sending request: $request" }
+
+    val response = grpcStub.executeQuery(request)
+
+    logger.debug { "executeQuery() got response: $response" }
+
+    return response.data
+  }
+
+  fun executeMutation(
+    projectId: String,
+    location: String,
+    operationName: String,
+    variables: Map<String, Any?>
+  ): Struct {
+    val request =
+      ExecuteMutationRequest.newBuilder().let {
+        it.name =
+          "projects/${projectId}/locations/${location}/services/s/operationSets/crud/revisions/r"
+        it.operationName = operationName
+        it.variables =
+          Struct.newBuilder().run {
+            putFields("data", Value.newBuilder().setStructValue(structFromMap(variables)).build())
+            build()
+          }
+        it.build()
+      }
+
+    logger.debug { "executeMutation() sending request: $request" }
+
+    val response = grpcStub.executeMutation(request)
+
+    logger.debug { "executeMutation() got response: $response" }
+
+    return response.data
+  }
 
   companion object {
     @JvmStatic
@@ -57,63 +161,21 @@ internal constructor(
   }
 }
 
-enum class GrpcConnectionEncryption {
-  PLAINTEXT,
-  ENCRYPTED,
-}
-
-/**
- * Open a GRPC connection.
- *
- * @param context A context to use; this context will simply be used to get the application context;
- * therefore, specifying a transient context, such as an `Activity`, will _not_ result in that
- * context being leaked.
- * @param host The host name of the server to which to connect. (e.g. `"firestore.googleapis.com"`,
- * `"10.0.2.2:9510"`)
- * @param encryption The encryption to use.
- * @param logger A logger to use.
- */
-fun createManagedChannel(
-  context: Context,
-  host: String,
-  encryption: GrpcConnectionEncryption,
-  logger: Logger
-): ManagedChannel {
-  upgradeAndroidSecurityProvider(context, logger)
-
-  val channelBuilder = ManagedChannelBuilder.forTarget(host)
-
-  when (encryption) {
-    GrpcConnectionEncryption.PLAINTEXT -> channelBuilder.usePlaintext()
-    GrpcConnectionEncryption.ENCRYPTED -> {}
+private fun structFromMap(map: Map<String, Any?>): Struct =
+  Struct.newBuilder().run {
+    map.keys.sorted().forEach { key -> putFields(key, protoValueFromObject(map[key])) }
+    build()
   }
 
-  // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
-  // the OS will  usually notify gRPC when a connection dies. But not always. This acts as a
-  // failsafe.
-  channelBuilder.keepAliveTime(30, TimeUnit.SECONDS)
-
-  // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel to
-  // respond more gracefully to network change events, such as switching from cellular to wifi.
-  return AndroidChannelBuilder.usingBuilder(channelBuilder)
-    .context(context.applicationContext)
+private fun protoValueFromObject(obj: Any?): Value =
+  Value.newBuilder()
+    .run {
+      when (obj) {
+        null -> setNullValue(NullValue.NULL_VALUE)
+        is String -> setStringValue(obj)
+        is Boolean -> setBoolValue(obj)
+        is Double -> setNumberValue(obj)
+        else -> throw IllegalArgumentException("unsupported value type: ${obj::class}")
+      }
+    }
     .build()
-}
-
-/**
- * Upgrade the Android security provider using Google Play Services.
- *
- * We need to upgrade the Security Provider before any network channels are initialized because
- * okhttp maintains a list of supported providers that is initialized when the JVM first resolves
- * the static dependencies of ManagedChannel.
- *
- * If initialization fails for any reason, then a warning is logged and this function returns as if
- * successful.
- */
-private fun upgradeAndroidSecurityProvider(context: Context, logger: Logger) {
-  try {
-    ProviderInstaller.installIfNeeded(context.applicationContext)
-  } catch (e: Exception) {
-    logger.warn(e) { "Failed to update ssl context" }
-  }
-}

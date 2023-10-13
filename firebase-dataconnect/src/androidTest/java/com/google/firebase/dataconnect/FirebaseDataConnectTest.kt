@@ -14,23 +14,15 @@
 
 package com.google.firebase.dataconnect
 
-import android.util.Log
-import androidx.test.core.app.ApplicationProvider.getApplicationContext
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Firebase
 import com.google.firebase.app
 import com.google.firebase.initialize
 import com.google.firebase.options
-import com.google.protobuf.Struct
-import com.google.protobuf.Value
-import google.internal.firebase.firemat.v0.DataServiceGrpc
-import google.internal.firebase.firemat.v0.DataServiceOuterClass.ExecuteMutationRequest
-import google.internal.firebase.firemat.v0.DataServiceOuterClass.ExecuteQueryRequest
 import java.util.UUID
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mockito.mock
 
 @RunWith(AndroidJUnit4::class)
 class FirebaseDataConnectTest {
@@ -79,69 +71,19 @@ class FirebaseDataConnectTest {
 
   @Test
   fun helloWorld() {
-    val logger = mock(Logger::class.java)
-    val managedChannel =
-      createManagedChannel(
-        getApplicationContext(),
-        "10.0.2.2:9510",
-        GrpcConnectionEncryption.PLAINTEXT,
-        logger
-      )
+    val dc = FirebaseDataConnect.instance
+    dc.settings = dataConnectSettings { connectToEmulator() }
 
-    val stub = DataServiceGrpc.newBlockingStub(managedChannel)
     val projectId = "ZzyzxTestProject"
     val location = "ZzyzxTestLocation"
 
-    run {
-      val request =
-        ExecuteMutationRequest.newBuilder().run {
-          name =
-            "projects/${projectId}/locations/${location}/services/s/operationSets/crud/revisions/r"
-          operationName = "createPost"
-          variables =
-            Struct.newBuilder().run {
-              putFields(
-                "data",
-                Value.newBuilder().run {
-                  setStructValue(
-                    Struct.newBuilder().run {
-                      putFields(
-                        "id",
-                        Value.newBuilder().setStringValue(UUID.randomUUID().toString()).build()
-                      )
-                      putFields(
-                        "content",
-                        Value.newBuilder().setStringValue("${System.currentTimeMillis()}").build()
-                      )
-                      build()
-                    }
-                  )
-                  build()
-                }
-              )
-              build()
-            }
-          build()
-        }
-
-      Log.w("zzyzx", "Sending mutation request: ${request}")
-      val response = stub.executeMutation(request)
-      Log.w("zzyzx", "Got mutation response: ${response}")
-    }
-
-    run {
-      val request =
-        ExecuteQueryRequest.newBuilder().run {
-          name =
-            "projects/${projectId}/locations/${location}/services/s/operationSets/crud/revisions/r"
-          operationName = "listPosts"
-          build()
-        }
-
-      Log.w("zzyzx", "Sending query request: ${request}")
-      val response = stub.executeQuery(request)
-      Log.w("zzyzx", "Got query response: ${response}")
-    }
+    dc.executeMutation(
+      projectId,
+      location,
+      "createPost",
+      mapOf("id" to UUID.randomUUID().toString(), "content" to "${System.currentTimeMillis()}")
+    )
+    dc.executeQuery(projectId, location, "listPosts", emptyMap())
   }
 }
 
