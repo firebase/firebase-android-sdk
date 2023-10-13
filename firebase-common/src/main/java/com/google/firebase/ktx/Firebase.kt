@@ -125,10 +125,6 @@ fun Firebase.initialize(context: Context, options: FirebaseOptions, name: String
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith("")
-)
 val Firebase.options: FirebaseOptions
   get() = Firebase.app.options
 
