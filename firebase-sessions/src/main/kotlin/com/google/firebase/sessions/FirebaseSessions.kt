@@ -36,6 +36,7 @@ internal constructor(
   blockingDispatcher: CoroutineDispatcher,
   private val sessionFirelogPublisher: SessionFirelogPublisher,
   @Suppress("UNUSED_PARAMETER") sessionMaintainer: SessionMaintainer,
+  private val sessionGenerator: SessionGenerator,
 ) {
   private val applicationInfo = SessionEvents.getApplicationInfo(firebaseApp)
   private val sessionSettings =
@@ -46,11 +47,12 @@ internal constructor(
       firebaseInstallations,
       applicationInfo,
     )
-  private val timeProvider: TimeProvider = Time()
-  private val sessionGenerator: SessionGenerator
+
+  // TODO: This needs to be moved into the service to be consistent across multiple processes.
+  private val collectEvents: Boolean
 
   init {
-    sessionGenerator = SessionGenerator(collectEvents = shouldCollectEvents(), timeProvider)
+    collectEvents = shouldCollectEvents()
 
     val sessionInitiateListener =
       object : SessionInitiateListener {
@@ -62,7 +64,7 @@ internal constructor(
 
     val sessionInitiator =
       SessionInitiator(
-        timeProvider,
+        timeProvider = WallClock,
         backgroundDispatcher,
         sessionInitiateListener,
         sessionSettings,
@@ -136,7 +138,7 @@ internal constructor(
       return
     }
 
-    if (!sessionGenerator.collectEvents) {
+    if (!collectEvents) {
       Log.d(TAG, "Sessions SDK has dropped this session due to sampling.")
       return
     }

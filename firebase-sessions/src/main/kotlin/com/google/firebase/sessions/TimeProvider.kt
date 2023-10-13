@@ -27,7 +27,7 @@ internal interface TimeProvider {
 }
 
 /** "Wall clock" time provider. */
-internal class Time : TimeProvider {
+internal object WallClock : TimeProvider {
   /**
    * Gets the [Duration] elapsed in "wall clock" time since device boot.
    *
@@ -45,8 +45,6 @@ internal class Time : TimeProvider {
    */
   override fun currentTimeUs(): Long = System.currentTimeMillis() * US_PER_MILLIS
 
-  companion object {
-    /** Microseconds per millisecond. */
-    private const val US_PER_MILLIS = 1000L
-  }
+  /** Microseconds per millisecond. */
+  private const val US_PER_MILLIS = 1000L
 }
