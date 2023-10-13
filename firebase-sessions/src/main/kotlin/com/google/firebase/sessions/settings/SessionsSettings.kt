@@ -20,8 +20,12 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
+import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
+import com.google.firebase.app
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.ApplicationInfo
+import com.google.firebase.sessions.SessionEvents
 import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -31,7 +35,7 @@ internal class SessionsSettings(
   private val localOverrideSettings: SettingsProvider,
   private val remoteSettings: SettingsProvider,
 ) {
-  constructor(
+  private constructor(
     context: Context,
     blockingDispatcher: CoroutineContext,
     backgroundDispatcher: CoroutineContext,
@@ -51,6 +55,19 @@ internal class SessionsSettings(
           ),
         dataStore = context.dataStore,
       ),
+  )
+
+  constructor(
+    firebaseApp: FirebaseApp,
+    blockingDispatcher: CoroutineContext,
+    backgroundDispatcher: CoroutineContext,
+    firebaseInstallationsApi: FirebaseInstallationsApi
+  ) : this(
+    firebaseApp.applicationContext,
+    blockingDispatcher,
+    backgroundDispatcher,
+    firebaseInstallationsApi,
+    SessionEvents.getApplicationInfo(firebaseApp),
   )
 
   // Order of preference for all the configs below:
@@ -117,8 +134,13 @@ internal class SessionsSettings(
     remoteSettings.updateSettings()
   }
 
-  private companion object {
-    const val SESSION_CONFIGS_NAME = "firebase_session_settings"
+  internal companion object {
+    private const val SESSION_CONFIGS_NAME = "firebase_session_settings"
+
+    val instance: SessionsSettings
+      get() = getInstance(Firebase.app)
+
+    fun getInstance(app: FirebaseApp): SessionsSettings = app.get(SessionsSettings::class.java)
 
     private val Context.dataStore: DataStore<Preferences> by
       preferencesDataStore(name = SESSION_CONFIGS_NAME)

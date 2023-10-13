@@ -17,7 +17,7 @@
 package com.google.firebase.sessions
 
 /** Interface for listening to the initiation of a new session. */
-internal interface SessionInitiateListener {
+internal fun interface SessionInitiateListener {
   /** To be called whenever a new session is initiated. */
   suspend fun onInitiateSession(sessionDetails: SessionDetails)
 }
