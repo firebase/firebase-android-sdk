@@ -40,7 +40,7 @@ import kotlinx.coroutines.flow.map
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.Firebase.database` from the main module instead.",
@@ -58,7 +58,7 @@ val Firebase.database: FirebaseDatabase
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.Firebase.database(url)` from the main module instead.",
@@ -75,7 +75,7 @@ fun Firebase.database(url: String): FirebaseDatabase = FirebaseDatabase.getInsta
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.Firebase.database(app)` from the main module instead.",
@@ -92,7 +92,7 @@ fun Firebase.database(app: FirebaseApp): FirebaseDatabase = FirebaseDatabase.get
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.Firebase.database(app, url)` from the main module instead.",
@@ -113,7 +113,7 @@ fun Firebase.database(app: FirebaseApp, url: String): FirebaseDatabase =
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.database.DataSnapshot.getValue` from the main module instead.",
@@ -135,7 +135,7 @@ inline fun <reified T> DataSnapshot.getValue(): T? {
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.database.MutableData.getValue` from the main module instead.",
@@ -157,7 +157,7 @@ inline fun <reified T> MutableData.getValue(): T? {
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.database.Query.snapshots` from the main module instead.",
@@ -192,7 +192,7 @@ val Query.snapshots
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.database.Query.childEvents` from the main module instead.",
@@ -240,7 +240,7 @@ val Query.childEvents
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.database.Query.values` from the main module instead.",
@@ -259,7 +259,7 @@ inline fun <reified T : Any> Query.values(): Flow<T?> {
  * respective main modules, and the Kotlin extension (KTX) APIs in
  * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no
  * longer release KTX modules. For details, see the
- * [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules)
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
   "Use `com.google.firebase.database.FirebaseDatabaseKtxRegistrar` from the main module instead.",

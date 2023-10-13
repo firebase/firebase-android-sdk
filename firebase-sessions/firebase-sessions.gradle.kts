@@ -48,10 +48,10 @@ android {
 }
 
 dependencies {
-  api("com.google.firebase:firebase-common:20.4.0")
-  api("com.google.firebase:firebase-common-ktx:20.4.0")
+  api("com.google.firebase:firebase-common:20.4.1")
+  api("com.google.firebase:firebase-common-ktx:20.4.1")
 
-  implementation("com.google.firebase:firebase-components:17.1.3")
+  implementation("com.google.firebase:firebase-components:17.1.4")
   implementation(project(":firebase-installations-interop")) {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
@@ -67,7 +67,7 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  runtimeOnly("com.google.firebase:firebase-datatransport:18.1.8"){
+  runtimeOnly("com.google.firebase:firebase-datatransport:18.1.8") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }

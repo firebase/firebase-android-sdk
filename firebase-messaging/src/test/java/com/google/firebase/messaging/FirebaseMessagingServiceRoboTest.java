@@ -43,7 +43,6 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -60,7 +59,6 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.iid.FirebaseInstanceIdReceiver;
 import com.google.firebase.messaging.AnalyticsTestHelper.Analytics;
-import com.google.firebase.messaging.shadows.ShadowMessenger;
 import com.google.firebase.messaging.testing.AnalyticsValidator;
 import com.google.firebase.messaging.testing.Bundles;
 import com.google.firebase.messaging.testing.FakeConnectorComponent;
@@ -81,18 +79,17 @@ import org.mockito.MockitoAnnotations;
 import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.android.controller.ServiceController;
-import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
 import org.robolectric.annotation.LooperMode.Mode;
 import org.robolectric.shadows.ShadowLooper;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(shadows = {ShadowMessenger.class})
 @LooperMode(Mode.PAUSED)
 public class FirebaseMessagingServiceRoboTest {
 
   // Constants are copied so that tests will break if these change
   private static final String ACTION_NEW_TOKEN = "com.google.firebase.messaging.NEW_TOKEN";
+  private static final String ACTION_RECEIVER = "com.google.android.c2dm.intent.RECEIVE";
 
   private static final String DEFAULT_FROM = "123";
   private static final String DEFAULT_TO = "456";
@@ -588,8 +585,8 @@ public class FirebaseMessagingServiceRoboTest {
     // Ensure the intent is a broadcast to the receiver, then dispatch it
     assertWithMessage("expected broadcast intent").that(shadowOf(pi).isBroadcastIntent()).isTrue();
 
-    assertEquals(
-        intent.getComponent(), new ComponentName(context, FirebaseInstanceIdReceiver.class));
+    assertEquals(intent.getAction(), ACTION_RECEIVER);
+    assertEquals(intent.getPackage(), context.getPackageName());
     sendBroadcastToReceiver(intent);
     ShadowLooper.idleMainLooper();
   }
