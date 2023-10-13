@@ -39,6 +39,7 @@ import static org.junit.Assume.assumeTrue;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
 import com.google.common.truth.Truth;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Collections;
 import java.util.Map;
@@ -1054,8 +1055,15 @@ public class AggregationTest {
     Throwable throwable = assertThrows(Throwable.class, () -> waitFor(task));
 
     Throwable cause = throwable.getCause();
-    Truth.assertThat(cause).hasMessageThat().ignoringCase().contains("index");
-    Truth.assertThat(cause).hasMessageThat().contains("https://console.firebase.google.com");
+    if (collection
+            .firestore
+            .getDatabaseId()
+            .getDatabaseId()
+            .equals(DatabaseId.DEFAULT_DATABASE_ID)) {
+      Truth.assertThat(cause).hasMessageThat().contains("https://console.firebase.google.com");
+    } else {
+      Truth.assertThat(cause).hasMessageThat().contains("Missing index configuration");
+    }
   }
 
   @Test
