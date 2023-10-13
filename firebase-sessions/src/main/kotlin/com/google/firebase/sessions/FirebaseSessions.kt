@@ -30,7 +30,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 class FirebaseSessions
 internal constructor(
   private val firebaseApp: FirebaseApp,
-  backgroundDispatcher: CoroutineDispatcher,
+  internal val backgroundDispatcher: CoroutineDispatcher,
   private val sessionFirelogPublisher: SessionFirelogPublisher,
   private val sessionGenerator: SessionGenerator,
   private val sessionSettings: SessionsSettings,
@@ -77,14 +77,6 @@ internal constructor(
       "Registering Sessions SDK subscriber with name: ${subscriber.sessionSubscriberName}, " +
         "data collection enabled: ${subscriber.isDataCollectionEnabled}"
     )
-
-    // Immediately call the callback if Sessions generated a session before the
-    // subscriber subscribed, otherwise subscribers might miss the first session.
-    if (sessionGenerator.hasGenerateSession) {
-      subscriber.onSessionChanged(
-        SessionSubscriber.SessionDetails(sessionGenerator.currentSession.sessionId)
-      )
-    }
   }
 
   private suspend fun initiateSessionStart(sessionDetails: SessionDetails) {
