@@ -41,8 +41,8 @@ import kotlinx.coroutines.launch
  * connected clients.
  */
 internal class SessionLifecycleService(
-  private var datastore: SessionDatastore = SessionDatastore(Firebase.app.applicationContext))
-  : Service() {
+  private var datastore: SessionDatastore = SessionDatastore(Firebase.app.applicationContext)
+) : Service() {
 
   /**
    * Queue of connected clients.
@@ -66,16 +66,12 @@ internal class SessionLifecycleService(
    */
   private var lastMsgTimeMs: Long = 0
 
-  /**
-   * Most recent session from datastore is updated asynchronously whenever it changes
-   */
+  /** Most recent session from datastore is updated asynchronously whenever it changes */
   private val currentSessionFromDatastore: AtomicReference<FirebaseSessionsData> = AtomicReference()
 
   init {
     CoroutineScope(FirebaseSessions.instance.backgroundDispatcher).launch {
-      datastore.firebaseSessionDataFlow.collect() {
-        currentSessionFromDatastore.set(it)
-      }
+      datastore.firebaseSessionDataFlow.collect() { currentSessionFromDatastore.set(it) }
     }
   }
 
@@ -84,7 +80,8 @@ internal class SessionLifecycleService(
    * All incoming communication from connected clients comes through this class and will be used to
    * determine when new sessions should be created.
    */
-  // TODO(rothbutter) there's a warning that this needs to be static and leaks may occur. Need to look in to this
+  // TODO(rothbutter) there's a warning that this needs to be static and leaks may occur. Need to
+  // look in to this
   internal inner class IncomingHandler(
     context: Context,
     private val appContext: Context = context.applicationContext,
