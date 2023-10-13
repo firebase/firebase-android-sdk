@@ -32,7 +32,7 @@ internal constructor(
   private val firebaseApp: FirebaseApp,
   internal val backgroundDispatcher: CoroutineDispatcher,
   private val sessionFirelogPublisher: SessionFirelogPublisher,
-  private val sessionGenerator: SessionGenerator,
+  sessionGenerator: SessionGenerator,
   private val sessionSettings: SessionsSettings,
 ) {
 
@@ -141,9 +141,18 @@ internal constructor(
 
     @JvmStatic
     val instance: FirebaseSessions
-      get() = getInstance(Firebase.app)
+      get() = Firebase.app.get(FirebaseSessions::class.java)
 
     @JvmStatic
-    fun getInstance(app: FirebaseApp): FirebaseSessions = app.get(FirebaseSessions::class.java)
+    @Deprecated(
+      "Firebase Sessions only supports the Firebase default app.",
+      ReplaceWith("FirebaseSessions.instance"),
+    )
+    fun getInstance(app: FirebaseApp): FirebaseSessions =
+      if (app == Firebase.app) {
+        app.get(FirebaseSessions::class.java)
+      } else {
+        throw IllegalArgumentException("Firebase Sessions only supports the Firebase default app.")
+      }
   }
 }
