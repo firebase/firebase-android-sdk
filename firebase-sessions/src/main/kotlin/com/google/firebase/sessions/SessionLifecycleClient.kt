@@ -28,7 +28,11 @@ import android.os.Message
 import android.os.Messenger
 import android.os.RemoteException
 import android.util.Log
+import com.google.firebase.sessions.api.FirebaseSessionsDependencies
+import com.google.firebase.sessions.api.SessionSubscriber
 import java.util.concurrent.LinkedBlockingDeque
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * Client for binding to the [SessionLifecycleService]. This client will receive updated sessions
@@ -70,9 +74,16 @@ internal object SessionLifecycleClient {
       }
     }
 
-    fun handleSessionUpdate(sessionId: String) {
+    private fun handleSessionUpdate(sessionId: String) {
       Log.i(TAG, "Session update received: $sessionId")
       curSessionId = sessionId
+
+      CoroutineScope(FirebaseSessions.instance.backgroundDispatcher).launch {
+        FirebaseSessionsDependencies.getRegisteredSubscribers().values.forEach { subscriber ->
+          // Notify subscribers, regardless of sampling and data collection state.
+          subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionId))
+        }
+      }
     }
   }
 
