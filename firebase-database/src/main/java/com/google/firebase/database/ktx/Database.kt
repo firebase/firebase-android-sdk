@@ -35,8 +35,8 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
 
 /**
- * Accessing this object for Kotlin apps has changed; see
- * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * Accessing this object for Kotlin apps has changed; see the
+ * [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseDatabase] instance of the default [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -49,8 +49,8 @@ val Firebase.database: FirebaseDatabase
   get() = FirebaseDatabase.getInstance()
 
 /**
- * Accessing this object for Kotlin apps has changed; see
- * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * Accessing this object for Kotlin apps has changed; see the
+ * [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseDatabase] instance for the specified [url].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -62,8 +62,8 @@ val Firebase.database: FirebaseDatabase
 fun Firebase.database(url: String): FirebaseDatabase = FirebaseDatabase.getInstance(url)
 
 /**
- * Accessing this object for Kotlin apps has changed; see
- * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * Accessing this object for Kotlin apps has changed; see the
+ * [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseDatabase] instance of the given [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -75,8 +75,8 @@ fun Firebase.database(url: String): FirebaseDatabase = FirebaseDatabase.getInsta
 fun Firebase.database(app: FirebaseApp): FirebaseDatabase = FirebaseDatabase.getInstance(app)
 
 /**
- * Accessing this object for Kotlin apps has changed; see
- * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * Accessing this object for Kotlin apps has changed; see the
+ * [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseDatabase] instance of the given [FirebaseApp] and [url].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their

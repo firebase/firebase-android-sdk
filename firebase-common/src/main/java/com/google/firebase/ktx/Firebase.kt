@@ -44,6 +44,9 @@ import kotlinx.coroutines.asCoroutineDispatcher
 object Firebase
 
 /**
+ * Accessing this object for Kotlin apps has changed; see the migration guide:
+ * https://firebase.google.com/docs/android/kotlin-migration.
+ *
  * Returns the default firebase app instance.
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
  * respective main modules, and the Kotlin extension (KTX) APIs in
@@ -51,14 +54,13 @@ object Firebase
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration).
  */
-@Deprecated(
-  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith("")
-)
 val Firebase.app: FirebaseApp
   get() = FirebaseApp.getInstance()
 
 /**
+ * Accessing this object for Kotlin apps has changed; see the migration guide:
+ * https://firebase.google.com/docs/android/kotlin-migration.
+ *
  * Returns a named firebase app instance.
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
  * respective main modules, and the Kotlin extension (KTX) APIs in
@@ -66,10 +68,6 @@ val Firebase.app: FirebaseApp
  * longer release KTX modules. For details, see the
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration).
  */
-@Deprecated(
-  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
-  ReplaceWith("")
-)
 fun Firebase.app(name: String): FirebaseApp = FirebaseApp.getInstance(name)
 
 /**
@@ -117,6 +115,9 @@ fun Firebase.initialize(context: Context, options: FirebaseOptions, name: String
   FirebaseApp.initializeApp(context, options, name)
 
 /**
+ * Accessing this object for Kotlin apps has changed; see the migration guide:
+ * https://firebase.google.com/docs/android/kotlin-migration.
+ *
  * Returns options of default FirebaseApp
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
  * respective main modules, and the Kotlin extension (KTX) APIs in

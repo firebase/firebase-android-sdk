@@ -26,8 +26,8 @@ import com.google.firebase.dynamiclinks.ShortDynamicLink
 import com.google.firebase.ktx.Firebase
 
 /**
- * Accessing this object for Kotlin apps has changed; see
- * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * Accessing this object for Kotlin apps has changed; see the
+ * [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseDynamicLinks] instance of the default [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
@@ -40,8 +40,8 @@ val Firebase.dynamicLinks: FirebaseDynamicLinks
   get() = FirebaseDynamicLinks.getInstance()
 
 /**
- * Accessing this object for Kotlin apps has changed; see
- * the [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ * Accessing this object for Kotlin apps has changed; see the
+ * [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
  *
  * Returns the [FirebaseDynamicLinks] instance of a given [FirebaseApp].
  * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
