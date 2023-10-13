@@ -20,7 +20,7 @@ plugins {
 firebaseLibrary {
   libraryGroup "crashlytics"
   testLab.enabled = true
-  publishJavadoc = true
+  publishJavadoc = false
   publishSources = true
 }
 
@@ -45,13 +45,11 @@ android {
 }
 
 dependencies {
-  implementation "com.google.firebase:firebase-common-ktx:20.3.2"
-  implementation "com.google.firebase:firebase-common:20.3.2"
-  implementation "com.google.firebase:firebase-components:17.1.0"
-  implementation(libs.androidx.annotation)
-  implementation project(":firebase-crashlytics")
-
-  androidTestImplementation(libs.androidx.test.junit)
-  androidTestImplementation(libs.androidx.test.runner)
-  androidTestImplementation(libs.truth)
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.truth)
+    api("com.google.firebase:firebase-common:20.4.1")
+    api("com.google.firebase:firebase-common-ktx:20.4.1")
+    implementation("com.google.firebase:firebase-components:17.1.4")
+    api(project(":firebase-crashlytics"))
 }

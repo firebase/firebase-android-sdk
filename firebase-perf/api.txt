@@ -27,6 +27,24 @@ package com.google.firebase.perf {
     field public static final String TRACE = "TRACE";
   }
 
+  public final class PerformanceKt {
+    method @NonNull public static com.google.firebase.perf.FirebasePerformance getPerformance(@NonNull com.google.firebase.Firebase);
+    method public static inline void trace(@NonNull com.google.firebase.perf.metrics.HttpMetric, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.perf.metrics.HttpMetric,kotlin.Unit> block);
+    method public static inline <T> T trace(@NonNull com.google.firebase.perf.metrics.Trace, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.perf.metrics.Trace,? extends T> block);
+    method public static inline <T> T trace(@NonNull String name, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.perf.metrics.Trace,? extends T> block);
+  }
+
+}
+
+package com.google.firebase.perf.ktx {
+
+  public final class PerformanceKt {
+    method @Deprecated @NonNull public static com.google.firebase.perf.FirebasePerformance getPerformance(@NonNull com.google.firebase.ktx.Firebase);
+    method @Deprecated public static inline void trace(@NonNull com.google.firebase.perf.metrics.HttpMetric, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.perf.metrics.HttpMetric,kotlin.Unit> block);
+    method @Deprecated public static inline <T> T trace(@NonNull com.google.firebase.perf.metrics.Trace, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.perf.metrics.Trace,? extends T> block);
+    method @Deprecated public static inline <T> T trace(@NonNull String name, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.perf.metrics.Trace,? extends T> block);
+  }
+
 }
 
 package com.google.firebase.perf.metrics {

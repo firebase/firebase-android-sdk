@@ -84,6 +84,27 @@ package com.google.firebase.storage {
   @IntDef({com.google.firebase.storage.StorageException.ERROR_UNKNOWN, com.google.firebase.storage.StorageException.ERROR_OBJECT_NOT_FOUND, com.google.firebase.storage.StorageException.ERROR_BUCKET_NOT_FOUND, com.google.firebase.storage.StorageException.ERROR_PROJECT_NOT_FOUND, com.google.firebase.storage.StorageException.ERROR_QUOTA_EXCEEDED, com.google.firebase.storage.StorageException.ERROR_NOT_AUTHENTICATED, com.google.firebase.storage.StorageException.ERROR_NOT_AUTHORIZED, com.google.firebase.storage.StorageException.ERROR_RETRY_LIMIT_EXCEEDED, com.google.firebase.storage.StorageException.ERROR_INVALID_CHECKSUM, com.google.firebase.storage.StorageException.ERROR_CANCELED}) @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.SOURCE) public static @interface StorageException.ErrorCode {
   }
 
+  public final class StorageKt {
+    method public static operator long component1(@NonNull com.google.firebase.storage.UploadTask.TaskSnapshot);
+    method public static operator long component1(@NonNull com.google.firebase.storage.StreamDownloadTask.TaskSnapshot);
+    method public static operator long component1(@NonNull com.google.firebase.storage.FileDownloadTask.TaskSnapshot);
+    method @NonNull public static operator java.util.List<com.google.firebase.storage.StorageReference> component1(@NonNull com.google.firebase.storage.ListResult);
+    method public static operator long component2(@NonNull com.google.firebase.storage.UploadTask.TaskSnapshot);
+    method public static operator long component2(@NonNull com.google.firebase.storage.StreamDownloadTask.TaskSnapshot);
+    method public static operator long component2(@NonNull com.google.firebase.storage.FileDownloadTask.TaskSnapshot);
+    method @NonNull public static operator java.util.List<com.google.firebase.storage.StorageReference> component2(@NonNull com.google.firebase.storage.ListResult);
+    method @Nullable public static operator com.google.firebase.storage.StorageMetadata component3(@NonNull com.google.firebase.storage.UploadTask.TaskSnapshot);
+    method @NonNull public static operator java.io.InputStream component3(@NonNull com.google.firebase.storage.StreamDownloadTask.TaskSnapshot);
+    method @Nullable public static operator String component3(@NonNull com.google.firebase.storage.ListResult);
+    method @Nullable public static operator android.net.Uri component4(@NonNull com.google.firebase.storage.UploadTask.TaskSnapshot);
+    method @NonNull public static com.google.firebase.storage.FirebaseStorage getStorage(@NonNull com.google.firebase.Firebase);
+    method @NonNull public static <T extends com.google.firebase.storage.StorageTask.SnapshotBase> kotlinx.coroutines.flow.Flow<com.google.firebase.storage.TaskState<T>> getTaskState(@NonNull com.google.firebase.storage.StorageTask<T>);
+    method @NonNull public static com.google.firebase.storage.FirebaseStorage storage(@NonNull com.google.firebase.Firebase, @NonNull String url);
+    method @NonNull public static com.google.firebase.storage.FirebaseStorage storage(@NonNull com.google.firebase.Firebase, @NonNull com.google.firebase.FirebaseApp app);
+    method @NonNull public static com.google.firebase.storage.FirebaseStorage storage(@NonNull com.google.firebase.Firebase, @NonNull com.google.firebase.FirebaseApp app, @NonNull String url);
+    method @NonNull public static com.google.firebase.storage.StorageMetadata storageMetadata(@NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.storage.StorageMetadata.Builder,kotlin.Unit> init);
+  }
+
   public class StorageMetadata {
     ctor public StorageMetadata();
     method @Nullable public String getBucket();
@@ -231,6 +252,21 @@ package com.google.firebase.storage {
     method public long getTotalByteCount();
   }
 
+  public abstract class TaskState<T> {
+  }
+
+  public static final class TaskState.InProgress<T> extends com.google.firebase.storage.TaskState<T> {
+    ctor public TaskState.InProgress(@Nullable T snapshot);
+    method public T getSnapshot();
+    property public final T snapshot;
+  }
+
+  public static final class TaskState.Paused<T> extends com.google.firebase.storage.TaskState<T> {
+    ctor public TaskState.Paused(@Nullable T snapshot);
+    method public T getSnapshot();
+    property public final T snapshot;
+  }
+
   public class UploadTask extends com.google.firebase.storage.StorageTask<com.google.firebase.storage.UploadTask.TaskSnapshot> {
     method protected void resetState();
     method protected void schedule();
@@ -241,6 +277,46 @@ package com.google.firebase.storage {
     method @Nullable public com.google.firebase.storage.StorageMetadata getMetadata();
     method public long getTotalByteCount();
     method @Nullable public android.net.Uri getUploadSessionUri();
+  }
+
+}
+
+package com.google.firebase.storage.ktx {
+
+  public final class StorageKt {
+    method @Deprecated public static operator long component1(@NonNull com.google.firebase.storage.UploadTask.TaskSnapshot);
+    method @Deprecated public static operator long component1(@NonNull com.google.firebase.storage.StreamDownloadTask.TaskSnapshot);
+    method @Deprecated public static operator long component1(@NonNull com.google.firebase.storage.FileDownloadTask.TaskSnapshot);
+    method @Deprecated @NonNull public static operator java.util.List<com.google.firebase.storage.StorageReference> component1(@NonNull com.google.firebase.storage.ListResult);
+    method @Deprecated public static operator long component2(@NonNull com.google.firebase.storage.UploadTask.TaskSnapshot);
+    method @Deprecated public static operator long component2(@NonNull com.google.firebase.storage.StreamDownloadTask.TaskSnapshot);
+    method @Deprecated public static operator long component2(@NonNull com.google.firebase.storage.FileDownloadTask.TaskSnapshot);
+    method @Deprecated @NonNull public static operator java.util.List<com.google.firebase.storage.StorageReference> component2(@NonNull com.google.firebase.storage.ListResult);
+    method @Deprecated @Nullable public static operator com.google.firebase.storage.StorageMetadata component3(@NonNull com.google.firebase.storage.UploadTask.TaskSnapshot);
+    method @Deprecated @NonNull public static operator java.io.InputStream component3(@NonNull com.google.firebase.storage.StreamDownloadTask.TaskSnapshot);
+    method @Deprecated @Nullable public static operator String component3(@NonNull com.google.firebase.storage.ListResult);
+    method @Deprecated @Nullable public static operator android.net.Uri component4(@NonNull com.google.firebase.storage.UploadTask.TaskSnapshot);
+    method @Deprecated @NonNull public static com.google.firebase.storage.FirebaseStorage getStorage(@NonNull com.google.firebase.ktx.Firebase);
+    method @Deprecated @NonNull public static <T extends com.google.firebase.storage.StorageTask.SnapshotBase> kotlinx.coroutines.flow.Flow<com.google.firebase.storage.ktx.TaskState<T>> getTaskState(@NonNull com.google.firebase.storage.StorageTask<T>);
+    method @Deprecated @NonNull public static com.google.firebase.storage.FirebaseStorage storage(@NonNull com.google.firebase.ktx.Firebase, @NonNull String url);
+    method @Deprecated @NonNull public static com.google.firebase.storage.FirebaseStorage storage(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app);
+    method @Deprecated @NonNull public static com.google.firebase.storage.FirebaseStorage storage(@NonNull com.google.firebase.ktx.Firebase, @NonNull com.google.firebase.FirebaseApp app, @NonNull String url);
+    method @Deprecated @NonNull public static com.google.firebase.storage.StorageMetadata storageMetadata(@NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.storage.StorageMetadata.Builder,kotlin.Unit> init);
+  }
+
+  @Deprecated public abstract class TaskState<T> {
+  }
+
+  @Deprecated public static final class TaskState.InProgress<T> extends com.google.firebase.storage.ktx.TaskState<T> {
+    ctor @Deprecated public TaskState.InProgress(@Nullable T snapshot);
+    method @Deprecated public T getSnapshot();
+    property public final T snapshot;
+  }
+
+  @Deprecated public static final class TaskState.Paused<T> extends com.google.firebase.storage.ktx.TaskState<T> {
+    ctor @Deprecated public TaskState.Paused(@Nullable T snapshot);
+    method @Deprecated public T getSnapshot();
+    property public final T snapshot;
   }
 
 }

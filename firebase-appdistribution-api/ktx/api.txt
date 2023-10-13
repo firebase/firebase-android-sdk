@@ -1,15 +1,7 @@
 // Signature format: 2.0
 package com.google.firebase.appdistribution.ktx {
 
-  public final class FirebaseAppDistributionKt {
-    method @NonNull public static operator com.google.firebase.appdistribution.BinaryType component1(@NonNull com.google.firebase.appdistribution.AppDistributionRelease);
-    method public static operator long component1(@NonNull com.google.firebase.appdistribution.UpdateProgress);
-    method @NonNull public static operator String component2(@NonNull com.google.firebase.appdistribution.AppDistributionRelease);
-    method public static operator long component2(@NonNull com.google.firebase.appdistribution.UpdateProgress);
-    method public static operator long component3(@NonNull com.google.firebase.appdistribution.AppDistributionRelease);
-    method @NonNull public static operator com.google.firebase.appdistribution.UpdateStatus component3(@NonNull com.google.firebase.appdistribution.UpdateProgress);
-    method @Nullable public static operator String component4(@NonNull com.google.firebase.appdistribution.AppDistributionRelease);
-    method @NonNull public static com.google.firebase.appdistribution.FirebaseAppDistribution getAppDistribution(@NonNull com.google.firebase.ktx.Firebase);
+  public final class LoggingKt {
   }
 
 }

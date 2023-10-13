@@ -1,4 +1,16 @@
 # Unreleased
+* [changed] Internal infrastructure improvements.
+
+* [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-ml-modeldownloader-ktx`
+  to `com.google.firebase:firebase-ml-modeldownloader` under the `com.google.firebase.ml.modeldownloader` package.
+  For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
+
+* [deprecated] All the APIs from `com.google.firebase:firebase-ml-modeldownloader-ktx` have been added to
+  `com.google.firebase:firebase-ml-modeldownloader` under the `com.google.firebase.ml.modeldownloader` package,
+  and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-ml-modeldownloader-ktx` are
+  now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
+  [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 # 24.1.3
 * [unchanged] Updated internal Dagger dependency.
