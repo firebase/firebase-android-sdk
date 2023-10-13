@@ -101,6 +101,7 @@ internal class SessionLifecycleService(
         }
       }
       lastMsgTimeMs = msg.getWhen()
+      updateSessionStorage(lastMsgTimeMs) // TODO(rothbutter) don't think we need this, eh?
     }
   }
 
@@ -155,7 +156,6 @@ internal class SessionLifecycleService(
    */
   private fun handleBackgrounding(msg: Message) {
     Log.i(TAG, "Activity backgrounding at ${msg.getWhen()}")
-    updateSessionStorage(msg.getWhen())
   }
 
   /**
@@ -171,7 +171,7 @@ internal class SessionLifecycleService(
     if (hasForegrounded) {
       sendSessionToClient(client, SessionGenerator.instance.currentSession.sessionId)
     } else {
-      // TODO: Send the value from the datastore before the first foregrounding
+      // Send the value from the datastore before the first foregrounding it exists
       val sessionData = currentSessionFromDatastore.get()
       if (sessionData != null) {
         sessionData.sessionId?.let { sendSessionToClient(client, it) }
