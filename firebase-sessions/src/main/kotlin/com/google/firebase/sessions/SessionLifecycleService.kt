@@ -28,7 +28,7 @@ import android.os.Looper
 import android.os.Message
 import android.os.Messenger
 import android.util.Log
-import java.util.UUID
+import java.util.concurrent.LinkedBlockingQueue
 
 /**
  * Service for monitoring application lifecycle events and determining when/if a new session should
@@ -37,8 +37,26 @@ import java.util.UUID
  */
 internal class SessionLifecycleService : Service() {
 
-  private val boundClients = mutableListOf<Messenger>()
-  private var curSessionId: String? = null
+  /**
+   * Queue of connected clients.
+   *
+   * Note that this needs to be a [LinkedBlockingQueue] since it is modified in the service [onBind]
+   * method and read in the message handler. Although the [IncomingHandler] is guaranteed to execute
+   * sequentially on a single thread, the [onBind] method is not guaranteed to run on that same
+   * thread.
+   */
+  private val boundClients = LinkedBlockingQueue<Messenger>()
+
+  /**
+   * Flag indicating whether or not the app has ever come into the foreground during the lifetime of
+   * the service. If it has not, we can infer that the first foreground event is a cold-start
+   */
+  private var hasForegrounded: Boolean = false
+
+  /**
+   * The timestamp of the last activity lifecycle message we've received from a client. Used to
+   * determine when the app has been idle for long enough to require a new session.
+   */
   private var lastMsgTimeMs: Long = 0
 
   /**
@@ -89,12 +107,14 @@ internal class SessionLifecycleService : Service() {
   private fun handleForegrounding(msg: Message) {
     Log.i(TAG, "Activity foregrounding at ${msg.getWhen()}")
 
-    if (curSessionId == null) {
+    if (!hasForegrounded) {
       Log.i(TAG, "Cold start detected.")
-      newSession()
+      hasForegrounded = true
+      broadcastSession()
     } else if (msg.getWhen() - lastMsgTimeMs > MAX_BACKGROUND_MS) {
       Log.i(TAG, "Session too long in background. Creating new session.")
-      newSession()
+      SessionGenerator.instance.generateNewSession()
+      broadcastSession()
     }
   }
 
@@ -108,22 +128,26 @@ internal class SessionLifecycleService : Service() {
   }
 
   /**
-   * Triggers the creation of a new session, and broadcasts that session to all connected clients.
+   * Broadcasts the current session to by uploading to Firelog and all sending a message to all
+   * connected clients.
    */
-  private fun newSession() {
-    curSessionId = UUID.randomUUID().toString()
-    Log.i(TAG, "Broadcasting session $curSessionId to ${boundClients.size} clients")
+  private fun broadcastSession() {
+    Log.i(TAG, "Broadcasting new session: ${SessionGenerator.instance.currentSession}")
     boundClients.forEach { sendSessionToClient(it) }
   }
 
-  /** Sends the current session id to the client connected through the given [Messenger]. */
   private fun sendSessionToClient(client: Messenger) {
+    if (hasForegrounded) {
+      sendSessionToClient(client, SessionGenerator.instance.currentSession.sessionId)
+    }
+    // TODO: Send the value from the datastore before the first foregrounding
+  }
+
+  /** Sends the current session id to the client connected through the given [Messenger]. */
+  private fun sendSessionToClient(client: Messenger, sessionId: String) {
     try {
-      client.send(
-        Message.obtain(null, SESSION_UPDATED, 0, 0).also {
-          it.setData(Bundle().also { it.putString(SESSION_UPDATE_EXTRA, curSessionId) })
-        }
-      )
+      val msgData = Bundle().also { it.putString(SESSION_UPDATE_EXTRA, sessionId) }
+      client.send(Message.obtain(null, SESSION_UPDATED, 0, 0).also { it.setData(msgData) })
     } catch (e: DeadObjectException) {
       Log.i(TAG, "Removing dead client from list: $client")
       boundClients.remove(client)
