@@ -30,14 +30,14 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
 /** Datastore for sessions information */
-internal data class FirebaseSessionsData(val sessionId: String?, val timestampMicroseconds: Long?)
+internal data class FirebaseSessionsData(val sessionId: String?, val timestampMS: Long?)
 
 internal class SessionDatastore(private val context: Context) {
   private val tag = "FirebaseSessionsRepo"
 
   private object FirebaseSessionDataKeys {
     val SESSION_ID = stringPreferencesKey("session_id")
-    val TIMESTAMP_MICROSECONDS = longPreferencesKey("timestamp_microseconds")
+    val TIMESTAMP_MS = longPreferencesKey("timestamp_ms")
   }
 
   internal val firebaseSessionDataFlow: Flow<FirebaseSessionsData> =
@@ -54,16 +54,16 @@ internal class SessionDatastore(private val context: Context) {
     }
   }
 
-  suspend fun updateTimestamp(timestampMicroseconds: Long) {
+  suspend fun updateTimestamp(timestampMS: Long) {
     context.dataStore.edit { preferences ->
-      preferences[FirebaseSessionDataKeys.TIMESTAMP_MICROSECONDS] = timestampMicroseconds
+      preferences[FirebaseSessionDataKeys.TIMESTAMP_MS] = timestampMS
     }
   }
 
   private fun mapSessionsData(preferences: Preferences): FirebaseSessionsData =
     FirebaseSessionsData(
       preferences[FirebaseSessionDataKeys.SESSION_ID],
-      preferences[FirebaseSessionDataKeys.TIMESTAMP_MICROSECONDS]
+      preferences[FirebaseSessionDataKeys.TIMESTAMP_MS]
     )
 
   private companion object {

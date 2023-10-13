@@ -59,6 +59,7 @@ internal object SessionLifecycleClient {
    * The callback class that will be used to receive updated session events from the
    * [SessionLifecycleService].
    */
+  // TODO(rothbutter) should we use the main looper or is there one available in this SDK?
   internal class ClientUpdateHandler : Handler(Looper.getMainLooper()) {
     override fun handleMessage(msg: Message) {
       when (msg.what) {
