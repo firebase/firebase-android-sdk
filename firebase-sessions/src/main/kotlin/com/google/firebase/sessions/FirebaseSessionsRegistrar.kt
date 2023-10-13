@@ -26,10 +26,11 @@ import com.google.firebase.components.Qualified.qualified
 import com.google.firebase.components.Qualified.unqualified
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.platforminfo.LibraryVersionComponent
+import com.google.firebase.sessions.settings.SessionsSettings
 import kotlinx.coroutines.CoroutineDispatcher
 
 /**
- * [ComponentRegistrar] for setting up [FirebaseSessions] and [SessionMaintainer].
+ * [ComponentRegistrar] for setting up [FirebaseSessions] and its internal dependencies.
  *
  * @hide
  */
@@ -38,55 +39,58 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
   override fun getComponents() =
     listOf(
       Component.builder(FirebaseSessions::class.java)
-        .name(SESSIONS_LIBRARY_NAME)
+        .name(LIBRARY_NAME)
         .add(Dependency.required(firebaseApp))
-        .add(Dependency.required(firebaseInstallationsApi))
         .add(Dependency.required(backgroundDispatcher))
-        .add(Dependency.required(blockingDispatcher))
-        .add(Dependency.required(sessionMaintainer))
         .add(Dependency.required(sessionFirelogPublisher))
         .add(Dependency.required(sessionGenerator))
+        .add(Dependency.required(sessionsSettings))
         .factory { container ->
           FirebaseSessions(
             container.get(firebaseApp),
-            container.get(firebaseInstallationsApi),
             container.get(backgroundDispatcher),
-            container.get(blockingDispatcher),
             container.get(sessionFirelogPublisher),
-            container.get(sessionMaintainer),
             container.get(sessionGenerator),
+            container.get(sessionsSettings),
           )
         }
         .build(),
-      Component.builder(SessionMaintainer::class.java)
-        .name(MAINTAINER_LIBRARY_NAME)
-        .factory { SessionMaintainer() }
-        .build(),
       Component.builder(SessionGenerator::class.java)
-        .name(SESSION_GENERATOR)
+        .name("session-generator")
         .factory { SessionGenerator(timeProvider = WallClock) }
         .build(),
       Component.builder(SessionFirelogPublisher::class.java)
-        .name(SESSIONS_PUBLISHER)
+        .name("session-publisher")
         .add(Dependency.required(firebaseInstallationsApi))
         .add(Dependency.requiredProvider(transportFactory))
         .factory { container ->
           SessionFirelogPublisher(
             container.get(firebaseInstallationsApi),
-            EventGDTLogger(container.getProvider(transportFactory))
+            EventGDTLogger(container.getProvider(transportFactory)),
           )
         }
         .build(),
-      LibraryVersionComponent.create(SESSIONS_LIBRARY_NAME, BuildConfig.VERSION_NAME),
+      Component.builder(SessionsSettings::class.java)
+        .name("sessions-settings")
+        .add(Dependency.required(firebaseApp))
+        .add(Dependency.required(blockingDispatcher))
+        .add(Dependency.required(backgroundDispatcher))
+        .add(Dependency.required(firebaseInstallationsApi))
+        .factory { container ->
+          SessionsSettings(
+            container.get(firebaseApp),
+            container.get(blockingDispatcher),
+            container.get(backgroundDispatcher),
+            container.get(firebaseInstallationsApi),
+          )
+        }
+        .build(),
+      LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
     )
 
   private companion object {
-    private const val SESSIONS_LIBRARY_NAME = "fire-sessions"
-    private const val MAINTAINER_LIBRARY_NAME = "fire-session-maintainer"
-    private const val SESSIONS_PUBLISHER = "sessions-publisher"
-    private const val SESSION_GENERATOR = "session-generator"
+    private const val LIBRARY_NAME = "fire-sessions"
 
-    private val sessionMaintainer = unqualified(SessionMaintainer::class.java)
     private val firebaseApp = unqualified(FirebaseApp::class.java)
     private val firebaseInstallationsApi = unqualified(FirebaseInstallationsApi::class.java)
     private val backgroundDispatcher =
@@ -96,5 +100,6 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
     private val transportFactory = unqualified(TransportFactory::class.java)
     private val sessionFirelogPublisher = unqualified(SessionFirelogPublisher::class.java)
     private val sessionGenerator = unqualified(SessionGenerator::class.java)
+    private val sessionsSettings = unqualified(SessionsSettings::class.java)
   }
 }

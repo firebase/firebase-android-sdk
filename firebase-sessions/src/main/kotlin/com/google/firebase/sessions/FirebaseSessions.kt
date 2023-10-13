@@ -21,7 +21,6 @@ import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
-import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
 import com.google.firebase.sessions.settings.SessionsSettings
@@ -31,22 +30,11 @@ import kotlinx.coroutines.CoroutineDispatcher
 class FirebaseSessions
 internal constructor(
   private val firebaseApp: FirebaseApp,
-  firebaseInstallations: FirebaseInstallationsApi,
   backgroundDispatcher: CoroutineDispatcher,
-  blockingDispatcher: CoroutineDispatcher,
   private val sessionFirelogPublisher: SessionFirelogPublisher,
-  @Suppress("UNUSED_PARAMETER") sessionMaintainer: SessionMaintainer,
   private val sessionGenerator: SessionGenerator,
+  private val sessionSettings: SessionsSettings,
 ) {
-  private val applicationInfo = SessionEvents.getApplicationInfo(firebaseApp)
-  private val sessionSettings =
-    SessionsSettings(
-      firebaseApp.applicationContext,
-      blockingDispatcher,
-      backgroundDispatcher,
-      firebaseInstallations,
-      applicationInfo,
-    )
 
   // TODO: This needs to be moved into the service to be consistent across multiple processes.
   private val collectEvents: Boolean
@@ -54,19 +42,11 @@ internal constructor(
   init {
     collectEvents = shouldCollectEvents()
 
-    val sessionInitiateListener =
-      object : SessionInitiateListener {
-        // Avoid making a public function in FirebaseSessions for onInitiateSession.
-        override suspend fun onInitiateSession(sessionDetails: SessionDetails) {
-          initiateSessionStart(sessionDetails)
-        }
-      }
-
     val sessionInitiator =
       SessionInitiator(
         timeProvider = WallClock,
         backgroundDispatcher,
-        sessionInitiateListener,
+        ::initiateSessionStart,
         sessionSettings,
         sessionGenerator,
       )
