@@ -33,26 +33,9 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
   }
 
   class Builder constructor(initialValues: FirebaseDataConnectSettings) {
-
-    private var values = initialValues.values
-
-    var hostName: String
-      get() = values.hostName
-      set(value) {
-        values = values.copy(hostName = value)
-      }
-
-    var port: Int
-      get() = values.port
-      set(value) {
-        values = values.copy(port = value)
-      }
-
-    var sslEnabled: Boolean
-      get() = values.sslEnabled
-      set(value) {
-        values = values.copy(sslEnabled = value)
-      }
+    var hostName = initialValues.hostName
+    var port = initialValues.port
+    var sslEnabled = initialValues.sslEnabled
 
     fun connectToEmulator() {
       hostName = "10.0.2.2"
@@ -60,14 +43,17 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
       sslEnabled = false
     }
 
-    fun build() = FirebaseDataConnectSettings(values)
+    fun build() =
+      FirebaseDataConnectSettings(
+        SettingsValues(hostName = hostName, port = port, sslEnabled = sslEnabled)
+      )
   }
 
   override fun equals(other: Any?) =
     when (other) {
       this -> true
       !is FirebaseDataConnectSettings -> false
-      else -> values.equals(other.values)
+      else -> values == other.values
     }
 
   override fun hashCode() = values.hashCode()
@@ -76,12 +62,12 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
     "FirebaseDataConnectSettings{hostName=$hostName, port=$port, sslEnabled=$sslEnabled}"
 }
 
-fun dataConnectSettings(block: FirebaseDataConnectSettings.Builder.() -> Unit) =
+inline fun dataConnectSettings(block: FirebaseDataConnectSettings.Builder.() -> Unit) =
   FirebaseDataConnectSettings.Builder(FirebaseDataConnectSettings.defaultInstance)
     .apply(block)
     .build()
 
-// Use a data class internally to store the settings to get the conveninence of the equals(),
+// Use a data class internally to store the settings to get the convenience of the equals(),
 // hashCode(), and copy() auto-generated methods.
 private data class SettingsValues(
   val hostName: String,
