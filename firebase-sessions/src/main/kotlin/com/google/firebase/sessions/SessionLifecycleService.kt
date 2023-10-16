@@ -17,7 +17,6 @@
 package com.google.firebase.sessions
 
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -71,7 +70,7 @@ internal class SessionLifecycleService(
 
   init {
     CoroutineScope(FirebaseSessions.instance.backgroundDispatcher).launch {
-      datastore.firebaseSessionDataFlow.collect() { currentSessionFromDatastore.set(it) }
+      datastore.firebaseSessionDataFlow.collect { currentSessionFromDatastore.set(it) }
     }
   }
 
@@ -82,10 +81,7 @@ internal class SessionLifecycleService(
    */
   // TODO(rothbutter) there's a warning that this needs to be static and leaks may occur. Need to
   // look in to this
-  internal inner class IncomingHandler(
-    context: Context,
-    private val appContext: Context = context.applicationContext,
-  ) : Handler(Looper.getMainLooper()) { // TODO(rothbutter) probably want to use our own executor
+  internal inner class IncomingHandler : Handler(Looper.getMainLooper()) {
 
     override fun handleMessage(msg: Message) {
       if (lastMsgTimeMs > msg.getWhen()) {
@@ -101,14 +97,13 @@ internal class SessionLifecycleService(
         }
       }
       lastMsgTimeMs = msg.getWhen()
-      updateSessionStorage(lastMsgTimeMs) // TODO(rothbutter) don't think we need this, eh?
     }
   }
 
   /** Called when a new [SessionLifecycleClient] binds to this service. */
   override fun onBind(intent: Intent): IBinder? {
     Log.i(TAG, "Service bound")
-    val messenger = Messenger(IncomingHandler(this))
+    val messenger = Messenger(IncomingHandler())
     val callbackMessenger = getClientCallback(intent)
     if (callbackMessenger != null) {
       boundClients.add(callbackMessenger)
@@ -129,23 +124,18 @@ internal class SessionLifecycleService(
       Log.i(TAG, "Cold start detected.")
       hasForegrounded = true
       broadcastSession()
-      updateSessionStorage(SessionGenerator.instance.currentSession.sessionId, msg.getWhen())
+      updateSessionStorage(SessionGenerator.instance.currentSession.sessionId)
     } else if (msg.getWhen() - lastMsgTimeMs > MAX_BACKGROUND_MS) {
       Log.i(TAG, "Session too long in background. Creating new session.")
       SessionGenerator.instance.generateNewSession()
       broadcastSession()
-      updateSessionStorage(SessionGenerator.instance.currentSession.sessionId, msg.getWhen())
+      updateSessionStorage(SessionGenerator.instance.currentSession.sessionId)
     }
   }
 
-  private fun updateSessionStorage(timeMs: Long) {
-    updateSessionStorage(null, timeMs)
-  }
-
-  private fun updateSessionStorage(sessionId: String?, timeMs: Long) {
+  private fun updateSessionStorage(sessionId: String) {
     CoroutineScope(FirebaseSessions.instance.backgroundDispatcher).launch {
-      datastore.updateTimestamp(timeMs)
-      sessionId?.let { datastore.updateSessionId(it) }
+      sessionId.let { datastore.updateSessionId(it) }
     }
   }
 
@@ -173,9 +163,7 @@ internal class SessionLifecycleService(
     } else {
       // Send the value from the datastore before the first foregrounding it exists
       val sessionData = currentSessionFromDatastore.get()
-      if (sessionData != null) {
-        sessionData.sessionId?.let { sendSessionToClient(client, it) }
-      }
+      sessionData?.sessionId?.let { sendSessionToClient(client, it) }
     }
   }
 
@@ -183,7 +171,7 @@ internal class SessionLifecycleService(
   private fun sendSessionToClient(client: Messenger, sessionId: String) {
     try {
       val msgData = Bundle().also { it.putString(SESSION_UPDATE_EXTRA, sessionId) }
-      client.send(Message.obtain(null, SESSION_UPDATED, 0, 0).also { it.setData(msgData) })
+      client.send(Message.obtain(null, SESSION_UPDATED, 0, 0).also { it.data = msgData })
     } catch (e: DeadObjectException) {
       Log.i(TAG, "Removing dead client from list: $client")
       boundClients.remove(client)
@@ -200,7 +188,7 @@ internal class SessionLifecycleService(
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
       intent.getParcelableExtra(CLIENT_CALLBACK_MESSENGER, Messenger::class.java)
     } else {
-      intent.getParcelableExtra<Messenger>(CLIENT_CALLBACK_MESSENGER)
+      @Suppress("DEPRECATION") intent.getParcelableExtra(CLIENT_CALLBACK_MESSENGER)
     }
 
   internal companion object {
