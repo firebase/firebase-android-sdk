@@ -95,7 +95,7 @@ configuration.
 2. If not already logged in, authenticate with your Google Cloud Platform (GCP) account using
 `gcloud auth application-default login`. You can check your logged-in accounts by running
 `gcloud auth list`.
-3. Run:
+3. Create composite indexes by running:
 ```
 terraform init
 terraform apply -var-file=../google-services.json -auto-approve
