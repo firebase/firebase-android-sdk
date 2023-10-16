@@ -42,7 +42,8 @@ android {
 
 dependencies {
     implementation 'com.google.firebase:firebase-annotations:16.2.0'
-    implementation 'com.google.firebase:firebase-common:20.3.1'
+    implementation("com.google.firebase:firebase-common:20.4.2")
+    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
     implementation 'com.google.firebase:firebase-components:17.1.0'
     implementation project(':appcheck:firebase-appcheck')
     implementation 'com.google.android.gms:play-services-base:18.0.1'
