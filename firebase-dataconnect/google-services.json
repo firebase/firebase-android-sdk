@@ -13,6 +13,7 @@
           "package_name": "com.google.firebase.dataconnect"
         }
       }
+    }
   ],
   "configuration_version": "1"
 }
