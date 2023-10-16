@@ -51,8 +51,8 @@ dependencies {
     javadocClasspath(libs.findbugs.jsr305)
 
     implementation(project(":appcheck:firebase-appcheck-interop"))
-    implementation("com.google.firebase:firebase-common:20.4.1")
-    implementation("com.google.firebase:firebase-common-ktx:20.4.1")
+    implementation("com.google.firebase:firebase-common:20.4.2")
+    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
     implementation("com.google.firebase:firebase-components:17.1.3")
     implementation("com.google.firebase:firebase-annotations:16.2.0")
     implementation("com.google.firebase:firebase-auth-interop:18.0.0") {

@@ -77,9 +77,8 @@ dependencies {
     // "implementation" dependencies. The alternative would be to make common an "api" dep of remote-config.
     // Released artifacts don't need these dependencies since they don't use `project` to refer
     // to Remote Config.
-    implementation("com.google.firebase:firebase-common:20.4.1")
-    implementation("com.google.firebase:firebase-common-ktx:20.4.1")
-    implementation("com.google.firebase:firebase-common-ktx:20.4.1")
+    implementation("com.google.firebase:firebase-common:20.4.2")
+    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
     implementation("com.google.firebase:firebase-components:17.1.3")
 
     implementation(project(":firebase-installations-interop")) {
