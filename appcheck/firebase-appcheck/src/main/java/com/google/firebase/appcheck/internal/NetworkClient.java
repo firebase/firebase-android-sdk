@@ -21,7 +21,6 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.util.Log;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.common.util.AndroidUtilsLight;
 import com.google.android.gms.common.util.Hex;
@@ -122,7 +121,8 @@ public class NetworkClient {
       throw new FirebaseException("Too many attempts.");
     }
     URL url = new URL(String.format(getUrlTemplate(tokenType), projectId, appId, apiKey));
-    String response = makeNetworkRequest(url, requestBytes, retryManager);
+    String response =
+        makeNetworkRequest(url, requestBytes, retryManager, /* resetRetryManagerOnSuccess= */ true);
     return AppCheckTokenResponse.fromJsonString(response);
   }
 
@@ -139,13 +139,15 @@ public class NetworkClient {
     }
     URL url =
         new URL(String.format(PLAY_INTEGRITY_CHALLENGE_URL_TEMPLATE, projectId, appId, apiKey));
-    // We don't forward the RetryManager, as we don't want a successful
-    // GeneratePlayIntegrityChallenge call to reset the retry throttling.
-    return makeNetworkRequest(url, requestBytes, /* retryManager= */ null);
+    return makeNetworkRequest(
+        url, requestBytes, retryManager, /* resetRetryManagerOnSuccess= */ false);
   }
 
   private String makeNetworkRequest(
-      @NonNull URL url, @NonNull byte[] requestBytes, @Nullable RetryManager retryManager)
+      @NonNull URL url,
+      @NonNull byte[] requestBytes,
+      @NonNull RetryManager retryManager,
+      boolean resetRetryManagerOnSuccess)
       throws FirebaseException, IOException, JSONException {
     HttpURLConnection urlConnection = createHttpUrlConnection(url);
 
@@ -181,9 +183,7 @@ public class NetworkClient {
       }
       String responseBody = response.toString();
       if (!isResponseSuccess(responseCode)) {
-        if (retryManager != null) {
-          retryManager.updateBackoffOnFailure(responseCode);
-        }
+        retryManager.updateBackoffOnFailure(responseCode);
         // TODO: Create a mapping from HTTP error codes to public App Check error codes.
         HttpErrorResponse httpErrorResponse = HttpErrorResponse.fromJsonString(responseBody);
         throw new FirebaseException(
@@ -192,7 +192,7 @@ public class NetworkClient {
                 + " body: "
                 + httpErrorResponse.getErrorMessage());
       }
-      if (retryManager != null) {
+      if (resetRetryManagerOnSuccess) {
         retryManager.resetBackoffOnSuccess();
       }
       return responseBody;
