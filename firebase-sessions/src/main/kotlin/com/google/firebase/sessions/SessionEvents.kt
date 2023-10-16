@@ -37,7 +37,7 @@ internal object SessionEvents {
    *
    * Some mutable fields, e.g. firebaseInstallationId, get populated later.
    */
-  fun startSession(
+  fun buildSession(
     firebaseApp: FirebaseApp,
     sessionDetails: SessionDetails,
     sessionsSettings: SessionsSettings,

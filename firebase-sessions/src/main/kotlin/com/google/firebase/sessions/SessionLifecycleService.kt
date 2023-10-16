@@ -29,6 +29,7 @@ import android.os.Messenger
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.app
+import com.google.firebase.sessions.settings.SessionsSettings
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineScope
@@ -125,7 +126,6 @@ internal class SessionLifecycleService(
       hasForegrounded = true
       broadcastSession()
       updateSessionStorage(SessionGenerator.instance.currentSession.sessionId)
-    } else if (msg.getWhen() - lastMsgTimeMs > MAX_BACKGROUND_MS) {
       Log.i(TAG, "Session too long in background. Creating new session.")
       SessionGenerator.instance.generateNewSession()
       broadcastSession()
@@ -154,6 +154,7 @@ internal class SessionLifecycleService(
    */
   private fun broadcastSession() {
     Log.i(TAG, "Broadcasting new session: ${SessionGenerator.instance.currentSession}")
+    SessionFirelogPublisher.instance.logSession(SessionGenerator.instance.currentSession)
     boundClients.forEach { maybeSendSessionToClient(it) }
   }
 
@@ -191,6 +192,14 @@ internal class SessionLifecycleService(
       @Suppress("DEPRECATION") intent.getParcelableExtra(CLIENT_CALLBACK_MESSENGER)
     }
 
+  /**
+   * Determines if the foregrounding that occurred at the given time should trigger a new session
+   * because the app has been idle for too long.
+   */
+  private fun isSessionRestart(foregroundTimeMs: Long) =
+    (foregroundTimeMs - lastMsgTimeMs) >
+      SessionsSettings.instance.sessionRestartTimeout.inWholeMilliseconds
+
   internal companion object {
     const val TAG = "SessionLifecycleService"
 
@@ -205,9 +214,6 @@ internal class SessionLifecycleService(
      * clients, containing an updated session id.
      */
     const val SESSION_UPDATE_EXTRA = "SessionUpdateExtra"
-
-    // TODO(bryanatkinson): Swap this out for the value coming from settings
-    const val MAX_BACKGROUND_MS = 30000
 
     /** [Message] code indicating that an application activity has gone to the foreground */
     const val FOREGROUNDED = 1
