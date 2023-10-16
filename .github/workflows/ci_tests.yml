@@ -136,7 +136,7 @@ jobs:
         run: |
           cd firebase-firestore
           apply_output=$(terraform apply -var-file=../google-services.json -auto-approve 2>&1)
-          echo apply_output
+          echo "$apply_output"
           # if [[ -n $(terraform apply -var-file=../google-services.json -auto-approve 2>&1 | grep -q "index already exists") ]]; then
           #   echo "Error found in Terraform Apply."
           # else
