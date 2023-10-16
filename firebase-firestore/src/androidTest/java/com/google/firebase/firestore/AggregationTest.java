@@ -1056,10 +1056,10 @@ public class AggregationTest {
 
     Throwable cause = throwable.getCause();
     if (collection
-            .firestore
-            .getDatabaseId()
-            .getDatabaseId()
-            .equals(DatabaseId.DEFAULT_DATABASE_ID)) {
+        .firestore
+        .getDatabaseId()
+        .getDatabaseId()
+        .equals(DatabaseId.DEFAULT_DATABASE_ID)) {
       Truth.assertThat(cause).hasMessageThat().contains("https://console.firebase.google.com");
     } else {
       Truth.assertThat(cause).hasMessageThat().contains("Missing index configuration");
