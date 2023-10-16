@@ -24,6 +24,9 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
   val sslEnabled: Boolean
     get() = values.sslEnabled
 
+  val builder: Builder
+    get() = Builder(this)
+
   companion object {
     val defaultInstance
       get() =
@@ -32,7 +35,7 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
         )
   }
 
-  class Builder constructor(initialValues: FirebaseDataConnectSettings) {
+  class Builder internal constructor(initialValues: FirebaseDataConnectSettings) {
     var hostName = initialValues.hostName
     var port = initialValues.port
     var sslEnabled = initialValues.sslEnabled
@@ -50,10 +53,12 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
   }
 
   override fun equals(other: Any?) =
-    when (other) {
-      this -> true
-      !is FirebaseDataConnectSettings -> false
-      else -> values == other.values
+    if (other === this) {
+      true
+    } else if (other !is FirebaseDataConnectSettings) {
+      false
+    } else {
+      values == other.values
     }
 
   override fun hashCode() = values.hashCode()
@@ -63,9 +68,7 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
 }
 
 inline fun dataConnectSettings(block: FirebaseDataConnectSettings.Builder.() -> Unit) =
-  FirebaseDataConnectSettings.Builder(FirebaseDataConnectSettings.defaultInstance)
-    .apply(block)
-    .build()
+  FirebaseDataConnectSettings.defaultInstance.builder.apply(block).build()
 
 // Use a data class internally to store the settings to get the convenience of the equals(),
 // hashCode(), and copy() auto-generated methods.
