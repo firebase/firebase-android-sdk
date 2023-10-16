@@ -98,16 +98,13 @@ internal constructor(
       }
     }
 
-  fun executeQuery(
-    projectId: String,
-    location: String,
-    operationName: String,
-    variables: Map<String, Any?>
-  ): Struct {
+  fun executeQuery(location: String, operationName: String, variables: Map<String, Any?>): Struct {
     val request =
       ExecuteQueryRequest.newBuilder().let {
         it.name =
-          "projects/${projectId}/locations/${location}/services/s/operationSets/crud/revisions/r"
+          "projects/${firebaseApp.options.projectId}" +
+            "/locations/${location}" +
+            "/services/s/operationSets/crud/revisions/r"
         it.operationName = operationName
         it.variables = structFromMap(variables)
         it.build()
@@ -123,7 +120,6 @@ internal constructor(
   }
 
   fun executeMutation(
-    projectId: String,
     location: String,
     operationName: String,
     variables: Map<String, Any?>
@@ -131,7 +127,9 @@ internal constructor(
     val request =
       ExecuteMutationRequest.newBuilder().let {
         it.name =
-          "projects/${projectId}/locations/${location}/services/s/operationSets/crud/revisions/r"
+          "projects/${firebaseApp.options.projectId}" +
+            "/locations/${location}" +
+            "/services/s/operationSets/crud/revisions/r"
         it.operationName = operationName
         it.variables =
           Struct.newBuilder().run {

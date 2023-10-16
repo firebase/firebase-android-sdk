@@ -19,7 +19,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Firebase
 import com.google.firebase.app
 import com.google.firebase.initialize
-import com.google.firebase.options
 import java.util.UUID
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -74,16 +73,14 @@ class FirebaseDataConnectTest {
     val dc = FirebaseDataConnect.instance
     dc.settings = dataConnectSettings { connectToEmulator() }
 
-    val projectId = "ZzyzxTestProject"
     val location = "ZzyzxTestLocation"
 
     dc.executeMutation(
-      projectId,
       location,
       "createPost",
       mapOf("id" to UUID.randomUUID().toString(), "content" to "${System.currentTimeMillis()}")
     )
-    dc.executeQuery(projectId, location, "listPosts", emptyMap())
+    dc.executeQuery(location, "listPosts", emptyMap())
   }
 }
 
