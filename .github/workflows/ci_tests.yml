@@ -135,11 +135,13 @@ jobs:
         if: github.event_name == 'pull_request' && contains(matrix.module, ':firebase-firestore')
         run: |
           cd firebase-firestore
-          if [[ -n $(terraform apply -var-file=../google-services.json -auto-approve 2>&1 | grep -q "index already exists") ]]; then
-            echo "Error found in Terraform Apply."
-          else
-            echo "No errors in Terraform Apply."
-          fi
+          apply_output=$(terraform apply -var-file=../google-services.json -auto-approve 2>&1)
+          echo apply_output
+          # if [[ -n $(terraform apply -var-file=../google-services.json -auto-approve 2>&1 | grep -q "index already exists") ]]; then
+          #   echo "Error found in Terraform Apply."
+          # else
+          #   echo "No errors in Terraform Apply."
+          # fi
         continue-on-error: true
       - name: ${{ matrix.module }} Integ Tests
         env:
