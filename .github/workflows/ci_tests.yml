@@ -137,7 +137,6 @@ jobs:
           cd firebase-firestore
           APPLY_OUTPUT=$(terraform apply -var-file=../google-services.json -auto-approve 2>&1)
           echo "$APPLY_OUTPUT"
-          
         continue-on-error: true
       - name: ${{ matrix.module }} Integ Tests
         env:
