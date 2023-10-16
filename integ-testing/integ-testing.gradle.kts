@@ -36,9 +36,9 @@ android {
 }
 
 dependencies {
-  implementation("com.google.firebase:firebase-common-ktx:20.4.1")
-  implementation("com.google.firebase:firebase-common:20.4.1")
-  implementation("com.google.firebase:firebase-components:17.1.4")
+  implementation("com.google.firebase:firebase-common-ktx:20.4.2")
+  implementation("com.google.firebase:firebase-common:20.4.2")
+  implementation("com.google.firebase:firebase-components:17.1.5")
   implementation(libs.androidx.test.runner)
   implementation(libs.junit)
   implementation(libs.kotlin.coroutines.test)

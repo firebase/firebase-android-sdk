@@ -32,11 +32,7 @@ class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
    */
   @Deprecated(
     "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
-    ReplaceWith(
-      expression = "key(key, value)",
-      imports =
-        ["com.google.firebase.Firebase", "com.google.firebase.crashlytics.KeyValueBuilder.key"]
-    )
+    ReplaceWith("")
   )
   fun key(key: String, value: Boolean) = crashlytics.setCustomKey(key, value)
 
@@ -50,11 +46,7 @@ class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
    */
   @Deprecated(
     "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
-    ReplaceWith(
-      expression = "key(key, value)",
-      imports =
-        ["com.google.firebase.Firebase", "com.google.firebase.crashlytics.KeyValueBuilder.key"]
-    )
+    ReplaceWith("")
   )
   fun key(key: String, value: Double) = crashlytics.setCustomKey(key, value)
 
@@ -68,11 +60,7 @@ class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
    */
   @Deprecated(
     "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
-    ReplaceWith(
-      expression = "key(key, value)",
-      imports =
-        ["com.google.firebase.Firebase", "com.google.firebase.crashlytics.KeyValueBuilder.key"]
-    )
+    ReplaceWith("")
   )
   fun key(key: String, value: Float) = crashlytics.setCustomKey(key, value)
 
@@ -86,11 +74,7 @@ class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
    */
   @Deprecated(
     "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
-    ReplaceWith(
-      expression = "key(key, value)",
-      imports =
-        ["com.google.firebase.Firebase", "com.google.firebase.crashlytics.KeyValueBuilder.key"]
-    )
+    ReplaceWith("")
   )
   fun key(key: String, value: Int) = crashlytics.setCustomKey(key, value)
 
@@ -104,11 +88,7 @@ class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
    */
   @Deprecated(
     "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
-    ReplaceWith(
-      expression = "key(key, value)",
-      imports =
-        ["com.google.firebase.Firebase", "com.google.firebase.crashlytics.KeyValueBuilder.key"]
-    )
+    ReplaceWith("")
   )
   fun key(key: String, value: Long) = crashlytics.setCustomKey(key, value)
 
@@ -122,11 +102,7 @@ class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
    */
   @Deprecated(
     "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
-    ReplaceWith(
-      expression = "key(key, value)",
-      imports =
-        ["com.google.firebase.Firebase", "com.google.firebase.crashlytics.KeyValueBuilder.key"]
-    )
+    ReplaceWith("")
   )
   fun key(key: String, value: String) = crashlytics.setCustomKey(key, value)
 }
