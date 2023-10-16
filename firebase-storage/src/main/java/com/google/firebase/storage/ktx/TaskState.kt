@@ -23,11 +23,8 @@ package com.google.firebase.storage.ktx
  * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.storage.TaskState` from the main module instead.",
-  ReplaceWith(
-    expression = "TaskState<T>",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.storage.TaskState"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 abstract class TaskState<T> private constructor() {
   /**
@@ -40,11 +37,8 @@ abstract class TaskState<T> private constructor() {
    * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
-    "Use `com.google.firebase.storage.TaskState.InProgress(snapshot)` from the main module instead.",
-    ReplaceWith(
-      expression = "InProgress<T>(snapshot)",
-      imports = ["com.google.firebase.Firebase", "com.google.firebase.storage.TaskState.InProgress"]
-    )
+    "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+    ReplaceWith("")
   )
   class InProgress<T>(val snapshot: T) : TaskState<T>()
 
@@ -57,11 +51,8 @@ abstract class TaskState<T> private constructor() {
    * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
-    "Use `com.google.firebase.storage.TaskState.Paused(snapshot)` from the main module instead.",
-    ReplaceWith(
-      expression = "Paused<T>(snapshot)",
-      imports = ["com.google.firebase.Firebase", "com.google.firebase.storage.TaskState.Paused"]
-    )
+    "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+    ReplaceWith("")
   )
   class Paused<T>(val snapshot: T) : TaskState<T>()
 }
