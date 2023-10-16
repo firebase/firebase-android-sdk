@@ -136,11 +136,8 @@ jobs:
         run: |
           cd firebase-firestore
           APPLY_OUTPUT=$(terraform apply -var-file=../google-services.json -auto-approve 2>&1)
-          if echo "$APPLY_OUTPUT" | grep -q "index already exists"; then
-            echo "Indexes already exists"
-          else
-            echo "$APPLY_OUTPUT"
-          fi
+          echo "$APPLY_OUTPUT"
+          
         continue-on-error: true
       - name: ${{ matrix.module }} Integ Tests
         env:
