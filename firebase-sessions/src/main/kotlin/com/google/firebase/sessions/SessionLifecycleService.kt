@@ -17,7 +17,6 @@
 package com.google.firebase.sessions
 
 import android.app.Service
-import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -28,14 +27,21 @@ import android.os.Looper
 import android.os.Message
 import android.os.Messenger
 import android.util.Log
+import com.google.firebase.Firebase
+import com.google.firebase.app
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * Service for monitoring application lifecycle events and determining when/if a new session should
  * be generated. When this happens, the service will broadcast the updated session id to all
  * connected clients.
  */
-internal class SessionLifecycleService : Service() {
+internal class SessionLifecycleService(
+  private var datastore: SessionDatastore = SessionDatastore(Firebase.app.applicationContext)
+) : Service() {
 
   /**
    * Queue of connected clients.
@@ -59,15 +65,23 @@ internal class SessionLifecycleService : Service() {
    */
   private var lastMsgTimeMs: Long = 0
 
+  /** Most recent session from datastore is updated asynchronously whenever it changes */
+  private val currentSessionFromDatastore: AtomicReference<FirebaseSessionsData> = AtomicReference()
+
+  init {
+    CoroutineScope(FirebaseSessions.instance.backgroundDispatcher).launch {
+      datastore.firebaseSessionDataFlow.collect { currentSessionFromDatastore.set(it) }
+    }
+  }
+
   /**
    * Handler of incoming activity lifecycle events being received from [SessionLifecycleClient]s.
    * All incoming communication from connected clients comes through this class and will be used to
    * determine when new sessions should be created.
    */
-  internal inner class IncomingHandler(
-    context: Context,
-    private val appContext: Context = context.applicationContext,
-  ) : Handler(Looper.getMainLooper()) { // TODO(rothbutter) probably want to use our own executor
+  // TODO(rothbutter) there's a warning that this needs to be static and leaks may occur. Need to
+  // look in to this
+  internal inner class IncomingHandler : Handler(Looper.getMainLooper()) {
 
     override fun handleMessage(msg: Message) {
       if (lastMsgTimeMs > msg.getWhen()) {
@@ -89,11 +103,11 @@ internal class SessionLifecycleService : Service() {
   /** Called when a new [SessionLifecycleClient] binds to this service. */
   override fun onBind(intent: Intent): IBinder? {
     Log.i(TAG, "Service bound")
-    val messenger = Messenger(IncomingHandler(this))
+    val messenger = Messenger(IncomingHandler())
     val callbackMessenger = getClientCallback(intent)
     if (callbackMessenger != null) {
       boundClients.add(callbackMessenger)
-      sendSessionToClient(callbackMessenger)
+      maybeSendSessionToClient(callbackMessenger)
       Log.i(TAG, "Stored callback to $callbackMessenger. Size: ${boundClients.size}")
     }
     return messenger.binder
@@ -106,15 +120,22 @@ internal class SessionLifecycleService : Service() {
    */
   private fun handleForegrounding(msg: Message) {
     Log.i(TAG, "Activity foregrounding at ${msg.getWhen()}")
-
     if (!hasForegrounded) {
       Log.i(TAG, "Cold start detected.")
       hasForegrounded = true
       broadcastSession()
+      updateSessionStorage(SessionGenerator.instance.currentSession.sessionId)
     } else if (msg.getWhen() - lastMsgTimeMs > MAX_BACKGROUND_MS) {
       Log.i(TAG, "Session too long in background. Creating new session.")
       SessionGenerator.instance.generateNewSession()
       broadcastSession()
+      updateSessionStorage(SessionGenerator.instance.currentSession.sessionId)
+    }
+  }
+
+  private fun updateSessionStorage(sessionId: String) {
+    CoroutineScope(FirebaseSessions.instance.backgroundDispatcher).launch {
+      sessionId.let { datastore.updateSessionId(it) }
     }
   }
 
@@ -133,21 +154,24 @@ internal class SessionLifecycleService : Service() {
    */
   private fun broadcastSession() {
     Log.i(TAG, "Broadcasting new session: ${SessionGenerator.instance.currentSession}")
-    boundClients.forEach { sendSessionToClient(it) }
+    boundClients.forEach { maybeSendSessionToClient(it) }
   }
 
-  private fun sendSessionToClient(client: Messenger) {
+  private fun maybeSendSessionToClient(client: Messenger) {
     if (hasForegrounded) {
       sendSessionToClient(client, SessionGenerator.instance.currentSession.sessionId)
+    } else {
+      // Send the value from the datastore before the first foregrounding it exists
+      val sessionData = currentSessionFromDatastore.get()
+      sessionData?.sessionId?.let { sendSessionToClient(client, it) }
     }
-    // TODO: Send the value from the datastore before the first foregrounding
   }
 
   /** Sends the current session id to the client connected through the given [Messenger]. */
   private fun sendSessionToClient(client: Messenger, sessionId: String) {
     try {
       val msgData = Bundle().also { it.putString(SESSION_UPDATE_EXTRA, sessionId) }
-      client.send(Message.obtain(null, SESSION_UPDATED, 0, 0).also { it.setData(msgData) })
+      client.send(Message.obtain(null, SESSION_UPDATED, 0, 0).also { it.data = msgData })
     } catch (e: DeadObjectException) {
       Log.i(TAG, "Removing dead client from list: $client")
       boundClients.remove(client)
@@ -164,7 +188,7 @@ internal class SessionLifecycleService : Service() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
       intent.getParcelableExtra(CLIENT_CALLBACK_MESSENGER, Messenger::class.java)
     } else {
-      intent.getParcelableExtra<Messenger>(CLIENT_CALLBACK_MESSENGER)
+      @Suppress("DEPRECATION") intent.getParcelableExtra(CLIENT_CALLBACK_MESSENGER)
     }
 
   internal companion object {

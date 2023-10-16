@@ -22,7 +22,6 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
-import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -30,14 +29,13 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
 /** Datastore for sessions information */
-internal data class FirebaseSessionsData(val sessionId: String?, val timestampMicroseconds: Long?)
+internal data class FirebaseSessionsData(val sessionId: String?)
 
 internal class SessionDatastore(private val context: Context) {
   private val tag = "FirebaseSessionsRepo"
 
   private object FirebaseSessionDataKeys {
     val SESSION_ID = stringPreferencesKey("session_id")
-    val TIMESTAMP_MICROSECONDS = longPreferencesKey("timestamp_microseconds")
   }
 
   internal val firebaseSessionDataFlow: Flow<FirebaseSessionsData> =
@@ -54,16 +52,9 @@ internal class SessionDatastore(private val context: Context) {
     }
   }
 
-  suspend fun updateTimestamp(timestampMicroseconds: Long) {
-    context.dataStore.edit { preferences ->
-      preferences[FirebaseSessionDataKeys.TIMESTAMP_MICROSECONDS] = timestampMicroseconds
-    }
-  }
-
   private fun mapSessionsData(preferences: Preferences): FirebaseSessionsData =
     FirebaseSessionsData(
       preferences[FirebaseSessionDataKeys.SESSION_ID],
-      preferences[FirebaseSessionDataKeys.TIMESTAMP_MICROSECONDS]
     )
 
   private companion object {
