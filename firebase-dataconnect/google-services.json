@@ -12,7 +12,12 @@
         "android_client_info": {
           "package_name": "com.google.firebase.dataconnect"
         }
-      }
+      },
+      "api_key": [
+        {
+          "current_key": "AIzayDNSXIbFmlXbIE6mCzDLQAqITYefhixbX4A"
+        }
+      ]
     }
   ],
   "configuration_version": "1"
