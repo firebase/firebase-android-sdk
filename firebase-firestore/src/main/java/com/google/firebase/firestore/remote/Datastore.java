@@ -225,7 +225,7 @@ public class Datastore {
   public Task<Map<String, Value>> runAggregateQuery(
       Query query, List<AggregateField> aggregateFields) {
     com.google.firestore.v1.Target.QueryTarget encodedQueryTarget =
-        serializer.encodeQueryTarget(query.toTarget());
+        serializer.encodeQueryTarget(query.toAggregateTarget());
     HashMap<String, String> aliasMap = new HashMap<>();
     StructuredAggregationQuery structuredAggregationQuery =
         serializer.encodeStructuredAggregationQuery(encodedQueryTarget, aggregateFields, aliasMap);
