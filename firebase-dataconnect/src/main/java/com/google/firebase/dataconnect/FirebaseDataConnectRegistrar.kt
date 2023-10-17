@@ -14,7 +14,9 @@
 
 package com.google.firebase.dataconnect
 
+import android.content.Context
 import androidx.annotation.Keep
+import androidx.annotation.RestrictTo
 import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.annotations.concurrent.Blocking
@@ -32,16 +34,21 @@ import kotlinx.coroutines.CoroutineDispatcher
  * @hide
  */
 @Keep
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 internal class FirebaseDataConnectRegistrar : ComponentRegistrar {
+
+  @Keep
   override fun getComponents() =
     listOf(
-      Component.builder(FirebaseDataConnect::class.java)
+      Component.builder(FirebaseDataConnectFactory::class.java)
         .name(LIBRARY_NAME)
         .add(Dependency.required(firebaseApp))
+        .add(Dependency.required(context))
         .add(Dependency.required(backgroundDispatcher))
         .add(Dependency.required(blockingDispatcher))
         .factory { container ->
-          FirebaseDataConnect(
+          FirebaseDataConnectFactory(
+            container.get(context),
             container.get(firebaseApp),
             container.get(backgroundDispatcher),
             container.get(blockingDispatcher),
@@ -55,6 +62,7 @@ internal class FirebaseDataConnectRegistrar : ComponentRegistrar {
     private const val LIBRARY_NAME = "fire-dataconnect"
 
     private val firebaseApp = unqualified(FirebaseApp::class.java)
+    private val context = unqualified(Context::class.java)
     private val backgroundDispatcher =
       qualified(Background::class.java, CoroutineDispatcher::class.java)
     private val blockingDispatcher =
