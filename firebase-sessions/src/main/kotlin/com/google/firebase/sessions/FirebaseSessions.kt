@@ -114,19 +114,6 @@ internal constructor(
       Log.d(TAG, "Sessions SDK has dropped this session due to sampling.")
       return
     }
-
-    try {
-      val sessionEvent =
-        SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings, subscribers)
-      sessionFirelogPublisher.attemptLoggingSessionEvent(sessionEvent)
-    } catch (ex: IllegalStateException) {
-      // This can happen if the app suddenly deletes the instance of FirebaseApp.
-      Log.w(
-        TAG,
-        "FirebaseApp is not initialized. Sessions library will not collect session data.",
-        ex
-      )
-    }
   }
 
   /** Calculate whether we should sample events using [sessionSettings] data. */

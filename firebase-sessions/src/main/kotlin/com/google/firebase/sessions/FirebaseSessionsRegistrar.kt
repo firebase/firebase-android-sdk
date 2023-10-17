@@ -61,12 +61,18 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .build(),
       Component.builder(SessionFirelogPublisher::class.java)
         .name("session-publisher")
+        .add(Dependency.required(firebaseApp))
         .add(Dependency.required(firebaseInstallationsApi))
+        .add(Dependency.required(sessionsSettings))
         .add(Dependency.requiredProvider(transportFactory))
+        .add(Dependency.required(backgroundDispatcher))
         .factory { container ->
           SessionFirelogPublisher(
+            container.get(firebaseApp),
             container.get(firebaseInstallationsApi),
+            container.get(sessionsSettings),
             EventGDTLogger(container.getProvider(transportFactory)),
+            container.get(backgroundDispatcher),
           )
         }
         .build(),

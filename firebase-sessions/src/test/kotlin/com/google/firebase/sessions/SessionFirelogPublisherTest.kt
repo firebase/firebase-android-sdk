@@ -19,6 +19,7 @@ package com.google.firebase.sessions
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
+import com.google.firebase.concurrent.TestOnlyExecutors
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeEventGDTLogger
 import com.google.firebase.sessions.testing.FakeFirebaseApp
@@ -26,6 +27,7 @@ import com.google.firebase.sessions.testing.FakeFirebaseInstallations
 import com.google.firebase.sessions.testing.FakeSettingsProvider
 import com.google.firebase.sessions.testing.TestSessionEventData
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -36,32 +38,30 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SessionFirelogPublisherTest {
   @Test
-  fun attemptLoggingSessionEvent_populatesFid() = runTest {
+  fun logSession_populatesFid() = runTest {
+    val fakeFirebaseApp = FakeFirebaseApp()
     val fakeEventGDTLogger = FakeEventGDTLogger()
     val firebaseInstallations = FakeFirebaseInstallations("FaKeFiD")
-    val sessionCoordinator =
+    val sessionsSettings =
+      SessionsSettings(
+        localOverrideSettings = FakeSettingsProvider(),
+        remoteSettings = FakeSettingsProvider(),
+      )
+    val publisher =
       SessionFirelogPublisher(
+        fakeFirebaseApp.firebaseApp,
         firebaseInstallations,
+        sessionsSettings,
         eventGDTLogger = fakeEventGDTLogger,
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
       )
 
     // Construct an event with no fid set.
-    val fakeFirebaseApp = FakeFirebaseApp()
-    val sessionEvent =
-      SessionEvents.startSession(
-        fakeFirebaseApp.firebaseApp,
-        TestSessionEventData.TEST_SESSION_DETAILS,
-        SessionsSettings(
-          localOverrideSettings = FakeSettingsProvider(),
-          remoteSettings = FakeSettingsProvider(),
-        ),
-      )
-
-    sessionCoordinator.attemptLoggingSessionEvent(sessionEvent)
+    publisher.logSession(TestSessionEventData.TEST_SESSION_DETAILS)
 
     runCurrent()
 
-    assertThat(sessionEvent.sessionData.firebaseInstallationId).isEqualTo("FaKeFiD")
+    System.out.println("FakeEventGDTLogger: $fakeEventGDTLogger")
     assertThat(fakeEventGDTLogger.loggedEvent!!.sessionData.firebaseInstallationId)
       .isEqualTo("FaKeFiD")
   }
