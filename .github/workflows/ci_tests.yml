@@ -165,16 +165,14 @@ jobs:
             
       # create composite indexes with Terraform
       - name: Setup Terraform 
-        if: contains(matrix.module, ':firebase-firestore')
         uses: hashicorp/setup-terraform@v2
       - name: Terraform Init
-        if: contains(matrix.module, ':firebase-firestore')
         run: |
           cd firebase-firestore
           terraform init
         continue-on-error: true
       - name: Terraform Apply
-        if: github.event_name == 'pull_request' && contains(matrix.module, ':firebase-firestore')
+        if: github.event_name == 'pull_request'
         run: |
           cd firebase-firestore
 
