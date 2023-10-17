@@ -196,10 +196,13 @@ class FirebaseDataConnectTest {
     dc.settings = dataConnectSettings { connectToEmulator() }
 
     dc.executeMutation(
-      "createPost",
-      mapOf("id" to UUID.randomUUID().toString(), "content" to "${System.currentTimeMillis()}")
+      revision = "TestRevision",
+      operationName = "createPost",
+      variables =
+        mapOf("id" to UUID.randomUUID().toString(), "content" to "${System.currentTimeMillis()}")
     )
-    dc.executeQuery("listPosts", emptyMap())
+
+    dc.executeQuery(revision = "TestRevision", operationName = "listPosts", variables = emptyMap())
   }
 
   private fun createNonDefaultFirebaseApp(): FirebaseApp {

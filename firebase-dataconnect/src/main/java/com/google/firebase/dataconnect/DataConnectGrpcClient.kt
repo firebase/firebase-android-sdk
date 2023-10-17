@@ -38,10 +38,6 @@ internal class DataConnectGrpcClient(
 ) {
   private val logger = LoggerImpl("FirebaseDataConnectClient", Logger.Level.DEBUG)
 
-  private val name =
-    "projects/${projectId}/locations/${location}/services/${service}/" +
-      "operationSets/crud/revisions/r"
-
   private val grpcChannel: ManagedChannel by lazy {
     // Upgrade the Android security provider using Google Play Services.
     //
@@ -76,10 +72,10 @@ internal class DataConnectGrpcClient(
     DataServiceGrpc.newBlockingStub(grpcChannel)
   }
 
-  fun executeQuery(operationName: String, variables: Map<String, Any?>): Struct {
+  fun executeQuery(revision: String, operationName: String, variables: Map<String, Any?>): Struct {
     val request =
       ExecuteQueryRequest.newBuilder().let {
-        it.name = name
+        it.name = nameForRevision(revision)
         it.operationName = operationName
         it.variables = structFromMap(variables)
         it.build()
@@ -91,10 +87,14 @@ internal class DataConnectGrpcClient(
     return response.data
   }
 
-  fun executeMutation(operationName: String, variables: Map<String, Any?>): Struct {
+  fun executeMutation(
+    revision: String,
+    operationName: String,
+    variables: Map<String, Any?>
+  ): Struct {
     val request =
       ExecuteMutationRequest.newBuilder().let {
-        it.name = name
+        it.name = nameForRevision(revision)
         it.operationName = operationName
         it.variables =
           Struct.newBuilder().run {
@@ -119,6 +119,10 @@ internal class DataConnectGrpcClient(
   fun close() {
     grpcChannel.shutdownNow()
   }
+
+  private fun nameForRevision(revision: String): String =
+    "projects/$projectId/locations/$location/services/$service/" +
+      "operationSets/crud/revisions/$revision"
 }
 
 private fun structFromMap(map: Map<String, Any?>): Struct =
