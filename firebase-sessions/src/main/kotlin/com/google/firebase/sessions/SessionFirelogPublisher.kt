@@ -23,7 +23,7 @@ import com.google.firebase.app
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.settings.SessionsSettings
-import kotlinx.coroutines.CoroutineDispatcher
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -38,7 +38,7 @@ internal class SessionFirelogPublisher(
   private val firebaseInstallations: FirebaseInstallationsApi,
   private val sessionSettings: SessionsSettings,
   private val eventGDTLogger: EventGDTLoggerInterface,
-  private val backgroundDispatcher: CoroutineDispatcher,
+  private val backgroundDispatcher: CoroutineContext,
 ) {
 
   /**

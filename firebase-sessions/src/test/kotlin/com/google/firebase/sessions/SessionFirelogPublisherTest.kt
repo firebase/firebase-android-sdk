@@ -53,7 +53,7 @@ class SessionFirelogPublisherTest {
         firebaseInstallations,
         sessionsSettings,
         eventGDTLogger = fakeEventGDTLogger,
-        TestOnlyExecutors.background().asCoroutineDispatcher(),
+        TestOnlyExecutors.background().asCoroutineDispatcher() + coroutineContext,
       )
 
     // Construct an event with no fid set.
@@ -61,6 +61,7 @@ class SessionFirelogPublisherTest {
 
     runCurrent()
 
+    System.out.println("FakeEventGDTLogger: $fakeEventGDTLogger")
     assertThat(fakeEventGDTLogger.loggedEvent!!.sessionData.firebaseInstallationId)
       .isEqualTo("FaKeFiD")
   }
