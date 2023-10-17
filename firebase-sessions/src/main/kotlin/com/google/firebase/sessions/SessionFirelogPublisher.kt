@@ -18,6 +18,7 @@ package com.google.firebase.sessions
 
 import android.util.Log
 import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
