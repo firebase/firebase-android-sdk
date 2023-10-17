@@ -31,7 +31,6 @@ import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.app
 import com.google.firebase.sessions.settings.SessionsSettings
-import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -41,52 +40,52 @@ import kotlinx.coroutines.launch
  * be generated. When this happens, the service will broadcast the updated session id to all
  * connected clients.
  */
-internal class SessionLifecycleService(
-  private var datastore: SessionDatastore = SessionDatastore(Firebase.app.applicationContext)
-) : Service() {
+internal class SessionLifecycleService() : Service() {
 
-  /**
-   * Queue of connected clients.
-   *
-   * Note that this needs to be a [LinkedBlockingQueue] since it is modified in the service [onBind]
-   * method and read in the message handler. Although the [IncomingHandler] is guaranteed to execute
-   * sequentially on a single thread, the [onBind] method is not guaranteed to run on that same
-   * thread.
-   */
-  private val boundClients = LinkedBlockingQueue<Messenger>()
-
-  /**
-   * Flag indicating whether or not the app has ever come into the foreground during the lifetime of
-   * the service. If it has not, we can infer that the first foreground event is a cold-start
-   */
-  private var hasForegrounded: Boolean = false
-
-  /**
-   * The timestamp of the last activity lifecycle message we've received from a client. Used to
-   * determine when the app has been idle for long enough to require a new session.
-   */
-  private var lastMsgTimeMs: Long = 0
-
-  /** Most recent session from datastore is updated asynchronously whenever it changes */
-  private val currentSessionFromDatastore: AtomicReference<FirebaseSessionsData> = AtomicReference()
-
+  /** The thread that will be used to process all lifecycle messages from connected clients. */
   private var handlerThread: HandlerThread = HandlerThread("FirebaseSessions_HandlerThread")
-  private var messageHandler: Handler? = null
 
-  init {
-    CoroutineScope(FirebaseSessions.instance.backgroundDispatcher).launch {
-      datastore.firebaseSessionDataFlow.collect { currentSessionFromDatastore.set(it) }
-    }
-  }
+  /** The handler that will process all lifecycle messages from connected clients . */
+  private var messageHandler: MessageHandler? = null
+
+  /** The single messenger that will be sent to all connected clients of this service . */
+  private var messenger: Messenger? = null
 
   /**
    * Handler of incoming activity lifecycle events being received from [SessionLifecycleClient]s.
    * All incoming communication from connected clients comes through this class and will be used to
    * determine when new sessions should be created.
    */
-  // TODO(rothbutter) there's a warning that this needs to be static and leaks may occur. Need to
-  // look in to this
-  internal inner class IncomingHandler(looper: Looper) : Handler(looper) {
+  internal class MessageHandler(looper: Looper) : Handler(looper) {
+
+    private var datastore: SessionDatastore = SessionDatastore(Firebase.app.applicationContext)
+    /**
+     * Flag indicating whether or not the app has ever come into the foreground during the lifetime
+     * of the service. If it has not, we can infer that the first foreground event is a cold-start
+     *
+     * Note: this is made volatile because we attempt to send the current session ID to newly bound
+     * clients, and this binding happens
+     */
+    private var hasForegrounded: Boolean = false
+
+    /**
+     * The timestamp of the last activity lifecycle message we've received from a client. Used to
+     * determine when the app has been idle for long enough to require a new session.
+     */
+    private var lastMsgTimeMs: Long = 0
+
+    /** Queue of connected clients. */
+    private val boundClients = ArrayList<Messenger>()
+
+    /** Most recent session from datastore is updated asynchronously whenever it changes */
+    private val currentSessionFromDatastore: AtomicReference<FirebaseSessionsData> =
+      AtomicReference()
+
+    init {
+      CoroutineScope(FirebaseSessions.instance.backgroundDispatcher).launch {
+        datastore.firebaseSessionDataFlow.collect { currentSessionFromDatastore.set(it) }
+      }
+    }
 
     override fun handleMessage(msg: Message) {
       if (lastMsgTimeMs > msg.getWhen()) {
@@ -96,6 +95,7 @@ internal class SessionLifecycleService(
       when (msg.what) {
         FOREGROUNDED -> handleForegrounding(msg)
         BACKGROUNDED -> handleBackgrounding(msg)
+        CLIENT_BOUND -> handleClientBound(msg)
         else -> {
           Log.w(TAG, "Received unexpected event from the SessionLifecycleClient: $msg")
           super.handleMessage(msg)
@@ -103,97 +103,122 @@ internal class SessionLifecycleService(
       }
       lastMsgTimeMs = msg.getWhen()
     }
+
+    internal fun addClient(client: Messenger) {
+      boundClients.add(client)
+      maybeSendSessionToClient(client)
+      Log.i(TAG, "Stored callback to $client. Size: ${boundClients.size}")
+    }
+
+    /**
+     * Handles a foregrounding event by any activity owned by the aplication as specified by the
+     * given [Message]. This will determine if the foregrounding should result in the creation of a
+     * new session.
+     */
+    private fun handleForegrounding(msg: Message) {
+      Log.i(TAG, "Activity foregrounding at ${msg.getWhen()}")
+      if (!hasForegrounded) {
+        Log.i(TAG, "Cold start detected.")
+        hasForegrounded = true
+        broadcastSession()
+        updateSessionStorage(SessionGenerator.instance.currentSession.sessionId)
+      } else if (isSessionRestart(msg.getWhen())) {
+        Log.i(TAG, "Session too long in background. Creating new session.")
+        SessionGenerator.instance.generateNewSession()
+        broadcastSession()
+        updateSessionStorage(SessionGenerator.instance.currentSession.sessionId)
+      }
+    }
+
+    /**
+     * Handles a backgrounding event by any activity owned by the application as specified by the
+     * given [Message]. This will keep track of the backgrounding and be used to determine if future
+     * foregrounding events should result in the creation of a new session.
+     */
+    private fun handleBackgrounding(msg: Message) {
+      Log.i(TAG, "Activity backgrounding at ${msg.getWhen()}")
+    }
+
+    /**
+     * Handles a newly bound client to this service by adding it to the list of callback clients and
+     * attempting to send it the latest session id immediately.
+     */
+    private fun handleClientBound(msg: Message) {
+      boundClients.add(msg.replyTo)
+      maybeSendSessionToClient(msg.replyTo)
+      Log.i(TAG, "Stored callback to ${msg.replyTo}. Size: ${boundClients.size}")
+    }
+
+    /**
+     * Broadcasts the current session to by uploading to Firelog and all sending a message to all
+     * connected clients.
+     */
+    private fun broadcastSession() {
+      Log.i(TAG, "Broadcasting new session: ${SessionGenerator.instance.currentSession}")
+      SessionFirelogPublisher.instance.logSession(SessionGenerator.instance.currentSession)
+      boundClients.forEach { maybeSendSessionToClient(it) }
+    }
+
+    private fun maybeSendSessionToClient(client: Messenger) {
+      if (hasForegrounded) {
+        sendSessionToClient(client, SessionGenerator.instance.currentSession.sessionId)
+      } else {
+        // Send the value from the datastore before the first foregrounding it exists
+        val sessionData = currentSessionFromDatastore.get()
+        sessionData?.sessionId?.let { sendSessionToClient(client, it) }
+      }
+    }
+
+    /** Sends the current session id to the client connected through the given [Messenger]. */
+    private fun sendSessionToClient(client: Messenger, sessionId: String) {
+      try {
+        val msgData = Bundle().also { it.putString(SESSION_UPDATE_EXTRA, sessionId) }
+        client.send(Message.obtain(null, SESSION_UPDATED, 0, 0).also { it.data = msgData })
+      } catch (e: DeadObjectException) {
+        Log.i(TAG, "Removing dead client from list: $client")
+        boundClients.remove(client)
+      } catch (e: Exception) {
+        Log.e(TAG, "Unable to push new session to $client.", e)
+      }
+    }
+
+    /**
+     * Determines if the foregrounding that occurred at the given time should trigger a new session
+     * because the app has been idle for too long.
+     */
+    private fun isSessionRestart(foregroundTimeMs: Long) =
+      (foregroundTimeMs - lastMsgTimeMs) >
+        SessionsSettings.instance.sessionRestartTimeout.inWholeMilliseconds
+
+    private fun updateSessionStorage(sessionId: String) {
+      CoroutineScope(FirebaseSessions.instance.backgroundDispatcher).launch {
+        sessionId.let { datastore.updateSessionId(it) }
+      }
+    }
   }
 
   override fun onCreate() {
     super.onCreate()
     handlerThread.start()
-    messageHandler = IncomingHandler(handlerThread.getLooper())
+    messageHandler = MessageHandler(handlerThread.getLooper())
+    messenger = Messenger(messageHandler)
   }
 
   /** Called when a new [SessionLifecycleClient] binds to this service. */
   override fun onBind(intent: Intent): IBinder? {
     Log.i(TAG, "Service bound")
-    val messenger = Messenger(messageHandler)
     val callbackMessenger = getClientCallback(intent)
     if (callbackMessenger != null) {
-      boundClients.add(callbackMessenger)
-      maybeSendSessionToClient(callbackMessenger)
-      Log.i(TAG, "Stored callback to $callbackMessenger. Size: ${boundClients.size}")
+      val clientBoundMsg = Message.obtain(null, CLIENT_BOUND, 0, 0)
+      clientBoundMsg.replyTo = callbackMessenger
+      messageHandler?.sendMessage(clientBoundMsg)
     }
-    return messenger.binder
+    return messenger?.binder
   }
 
   override fun onDestroy() {
     super.onDestroy()
     handlerThread.quit()
-  }
-
-  /**
-   * Handles a foregrounding event by any activity owned by the aplication as specified by the given
-   * [Message]. This will determine if the foregrounding should result in the creation of a new
-   * session.
-   */
-  private fun handleForegrounding(msg: Message) {
-    Log.i(TAG, "Activity foregrounding at ${msg.getWhen()}")
-    if (!hasForegrounded) {
-      Log.i(TAG, "Cold start detected.")
-      hasForegrounded = true
-      broadcastSession()
-      updateSessionStorage(SessionGenerator.instance.currentSession.sessionId)
-      Log.i(TAG, "Session too long in background. Creating new session.")
-      SessionGenerator.instance.generateNewSession()
-      broadcastSession()
-      updateSessionStorage(SessionGenerator.instance.currentSession.sessionId)
-    }
-  }
-
-  private fun updateSessionStorage(sessionId: String) {
-    CoroutineScope(FirebaseSessions.instance.backgroundDispatcher).launch {
-      sessionId.let { datastore.updateSessionId(it) }
-    }
-  }
-
-  /**
-   * Handles a backgrounding event by any activity owned by the application as specified by the
-   * given [Message]. This will keep track of the backgrounding and be used to determine if future
-   * foregrounding events should result in the creation of a new session.
-   */
-  private fun handleBackgrounding(msg: Message) {
-    Log.i(TAG, "Activity backgrounding at ${msg.getWhen()}")
-  }
-
-  /**
-   * Broadcasts the current session to by uploading to Firelog and all sending a message to all
-   * connected clients.
-   */
-  private fun broadcastSession() {
-    Log.i(TAG, "Broadcasting new session: ${SessionGenerator.instance.currentSession}")
-    SessionFirelogPublisher.instance.logSession(SessionGenerator.instance.currentSession)
-    boundClients.forEach { maybeSendSessionToClient(it) }
-  }
-
-  private fun maybeSendSessionToClient(client: Messenger) {
-    if (hasForegrounded) {
-      sendSessionToClient(client, SessionGenerator.instance.currentSession.sessionId)
-    } else {
-      // Send the value from the datastore before the first foregrounding it exists
-      val sessionData = currentSessionFromDatastore.get()
-      sessionData?.sessionId?.let { sendSessionToClient(client, it) }
-    }
-  }
-
-  /** Sends the current session id to the client connected through the given [Messenger]. */
-  private fun sendSessionToClient(client: Messenger, sessionId: String) {
-    try {
-      val msgData = Bundle().also { it.putString(SESSION_UPDATE_EXTRA, sessionId) }
-      client.send(Message.obtain(null, SESSION_UPDATED, 0, 0).also { it.data = msgData })
-    } catch (e: DeadObjectException) {
-      Log.i(TAG, "Removing dead client from list: $client")
-      boundClients.remove(client)
-    } catch (e: Exception) {
-      Log.e(TAG, "Unable to push new session to $client.", e)
-    }
   }
 
   /**
@@ -206,14 +231,6 @@ internal class SessionLifecycleService(
     } else {
       @Suppress("DEPRECATION") intent.getParcelableExtra(CLIENT_CALLBACK_MESSENGER)
     }
-
-  /**
-   * Determines if the foregrounding that occurred at the given time should trigger a new session
-   * because the app has been idle for too long.
-   */
-  private fun isSessionRestart(foregroundTimeMs: Long) =
-    (foregroundTimeMs - lastMsgTimeMs) >
-      SessionsSettings.instance.sessionRestartTimeout.inWholeMilliseconds
 
   internal companion object {
     const val TAG = "SessionLifecycleService"
@@ -239,5 +256,11 @@ internal class SessionLifecycleService(
      * id in the [SESSION_UPDATE_EXTRA] extra field.
      */
     const val SESSION_UPDATED = 3
+
+    /**
+     * [Message] code indicating that a new client has been bound to the service. The
+     * [Message.replyTo] field will contain the new client callback interface.
+     */
+    private const val CLIENT_BOUND = 4
   }
 }
