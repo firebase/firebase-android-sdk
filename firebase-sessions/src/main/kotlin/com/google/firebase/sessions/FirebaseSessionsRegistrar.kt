@@ -41,17 +41,9 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
       Component.builder(FirebaseSessions::class.java)
         .name(LIBRARY_NAME)
         .add(Dependency.required(firebaseApp))
-        .add(Dependency.required(backgroundDispatcher))
-        .add(Dependency.required(sessionFirelogPublisher))
-        .add(Dependency.required(sessionGenerator))
-        .add(Dependency.required(sessionsSettings))
         .factory { container ->
           FirebaseSessions(
             container.get(firebaseApp),
-            container.get(backgroundDispatcher),
-            container.get(sessionFirelogPublisher),
-            container.get(sessionGenerator),
-            container.get(sessionsSettings),
           )
         }
         .build(),
@@ -89,6 +81,14 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
             container.get(backgroundDispatcher),
             container.get(firebaseInstallationsApi),
           )
+        }
+        .build(),
+      Component.builder(Dispatchers::class.java)
+        .name("sessions-dispatchers")
+        .add(Dependency.required(blockingDispatcher))
+        .add(Dependency.required(backgroundDispatcher))
+        .factory { container ->
+          Dispatchers(container.get(blockingDispatcher), container.get(backgroundDispatcher))
         }
         .build(),
       LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),

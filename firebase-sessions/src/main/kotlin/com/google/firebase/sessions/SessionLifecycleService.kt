@@ -59,6 +59,7 @@ internal class SessionLifecycleService() : Service() {
   internal class MessageHandler(looper: Looper) : Handler(looper) {
 
     private var datastore: SessionDatastore = SessionDatastore(Firebase.app.applicationContext)
+
     /**
      * Flag indicating whether or not the app has ever come into the foreground during the lifetime
      * of the service. If it has not, we can infer that the first foreground event is a cold-start
@@ -82,7 +83,7 @@ internal class SessionLifecycleService() : Service() {
       AtomicReference()
 
     init {
-      CoroutineScope(FirebaseSessions.instance.backgroundDispatcher).launch {
+      CoroutineScope(Dispatchers.instance.backgroundDispatcher).launch {
         datastore.firebaseSessionDataFlow.collect { currentSessionFromDatastore.set(it) }
       }
     }
@@ -120,13 +121,10 @@ internal class SessionLifecycleService() : Service() {
       if (!hasForegrounded) {
         Log.i(TAG, "Cold start detected.")
         hasForegrounded = true
-        broadcastSession()
-        updateSessionStorage(SessionGenerator.instance.currentSession.sessionId)
+        newSession()
       } else if (isSessionRestart(msg.getWhen())) {
         Log.i(TAG, "Session too long in background. Creating new session.")
-        SessionGenerator.instance.generateNewSession()
-        broadcastSession()
-        updateSessionStorage(SessionGenerator.instance.currentSession.sessionId)
+        newSession()
       }
     }
 
@@ -147,6 +145,13 @@ internal class SessionLifecycleService() : Service() {
       boundClients.add(msg.replyTo)
       maybeSendSessionToClient(msg.replyTo)
       Log.i(TAG, "Stored callback to ${msg.replyTo}. Size: ${boundClients.size}")
+    }
+
+    /** Generates a new session id and sends it everywhere it's needed */
+    private fun newSession() {
+      SessionGenerator.instance.generateNewSession()
+      broadcastSession()
+      updateSessionStorage(SessionGenerator.instance.currentSession.sessionId)
     }
 
     /**
@@ -191,7 +196,7 @@ internal class SessionLifecycleService() : Service() {
         SessionsSettings.instance.sessionRestartTimeout.inWholeMilliseconds
 
     private fun updateSessionStorage(sessionId: String) {
-      CoroutineScope(FirebaseSessions.instance.backgroundDispatcher).launch {
+      CoroutineScope(Dispatchers.instance.backgroundDispatcher).launch {
         sessionId.let { datastore.updateSessionId(it) }
       }
     }
