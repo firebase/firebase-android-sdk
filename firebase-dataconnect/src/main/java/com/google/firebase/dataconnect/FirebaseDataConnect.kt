@@ -14,7 +14,6 @@
 package com.google.firebase.dataconnect
 
 import android.content.Context
-import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseAppLifecycleListener
@@ -22,14 +21,6 @@ import com.google.firebase.app
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import google.internal.firebase.firemat.v0.DataServiceGrpc
-import google.internal.firebase.firemat.v0.DataServiceGrpc.DataServiceBlockingStub
-import google.internal.firebase.firemat.v0.DataServiceOuterClass.ExecuteMutationRequest
-import google.internal.firebase.firemat.v0.DataServiceOuterClass.ExecuteQueryRequest
-import io.grpc.ManagedChannel
-import io.grpc.ManagedChannelBuilder
-import io.grpc.android.AndroidChannelBuilder
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
@@ -52,48 +43,6 @@ internal constructor(
   private var settingsFrozen = false
   private var terminated = false
 
-  private val grpcChannel: ManagedChannel by lazy {
-    // Make sure that no further changes can be made to the settings.
-    lock.write {
-      if (terminated) {
-        throw IllegalStateException("instance has been terminated")
-      }
-      settingsFrozen = true
-    }
-
-    // Upgrade the Android security provider using Google Play Services.
-    //
-    // We need to upgrade the Security Provider before any network channels are initialized because
-    // okhttp maintains a list of supported providers that is initialized when the JVM first
-    // resolves the static dependencies of ManagedChannel.
-    //
-    // If initialization fails for any reason, then a warning is logged and the original,
-    // un-upgraded security provider is used.
-    try {
-      ProviderInstaller.installIfNeeded(context)
-    } catch (e: Exception) {
-      logger.warn(e) { "Failed to update ssl context" }
-    }
-
-    val channelBuilder = ManagedChannelBuilder.forAddress(settings.hostName, settings.port)
-    if (!settings.sslEnabled) {
-      channelBuilder.usePlaintext()
-    }
-
-    // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
-    // the OS will  usually notify gRPC when a connection dies. But not always. This acts as a
-    // failsafe.
-    channelBuilder.keepAliveTime(30, TimeUnit.SECONDS)
-
-    // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel to
-    // respond more gracefully to network change events, such as switching from cellular to wifi.
-    AndroidChannelBuilder.usingBuilder(channelBuilder).context(context).build()
-  }
-
-  private val grpcStub: DataServiceBlockingStub by lazy {
-    DataServiceGrpc.newBlockingStub(grpcChannel)
-  }
-
   var settings: FirebaseDataConnectSettings = FirebaseDataConnectSettings.defaultInstance
     get() {
       lock.read {
@@ -112,59 +61,34 @@ internal constructor(
       }
     }
 
-  fun executeQuery(location: String, operationName: String, variables: Map<String, Any?>): Struct {
-    val request =
-      ExecuteQueryRequest.newBuilder().let {
-        it.name =
-          "projects/${projectId}" +
-            "/locations/${location}" +
-            "/services/s/operationSets/crud/revisions/r"
-        it.operationName = operationName
-        it.variables = structFromMap(variables)
-        it.build()
+  private val grpcClint: DataConnectGrpcClient by lazy {
+    lock.write {
+      if (terminated) {
+        throw IllegalStateException("instance has been terminated")
       }
+      settingsFrozen = true
 
-    logger.debug { "executeQuery() sending request: $request" }
-
-    val response = grpcStub.executeQuery(request)
-
-    logger.debug { "executeQuery() got response: $response" }
-
-    return response.data
+      DataConnectGrpcClient(
+        context = context,
+        projectId = projectId,
+        location = location,
+        service = service,
+        hostName = settings.hostName,
+        port = settings.port,
+        sslEnabled = settings.sslEnabled,
+      )
+    }
   }
 
-  fun executeMutation(
-    location: String,
-    operationName: String,
-    variables: Map<String, Any?>
-  ): Struct {
-    val request =
-      ExecuteMutationRequest.newBuilder().let {
-        it.name =
-          "projects/${projectId}" +
-            "/locations/${location}" +
-            "/services/s/operationSets/crud/revisions/r"
-        it.operationName = operationName
-        it.variables =
-          Struct.newBuilder().run {
-            putFields("data", Value.newBuilder().setStructValue(structFromMap(variables)).build())
-            build()
-          }
-        it.build()
-      }
+  fun executeQuery(operationName: String, variables: Map<String, Any?>): Struct =
+    grpcClint.executeQuery(operationName, variables)
 
-    logger.debug { "executeMutation() sending request: $request" }
-
-    val response = grpcStub.executeMutation(request)
-
-    logger.debug { "executeMutation() got response: $response" }
-
-    return response.data
-  }
+  fun executeMutation(operationName: String, variables: Map<String, Any?>): Struct =
+    grpcClint.executeMutation(operationName, variables)
 
   fun terminate() {
     lock.write {
-      grpcChannel.shutdown()
+      grpcClint.close()
       terminated = true
       creator.remove(this)
     }
@@ -251,10 +175,17 @@ internal class FirebaseDataConnectFactory(
   }
 
   fun remove(instance: FirebaseDataConnect) {
-    val key = InstanceCacheKey(location = instance.location, service = instance.service)
     lock.withLock {
-      if (instancesByCacheKey[key] === instance) {
-        instancesByCacheKey.remove(key)
+      val entries = instancesByCacheKey.entries.filter { it.value === instance }
+      if (entries.isEmpty()) {
+        return
+      } else if (entries.size == 1) {
+        instancesByCacheKey.remove(entries[0].key)
+      } else {
+        throw IllegalStateException(
+          "internal error: FirebaseDataConnect instance $instance" +
+            "maps to more than one key: ${entries.map { it.key }.joinToString(", ")}"
+        )
       }
     }
   }

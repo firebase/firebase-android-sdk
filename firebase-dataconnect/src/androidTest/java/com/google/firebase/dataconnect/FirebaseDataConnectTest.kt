@@ -195,14 +195,11 @@ class FirebaseDataConnectTest {
     val dc = FirebaseDataConnect.getInstance("TestLocation", "TestService")
     dc.settings = dataConnectSettings { connectToEmulator() }
 
-    val location = "ZzyzxTestLocation"
-
     dc.executeMutation(
-      location,
       "createPost",
       mapOf("id" to UUID.randomUUID().toString(), "content" to "${System.currentTimeMillis()}")
     )
-    dc.executeQuery(location, "listPosts", emptyMap())
+    dc.executeQuery("listPosts", emptyMap())
   }
 
   private fun createNonDefaultFirebaseApp(): FirebaseApp {
