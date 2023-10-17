@@ -10,6 +10,8 @@
   now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
+* [fixed] Fixed Flutter and Unity on-demand fatal `setUserIdentifier` behaviour. Github
+  [#10759](https://github.com/firebase/flutterfire/issues/10759)
 
 # 18.4.3
 * [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. [#5337]
