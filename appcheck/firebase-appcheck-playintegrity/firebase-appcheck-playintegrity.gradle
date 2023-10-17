@@ -50,7 +50,7 @@ dependencies {
     implementation project(':appcheck:firebase-appcheck')
     implementation 'com.google.android.gms:play-services-base:18.0.1'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation 'com.google.android.play:integrity:1.0.1'
+    implementation 'com.google.android.play:integrity:1.2.0'
 
     javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
 
