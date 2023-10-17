@@ -399,9 +399,8 @@ public class AppStartTrace
 
   @Override
   public void updateSession(PerfSession session) {
-    if (session.sessionId().isEmpty()) {
-      SessionManager.getInstance().registerForSessionUpdates(sessionAwareObject);
-    } else {
+    if (!session.sessionId().isEmpty()) {
+      SessionManager.getInstance().unregisterForSessionUpdates(sessionAwareObject);
       this.startSession = session;
       dispatchAppStartTrace();
     }
