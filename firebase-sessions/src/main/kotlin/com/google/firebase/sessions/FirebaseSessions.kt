@@ -16,10 +16,7 @@
 
 package com.google.firebase.sessions
 
-import android.app.Activity
 import android.app.Application
-import android.app.Application.ActivityLifecycleCallbacks
-import android.os.Bundle
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
@@ -34,11 +31,11 @@ class FirebaseSessions internal constructor(private val firebaseApp: FirebaseApp
     val appContext = firebaseApp.applicationContext.applicationContext
     if (appContext is Application) {
       SessionLifecycleClient.bindToService(appContext)
-      appContext.registerActivityLifecycleCallbacks(activityLifecycleCallbacks)
+      appContext.registerActivityLifecycleCallbacks(SessionsActivityLifecycleCallbacks)
 
       firebaseApp.addLifecycleEventListener { _, _ ->
         Log.w(TAG, "FirebaseApp instance deleted. Sessions library will not collect session data.")
-        appContext.unregisterActivityLifecycleCallbacks(activityLifecycleCallbacks)
+        appContext.unregisterActivityLifecycleCallbacks(SessionsActivityLifecycleCallbacks)
       }
     } else {
       Log.e(
@@ -77,27 +74,6 @@ class FirebaseSessions internal constructor(private val firebaseApp: FirebaseApp
         app.get(FirebaseSessions::class.java)
       } else {
         throw IllegalArgumentException("Firebase Sessions only supports the Firebase default app.")
-      }
-
-    /**
-     * Lifecycle callbacks that will inform the [SessionLifecycleClient] whenever an [Activity] in
-     * this application process goes foreground or background.
-     */
-    private val activityLifecycleCallbacks =
-      object : ActivityLifecycleCallbacks {
-        override fun onActivityResumed(activity: Activity) = SessionLifecycleClient.foregrounded()
-
-        override fun onActivityPaused(activity: Activity) = SessionLifecycleClient.backgrounded()
-
-        override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
-
-        override fun onActivityStarted(activity: Activity) = Unit
-
-        override fun onActivityStopped(activity: Activity) = Unit
-
-        override fun onActivityDestroyed(activity: Activity) = Unit
-
-        override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
       }
   }
 }
