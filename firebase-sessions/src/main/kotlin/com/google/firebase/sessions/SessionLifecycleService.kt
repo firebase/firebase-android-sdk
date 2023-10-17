@@ -22,6 +22,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.DeadObjectException
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.IBinder
 import android.os.Looper
 import android.os.Message
@@ -69,6 +70,9 @@ internal class SessionLifecycleService(
   /** Most recent session from datastore is updated asynchronously whenever it changes */
   private val currentSessionFromDatastore: AtomicReference<FirebaseSessionsData> = AtomicReference()
 
+  private var handlerThread: HandlerThread = HandlerThread("FirebaseSessions_HandlerThread")
+  private var messageHandler: Handler? = null
+
   init {
     CoroutineScope(FirebaseSessions.instance.backgroundDispatcher).launch {
       datastore.firebaseSessionDataFlow.collect { currentSessionFromDatastore.set(it) }
@@ -82,7 +86,7 @@ internal class SessionLifecycleService(
    */
   // TODO(rothbutter) there's a warning that this needs to be static and leaks may occur. Need to
   // look in to this
-  internal inner class IncomingHandler : Handler(Looper.getMainLooper()) {
+  internal inner class IncomingHandler(looper: Looper) : Handler(looper) {
 
     override fun handleMessage(msg: Message) {
       if (lastMsgTimeMs > msg.getWhen()) {
@@ -101,10 +105,16 @@ internal class SessionLifecycleService(
     }
   }
 
+  override fun onCreate() {
+    super.onCreate()
+    handlerThread.start()
+    messageHandler = IncomingHandler(handlerThread.getLooper())
+  }
+
   /** Called when a new [SessionLifecycleClient] binds to this service. */
   override fun onBind(intent: Intent): IBinder? {
     Log.i(TAG, "Service bound")
-    val messenger = Messenger(IncomingHandler())
+    val messenger = Messenger(messageHandler)
     val callbackMessenger = getClientCallback(intent)
     if (callbackMessenger != null) {
       boundClients.add(callbackMessenger)
@@ -112,6 +122,11 @@ internal class SessionLifecycleService(
       Log.i(TAG, "Stored callback to $callbackMessenger. Size: ${boundClients.size}")
     }
     return messenger.binder
+  }
+
+  override fun onDestroy() {
+    super.onDestroy()
+    handlerThread.quit()
   }
 
   /**
