@@ -180,7 +180,7 @@ jobs:
           output_file=$(mktemp)
 
           # Run terraform apply, redirect stderr to the file
-          if ! { terraform apply -var-file=../google-services.json -auto-approve  2> "$output_file" > /dev/null; then
+          if ! terraform apply -var-file=../google-services.json -auto-approve  2> "$output_file" > /dev/null; then
             cat "$output_file"
             if cat "$output_file" | grep -q "index already exists"; then
               echo "==================================================================================="
