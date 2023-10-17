@@ -138,9 +138,8 @@ jobs:
           cd firebase-firestore
           # Define a temporary file to store the output
           output_file=$(mktemp)
-          echo "111"
           # Run terraform apply, redirect both stdout and stderr to the file
-          if ! terraform apply -var-file=../google-services.json -auto-approve 2> "$output_file"; then
+          if ! terraform apply -var-file=../google-services.json -auto-approve  > "$output_file" 2>&1 ; then
             if cat "$output_file" | grep -q "index already exists"; then
               echo "terraform apply failed due to index already exists; ignoring the failure"
             else
