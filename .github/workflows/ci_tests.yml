@@ -136,17 +136,21 @@ jobs:
         if: github.event_name == 'pull_request' && contains(matrix.module, ':firebase-firestore')
         run: |
           cd firebase-firestore
+
           # Define a temporary file to store the output
           output_file=$(mktemp)
+          
           # Run terraform apply, redirect both stdout and stderr to the file
           if ! terraform apply -var-file=../google-services.json -auto-approve  > "$output_file" 2>&1 ; then
+            echo "$output_file" >&2
             if cat "$output_file" | grep -q "index already exists"; then
-              echo "terraform apply failed due to index already exists; ignoring the failure"
+              echo "============================================================================="
+              echo -e "\e[93m\e[1mERROR: Terraform apply failed due to index already exists; We can safely ignore this error.\e[0m"
+              echo "============================================================================="
             else
               echo "ERROR: terraform apply failed" >&2
-              cat "$output_file" >&2
-              exit 1
             fi
+            exit 1
           fi
           # Clean up the temporary file
           rm -f "$output_file"
