@@ -24,6 +24,8 @@ import java.net.URL;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import okhttp3.OkHttpClient;
+
 @RunWith(AndroidJUnit4.class)
 public class FirebaseFunctionsTest {
 
@@ -99,6 +101,17 @@ public class FirebaseFunctionsTest {
     FirebaseFunctions functions2 = FirebaseFunctions.getInstance(app);
 
     assertEquals(functions1.getURL("foo").toString(), functions2.getURL("foo").toString());
+  }
+
+  @Test
+  public void testSetOkHttpClient() {
+    OkHttpClient client = new OkHttpClient.Builder().build();
+    FirebaseApp app = getApp("testSetOkHttpClient");
+    FirebaseFunctions functions = FirebaseFunctions.getInstance(app);
+
+    functions.setOkHttpClient(client);
+
+    assertEquals(client, functions.getOkHttpClient());
   }
 
   private FirebaseApp getApp(String name) {
