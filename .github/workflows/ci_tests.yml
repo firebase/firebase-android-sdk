@@ -121,6 +121,7 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v0
+      
       # create composite indexes with Terraform
       - name: Setup Terraform 
         if: contains(matrix.module, ':firebase-firestore')
@@ -134,25 +135,32 @@ jobs:
       - name: Terraform Apply
         if: github.event_name == 'pull_request' && contains(matrix.module, ':firebase-firestore')
         run: |
+          echo "0"
           cd firebase-firestore
+          echo "1"
           # Define a temporary file to store the output
           output_file=$(mktemp)
-          
+          echo "2"
+
           # Run terraform apply, redirect both stdout and stderr to the file
           terraform apply -var-file=../google-services.json -auto-approve &> "$output_file"
+          echo "3"
 
           # Read the contents of the file into a variable
           apply_output=$(cat "$output_file")
+          echo "4"
 
           # Clean up the temporary file
           rm -f "$output_file"
+          echo "5"
 
           if echo "$apply_output" | grep -q "index already exists"; then
             echo "Error found in Terraform Apply."
           else
             echo "No errors in Terraform Apply."
           fi
-        continue-on-error: true
+          echo "6"
+        # continue-on-error: true
       - name: ${{ matrix.module }} Integ Tests
         env:
           FIREBASE_CI: 1
