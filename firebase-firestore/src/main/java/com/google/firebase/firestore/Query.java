@@ -22,7 +22,6 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RestrictTo;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -858,7 +857,7 @@ public class Query {
     // contain the document key. That way the position becomes unambiguous and the query
     // continues/ends exactly at the provided document. Without the key (by using the explicit sort
     // orders), multiple documents could match the position, yielding duplicate results.
-    for (OrderBy orderBy : query.getOrderBy()) {
+    for (OrderBy orderBy : query.getNormalizedOrderBy()) {
       if (orderBy.getField().equals(com.google.firebase.firestore.model.FieldPath.KEY_PATH)) {
         components.add(Values.refValue(firestore.getDatabaseId(), document.getKey()));
       } else {
@@ -1203,9 +1202,6 @@ public class Query {
    * @return The {@code AggregateQuery} that performs aggregations on the documents in the result
    *     set of this query.
    */
-  // TODO(sumavg): Remove the `hide` and scope annotations.
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @NonNull
   public AggregateQuery aggregate(
       @NonNull AggregateField aggregateField, @NonNull AggregateField... aggregateFields) {

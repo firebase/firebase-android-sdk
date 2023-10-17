@@ -18,7 +18,6 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RestrictTo;
 import com.google.firestore.v1.Value;
 import java.util.Collections;
 import java.util.Map;
@@ -73,9 +72,6 @@ public class AggregateQuerySnapshot {
    * @param aggregateField The aggregation for which the value is requested.
    * @return The result of the given aggregation.
    */
-  // TODO(sumavg): Remove the `hide` and scope annotations.
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Object get(@Nonnull AggregateField aggregateField) {
     return getInternal(aggregateField);
@@ -87,9 +83,6 @@ public class AggregateQuerySnapshot {
    * @param countAggregateField The count aggregation for which the value is requested.
    * @return The result of the given count aggregation.
    */
-  // TODO(sumavg): Remove the `hide` and scope annotations.
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
   public long get(@Nonnull AggregateField.CountAggregateField countAggregateField) {
     Long value = getLong(countAggregateField);
     if (value == null) {
@@ -108,9 +101,6 @@ public class AggregateQuerySnapshot {
    * @param averageAggregateField The average aggregation for which the value is requested.
    * @return The result of the given average aggregation.
    */
-  // TODO(sumavg): Remove the `hide` and scope annotations.
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Double get(@Nonnull AggregateField.AverageAggregateField averageAggregateField) {
     return getDouble(averageAggregateField);
@@ -125,9 +115,6 @@ public class AggregateQuerySnapshot {
    * @param aggregateField The aggregation for which the value is requested.
    * @return The result of the given average aggregation as a double.
    */
-  // TODO(sumavg): Remove the `hide` and scope annotations.
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Double getDouble(@Nonnull AggregateField aggregateField) {
     Number val = getTypedValue(aggregateField, Number.class);
@@ -142,9 +129,6 @@ public class AggregateQuerySnapshot {
    * @param aggregateField The aggregation for which the value is requested.
    * @return The result of the given average aggregation as a long.
    */
-  // TODO(sumavg): Remove the `hide` and scope annotations.
-  /** @hide */
-  @RestrictTo(RestrictTo.Scope.LIBRARY)
   @Nullable
   public Long getLong(@Nonnull AggregateField aggregateField) {
     Number val = getTypedValue(aggregateField, Number.class);
