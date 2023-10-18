@@ -14,11 +14,13 @@
 
 package com.google.firebase.crashlytics.internal.persistence;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import androidx.annotation.Nullable;
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsAppQualitySessionsSubscriber;
 import com.google.firebase.crashlytics.internal.common.CrashlyticsReportWithSessionId;
@@ -29,6 +31,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Signal;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Thread.Frame;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.ProcessDetails;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.Settings.FeatureFlagData;
@@ -442,6 +445,31 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     assertEquals(userId, finalizedReport.getSession().getUser().getIdentifier());
   }
 
+  public void testLoadFinalizedReports_reportWithProcessDetails_returnsReportWithProcessDetails() {
+    String sessionId = "testSession";
+    CrashlyticsReport testReport = makeTestReport(sessionId);
+    ProcessDetails process1 = makeProcessDetails("process1");
+    ProcessDetails process2 = makeProcessDetails("process2");
+    CrashlyticsReport.Session.Event testEvent =
+        makeTestEvent(
+            "java.lang.Exception", "reason", process1, ImmutableList.from(process1, process2));
+
+    reportPersistence.persistReport(testReport);
+    reportPersistence.persistEvent(testEvent, sessionId);
+    reportPersistence.finalizeReports(null, 0L);
+
+    List<CrashlyticsReportWithSessionId> finalizedReports =
+        reportPersistence.loadFinalizedReports();
+
+    assertThat(finalizedReports).hasSize(1);
+    CrashlyticsReport finalizedReport = finalizedReports.get(0).getReport();
+    assertThat(finalizedReport.getSession()).isNotNull();
+    assertThat(finalizedReport.getSession().getEvents()).isNotNull();
+    Event event = finalizedReport.getSession().getEvents().get(0);
+    assertThat(event.getApp().getCurrentProcessDetails()).isEqualTo(process1);
+    assertThat(event.getApp().getAppProcessDetails()).containsExactly(process1, process2);
+  }
+
   public void
       testLoadFinalizedReports_reportsWithUserIdInMultipleSessions_returnsReportsWithProperUserIds() {
     final String userId1 = "testUser1";
@@ -853,12 +881,23 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
   }
 
   private static Event makeTestEvent(String type, String reason) {
+    return makeTestEvent(
+        type, reason, /* currentProcessDetails= */ null, /* appProcessDetails= */ null);
+  }
+
+  private static Event makeTestEvent(
+      String type,
+      String reason,
+      @Nullable ProcessDetails currentProcessDetails,
+      @Nullable ImmutableList<ProcessDetails> appProcessDetails) {
     return Event.builder()
         .setType(type)
         .setTimestamp(1000)
         .setApp(
             Session.Event.Application.builder()
                 .setBackground(false)
+                .setCurrentProcessDetails(currentProcessDetails)
+                .setAppProcessDetails(appProcessDetails)
                 .setExecution(
                     Execution.builder()
                         .setBinaries(
@@ -975,6 +1014,15 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
         .setPid(1)
         .setPss(1L)
         .setRss(1L)
+        .build();
+  }
+
+  private static ProcessDetails makeProcessDetails(String processName) {
+    return ProcessDetails.builder()
+        .setProcessName(processName)
+        .setPid(0)
+        .setImportance(0)
+        .setDefaultProcess(false)
         .build();
   }
 }

@@ -1016,11 +1016,11 @@ public abstract class CrashlyticsReport {
           public abstract Builder setBackground(@Nullable Boolean value);
 
           @NonNull
-          public abstract Builder setCurrentProcessDetails(@NonNull ProcessDetails processDetails);
+          public abstract Builder setCurrentProcessDetails(@Nullable ProcessDetails processDetails);
 
           @NonNull
           public abstract Builder setAppProcessDetails(
-              @NonNull ImmutableList<ProcessDetails> appProcessDetails);
+              @Nullable ImmutableList<ProcessDetails> appProcessDetails);
 
           @NonNull
           public abstract Builder setUiOrientation(int value);
