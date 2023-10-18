@@ -72,7 +72,9 @@ class PostReleasePlugin : Plugin<Project> {
    * @param project the [Project] to register this task to
    */
   fun registerMoveUnreleasedChangesTask(project: Project) =
-    project.tasks.register<MoveUnreleasedChangesTask>("moveUnreleasedChanges")
+    project.tasks.register<MoveUnreleasedChangesTask>("moveUnreleasedChanges") {
+      onlyIf { project.file("CHANGELOG.md").exists() }
+    }
 
   /**
    * Registers the `updatePinnedDependencies` for the provided [Project]
