@@ -89,13 +89,11 @@ Run:
 
 ### Testing composite index query against production
 #### Setting Up the Environment:
-1. Navigate to the `firebase-android-sdk/firebase-firestore` directory.
-2. Create a `google-services.json` file. This file should contain your target Firebase project's
-configuration.
+1. Create a `google-services.json` file in the root directory. This file should contain your target Firebase project's configuration.
 2. If not already logged in, authenticate with your Google Cloud Platform (GCP) account using
 `gcloud auth application-default login`. You can check your logged-in accounts by running
 `gcloud auth list`.
-3. Create composite indexes by running:
+3. Navigate to the `firebase-firestore` directory, create composite indexes by running:
 ```
 terraform init
 terraform apply -var-file=../google-services.json -auto-approve
