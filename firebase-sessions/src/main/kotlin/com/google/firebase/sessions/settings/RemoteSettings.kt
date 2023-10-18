@@ -68,6 +68,7 @@ internal class RemoteSettings(
     fetchInProgress.withLock {
       // Double check if cache is expired. If not, return.
       if (!settingsCache.hasCacheExpired()) {
+        Log.d(TAG, "Remote settings cache not expired. Using cached values.")
         return
       }
 
@@ -89,9 +90,11 @@ internal class RemoteSettings(
           "X-Crashlytics-API-Client-Version" to appInfo.sessionSdkVersion
         )
 
+      Log.d(TAG, "Fetching settings from server.")
       configsFetcher.doConfigFetch(
         headerOptions = options,
         onSuccess = {
+          Log.d(TAG, "Fetched settings: $it")
           var sessionsEnabled: Boolean? = null
           var sessionSamplingRate: Double? = null
           var sessionTimeoutSeconds: Int? = null
