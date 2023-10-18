@@ -1,9 +1,11 @@
 # Unreleased
+
+
+# 18.5.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-crashlytics-ktx`
   to `com.google.firebase:firebase-crashlytics` under the `com.google.firebase.crashlytics` package.
   For details, see the
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
-
 * [deprecated] All the APIs from `com.google.firebase:firebase-crashlytics-ktx` have been added to
   `com.google.firebase:firebase-crashlytics` under the `com.google.firebase.crashlytics` package,
   and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-crashlytics-ktx` are
@@ -12,6 +14,11 @@
 
 * [fixed] Fixed Flutter and Unity on-demand fatal `setUserIdentifier` behaviour. Github
   [#10759](https://github.com/firebase/flutterfire/issues/10759)
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
 
 # 18.4.3
 * [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. [#5337]

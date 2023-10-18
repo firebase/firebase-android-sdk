@@ -1,5 +1,7 @@
 # Unreleased
-* [feature] Expose Sum/Average aggregate query support in API. [#5217](//github.com/firebase/firebase-android-sdk/pull/5217)
+
+
+# 24.9.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-firestore-ktx`
   to `com.google.firebase:firebase-firestore` under the `com.google.firebase.firestore` package.
   For details, see the
@@ -10,6 +12,11 @@
   now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.8.1
 * [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. [#5337]

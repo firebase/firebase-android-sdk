@@ -1,9 +1,11 @@
 # Unreleased
+
+
+# 20.4.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-inappmessaging-display-ktx`
   to `com.google.firebase:firebase-inappmessaging-display` under the `com.google.firebase.inappmessaging.display` package.
   For details, see the
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
-
 * [deprecated] All the APIs from `com.google.firebase:firebase-inappmessaging-display-ktx` have been added to
   `com.google.firebase:firebase-inappmessaging-display` under the `com.google.firebase.inappmessaging.display` package,
   and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-inappmessaging-display-ktx` are
@@ -11,6 +13,10 @@
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
 
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-inappmessaging-display` library. The Kotlin extensions library has no additional
+updates.
 
 # 20.3.5
 * [fixed] Disabled `GradleMetadataPublishing` to fix breakage of the Kotlin extensions library. [#5337]
