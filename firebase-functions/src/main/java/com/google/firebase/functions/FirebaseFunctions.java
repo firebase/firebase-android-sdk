@@ -282,10 +282,11 @@ public class FirebaseFunctions {
    *
    * @param client The OkHttpClient instance
    */
-  public void setOkHttpClient(OkHttpClient client) {
-    this.client = client;
+  public void setOkHttpClient(@NonNull OkHttpClient client) {
+    this.client = Preconditions.checkNotNull(client);
   }
 
+  @NonNull
   OkHttpClient getOkHttpClient() {
     return this.client;
   }
