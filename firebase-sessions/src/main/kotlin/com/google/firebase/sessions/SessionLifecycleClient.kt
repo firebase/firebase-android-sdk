@@ -78,7 +78,7 @@ internal object SessionLifecycleClient {
       Log.i(TAG, "Session update received: $sessionId")
       curSessionId = sessionId
 
-      CoroutineScope(FirebaseSessions.instance.backgroundDispatcher).launch {
+      CoroutineScope(Dispatchers.instance.backgroundDispatcher).launch {
         FirebaseSessionsDependencies.getRegisteredSubscribers().values.forEach { subscriber ->
           // Notify subscribers, regardless of sampling and data collection state.
           subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionId))

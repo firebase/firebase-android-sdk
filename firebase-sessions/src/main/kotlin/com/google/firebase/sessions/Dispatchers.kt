@@ -16,8 +16,19 @@
 
 package com.google.firebase.sessions
 
-/** Interface for listening to the initiation of a new session. */
-internal fun interface SessionInitiateListener {
-  /** To be called whenever a new session is initiated. */
-  suspend fun onInitiateSession(sessionDetails: SessionDetails)
+import com.google.firebase.Firebase
+import com.google.firebase.app
+import kotlin.coroutines.CoroutineContext
+
+/** Container for injecting dispatchers. */
+internal data class Dispatchers
+constructor(
+  val blockingDispatcher: CoroutineContext,
+  val backgroundDispatcher: CoroutineContext,
+) {
+
+  companion object {
+    val instance: Dispatchers
+      get() = Firebase.app.get(Dispatchers::class.java)
+  }
 }
