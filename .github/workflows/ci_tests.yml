@@ -178,10 +178,8 @@ jobs:
 
           # Define a temporary file to store the output
           output_file=$(mktemp)
-
           # Run terraform apply, redirect both stdout and stderr to the file
-          if ! terraform apply -var-file=../google-services.json -auto-approve  > "$output_file" 2>&1 ; then
-            cat "$output_file" 
+          if ! terraform apply -var-file=../google-services.json -auto-approve 2>&1 | tee "$output_file" ; then
             if cat "$output_file" | grep -q "index already exists"; then
               echo "==================================================================================="
               echo -e "\e[93m\e[1mTerraform apply failed due to index already exists; We can safely ignore this error.\e[0m"
@@ -189,8 +187,6 @@ jobs:
             fi
             exit 1
           fi
-
-          # Clean up the temporary file
           rm -f "$output_file"
         continue-on-error: true
 
