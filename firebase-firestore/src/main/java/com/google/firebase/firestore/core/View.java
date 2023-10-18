@@ -87,6 +87,11 @@ public class View {
   /** Documents included in the remote target */
   private ImmutableSortedSet<DocumentKey> syncedDocuments;
 
+  /** Documents included in the remote target, but waiting a reset */
+  private ImmutableSortedSet<DocumentKey> pendingResetDocuments;
+
+  private boolean resetComplete = true;
+
   /** Documents in the view but not in the remote target */
   private ImmutableSortedSet<DocumentKey> limboDocuments;
 
@@ -100,6 +105,7 @@ public class View {
     syncedDocuments = remoteDocuments;
     limboDocuments = DocumentKey.emptyKeySet();
     mutatedKeys = DocumentKey.emptyKeySet();
+    pendingResetDocuments = DocumentKey.emptyKeySet();
   }
 
   public SyncState getSyncState() {
@@ -294,7 +300,7 @@ public class View {
         });
     applyTargetChange(targetChange);
     List<LimboDocumentChange> limboDocumentChanges = updateLimboDocuments();
-    boolean synced = limboDocuments.size() == 0 && current;
+    boolean synced = limboDocuments.size() == 0 && current && (pendingResetDocuments.size() == 0);
     SyncState newSyncState = synced ? SyncState.SYNCED : SyncState.LOCAL;
     boolean syncStatedChanged = newSyncState != syncState;
     syncState = newSyncState;
@@ -342,6 +348,11 @@ public class View {
     if (targetChange != null) {
       for (DocumentKey documentKey : targetChange.getAddedDocuments()) {
         syncedDocuments = syncedDocuments.insert(documentKey);
+
+        if (pendingResetDocuments.contains(documentKey)) {
+          // The query reset contains this document, so remove it from the pending list.
+          pendingResetDocuments = pendingResetDocuments.remove(documentKey);
+        }
       }
       for (DocumentKey documentKey : targetChange.getModifiedDocuments()) {
         hardAssert(
@@ -369,6 +380,15 @@ public class View {
     for (Document doc : documentSet) {
       if (shouldBeLimboDoc(doc.getKey())) {
         limboDocuments = limboDocuments.insert(doc.getKey());
+      }
+    }
+
+    if (resetComplete) {
+      // Reset is complete, so any documents left in pendingResetDocuments should be marked
+      // as limbo and will need a listen to re-sync
+      for (DocumentKey documentKey : pendingResetDocuments) {
+        limboDocuments = limboDocuments.insert(documentKey);
+        pendingResetDocuments = pendingResetDocuments.remove(documentKey);
       }
     }
 
@@ -408,6 +428,11 @@ public class View {
       return false;
     }
 
+    // Pending a reset, so don't put in limbo yet.
+    if (pendingResetDocuments.contains(key)) {
+      return false;
+    }
+
     // Everything else is in limbo
     return true;
   }
@@ -422,6 +447,22 @@ public class View {
    */
   ImmutableSortedSet<DocumentKey> getSyncedDocuments() {
     return syncedDocuments;
+  }
+
+  /** Query reset is pending. Put all synced docs into pending reset list. */
+  public void setResetPending() {
+    pendingResetDocuments = syncedDocuments;
+    resetComplete = false;
+  }
+
+  /** Query reset is complete. */
+  public void setResetComplete() {
+    resetComplete = true;
+  }
+
+  /** Status of the query reset. */
+  public boolean isResetInProgress() {
+    return !resetComplete;
   }
 
   /** Helper function to determine order of changes */
