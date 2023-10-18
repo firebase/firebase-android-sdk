@@ -139,18 +139,6 @@ public class CommonUtilsTest extends CrashlyticsTestCase {
     Log.d(Logger.TAG, "testGetTotalRam: " + bytes);
   }
 
-  public void testGetAppProcessInfo() {
-    final Context context = getContext();
-    RunningAppProcessInfo info = CommonUtils.getAppProcessInfo(context.getPackageName(), context);
-    assertNotNull(info);
-    // It is not possible to test the state of info.importance because the value is not
-    // always the same under test as it is when the sdk is running in an app. In API 21, the
-    // importance under test started returning VISIBLE instead of FOREGROUND.
-
-    info = CommonUtils.getAppProcessInfo("nonexistant.package.name", context);
-    assertNull(info);
-  }
-
   public void testIsRooted() {
     // No good way to test the alternate case,
     // just want to ensure we can complete the call without an exception here.

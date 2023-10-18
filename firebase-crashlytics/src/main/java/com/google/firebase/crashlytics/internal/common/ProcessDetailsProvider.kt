@@ -38,10 +38,10 @@ internal object ProcessDetailsProvider {
     return ImmutableList.from(
       runningAppProcesses.filterNotNull().map { runningAppProcessInfo ->
         ProcessDetails.builder()
-          .setName(runningAppProcessInfo.processName)
+          .setProcessName(runningAppProcessInfo.processName)
           .setPid(runningAppProcessInfo.pid)
           .setImportance(runningAppProcessInfo.importance)
-          .setIsDefaultProcess(runningAppProcessInfo.processName == defaultProcessName)
+          .setDefaultProcess(runningAppProcessInfo.processName == defaultProcessName)
           .build()
       }
     )
@@ -53,11 +53,26 @@ internal object ProcessDetailsProvider {
    * If the current process details are not found for whatever reason, returns process details with
    * just the current process name and pid set.
    */
-  fun getProcessDetails(context: Context): ProcessDetails {
+  fun getCurrentProcessDetails(context: Context): ProcessDetails {
     val pid = Process.myPid()
     return getAppProcessDetails(context).find { processDetails -> processDetails.pid == pid }
-      ?: buildProcess(getProcessName(), pid)
+      ?: buildProcessDetails(getProcessName(), pid)
   }
+
+  /** Builds a ProcessDetails object. */
+  @JvmOverloads
+  fun buildProcessDetails(
+    processName: String,
+    pid: Int = 0,
+    importance: Int = 0,
+    isDefaultProcess: Boolean = false
+  ) =
+    ProcessDetails.builder()
+      .setProcessName(processName)
+      .setPid(pid)
+      .setImportance(importance)
+      .setDefaultProcess(isDefaultProcess)
+      .build()
 
   /** Gets the current process name. If the API is not available, returns an empty string. */
   private fun getProcessName(): String =
@@ -66,13 +81,4 @@ internal object ProcessDetailsProvider {
     } else {
       ""
     }
-
-  /** Builds a ProcessDetails object from just a process name and pid. */
-  private fun buildProcess(processName: String, pid: Int) =
-    ProcessDetails.builder()
-      .setName(processName)
-      .setPid(pid)
-      .setImportance(0)
-      .setIsDefaultProcess(false)
-      .build()
 }

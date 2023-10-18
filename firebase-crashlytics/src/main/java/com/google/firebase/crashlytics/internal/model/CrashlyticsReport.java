@@ -18,7 +18,6 @@ import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
-import com.google.firebase.crashlytics.internal.model.AutoValue_CrashlyticsReport_Session_Event_Application_ProcessDetails.Builder;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Thread.Frame;
 import com.google.firebase.encoders.annotations.Encodable;
@@ -688,10 +687,10 @@ public abstract class CrashlyticsReport {
         public abstract Boolean getBackground();
 
         @Nullable
-        public abstract ProcessDetails processDetails();
+        public abstract ProcessDetails getCurrentProcessDetails();
 
         @Nullable
-        public abstract ImmutableList<ProcessDetails> appProcessDetails();
+        public abstract ImmutableList<ProcessDetails> getAppProcessDetails();
 
         public abstract int getUiOrientation();
 
@@ -965,13 +964,13 @@ public abstract class CrashlyticsReport {
         @AutoValue
         public abstract static class ProcessDetails {
           @NonNull
-          public abstract String getName();
+          public abstract String getProcessName();
 
           public abstract int getPid();
 
           public abstract int getImportance();
 
-          public abstract boolean getIsDefaultProcess();
+          public abstract boolean isDefaultProcess();
 
           @NonNull
           public static Builder builder() {
@@ -983,7 +982,7 @@ public abstract class CrashlyticsReport {
           @AutoValue.Builder
           public abstract static class Builder {
             @NonNull
-            public abstract Builder setName(@NonNull String name);
+            public abstract Builder setProcessName(@NonNull String processName);
 
             @NonNull
             public abstract Builder setPid(int pid);
@@ -992,7 +991,7 @@ public abstract class CrashlyticsReport {
             public abstract Builder setImportance(int importance);
 
             @NonNull
-            public abstract Builder setIsDefaultProcess(boolean isDefaultProcess);
+            public abstract Builder setDefaultProcess(boolean isDefaultProcess);
 
             @NonNull
             public abstract ProcessDetails build();
@@ -1015,6 +1014,13 @@ public abstract class CrashlyticsReport {
 
           @NonNull
           public abstract Builder setBackground(@Nullable Boolean value);
+
+          @NonNull
+          public abstract Builder setCurrentProcessDetails(@NonNull ProcessDetails processDetails);
+
+          @NonNull
+          public abstract Builder setAppProcessDetails(
+              @NonNull ImmutableList<ProcessDetails> appProcessDetails);
 
           @NonNull
           public abstract Builder setUiOrientation(int value);
