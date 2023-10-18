@@ -75,13 +75,14 @@ internal object SessionLifecycleClient {
     }
 
     private fun handleSessionUpdate(sessionId: String) {
-      Log.i(TAG, "Session update received: $sessionId")
+      Log.d(TAG, "Session update received: $sessionId")
       curSessionId = sessionId
 
       CoroutineScope(Dispatchers.instance.backgroundDispatcher).launch {
         FirebaseSessionsDependencies.getRegisteredSubscribers().values.forEach { subscriber ->
           // Notify subscribers, regardless of sampling and data collection state.
           subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionId))
+          Log.d(TAG, "Notified ${subscriber.sessionSubscriberName} of new session $sessionId")
         }
       }
     }
@@ -91,14 +92,14 @@ internal object SessionLifecycleClient {
   private val serviceConnection =
     object : ServiceConnection {
       override fun onServiceConnected(className: ComponentName, serviceBinder: IBinder) {
-        Log.i(TAG, "Connected to SessionLifecycleService. Queue size ${queuedMessages.size}")
+        Log.d(TAG, "Connected to SessionLifecycleService. Queue size ${queuedMessages.size}")
         service = Messenger(serviceBinder)
         serviceBound = true
         sendLifecycleEvents(drainQueue())
       }
 
       override fun onServiceDisconnected(className: ComponentName) {
-        Log.i(TAG, "Disconnected from SessionLifecycleService")
+        Log.d(TAG, "Disconnected from SessionLifecycleService")
         service = null
         serviceBound = false
       }
@@ -110,7 +111,7 @@ internal object SessionLifecycleClient {
    */
   fun bindToService(appContext: Context) {
     Intent(appContext, SessionLifecycleService::class.java).also { intent ->
-      Log.i(TAG, "Binding service to application.")
+      Log.d(TAG, "Binding service to application.")
       // This is necessary for the onBind() to be called by each process
       intent.action = android.os.Process.myPid().toString()
       intent.putExtra(
@@ -173,10 +174,10 @@ internal object SessionLifecycleClient {
   private fun sendMessageToServer(msg: Message) {
     if (service != null) {
       try {
-        Log.i(TAG, "Sending lifecycle ${msg.what} at time ${msg.getWhen()} to service")
+        Log.d(TAG, "Sending lifecycle ${msg.what} to service")
         service?.send(msg)
       } catch (e: RemoteException) {
-        Log.e(TAG, "Unable to deliver message: ${msg.what}")
+        Log.w(TAG, "Unable to deliver message: ${msg.what}", e)
         queueMessage(msg)
       }
     } else {
@@ -190,9 +191,9 @@ internal object SessionLifecycleClient {
    */
   private fun queueMessage(msg: Message) {
     if (queuedMessages.offer(msg)) {
-      Log.i(TAG, "Queued message ${msg.what} at ${msg.getWhen()}")
+      Log.d(TAG, "Queued message ${msg.what}. Queue size ${queuedMessages.size}")
     } else {
-      Log.i(TAG, "Failed to enqueue message ${msg.what} at ${msg.getWhen()}. Dropping.")
+      Log.d(TAG, "Failed to enqueue message ${msg.what}. Dropping.")
     }
   }
 

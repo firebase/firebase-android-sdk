@@ -90,7 +90,7 @@ internal class SessionLifecycleService() : Service() {
 
     override fun handleMessage(msg: Message) {
       if (lastMsgTimeMs > msg.getWhen()) {
-        Log.i(TAG, "Received old message $msg. Ignoring")
+        Log.d(TAG, "Ignoring old message from ${msg.getWhen()} which is older than $lastMsgTimeMs.")
         return
       }
       when (msg.what) {
@@ -105,25 +105,19 @@ internal class SessionLifecycleService() : Service() {
       lastMsgTimeMs = msg.getWhen()
     }
 
-    internal fun addClient(client: Messenger) {
-      boundClients.add(client)
-      maybeSendSessionToClient(client)
-      Log.i(TAG, "Stored callback to $client. Size: ${boundClients.size}")
-    }
-
     /**
      * Handles a foregrounding event by any activity owned by the aplication as specified by the
      * given [Message]. This will determine if the foregrounding should result in the creation of a
      * new session.
      */
     private fun handleForegrounding(msg: Message) {
-      Log.i(TAG, "Activity foregrounding at ${msg.getWhen()}")
+      Log.d(TAG, "Activity foregrounding at ${msg.getWhen()}")
       if (!hasForegrounded) {
-        Log.i(TAG, "Cold start detected.")
+        Log.d(TAG, "Cold start detected.")
         hasForegrounded = true
         newSession()
       } else if (isSessionRestart(msg.getWhen())) {
-        Log.i(TAG, "Session too long in background. Creating new session.")
+        Log.d(TAG, "Session too long in background. Creating new session.")
         newSession()
       }
     }
@@ -134,7 +128,7 @@ internal class SessionLifecycleService() : Service() {
      * foregrounding events should result in the creation of a new session.
      */
     private fun handleBackgrounding(msg: Message) {
-      Log.i(TAG, "Activity backgrounding at ${msg.getWhen()}")
+      Log.d(TAG, "Activity backgrounding at ${msg.getWhen()}")
     }
 
     /**
@@ -144,12 +138,13 @@ internal class SessionLifecycleService() : Service() {
     private fun handleClientBound(msg: Message) {
       boundClients.add(msg.replyTo)
       maybeSendSessionToClient(msg.replyTo)
-      Log.i(TAG, "Stored callback to ${msg.replyTo}. Size: ${boundClients.size}")
+      Log.d(TAG, "Client ${msg.replyTo} bound at ${msg.getWhen()}. Clients: ${boundClients.size}")
     }
 
     /** Generates a new session id and sends it everywhere it's needed */
     private fun newSession() {
       SessionGenerator.instance.generateNewSession()
+      Log.d(TAG, "Generated new session ${SessionGenerator.instance.currentSession.sessionId}")
       broadcastSession()
       updateSessionStorage(SessionGenerator.instance.currentSession.sessionId)
     }
@@ -159,7 +154,7 @@ internal class SessionLifecycleService() : Service() {
      * connected clients.
      */
     private fun broadcastSession() {
-      Log.i(TAG, "Broadcasting new session: ${SessionGenerator.instance.currentSession}")
+      Log.d(TAG, "Broadcasting new session: ${SessionGenerator.instance.currentSession}")
       SessionFirelogPublisher.instance.logSession(SessionGenerator.instance.currentSession)
       boundClients.forEach { maybeSendSessionToClient(it) }
     }
@@ -170,6 +165,7 @@ internal class SessionLifecycleService() : Service() {
       } else {
         // Send the value from the datastore before the first foregrounding it exists
         val sessionData = currentSessionFromDatastore.get()
+        Log.d(TAG, "App has not yet foregrounded. Using previously stored session: $sessionData")
         sessionData?.sessionId?.let { sendSessionToClient(client, it) }
       }
     }
@@ -180,10 +176,10 @@ internal class SessionLifecycleService() : Service() {
         val msgData = Bundle().also { it.putString(SESSION_UPDATE_EXTRA, sessionId) }
         client.send(Message.obtain(null, SESSION_UPDATED, 0, 0).also { it.data = msgData })
       } catch (e: DeadObjectException) {
-        Log.i(TAG, "Removing dead client from list: $client")
+        Log.d(TAG, "Removing dead client from list: $client")
         boundClients.remove(client)
       } catch (e: Exception) {
-        Log.e(TAG, "Unable to push new session to $client.", e)
+        Log.w(TAG, "Unable to push new session to $client.", e)
       }
     }
 
@@ -211,7 +207,7 @@ internal class SessionLifecycleService() : Service() {
 
   /** Called when a new [SessionLifecycleClient] binds to this service. */
   override fun onBind(intent: Intent): IBinder? {
-    Log.i(TAG, "Service bound")
+    Log.d(TAG, "Service bound to new client")
     val callbackMessenger = getClientCallback(intent)
     if (callbackMessenger != null) {
       val clientBoundMsg = Message.obtain(null, CLIENT_BOUND, 0, 0)
