@@ -1,5 +1,6 @@
 # Unreleased
-
+* [fixed] Fixed a bug causing internal tests to depend directly on `firebase-common`.
+* [fixed] Fixed client-side throttling in Play Integrity flows.
 
 # 17.1.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-appcheck-ktx`

@@ -1,5 +1,8 @@
 # Unreleased
-
+* [changed] Added metadata to FirebaseInstanceIdReceiver to signal that it
+  finishes background broadcasts after the message has been handled.
+* [changed] Specified notification's dismiss intent target via action instead of
+  component name.
 
 # 23.3.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-messaging-ktx`

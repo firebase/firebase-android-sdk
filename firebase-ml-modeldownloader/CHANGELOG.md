@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Internal infrastructure improvements.
 
 # 24.2.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-ml-modeldownloader-ktx`

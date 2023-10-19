@@ -1,5 +1,5 @@
 # Unreleased
-
+* [feature] Expose Sum/Average aggregate query support in API. [#5217](//github.com/firebase/firebase-android-sdk/pull/5217)
 
 # 24.9.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-firestore-ktx`
