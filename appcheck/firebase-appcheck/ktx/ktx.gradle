@@ -57,6 +57,7 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'junit:junit:4.12'
     api(project(":appcheck:firebase-appcheck"))
+    androidTestImplementation 'com.google.firebase:firebase-appcheck-interop:17.1.0'
     api("com.google.firebase:firebase-common:20.4.2")
     api("com.google.firebase:firebase-common-ktx:20.4.2")
     implementation("com.google.firebase:firebase-components:17.1.5")
