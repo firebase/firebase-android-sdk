@@ -57,6 +57,10 @@ internal object SessionLifecycleClient {
   private var curSessionId: String = ""
   private var handlerThread: HandlerThread = HandlerThread("FirebaseSessionsClient_HandlerThread")
 
+  init {
+    handlerThread.start()
+  }
+  
   /**
    * The callback class that will be used to receive updated session events from the
    * [SessionLifecycleService].
