@@ -23,30 +23,53 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
+import com.google.firebase.sessions.settings.SessionsSettings
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /** The [FirebaseSessions] API provides methods to register a [SessionSubscriber]. */
-class FirebaseSessions internal constructor(private val firebaseApp: FirebaseApp) {
+class FirebaseSessions
+internal constructor(
+  private val firebaseApp: FirebaseApp,
+  private val settings: SessionsSettings,
+  backgroundDispatcher: CoroutineContext,
+) {
 
   init {
-    val appContext = firebaseApp.applicationContext.applicationContext
-    if (appContext is Application) {
-      SessionLifecycleClient.bindToService(appContext)
-      appContext.registerActivityLifecycleCallbacks(SessionsActivityLifecycleCallbacks)
+    Log.d(TAG, "Initializing Firebase Sessions SDK.")
+    CoroutineScope(backgroundDispatcher).launch {
+      val appContext = firebaseApp.applicationContext.applicationContext
+      settings.updateSettings()
+      if (!settings.sessionsEnabled) {
+        Log.d(TAG, "Sessions SDK disabled. Not listening to lifecycle events.")
+      } else if (appContext is Application) {
+        SessionLifecycleClient.bindToService(appContext)
+        appContext.registerActivityLifecycleCallbacks(SessionsActivityLifecycleCallbacks)
 
-      firebaseApp.addLifecycleEventListener { _, _ ->
-        Log.w(TAG, "FirebaseApp instance deleted. Sessions library will not collect session data.")
-        appContext.unregisterActivityLifecycleCallbacks(SessionsActivityLifecycleCallbacks)
+        firebaseApp.addLifecycleEventListener { _, _ ->
+          Log.w(
+            TAG,
+            "FirebaseApp instance deleted. Sessions library will not collect session data."
+          )
+          appContext.unregisterActivityLifecycleCallbacks(SessionsActivityLifecycleCallbacks)
+        }
+      } else {
+        Log.e(
+          TAG,
+          "Failed to register lifecycle callbacks, unexpected context ${appContext.javaClass}."
+        )
       }
-    } else {
-      Log.e(
-        TAG,
-        "Failed to register lifecycle callbacks, unexpected context ${appContext.javaClass}."
-      )
     }
   }
 
   /** Register the [subscriber]. This must be called for every dependency. */
   fun register(subscriber: SessionSubscriber) {
+    if (!settings.sessionsEnabled) {
+      Log.d(TAG, "Sessions SDK disabled. Ignoring dependency registration.")
+      return
+    }
+
     FirebaseSessionsDependencies.register(subscriber)
 
     Log.d(
