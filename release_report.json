@@ -1,0 +1,1357 @@
+{
+    "changesByLibraryName": {
+        "firebase-appdistribution-api": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-appdistribution-api/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-common": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "b63cf964578ad101c69cae24867f3b9168aea8f0",
+                "prId": "5418",
+                "author": "Vinay Guthal",
+                "message": "Remove annotation from FirebaseOptions accessor (#5418)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b63cf964578ad101c69cae24867f3b9168aea8f0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5418"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            },
+            {
+                "commitId": "5bc731cea6ed4166c7a8feabf9af0a1a2563b557",
+                "prId": "5370",
+                "author": "Vinay Guthal",
+                "message": "add common release notes (#5370)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5bc731cea6ed4166c7a8feabf9af0a1a2563b557",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5370"
+            }
+        ],
+        "firebase-common/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-config": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-config/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "9db51740d20fadf8f2a954b6c833759a96088a39",
+                "prId": "5432",
+                "author": "themiswang",
+                "message": "User id fix (#5432)\n\nFix Unity and Flutter on-demand user meta data behaviour. Cherry-picked\r\nfrom previous closed pr:\r\nhttps://github.com/firebase/firebase-android-sdk/pull/5275",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9db51740d20fadf8f2a954b6c833759a96088a39",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5432"
+            },
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-crashlytics/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-database": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-database/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-dynamic-links": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-dynamic-links/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "ffdee32c8dd4cac5c32e30e6ae4de608f8e37c5a",
+                "prId": "5217",
+                "author": "cherylEnkidu",
+                "message": "Public sum/avg (#5217)\n\nCo-authored-by: Mark Duckworth <1124037+MarkDuckworth@users.noreply.github.com>\r\nCo-authored-by: Ehsan Nasiri <ehsann@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ffdee32c8dd4cac5c32e30e6ae4de608f8e37c5a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5217"
+            },
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "5241ce74bd71e37561888e85b0852aaaf7eb0c81",
+                "prId": "5383",
+                "author": "Mila",
+                "message": "MIEQ: add negative test cases (#5383)\n\nported from https://github.com/firebase/firebase-js-sdk/pull/7680",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5241ce74bd71e37561888e85b0852aaaf7eb0c81",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5383"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "26eb26093f9aae69e7b5926db56c89597834ad1e",
+                "prId": "5352",
+                "author": "Mila",
+                "message": "Testing composite index queries against production  (#5352)\n\nport from: https://github.com/firebase/firebase-js-sdk/pull/7632",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/26eb26093f9aae69e7b5926db56c89597834ad1e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5352"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            },
+            {
+                "commitId": "22c314f4f93c2cbe404f6c6ee01f776d7f773503",
+                "prId": "5346",
+                "author": "Ehsan",
+                "message": "Clean up and re-enable OR query integration tests. (#5346)\n\nCo-authored-by: Mila <107142260+milaGGL@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/22c314f4f93c2cbe404f6c6ee01f776d7f773503",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5346"
+            },
+            {
+                "commitId": "dd56689cc11f309987d97aee58409b7ac1ef390f",
+                "prId": "5323",
+                "author": "Tom Andersen",
+                "message": "Fix documentation according to cl/563780077 feedback. (#5323)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/dd56689cc11f309987d97aee58409b7ac1ef390f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5323"
+            }
+        ],
+        "firebase-firestore/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-functions": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-functions/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-inappmessaging": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-inappmessaging-display": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-inappmessaging/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-inappmessaging-display/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-installations": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-installations/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "1e835805a6b67062b17a97b80b251ebeb00d00e3",
+                "prId": "5410",
+                "author": "Greg Sakakihara",
+                "message": "Specify notification's dismiss intent target via action instead of co… (#5410)\n\n…mponent name.\r\n\r\n* Changed createMessagingPendingIntent() to create an Intent targeting\r\nthe BroadcastReceiver via action and package instead of specifying the\r\nComponentName directly. This will make it easier to change\r\nFirebaseInstanceIdReceiver's class name in the future.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1e835805a6b67062b17a97b80b251ebeb00d00e3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5410"
+            },
+            {
+                "commitId": "15c3197cd3c0c16c46325652addb639bd28258c5",
+                "prId": "5408",
+                "author": "Greg Sakakihara",
+                "message": "Add FINISHED_AFTER_HANDLED metadata to FirebaseInstanceIdReceiver. (#5408)\n\n* Added metadata to FirebaseInstanceIdReceiver to signal that it\r\nfinishes background broadcasts after the message has been handled.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/15c3197cd3c0c16c46325652addb639bd28258c5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5408"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "c03324539a4d539f7459513541f411ef40ddcbb8",
+                "prId": "5388",
+                "author": "Greg Sakakihara",
+                "message": "Remove unnecessary custom shadow annotations. (#5388)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c03324539a4d539f7459513541f411ef40ddcbb8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5388"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-messaging-directboot": [
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-messaging/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-ml-modeldownloader": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "4273a2379db748ddae3aeab138ad1e5830ff7f3f",
+                "prId": "5365",
+                "author": "David Motsonashvili",
+                "message": "swap out the datatransport backend for ml modeldownloader (#5365)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4273a2379db748ddae3aeab138ad1e5830ff7f3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5365"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-ml-modeldownloader/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-perf": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "dc48e69d216f4c1a15bd208a2e592ec64625d586",
+                "prId": "5149",
+                "author": "utzcoz",
+                "message": "Bump Robolectric to 4.10.3 (#5149)\n\nBump Robolectric to 4.10.3. See\r\nhttps://github.com/robolectric/robolectric/releases/tag/robolectric-4.10.3.\r\n\r\n---------\r\n\r\nSigned-off-by: utzcoz <utzcoz@outlook.com>\r\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/dc48e69d216f4c1a15bd208a2e592ec64625d586",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5149"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-perf/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-storage": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "firebase-storage/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "appcheck/firebase-appcheck": [
+            {
+                "commitId": "af35bf272baa71af22346e7854f9baef986ae219",
+                "prId": "5438",
+                "author": "Rosalyn Tan",
+                "message": "Update version numbers for M139 release. (#5438)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/af35bf272baa71af22346e7854f9baef986ae219",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5438"
+            },
+            {
+                "commitId": "fef7bade4e15e168ea7e3ec474dd2eead2741f11",
+                "prId": "5395",
+                "author": "Rosalyn Tan",
+                "message": "Fix client-side throttling for Play Integrity flows (#5395)\n\nChanges:\r\n- Successful `GeneratePlayIntegrityChallenge` call should not reset\r\n`RetryManager` backoff\r\n- Cache in-flight App Check token fetching tasks\r\n- Update `403` errors to throttle with exponential backoff rather than a\r\nflat one-day period (to match\r\n[iOS](https://github.com/firebase/firebase-ios-sdk/blob/f3a14c249e001b3c894bb943ecc3973f50e60a49/FirebaseAppCheck/Sources/Core/Backoff/FIRAppCheckBackoffWrapper.m#L264-L268))",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fef7bade4e15e168ea7e3ec474dd2eead2741f11",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5395"
+            },
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "157147feca0245e13b0cab903d059c10f287faf1",
+                "prId": "5409",
+                "author": "Vinay Guthal",
+                "message": "fix deprecation message (#5409)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/157147feca0245e13b0cab903d059c10f287faf1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5409"
+            },
+            {
+                "commitId": "98b744a60b967158ce26e32fa47ac67613a2d272",
+                "prId": "5405",
+                "author": "Rodrigo Lazo",
+                "message": "Declare firebase-common dependency as api in firebase-appcheck (#5405)\n\nAdditionally, we are explicitly marking firebase-appcheck/test-app\r\nactivity as exported, and removing direct dependencies it has with\r\ncommon and components.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98b744a60b967158ce26e32fa47ac67613a2d272",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5405"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prId": "5389",
+                "author": "Vinay Guthal",
+                "message": "update deprecation message for common (#5389)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/209ee0c5c4dd1906a9b2c489ca7614f815281094",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5389"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug": [
+            {
+                "commitId": "af35bf272baa71af22346e7854f9baef986ae219",
+                "prId": "5438",
+                "author": "Rosalyn Tan",
+                "message": "Update version numbers for M139 release. (#5438)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/af35bf272baa71af22346e7854f9baef986ae219",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5438"
+            },
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug-testing": [
+            {
+                "commitId": "af35bf272baa71af22346e7854f9baef986ae219",
+                "prId": "5438",
+                "author": "Rosalyn Tan",
+                "message": "Update version numbers for M139 release. (#5438)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/af35bf272baa71af22346e7854f9baef986ae219",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5438"
+            },
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "appcheck/firebase-appcheck-playintegrity": [
+            {
+                "commitId": "af35bf272baa71af22346e7854f9baef986ae219",
+                "prId": "5438",
+                "author": "Rosalyn Tan",
+                "message": "Update version numbers for M139 release. (#5438)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/af35bf272baa71af22346e7854f9baef986ae219",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5438"
+            },
+            {
+                "commitId": "1073ded077c0f2b75862ad448e9968514e8e3838",
+                "prId": "5435",
+                "author": "Rosalyn Tan",
+                "message": "Bump Play Integrity API dependency. (#5435)\n\nBump our Play Integrity API Library dependency version per the request\r\nof the Play Integrity team.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1073ded077c0f2b75862ad448e9968514e8e3838",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5435"
+            },
+            {
+                "commitId": "fef7bade4e15e168ea7e3ec474dd2eead2741f11",
+                "prId": "5395",
+                "author": "Rosalyn Tan",
+                "message": "Fix client-side throttling for Play Integrity flows (#5395)\n\nChanges:\r\n- Successful `GeneratePlayIntegrityChallenge` call should not reset\r\n`RetryManager` backoff\r\n- Cache in-flight App Check token fetching tasks\r\n- Update `403` errors to throttle with exponential backoff rather than a\r\nflat one-day period (to match\r\n[iOS](https://github.com/firebase/firebase-ios-sdk/blob/f3a14c249e001b3c894bb943ecc3973f50e60a49/FirebaseAppCheck/Sources/Core/Backoff/FIRAppCheckBackoffWrapper.m#L264-L268))",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fef7bade4e15e168ea7e3ec474dd2eead2741f11",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5395"
+            },
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ],
+        "appcheck/firebase-appcheck/ktx": [
+            {
+                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prId": "5419",
+                "author": "Vinay Guthal",
+                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
+            },
+            {
+                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prId": "5390",
+                "author": "Vinay Guthal",
+                "message": "Update common version (#5390)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
+            },
+            {
+                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prId": "5377",
+                "author": "Vinay Guthal",
+                "message": "Set up other sdks for release (#5377)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-appdistribution",
+        ":firebase-components",
+        ":firebase-sessions",
+        ":appcheck:firebase-appcheck-interop",
+        ":appcheck:firebase-appcheck-safetynet"
+    ]
+}
