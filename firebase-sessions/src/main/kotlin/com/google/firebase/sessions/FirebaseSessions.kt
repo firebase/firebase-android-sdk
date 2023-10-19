@@ -21,7 +21,6 @@ import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
-import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
 import com.google.firebase.sessions.settings.SessionsSettings
 import kotlin.coroutines.CoroutineContext
@@ -61,22 +60,6 @@ internal constructor(
         )
       }
     }
-  }
-
-  /** Register the [subscriber]. This must be called for every dependency. */
-  fun register(subscriber: SessionSubscriber) {
-    if (!settings.sessionsEnabled) {
-      Log.d(TAG, "Sessions SDK disabled. Ignoring dependency registration.")
-      return
-    }
-
-    FirebaseSessionsDependencies.register(subscriber)
-
-    Log.d(
-      TAG,
-      "Registering Sessions SDK subscriber with name: ${subscriber.sessionSubscriberName}, " +
-        "data collection enabled: ${subscriber.isDataCollectionEnabled}"
-    )
   }
 
   /** Calculate whether we should sample events using [sessionSettings] data. */

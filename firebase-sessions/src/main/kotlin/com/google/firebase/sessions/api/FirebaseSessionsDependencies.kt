@@ -53,7 +53,8 @@ object FirebaseSessionsDependencies {
    * Register and unlock the subscriber. This must be called before [getRegisteredSubscribers] can
    * return.
    */
-  internal fun register(subscriber: SessionSubscriber) {
+  @JvmStatic
+  fun register(subscriber: SessionSubscriber) {
     val subscriberName = subscriber.sessionSubscriberName
     val dependency = getDependency(subscriberName)
 

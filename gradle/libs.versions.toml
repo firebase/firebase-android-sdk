@@ -59,6 +59,7 @@ kotest-runner = { module = "io.kotest:kotest-runner-junit4-jvm", version.ref = "
 kotest-assertions = { module = "io.kotest:kotest-assertions-core-jvm", version.ref = "kotest" }
 kotest-property = { module = "io.kotest:kotest-property-jvm", version.ref = "kotest" }
 quickcheck = { module = "net.java:quickcheck", version.ref = "quickcheck" }
+firebase-sessions = { group = "com.google.firebase", name = "firebase-sessions", version = "1.0.2" }
 
 [bundles]
 kotest = ["kotest-runner", "kotest-assertions", "kotest-property"]
