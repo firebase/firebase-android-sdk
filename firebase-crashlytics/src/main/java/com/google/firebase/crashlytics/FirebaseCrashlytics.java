@@ -41,7 +41,6 @@ import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.SettingsController;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.installations.FirebaseInstallationsApi;
-import com.google.firebase.sessions.FirebaseSessions;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 
 import java.util.List;
