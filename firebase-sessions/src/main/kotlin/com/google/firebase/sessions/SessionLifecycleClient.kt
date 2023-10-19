@@ -80,7 +80,6 @@ internal object SessionLifecycleClient {
 
       CoroutineScope(Dispatchers.instance.backgroundDispatcher).launch {
         FirebaseSessionsDependencies.getRegisteredSubscribers().values.forEach { subscriber ->
-          // Notify subscribers, regardless of sampling and data collection state.
           subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionId))
           Log.d(TAG, "Notified ${subscriber.sessionSubscriberName} of new session $sessionId")
         }
