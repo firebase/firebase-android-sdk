@@ -88,7 +88,7 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.1.0'
     implementation 'com.google.android.gms:play-services-base:18.0.1'
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation(project(":appcheck:firebase-appcheck-interop"))
+    implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
     implementation('com.google.firebase:firebase-auth-interop:18.0.0') {
          exclude group: "com.google.firebase", module: "firebase-common"
          exclude group: "com.google.firebase", module: "firebase-components"
@@ -108,7 +108,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.mockito:mockito-core:2.25.0'
     testImplementation 'org.mockito:mockito-core:3.3.3'
-    implementation(project(':appcheck:firebase-appcheck')) {
+    implementation("com.google.firebase:firebase-appcheck:17.1.0") {
         exclude group: "com.google.firebase", module: "firebase-common"
         exclude group: "com.google.firebase", module: "firebase-components"
         exclude group: "com.google.firebase", module: "firebase-annotations"

@@ -56,7 +56,7 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
     annotationProcessor "com.google.auto.value:auto-value:1.6.2"
-    api(project(":firebase-installations-interop"))
+    api("com.google.firebase:firebase-installations-interop:17.1.1")
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
     implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
     implementation 'com.google.android.gms:play-services-tasks:18.0.1'
