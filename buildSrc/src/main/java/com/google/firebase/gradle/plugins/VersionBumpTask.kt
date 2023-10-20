@@ -56,7 +56,6 @@ abstract class VersionBumpTask : DefaultTask() {
 
   @TaskAction
   fun build() {
-    project.version
     versionFile.get().rewriteLines {
       when {
         it.startsWith("version=") -> "version=${newVersion.get()}"
