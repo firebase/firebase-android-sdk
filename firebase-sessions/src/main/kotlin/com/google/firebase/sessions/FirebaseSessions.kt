@@ -21,7 +21,6 @@ import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
-import com.google.firebase.sessions.api.SessionSubscriber
 import com.google.firebase.sessions.settings.SessionsSettings
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope

@@ -28,12 +28,7 @@ import android.os.Looper
 import android.os.Message
 import android.os.Messenger
 import android.util.Log
-import com.google.firebase.Firebase
-import com.google.firebase.app
 import com.google.firebase.sessions.settings.SessionsSettings
-import java.util.concurrent.atomic.AtomicReference
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 /**
  * Service for monitoring application lifecycle events and determining when/if a new session should
@@ -58,8 +53,6 @@ internal class SessionLifecycleService : Service() {
    */
   internal class MessageHandler(looper: Looper) : Handler(looper) {
 
-    private var datastore: SessionDatastore = SessionDatastore(Firebase.app.applicationContext)
-
     /**
      * Flag indicating whether or not the app has ever come into the foreground during the lifetime
      * of the service. If it has not, we can infer that the first foreground event is a cold-start
@@ -77,16 +70,6 @@ internal class SessionLifecycleService : Service() {
 
     /** Queue of connected clients. */
     private val boundClients = ArrayList<Messenger>()
-
-    /** Most recent session from datastore is updated asynchronously whenever it changes */
-    private val currentSessionFromDatastore: AtomicReference<FirebaseSessionsData> =
-      AtomicReference()
-
-    init {
-      CoroutineScope(Dispatchers.instance.backgroundDispatcher).launch {
-        datastore.firebaseSessionDataFlow.collect { currentSessionFromDatastore.set(it) }
-      }
-    }
 
     override fun handleMessage(msg: Message) {
       if (lastMsgTimeMs > msg.getWhen()) {
@@ -146,7 +129,7 @@ internal class SessionLifecycleService : Service() {
       SessionGenerator.instance.generateNewSession()
       Log.d(TAG, "Generated new session ${SessionGenerator.instance.currentSession.sessionId}")
       broadcastSession()
-      updateSessionStorage(SessionGenerator.instance.currentSession.sessionId)
+      SessionDatastore.instance.updateSessionId(SessionGenerator.instance.currentSession.sessionId)
     }
 
     /**
@@ -164,9 +147,9 @@ internal class SessionLifecycleService : Service() {
         sendSessionToClient(client, SessionGenerator.instance.currentSession.sessionId)
       } else {
         // Send the value from the datastore before the first foregrounding it exists
-        val sessionData = currentSessionFromDatastore.get()
-        Log.d(TAG, "App has not yet foregrounded. Using previously stored session: $sessionData")
-        sessionData?.sessionId?.let { sendSessionToClient(client, it) }
+        val storedSession = SessionDatastore.instance.getCurrentSessionId()
+        Log.d(TAG, "App has not yet foregrounded. Using previously stored session: $storedSession")
+        storedSession?.let { sendSessionToClient(client, it) }
       }
     }
 
@@ -190,12 +173,6 @@ internal class SessionLifecycleService : Service() {
     private fun isSessionRestart(foregroundTimeMs: Long) =
       (foregroundTimeMs - lastMsgTimeMs) >
         SessionsSettings.instance.sessionRestartTimeout.inWholeMilliseconds
-
-    private fun updateSessionStorage(sessionId: String) {
-      CoroutineScope(Dispatchers.instance.backgroundDispatcher).launch {
-        sessionId.let { datastore.updateSessionId(it) }
-      }
-    }
   }
 
   override fun onCreate() {
