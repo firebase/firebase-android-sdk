@@ -47,23 +47,22 @@ internal class SessionFirelogPublisher(
    * This will pull all the necessary information about the device in order to create a full
    * [SessionEvent], and then upload that through the Firelog interface.
    */
-  fun logSession(sessionDetails: SessionDetails) =
+  fun logSession(sessionDetails: SessionDetails) {
     CoroutineScope(backgroundDispatcher).launch {
-      if (shouldLogSession()) {
-        attemptLoggingSessionEvent(
-          SessionEvents.buildSession(
-            firebaseApp,
-            sessionDetails,
-            sessionSettings,
-            FirebaseSessionsDependencies.getRegisteredSubscribers(),
-            getFirebaseInstallationId(),
-          )
+      val sessionEvent =
+        SessionEvents.buildSession(
+          firebaseApp,
+          sessionDetails,
+          sessionSettings,
+          FirebaseSessionsDependencies.getRegisteredSubscribers(),
         )
-      }
+      sessionEvent.sessionData.firebaseInstallationId = getFid()
+      attemptLoggingSessionEvent(sessionEvent)
     }
+  }
 
   /** Attempts to write the given [SessionEvent] to firelog. Failures are logged and ignored. */
-  private fun attemptLoggingSessionEvent(sessionEvent: SessionEvent) {
+  private suspend fun attemptLoggingSessionEvent(sessionEvent: SessionEvent) {
     try {
       eventGDTLogger.log(sessionEvent)
       Log.d(TAG, "Successfully logged Session Start event: ${sessionEvent.sessionData.sessionId}")
@@ -72,28 +71,8 @@ internal class SessionFirelogPublisher(
     }
   }
 
-  /** Determines if the SDK should log a session to Firelog. */
-  private suspend fun shouldLogSession(): Boolean {
-    Log.d(TAG, "Data Collection is enabled for at least one Subscriber")
-
-    // This will cause remote settings to be fetched if the cache is expired.
-    sessionSettings.updateSettings()
-
-    if (!sessionSettings.sessionsEnabled) {
-      Log.d(TAG, "Sessions SDK disabled. Events will not be sent.")
-      return false
-    }
-
-    if (!shouldCollectEvents()) {
-      Log.d(TAG, "Sessions SDK has dropped this session due to sampling.")
-      return false
-    }
-
-    return true
-  }
-
   /** Gets the Firebase Installation ID for the current app installation. */
-  private suspend fun getFirebaseInstallationId() =
+  private suspend fun getFid() =
     try {
       firebaseInstallations.id.await()
     } catch (ex: Exception) {
@@ -102,16 +81,8 @@ internal class SessionFirelogPublisher(
       ""
     }
 
-  /** Calculate whether we should sample events using [SessionsSettings] data. */
-  private fun shouldCollectEvents(): Boolean {
-    // Sampling rate of 1 means the SDK will send every event.
-    return randomValueForSampling <= sessionSettings.samplingRate
-  }
-
   internal companion object {
-    private const val TAG = "SessionFirelogPublisher"
-
-    private val randomValueForSampling: Double = Math.random()
+    const val TAG = "SessionFirelogPublisher"
 
     val instance: SessionFirelogPublisher
       get() = Firebase.app.get(SessionFirelogPublisher::class.java)

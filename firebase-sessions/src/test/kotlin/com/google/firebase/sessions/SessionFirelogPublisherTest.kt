@@ -20,13 +20,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
 import com.google.firebase.concurrent.TestOnlyExecutors
-import com.google.firebase.sessions.api.FirebaseSessionsDependencies
-import com.google.firebase.sessions.api.SessionSubscriber
 import com.google.firebase.sessions.settings.SessionsSettings
 import com.google.firebase.sessions.testing.FakeEventGDTLogger
 import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirebaseInstallations
-import com.google.firebase.sessions.testing.FakeSessionSubscriber
 import com.google.firebase.sessions.testing.FakeSettingsProvider
 import com.google.firebase.sessions.testing.TestSessionEventData
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -34,27 +31,12 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class SessionFirelogPublisherTest {
-  @Before
-  fun setUp() {
-    val crashlyticsSubscriber =
-      FakeSessionSubscriber(sessionSubscriberName = SessionSubscriber.Name.CRASHLYTICS)
-    FirebaseSessionsDependencies.addDependency(SessionSubscriber.Name.CRASHLYTICS)
-    FirebaseSessionsDependencies.register(crashlyticsSubscriber)
-  }
-
-  @After
-  fun cleanUp() {
-    FirebaseApp.clearInstancesForTest()
-    FirebaseSessionsDependencies.reset()
-  }
-
   @Test
   fun logSession_populatesFid() = runTest {
     val fakeFirebaseApp = FakeFirebaseApp()
@@ -79,7 +61,13 @@ class SessionFirelogPublisherTest {
 
     runCurrent()
 
+    System.out.println("FakeEventGDTLogger: $fakeEventGDTLogger")
     assertThat(fakeEventGDTLogger.loggedEvent!!.sessionData.firebaseInstallationId)
       .isEqualTo("FaKeFiD")
+  }
+
+  @After
+  fun cleanUp() {
+    FirebaseApp.clearInstancesForTest()
   }
 }

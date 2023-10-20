@@ -40,10 +40,10 @@ import kotlinx.coroutines.launch
  * be generated. When this happens, the service will broadcast the updated session id to all
  * connected clients.
  */
-internal class SessionLifecycleService : Service() {
+internal class SessionLifecycleService() : Service() {
 
   /** The thread that will be used to process all lifecycle messages from connected clients. */
-  private val handlerThread: HandlerThread = HandlerThread("FirebaseSessions_HandlerThread")
+  private var handlerThread: HandlerThread = HandlerThread("FirebaseSessions_HandlerThread")
 
   /** The handler that will process all lifecycle messages from connected clients . */
   private var messageHandler: MessageHandler? = null

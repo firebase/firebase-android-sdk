@@ -152,9 +152,7 @@ internal object SessionLifecycleClient {
   private fun sendLifecycleEvent(messageCode: Int) {
     val allMessages = drainQueue()
     allMessages.add(Message.obtain(null, messageCode, 0, 0))
-    CoroutineScope(Dispatchers.instance.backgroundDispatcher).launch {
-      sendLifecycleEvents(allMessages)
-    }
+    sendLifecycleEvents(allMessages)
   }
 
   /**
@@ -162,26 +160,15 @@ internal object SessionLifecycleClient {
    * FOREGROUND and BACKGROUND events to the service that are included in the given list. Running
    * through the full backlog of messages is not useful since the service only cares about the
    * current state and transitions from background -> foreground.
-   *
-   * Does not send events unless data collection is enabled for at least one subscriber.
    */
-  private fun sendLifecycleEvents(messages: List<Message>) =
-    CoroutineScope(Dispatchers.instance.backgroundDispatcher).launch {
-      val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
-      if (subscribers.isEmpty()) {
-        Log.d(
-          TAG,
-          "Sessions SDK did not have any dependent SDKs register as dependencies. Events will not be sent."
-        )
-      } else if (subscribers.values.none { it.isDataCollectionEnabled }) {
-        Log.d(TAG, "Data Collection is disabled for all subscribers. Skipping this Event")
-      } else {
-        val latest = ArrayList<Message>(2)
-        getLatestByCode(messages, SessionLifecycleService.BACKGROUNDED)?.let { latest.add(it) }
-        getLatestByCode(messages, SessionLifecycleService.FOREGROUNDED)?.let { latest.add(it) }
-        latest.sortedBy { it.getWhen() }.forEach { sendMessageToServer(it) }
-      }
-    }
+  private fun sendLifecycleEvents(messages: List<Message>) {
+    val latest = ArrayList<Message>()
+    getLatestByCode(messages, SessionLifecycleService.BACKGROUNDED)?.let { latest.add(it) }
+    getLatestByCode(messages, SessionLifecycleService.FOREGROUNDED)?.let { latest.add(it) }
+    latest.sortBy { it.getWhen() }
+
+    latest.forEach { sendMessageToServer(it) }
+  }
 
   /** Sends the given [Message] to the [SessionLifecycleService]. */
   private fun sendMessageToServer(msg: Message) {
