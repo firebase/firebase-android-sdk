@@ -1,25 +1,29 @@
 # Unreleased
 * [changed] Internal infrastructure improvements.
 
+# 24.2.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-ml-modeldownloader-ktx`
   to `com.google.firebase:firebase-ml-modeldownloader` under the `com.google.firebase.ml.modeldownloader` package.
   For details, see the
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
-
 * [deprecated] All the APIs from `com.google.firebase:firebase-ml-modeldownloader-ktx` have been added to
   `com.google.firebase:firebase-ml-modeldownloader` under the `com.google.firebase.ml.modeldownloader` package,
   and all the Kotlin extensions (KTX) APIs in `com.google.firebase:firebase-ml-modeldownloader-ktx` are
   now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-ml-modeldownloader` library. The Kotlin extensions library has no additional
+updates.
+
 # 24.1.3
 * [unchanged] Updated internal Dagger dependency.
 * [fixed] Updated the third-party license file to include Dagger's license.
 
-
 # 24.1.2
 * [changed] Internal infrastructure improvements.
-
 * [changed] Migrated [firebase_ml] to use standard Firebase executors.
 
 
@@ -39,6 +43,7 @@ additional updates.
 The Kotlin extensions library transitively includes the updated
 `firebase-ml-modeldownloader` library. The Kotlin extensions library has no
 additional updates.
+
 # 24.1.0
 * [unchanged] Updated to accommodate the release of the updated
   [firebase_ml] Kotlin extensions library.
@@ -66,6 +71,7 @@ The Kotlin extensions library transitively includes the updated
 The Kotlin extensions library transitively includes the updated
 `firebase-ml-modeldownloader` library. The Kotlin extensions library has no
 additional updates.
+
 # 24.0.4
 * [fixed] Fixed a race condition that was caused when differently sized
   models were concurrently downloaded using this SDK and the Model Downloader from
@@ -77,6 +83,7 @@ additional updates.
 The Kotlin extensions library transitively includes the updated
 `firebase-ml-modeldownloader` library. The Kotlin extensions library has no
 additional updates.
+
 # 24.0.3
 * [changed] Updated dependencies of `play-services-basement`,
   `play-services-base`, and `play-services-tasks` to their latest versions
@@ -89,6 +96,7 @@ additional updates.
 The Kotlin extensions library transitively includes the updated
 `firebase-ml-modeldownloader` library. The Kotlin extensions library has no
 additional updates.
+
 # 24.0.2
 * [fixed] Fixed an issue where `FirebaseModelDownloader.getInstance` would
   crash when using non-default FirebaseApp instances.
@@ -101,6 +109,7 @@ additional updates.
 The Kotlin extensions library transitively includes the updated
 `firebase-ml-modeldownloader` library. The Kotlin extensions library has no
 additional updates.
+
 # 24.0.1
 * [fixed] Added support for Android API key restrictions.
 
@@ -138,6 +147,6 @@ runtime.
 
 * [feature] Added custom hosted model download and on-device management
   capabilities.
-
 * [feature] Added ability to get the model download ID, which allows progress
   tracking of file downloads.
+
