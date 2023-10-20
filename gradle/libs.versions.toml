@@ -32,6 +32,12 @@ dagger-dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version = "2.9.0" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
+grpc-android = { module = "io.grpc:grpc-android", version.ref = "grpc" }
+grpc-okhttp = { module = "io.grpc:grpc-okhttp", version.ref = "grpc" }
+grpc-protobuf-lite = { module = "io.grpc:grpc-protobuf-lite", version.ref = "grpc" }
+grpc-protoc-gen-java = { module = "io.grpc:protoc-gen-grpc-java", version.ref = "grpc" }
+grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
+javax-annotation-jsr250 = { module = "javax.annotation:jsr250-api", version = "1.0" }
 javax-inject = { module = "javax.inject:javax.inject", version = "1" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-coroutines-tasks = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
@@ -42,6 +48,9 @@ org-json = { module = "org.json:json", version = "20210307" }
 playservices-base = { module = "com.google.android.gms:play-services-base", version = "18.1.0" }
 playservices-basement = { module = "com.google.android.gms:play-services-basement", version = "18.1.0" }
 playservices-tasks = { module = "com.google.android.gms:play-services-tasks", version = "18.0.2" }
+protoc = { module = "com.google.protobuf:protoc", version.ref = "protoc" }
+protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "javalite" }
+protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "javalite" }
 
 # Test libs
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }
