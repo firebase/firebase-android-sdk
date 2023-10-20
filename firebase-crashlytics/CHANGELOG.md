@@ -15,6 +15,8 @@
 * [fixed] Fixed Flutter and Unity on-demand fatal `setUserIdentifier` behaviour. Github
   [#10759](https://github.com/firebase/flutterfire/issues/10759)
 
+* [changed] Include more details about app processes in reports.
+
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
 `firebase-crashlytics` library. The Kotlin extensions library has no additional
@@ -520,4 +522,3 @@ The following release notes describe changes in the new SDK.
  from your `AndroidManifest.xml` file.
  * [removed] The `fabric.properties` and `crashlytics.properties` files are no
  longer supported. Remove them from your app.
-
