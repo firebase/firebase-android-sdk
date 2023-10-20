@@ -24,33 +24,71 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.google.firebase.Firebase
+import com.google.firebase.app
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 /** Datastore for sessions information */
 internal data class FirebaseSessionsData(val sessionId: String?)
 
-internal class SessionDatastore(private val context: Context) {
-  private val tag = "FirebaseSessionsRepo"
+/** Handles reading to and writing from the [DataStore]. */
+internal interface SessionDatastore {
+  /** Stores a new session ID value in the [DataStore] */
+  fun updateSessionId(sessionId: String): Unit
+
+  /**
+   * Gets the currently stored session ID from the [DataStore]. This will be null if no session has
+   * been stored previously.
+   */
+  fun getCurrentSessionId(): String?
+
+  companion object {
+    val instance: SessionDatastore
+      get() = Firebase.app.get(SessionDatastore::class.java)
+  }
+}
+
+internal class SessionDatastoreImpl(
+  private val context: Context,
+  private val backgroundDispatcher: CoroutineContext,
+) : SessionDatastore {
+
+  /** Most recent session from datastore is updated asynchronously whenever it changes */
+  private val currentSessionFromDatastore = AtomicReference<FirebaseSessionsData>()
 
   private object FirebaseSessionDataKeys {
     val SESSION_ID = stringPreferencesKey("session_id")
   }
 
-  internal val firebaseSessionDataFlow: Flow<FirebaseSessionsData> =
+  private val firebaseSessionDataFlow: Flow<FirebaseSessionsData> =
     context.dataStore.data
       .catch { exception ->
-        Log.e(tag, "Error reading stored session data.", exception)
+        Log.e(TAG, "Error reading stored session data.", exception)
         emit(emptyPreferences())
       }
       .map { preferences -> mapSessionsData(preferences) }
 
-  suspend fun updateSessionId(sessionId: String) {
-    context.dataStore.edit { preferences ->
-      preferences[FirebaseSessionDataKeys.SESSION_ID] = sessionId
+  init {
+    CoroutineScope(backgroundDispatcher).launch {
+      firebaseSessionDataFlow.collect { currentSessionFromDatastore.set(it) }
     }
   }
+
+  override fun updateSessionId(sessionId: String) {
+    CoroutineScope(backgroundDispatcher).launch {
+      context.dataStore.edit { preferences ->
+        preferences[FirebaseSessionDataKeys.SESSION_ID] = sessionId
+      }
+    }
+  }
+
+  override fun getCurrentSessionId() = currentSessionFromDatastore.get()?.sessionId
 
   private fun mapSessionsData(preferences: Preferences): FirebaseSessionsData =
     FirebaseSessionsData(
@@ -58,6 +96,7 @@ internal class SessionDatastore(private val context: Context) {
     )
 
   private companion object {
+    private val TAG = "FirebaseSessionsRepo"
     private val Context.dataStore: DataStore<Preferences> by
       preferencesDataStore(name = "firebase_session_data")
   }

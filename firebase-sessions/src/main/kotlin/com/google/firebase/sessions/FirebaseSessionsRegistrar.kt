@@ -63,7 +63,7 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .add(Dependency.requiredProvider(transportFactory))
         .add(Dependency.required(backgroundDispatcher))
         .factory { container ->
-          SessionFirelogPublisher(
+          SessionFirelogPublisherImpl(
             container.get(firebaseApp),
             container.get(firebaseInstallationsApi),
             container.get(sessionsSettings),
@@ -93,6 +93,17 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
         .add(Dependency.required(backgroundDispatcher))
         .factory { container ->
           Dispatchers(container.get(blockingDispatcher), container.get(backgroundDispatcher))
+        }
+        .build(),
+      Component.builder(SessionDatastore::class.java)
+        .name("sessions-datastore")
+        .add(Dependency.required(firebaseApp))
+        .add(Dependency.required(backgroundDispatcher))
+        .factory { container ->
+          SessionDatastoreImpl(
+            container.get(firebaseApp).getApplicationContext(),
+            container.get(backgroundDispatcher)
+          )
         }
         .build(),
       LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
