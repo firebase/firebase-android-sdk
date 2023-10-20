@@ -66,7 +66,7 @@ class SessionFirelogPublisherTest {
         remoteSettings = FakeSettingsProvider(),
       )
     val publisher =
-      SessionFirelogPublisher(
+      SessionFirelogPublisherImpl(
         fakeFirebaseApp.firebaseApp,
         firebaseInstallations,
         sessionsSettings,
