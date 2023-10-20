@@ -23,7 +23,6 @@ import android.content.ServiceConnection
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
-import android.os.Looper
 import android.os.Message
 import android.os.Messenger
 import android.os.RemoteException
@@ -60,7 +59,7 @@ internal object SessionLifecycleClient {
   init {
     handlerThread.start()
   }
-  
+
   /**
    * The callback class that will be used to receive updated session events from the
    * [SessionLifecycleService].
@@ -150,16 +149,14 @@ internal object SessionLifecycleClient {
     sendLifecycleEvent(SessionLifecycleService.BACKGROUNDED)
   }
 
-  /**
-   * Perform initialization that requires cleanup
-   */
+  /** Perform initialization that requires cleanup */
   fun started() {
-    if (!handlerThread.isAlive) { handlerThread.start() }
+    if (!handlerThread.isAlive) {
+      handlerThread.start()
+    }
   }
 
-  /**
-   * Cleanup initialization
-   */
+  /** Cleanup initialization */
   fun stopped() {
     handlerThread.quit()
   }

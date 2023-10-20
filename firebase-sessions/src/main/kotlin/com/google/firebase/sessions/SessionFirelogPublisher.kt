@@ -28,14 +28,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-/**
- * Responsible for uploading session events to Firelog.
- */
+/** Responsible for uploading session events to Firelog. */
 internal interface SessionFirelogPublisher {
 
-  /**
-   * Asynchronously logs the session represented by the given [SessionDetails] to Firelog.
-   */
+  /** Asynchronously logs the session represented by the given [SessionDetails] to Firelog. */
   fun logSession(sessionDetails: SessionDetails): Unit
 
   companion object {
