@@ -38,7 +38,7 @@ import com.google.firebase.sessions.settings.SessionsSettings
 internal class SessionLifecycleService : Service() {
 
   /** The thread that will be used to process all lifecycle messages from connected clients. */
-  private val handlerThread: HandlerThread = HandlerThread("FirebaseSessions_HandlerThread")
+  internal val handlerThread: HandlerThread = HandlerThread("FirebaseSessions_HandlerThread")
 
   /** The handler that will process all lifecycle messages from connected clients . */
   private var messageHandler: MessageHandler? = null
