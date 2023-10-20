@@ -30,7 +30,6 @@ import android.os.Messenger
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.app
-import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.settings.SessionsSettings
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineScope
@@ -44,7 +43,7 @@ import kotlinx.coroutines.launch
 internal class SessionLifecycleService : Service() {
 
   /** The thread that will be used to process all lifecycle messages from connected clients. */
-  private var handlerThread: HandlerThread = HandlerThread("FirebaseSessions_HandlerThread")
+  private val handlerThread: HandlerThread = HandlerThread("FirebaseSessions_HandlerThread")
 
   /** The handler that will process all lifecycle messages from connected clients . */
   private var messageHandler: MessageHandler? = null
@@ -111,18 +110,17 @@ internal class SessionLifecycleService : Service() {
      * given [Message]. This will determine if the foregrounding should result in the creation of a
      * new session.
      */
-    private fun handleForegrounding(msg: Message) =
-      CoroutineScope(Dispatchers.instance.backgroundDispatcher).launch {
-        Log.d(TAG, "Activity foregrounding at ${msg.getWhen()}")
-        if (!hasForegrounded) {
-          Log.d(TAG, "Cold start detected.")
-          hasForegrounded = true
-          newSession()
-        } else if (isSessionRestart(msg.getWhen())) {
-          Log.d(TAG, "Session too long in background. Creating new session.")
-          newSession()
-        }
+    private fun handleForegrounding(msg: Message) {
+      Log.d(TAG, "Activity foregrounding at ${msg.getWhen()}")
+      if (!hasForegrounded) {
+        Log.d(TAG, "Cold start detected.")
+        hasForegrounded = true
+        newSession()
+      } else if (isSessionRestart(msg.getWhen())) {
+        Log.d(TAG, "Session too long in background. Creating new session.")
+        newSession()
       }
+    }
 
     /**
      * Handles a backgrounding event by any activity owned by the application as specified by the
@@ -144,37 +142,7 @@ internal class SessionLifecycleService : Service() {
     }
 
     /** Generates a new session id and sends it everywhere it's needed */
-    private suspend fun newSession() {
-      val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
-
-      if (subscribers.isEmpty()) {
-        Log.d(
-          TAG,
-          "Sessions SDK did not have any dependent SDKs register as dependencies. Events will not be sent."
-        )
-        return
-      }
-
-      if (subscribers.values.none { it.isDataCollectionEnabled }) {
-        Log.d(TAG, "Data Collection is disabled for all subscribers. Skipping this Session Event")
-        return
-      }
-
-      Log.d(TAG, "Data Collection is enabled for at least one Subscriber")
-
-      // This will cause remote settings to be fetched if the cache is expired.
-      SessionsSettings.instance.updateSettings()
-
-      if (!SessionsSettings.instance.sessionsEnabled) {
-        Log.d(TAG, "Sessions SDK disabled. Events will not be sent.")
-        return
-      }
-
-      if (!shouldCollectEvents()) {
-        Log.d(TAG, "Sessions SDK has dropped this session due to sampling.")
-        return
-      }
-
+    private fun newSession() {
       SessionGenerator.instance.generateNewSession()
       Log.d(TAG, "Generated new session ${SessionGenerator.instance.currentSession.sessionId}")
       broadcastSession()
@@ -227,16 +195,6 @@ internal class SessionLifecycleService : Service() {
       CoroutineScope(Dispatchers.instance.backgroundDispatcher).launch {
         sessionId.let { datastore.updateSessionId(it) }
       }
-    }
-
-    /** Calculate whether we should sample events using [SessionsSettings] data. */
-    private fun shouldCollectEvents(): Boolean {
-      // Sampling rate of 1 means the SDK will send every event.
-      return randomValueForSampling <= SessionsSettings.instance.samplingRate
-    }
-
-    private companion object {
-      private val randomValueForSampling: Double = Math.random()
     }
   }
 
