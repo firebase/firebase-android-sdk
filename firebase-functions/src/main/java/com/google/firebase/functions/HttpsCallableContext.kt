@@ -13,8 +13,9 @@
 // limitations under the License.
 package com.google.firebase.functions
 
-/** The metadata about the client that should automatically be included in function calls.  */
+/** The metadata about the client that should automatically be included in function calls. */
 internal class HttpsCallableContext(
-        val authToken: String?,
-        val instanceIdToken: String?,
-        val appCheckToken: String?)
+  val authToken: String?,
+  val instanceIdToken: String?,
+  val appCheckToken: String?
+)

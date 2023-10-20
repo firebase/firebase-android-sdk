@@ -15,7 +15,7 @@ package com.google.firebase.functions
 
 import com.google.android.gms.tasks.Task
 
-/** The interface for getting metadata about the client. This is an interface for easier testing.  */
+/** The interface for getting metadata about the client. This is an interface for easier testing. */
 internal interface ContextProvider {
   fun getContext(getLimitedUseAppCheckToken: Boolean): Task<HttpsCallableContext?>?
 }

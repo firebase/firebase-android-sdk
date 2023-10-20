@@ -16,21 +16,25 @@ package com.google.firebase.functions
 /**
  * Options for configuring the callable function.
  *
- *
  * These properties are immutable once a callable function reference is instantiated.
  */
-class HttpsCallableOptions private constructor(
-        /**
-         * Returns the setting indicating if limited-use App Check tokens are enforced for this function.
-         */
-        // If true, request a limited-use token from AppCheck.
-        val limitedUseAppCheckTokens: Boolean) {
+class HttpsCallableOptions
+private constructor(
+  /**
+   * Returns the setting indicating if limited-use App Check tokens are enforced for this function.
+   */
+  // If true, request a limited-use token from AppCheck.
+  @JvmField val limitedUseAppCheckTokens: Boolean
+) {
 
-  /** Builder class for [com.google.firebase.functions.HttpsCallableOptions]  */
+  /** Builder class for [com.google.firebase.functions.HttpsCallableOptions] */
   class Builder {
-    /** Returns the setting indicating if limited-use App Check tokens are enforced.  */
-    var limitedUseAppCheckTokens = false
-      private set
+    @JvmField var limitedUseAppCheckTokens = false
+
+    /** Returns the setting indicating if limited-use App Check tokens are enforced. */
+    fun getLimitedUseAppCheckTokens(): Boolean {
+      return limitedUseAppCheckTokens
+    }
 
     /**
      * Sets whether or not to use limited-use App Check tokens when invoking the associated
@@ -41,7 +45,7 @@ class HttpsCallableOptions private constructor(
       return this
     }
 
-    /** Builds a new [com.google.firebase.functions.HttpsCallableOptions].  */
+    /** Builds a new [com.google.firebase.functions.HttpsCallableOptions]. */
     fun build(): HttpsCallableOptions {
       return HttpsCallableOptions(limitedUseAppCheckTokens)
     }

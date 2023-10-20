@@ -17,7 +17,7 @@ import com.google.android.gms.tasks.Task
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
-/** A reference to a particular Callable HTTPS trigger in Cloud Functions.  */
+/** A reference to a particular Callable HTTPS trigger in Cloud Functions. */
 class HttpsCallableReference {
   // The functions client to use for making calls.
   private val functionsClient: FirebaseFunctions
@@ -33,15 +33,19 @@ class HttpsCallableReference {
   // Options for how to do the HTTPS call.
   private val options: HttpsCallOptions
 
-  /** Creates a new reference with the given options.  */
-  internal constructor(functionsClient: FirebaseFunctions, name: String?, options: HttpsCallOptions) {
+  /** Creates a new reference with the given options. */
+  internal constructor(
+    functionsClient: FirebaseFunctions,
+    name: String?,
+    options: HttpsCallOptions
+  ) {
     this.functionsClient = functionsClient
     this.name = name
     url = null
     this.options = options
   }
 
-  /** Creates a new reference with the given options.  */
+  /** Creates a new reference with the given options. */
   internal constructor(functionsClient: FirebaseFunctions, url: URL?, options: HttpsCallOptions) {
     this.functionsClient = functionsClient
     name = null
@@ -52,38 +56,32 @@ class HttpsCallableReference {
   /**
    * Executes this Callable HTTPS trigger asynchronously.
    *
-   *
    * The data passed into the trigger can be any of the following types:
    *
-   *
-   *  * Any primitive type, including null, int, long, float, and boolean.
-   *  * [String]
-   *  * [List&amp;lt;?&amp;gt;][java.util.List], where the contained objects are also one of these
+   * * Any primitive type, including null, int, long, float, and boolean.
+   * * [String]
+   * * [List&amp;lt;?&amp;gt;][java.util.List], where the contained objects are also one of these
    * types.
-   *  * [Map&amp;lt;String, ?&amp;gt;&gt;][java.util.Map], where the values are also one of these
+   * * [Map&amp;lt;String, ?&amp;gt;&gt;][java.util.Map], where the values are also one of these
    * types.
-   *  * [org.json.JSONArray]
-   *  * [org.json.JSONObject]
-   *  * [org.json.JSONObject.NULL]
-   *
-   *
+   * * [org.json.JSONArray]
+   * * [org.json.JSONObject]
+   * * [org.json.JSONObject.NULL]
    *
    * If the returned task fails, the Exception will be one of the following types:
    *
-   *
-   *  * [java.io.IOException] - if the HTTPS request failed to connect.
-   *  * [FirebaseFunctionsException] - if the request connected, but the function returned
-   * an error.
-   *
-   *
+   * * [java.io.IOException]
+   * - if the HTTPS request failed to connect.
+   * * [FirebaseFunctionsException]
+   * - if the request connected, but the function returned an error.
    *
    * The request to the Cloud Functions backend made by this method automatically includes a
    * Firebase Instance ID token to identify the app instance. If a user is logged in with Firebase
    * Auth, an auth token for the user will also be automatically included.
    *
-   *
    * Firebase Instance ID sends data to the Firebase backend periodically to collect information
-   * regarding the app instance. To stop this, see [ ][com.google.firebase.iid.FirebaseInstanceId.deleteInstanceId]. It will resume with a new
+   * regarding the app instance. To stop this, see [ ]
+   * [com.google.firebase.iid.FirebaseInstanceId.deleteInstanceId]. It will resume with a new
    * Instance ID the next time you call this method.
    *
    * @param data Parameters to pass to the trigger.
@@ -107,14 +105,13 @@ class HttpsCallableReference {
   /**
    * Executes this HTTPS endpoint asynchronously without arguments.
    *
-   *
    * The request to the Cloud Functions backend made by this method automatically includes a
    * Firebase Instance ID token to identify the app instance. If a user is logged in with Firebase
    * Auth, an auth token for the user will also be automatically included.
    *
-   *
    * Firebase Instance ID sends data to the Firebase backend periodically to collect information
-   * regarding the app instance. To stop this, see [ ][com.google.firebase.iid.FirebaseInstanceId.deleteInstanceId]. It will resume with a new
+   * regarding the app instance. To stop this, see [ ]
+   * [com.google.firebase.iid.FirebaseInstanceId.deleteInstanceId]. It will resume with a new
    * Instance ID the next time you call this method.
    *
    * @return A Task that will be completed when the HTTPS request has completed.

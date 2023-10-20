@@ -20,7 +20,7 @@ import org.json.JSONObject
 
 // TODO: This is a copy of FirebaseFirestoreException.
 // We should investigate whether we can at least share the Code enum.
-/** The class for all Exceptions thrown by FirebaseFunctions.  */
+/** The class for all Exceptions thrown by FirebaseFunctions. */
 class FirebaseFunctionsException : FirebaseException {
   /**
    * The set of error status codes that can be returned from a Callable HTTPS tigger. These are the
@@ -34,10 +34,10 @@ class FirebaseFunctionsException : FirebaseException {
      */
     OK(0),
 
-    /** The operation was cancelled (typically by the caller).  */
+    /** The operation was cancelled (typically by the caller). */
     CANCELLED(1),
 
-    /** Unknown error or an error from a different error domain.  */
+    /** Unknown error or an error from a different error domain. */
     UNKNOWN(2),
 
     /**
@@ -55,13 +55,13 @@ class FirebaseFunctionsException : FirebaseException {
      */
     DEADLINE_EXCEEDED(4),
 
-    /** Some requested document was not found.  */
+    /** Some requested document was not found. */
     NOT_FOUND(5),
 
-    /** Some document that we attempted to create already exists.  */
+    /** Some document that we attempted to create already exists. */
     ALREADY_EXISTS(6),
 
-    /** The caller does not have permission to execute the specified operation.  */
+    /** The caller does not have permission to execute the specified operation. */
     PERMISSION_DENIED(7),
 
     /**
@@ -81,10 +81,10 @@ class FirebaseFunctionsException : FirebaseException {
      */
     ABORTED(10),
 
-    /** Operation was attempted past the valid range.  */
+    /** Operation was attempted past the valid range. */
     OUT_OF_RANGE(11),
 
-    /** Operation is not implemented or not supported/enabled.  */
+    /** Operation is not implemented or not supported/enabled. */
     UNIMPLEMENTED(12),
 
     /**
@@ -99,10 +99,10 @@ class FirebaseFunctionsException : FirebaseException {
      */
     UNAVAILABLE(14),
 
-    /** Unrecoverable data loss or corruption.  */
+    /** Unrecoverable data loss or corruption. */
     DATA_LOSS(15),
 
-    /** The request does not have valid authentication credentials for the operation.  */
+    /** The request does not have valid authentication credentials for the operation. */
     UNAUTHENTICATED(16);
 
     companion object {
@@ -112,7 +112,9 @@ class FirebaseFunctionsException : FirebaseException {
         val codes = SparseArray<Code>()
         for (c in values()) {
           val existingValue = codes[c.ordinal]
-          check(existingValue == null) { "Code value duplication between " + existingValue + "&" + c.name }
+          check(existingValue == null) {
+            "Code value duplication between " + existingValue + "&" + c.name
+          }
           codes.put(c.ordinal, c)
         }
         return codes
@@ -124,8 +126,8 @@ class FirebaseFunctionsException : FirebaseException {
       }
 
       /**
-       * Takes an HTTP status code and returns the corresponding FUNErrorCode error code. This is the
-       * standard HTTP status code -> error mapping defined in:
+       * Takes an HTTP status code and returns the corresponding FUNErrorCode error code. This is
+       * the standard HTTP status code -> error mapping defined in:
        * https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto
        *
        * @param status An HTTP status code.
@@ -166,14 +168,17 @@ class FirebaseFunctionsException : FirebaseException {
    */
   val details: Any?
 
-  internal constructor(
-          message: String, code: Code, details: Any?) : super(message) {
+  internal constructor(message: String, code: Code, details: Any?) : super(message) {
     this.code = code
     this.details = details
   }
 
   internal constructor(
-          message: String, code: Code, details: Any?, cause: Throwable?) : super(message, cause!!) {
+    message: String,
+    code: Code,
+    details: Any?,
+    cause: Throwable?
+  ) : super(message, cause!!) {
     this.code = code
     this.details = details
   }
@@ -189,7 +194,10 @@ class FirebaseFunctionsException : FirebaseException {
      */
     @JvmStatic
     fun fromResponse(
-            code: Code, body: String?, serializer: Serializer): FirebaseFunctionsException? {
+      code: Code,
+      body: String?,
+      serializer: Serializer
+    ): FirebaseFunctionsException? {
       // Start with reasonable defaults from the status code.
       var code = code
       var description = code.name

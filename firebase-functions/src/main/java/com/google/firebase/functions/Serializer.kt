@@ -14,15 +14,15 @@
 package com.google.firebase.functions
 
 import androidx.annotation.VisibleForTesting
-import org.json.JSONArray
-import org.json.JSONException
-import org.json.JSONObject
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.TimeZone
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
 
-/** Converts raw Java types into JSON objects.  */
+/** Converts raw Java types into JSON objects. */
 class Serializer {
   private val dateFormat: DateFormat
 
@@ -90,8 +90,7 @@ class Serializer {
       val m = obj
       val keys = m.keys()
       while (keys.hasNext()) {
-        val k = keys.next()
-                ?: throw IllegalArgumentException("Object keys cannot be null.")
+        val k = keys.next() ?: throw IllegalArgumentException("Object keys cannot be null.")
         val value = encode(m.opt(k))
         try {
           result.put(k, value)
@@ -172,8 +171,7 @@ class Serializer {
   }
 
   companion object {
-    @VisibleForTesting
-    const val LONG_TYPE = "type.googleapis.com/google.protobuf.Int64Value"
+    @VisibleForTesting const val LONG_TYPE = "type.googleapis.com/google.protobuf.Int64Value"
 
     @VisibleForTesting
     const val UNSIGNED_LONG_TYPE = "type.googleapis.com/google.protobuf.UInt64Value"

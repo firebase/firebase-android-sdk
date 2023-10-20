@@ -30,13 +30,16 @@ import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** A ContextProvider that uses FirebaseAuth to get the token.  */
+/** A ContextProvider that uses FirebaseAuth to get the token. */
 @Singleton
-internal class FirebaseContextProvider @Inject constructor(
-        private val tokenProvider: Provider<InternalAuthProvider>,
-        private val instanceId: Provider<FirebaseInstanceIdInternal>,
-        appCheckDeferred: Deferred<InteropAppCheckTokenProvider>,
-        @param:Lightweight private val executor: Executor) : ContextProvider {
+internal class FirebaseContextProvider
+@Inject
+constructor(
+  private val tokenProvider: Provider<InternalAuthProvider>,
+  private val instanceId: Provider<FirebaseInstanceIdInternal>,
+  appCheckDeferred: Deferred<InteropAppCheckTokenProvider>,
+  @param:Lightweight private val executor: Executor
+) : ContextProvider {
   private val TAG = "FirebaseContextProvider"
   private val appCheckRef = AtomicReference<InteropAppCheckTokenProvider>()
 
@@ -49,50 +52,38 @@ internal class FirebaseContextProvider @Inject constructor(
   }
 
   override fun getContext(limitedUseAppCheckToken: Boolean): Task<HttpsCallableContext?>? {
-    val authToken = authToken
+    val authToken = getAuthToken()
     val appCheckToken = getAppCheckToken(limitedUseAppCheckToken)
-    return Tasks.whenAll(authToken, appCheckToken)
-            .onSuccessTask(
-                    executor
-            ) { v: Void? ->
-              Tasks.forResult(
-                      HttpsCallableContext(
-                              authToken.result,
-                              instanceId.get().token,
-                              appCheckToken.result))
-            }
+    return Tasks.whenAll(authToken, appCheckToken).onSuccessTask(executor) { _ ->
+      Tasks.forResult(
+        HttpsCallableContext(authToken.result, instanceId.get().token, appCheckToken.result)
+      )
+    }
   }
 
-  private val authToken: Task<String?>
-    private get() {
-      val auth = tokenProvider.get()
-              ?: return Tasks.forResult(null)
-      return auth.getAccessToken(false)
-              .continueWith(
-                      executor
-              ) { task: Task<GetTokenResult> ->
-                var authToken: String? = null
-                if (!task.isSuccessful) {
-                  val exception = task.exception
-                  if (exception is FirebaseNoSignedInUserException) {
-                    // Firebase Auth is linked in, but nobody is signed in, which is fine.
-                  } else {
-                    throw exception!!
-                  }
-                } else {
-                  authToken = task.result.token
-                }
-                authToken
-              }
+  private fun getAuthToken(): Task<String?> {
+    val auth = tokenProvider.get() ?: return Tasks.forResult(null)
+    return auth.getAccessToken(false).continueWith(executor) { task: Task<GetTokenResult> ->
+      var authToken: String? = null
+      if (!task.isSuccessful) {
+        val exception = task.exception
+        if (exception is FirebaseNoSignedInUserException) {
+          // Firebase Auth is linked in, but nobody is signed in, which is fine.
+        } else {
+          throw exception!!
+        }
+      } else {
+        authToken = task.result.token
+      }
+      authToken
     }
+  }
 
-  private fun getAppCheckToken(limitedUseAppCheckToken: Boolean): Task<String?> {
-    val appCheck = appCheckRef.get()
-            ?: return Tasks.forResult(null)
-    val tokenTask = if (limitedUseAppCheckToken) appCheck.limitedUseToken else appCheck.getToken(false)
-    return tokenTask.onSuccessTask(
-            executor
-    ) { result: AppCheckTokenResult ->
+  private fun getAppCheckToken(getLimitedUseAppCheckToken: Boolean): Task<String?> {
+    val appCheck = appCheckRef.get() ?: return Tasks.forResult(null)
+    val tokenTask =
+      if (getLimitedUseAppCheckToken) appCheck.limitedUseToken else appCheck.getToken(false)
+    return tokenTask.onSuccessTask(executor) { result: AppCheckTokenResult ->
       if (result.error != null) {
         // If there was an error getting the App Check token, do NOT send the placeholder
         // token. Only valid App Check tokens should be sent to the functions backend.

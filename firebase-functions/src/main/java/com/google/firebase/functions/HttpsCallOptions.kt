@@ -13,17 +13,17 @@
 // limitations under the License.
 package com.google.firebase.functions
 
-import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
+import okhttp3.OkHttpClient
 
-/** An internal class for keeping track of options applied to an HttpsCallableReference.  */
+/** An internal class for keeping track of options applied to an HttpsCallableReference. */
 class HttpsCallOptions {
   // The timeout to use for calls from references created by this Functions.
   private var timeout = DEFAULT_TIMEOUT
   private var timeoutUnits = DEFAULT_TIMEOUT_UNITS
   val limitedUseAppCheckTokens: Boolean
 
-  /** Creates an (internal) HttpsCallOptions from the (external) [HttpsCallableOptions].  */
+  /** Creates an (internal) HttpsCallOptions from the (external) [HttpsCallableOptions]. */
   constructor(publicCallableOptions: HttpsCallableOptions) {
     limitedUseAppCheckTokens = publicCallableOptions.limitedUseAppCheckTokens
   }
@@ -52,13 +52,13 @@ class HttpsCallOptions {
     return timeoutUnits.toMillis(timeout)
   }
 
-  /** Creates a new OkHttpClient with these options applied to it.  */
+  /** Creates a new OkHttpClient with these options applied to it. */
   fun apply(client: OkHttpClient): OkHttpClient {
     return client
-            .newBuilder()
-            .callTimeout(timeout, timeoutUnits)
-            .readTimeout(timeout, timeoutUnits)
-            .build()
+      .newBuilder()
+      .callTimeout(timeout, timeoutUnits)
+      .readTimeout(timeout, timeoutUnits)
+      .build()
   }
 
   companion object {

@@ -30,6 +30,12 @@ import com.google.firebase.functions.FirebaseFunctionsException.Code.Companion.f
 import com.google.firebase.functions.FirebaseFunctionsException.Companion.fromResponse
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import java.io.IOException
+import java.io.InterruptedIOException
+import java.net.MalformedURLException
+import java.net.URL
+import java.util.concurrent.Executor
+import javax.inject.Named
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType
@@ -39,21 +45,18 @@ import okhttp3.RequestBody
 import okhttp3.Response
 import org.json.JSONException
 import org.json.JSONObject
-import java.io.IOException
-import java.io.InterruptedIOException
-import java.net.MalformedURLException
-import java.net.URL
-import java.util.concurrent.Executor
-import javax.inject.Named
 
-/** FirebaseFunctions lets you call Cloud Functions for Firebase.  */
-class FirebaseFunctions @AssistedInject internal constructor(
-        context: Context,
-        @Named("projectId") projectId: String?,
-        @Assisted regionOrCustomDomain: String?,
-        contextProvider: ContextProvider?,
-        @param:Lightweight private val executor: Executor,
-        @UiThread uiExecutor: Executor) {
+/** FirebaseFunctions lets you call Cloud Functions for Firebase. */
+class FirebaseFunctions
+@AssistedInject
+internal constructor(
+  context: Context,
+  @Named("projectId") projectId: String?,
+  @Assisted regionOrCustomDomain: String?,
+  contextProvider: ContextProvider?,
+  @param:Lightweight private val executor: Executor,
+  @UiThread uiExecutor: Executor
+) {
   // The network client to use for HTTPS requests.
   private val client: OkHttpClient
 
@@ -84,12 +87,13 @@ class FirebaseFunctions @AssistedInject internal constructor(
     this.contextProvider = Preconditions.checkNotNull(contextProvider)
     this.projectId = Preconditions.checkNotNull(projectId)
     val isRegion: Boolean
-    isRegion = try {
-      URL(regionOrCustomDomain)
-      false
-    } catch (malformedURLException: MalformedURLException) {
-      true
-    }
+    isRegion =
+      try {
+        URL(regionOrCustomDomain)
+        false
+      } catch (malformedURLException: MalformedURLException) {
+        true
+      }
     if (isRegion) {
       region = regionOrCustomDomain
       customDomain = null
@@ -100,25 +104,23 @@ class FirebaseFunctions @AssistedInject internal constructor(
     maybeInstallProviders(context, uiExecutor)
   }
 
-  /** Returns a reference to the callable HTTPS trigger with the given name.  */
+  /** Returns a reference to the callable HTTPS trigger with the given name. */
   fun getHttpsCallable(name: String): HttpsCallableReference {
     return HttpsCallableReference(this, name, HttpsCallOptions())
   }
 
-  /** Returns a reference to the callable HTTPS trigger with the provided URL.  */
+  /** Returns a reference to the callable HTTPS trigger with the provided URL. */
   fun getHttpsCallableFromUrl(url: URL): HttpsCallableReference {
     return HttpsCallableReference(this, url, HttpsCallOptions())
   }
 
-  /** Returns a reference to the callable HTTPS trigger with the given name and call options.  */
-  fun getHttpsCallable(
-          name: String, options: HttpsCallableOptions): HttpsCallableReference {
+  /** Returns a reference to the callable HTTPS trigger with the given name and call options. */
+  fun getHttpsCallable(name: String, options: HttpsCallableOptions): HttpsCallableReference {
     return HttpsCallableReference(this, name, HttpsCallOptions(options))
   }
 
-  /** Returns a reference to the callable HTTPS trigger with the provided URL and call options.  */
-  fun getHttpsCallableFromUrl(
-          url: URL, options: HttpsCallableOptions): HttpsCallableReference {
+  /** Returns a reference to the callable HTTPS trigger with the provided URL and call options. */
+  fun getHttpsCallableFromUrl(url: URL, options: HttpsCallableOptions): HttpsCallableReference {
     return HttpsCallableReference(this, url, HttpsCallOptions(options))
   }
 
@@ -132,11 +134,8 @@ class FirebaseFunctions @AssistedInject internal constructor(
   fun getURL(function: String): URL {
     val emulatorSettings = emulatorSettings
     if (emulatorSettings != null) {
-      urlFormat = ("http://"
-              + emulatorSettings.host
-              + ":"
-              + emulatorSettings.port
-              + "/%2\$s/%1\$s/%3\$s")
+      urlFormat =
+        ("http://" + emulatorSettings.host + ":" + emulatorSettings.port + "/%2\$s/%1\$s/%3\$s")
     }
     var str = String.format(urlFormat, region, projectId, function)
     if (customDomain != null && emulatorSettings == null) {
@@ -158,7 +157,6 @@ class FirebaseFunctions @AssistedInject internal constructor(
   /**
    * Modifies this FirebaseFunctions instance to communicate with the Cloud Functions emulator.
    *
-   *
    * Note: Call this method before using the instance to do any functions operations.
    *
    * @param host the emulator host (for example, 10.0.2.2)
@@ -176,20 +174,18 @@ class FirebaseFunctions @AssistedInject internal constructor(
    * @return A Task that will be completed when the request is complete.
    */
   fun call(name: String, data: Any?, options: HttpsCallOptions): Task<HttpsCallableResult?> {
-    return providerInstalled
-            .task
-            .continueWithTask(
-                    executor) { task: Task<Void>? -> contextProvider.getContext(options.limitedUseAppCheckTokens) }
-            .continueWithTask(
-                    executor
-            ) { task: Task<HttpsCallableContext?> ->
-              if (!task.isSuccessful) {
-                return@continueWithTask Tasks.forException<HttpsCallableResult>(task.exception!!)
-              }
-              val context = task.result
-              val url = getURL(name)
-              call(url, data, context, options)
-            }
+    return providerInstalled.task
+      .continueWithTask(executor) { task: Task<Void>? ->
+        contextProvider.getContext(options.limitedUseAppCheckTokens)
+      }
+      .continueWithTask(executor) { task: Task<HttpsCallableContext?> ->
+        if (!task.isSuccessful) {
+          return@continueWithTask Tasks.forException<HttpsCallableResult>(task.exception!!)
+        }
+        val context = task.result
+        val url = getURL(name)
+        call(url, data, context, options)
+      }
   }
 
   /**
@@ -200,19 +196,17 @@ class FirebaseFunctions @AssistedInject internal constructor(
    * @return A Task that will be completed when the request is complete.
    */
   fun call(url: URL, data: Any?, options: HttpsCallOptions): Task<HttpsCallableResult?> {
-    return providerInstalled
-            .task
-            .continueWithTask(
-                    executor) { task: Task<Void>? -> contextProvider.getContext(options.limitedUseAppCheckTokens) }
-            .continueWithTask(
-                    executor
-            ) { task: Task<HttpsCallableContext?> ->
-              if (!task.isSuccessful) {
-                return@continueWithTask Tasks.forException<HttpsCallableResult>(task.exception!!)
-              }
-              val context = task.result
-              call(url, data, context, options)
-            }
+    return providerInstalled.task
+      .continueWithTask(executor) { task: Task<Void>? ->
+        contextProvider.getContext(options.limitedUseAppCheckTokens)
+      }
+      .continueWithTask(executor) { task: Task<HttpsCallableContext?> ->
+        if (!task.isSuccessful) {
+          return@continueWithTask Tasks.forException<HttpsCallableResult>(task.exception!!)
+        }
+        val context = task.result
+        call(url, data, context, options)
+      }
   }
 
   /**
@@ -224,10 +218,11 @@ class FirebaseFunctions @AssistedInject internal constructor(
    * @return A Task that will be completed when the request is complete.
    */
   private fun call(
-          url: URL,
-          data: Any?,
-          context: HttpsCallableContext?,
-          options: HttpsCallOptions): Task<HttpsCallableResult?> {
+    url: URL,
+    data: Any?,
+    context: HttpsCallableContext?,
+    options: HttpsCallOptions
+  ): Task<HttpsCallableResult?> {
     Preconditions.checkNotNull(url, "url cannot be null")
     val body: MutableMap<String?, Any?> = HashMap()
     val encoded = serializer.encode(data)
@@ -249,56 +244,78 @@ class FirebaseFunctions @AssistedInject internal constructor(
     val call = callClient.newCall(request.build())
     val tcs = TaskCompletionSource<HttpsCallableResult?>()
     call.enqueue(
-            object : Callback {
-              override fun onFailure(ignored: Call, e: IOException) {
-                if (e is InterruptedIOException) {
-                  val exception = FirebaseFunctionsException(
-                          FirebaseFunctionsException.Code.DEADLINE_EXCEEDED.name, FirebaseFunctionsException.Code.DEADLINE_EXCEEDED, null, e)
-                  tcs.setException(exception)
-                } else {
-                  val exception = FirebaseFunctionsException(FirebaseFunctionsException.Code.INTERNAL.name, FirebaseFunctionsException.Code.INTERNAL, null, e)
-                  tcs.setException(exception)
-                }
-              }
+      object : Callback {
+        override fun onFailure(ignored: Call, e: IOException) {
+          if (e is InterruptedIOException) {
+            val exception =
+              FirebaseFunctionsException(
+                FirebaseFunctionsException.Code.DEADLINE_EXCEEDED.name,
+                FirebaseFunctionsException.Code.DEADLINE_EXCEEDED,
+                null,
+                e
+              )
+            tcs.setException(exception)
+          } else {
+            val exception =
+              FirebaseFunctionsException(
+                FirebaseFunctionsException.Code.INTERNAL.name,
+                FirebaseFunctionsException.Code.INTERNAL,
+                null,
+                e
+              )
+            tcs.setException(exception)
+          }
+        }
 
-              @Throws(IOException::class)
-              override fun onResponse(ignored: Call, response: Response) {
-                val code = fromHttpStatus(response.code())
-                val body = response.body()!!.string()
-                val exception = fromResponse(code, body, serializer)
-                if (exception != null) {
-                  tcs.setException(exception)
-                  return
-                }
-                val bodyJSON: JSONObject
-                bodyJSON = try {
-                  JSONObject(body)
-                } catch (je: JSONException) {
-                  val e: Exception = FirebaseFunctionsException(
-                          "Response is not valid JSON object.", FirebaseFunctionsException.Code.INTERNAL, null, je)
-                  tcs.setException(e)
-                  return
-                }
-                var dataJSON = bodyJSON.opt("data")
-                // TODO: Allow "result" instead of "data" for now, for backwards compatibility.
-                if (dataJSON == null) {
-                  dataJSON = bodyJSON.opt("result")
-                }
-                if (dataJSON == null) {
-                  val e: Exception = FirebaseFunctionsException(
-                          "Response is missing data field.", FirebaseFunctionsException.Code.INTERNAL, null)
-                  tcs.setException(e)
-                  return
-                }
-                val result = HttpsCallableResult(serializer.decode(dataJSON))
-                tcs.setResult(result)
-              }
-            })
+        @Throws(IOException::class)
+        override fun onResponse(ignored: Call, response: Response) {
+          val code = fromHttpStatus(response.code())
+          val body = response.body()!!.string()
+          val exception = fromResponse(code, body, serializer)
+          if (exception != null) {
+            tcs.setException(exception)
+            return
+          }
+          val bodyJSON: JSONObject
+          bodyJSON =
+            try {
+              JSONObject(body)
+            } catch (je: JSONException) {
+              val e: Exception =
+                FirebaseFunctionsException(
+                  "Response is not valid JSON object.",
+                  FirebaseFunctionsException.Code.INTERNAL,
+                  null,
+                  je
+                )
+              tcs.setException(e)
+              return
+            }
+          var dataJSON = bodyJSON.opt("data")
+          // TODO: Allow "result" instead of "data" for now, for backwards compatibility.
+          if (dataJSON == null) {
+            dataJSON = bodyJSON.opt("result")
+          }
+          if (dataJSON == null) {
+            val e: Exception =
+              FirebaseFunctionsException(
+                "Response is missing data field.",
+                FirebaseFunctionsException.Code.INTERNAL,
+                null
+              )
+            tcs.setException(e)
+            return
+          }
+          val result = HttpsCallableResult(serializer.decode(dataJSON))
+          tcs.setResult(result)
+        }
+      }
+    )
     return tcs.task
   }
 
   companion object {
-    /** A task that will be resolved once ProviderInstaller has installed what it needs to.  */
+    /** A task that will be resolved once ProviderInstaller has installed what it needs to. */
     private val providerInstalled = TaskCompletionSource<Void>()
 
     /**
@@ -326,17 +343,18 @@ class FirebaseFunctions @AssistedInject internal constructor(
       // installIfNeededAsync checks to make sure it is on the main thread, and throws otherwise.
       uiExecutor.execute {
         ProviderInstaller.installIfNeededAsync(
-                context,
-                object : ProviderInstaller.ProviderInstallListener {
-                  override fun onProviderInstalled() {
-                    providerInstalled.setResult(null)
-                  }
+          context,
+          object : ProviderInstaller.ProviderInstallListener {
+            override fun onProviderInstalled() {
+              providerInstalled.setResult(null)
+            }
 
-                  override fun onProviderInstallFailed(i: Int, intent: Intent?) {
-                    Log.d("FirebaseFunctions", "Failed to update ssl context")
-                    providerInstalled.setResult(null)
-                  }
-                })
+            override fun onProviderInstallFailed(i: Int, intent: Intent?) {
+              Log.d("FirebaseFunctions", "Failed to update ssl context")
+              providerInstalled.setResult(null)
+            }
+          }
+        )
       }
     }
 
@@ -344,16 +362,16 @@ class FirebaseFunctions @AssistedInject internal constructor(
      * Creates a Cloud Functions client with the given app and region or custom domain.
      *
      * @param app The app for the Firebase project.
-     * @param regionOrCustomDomain The region or custom domain for the HTTPS trigger, such as `"us-central1"` or `"https://mydomain.com"`.
+     * @param regionOrCustomDomain The region or custom domain for the HTTPS trigger, such as
+     * `"us-central1"` or `"https://mydomain.com"`.
      */
     @JvmStatic
-    fun getInstance(
-            app: FirebaseApp, regionOrCustomDomain: String): FirebaseFunctions {
+    fun getInstance(app: FirebaseApp, regionOrCustomDomain: String): FirebaseFunctions {
       Preconditions.checkNotNull(app, "You must call FirebaseApp.initializeApp first.")
       Preconditions.checkNotNull(regionOrCustomDomain)
       val component = app.get(FunctionsMultiResourceComponent::class.java)
       Preconditions.checkNotNull(component, "Functions component does not exist.")
-      return component[regionOrCustomDomain]
+      return component[regionOrCustomDomain]!!
     }
 
     /**
@@ -369,14 +387,18 @@ class FirebaseFunctions @AssistedInject internal constructor(
     /**
      * Creates a Cloud Functions client with the default app and given region or custom domain.
      *
-     * @param regionOrCustomDomain The region or custom domain for the HTTPS trigger, such as `"us-central1"` or `"https://mydomain.com"`.
+     * @param regionOrCustomDomain The region or custom domain for the HTTPS trigger, such as
+     * `"us-central1"` or `"https://mydomain.com"`.
      */
     @JvmStatic
     fun getInstance(regionOrCustomDomain: String): FirebaseFunctions {
       return getInstance(FirebaseApp.getInstance(), regionOrCustomDomain)
     }
 
+    /** Creates a Cloud Functions client with the default app. */
     @JvmStatic
-    fun getInstance() = getInstance(FirebaseApp.getInstance(), "us-central1")
+    fun getInstance(): FirebaseFunctions {
+      return getInstance(FirebaseApp.getInstance(), "us-central")
+    }
   }
 }
