@@ -41,22 +41,6 @@ internal interface SessionFirelogPublisher {
 }
 
 /**
- * Responsible for uploading session events to Firelog.
- */
-internal interface SessionFirelogPublisher {
-
-  /**
-   * Asynchronously logs the session represented by the given [SessionDetails] to Firelog.
-   */
-  fun logSession(sessionDetails: SessionDetails): Unit
-
-  companion object {
-    val instance: SessionFirelogPublisher
-      get() = Firebase.app.get(SessionFirelogPublisher::class.java)
-  }
-}
-
-/**
  * [SessionFirelogPublisher] is responsible for publishing sessions to firelog
  *
  * @hide
