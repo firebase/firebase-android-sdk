@@ -27,9 +27,8 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-/** The [FirebaseSessions] API provides methods to register a [SessionSubscriber]. */
-class FirebaseSessions
-internal constructor(
+/** Responsible for initializing AQS */
+internal class FirebaseSessions(
   private val firebaseApp: FirebaseApp,
   private val settings: SessionsSettings,
   backgroundDispatcher: CoroutineContext,
@@ -62,7 +61,6 @@ internal constructor(
     }
   }
 
-  /** Calculate whether we should sample events using [sessionSettings] data. */
   companion object {
     private const val TAG = "FirebaseSessions"
 

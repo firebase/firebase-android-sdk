@@ -59,7 +59,6 @@ thirdPartyLicenses {
 }
 
 dependencies {
-    implementation libs.firebase.sessions
     androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
     androidTestImplementation "androidx.test:core:$androidxTestCoreVersion"
     androidTestImplementation "com.google.truth:truth:$googleTruthVersion"

@@ -1,21 +1,4 @@
 // Signature format: 2.0
-package com.google.firebase.sessions {
-
-  public final class FirebaseSessions {
-    method @NonNull public static com.google.firebase.sessions.FirebaseSessions getInstance();
-    method @Deprecated @NonNull public static com.google.firebase.sessions.FirebaseSessions getInstance(@NonNull com.google.firebase.FirebaseApp app);
-    property @NonNull public static final com.google.firebase.sessions.FirebaseSessions instance;
-    field @NonNull public static final com.google.firebase.sessions.FirebaseSessions.Companion Companion;
-  }
-
-  public static final class FirebaseSessions.Companion {
-    method @NonNull public com.google.firebase.sessions.FirebaseSessions getInstance();
-    method @Deprecated @NonNull public com.google.firebase.sessions.FirebaseSessions getInstance(@NonNull com.google.firebase.FirebaseApp app);
-    property @NonNull public final com.google.firebase.sessions.FirebaseSessions instance;
-  }
-
-}
-
 package com.google.firebase.sessions.api {
 
   public final class FirebaseSessionsDependencies {
