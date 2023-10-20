@@ -24,21 +24,28 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.provideDelegate
 
 /**
- * Bumps the `version` property of the specified [versionFile].
+ * Bumps the `version` property of the specified [versionFile], and sets the
+ * `latestReleasedVersion`.
  *
  * Primarily utilized as a post-release clean up task in which we bump the versions of released
- * modules to be one patch higher than their currently released counterparts.
+ * modules to be one patch higher than their currently released counterparts, and update their
+ * latest released version.
  *
  * @see PostReleasePlugin
  *
  * @property versionFile A [File] that contains the `version` property. Defaults to the
  * `gradle.properties` file at the project's root.
+ * @property releasedVersion A [ModuleVersion] of what to bump from. Defaults to the project
+ * version.
  * @property newVersion A [ModuleVersion] of what to set the version to. Defaults to one patch
- * higher than the existing version.
+ * higher than [releasedVersion]
  */
 abstract class VersionBumpTask : DefaultTask() {
   @get:[Optional InputFile]
   abstract val versionFile: Property<File>
+
+  @get:[Optional Input]
+  abstract val releasedVersion: Property<ModuleVersion>
 
   @get:[Optional Input]
   abstract val newVersion: Property<ModuleVersion>
@@ -49,19 +56,25 @@ abstract class VersionBumpTask : DefaultTask() {
 
   @TaskAction
   fun build() {
+    project.version
     versionFile.get().rewriteLines {
-      if (it.startsWith("version=")) "version=${newVersion.get()}" else it
+      when {
+        it.startsWith("version=") -> "version=${newVersion.get()}"
+        it.startsWith("latestReleasedVersion") -> "latestReleasedVersion=${releasedVersion.get()}"
+        else -> it
+      }
     }
   }
 
   fun configure() {
     versionFile.convention(project.file("gradle.properties"))
-    newVersion.convention(computeNewVersion())
+    releasedVersion.convention(computeReleasedVersion())
+    newVersion.convention(releasedVersion.map { it.bump() })
   }
 
-  fun computeNewVersion(): ModuleVersion? {
+  fun computeReleasedVersion(): ModuleVersion? {
     val version: String? by project
 
-    return version?.let { ModuleVersion.fromStringOrNull(it)?.bump() }
+    return version?.let { ModuleVersion.fromStringOrNull(it) }
   }
 }

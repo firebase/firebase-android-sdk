@@ -52,6 +52,10 @@ class PostReleasePlugin : Plugin<Project> {
    * is set to the current version of said module. After a release, this `version` should be bumped
    * up to differentiate between code at HEAD, and the latest released version.
    *
+   * Furthermore, this file may optionally contain a `latestReleasedVersion` variable (if the SDK
+   * has released). If this property is present, it should be updated to the related version that
+   * went out during the release.
+   *
    * @see VersionBumpTask
    *
    * @param project the [Project] to register this task to
@@ -72,7 +76,6 @@ class PostReleasePlugin : Plugin<Project> {
    * @param project the [Project] to register this task to
    */
   fun registerMoveUnreleasedChangesTask(project: Project) =
-    project.tasks.register<MoveUnreleasedChangesTask>("moveUnreleasedChanges")
     project.tasks.register<MoveUnreleasedChangesTask>("moveUnreleasedChanges") {
       onlyIf("CHANGELOG.md file must be present") { project.file("CHANGELOG.md").exists() }
     }
