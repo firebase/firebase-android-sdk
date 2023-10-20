@@ -22,7 +22,6 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
-import com.google.firebase.sessions.api.SessionSubscriber
 import com.google.firebase.sessions.settings.SessionsSettings
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
@@ -50,18 +49,13 @@ internal class SessionFirelogPublisher(
    */
   fun logSession(sessionDetails: SessionDetails) =
     CoroutineScope(backgroundDispatcher).launch {
-      // TODO(mrober): Get subscriber.isDataCollectionEnabled information from all processes.
-      // This will get the subscribers for the current process, not the union of all.
-      // It's possible only one subscriber in another process has data collection enabled.
-      val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
-
-      if (shouldLogSession(subscribers)) {
+      if (shouldLogSession()) {
         attemptLoggingSessionEvent(
           SessionEvents.buildSession(
             firebaseApp,
             sessionDetails,
             sessionSettings,
-            subscribers,
+            FirebaseSessionsDependencies.getRegisteredSubscribers(),
             getFirebaseInstallationId(),
           )
         )
@@ -79,49 +73,26 @@ internal class SessionFirelogPublisher(
   }
 
   /** Determines if the SDK should log a session to Firelog. */
-  private suspend fun shouldLogSession(
-    subscribers: Map<SessionSubscriber.Name, SessionSubscriber>
-  ): Boolean {
-    if (subscribers.isEmpty()) {
-      Log.d(
-        SessionLifecycleService.TAG,
-        "Sessions SDK did not have any dependent SDKs register as dependencies. Events will not be sent."
-      )
-      return false
-    }
-
-    if (subscribers.values.none { it.isDataCollectionEnabled }) {
-      Log.d(
-        SessionLifecycleService.TAG,
-        "Data Collection is disabled for all subscribers. Skipping this Session Event"
-      )
-      return false
-    }
-
-    Log.d(SessionLifecycleService.TAG, "Data Collection is enabled for at least one Subscriber")
+  private suspend fun shouldLogSession(): Boolean {
+    Log.d(TAG, "Data Collection is enabled for at least one Subscriber")
 
     // This will cause remote settings to be fetched if the cache is expired.
     sessionSettings.updateSettings()
 
     if (!sessionSettings.sessionsEnabled) {
-      Log.d(SessionLifecycleService.TAG, "Sessions SDK disabled. Events will not be sent.")
+      Log.d(TAG, "Sessions SDK disabled. Events will not be sent.")
       return false
     }
 
     if (!shouldCollectEvents()) {
-      Log.d(SessionLifecycleService.TAG, "Sessions SDK has dropped this session due to sampling.")
+      Log.d(TAG, "Sessions SDK has dropped this session due to sampling.")
       return false
     }
 
     return true
   }
 
-  /**
-   * Gets the Firebase Installation ID for the current app installation.
-   *
-   * Only call this after checking [shouldLogSession] to ensure data collection is enabled for at
-   * least one subscriber. Otherwise this could cause a network request for no reason.
-   */
+  /** Gets the Firebase Installation ID for the current app installation. */
   private suspend fun getFirebaseInstallationId() =
     try {
       firebaseInstallations.id.await()
