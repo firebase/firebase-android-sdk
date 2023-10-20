@@ -169,9 +169,7 @@ internal object SessionLifecycleClient {
   private fun sendLifecycleEvent(messageCode: Int) {
     val allMessages = drainQueue()
     allMessages.add(Message.obtain(null, messageCode, 0, 0))
-    CoroutineScope(Dispatchers.instance.backgroundDispatcher).launch {
-      sendLifecycleEvents(allMessages)
-    }
+    sendLifecycleEvents(allMessages)
   }
 
   /**
