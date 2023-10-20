@@ -1,17 +1,19 @@
 [versions]
 # javalite, protoc and protobufjavautil versions should be in sync while updating and
-# it needs to match the protobuf version which grpc has transitive dependency on.
+# it needs to match the protobuf version which grpc has transitive dependency on, which
+# needs to match the version of grpc that grpc-kotlin has a transitive dependency on.
 android-lint = "30.3.1"
 autovalue = "1.10.1"
-coroutines = "1.6.4"
+coroutines = "1.7.3"
 dagger = "2.43.2"
-grpc = "1.52.1"
-javalite = "3.21.11"
-kotlin = "1.7.10"
-protoc = "3.21.11"
+grpc = "1.57.2"
+grpcKotlin = "1.4.0"
+javalite = "3.24.0"
+kotlin = "1.8.0"
+protoc = "3.24.0"
 robolectric = "4.10.3"
 truth = "1.1.2"
-protobufjavautil = "3.21.11"
+protobufjavautil = "3.24.0"
 kotest = "5.5.5"
 quickcheck = "0.6"
 androidx-test-core="1.5.0"
@@ -33,9 +35,11 @@ dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = 
 errorprone-annotations = { module = "com.google.errorprone:error_prone_annotations", version = "2.9.0" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
 grpc-android = { module = "io.grpc:grpc-android", version.ref = "grpc" }
+grpc-kotlin-stub = { module = "io.grpc:grpc-kotlin-stub", version.ref = "grpcKotlin" }
 grpc-okhttp = { module = "io.grpc:grpc-okhttp", version.ref = "grpc" }
 grpc-protobuf-lite = { module = "io.grpc:grpc-protobuf-lite", version.ref = "grpc" }
 grpc-protoc-gen-java = { module = "io.grpc:protoc-gen-grpc-java", version.ref = "grpc" }
+grpc-protoc-gen-kotlin = { module = "io.grpc:protoc-gen-grpc-kotlin", version.ref = "grpcKotlin" }
 grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
 javax-annotation-jsr250 = { module = "javax.annotation:jsr250-api", version = "1.0" }
 javax-inject = { module = "javax.inject:javax.inject", version = "1" }
@@ -50,7 +54,8 @@ playservices-basement = { module = "com.google.android.gms:play-services-basemen
 playservices-tasks = { module = "com.google.android.gms:play-services-tasks", version = "18.0.2" }
 protoc = { module = "com.google.protobuf:protoc", version.ref = "protoc" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "javalite" }
-protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "javalite" }
+protobuf-java-lite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "javalite" }
+protobuf-kotlin-lite = { module = "com.google.protobuf:protobuf-kotlin-lite", version.ref = "javalite" }
 
 # Test libs
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidx-test-core" }

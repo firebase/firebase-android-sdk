@@ -26,6 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -191,7 +192,7 @@ class FirebaseDataConnectTest {
   }
 
   @Test
-  fun helloWorld() {
+  fun helloWorld() = runTest {
     val dc = FirebaseDataConnect.getInstance("TestLocation", "TestService")
     dc.settings = dataConnectSettings { connectToEmulator() }
 

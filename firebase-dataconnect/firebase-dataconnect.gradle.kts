@@ -52,16 +52,25 @@ protobuf {
     create("grpc") {
       artifact = "${libs.grpc.protoc.gen.java.get()}"
     }
+    create("grpckt") {
+      artifact = "${libs.grpc.protoc.gen.kotlin.get()}:jdk8@jar"
+    }
   }
   generateProtoTasks {
     all().forEach { task ->
       task.builtins {
-        create("java") {
+        create("kotlin") {
           option("lite")
         }
       }
       task.plugins {
+        create("java") {
+          option("lite")
+        }
         create("grpc") {
+          option("lite")
+        }
+        create("grpckt") {
           option("lite")
         }
       }
@@ -83,8 +92,10 @@ dependencies {
   implementation(libs.grpc.android)
   implementation(libs.grpc.okhttp)
   implementation(libs.grpc.protobuf.lite)
+  implementation(libs.grpc.kotlin.stub)
   implementation(libs.grpc.stub)
-  implementation(libs.protobuf.javalite)
+  implementation(libs.protobuf.java.lite)
+  implementation(libs.protobuf.kotlin.lite)
 
   testCompileOnly(libs.protobuf.java)
   testImplementation(libs.robolectric)
@@ -94,7 +105,14 @@ dependencies {
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.rules)
   androidTestImplementation(libs.androidx.test.runner)
+  androidTestImplementation(libs.kotlin.coroutines.test)
   androidTestImplementation(libs.truth)
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().all {
+  kotlinOptions {
+    freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn")
+  }
 }
 
 extra["packageName"] = "com.google.firebase.dataconnect"

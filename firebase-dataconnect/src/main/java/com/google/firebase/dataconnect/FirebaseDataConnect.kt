@@ -77,10 +77,13 @@ internal constructor(
     }
   }
 
-  fun executeQuery(revision: String, operationName: String, variables: Map<String, Any?>): Struct =
-    grpcClint.executeQuery(revision, operationName, variables)
+  suspend fun executeQuery(
+    revision: String,
+    operationName: String,
+    variables: Map<String, Any?>
+  ): Struct = grpcClint.executeQuery(revision, operationName, variables)
 
-  fun executeMutation(
+  suspend fun executeMutation(
     revision: String,
     operationName: String,
     variables: Map<String, Any?>

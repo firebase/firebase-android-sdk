@@ -18,14 +18,17 @@ import com.google.android.gms.security.ProviderInstaller
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import google.internal.firebase.firemat.v0.DataServiceGrpc
-import google.internal.firebase.firemat.v0.DataServiceGrpc.DataServiceBlockingStub
-import google.internal.firebase.firemat.v0.DataServiceOuterClass.ExecuteMutationRequest
-import google.internal.firebase.firemat.v0.DataServiceOuterClass.ExecuteQueryRequest
+import com.google.protobuf.struct
+import com.google.protobuf.value
+import google.internal.firebase.firemat.v0.DataServiceGrpcKt.DataServiceCoroutineStub
+import google.internal.firebase.firemat.v0.executeMutationRequest
+import google.internal.firebase.firemat.v0.executeQueryRequest
 import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.android.AndroidChannelBuilder
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asExecutor
 
 internal class DataConnectGrpcClient(
   val context: Context,
@@ -53,33 +56,38 @@ internal class DataConnectGrpcClient(
       logger.warn(e) { "Failed to update ssl context" }
     }
 
-    val channelBuilder = ManagedChannelBuilder.forAddress(hostName, port)
-    if (!sslEnabled) {
-      channelBuilder.usePlaintext()
-    }
-
-    // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
-    // the OS will  usually notify gRPC when a connection dies. But not always. This acts as a
-    // failsafe.
-    channelBuilder.keepAliveTime(30, TimeUnit.SECONDS)
-
-    // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel to
-    // respond more gracefully to network change events, such as switching from cellular to wifi.
-    AndroidChannelBuilder.usingBuilder(channelBuilder).context(context).build()
-  }
-
-  private val grpcStub: DataServiceBlockingStub by lazy {
-    DataServiceGrpc.newBlockingStub(grpcChannel)
-  }
-
-  fun executeQuery(revision: String, operationName: String, variables: Map<String, Any?>): Struct {
-    val request =
-      ExecuteQueryRequest.newBuilder().let {
-        it.name = nameForRevision(revision)
-        it.operationName = operationName
-        it.variables = structFromMap(variables)
-        it.build()
+    ManagedChannelBuilder.forAddress(hostName, port).let {
+      if (!sslEnabled) {
+        it.usePlaintext()
       }
+
+      // Ensure gRPC recovers from a dead connection. This is not typically necessary, as
+      // the OS will  usually notify gRPC when a connection dies. But not always. This acts as a
+      // failsafe.
+      it.keepAliveTime(30, TimeUnit.SECONDS)
+
+      // TODO: Create a dedicated executor rather than using a global one.
+      //  See go/kotlin/coroutines/coroutine-contexts-scopes.md for details.
+      it.executor(Dispatchers.IO.asExecutor())
+
+      // Wrap the `ManagedChannelBuilder` in an `AndroidChannelBuilder`. This allows the channel to
+      // respond more gracefully to network change events, such as switching from cellular to wifi.
+      AndroidChannelBuilder.usingBuilder(it).context(context).build()
+    }
+  }
+
+  private val grpcStub: DataServiceCoroutineStub by lazy { DataServiceCoroutineStub(grpcChannel) }
+
+  suspend fun executeQuery(
+    revision: String,
+    operationName: String,
+    variables: Map<String, Any?>
+  ): Struct {
+    val request = executeQueryRequest {
+      this.name = nameForRevision(revision)
+      this.operationName = operationName
+      this.variables = structFromMap(variables)
+    }
 
     logger.debug { "executeQuery() sending request: $request" }
     val response = grpcStub.executeQuery(request)
@@ -87,22 +95,18 @@ internal class DataConnectGrpcClient(
     return response.data
   }
 
-  fun executeMutation(
+  suspend fun executeMutation(
     revision: String,
     operationName: String,
     variables: Map<String, Any?>
   ): Struct {
-    val request =
-      ExecuteMutationRequest.newBuilder().let {
-        it.name = nameForRevision(revision)
-        it.operationName = operationName
-        it.variables =
-          Struct.newBuilder().run {
-            putFields("data", Value.newBuilder().setStructValue(structFromMap(variables)).build())
-            build()
-          }
-        it.build()
+    val request = executeMutationRequest {
+      this.name = nameForRevision(revision)
+      this.operationName = operationName
+      this.variables = struct {
+        this.fields.put("data", value { structValue = structFromMap(variables) })
       }
+    }
 
     logger.debug { "executeMutation() sending request: $request" }
     val response = grpcStub.executeMutation(request)
