@@ -90,7 +90,7 @@ internal class FirebaseDataConnectFactory(
       instances.addAll(instancesByCacheKey.values)
     }
 
-    instances.forEach { instance -> instance.terminate() }
+    instances.forEach { instance -> instance.close() }
 
     lock.withLock {
       if (instancesByCacheKey.isNotEmpty()) {

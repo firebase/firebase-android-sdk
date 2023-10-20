@@ -18,6 +18,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.protobuf.Struct
+import java.io.Closeable
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
@@ -30,12 +31,12 @@ internal constructor(
   internal val location: String,
   internal val service: String,
   private val creator: FirebaseDataConnectFactory
-) {
+) : Closeable {
   private val logger = LoggerImpl("FirebaseDataConnect", Logger.Level.DEBUG)
 
   private val lock = ReentrantReadWriteLock()
   private var settingsFrozen = false
-  private var terminated = false
+  private var closed = false
 
   var settings: FirebaseDataConnectSettings = FirebaseDataConnectSettings.defaultInstance
     get() {
@@ -45,8 +46,8 @@ internal constructor(
     }
     set(value) {
       lock.write {
-        if (terminated) {
-          throw IllegalStateException("instance has been terminated")
+        if (closed) {
+          throw IllegalStateException("instance has been closed")
         }
         if (settingsFrozen) {
           throw IllegalStateException("settings cannot be modified after they are used")
@@ -59,8 +60,8 @@ internal constructor(
   private val grpcClint: DataConnectGrpcClient by lazy {
     logger.debug { "DataConnectGrpcClient initialization started" }
     lock.write {
-      if (terminated) {
-        throw IllegalStateException("instance has been terminated")
+      if (closed) {
+        throw IllegalStateException("instance has been closed")
       }
       settingsFrozen = true
 
@@ -89,12 +90,15 @@ internal constructor(
     variables: Map<String, Any?>
   ): Struct = grpcClint.executeMutation(revision, operationName, variables)
 
-  fun terminate() {
-    logger.debug { "terminate() called" }
+  override fun close() {
+    logger.debug { "close() called" }
     lock.write {
-      grpcClint.close()
-      terminated = true
-      creator.remove(this)
+      try {
+        grpcClint.close()
+      } finally {
+        closed = true
+        creator.remove(this)
+      }
     }
   }
 

@@ -73,7 +73,7 @@ class FirebaseDataConnectTest {
   @Test
   fun getInstance_should_return_new_instance_after_terminate() {
     val instance1 = FirebaseDataConnect.getInstance(Firebase.app, "TestLocation", "TestService")
-    instance1.terminate()
+    instance1.close()
     val instance2 = FirebaseDataConnect.getInstance(Firebase.app, "TestLocation", "TestService")
     assertThat(instance1).isNotSameInstanceAs(instance2)
   }
@@ -110,12 +110,12 @@ class FirebaseDataConnectTest {
     val instance2A = FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation2", "TestService2")
     assertThat(instance1A).isNotSameInstanceAs(instance2A)
 
-    instance1A.terminate()
+    instance1A.close()
     val instance1B = FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation1", "TestService1")
     assertThat(instance1A).isNotSameInstanceAs(instance1B)
     assertThat(instance1A).isNotSameInstanceAs(instance2A)
 
-    instance2A.terminate()
+    instance2A.close()
     val instance2B = FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation2", "TestService2")
     assertThat(instance2A).isNotSameInstanceAs(instance2B)
     assertThat(instance2A).isNotSameInstanceAs(instance1A)
