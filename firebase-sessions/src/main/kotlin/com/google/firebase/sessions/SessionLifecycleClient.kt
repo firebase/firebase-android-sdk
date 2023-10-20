@@ -151,6 +151,20 @@ internal object SessionLifecycleClient {
   }
 
   /**
+   * Perform initialization that requires cleanup
+   */
+  fun started() {
+    if (!handlerThread.isAlive) { handlerThread.start() }
+  }
+
+  /**
+   * Cleanup initialization
+   */
+  fun stopped() {
+    handlerThread.quit()
+  }
+
+  /**
    * Sends a message to the [SessionLifecycleService] with the given event code. This will
    * potentially also send any messages that have been queued up but not successfully delivered to
    * this service since the previous send.

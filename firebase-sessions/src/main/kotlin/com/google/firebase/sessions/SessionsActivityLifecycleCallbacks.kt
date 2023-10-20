@@ -31,9 +31,9 @@ internal object SessionsActivityLifecycleCallbacks : ActivityLifecycleCallbacks 
 
   override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
 
-  override fun onActivityStarted(activity: Activity) = Unit
+  override fun onActivityStarted(activity: Activity) = SessionLifecycleClient.started()
 
-  override fun onActivityStopped(activity: Activity) = Unit
+  override fun onActivityStopped(activity: Activity) = SessionLifecycleClient.stopped()
 
   override fun onActivityDestroyed(activity: Activity) = Unit
 
