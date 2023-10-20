@@ -24,7 +24,7 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.metrics.AppStartTrace;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
-import com.google.firebase.sessions.FirebaseSessions;
+import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import com.google.firebase.sessions.api.SessionSubscriber;
 import java.util.concurrent.Executor;
 
@@ -38,10 +38,7 @@ import java.util.concurrent.Executor;
 public class FirebasePerfEarly {
 
   public FirebasePerfEarly(
-      FirebaseApp app,
-      FirebaseSessions firebaseSessions,
-      @Nullable StartupTime startupTime,
-      Executor uiExecutor) {
+      FirebaseApp app, @Nullable StartupTime startupTime, Executor uiExecutor) {
     Context context = app.getApplicationContext();
 
     // Initialize ConfigResolver early for accessing device caching layer.
@@ -59,7 +56,7 @@ public class FirebasePerfEarly {
     }
 
     // Register with Firebase sessions to receive updates about session changes.
-    firebaseSessions.register(
+    FirebaseSessionsDependencies.register(
         new SessionSubscriber() {
           @Override
           public void onSessionChanged(@NonNull SessionDetails sessionDetails) {

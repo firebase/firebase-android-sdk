@@ -49,7 +49,7 @@ class FirebaseSessionsTest {
 
     // Add a fake dependency and register it, otherwise sessions will never send.
     val fakeSessionSubscriber = FakeSessionSubscriber()
-    FirebaseSessions.instance.register(fakeSessionSubscriber)
+    FirebaseSessionsDependencies.register(fakeSessionSubscriber)
 
     // Wait for the session start event to send.
     Thread.sleep(TIME_TO_LOG_SESSION)

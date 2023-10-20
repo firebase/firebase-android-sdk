@@ -69,6 +69,6 @@ public class CrashlyticsRegistrar implements ComponentRegistrar {
     FirebaseSessions firebaseSessions = container.get(FirebaseSessions.class);
 
     return FirebaseCrashlytics.init(
-        app, firebaseInstallations, firebaseSessions, nativeComponent, analyticsConnector);
+        app, firebaseInstallations, nativeComponent, analyticsConnector);
   }
 }
