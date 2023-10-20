@@ -50,7 +50,7 @@ dependencies {
     javadocClasspath(libs.autovalue.annotations)
     javadocClasspath(libs.findbugs.jsr305)
 
-    implementation(project(":appcheck:firebase-appcheck-interop"))
+    implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
     implementation("com.google.firebase:firebase-common:20.4.2")
     implementation("com.google.firebase:firebase-common-ktx:20.4.2")
     implementation("com.google.firebase:firebase-components:17.1.5")
