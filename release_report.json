@@ -1351,40 +1351,6 @@
                 "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
             }
-        ],
-        "appcheck/firebase-appcheck/ktx": [
-            {
-                "commitId": "470153683091c7ec59dc29916193863182e16a43",
-                "prId": "5453",
-                "author": "David Motsonashvili",
-                "message": "fix versions and dependencies for m139 (#5453)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/470153683091c7ec59dc29916193863182e16a43",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5453"
-            },
-            {
-                "commitId": "406c0573338539ca6500bd3f8757aa6444f4ed3f",
-                "prId": "5419",
-                "author": "Vinay Guthal",
-                "message": "update firebase sdks to depend on the new version of common (#5419)\n\n",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/406c0573338539ca6500bd3f8757aa6444f4ed3f",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5419"
-            },
-            {
-                "commitId": "a135c514ee4d6a48cfc6680d7a35e97e6a666736",
-                "prId": "5390",
-                "author": "Vinay Guthal",
-                "message": "Update common version (#5390)\n\n",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a135c514ee4d6a48cfc6680d7a35e97e6a666736",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5390"
-            },
-            {
-                "commitId": "fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
-                "prId": "5377",
-                "author": "Vinay Guthal",
-                "message": "Set up other sdks for release (#5377)\n\n",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/fa6f5c69adfe673c5ff855ba01c07793b89e0aab",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5377"
-            }
         ]
     },
     "changedLibrariesWithNoChangelog": [
