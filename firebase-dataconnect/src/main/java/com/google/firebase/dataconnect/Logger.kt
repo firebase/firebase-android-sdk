@@ -14,11 +14,10 @@
 package com.google.firebase.dataconnect
 
 import android.util.Log
+import java.util.concurrent.atomic.AtomicInteger
 
 interface Logger {
-
-  val name: String
-  var level: Level
+  val id: String
 
   fun info(message: () -> Any?)
   fun debug(message: () -> Any?)
@@ -32,23 +31,69 @@ interface Logger {
   }
 }
 
-internal class LoggerImpl(override val name: String, override var level: Logger.Level) : Logger {
+@Volatile var logLevel: Logger.Level = Logger.Level.INFO
 
-  override fun info(message: () -> Any?) {
-    if (level == Logger.Level.INFO || level == Logger.Level.DEBUG) {
-      Log.i("FirebaseDataConnect", message().toString())
-    }
+fun Logger(name: String): Logger = LoggerImpl(name = name, idInt = nextLoggerId.getAndIncrement())
+
+private const val LOG_TAG = "FirebaseDataConnect"
+
+// TODO: Use kotlin.concurrent.AtomicInt once kotlin-stdlib is upgraded to 1.9
+// The initial value is just an arbitrary, non-zero value so that logger IDs are easily searchable
+// in logs due to the "uniqueness" of their first 4 digits.
+private val nextLoggerId = AtomicInteger(0x591F0000)
+
+private fun isLogEnabledFor(level: Logger.Level) =
+  when (logLevel) {
+    Logger.Level.DEBUG ->
+      when (level) {
+        Logger.Level.DEBUG -> true
+        Logger.Level.INFO -> true
+        Logger.Level.WARNING -> true
+      }
+    Logger.Level.INFO ->
+      when (level) {
+        Logger.Level.DEBUG -> false
+        Logger.Level.INFO -> true
+        Logger.Level.WARNING -> true
+      }
+    Logger.Level.WARNING ->
+      when (level) {
+        Logger.Level.DEBUG -> false
+        Logger.Level.INFO -> false
+        Logger.Level.WARNING -> true
+      }
   }
 
-  override fun debug(message: () -> Any?) {
-    if (level == Logger.Level.DEBUG) {
-      Log.d("FirebaseDataConnect", message().toString())
-    }
+private fun runIfLogEnabled(level: Logger.Level, block: () -> Unit) {
+  if (isLogEnabledFor(level)) {
+    block()
   }
+}
+
+private class LoggerImpl(private val name: String, private val idInt: Int) : Logger {
+
+  override val id: String by
+    lazy(LazyThreadSafetyMode.PUBLICATION) {
+      StringBuilder().run {
+        append(name)
+        append('[')
+        append("0x")
+        val idHexString = idInt.toString(16)
+        repeat(8 - idHexString.length) { append('0') }
+        append(idHexString)
+        append(']')
+        toString()
+      }
+    }
+
+  override fun info(message: () -> Any?) =
+    runIfLogEnabled(Logger.Level.INFO) { Log.i(LOG_TAG, "$id ${message()}") }
+
+  override fun debug(message: () -> Any?) =
+    runIfLogEnabled(Logger.Level.DEBUG) { Log.d(LOG_TAG, "$id ${message()}") }
 
   override fun warn(message: () -> Any?) = warn(null, message)
 
-  override fun warn(e: Throwable?, message: () -> Any?) {
-    Log.w("FirebaseDataConnect", message().toString(), e)
-  }
+  override fun warn(e: Throwable?, message: () -> Any?) =
+    runIfLogEnabled(Logger.Level.WARNING) { Log.w(LOG_TAG, "$id ${message()}", e) }
 }

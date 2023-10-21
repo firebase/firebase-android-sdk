@@ -32,7 +32,14 @@ internal constructor(
   internal val service: String,
   private val creator: FirebaseDataConnectFactory
 ) : Closeable {
-  private val logger = LoggerImpl("FirebaseDataConnect", Logger.Level.DEBUG)
+  private val logger = Logger("FirebaseDataConnect")
+
+  init {
+    logger.debug {
+      "New instance created with " +
+        "appName=$appName, projectId=$projectId, location=$location, service=$service"
+    }
+  }
 
   private val lock = ReentrantReadWriteLock()
   private var settingsFrozen = false
@@ -73,6 +80,7 @@ internal constructor(
           hostName = settings.hostName,
           port = settings.port,
           sslEnabled = settings.sslEnabled,
+          creatorLoggerId = logger.id,
         )
         .also { logger.debug { "DataConnectGrpcClient initialization complete: $it" } }
     }

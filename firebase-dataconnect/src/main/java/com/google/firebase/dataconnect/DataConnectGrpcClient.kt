@@ -37,9 +37,14 @@ internal class DataConnectGrpcClient(
   val service: String,
   val hostName: String,
   val port: Int,
-  val sslEnabled: Boolean
+  val sslEnabled: Boolean,
+  creatorLoggerId: String,
 ) {
-  private val logger = LoggerImpl("FirebaseDataConnectClient", Logger.Level.DEBUG)
+  private val logger = Logger("DataConnectGrpcClient")
+
+  init {
+    logger.debug { "Created from $creatorLoggerId" }
+  }
 
   private val grpcChannel: ManagedChannel by lazy {
     // Upgrade the Android security provider using Google Play Services.
@@ -121,7 +126,9 @@ internal class DataConnectGrpcClient(
   }
 
   fun close() {
+    logger.debug { "close() starting" }
     grpcChannel.shutdownNow()
+    logger.debug { "close() done" }
   }
 
   private fun nameForRevision(revision: String): String =

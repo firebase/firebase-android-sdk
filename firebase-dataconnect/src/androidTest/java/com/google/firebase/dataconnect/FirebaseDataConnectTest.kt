@@ -28,6 +28,7 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -41,6 +42,19 @@ class FirebaseDataConnectTest {
     while (createdFirebaseApps.isNotEmpty()) {
       createdFirebaseApps.removeAt(0).delete()
     }
+  }
+
+  private lateinit var logLevelBefore: Logger.Level
+
+  @Before
+  fun setupLogLevel() {
+    logLevelBefore = logLevel
+    logLevel = Logger.Level.DEBUG
+  }
+
+  @After
+  fun restoreLogLevelBefore() {
+    logLevel = logLevelBefore
   }
 
   @Test
