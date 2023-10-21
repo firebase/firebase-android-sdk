@@ -25,6 +25,7 @@ import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -153,9 +154,9 @@ class FirebaseDataConnectTest {
     val threads =
       mutableListOf<Thread>().run {
         val readyCountDown = AtomicInteger(numThreads)
-        for (i in 0 until numThreads) {
+        repeat(numThreads) { i ->
           add(
-            Thread {
+            thread {
               readyCountDown.decrementAndGet()
               while (readyCountDown.get() > 0) {
                 /* spin */
@@ -176,14 +177,17 @@ class FirebaseDataConnectTest {
         toList()
       }
 
-    threads.forEach { it.start() }
     threads.forEach { it.join() }
 
+    // Verify that each thread reported its result.
     assertThat(createdInstancesByThreadId.size).isEqualTo(8)
+
+    // Choose an arbitrary list of created instances from one of the threads, and use it as the
+    // "expected" value for all other threads.
     val expectedInstances = createdInstancesByThreadId.values.toList()[0]
     assertThat(expectedInstances.size).isEqualTo(15)
-    createdInstancesByThreadId.keys.forEach { threadId ->
-      val createdInstances = createdInstancesByThreadId[threadId]
+
+    createdInstancesByThreadId.entries.forEach { (threadId, createdInstances) ->
       assertWithMessage("instances created by threadId=${threadId}")
         .that(createdInstances)
         .containsExactlyElementsIn(expectedInstances)
