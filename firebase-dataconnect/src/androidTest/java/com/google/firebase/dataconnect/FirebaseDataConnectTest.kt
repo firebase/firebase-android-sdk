@@ -216,12 +216,18 @@ class FirebaseDataConnectTest {
 
     dc.executeMutation(
       revision = "TestRevision",
+      operationSet = "crud",
       operationName = "createPost",
       variables =
         mapOf("id" to UUID.randomUUID().toString(), "content" to "${System.currentTimeMillis()}")
     )
 
-    dc.executeQuery(revision = "TestRevision", operationName = "listPosts", variables = emptyMap())
+    dc.executeQuery(
+      revision = "TestRevision",
+      operationSet = "crud",
+      operationName = "listPosts",
+      variables = emptyMap()
+    )
   }
 
   private fun createNonDefaultFirebaseApp(): FirebaseApp {

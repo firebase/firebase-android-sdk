@@ -85,11 +85,12 @@ internal class DataConnectGrpcClient(
 
   suspend fun executeQuery(
     revision: String,
+    operationSet: String,
     operationName: String,
     variables: Map<String, Any?>
   ): Struct {
     val request = executeQueryRequest {
-      this.name = nameForRevision(revision)
+      this.name = name(revision, operationSet)
       this.operationName = operationName
       this.variables = structFromMap(variables)
     }
@@ -102,11 +103,12 @@ internal class DataConnectGrpcClient(
 
   suspend fun executeMutation(
     revision: String,
+    operationSet: String,
     operationName: String,
     variables: Map<String, Any?>
   ): Struct {
     val request = executeMutationRequest {
-      this.name = nameForRevision(revision)
+      this.name = name(revision, operationSet)
       this.operationName = operationName
       this.variables = struct {
         this.fields.put("data", value { structValue = structFromMap(variables) })
@@ -131,9 +133,9 @@ internal class DataConnectGrpcClient(
     logger.debug { "close() done" }
   }
 
-  private fun nameForRevision(revision: String): String =
+  private fun name(revision: String, operationSet: String): String =
     "projects/$projectId/locations/$location/services/$service/" +
-      "operationSets/crud/revisions/$revision"
+      "operationSets/$operationSet/revisions/$revision"
 }
 
 private fun structFromMap(map: Map<String, Any?>): Struct =

@@ -88,15 +88,29 @@ internal constructor(
 
   suspend fun executeQuery(
     revision: String,
+    operationSet: String,
     operationName: String,
     variables: Map<String, Any?>
-  ): Struct = grpcClint.executeQuery(revision, operationName, variables)
+  ): Struct =
+    grpcClint.executeQuery(
+      revision = revision,
+      operationSet = operationSet,
+      operationName = operationName,
+      variables = variables
+    )
 
   suspend fun executeMutation(
     revision: String,
+    operationSet: String,
     operationName: String,
     variables: Map<String, Any?>
-  ): Struct = grpcClint.executeMutation(revision, operationName, variables)
+  ): Struct =
+    grpcClint.executeMutation(
+      revision = revision,
+      operationSet = operationSet,
+      operationName = operationName,
+      variables = variables
+    )
 
   override fun close() {
     logger.debug { "close() called" }
