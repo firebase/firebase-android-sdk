@@ -39,6 +39,7 @@ import com.google.firebase.StartupTime;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionAwareObject;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
@@ -70,7 +71,8 @@ import java.util.concurrent.TimeUnit;
  *
  * @hide
  */
-public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObserver {
+public class AppStartTrace
+    implements ActivityLifecycleCallbacks, LifecycleObserver, SessionAwareObject {
 
   private static final @NonNull Timer PERF_CLASS_LOAD_TIME = new Clock().getTime();
   private static final long MAX_LATENCY_BEFORE_UI_INIT = TimeUnit.MINUTES.toMicros(1);
@@ -96,6 +98,9 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
    * The first time onResume() of any activity is called, the activity is saved as appStartActivity
    */
   private WeakReference<Activity> appStartActivity;
+
+  // Start tracking session information changes for app start trace.
+  private final WeakReference<SessionAwareObject> sessionAwareObject = new WeakReference<>(this);
 
   /**
    * If the time difference between app starts and creation of any Activity is larger than
@@ -365,7 +370,14 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     appStartActivity = new WeakReference<Activity>(activity);
 
     onResumeTime = clock.getTime();
-    this.startSession = SessionManager.getInstance().perfSession();
+    PerfSession perfSession = SessionManager.getInstance().perfSession();
+    if (perfSession.sessionId().isEmpty()) {
+      SessionManager.getInstance().registerForSessionUpdates(sessionAwareObject);
+    } else {
+      this.startSession = SessionManager.getInstance().perfSession();
+      dispatchAppStartTrace();
+    }
+
     AndroidLogger.getInstance()
         .debug(
             "onResume(): "
@@ -374,12 +386,23 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
                 + getClassLoadTimeCompat().getDurationMicros(onResumeTime)
                 + " microseconds");
 
-    // Log the app start trace in a non-main thread.
-    executorService.execute(this::logAppStartTrace);
-
     if (!isExperimentTTIDEnabled) {
       // After AppStart trace is logged, we can unregister this callback.
       unregisterActivityLifecycleCallbacks();
+    }
+  }
+
+  private void dispatchAppStartTrace() {
+    // Log the app start trace in a non-main thread.
+    executorService.execute(this::logAppStartTrace);
+  }
+
+  @Override
+  public void updateSession(PerfSession session) {
+    if (!session.sessionId().isEmpty()) {
+      SessionManager.getInstance().unregisterForSessionUpdates(sessionAwareObject);
+      this.startSession = session;
+      dispatchAppStartTrace();
     }
   }
 
