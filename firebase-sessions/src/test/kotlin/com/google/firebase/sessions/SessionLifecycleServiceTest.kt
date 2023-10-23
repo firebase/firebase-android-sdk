@@ -33,7 +33,6 @@ import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeFirelogPublisher
 import com.google.firebase.sessions.testing.FakeSessionDatastore
 import java.time.Duration
-import java.util.concurrent.TimeoutException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.After
 import org.junit.Before
@@ -88,7 +87,6 @@ internal class SessionLifecycleServiceTest {
   }
 
   @Test
-  @Throws(TimeoutException::class)
   fun binding_noCallbackOnInitialBindingWhenNoneStored() {
     val client = TestCallbackHandler()
 
@@ -99,7 +97,6 @@ internal class SessionLifecycleServiceTest {
   }
 
   @Test
-  @Throws(TimeoutException::class)
   fun binding_callbackOnInitialBindWhenSessionIdSet() {
     val client = TestCallbackHandler()
     firebaseApp.get(FakeSessionDatastore::class.java).updateSessionId("123")
@@ -116,7 +113,6 @@ internal class SessionLifecycleServiceTest {
   }
 
   @Test
-  @Throws(TimeoutException::class)
   fun foregrounding_startsSessionOnFirstForegrounding() {
     val client = TestCallbackHandler()
     val messenger = bindToService(client)
@@ -134,7 +130,6 @@ internal class SessionLifecycleServiceTest {
   }
 
   @Test
-  @Throws(TimeoutException::class)
   fun foregrounding_onlyOneSessionOnMultipleForegroundings() {
     val client = TestCallbackHandler()
     val messenger = bindToService(client)
@@ -149,7 +144,6 @@ internal class SessionLifecycleServiceTest {
   }
 
   @Test
-  @Throws(TimeoutException::class)
   fun foregrounding_newSessionAfterLongDelay() {
     val client = TestCallbackHandler()
     val messenger = bindToService(client)
@@ -170,7 +164,6 @@ internal class SessionLifecycleServiceTest {
   }
 
   @Test
-  @Throws(TimeoutException::class)
   fun sendsSessionsToMultipleClients() {
     val client1 = TestCallbackHandler()
     val client2 = TestCallbackHandler()
@@ -190,7 +183,6 @@ internal class SessionLifecycleServiceTest {
   }
 
   @Test
-  @Throws(TimeoutException::class)
   fun onlyOneSessionForMultipleClientsForegrounding() {
     val client1 = TestCallbackHandler()
     val client2 = TestCallbackHandler()
@@ -214,7 +206,6 @@ internal class SessionLifecycleServiceTest {
   }
 
   @Test
-  @Throws(TimeoutException::class)
   fun backgrounding_doesNotStartSession() {
     val client = TestCallbackHandler()
     val messenger = bindToService(client)
