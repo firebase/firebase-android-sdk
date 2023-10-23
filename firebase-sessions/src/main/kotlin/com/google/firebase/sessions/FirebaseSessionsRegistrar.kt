@@ -87,14 +87,6 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
           )
         }
         .build(),
-      Component.builder(Dispatchers::class.java)
-        .name("sessions-dispatchers")
-        .add(Dependency.required(blockingDispatcher))
-        .add(Dependency.required(backgroundDispatcher))
-        .factory { container ->
-          Dispatchers(container.get(blockingDispatcher), container.get(backgroundDispatcher))
-        }
-        .build(),
       Component.builder(SessionDatastore::class.java)
         .name("sessions-datastore")
         .add(Dependency.required(firebaseApp))

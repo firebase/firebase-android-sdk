@@ -29,7 +29,6 @@ import com.google.firebase.components.Qualified.unqualified
 import com.google.firebase.installations.FirebaseInstallationsApi
 import com.google.firebase.platforminfo.LibraryVersionComponent
 import com.google.firebase.sessions.BuildConfig
-import com.google.firebase.sessions.Dispatchers
 import com.google.firebase.sessions.FirebaseSessions
 import com.google.firebase.sessions.SessionDatastore
 import com.google.firebase.sessions.SessionFirelogPublisher
@@ -74,14 +73,6 @@ internal class FirebaseSessionsFakeRegistrar : ComponentRegistrar {
             container.get(backgroundDispatcher),
             fakeFirebaseInstallations,
           )
-        }
-        .build(),
-      Component.builder(Dispatchers::class.java)
-        .name("sessions-dispatchers")
-        .add(Dependency.required(blockingDispatcher))
-        .add(Dependency.required(backgroundDispatcher))
-        .factory { container ->
-          Dispatchers(container.get(blockingDispatcher), container.get(backgroundDispatcher))
         }
         .build(),
       Component.builder(FakeSessionDatastore::class.java)

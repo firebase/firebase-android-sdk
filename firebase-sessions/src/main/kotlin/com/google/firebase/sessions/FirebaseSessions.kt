@@ -41,15 +41,14 @@ internal class FirebaseSessions(
       if (!settings.sessionsEnabled) {
         Log.d(TAG, "Sessions SDK disabled. Not listening to lifecycle events.")
       } else if (appContext is Application) {
-        SessionLifecycleClient.bindToService(appContext)
-        appContext.registerActivityLifecycleCallbacks(SessionsActivityLifecycleCallbacks)
+        val lifecycleClient = SessionLifecycleClient(backgroundDispatcher)
+        val activityCallbacks = SessionsActivityLifecycleCallbacks(lifecycleClient)
+        appContext.registerActivityLifecycleCallbacks(activityCallbacks)
+        lifecycleClient.bindToService()
 
         firebaseApp.addLifecycleEventListener { _, _ ->
-          Log.w(
-            TAG,
-            "FirebaseApp instance deleted. Sessions library will not collect session data."
-          )
-          appContext.unregisterActivityLifecycleCallbacks(SessionsActivityLifecycleCallbacks)
+          Log.w(TAG, "FirebaseApp instance deleted. Sessions library will stop collecting data.")
+          appContext.unregisterActivityLifecycleCallbacks(activityCallbacks)
         }
       } else {
         Log.e(
