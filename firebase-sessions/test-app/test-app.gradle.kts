@@ -66,7 +66,7 @@ dependencies {
   implementation("com.google.android.material:material:1.9.0")
   implementation(libs.androidx.core)
 
-  androidTestImplementation("com.google.firebase:firebase-common-ktx:20.3.3")
+  androidTestImplementation("com.google.firebase:firebase-common:20.4.2")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)

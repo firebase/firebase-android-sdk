@@ -63,20 +63,7 @@ internal class FirebaseSessions(
   companion object {
     private const val TAG = "FirebaseSessions"
 
-    @JvmStatic
     val instance: FirebaseSessions
       get() = Firebase.app.get(FirebaseSessions::class.java)
-
-    @JvmStatic
-    @Deprecated(
-      "Firebase Sessions only supports the Firebase default app.",
-      ReplaceWith("FirebaseSessions.instance"),
-    )
-    fun getInstance(app: FirebaseApp): FirebaseSessions =
-      if (app == Firebase.app) {
-        app.get(FirebaseSessions::class.java)
-      } else {
-        throw IllegalArgumentException("Firebase Sessions only supports the Firebase default app.")
-      }
   }
 }
