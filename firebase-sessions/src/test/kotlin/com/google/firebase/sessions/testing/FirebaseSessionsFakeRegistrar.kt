@@ -33,6 +33,7 @@ import com.google.firebase.sessions.FirebaseSessions
 import com.google.firebase.sessions.SessionDatastore
 import com.google.firebase.sessions.SessionFirelogPublisher
 import com.google.firebase.sessions.SessionGenerator
+import com.google.firebase.sessions.SessionLifecycleServiceBinder
 import com.google.firebase.sessions.WallClock
 import com.google.firebase.sessions.settings.SessionsSettings
 import kotlinx.coroutines.CoroutineDispatcher
@@ -63,8 +64,6 @@ internal class FirebaseSessionsFakeRegistrar : ComponentRegistrar {
       Component.builder(SessionsSettings::class.java)
         .name("sessions-settings")
         .add(Dependency.required(firebaseApp))
-        .add(Dependency.required(blockingDispatcher))
-        .add(Dependency.required(backgroundDispatcher))
         .add(Dependency.required(firebaseInstallationsApi))
         .factory { container ->
           SessionsSettings(
@@ -84,6 +83,15 @@ internal class FirebaseSessionsFakeRegistrar : ComponentRegistrar {
         .add(Dependency.required(fakeDatastore))
         .factory { container -> container.get(fakeDatastore) }
         .build(),
+      Component.builder(FakeSessionLifecycleServiceBinder::class.java)
+        .name("fake-sessions-service-binder")
+        .factory { FakeSessionLifecycleServiceBinder() }
+        .build(),
+      Component.builder(SessionLifecycleServiceBinder::class.java)
+        .name("sessions-service-binder")
+        .add(Dependency.required(fakeServiceBinder))
+        .factory { container -> container.get(fakeServiceBinder) }
+        .build(),
       LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
     )
 
@@ -99,6 +107,7 @@ internal class FirebaseSessionsFakeRegistrar : ComponentRegistrar {
     private val transportFactory = unqualified(TransportFactory::class.java)
     private val fakeFirelogPublisher = unqualified(FakeFirelogPublisher::class.java)
     private val fakeDatastore = unqualified(FakeSessionDatastore::class.java)
+    private val fakeServiceBinder = unqualified(FakeSessionLifecycleServiceBinder::class.java)
     private val sessionGenerator = unqualified(SessionGenerator::class.java)
     private val sessionsSettings = unqualified(SessionsSettings::class.java)
 
