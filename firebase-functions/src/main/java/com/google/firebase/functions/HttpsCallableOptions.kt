@@ -27,6 +27,10 @@ private constructor(
   @JvmField val limitedUseAppCheckTokens: Boolean
 ) {
 
+  fun getLimitedUseAppCheckTokens(): Boolean {
+    return limitedUseAppCheckTokens
+  }
+
   /** Builder class for [com.google.firebase.functions.HttpsCallableOptions] */
   class Builder {
     @JvmField var limitedUseAppCheckTokens = false
