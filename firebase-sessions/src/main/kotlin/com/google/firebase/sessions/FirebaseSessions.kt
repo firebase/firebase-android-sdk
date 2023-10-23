@@ -27,8 +27,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /** Responsible for initializing AQS */
-class FirebaseSessions
-internal constructor(
+internal class FirebaseSessions(
   private val firebaseApp: FirebaseApp,
   private val settings: SessionsSettings,
   backgroundDispatcher: CoroutineContext,
@@ -64,7 +63,6 @@ internal constructor(
   companion object {
     private const val TAG = "FirebaseSessions"
 
-    @JvmStatic
     val instance: FirebaseSessions
       get() = Firebase.app.get(FirebaseSessions::class.java)
   }

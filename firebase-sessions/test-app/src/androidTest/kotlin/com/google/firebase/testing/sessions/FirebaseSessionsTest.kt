@@ -23,7 +23,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.initialize
-import com.google.firebase.sessions.FirebaseSessions
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
 import org.junit.After
@@ -45,9 +44,6 @@ class FirebaseSessionsTest {
 
   @Test
   fun initializeSessions_generatesSessionEvent() {
-    // Force the Firebase Sessions SDK to initialize.
-    assertThat(FirebaseSessions.instance).isNotNull()
-
     // Add a fake dependency and register it, otherwise sessions will never send.
     val fakeSessionSubscriber = FakeSessionSubscriber()
     FirebaseSessionsDependencies.register(fakeSessionSubscriber)
