@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @hide
  */
-sealed class Logger private constructor(internal val tag: String) {
+sealed class Logger private constructor(val tag: String) {
   var enabled: Boolean = true
   var minLevel: Level = Level.INFO
 
@@ -69,20 +69,20 @@ sealed class Logger private constructor(internal val tag: String) {
   fun error(msg: String, throwable: Throwable? = null): Int =
     logIfAble(Level.ERROR, msg, throwable = throwable)
 
-  /** Log if [enabled] is set and the given level is >= [minLevel]. */
+  /** Log if [enabled] is set and the given level is loggable. */
   private fun logIfAble(
     level: Level,
     format: String,
     args: Array<out Any?> = emptyArray(),
     throwable: Throwable?,
   ): Int =
-    if (enabled && level.priority >= minLevel.priority) {
+    if (enabled && (minLevel.priority <= level.priority || Log.isLoggable(tag, level.priority))) {
       log(level, format, args, throwable = throwable)
     } else {
       0
     }
 
-  internal abstract fun log(
+  abstract fun log(
     level: Level,
     format: String,
     args: Array<out Any?>,
