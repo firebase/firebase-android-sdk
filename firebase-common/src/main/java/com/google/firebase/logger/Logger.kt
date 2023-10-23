@@ -25,10 +25,12 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @hide
  */
-sealed class Logger private constructor(val tag: String) {
-  var enabled: Boolean = true
-  var minLevel: Level = Level.INFO
-
+sealed class Logger
+private constructor(
+  val tag: String,
+  var enabled: Boolean,
+  var minLevel: Level,
+) {
   @JvmOverloads
   fun verbose(format: String, vararg args: Any?, throwable: Throwable? = null): Int =
     logIfAble(Level.VERBOSE, format, args, throwable = throwable)
@@ -90,7 +92,11 @@ sealed class Logger private constructor(val tag: String) {
   ): Int
 
   /** Simple wrapper around [Log]. */
-  private class AndroidLogger(tag: String) : Logger(tag) {
+  private class AndroidLogger(
+    tag: String,
+    enabled: Boolean,
+    minLevel: Level,
+  ) : Logger(tag, enabled, minLevel) {
     override fun log(
       level: Level,
       format: String,
@@ -110,7 +116,12 @@ sealed class Logger private constructor(val tag: String) {
 
   /** Fake implementation that allows recording and asserting on log messages. */
   @VisibleForTesting
-  class FakeLogger(tag: String) : Logger(tag) {
+  class FakeLogger
+  internal constructor(
+    tag: String,
+    enabled: Boolean,
+    minLevel: Level,
+  ) : Logger(tag, enabled, minLevel) {
     private val record: MutableList<String> = ArrayList()
 
     override fun log(
@@ -161,14 +172,23 @@ sealed class Logger private constructor(val tag: String) {
     private val loggers = ConcurrentHashMap<String, Logger>()
 
     /** Gets (or creates) the single instance of [Logger] with the given [tag]. */
-    @JvmStatic fun getLogger(tag: String): Logger = loggers.getOrPut(tag) { AndroidLogger(tag) }
+    @JvmStatic
+    fun getLogger(
+      tag: String,
+      enabled: Boolean = true,
+      minLevel: Level = Level.INFO,
+    ): Logger = loggers.getOrPut(tag) { AndroidLogger(tag, enabled, minLevel) }
 
     /** Sets (or replaces) the instance of [Logger] with the given [tag] for testing purposes. */
     @VisibleForTesting
     @JvmStatic
-    fun setupFakeLogger(tag: String): FakeLogger {
-      val fakeLogger = FakeLogger(tag)
-      loggers[fakeLogger.tag] = fakeLogger
+    fun setupFakeLogger(
+      tag: String,
+      enabled: Boolean = true,
+      minLevel: Level = Level.DEBUG,
+    ): FakeLogger {
+      val fakeLogger = FakeLogger(tag, enabled, minLevel)
+      loggers[tag] = fakeLogger
       return fakeLogger
     }
   }
