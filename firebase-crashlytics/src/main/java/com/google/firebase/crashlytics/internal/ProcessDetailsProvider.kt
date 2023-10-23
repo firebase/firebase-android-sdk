@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.crashlytics.internal.common
+package com.google.firebase.crashlytics.internal
 
 import android.app.ActivityManager
 import android.content.Context
