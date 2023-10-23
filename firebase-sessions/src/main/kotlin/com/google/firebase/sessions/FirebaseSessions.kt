@@ -27,7 +27,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /** Responsible for initializing AQS */
-internal class FirebaseSessions(
+class FirebaseSessions
+internal constructor(
   private val firebaseApp: FirebaseApp,
   private val settings: SessionsSettings,
   backgroundDispatcher: CoroutineContext,
@@ -66,17 +67,5 @@ internal class FirebaseSessions(
     @JvmStatic
     val instance: FirebaseSessions
       get() = Firebase.app.get(FirebaseSessions::class.java)
-
-    @JvmStatic
-    @Deprecated(
-      "Firebase Sessions only supports the Firebase default app.",
-      ReplaceWith("FirebaseSessions.instance"),
-    )
-    fun getInstance(app: FirebaseApp): FirebaseSessions =
-      if (app == Firebase.app) {
-        app.get(FirebaseSessions::class.java)
-      } else {
-        throw IllegalArgumentException("Firebase Sessions only supports the Firebase default app.")
-      }
   }
 }
