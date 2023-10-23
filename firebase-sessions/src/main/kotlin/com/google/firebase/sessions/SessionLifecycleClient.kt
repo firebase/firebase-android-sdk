@@ -56,10 +56,6 @@ internal object SessionLifecycleClient {
   private var curSessionId: String = ""
   private var handlerThread: HandlerThread = HandlerThread("FirebaseSessionsClient_HandlerThread")
 
-  init {
-    handlerThread.start()
-  }
-
   /**
    * The callback class that will be used to receive updated session events from the
    * [SessionLifecycleService].
@@ -115,6 +111,7 @@ internal object SessionLifecycleClient {
    * relay session updates to this client.
    */
   fun bindToService(appContext: Context) {
+    handlerThread.start()
     Intent(appContext, SessionLifecycleService::class.java).also { intent ->
       Log.d(TAG, "Binding service to application.")
       // This is necessary for the onBind() to be called by each process
@@ -147,18 +144,6 @@ internal object SessionLifecycleClient {
    */
   fun backgrounded() {
     sendLifecycleEvent(SessionLifecycleService.BACKGROUNDED)
-  }
-
-  /** Perform initialization that requires cleanup */
-  fun started() {
-    if (!handlerThread.isAlive) {
-      handlerThread.start()
-    }
-  }
-
-  /** Cleanup initialization */
-  fun stopped() {
-    handlerThread.quit()
   }
 
   /**
