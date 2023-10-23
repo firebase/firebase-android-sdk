@@ -21,8 +21,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Handler
-import android.os.HandlerThread
 import android.os.IBinder
+import android.os.Looper
 import android.os.Message
 import android.os.Messenger
 import android.os.RemoteException
@@ -54,14 +54,13 @@ internal object SessionLifecycleClient {
   private var serviceBound: Boolean = false
   private val queuedMessages = LinkedBlockingDeque<Message>(MAX_QUEUED_MESSAGES)
   private var curSessionId: String = ""
-  private var handlerThread: HandlerThread = HandlerThread("FirebaseSessionsClient_HandlerThread")
 
   /**
    * The callback class that will be used to receive updated session events from the
    * [SessionLifecycleService].
    */
   // TODO(rothbutter) should we use the main looper or is there one available in this SDK?
-  internal class ClientUpdateHandler : Handler(handlerThread.looper) {
+  internal class ClientUpdateHandler : Handler(Looper.getMainLooper()) {
     override fun handleMessage(msg: Message) {
       when (msg.what) {
         SessionLifecycleService.SESSION_UPDATED ->
@@ -111,7 +110,6 @@ internal object SessionLifecycleClient {
    * relay session updates to this client.
    */
   fun bindToService(appContext: Context) {
-    handlerThread.start()
     Intent(appContext, SessionLifecycleService::class.java).also { intent ->
       Log.d(TAG, "Binding service to application.")
       // This is necessary for the onBind() to be called by each process
