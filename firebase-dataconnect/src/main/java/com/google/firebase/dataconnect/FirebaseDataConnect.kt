@@ -86,20 +86,20 @@ internal constructor(
     }
   }
 
-  suspend fun executeQuery(ref: QueryRef): Struct =
+  suspend fun executeQuery(ref: QueryRef, variables: Map<String, Any?>): Struct =
     grpcClint.executeQuery(
       revision = ref.revision,
       operationSet = ref.operationSet,
       operationName = ref.operationName,
-      variables = ref.variables
+      variables = variables
     )
 
-  suspend fun executeMutation(ref: MutationRef): Struct =
+  suspend fun executeMutation(ref: MutationRef, variables: Map<String, Any?>): Struct =
     grpcClint.executeMutation(
       revision = ref.revision,
       operationSet = ref.operationSet,
       operationName = ref.operationName,
-      variables = ref.variables
+      variables = variables
     )
 
   override fun close() {

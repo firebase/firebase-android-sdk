@@ -215,22 +215,14 @@ class FirebaseDataConnectTest {
     dc.settings = dataConnectSettings { connectToEmulator() }
 
     dc.executeMutation(
-      MutationRef(
-        revision = "TestRevision",
-        operationSet = "crud",
-        operationName = "createPost",
-        variables =
-          mapOf("id" to UUID.randomUUID().toString(), "content" to "${System.currentTimeMillis()}")
-      )
+      MutationRef(revision = "TestRevision", operationSet = "crud", operationName = "createPost"),
+      variables =
+        mapOf("id" to UUID.randomUUID().toString(), "content" to "${System.currentTimeMillis()}")
     )
 
     dc.executeQuery(
-      QueryRef(
-        revision = "TestRevision",
-        operationSet = "crud",
-        operationName = "listPosts",
-        variables = emptyMap()
-      )
+      QueryRef(revision = "TestRevision", operationSet = "crud", operationName = "listPosts"),
+      variables = emptyMap()
     )
   }
 

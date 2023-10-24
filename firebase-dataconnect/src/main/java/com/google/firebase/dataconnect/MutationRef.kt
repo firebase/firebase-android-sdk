@@ -14,14 +14,4 @@
 package com.google.firebase.dataconnect
 
 open class MutationRef
-constructor(
-  val revision: String,
-  val operationSet: String,
-  val operationName: String,
-  variables: Map<String, Any?>
-) {
-  private val _variables = HashMap(variables)
-
-  val variables: Map<String, Any?>
-    get() = HashMap(_variables)
-}
+constructor(val revision: String, val operationSet: String, val operationName: String)
