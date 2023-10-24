@@ -500,8 +500,8 @@ public class CrashlyticsReportJsonTransform {
   }
 
   @NonNull
-  private static Event.Application.ProcessDetails parseProcessDetails(@NonNull JsonReader jsonReader)
-      throws IOException {
+  private static Event.Application.ProcessDetails parseProcessDetails(
+      @NonNull JsonReader jsonReader) throws IOException {
     Event.Application.ProcessDetails.Builder builder = Event.Application.ProcessDetails.builder();
 
     jsonReader.beginObject();
