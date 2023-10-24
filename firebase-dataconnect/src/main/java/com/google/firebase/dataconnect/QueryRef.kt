@@ -13,5 +13,19 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
+import java.util.Objects
+
 open class QueryRef
-constructor(val revision: String, val operationSet: String, val operationName: String)
+constructor(val revision: String, val operationSet: String, val operationName: String) {
+
+  override fun equals(other: Any?) =
+    other is QueryRef &&
+      revision == other.revision &&
+      operationSet == other.operationSet &&
+      operationName == other.operationName
+
+  override fun hashCode() = Objects.hash(revision, operationSet, operationName)
+
+  override fun toString() =
+    "QueryRef{revision=$revision, operationSet=$operationSet operationName=$operationName}"
+}

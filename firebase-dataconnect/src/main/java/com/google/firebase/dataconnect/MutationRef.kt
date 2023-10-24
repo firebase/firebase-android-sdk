@@ -13,5 +13,19 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
+import java.util.Objects
+
 open class MutationRef
-constructor(val revision: String, val operationSet: String, val operationName: String)
+constructor(val revision: String, val operationSet: String, val operationName: String) {
+
+  override fun equals(other: Any?) =
+    other is MutationRef &&
+      revision == other.revision &&
+      operationSet == other.operationSet &&
+      operationName == other.operationName
+
+  override fun hashCode() = Objects.hash(revision, operationSet, operationName)
+
+  override fun toString() =
+    "MutationRef{revision=$revision, operationSet=$operationSet operationName=$operationName}"
+}

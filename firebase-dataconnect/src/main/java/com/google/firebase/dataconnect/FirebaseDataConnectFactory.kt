@@ -54,12 +54,13 @@ internal class FirebaseDataConnectFactory(
 
       val projectId = firebaseApp.options.projectId ?: "<unspecified project ID>"
       val newInstance =
-        FirebaseDataConnect(
+        FirebaseDataConnectImpl(
           context = context,
           appName = firebaseApp.name,
           projectId = projectId,
           location = location,
           service = service,
+          backgroundDispatcher = backgroundDispatcher,
           creator = this
         )
       instancesByCacheKey[key] = newInstance
