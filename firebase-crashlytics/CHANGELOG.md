@@ -1,5 +1,6 @@
 # Unreleased
 
+* [changed] Include more details about app processes in reports.
 
 # 18.5.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-crashlytics-ktx`
@@ -520,4 +521,3 @@ The following release notes describe changes in the new SDK.
  from your `AndroidManifest.xml` file.
  * [removed] The `fabric.properties` and `crashlytics.properties` files are no
  longer supported. Remove them from your app.
-

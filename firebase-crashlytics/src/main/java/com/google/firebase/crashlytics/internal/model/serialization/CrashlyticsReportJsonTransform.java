@@ -483,12 +483,50 @@ public class CrashlyticsReportJsonTransform {
           builder.setInternalKeys(
               parseArray(jsonReader, CrashlyticsReportJsonTransform::parseCustomAttribute));
           break;
+        case "currentProcessDetails":
+          builder.setCurrentProcessDetails(parseProcessDetails(jsonReader));
+          break;
+        case "appProcessDetails":
+          builder.setAppProcessDetails(
+              parseArray(jsonReader, CrashlyticsReportJsonTransform::parseProcessDetails));
+          break;
         default:
           jsonReader.skipValue();
           break;
       }
     }
     jsonReader.endObject();
+    return builder.build();
+  }
+
+  @NonNull
+  private static Event.Application.ProcessDetails parseProcessDetails(
+      @NonNull JsonReader jsonReader) throws IOException {
+    Event.Application.ProcessDetails.Builder builder = Event.Application.ProcessDetails.builder();
+
+    jsonReader.beginObject();
+    while (jsonReader.hasNext()) {
+      String name = jsonReader.nextName();
+      switch (name) {
+        case "processName":
+          builder.setProcessName(jsonReader.nextString());
+          break;
+        case "pid":
+          builder.setPid(jsonReader.nextInt());
+          break;
+        case "importance":
+          builder.setImportance(jsonReader.nextInt());
+          break;
+        case "defaultProcess":
+          builder.setDefaultProcess(jsonReader.nextBoolean());
+          break;
+        default:
+          jsonReader.skipValue();
+          break;
+      }
+    }
+    jsonReader.endObject();
+
     return builder.build();
   }
 
