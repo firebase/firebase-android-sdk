@@ -58,10 +58,15 @@ public class CompositeIndexTestHelper {
     this.testId = "test-id-" + autoId();
   }
 
+  @NonNull
+  public CollectionReference withTestCollection() {
+    return testFirestore().collection(COMPOSITE_INDEX_TEST_COLLECTION);
+  }
+
   // Runs a test with specified documents in the COMPOSITE_INDEX_TEST_COLLECTION.
   @NonNull
   public CollectionReference withTestDocs(@NonNull Map<String, Map<String, Object>> docs) {
-    CollectionReference writer = testFirestore().collection(COMPOSITE_INDEX_TEST_COLLECTION);
+    CollectionReference writer = withTestCollection();
     writeAllDocs(writer, prepareTestDocuments(docs));
     CollectionReference reader = testFirestore().collection(writer.getPath());
     return reader;
@@ -81,7 +86,7 @@ public class CompositeIndexTestHelper {
   }
 
   // Adds test-specific fields to a document, including the testId and expiration date.
-  private Map<String, Object> addTestSpecificFieldsToDoc(Map<String, Object> doc) {
+  public Map<String, Object> addTestSpecificFieldsToDoc(Map<String, Object> doc) {
     Map<String, Object> updatedDoc = new HashMap<>(doc);
     updatedDoc.put(TEST_ID_FIELD, testId);
     updatedDoc.put(
