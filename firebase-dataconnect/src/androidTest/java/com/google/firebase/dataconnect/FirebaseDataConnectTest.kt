@@ -230,6 +230,31 @@ class FirebaseDataConnectTest {
   }
 
   @Test
+  fun testNewQueryInterface() {
+    val dc = FirebaseDataConnect.getInstance("TestLocation", "TestService")
+    dc.settings = dataConnectSettings { connectToEmulator() }
+
+    runBlocking {
+      val query = ListPostsQuery()
+
+      // one time fetch
+      launch {
+        query.get()
+      }
+
+      // listen to realtime update
+      launch {
+        val listener = query.listen()
+        listener.channel.receive()
+      }
+
+      launch {
+        query.listen().reload()
+      }
+    }
+  }
+
+  @Test
   fun testReloadWorks() {
     runBlocking {
       val testingStr = "reload"

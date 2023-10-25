@@ -6,23 +6,6 @@ class GetPost(id : String) : QueryRefBasic<GetPostResponse>(mapOf(id to null)) {
     }
 }
 
-data class GetPostResponse(
-    val content : String,
-    val comments : List<Comment>
-) {
-     data class Comment(
-        val id : Int,
-        val content : String
-    )
-}
+class ListPosts : QueryRefBasic<ListPostsResponse>()
 
-class ListPosts : QueryRefBasic<List<ListPostsResponse>>()
-
-data class ListPostsResponse(
-    val id : String,
-    val content : String
-)
-
-class ListPostsOnlyId : QueryRefBasic<List<ListPostsOnlyIdResponse>>()
-
-data class ListPostsOnlyIdResponse(val id : String)
+class ListPostsOnlyId : QueryRefBasic<ListPostsOnlyIdResponse>()
