@@ -155,10 +155,13 @@ internal class SessionLifecycleClient(private val backgroundDispatcher: Coroutin
       } else if (subscribers.values.none { it.isDataCollectionEnabled }) {
         Log.d(TAG, "Data Collection is disabled for all subscribers. Skipping this Event")
       } else {
-        val latest = mutableListOf<Message>()
-        getLatestByCode(messages, SessionLifecycleService.BACKGROUNDED)?.let { latest.add(it) }
-        getLatestByCode(messages, SessionLifecycleService.FOREGROUNDED)?.let { latest.add(it) }
-        latest.sortedBy { it.getWhen() }.forEach { sendMessageToServer(it) }
+        mutableListOf(
+            getLatestByCode(messages, SessionLifecycleService.BACKGROUNDED),
+            getLatestByCode(messages, SessionLifecycleService.FOREGROUNDED),
+          )
+          .filterNotNull()
+          .sortedBy { it.getWhen() }
+          .forEach { sendMessageToServer(it) }
       }
     }
 
