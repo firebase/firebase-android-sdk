@@ -17,6 +17,9 @@ import static com.google.android.datatransport.runtime.scheduling.persistence.Sc
 import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 
 import androidx.test.core.app.ApplicationProvider;
+
+import com.google.common.collect.ImmutableMap;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,16 +33,14 @@ public class SchemaManagerMigrationTest {
   private final int highVersion;
   private final int lowVersion;
 
-  private static Map<Integer, StateSimulations.StateSimulator> simulatorMap = new HashMap<>();
-
-  static {
-    simulatorMap.put(1, new StateSimulations.V1());
-    simulatorMap.put(2, new StateSimulations.V2());
-    simulatorMap.put(3, new StateSimulations.V3());
-    simulatorMap.put(4, new StateSimulations.V4());
-    simulatorMap.put(5, new StateSimulations.V5());
-    simulatorMap.put(6, new StateSimulations.V6());
-  }
+  private static final Map<Integer, StateSimulations.StateSimulator> simulatorMap = ImmutableMap.of(
+          1, new StateSimulations.V1(),
+          2, new StateSimulations.V2(),
+          3, new StateSimulations.V3(),
+          4, new StateSimulations.V4(),
+          5, new StateSimulations.V5(),
+          6, new StateSimulations.V6()
+  );
 
   @ParameterizedRobolectricTestRunner.Parameters(name = "lowVersion = {0}, highVersion = {1}")
   public static Collection<Object[]> data() {
