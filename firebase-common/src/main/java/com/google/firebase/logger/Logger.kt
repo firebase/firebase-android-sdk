@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * @hide
  */
-sealed class Logger
+abstract class Logger
 private constructor(
   val tag: String,
   var enabled: Boolean,
