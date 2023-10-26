@@ -65,6 +65,7 @@ internal class FirebaseSessionsFakeRegistrar : ComponentRegistrar {
         .name("sessions-settings")
         .add(Dependency.required(firebaseApp))
         .add(Dependency.required(firebaseInstallationsApi))
+        .add(Dependency.required(backgroundDispatcher))
         .factory { container ->
           SessionsSettings(
             container.get(firebaseApp),

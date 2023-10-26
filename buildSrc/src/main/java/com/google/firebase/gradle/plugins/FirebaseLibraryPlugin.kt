@@ -85,7 +85,7 @@ class FirebaseLibraryPlugin : BaseFirebaseLibraryPlugin() {
     android.testServer(FirebaseTestServer(project, firebaseLibrary.testLab, android))
     setupStaticAnalysis(project, firebaseLibrary)
     getIsPomValidTask(project, firebaseLibrary)
-    setupVersionCheckTasks(project, firebaseLibrary)
+    // setupVersionCheckTasks(project, firebaseLibrary)
     configurePublishing(project, firebaseLibrary, android)
   }
 
