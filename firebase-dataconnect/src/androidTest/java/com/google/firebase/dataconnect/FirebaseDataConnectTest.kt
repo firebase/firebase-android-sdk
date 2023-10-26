@@ -245,11 +245,11 @@ class FirebaseDataConnectTest {
       // listen to realtime update
       launch {
         val listener = query.listen()
-        listener.channel.receive()
+        listener.receive()
       }
 
       launch {
-        query.listen().reload()
+        query.reload()
       }
     }
   }

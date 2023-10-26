@@ -1,10 +1,16 @@
 package com.google.firebase.dataconnect
 
 import com.google.protobuf.Struct
+import kotlinx.coroutines.channels.ReceiveChannel
 
 class GetPostQuery(private var id : String) {
     private val queryRef = QueryRef("revision", "operationSet", "GetPostQuery")
     private val dataConnect = FirebaseDataConnect.getInstance("", "")
+    private val subscribeQuery : QuerySubscription
+        get() {
+            return dataConnect.subscribeQuery(queryRef, encode())
+        }
+
     fun update(newId : String) {
         id = newId
     }
@@ -13,8 +19,12 @@ class GetPostQuery(private var id : String) {
         return decode(dataConnect.executeQuery(queryRef, encode()))
     }
 
-    fun listen() : QuerySubscription {
-        return dataConnect.subscribeQuery(queryRef, encode())
+    fun listen() : ReceiveChannel<QueryResult> {
+        return subscribeQuery.channel
+    }
+
+    fun reload() {
+        subscribeQuery.reload()
     }
 
     private fun encode() : Map<String, Any?> {
@@ -29,13 +39,21 @@ class GetPostQuery(private var id : String) {
 class ListPostsQuery {
     private val queryRef = QueryRef("revision", "operationSet", "ListPostsQuery")
     private val dataConnect = FirebaseDataConnect.getInstance("", "")
+    private val subscribeQuery : QuerySubscription
+        get() {
+            return dataConnect.subscribeQuery(queryRef, encode())
+        }
 
     suspend fun get() : ListPostsResponse {
         return decode(dataConnect.executeQuery(queryRef, encode()))
     }
 
-    fun listen() : QuerySubscription {
-        return dataConnect.subscribeQuery(queryRef, encode())
+    fun listen() : ReceiveChannel<QueryResult> {
+        return subscribeQuery.channel
+    }
+
+    fun reload() {
+        subscribeQuery.reload()
     }
 
     private fun encode() : Map<String, Any?> {
@@ -50,13 +68,21 @@ class ListPostsQuery {
 class ListPostsOnlyIdQuery {
     private val queryRef = QueryRef("revision", "operationSet", "ListPostsOnlyIdQuery")
     private val dataConnect = FirebaseDataConnect.getInstance("", "")
+    private val subscribeQuery : QuerySubscription
+        get() {
+            return dataConnect.subscribeQuery(queryRef, encode())
+        }
 
     suspend fun get() : ListPostsOnlyIdResponse {
         return decode(dataConnect.executeQuery(queryRef, encode()))
     }
 
-    fun listen() : QuerySubscription {
-        return dataConnect.subscribeQuery(queryRef, encode())
+    fun listen() : ReceiveChannel<QueryResult> {
+        return subscribeQuery.channel
+    }
+
+    fun reload() {
+        subscribeQuery.reload()
     }
 
     private fun encode() : Map<String, Any?> {
