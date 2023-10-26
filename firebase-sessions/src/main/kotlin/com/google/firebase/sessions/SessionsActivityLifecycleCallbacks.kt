@@ -24,10 +24,12 @@ import android.os.Bundle
  * Lifecycle callbacks that will inform the [SessionLifecycleClient] whenever an [Activity] in this
  * application process goes foreground or background.
  */
-internal object SessionsActivityLifecycleCallbacks : ActivityLifecycleCallbacks {
-  override fun onActivityResumed(activity: Activity) = SessionLifecycleClient.foregrounded()
+internal class SessionsActivityLifecycleCallbacks(private val client: SessionLifecycleClient) :
+  ActivityLifecycleCallbacks {
 
-  override fun onActivityPaused(activity: Activity) = SessionLifecycleClient.backgrounded()
+  override fun onActivityResumed(activity: Activity) = client.foregrounded()
+
+  override fun onActivityPaused(activity: Activity) = client.backgrounded()
 
   override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
 

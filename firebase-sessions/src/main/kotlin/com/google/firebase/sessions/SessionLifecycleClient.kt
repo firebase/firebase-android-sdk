@@ -17,8 +17,6 @@
 package com.google.firebase.sessions
 
 import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Handler
 import android.os.IBinder
@@ -30,6 +28,7 @@ import android.util.Log
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
 import java.util.concurrent.LinkedBlockingDeque
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -41,26 +40,19 @@ import kotlinx.coroutines.launch
  * Note: this client will be connected in every application process that uses Firebase, and is
  * intended to maintain that connection for the lifetime of the process.
  */
-internal object SessionLifecycleClient {
-  const val TAG = "SessionLifecycleClient"
-
-  /**
-   * The maximum number of messages that we should queue up for delivery to the
-   * [SessionLifecycleService] in the event that we have lost the connection.
-   */
-  private const val MAX_QUEUED_MESSAGES = 20
+internal class SessionLifecycleClient(private val backgroundDispatcher: CoroutineContext) {
 
   private var service: Messenger? = null
   private var serviceBound: Boolean = false
   private val queuedMessages = LinkedBlockingDeque<Message>(MAX_QUEUED_MESSAGES)
-  private var curSessionId: String = ""
 
   /**
    * The callback class that will be used to receive updated session events from the
    * [SessionLifecycleService].
    */
-  // TODO(rothbutter) should we use the main looper or is there one available in this SDK?
-  internal class ClientUpdateHandler : Handler(Looper.getMainLooper()) {
+  internal class ClientUpdateHandler(private val backgroundDispatcher: CoroutineContext) :
+    Handler(Looper.getMainLooper()) {
+
     override fun handleMessage(msg: Message) {
       when (msg.what) {
         SessionLifecycleService.SESSION_UPDATED ->
@@ -76,9 +68,8 @@ internal object SessionLifecycleClient {
 
     private fun handleSessionUpdate(sessionId: String) {
       Log.d(TAG, "Session update received: $sessionId")
-      curSessionId = sessionId
 
-      CoroutineScope(Dispatchers.instance.backgroundDispatcher).launch {
+      CoroutineScope(backgroundDispatcher).launch {
         FirebaseSessionsDependencies.getRegisteredSubscribers().values.forEach { subscriber ->
           // Notify subscribers, regardless of sampling and data collection state.
           subscriber.onSessionChanged(SessionSubscriber.SessionDetails(sessionId))
@@ -109,21 +100,11 @@ internal object SessionLifecycleClient {
    * Binds to the [SessionLifecycleService] and passes a callback [Messenger] that will be used to
    * relay session updates to this client.
    */
-  fun bindToService(appContext: Context) {
-    Intent(appContext, SessionLifecycleService::class.java).also { intent ->
-      Log.d(TAG, "Binding service to application.")
-      // This is necessary for the onBind() to be called by each process
-      intent.action = android.os.Process.myPid().toString()
-      intent.putExtra(
-        SessionLifecycleService.CLIENT_CALLBACK_MESSENGER,
-        Messenger(ClientUpdateHandler())
-      )
-      appContext.bindService(
-        intent,
-        serviceConnection,
-        Context.BIND_IMPORTANT or Context.BIND_AUTO_CREATE
-      )
-    }
+  fun bindToService() {
+    SessionLifecycleServiceBinder.instance.bindToService(
+      Messenger(ClientUpdateHandler(backgroundDispatcher)),
+      serviceConnection
+    )
   }
 
   /**
@@ -164,7 +145,7 @@ internal object SessionLifecycleClient {
    * Does not send events unless data collection is enabled for at least one subscriber.
    */
   private fun sendLifecycleEvents(messages: List<Message>) =
-    CoroutineScope(Dispatchers.instance.backgroundDispatcher).launch {
+    CoroutineScope(backgroundDispatcher).launch {
       val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
       if (subscribers.isEmpty()) {
         Log.d(
@@ -174,10 +155,13 @@ internal object SessionLifecycleClient {
       } else if (subscribers.values.none { it.isDataCollectionEnabled }) {
         Log.d(TAG, "Data Collection is disabled for all subscribers. Skipping this Event")
       } else {
-        val latest = ArrayList<Message>(2)
-        getLatestByCode(messages, SessionLifecycleService.BACKGROUNDED)?.let { latest.add(it) }
-        getLatestByCode(messages, SessionLifecycleService.FOREGROUNDED)?.let { latest.add(it) }
-        latest.sortedBy { it.getWhen() }.forEach { sendMessageToServer(it) }
+        mutableListOf(
+            getLatestByCode(messages, SessionLifecycleService.BACKGROUNDED),
+            getLatestByCode(messages, SessionLifecycleService.FOREGROUNDED),
+          )
+          .filterNotNull()
+          .sortedBy { it.getWhen() }
+          .forEach { sendMessageToServer(it) }
       }
     }
 
@@ -210,7 +194,7 @@ internal object SessionLifecycleClient {
 
   /** Drains the queue of messages into a new list in a thread-safe manner. */
   private fun drainQueue(): MutableList<Message> {
-    val messages = ArrayList<Message>()
+    val messages = mutableListOf<Message>()
     queuedMessages.drainTo(messages)
     return messages
   }
@@ -218,4 +202,14 @@ internal object SessionLifecycleClient {
   /** Gets the message in the given list with the given code that has the latest timestamp. */
   private fun getLatestByCode(messages: List<Message>, msgCode: Int): Message? =
     messages.filter { it.what == msgCode }.maxByOrNull { it.getWhen() }
+
+  companion object {
+    const val TAG = "SessionLifecycleClient"
+
+    /**
+     * The maximum number of messages that we should queue up for delivery to the
+     * [SessionLifecycleService] in the event that we have lost the connection.
+     */
+    private const val MAX_QUEUED_MESSAGES = 20
+  }
 }
