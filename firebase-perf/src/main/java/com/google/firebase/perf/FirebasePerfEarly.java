@@ -22,7 +22,6 @@ import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.metrics.AppStartTrace;
 import com.google.firebase.perf.session.SessionManager;
-import com.google.firebase.sessions.FirebaseSessions;
 import java.util.concurrent.Executor;
 
 /**
@@ -35,10 +34,7 @@ import java.util.concurrent.Executor;
 public class FirebasePerfEarly {
 
   public FirebasePerfEarly(
-      FirebaseApp app,
-      FirebaseSessions firebaseSessions,
-      @Nullable StartupTime startupTime,
-      Executor uiExecutor) {
+      FirebaseApp app, @Nullable StartupTime startupTime, Executor uiExecutor) {
     Context context = app.getApplicationContext();
 
     // Initialize ConfigResolver early for accessing device caching layer.

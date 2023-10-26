@@ -30,7 +30,6 @@ import com.google.firebase.perf.injection.components.FirebasePerformanceComponen
 import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
-import com.google.firebase.sessions.FirebaseSessions;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -65,7 +64,6 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
         Component.builder(FirebasePerfEarly.class)
             .name(EARLY_LIBRARY_NAME)
             .add(Dependency.required(FirebaseApp.class))
-            .add(Dependency.required(FirebaseSessions.class))
             .add(Dependency.optionalProvider(StartupTime.class))
             .add(Dependency.required(uiExecutor))
             .eagerInDefaultApp()
