@@ -231,6 +231,7 @@ class StateSimulations {
       values.put("event_id", "42");
       values.put("bytes", "event".getBytes());
       long payloadId = db.insert("event_payloads", null, payloads);
+      assertThat(payloadId).isNotEqualTo(-1);
 
       ContentValues metadata = new ContentValues();
       metadata.put("event_id", newEventId);
@@ -291,6 +292,7 @@ class StateSimulations {
       values.put("event_id", "42");
       values.put("bytes", "event".getBytes());
       long payloadId = db.insert("event_payloads", null, payloads);
+      assertThat(payloadId).isNotEqualTo(-1);
 
       ContentValues metadata = new ContentValues();
       metadata.put("event_id", newEventId);
