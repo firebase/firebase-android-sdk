@@ -16,17 +16,20 @@ package com.google.android.datatransport.runtime.scheduling.persistence;
 import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.DB_NAME;
 import static com.google.android.datatransport.runtime.scheduling.persistence.SchemaManager.SCHEMA_VERSION;
 
+import android.database.sqlite.SQLiteDatabase;
+
 import androidx.test.core.app.ApplicationProvider;
 
 import com.google.common.collect.ImmutableMap;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.ParameterizedRobolectricTestRunner;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Objects;
 
 @RunWith(ParameterizedRobolectricTestRunner.class)
 public class SchemaManagerMigrationTest {
@@ -62,42 +65,49 @@ public class SchemaManagerMigrationTest {
   public void upgrade_migratesSuccessfully() {
     SchemaManager schemaManager =
         new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, lowVersion);
-    schemaManager.onUpgrade(schemaManager.getWritableDatabase(), lowVersion, highVersion);
-    simulatorMap.get(highVersion).simulate(schemaManager);
+    try (SQLiteDatabase db = schemaManager.getWritableDatabase()) {
+      schemaManager.onUpgrade(db, lowVersion, highVersion);
+
+      simulatorMap.get(highVersion).simulate(schemaManager);
+    }
   }
 
   @Test
   public void downgrade_migratesSuccessfully() {
     SchemaManager schemaManager =
         new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, highVersion);
-    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), highVersion, lowVersion);
-    simulatorMap.get(lowVersion).simulate(schemaManager);
+    try (SQLiteDatabase db = schemaManager.getWritableDatabase()) {
+      schemaManager.onDowngrade(db, highVersion, lowVersion);
+      simulatorMap.get(lowVersion).simulate(schemaManager);
+    }
   }
 
   @Test
   public void downgrade_upgrade_migratesSuccessfully() {
     SchemaManager schemaManager =
         new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, highVersion);
+    try (SQLiteDatabase db = schemaManager.getWritableDatabase()) {
+      schemaManager.onDowngrade(db, highVersion, lowVersion);
+      simulatorMap.get(lowVersion).simulate(schemaManager);
 
-    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), highVersion, lowVersion);
-    simulatorMap.get(lowVersion).simulate(schemaManager);
-
-    schemaManager.onUpgrade(schemaManager.getWritableDatabase(), lowVersion, highVersion);
-    simulatorMap.get(highVersion).simulate(schemaManager);
+      schemaManager.onUpgrade(db, lowVersion, highVersion);
+      simulatorMap.get(highVersion).simulate(schemaManager);
+    }
   }
 
   @Test
   public void upgrade_downgrade_upgrade_migratesSuccessfully() {
     SchemaManager schemaManager =
         new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, lowVersion);
+    try (SQLiteDatabase db = schemaManager.getWritableDatabase()) {
+      schemaManager.onUpgrade(db, lowVersion, highVersion);
+      simulatorMap.get(highVersion).simulate(schemaManager);
 
-    schemaManager.onUpgrade(schemaManager.getWritableDatabase(), lowVersion, highVersion);
-    simulatorMap.get(highVersion).simulate(schemaManager);
+      schemaManager.onDowngrade(db, highVersion, lowVersion);
+      simulatorMap.get(lowVersion).simulate(schemaManager);
 
-    schemaManager.onDowngrade(schemaManager.getWritableDatabase(), highVersion, lowVersion);
-    simulatorMap.get(lowVersion).simulate(schemaManager);
-
-    schemaManager.onUpgrade(schemaManager.getWritableDatabase(), lowVersion, highVersion);
-    simulatorMap.get(highVersion).simulate(schemaManager);
+      schemaManager.onUpgrade(db, lowVersion, highVersion);
+      simulatorMap.get(highVersion).simulate(schemaManager);
+    }
   }
 }
