@@ -38,6 +38,7 @@ public class SchemaManagerMigrationTest {
     simulatorMap.put(3, new StateSimulations.V3());
     simulatorMap.put(4, new StateSimulations.V4());
     simulatorMap.put(5, new StateSimulations.V5());
+    simulatorMap.put(6, new StateSimulations.V6());
   }
 
   @ParameterizedRobolectricTestRunner.Parameters(name = "lowVersion = {0}, highVersion = {1}")
