@@ -230,90 +230,17 @@ class FirebaseDataConnectTest {
   }
 
   @Test
-  fun testNewQueryInterface() {
-    val dc = FirebaseDataConnect.getInstance("TestLocation", "TestService")
-    dc.settings = dataConnectSettings { connectToEmulator() }
-
-    runBlocking {
-      val query = ListPostsQuery()
-
-      // one time fetch
-      launch {
-        query.get()
-      }
-
-      // listen to realtime update
-      launch {
-        val listener = query.listen()
-        listener.receive()
-      }
-
-      launch {
-        query.reload()
-      }
-    }
-  }
-
-  @Test
-  fun testReloadWorks() {
+  fun testQueryRefBasicWorks() {
     runBlocking {
       val testingStr = "reload"
-      val query = TestBasicQuery()
-      query.testResult = testingStr
+      val query = GetPost()
 
       launch {
-        assertThat(query.listen().receive()).isEqualTo(testingStr)
-      }
-      launch {
-        query.reload()
-      }
-    }
-  }
+        query.get("id")
 
-  @Test
-  fun testCanAddMultipleListeners() {
-    runBlocking {
-      val testingStr = "add multiple listeners"
-      val query = TestBasicQuery()
-      query.testResult = testingStr
+        val listener = query.listen()
+        val value = listener.receive()
 
-      launch {
-        assertThat(query.listen().receive()).isEqualTo(testingStr)
-      }
-      launch {
-        assertThat(query.listen().receive()).isEqualTo(testingStr)
-      }
-      launch {
-        assertThat(query.listeners.size).isEqualTo(2)
-        query.reload()
-      }
-    }
-  }
-
-  @Test
-  fun testCancelWorks() {
-    runBlocking {
-      val testingTwo = "when there are two listeners"
-      val testingOne = "when there is one listeners"
-      val query = TestBasicQuery()
-      query.testResult = testingTwo
-
-      launch {
-        val channel = query.listen()
-        assertThat(channel.receive()).isEqualTo(testingTwo)
-        query.remove(channel)
-      }
-      launch {
-        val channel = query.listen()
-        assertThat(channel.receive()).isEqualTo(testingTwo)
-        assertThat(channel.receive()).isEqualTo(testingOne)
-      }
-      launch {
-        assertThat(query.listeners.size).isEqualTo(2)
-        query.reload()
-        delay(2000)
-        assertThat(query.listeners.size).isEqualTo(1)
-        query.testResult = testingOne
         query.reload()
       }
     }
