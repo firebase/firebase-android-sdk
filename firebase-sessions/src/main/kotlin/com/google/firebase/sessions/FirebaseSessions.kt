@@ -35,27 +35,30 @@ internal class FirebaseSessions(
 
   init {
     Log.d(TAG, "Initializing Firebase Sessions SDK.")
-    CoroutineScope(backgroundDispatcher).launch {
-      val appContext = firebaseApp.applicationContext.applicationContext
-      settings.updateSettings()
-      if (!settings.sessionsEnabled) {
-        Log.d(TAG, "Sessions SDK disabled. Not listening to lifecycle events.")
-      } else if (appContext is Application) {
-        val lifecycleClient = SessionLifecycleClient(backgroundDispatcher)
-        val activityCallbacks = SessionsActivityLifecycleCallbacks(lifecycleClient)
-        appContext.registerActivityLifecycleCallbacks(activityCallbacks)
-        lifecycleClient.bindToService()
+    val appContext = firebaseApp.applicationContext.applicationContext
+    if (appContext is Application) {
+      appContext.registerActivityLifecycleCallbacks(SessionsActivityLifecycleCallbacks)
 
-        firebaseApp.addLifecycleEventListener { _, _ ->
-          Log.w(TAG, "FirebaseApp instance deleted. Sessions library will stop collecting data.")
-          appContext.unregisterActivityLifecycleCallbacks(activityCallbacks)
+      CoroutineScope(backgroundDispatcher).launch {
+        settings.updateSettings()
+        if (!settings.sessionsEnabled) {
+          Log.d(TAG, "Sessions SDK disabled. Not listening to lifecycle events.")
+        } else {
+          val lifecycleClient = SessionLifecycleClient(backgroundDispatcher)
+          lifecycleClient.bindToService()
+          SessionsActivityLifecycleCallbacks.lifecycleClient = lifecycleClient
+
+          firebaseApp.addLifecycleEventListener { _, _ ->
+            Log.w(TAG, "FirebaseApp instance deleted. Sessions library will stop collecting data.")
+            SessionsActivityLifecycleCallbacks.lifecycleClient = null
+          }
         }
-      } else {
-        Log.e(
-          TAG,
-          "Failed to register lifecycle callbacks, unexpected context ${appContext.javaClass}."
-        )
       }
+    } else {
+      Log.e(
+        TAG,
+        "Failed to register lifecycle callbacks, unexpected context ${appContext.javaClass}."
+      )
     }
   }
 
