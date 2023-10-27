@@ -1,5 +1,5 @@
 # Unreleased
-
+* [changed] Include more details about app processes in reports.
 
 # 18.5.1
 * [fixed] Fixed Flutter and Unity on-demand fatal `setUserIdentifier` behaviour. Github
