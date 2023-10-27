@@ -33,11 +33,18 @@ public class SchemaManagerMigrationTest {
 
   private static final Map<Integer, StateSimulations.StateSimulator> simulatorMap =
       ImmutableMap.of(
-          1, new StateSimulations.V1(),
-          2, new StateSimulations.V2(),
-          3, new StateSimulations.V3(),
-          4, new StateSimulations.V4(),
-          5, new StateSimulations.V5());
+          1,
+          new StateSimulations.V1(),
+          2,
+          new StateSimulations.V2(),
+          3,
+          new StateSimulations.V3(),
+          4,
+          new StateSimulations.V4(),
+          5,
+          new StateSimulations.V5(),
+          6,
+          new StateSimulations.V6());
 
   @ParameterizedRobolectricTestRunner.Parameters(name = "lowVersion = {0}, highVersion = {1}")
   public static Collection<Object[]> data() {

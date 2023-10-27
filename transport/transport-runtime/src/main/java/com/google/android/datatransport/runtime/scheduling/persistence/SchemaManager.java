@@ -101,7 +101,7 @@ final class SchemaManager extends SQLiteOpenHelper {
   private static final String DROP_GLOBAL_LOG_EVENT_STATE_SQL =
       "DROP TABLE IF EXISTS global_log_event_state";
 
-  static int SCHEMA_VERSION = 5;
+  static int SCHEMA_VERSION = 6;
 
   private static final SchemaManager.Migration MIGRATE_TO_V1 =
       (db) -> {
