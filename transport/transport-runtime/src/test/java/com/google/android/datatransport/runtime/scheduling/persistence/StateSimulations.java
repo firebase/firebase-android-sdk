@@ -180,10 +180,11 @@ class StateSimulations {
       assertThat(newEventId).isNotEqualTo(-1);
 
       ContentValues payloads = new ContentValues();
-      values.put("sequence_num", newEventId);
-      values.put("event_id", "42");
-      values.put("bytes", "event".getBytes());
-      long payloadId = db.insert("event_payloads", null, payloads);
+      payloads.put("sequence_num", 1);
+      payloads.put("event_id", newEventId);
+      payloads.put("bytes", "event".getBytes());
+      long payloadId = db.insertOrThrow("event_payloads", null, payloads);
+      assertThat(payloadId).isNotEqualTo(-1);
 
       ContentValues metadata = new ContentValues();
       metadata.put("event_id", newEventId);
@@ -227,10 +228,10 @@ class StateSimulations {
       assertThat(newEventId).isNotEqualTo(-1);
 
       ContentValues payloads = new ContentValues();
-      values.put("sequence_num", newEventId);
-      values.put("event_id", "42");
-      values.put("bytes", "event".getBytes());
-      long payloadId = db.insert("event_payloads", null, payloads);
+      payloads.put("sequence_num", 1);
+      payloads.put("event_id", newEventId);
+      payloads.put("bytes", "event".getBytes());
+      long payloadId = db.insertOrThrow("event_payloads", null, payloads);
       assertThat(payloadId).isNotEqualTo(-1);
 
       ContentValues metadata = new ContentValues();
@@ -288,10 +289,10 @@ class StateSimulations {
       assertThat(newEventId).isNotEqualTo(-1);
 
       ContentValues payloads = new ContentValues();
-      values.put("sequence_num", newEventId);
-      values.put("event_id", "42");
-      values.put("bytes", "event".getBytes());
-      long payloadId = db.insert("event_payloads", null, payloads);
+      payloads.put("sequence_num", 1);
+      payloads.put("event_id", newEventId);
+      payloads.put("bytes", "event".getBytes());
+      long payloadId = db.insertOrThrow("event_payloads", null, payloads);
       assertThat(payloadId).isNotEqualTo(-1);
 
       ContentValues metadata = new ContentValues();
