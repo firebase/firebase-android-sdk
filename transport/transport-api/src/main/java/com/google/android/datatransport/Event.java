@@ -27,50 +27,50 @@ public abstract class Event<T> {
   public abstract Priority getPriority();
 
   @Nullable
-  public abstract Integer getProductId();
+  public abstract ProductData getProductData();
 
-  public static <T> Event<T> ofData(int code, T payload, int productId) {
-    return new AutoValue_Event<>(code, payload, Priority.DEFAULT, productId);
+  public static <T> Event<T> ofData(int code, T payload, @Nullable ProductData productData) {
+    return new AutoValue_Event<>(code, payload, Priority.DEFAULT, productData);
   }
 
   public static <T> Event<T> ofData(int code, T payload) {
     return new AutoValue_Event<>(code, payload, Priority.DEFAULT, null);
   }
 
-  public static <T> Event<T> ofData(T payload, int productId) {
-    return new AutoValue_Event<>(null, payload, Priority.DEFAULT, productId);
+  public static <T> Event<T> ofData(T payload, @Nullable ProductData productData) {
+    return new AutoValue_Event<>(null, payload, Priority.DEFAULT, productData);
   }
 
   public static <T> Event<T> ofData(T payload) {
     return new AutoValue_Event<>(null, payload, Priority.DEFAULT, null);
   }
 
-  public static <T> Event<T> ofTelemetry(int code, T value, int productId) {
-    return new AutoValue_Event<>(code, value, Priority.VERY_LOW, productId);
+  public static <T> Event<T> ofTelemetry(int code, T value, @Nullable ProductData productData) {
+    return new AutoValue_Event<>(code, value, Priority.VERY_LOW, productData);
   }
 
   public static <T> Event<T> ofTelemetry(int code, T value) {
     return new AutoValue_Event<>(code, value, Priority.VERY_LOW, null);
   }
 
-  public static <T> Event<T> ofTelemetry(T value, int productId) {
-    return new AutoValue_Event<>(null, value, Priority.VERY_LOW, productId);
+  public static <T> Event<T> ofTelemetry(T value, @Nullable ProductData productData) {
+    return new AutoValue_Event<>(null, value, Priority.VERY_LOW, productData);
   }
 
   public static <T> Event<T> ofTelemetry(T value) {
     return new AutoValue_Event<>(null, value, Priority.VERY_LOW, null);
   }
 
-  public static <T> Event<T> ofUrgent(int code, T value, int productId) {
-    return new AutoValue_Event<>(code, value, Priority.HIGHEST, productId);
+  public static <T> Event<T> ofUrgent(int code, T value, @Nullable ProductData productData) {
+    return new AutoValue_Event<>(code, value, Priority.HIGHEST, productData);
   }
 
   public static <T> Event<T> ofUrgent(int code, T value) {
     return new AutoValue_Event<>(code, value, Priority.HIGHEST, null);
   }
 
-  public static <T> Event<T> ofUrgent(T value, int productId) {
-    return new AutoValue_Event<>(null, value, Priority.HIGHEST, productId);
+  public static <T> Event<T> ofUrgent(T value, @Nullable ProductData productData) {
+    return new AutoValue_Event<>(null, value, Priority.HIGHEST, productData);
   }
 
   public static <T> Event<T> ofUrgent(T value) {
