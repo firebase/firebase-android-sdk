@@ -1,5 +1,14 @@
 # Unreleased
+
+
+# 24.9.1
 * [feature] Expose Sum/Average aggregate query support in API. [#5217](//github.com/firebase/firebase-android-sdk/pull/5217)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-firestore` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.9.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-firestore-ktx`

@@ -1,5 +1,14 @@
 # Unreleased
+
+
+# 24.2.1
 * [changed] Internal infrastructure improvements.
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-ml-modeldownloader` library. The Kotlin extensions library has no additional
+updates.
 
 # 24.2.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-ml-modeldownloader-ktx`
