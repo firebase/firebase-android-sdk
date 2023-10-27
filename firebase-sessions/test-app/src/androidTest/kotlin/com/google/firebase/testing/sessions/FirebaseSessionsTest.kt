@@ -16,6 +16,7 @@
 
 package com.google.firebase.testing.sessions
 
+import androidx.lifecycle.Lifecycle.State
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -50,9 +51,18 @@ class FirebaseSessionsTest {
 
     ActivityScenario.launch(MainActivity::class.java).use { scenario ->
       scenario.onActivity {
+        // Wait for the settings to be fetched from the server.
+        Thread.sleep(TIME_TO_READ_SETTINGS)
+      }
+      // Move the activity to the background and then foreground
+      // This is necessary because the initial app launch does not yet know whether the sdk is
+      // enabled, and so the first session isnt' created until a lifecycle event happens after the
+      // settings are read.
+      scenario.moveToState(State.CREATED)
+      scenario.moveToState(State.RESUMED)
+      scenario.onActivity {
         // Wait for the session start event to send.
         Thread.sleep(TIME_TO_LOG_SESSION)
-
         // Assert that some session was generated and sent to the subscriber.
         assertThat(fakeSessionSubscriber.sessionDetails).isNotNull()
       }
@@ -60,7 +70,8 @@ class FirebaseSessionsTest {
   }
 
   companion object {
-    private const val TIME_TO_LOG_SESSION = 60_000L
+    private const val TIME_TO_READ_SETTINGS = 60_000L
+    private const val TIME_TO_LOG_SESSION = 10_000L
 
     init {
       FirebaseSessionsDependencies.addDependency(SessionSubscriber.Name.MATT_SAYS_HI)
