@@ -25,6 +25,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Thread.Frame;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 
@@ -48,8 +49,8 @@ public class CrashlyticsReportTest {
     final CrashlyticsReport testReport = makeTestReport();
 
     assertNull(testReport.getSession().getEvents());
-    final CrashlyticsReport withAnrEventsReport =
-        testReport.withEvents(ImmutableList.from(makeAnrEvent()));
+        final CrashlyticsReport withAnrEventsReport =
+                testReport.withEvents(Collections.singletonList(makeAnrEvent()));
 
     assertNotEquals(testReport, withAnrEventsReport);
     assertNotNull(withAnrEventsReport.getSession().getEvents());
@@ -221,12 +222,12 @@ public class CrashlyticsReportTest {
         .build();
   }
 
-  private static ImmutableList<Event> makeTestEvents(int numEvents) {
+  private static List<Event> makeTestEvents(int numEvents) {
     List<Event> events = new ArrayList<>();
     for (int i = 0; i < numEvents; i++) {
       events.add(makeTestEvent());
     }
-    return ImmutableList.from(events);
+    return events;
   }
 
   private static Event makeAnrEvent() {
@@ -239,7 +240,7 @@ public class CrashlyticsReportTest {
                 .setExecution(
                     Execution.builder()
                         .setBinaries(
-                            ImmutableList.from(
+                            Collections.singletonList(
                                 Execution.BinaryImage.builder()
                                     .setBaseAddress(0)
                                     .setName("name")
@@ -273,7 +274,7 @@ public class CrashlyticsReportTest {
                 .setExecution(
                     Execution.builder()
                         .setBinaries(
-                            ImmutableList.from(
+                                Collections.singletonList(
                                 Execution.BinaryImage.builder()
                                     .setBaseAddress(0)
                                     .setName("name")
@@ -289,7 +290,7 @@ public class CrashlyticsReportTest {
                                 .build())
                         .setSignal(Signal.builder().setCode("0").setName("0").setAddress(0).build())
                         .setThreads(
-                            ImmutableList.from(
+                                Collections.singletonList(
                                 Session.Event.Application.Execution.Thread.builder()
                                     .setName("name")
                                     .setImportance(4)
@@ -323,35 +324,36 @@ public class CrashlyticsReportTest {
         .build();
   }
 
-  private static ImmutableList<Frame> makeTestFrames() {
-    return ImmutableList.from(
-        Frame.builder()
+  private static List<Frame> makeTestFrames() {
+    ArrayList<Frame> frames = new ArrayList<>();
+    frames.add(Frame.builder()
             .setPc(0)
             .setSymbol("func1")
             .setFile("Test.java")
             .setOffset(36)
             .setImportance(4)
-            .build(),
-        Frame.builder()
+            .build());
+    frames.add(Frame.builder()
             .setPc(0)
             .setSymbol("func2")
             .setFile("Test.java")
             .setOffset(5637)
             .setImportance(4)
-            .build(),
-        Frame.builder()
+            .build());
+    frames.add(Frame.builder()
             .setPc(0)
             .setSymbol("func3")
             .setFile("Test.java")
             .setOffset(22429)
             .setImportance(4)
-            .build(),
-        Frame.builder()
+            .build());
+    frames.add(Frame.builder()
             .setPc(0)
             .setSymbol("func4")
             .setFile("Test.java")
             .setOffset(751)
             .setImportance(4)
             .build());
+    return frames;
   }
 }
