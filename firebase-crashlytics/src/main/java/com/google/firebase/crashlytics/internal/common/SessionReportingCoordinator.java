@@ -29,7 +29,6 @@ import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.FilesPayload;
-import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
@@ -181,7 +180,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
 
     reportPersistence.finalizeSessionWithNativeEvent(
         sessionId,
-        FilesPayload.builder().setFiles(ImmutableList.from(nativeFiles)).build(),
+        FilesPayload.builder().setFiles(Collections.unmodifiableList(nativeFiles)).build(),
         applicationExitInfo);
   }
 
@@ -281,8 +280,8 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     if (!sortedCustomAttributes.isEmpty() || !sortedInternalKeys.isEmpty()) {
       eventBuilder.setApp(
           capturedEvent.getApp().toBuilder()
-              .setCustomAttributes(ImmutableList.from(sortedCustomAttributes))
-              .setInternalKeys(ImmutableList.from(sortedInternalKeys))
+              .setCustomAttributes(sortedCustomAttributes)
+              .setInternalKeys(sortedInternalKeys)
               .build());
     }
 
@@ -346,7 +345,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
         attributesList,
         (CustomAttribute attr1, CustomAttribute attr2) -> attr1.getKey().compareTo(attr2.getKey()));
 
-    return attributesList;
+    return Collections.unmodifiableList(attributesList);
   }
 
   @RequiresApi(api = Build.VERSION_CODES.R)
