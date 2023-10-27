@@ -477,7 +477,7 @@ public class SQLiteEventStore
               event.setCode(cursor.getInt(6));
             }
             if (!cursor.isNull(8)) {
-                event.setProductId(cursor.getInt(8));
+              event.setProductId(cursor.getInt(8));
             }
             events.add(PersistedEvent.create(id, transportContext, event.build()));
           }

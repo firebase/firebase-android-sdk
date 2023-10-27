@@ -276,9 +276,9 @@ class StateSimulations {
       values.put("timestamp_ms", 1);
       values.put("uptime_ms", 2);
       values.put(
-              "payload",
-              new EncodedPayload(PROTOBUF_ENCODING, "Hello".getBytes(Charset.defaultCharset()))
-                      .getBytes());
+          "payload",
+          new EncodedPayload(PROTOBUF_ENCODING, "Hello".getBytes(Charset.defaultCharset()))
+              .getBytes());
       values.put("code", 1);
       values.put("num_attempts", 0);
       values.put("payload_encoding", "encoding");
