@@ -686,6 +686,12 @@ public abstract class CrashlyticsReport {
         @Nullable
         public abstract Boolean getBackground();
 
+        @Nullable
+        public abstract ProcessDetails getCurrentProcessDetails();
+
+        @Nullable
+        public abstract ImmutableList<ProcessDetails> getAppProcessDetails();
+
         public abstract int getUiOrientation();
 
         @NonNull
@@ -955,6 +961,43 @@ public abstract class CrashlyticsReport {
           }
         }
 
+        @AutoValue
+        public abstract static class ProcessDetails {
+          @NonNull
+          public abstract String getProcessName();
+
+          public abstract int getPid();
+
+          public abstract int getImportance();
+
+          public abstract boolean isDefaultProcess();
+
+          @NonNull
+          public static Builder builder() {
+            return new AutoValue_CrashlyticsReport_Session_Event_Application_ProcessDetails
+                .Builder();
+          }
+
+          /** Builder for {@link ProcessDetails}. */
+          @AutoValue.Builder
+          public abstract static class Builder {
+            @NonNull
+            public abstract Builder setProcessName(@NonNull String processName);
+
+            @NonNull
+            public abstract Builder setPid(int pid);
+
+            @NonNull
+            public abstract Builder setImportance(int importance);
+
+            @NonNull
+            public abstract Builder setDefaultProcess(boolean isDefaultProcess);
+
+            @NonNull
+            public abstract ProcessDetails build();
+          }
+        }
+
         /** Builder for {@link Application}. */
         @AutoValue.Builder
         public abstract static class Builder {
@@ -971,6 +1014,13 @@ public abstract class CrashlyticsReport {
 
           @NonNull
           public abstract Builder setBackground(@Nullable Boolean value);
+
+          @NonNull
+          public abstract Builder setCurrentProcessDetails(@Nullable ProcessDetails processDetails);
+
+          @NonNull
+          public abstract Builder setAppProcessDetails(
+              @Nullable ImmutableList<ProcessDetails> appProcessDetails);
 
           @NonNull
           public abstract Builder setUiOrientation(int value);

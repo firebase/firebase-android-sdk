@@ -25,11 +25,13 @@ import android.os.Environment;
 import android.os.StatFs;
 import android.text.TextUtils;
 import com.google.firebase.crashlytics.BuildConfig;
+import com.google.firebase.crashlytics.internal.ProcessDetailsProvider;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Architecture;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.BinaryImage;
+import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.ProcessDetails;
 import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
@@ -71,6 +73,7 @@ public class CrashlyticsReportDataCapture {
   private final AppData appData;
   private final StackTraceTrimmingStrategy stackTraceTrimmingStrategy;
   private final SettingsProvider settingsProvider;
+  private final ProcessDetailsProvider processDetailsProvider = ProcessDetailsProvider.INSTANCE;
 
   public CrashlyticsReportDataCapture(
       Context context,
@@ -239,17 +242,18 @@ public class CrashlyticsReportDataCapture {
       int maxChainedExceptions,
       boolean includeAllThreads) {
     Boolean isBackground = null;
-    final RunningAppProcessInfo runningAppProcessInfo =
-        CommonUtils.getAppProcessInfo(appData.packageName, context);
-    if (runningAppProcessInfo != null) {
+    ProcessDetails currentProcessDetails = processDetailsProvider.getCurrentProcessDetails(context);
+    if (currentProcessDetails.getImportance() > 0) {
       // Several different types of "background" states, easiest to check for not foreground.
       isBackground =
-          runningAppProcessInfo.importance
+          currentProcessDetails.getImportance()
               != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND;
     }
 
     return Event.Application.builder()
         .setBackground(isBackground)
+        .setCurrentProcessDetails(currentProcessDetails)
+        .setAppProcessDetails(processDetailsProvider.getAppProcessDetails(context))
         .setUiOrientation(orientation)
         .setExecution(
             populateExecutionData(
@@ -268,6 +272,7 @@ public class CrashlyticsReportDataCapture {
 
     return Event.Application.builder()
         .setBackground(isBackground)
+        .setCurrentProcessDetails(processDetailsFromApplicationExitInfo(applicationExitInfo))
         .setUiOrientation(orientation)
         .setExecution(populateExecutionData(applicationExitInfo))
         .build();
@@ -474,5 +479,14 @@ public class CrashlyticsReportDataCapture {
   /** Returns the given value, or zero is the value is negative. */
   private static long ensureNonNegative(long value) {
     return value > 0 ? value : 0;
+  }
+
+  /** Builds a ProcessDetails object from the details in applicationExitInfo. */
+  private ProcessDetails processDetailsFromApplicationExitInfo(
+      CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
+    return processDetailsProvider.buildProcessDetails(
+        applicationExitInfo.getProcessName(),
+        applicationExitInfo.getPid(),
+        applicationExitInfo.getImportance());
   }
 }

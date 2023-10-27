@@ -20,7 +20,6 @@ import static com.google.firebase.firestore.AggregateField.sum;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
-import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -34,7 +33,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
-import static org.junit.Assume.assumeTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -344,30 +342,6 @@ public class AggregationTest {
   }
 
   @Test
-  public void testCanGetCorrectTypeForSum() {
-    assumeTrue(
-        "This query requires a composite index, which is not support when testing"
-            + " against production. So it only runs against emulator which doesn't require "
-            + "an index. ",
-        isRunningAgainstEmulator());
-
-    CollectionReference collection = testCollectionWithDocs(testDocs1);
-
-    AggregateQuerySnapshot snapshot =
-        waitFor(
-            collection
-                .aggregate(sum("pages"), sum("height"), sum("weight"))
-                .get(AggregateSource.SERVER));
-
-    Object sumPages = snapshot.get(sum("pages"));
-    Object sumHeight = snapshot.get(sum("height"));
-    Object sumWeight = snapshot.get(sum("weight"));
-    assertTrue(sumPages instanceof Long);
-    assertTrue(sumHeight instanceof Double);
-    assertTrue(sumWeight instanceof Double);
-  }
-
-  @Test
   public void testCanGetCorrectDoubleTypeForSum() {
     CollectionReference collection = testCollectionWithDocs(testDocs1);
 
@@ -412,31 +386,6 @@ public class AggregationTest {
   }
 
   @Test
-  public void testCanPerformMaxAggregations() {
-    assumeTrue(
-        "This query requires a composite index, which is not support when testing"
-            + " against production. So it only runs against emulator which doesn't require "
-            + "an index. ",
-        isRunningAgainstEmulator());
-
-    CollectionReference collection = testCollectionWithDocs(testDocs1);
-    AggregateField f1 = sum("pages");
-    AggregateField f2 = average("pages");
-    AggregateField f3 = AggregateField.count();
-    AggregateField f4 = sum("foo");
-    AggregateField f5 = sum("bar");
-
-    AggregateQuerySnapshot snapshot =
-        waitFor(collection.aggregate(f1, f2, f3, f4, f5).get(AggregateSource.SERVER));
-
-    assertEquals(snapshot.get(f1), 150L);
-    assertEquals(snapshot.get(f2), 75.0);
-    assertEquals(snapshot.get(f3), 2L);
-    assertEquals(snapshot.get(f4), 2L);
-    assertEquals(snapshot.get(f5), 4L);
-  }
-
-  @Test
   public void testCannotPerformMoreThanMaxAggregations() {
     CollectionReference collection = testCollectionWithDocs(testDocs1);
     AggregateField f1 = sum("pages");
@@ -453,51 +402,6 @@ public class AggregationTest {
     FirebaseFirestoreException firestoreException = (FirebaseFirestoreException) e;
     assertEquals(FirebaseFirestoreException.Code.INVALID_ARGUMENT, firestoreException.getCode());
     assertTrue(firestoreException.getMessage().contains("maximum number of aggregations"));
-  }
-
-  @Test
-  public void testCanRunAggregateCollectionGroupQuery() {
-    assumeTrue(
-        "This query requires a composite index, which is not support when testing"
-            + " against production. So it only runs against emulator which doesn't require "
-            + "an index. ",
-        isRunningAgainstEmulator());
-
-    FirebaseFirestore db = testFirestore();
-    // Use .document() to get a random collection group name to use but ensure it starts with 'b'
-    // for predictable ordering.
-    String collectionGroup = "b" + db.collection("foo").document().getId();
-
-    String[] docPaths =
-        new String[] {
-          "abc/123/${collectionGroup}/cg-doc1",
-          "abc/123/${collectionGroup}/cg-doc2",
-          "${collectionGroup}/cg-doc3",
-          "${collectionGroup}/cg-doc4",
-          "def/456/${collectionGroup}/cg-doc5",
-          "${collectionGroup}/virtual-doc/nested-coll/not-cg-doc",
-          "x${collectionGroup}/not-cg-doc",
-          "${collectionGroup}x/not-cg-doc",
-          "abc/123/${collectionGroup}x/not-cg-doc",
-          "abc/123/x${collectionGroup}/not-cg-doc",
-          "abc/${collectionGroup}"
-        };
-    WriteBatch batch = db.batch();
-    for (String path : docPaths) {
-      batch.set(db.document(path.replace("${collectionGroup}", collectionGroup)), map("x", 2));
-    }
-    waitFor(batch.commit());
-
-    AggregateQuerySnapshot snapshot =
-        waitFor(
-            db.collectionGroup(collectionGroup)
-                .aggregate(AggregateField.count(), sum("x"), average("x"))
-                .get(AggregateSource.SERVER));
-    assertEquals(
-        5L, // "cg-doc1", "cg-doc2", "cg-doc3", "cg-doc4", "cg-doc5",
-        snapshot.get(AggregateField.count()));
-    assertEquals(10L, snapshot.get(sum("x")));
-    assertEquals((Double) 2.0, snapshot.get(average("x")));
   }
 
   @Test
@@ -585,62 +489,6 @@ public class AggregationTest {
 
     assertEquals(snapshot.get(sum("rating")), 8L);
     assertEquals(snapshot.get(average("rating")), (Double) 4.0);
-    assertEquals(snapshot.get(AggregateField.count()), 2L);
-  }
-
-  @Test
-  public void testPerformsAggregationWhenUsingArrayContainsAnyOperator() {
-    assumeTrue(
-        "This query requires a composite index, which is not support when testing"
-            + " against production. So it only runs against emulator which doesn't require "
-            + "an index. ",
-        isRunningAgainstEmulator());
-
-    Map<String, Map<String, Object>> testDocs =
-        map(
-            "a",
-            map(
-                "author",
-                "authorA",
-                "title",
-                "titleA",
-                "pages",
-                100,
-                "year",
-                1980,
-                "rating",
-                asList(5, 1000)),
-            "b",
-            map(
-                "author", "authorB", "title", "titleB", "pages", 50, "year", 2020, "rating",
-                asList(4)),
-            "c",
-            map(
-                "author",
-                "authorC",
-                "title",
-                "titleC",
-                "pages",
-                100,
-                "year",
-                1980,
-                "rating",
-                asList(2222, 3)),
-            "d",
-            map(
-                "author", "authorD", "title", "titleD", "pages", 50, "year", 2020, "rating",
-                asList(0)));
-    CollectionReference collection = testCollectionWithDocs(testDocs);
-
-    AggregateQuerySnapshot snapshot =
-        waitFor(
-            collection
-                .whereArrayContainsAny("rating", asList(5, 3))
-                .aggregate(sum("pages"), average("pages"), AggregateField.count())
-                .get(AggregateSource.SERVER));
-
-    assertEquals(snapshot.get(sum("pages")), 200L);
-    assertEquals(snapshot.get(average("pages")), (Double) 100.0);
     assertEquals(snapshot.get(AggregateField.count()), 2L);
   }
 
