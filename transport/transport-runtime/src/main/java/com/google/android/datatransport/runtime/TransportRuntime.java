@@ -155,12 +155,17 @@ public class TransportRuntime implements TransportInternal {
   }
 
   private EventInternal convert(SendRequest request) {
-    return EventInternal.builder()
-        .setEventMillis(eventClock.getTime())
-        .setUptimeMillis(uptimeClock.getTime())
-        .setTransportName(request.getTransportName())
-        .setEncodedPayload(new EncodedPayload(request.getEncoding(), request.getPayload()))
-        .setCode(request.getEvent().getCode())
-        .build();
+    EventInternal.Builder builder =
+        EventInternal.builder()
+            .setEventMillis(eventClock.getTime())
+            .setUptimeMillis(uptimeClock.getTime())
+            .setTransportName(request.getTransportName())
+            .setEncodedPayload(new EncodedPayload(request.getEncoding(), request.getPayload()))
+            .setCode(request.getEvent().getCode());
+    if (request.getEvent().getProductData() != null
+        && request.getEvent().getProductData().getProductId() != null) {
+      builder.setProductId(request.getEvent().getProductData().getProductId());
+    }
+    return builder.build();
   }
 }
