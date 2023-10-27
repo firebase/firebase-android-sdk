@@ -35,13 +35,13 @@ internal object ProcessDetailsProvider {
     val runningAppProcesses = activityManager?.runningAppProcesses ?: listOf()
 
     return runningAppProcesses.filterNotNull().map { runningAppProcessInfo ->
-        ProcessDetails.builder()
-          .setProcessName(runningAppProcessInfo.processName)
-          .setPid(runningAppProcessInfo.pid)
-          .setImportance(runningAppProcessInfo.importance)
-          .setDefaultProcess(runningAppProcessInfo.processName == defaultProcessName)
-          .build()
-      }
+      ProcessDetails.builder()
+        .setProcessName(runningAppProcessInfo.processName)
+        .setPid(runningAppProcessInfo.pid)
+        .setImportance(runningAppProcessInfo.importance)
+        .setDefaultProcess(runningAppProcessInfo.processName == defaultProcessName)
+        .build()
+    }
   }
 
   /**
