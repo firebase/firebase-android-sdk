@@ -44,11 +44,11 @@ android {
 }
 
 dependencies {
-    api(project(":firebase-common"))
-    api(project(":firebase-common:ktx"))
+    api("com.google.firebase:firebase-common:20.4.2")
+    api("com.google.firebase:firebase-common-ktx:20.4.2")
     api(project(":firebase-functions"))
 
-    implementation(project(":firebase-components"))
+    implementation("com.google.firebase:firebase-components:17.1.5")
 
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.junit)

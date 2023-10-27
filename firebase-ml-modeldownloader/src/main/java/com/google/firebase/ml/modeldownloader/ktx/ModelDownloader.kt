@@ -23,40 +23,44 @@ import com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions
 import com.google.firebase.ml.modeldownloader.FirebaseModelDownloader
 import java.io.File
 
-/** Returns the [FirebaseModelDownloader] instance of the default [FirebaseApp]. */
-@Deprecated(
-  "com.google.firebase.ml.modeldownloaderktx.Firebase.modelDownloader has been deprecated. Use `com.google.firebase.ml.modeldownloaderFirebase.modelDownloader` instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.modelDownloader",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.ml.modeldownloadermodelDownloader"]
-  )
-)
+/**
+ * Accessing this object for Kotlin apps has changed; see the
+ * [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ *
+ * Returns the [FirebaseModelDownloader] instance of the default [FirebaseApp].
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-ml-modeldownloade-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 val Firebase.modelDownloader: FirebaseModelDownloader
   get() = FirebaseModelDownloader.getInstance()
 
-/** Returns the [FirebaseModelDownloader] instance of a given [FirebaseApp]. */
-@Deprecated(
-  "com.google.firebase.ml.modeldownloaderktx.Firebase.modelDownloader(app) has been deprecated. Use `com.google.firebase.ml.modeldownloaderFirebase.modelDownloader(app)` instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.modelDownloader(app)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.ml.modeldownloadermodelDownloader"]
-  )
-)
+/**
+ * Accessing this object for Kotlin apps has changed; see the
+ * [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ *
+ * Returns the [FirebaseModelDownloader] instance of a given [FirebaseApp].
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-ml-modeldownloade-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 fun Firebase.modelDownloader(app: FirebaseApp) = FirebaseModelDownloader.getInstance(app)
 
-/** Returns a [CustomModelDownloadConditions] initialized using the [init] function. */
+/**
+ * Returns a [CustomModelDownloadConditions] initialized using the [init] function.
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-ml-modeldownloade-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 @Deprecated(
-  "Use `com.google.firebase.ml.modeldownloader.customModelDownloadConditions(init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-ml-modeldownloade-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "customModelDownloadConditions(init)",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.ml.modeldownloader.customModelDownloadConditions"
-      ]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 fun customModelDownloadConditions(
   init: CustomModelDownloadConditions.Builder.() -> Unit
@@ -76,17 +80,17 @@ operator fun CustomModel.component4() = modelHash
 
 operator fun CustomModel.component5() = name
 
-/** @suppress */
+/**
+ * @suppress
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-ml-modeldownloade-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 @Deprecated(
-  "Use `com.google.firebase.ml.modeldownloader.FirebaseMlModelDownloaderKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-ml-modeldownloade-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "FirebaseMlModelDownloaderKtxRegistrar",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.ml.modeldownloader.FirebaseMlModelDownloaderKtxRegistrar"
-      ]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 class FirebaseMlModelDownloaderKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> = listOf()

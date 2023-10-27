@@ -90,14 +90,14 @@ dependencies {
     implementation 'com.google.firebase:firebase-encoders:17.0.0'
     implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
     implementation 'javax.inject:javax.inject:1'
-    implementation('com.google.firebase:firebase-datatransport:18.1.7'){
+    implementation('com.google.firebase:firebase-datatransport:18.2.0'){
          exclude group: 'com.google.firebase', module: 'firebase-common'
          exclude group: 'com.google.firebase', module: 'firebase-components'
      }
-    implementation(project(":firebase-common"))
-    implementation(project(":firebase-common:ktx"))
-    implementation(project(":firebase-components"))
-    implementation(project(":firebase-installations"))
+    implementation("com.google.firebase:firebase-common:20.4.2")
+    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
+    implementation("com.google.firebase:firebase-components:17.1.3")
+    implementation("com.google.firebase:firebase-installations:17.2.0")
     javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
     testImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
     testImplementation "androidx.test:core:$androidxTestCoreVersion"
@@ -112,7 +112,10 @@ dependencies {
     testImplementation 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
     testImplementation 'org.mockito:mockito-core:3.3.3'
     testImplementation 'org.mockito:mockito-core:3.6.0'
-    testImplementation(project(":integ-testing"))
+    testImplementation(project(":integ-testing")) {
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
     vendor (libs.dagger.dagger) {
          exclude group: "javax.inject", module: "javax.inject"
      }

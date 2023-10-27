@@ -50,10 +50,10 @@ dependencies {
     javadocClasspath(libs.autovalue.annotations)
     javadocClasspath(libs.findbugs.jsr305)
 
-    implementation(project(":appcheck:firebase-appcheck-interop"))
-    implementation(project(":firebase-common"))
-    implementation(project(":firebase-common:ktx"))
-    implementation(project(":firebase-components"))
+    implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
+    implementation("com.google.firebase:firebase-common:20.4.2")
+    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
+    implementation("com.google.firebase:firebase-components:17.1.5")
     implementation("com.google.firebase:firebase-annotations:16.2.0")
     implementation("com.google.firebase:firebase-auth-interop:18.0.0") {
        exclude(group = "com.google.firebase", module = "firebase-common")

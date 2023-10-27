@@ -162,6 +162,34 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       - uses: google-github-actions/setup-gcloud@v0
+            
+      # create composite indexes with Terraform
+      - name: Setup Terraform 
+        uses: hashicorp/setup-terraform@v2
+      - name: Terraform Init
+        run: |
+          cd firebase-firestore
+          terraform init
+        continue-on-error: true
+      - name: Terraform Apply
+        if: github.event_name == 'pull_request'
+        run: |
+          cd firebase-firestore
+
+          # Define a temporary file, redirect both stdout and stderr to the file
+          output_file=$(mktemp)
+          if ! terraform apply -var-file=../google-services.json -auto-approve > "$output_file" 2>&1 ; then
+            cat "$output_file"
+            if cat "$output_file" | grep -q "index already exists"; then
+              echo "==================================================================================="
+              echo -e "\e[93m\e[1mTerraform apply failed due to index already exists; We can safely ignore this error.\e[0m"
+              echo "==================================================================================="
+            fi
+            exit 1
+          fi
+          rm -f "$output_file"
+        continue-on-error: true
+
       - name: Firestore Named DB Integ Tests
         env:
           FIREBASE_CI: 1

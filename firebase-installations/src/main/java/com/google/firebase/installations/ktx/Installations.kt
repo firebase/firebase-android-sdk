@@ -20,39 +20,38 @@ import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.installations.FirebaseInstallations
 import com.google.firebase.ktx.Firebase
 
-/** Returns the [FirebaseInstallations] instance of the default [FirebaseApp]. */
-@Deprecated(
-  "com.google.firebase.installationsktx.Firebase.installations has been deprecated. Use `com.google.firebase.installationsFirebase.installations` instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.installations",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.installationsinstallations"]
-  )
-)
+/**
+ * Accessing this object for Kotlin apps has changed; see the
+ * [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ *
+ * Returns the [FirebaseInstallations] instance of the default [FirebaseApp].
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no
+ * longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 val Firebase.installations: FirebaseInstallations
   get() = FirebaseInstallations.getInstance()
 
-/** Returns the [FirebaseInstallations] instance of a given [FirebaseApp]. */
-@Deprecated(
-  "com.google.firebase.installations.Firebase.installations(app) has been deprecated. Use `com.google.firebase.installationsFirebase.installations(app)` instead.",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.installations(app)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.installations.installations"]
-  )
-)
+/**
+ * Accessing this object for Kotlin apps has changed; see the
+ * [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ *
+ * Returns the [FirebaseInstallations] instance of a given [FirebaseApp].
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-storage-ktx` are now deprecated. As early as April 2024, we'll no
+ * longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 fun Firebase.installations(app: FirebaseApp): FirebaseInstallations =
   FirebaseInstallations.getInstance(app)
 
 /** @suppress */
 @Deprecated(
   "com.google.firebase.installations.FirebaseInstallationsKtxRegistrar has been deprecated. Use `com.google.firebase.installationsFirebaseInstallationsKtxRegistrar` instead.",
-  ReplaceWith(
-    expression = "FirebaseInstallationsKtxRegistrar",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.installations.FirebaseInstallationsKtxRegistrar"
-      ]
-  )
+  ReplaceWith("")
 )
 class FirebaseInstallationsKtxRegistrar : ComponentRegistrar {
   override fun getComponents(): List<Component<*>> = listOf()

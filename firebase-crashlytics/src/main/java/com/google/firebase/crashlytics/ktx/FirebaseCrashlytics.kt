@@ -21,45 +21,48 @@ import com.google.firebase.components.ComponentRegistrar
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.ktx.Firebase
 
-/** Returns the [FirebaseCrashlytics] instance of the default [FirebaseApp]. */
-@Deprecated(
-  "Use `com.google.firebase.Firebase.crashlytics` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.crashlytics",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.crashlytics.crashlytics"]
-  )
-)
+/**
+ * Accessing this object for Kotlin apps has changed; see the
+ * [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ *
+ * Returns the [FirebaseCrashlytics] instance of the default [FirebaseApp].
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll
+ * no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 val Firebase.crashlytics: FirebaseCrashlytics
   get() = FirebaseCrashlytics.getInstance()
 
-/** Associates all key-value parameters with the reports */
+/**
+ * Associates all key-value parameters with the reports
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll
+ * no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 @Deprecated(
-  "Use `com.google.firebase.crashlytics.FirebaseCrashlytics.setCustomKeys(init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "FirebaseCrashlytics.setCustomKeys(init)",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.crashlytics.FirebaseCrashlytics.setCustomKeys"
-      ]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 fun FirebaseCrashlytics.setCustomKeys(init: KeyValueBuilder.() -> Unit) {
   val builder = KeyValueBuilder(this)
   builder.init()
 }
 
-/** @suppress */
+/**
+ * @suppress
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll
+ * no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 @Deprecated(
-  "Use `com.google.firebase.crashlytics.FirebaseCrashlyticsKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "FirebaseCrashlyticsKtxRegistrar",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.crashlytics.FirebaseCrashlyticsKtxRegistrar"
-      ]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 @Keep
 internal class FirebaseCrashlyticsKtxRegistrar : ComponentRegistrar {

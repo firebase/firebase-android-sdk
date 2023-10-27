@@ -19,10 +19,15 @@ import com.google.firebase.database.DataSnapshot
 /**
  * Used to emit events about changes in the child locations of a given [Query] when using the
  * [childEvents] Flow.
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no
+ * longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.database.ChildEvent` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(expression = "ChildEvent", imports = ["com.google.firebase.database.ChildEvent"])
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 sealed class ChildEvent {
   /**
@@ -33,13 +38,15 @@ sealed class ChildEvent {
    * ```
    *     will be null for the first child node of a location.
    * ```
+   * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+   * respective main modules, and the Kotlin extension (KTX) APIs in
+   * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll
+   * no longer release KTX modules. For details, see the
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
-    "Use `com.google.firebase.database.ChildEvent.Added` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-    ReplaceWith(
-      expression = "com.google.firebase.database.ChildEvent.Added",
-      imports = ["com.google.firebase.Firebase", "com.google.firebase.database.ChildEvent.Added"]
-    )
+    "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+    ReplaceWith("")
   )
   data class Added(val snapshot: DataSnapshot, val previousChildName: String?) : ChildEvent()
 
@@ -51,13 +58,15 @@ sealed class ChildEvent {
    * ```
    *     be null for the first child node of a location.
    * ```
+   * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+   * respective main modules, and the Kotlin extension (KTX) APIs in
+   * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll
+   * no longer release KTX modules. For details, see the
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
-    "Use `com.google.firebase.database.ChildEvent.Changed` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
-    ReplaceWith(
-      expression = "com.google.firebase.database.ChildEvent.Changed",
-      imports = ["com.google.firebase.Firebase", "com.google.firebase.database.ChildEvent.Changed"]
-    )
+    "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+    ReplaceWith("")
   )
   data class Changed(val snapshot: DataSnapshot, val previousChildName: String?) : ChildEvent()
 
@@ -65,13 +74,15 @@ sealed class ChildEvent {
    * Emitted when a child is removed from the location.
    *
    * @param snapshot An immutable snapshot of the data at the child that was removed.
+   * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+   * respective main modules, and the Kotlin extension (KTX) APIs in
+   * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll
+   * no longer release KTX modules. For details, see the
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
-    "Use `com.google.firebase.database.ChildEvent.Removed` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-    ReplaceWith(
-      expression = "com.google.firebase.database.ChildEvent.Removed",
-      imports = ["com.google.firebase.Firebase", "com.google.firebase.database.ChildEvent.Removed"]
-    )
+    "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+    ReplaceWith("")
   )
   data class Removed(val snapshot: DataSnapshot) : ChildEvent()
 
@@ -83,13 +94,15 @@ sealed class ChildEvent {
    * ```
    *     location. This will be null if this location is ordered first.
    * ```
+   * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+   * respective main modules, and the Kotlin extension (KTX) APIs in
+   * `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll
+   * no longer release KTX modules. For details, see the
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
    */
   @Deprecated(
-    "Use `com.google.firebase.database.ChildEvent.Moved` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-database-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-    ReplaceWith(
-      expression = "com.google.firebase.database.ChildEvent.Moved",
-      imports = ["com.google.firebase.Firebase", "com.google.firebase.database.ChildEvent.Moved"]
-    )
+    "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+    ReplaceWith("")
   )
   data class Moved(val snapshot: DataSnapshot, val previousChildName: String?) : ChildEvent()
 }

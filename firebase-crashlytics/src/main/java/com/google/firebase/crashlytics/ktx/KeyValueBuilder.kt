@@ -18,67 +18,91 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 
 /** Helper class to enable fluent syntax in [setCustomKeys] */
 @Deprecated(
-  "com.google.firebase.crashlyticsktx.KeyValueBuilder(private has been deprecated. Use `com.google.firebase.crashlyticsKeyValueBuilder(private` instead.",
+  "Use `com.google.firebase.crashlytics.KeyValueBuilder` from the main module.",
 )
 class KeyValueBuilder(private val crashlytics: FirebaseCrashlytics) {
 
-  /** Sets a custom key and value that are associated with reports. */
+  /**
+   * Sets a custom key and value that are associated with reports.
+   * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+   * respective main modules, and the Kotlin extension (KTX) APIs in
+   * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024,
+   * we'll no longer release KTX modules. For details, see the
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+   */
   @Deprecated(
-    "com.google.firebase.crashlyticsktx. has been deprecated. Use `com.google.firebase.crashlytics` instead.",
-    ReplaceWith(
-      expression = "",
-      imports = ["com.google.firebase.Firebase", "com.google.firebase.crashlytics"]
-    )
+    "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
+    ReplaceWith("")
   )
   fun key(key: String, value: Boolean) = crashlytics.setCustomKey(key, value)
 
-  /** Sets a custom key and value that are associated with reports. */
+  /**
+   * Sets a custom key and value that are associated with reports.
+   * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+   * respective main modules, and the Kotlin extension (KTX) APIs in
+   * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024,
+   * we'll no longer release KTX modules. For details, see the
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+   */
   @Deprecated(
-    "com.google.firebase.crashlyticsktx. has been deprecated. Use `com.google.firebase.crashlytics` instead.",
-    ReplaceWith(
-      expression = "",
-      imports = ["com.google.firebase.Firebase", "com.google.firebase.crashlytics"]
-    )
+    "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
+    ReplaceWith("")
   )
   fun key(key: String, value: Double) = crashlytics.setCustomKey(key, value)
 
-  /** Sets a custom key and value that are associated with reports. */
+  /**
+   * Sets a custom key and value that are associated with reports.
+   * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+   * respective main modules, and the Kotlin extension (KTX) APIs in
+   * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024,
+   * we'll no longer release KTX modules. For details, see the
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+   */
   @Deprecated(
-    "com.google.firebase.crashlyticsktx. has been deprecated. Use `com.google.firebase.crashlytics` instead.",
-    ReplaceWith(
-      expression = "",
-      imports = ["com.google.firebase.Firebase", "com.google.firebase.crashlytics"]
-    )
+    "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
+    ReplaceWith("")
   )
   fun key(key: String, value: Float) = crashlytics.setCustomKey(key, value)
 
-  /** Sets a custom key and value that are associated with reports. */
+  /**
+   * Sets a custom key and value that are associated with reports.
+   * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+   * respective main modules, and the Kotlin extension (KTX) APIs in
+   * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024,
+   * we'll no longer release KTX modules. For details, see the
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+   */
   @Deprecated(
-    "com.google.firebase.crashlyticsktx. has been deprecated. Use `com.google.firebase.crashlytics` instead.",
-    ReplaceWith(
-      expression = "",
-      imports = ["com.google.firebase.Firebase", "com.google.firebase.crashlytics"]
-    )
+    "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
+    ReplaceWith("")
   )
   fun key(key: String, value: Int) = crashlytics.setCustomKey(key, value)
 
-  /** Sets a custom key and value that are associated with reports. */
+  /**
+   * Sets a custom key and value that are associated with reports.
+   * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+   * respective main modules, and the Kotlin extension (KTX) APIs in
+   * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024,
+   * we'll no longer release KTX modules. For details, see the
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+   */
   @Deprecated(
-    "com.google.firebase.crashlyticsktx. has been deprecated. Use `com.google.firebase.crashlytics` instead.",
-    ReplaceWith(
-      expression = "",
-      imports = ["com.google.firebase.Firebase", "com.google.firebase.crashlytics"]
-    )
+    "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
+    ReplaceWith("")
   )
   fun key(key: String, value: Long) = crashlytics.setCustomKey(key, value)
 
-  /** Sets a custom key and value that are associated with reports. */
+  /**
+   * Sets a custom key and value that are associated with reports.
+   * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+   * respective main modules, and the Kotlin extension (KTX) APIs in
+   * `com.google.firebase:firebase-crashlytics-ktx` are now deprecated. As early as April 2024,
+   * we'll no longer release KTX modules. For details, see the
+   * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+   */
   @Deprecated(
-    "com.google.firebase.crashlyticsktx. has been deprecated. Use `com.google.firebase.crashlytics` instead.",
-    ReplaceWith(
-      expression = "",
-      imports = ["com.google.firebase.Firebase", "com.google.firebase.crashlytics"]
-    )
+    "Use `com.google.firebase.crashlytics.KeyValueBuilder.key(key, value)` from the main module.",
+    ReplaceWith("")
   )
   fun key(key: String, value: String) = crashlytics.setCustomKey(key, value)
 }

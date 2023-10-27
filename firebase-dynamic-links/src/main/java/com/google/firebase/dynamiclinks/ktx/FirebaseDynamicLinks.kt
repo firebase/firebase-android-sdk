@@ -25,25 +25,31 @@ import com.google.firebase.dynamiclinks.PendingDynamicLinkData
 import com.google.firebase.dynamiclinks.ShortDynamicLink
 import com.google.firebase.ktx.Firebase
 
-/** Returns the [FirebaseDynamicLinks] instance of the default [FirebaseApp]. */
-@Deprecated(
-  "Use `com.google.firebase.Firebase.dynamicLinks` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.dynamicLinks",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.dynamicLinks"]
-  )
-)
+/**
+ * Accessing this object for Kotlin apps has changed; see the
+ * [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ *
+ * Returns the [FirebaseDynamicLinks] instance of the default [FirebaseApp].
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 val Firebase.dynamicLinks: FirebaseDynamicLinks
   get() = FirebaseDynamicLinks.getInstance()
 
-/** Returns the [FirebaseDynamicLinks] instance of a given [FirebaseApp]. */
-@Deprecated(
-  "Use `com.google.firebase.Firebase.dynamicLinks(app)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "com.google.firebase.Firebase.dynamicLinks(app)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.dynamicLinks"]
-  )
-)
+/**
+ * Accessing this object for Kotlin apps has changed; see the
+ * [migration guide](https://firebase.google.com/docs/android/kotlin-migration).
+ *
+ * Returns the [FirebaseDynamicLinks] instance of a given [FirebaseApp].
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 fun Firebase.dynamicLinks(app: FirebaseApp): FirebaseDynamicLinks {
   return FirebaseDynamicLinks.getInstance(app)
 }
@@ -51,13 +57,15 @@ fun Firebase.dynamicLinks(app: FirebaseApp): FirebaseDynamicLinks {
 /**
  * Creates a [DynamicLink.AndroidParameters] object initialized using the [init] function and sets
  * it to the [DynamicLink.Builder]
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.DynamicLink.Builder.androidParameters(init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "androidParameters(init)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.androidParameters"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 fun DynamicLink.Builder.androidParameters(init: DynamicLink.AndroidParameters.Builder.() -> Unit) {
   val builder = DynamicLink.AndroidParameters.Builder()
@@ -68,13 +76,15 @@ fun DynamicLink.Builder.androidParameters(init: DynamicLink.AndroidParameters.Bu
 /**
  * Creates a [DynamicLink.AndroidParameters] object initialized with the specified [packageName] and
  * using the [init] function and sets it to the [DynamicLink.Builder]
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.DynamicLink.Builder.androidParameters(packageName, init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "androidParameters(packageName, init)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.androidParameters"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 fun DynamicLink.Builder.androidParameters(
   packageName: String,
@@ -88,13 +98,15 @@ fun DynamicLink.Builder.androidParameters(
 /**
  * Creates a [DynamicLink.IosParameters] object initialized with the specified [bundleId] and using
  * the [init] function and sets it to the [DynamicLink.Builder]
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.DynamicLink.Builder.iosParameters(bundleId, init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "iosParameters(bundleId, init)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.iosParameters"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 fun DynamicLink.Builder.iosParameters(
   bundleId: String,
@@ -108,14 +120,15 @@ fun DynamicLink.Builder.iosParameters(
 /**
  * Creates a [DynamicLink.GoogleAnalyticsParameters] object initialized using the [init] function
  * and sets it to the [DynamicLink.Builder]
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.DynamicLink.Builder.googleAnalyticsParameters(init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "googleAnalyticsParameters(init)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.googleAnalyticsParameters"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 fun DynamicLink.Builder.googleAnalyticsParameters(
   init: DynamicLink.GoogleAnalyticsParameters.Builder.() -> Unit
@@ -128,15 +141,13 @@ fun DynamicLink.Builder.googleAnalyticsParameters(
 /**
  * Creates a [DynamicLink.GoogleAnalyticsParameters] object initialized with the specified [source],
  * [medium], [campaign] and using the [init] function and sets it to the [DynamicLink.Builder].
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
-@Deprecated(
-  "com.google.firebase.dynamiclinks.googleAnalyticsParameters( has been deprecated. Use `com.google.firebase.dynamiclinksDynamicLink.Builder.googleAnalyticsParameters(` instead.",
-  ReplaceWith(
-    expression = "googleAnalyticsParameters(source, medium, campaign, init)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.googleAnalyticsParameters"]
-  )
-)
+@Deprecated("com.google.firebase.dynam", ReplaceWith(""))
 fun DynamicLink.Builder.googleAnalyticsParameters(
   source: String,
   medium: String,
@@ -151,17 +162,15 @@ fun DynamicLink.Builder.googleAnalyticsParameters(
 /**
  * Creates a [DynamicLink.ItunesConnectAnalyticsParameters] object initialized using the [init]
  * function and sets it to the [DynamicLink.Builder]
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.DynamicLink.Builder.itunesConnectAnalyticsParameter(init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "itunesConnectAnalyticsParameters(init)",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.dynamiclinks.itunesConnectAnalyticsParameters"
-      ]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 fun DynamicLink.Builder.itunesConnectAnalyticsParameters(
   init: DynamicLink.ItunesConnectAnalyticsParameters.Builder.() -> Unit
@@ -174,14 +183,15 @@ fun DynamicLink.Builder.itunesConnectAnalyticsParameters(
 /**
  * Creates a [DynamicLink.SocialMetaTagParameters] object initialized using the [init] function and
  * sets it to the [DynamicLink.Builder]
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.DynamicLink.Builder.socialMetaTagParameters(init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "socialMetaTagParameters(init)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.socialMetaTagParameters"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 fun DynamicLink.Builder.socialMetaTagParameters(
   init: DynamicLink.SocialMetaTagParameters.Builder.() -> Unit
@@ -194,14 +204,15 @@ fun DynamicLink.Builder.socialMetaTagParameters(
 /**
  * Creates a [DynamicLink.NavigationInfoParameters] object initialized using the [init] function and
  * sets it to the [DynamicLink.Builder]
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
  */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.DynamicLink.Builder.navigationInfoParameters(init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "navigationInfoParameters(init)",
-    imports =
-      ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.navigationInfoParameters"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 fun DynamicLink.Builder.navigationInfoParameters(
   init: DynamicLink.NavigationInfoParameters.Builder.() -> Unit
@@ -211,13 +222,17 @@ fun DynamicLink.Builder.navigationInfoParameters(
   setNavigationInfoParameters(builder.build())
 }
 
-/** Creates a [DynamicLink] object initialized using the [init] function. */
+/**
+ * Creates a [DynamicLink] object initialized using the [init] function.
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.FirebaseDynamicLinks.dynamicLink` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "dynamicLink(init)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.dynamicLink"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 fun FirebaseDynamicLinks.dynamicLink(init: DynamicLink.Builder.() -> Unit): DynamicLink {
   val builder = FirebaseDynamicLinks.getInstance().createDynamicLink()
@@ -225,13 +240,17 @@ fun FirebaseDynamicLinks.dynamicLink(init: DynamicLink.Builder.() -> Unit): Dyna
   return builder.buildDynamicLink()
 }
 
-/** Creates a [ShortDynamicLink] object initialized using the [init] function. */
+/**
+ * Creates a [ShortDynamicLink] object initialized using the [init] function.
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.FirebaseDynamicLinks.shortLinkAsync(init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "shortLinkAsync(init)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.shortLinkAsync"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 fun FirebaseDynamicLinks.shortLinkAsync(
   init: DynamicLink.Builder.() -> Unit
@@ -241,13 +260,17 @@ fun FirebaseDynamicLinks.shortLinkAsync(
   return builder.buildShortDynamicLink()
 }
 
-/** Creates a [ShortDynamicLink] object initialized using the [init] function. */
+/**
+ * Creates a [ShortDynamicLink] object initialized using the [init] function.
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.FirebaseDynamicLinks.shortLinkAsync(suffix, init)` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "shortLinkAsync(suffix, init)",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.shortLinkAsync"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 fun FirebaseDynamicLinks.shortLinkAsync(
   suffix: Int,
@@ -258,77 +281,101 @@ fun FirebaseDynamicLinks.shortLinkAsync(
   return builder.buildShortDynamicLink(suffix)
 }
 
-/** Destructuring declaration for [ShortDynamicLink] to provide shortLink. */
+/**
+ * Destructuring declaration for [ShortDynamicLink] to provide shortLink.
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.ShortDynamicLink.component1` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "component1()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.component1()"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 operator fun ShortDynamicLink.component1() = shortLink
 
-/** Destructuring declaration for [ShortDynamicLink] to provide previewLink. */
+/**
+ * Destructuring declaration for [ShortDynamicLink] to provide previewLink.
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.ShortDynamicLink.component2` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the <a href=\"https://firebase.google.com/docs/android/ktx-apis-to-main-modules\">FAQ about this initiative.</a>",
-  ReplaceWith(
-    expression = "component2()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.component2"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 operator fun ShortDynamicLink.component2() = previewLink
 
-/** Destructuring declaration for [ShortDynamicLink] to provide warnings. */
+/**
+ * Destructuring declaration for [ShortDynamicLink] to provide warnings.
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.ShortDynamicLink.component3` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "component3()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.component3"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 operator fun ShortDynamicLink.component3(): List<ShortDynamicLink.Warning> = warnings
 
-/** Destructuring declaration for [PendingDynamicLinkData] to provide link. */
+/**
+ * Destructuring declaration for [PendingDynamicLinkData] to provide link.
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.PendingDynamicLinkData.component1` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "component1()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.component1"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 operator fun PendingDynamicLinkData.component1() = link
 
-/** Destructuring declaration for [PendingDynamicLinkData] to provide minimumAppVersion. */
+/**
+ * Destructuring declaration for [PendingDynamicLinkData] to provide minimumAppVersion.
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.PendingDynamicLinkData.component2` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "component2()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.component2"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 operator fun PendingDynamicLinkData.component2() = minimumAppVersion
 
-/** Destructuring declaration for [PendingDynamicLinkData] to provide clickTimestamp. */
+/**
+ * Destructuring declaration for [PendingDynamicLinkData] to provide clickTimestamp.
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.PendingDynamicLinkData.component3` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "component3()",
-    imports = ["com.google.firebase.Firebase", "com.google.firebase.dynamiclinks.component3"]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 operator fun PendingDynamicLinkData.component3() = clickTimestamp
 
-/** @suppress */
+/**
+ * @suppress
+ * @deprecated **Deprecation Notice:** The Kotlin extensions (KTX) APIs have been added to their
+ * respective main modules, and the Kotlin extension (KTX) APIs in
+ * `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024,
+ * we'll no longer release KTX modules. For details, see the
+ * [FAQ about this initiative.](https://firebase.google.com/docs/android/kotlin-migration)
+ */
 @Deprecated(
-  "Use `com.google.firebase.dynamiclinks.FirebaseDynamicLinksKtxRegistrar` from the main module instead. The Kotlin extensions (KTX) APIs have been added to their respective main modules, and the Kotlin extension (KTX) APIs in `com.google.firebase.firebase-dynamic-links-ktx` are now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the [FAQ about this initiative.](https://firebase.google.com/docs/android/ktx-apis-to-main-modules){:.external}",
-  ReplaceWith(
-    expression = "FirebaseDynamicLinksKtxRegistrar",
-    imports =
-      [
-        "com.google.firebase.Firebase",
-        "com.google.firebase.dynamiclinks.FirebaseDynamicLinksKtxRegistrar"
-      ]
-  )
+  "Migrate to use the KTX API from the main module: https://firebase.google.com/docs/android/kotlin-migration.",
+  ReplaceWith("")
 )
 @Keep
 class FirebaseDynamicLinksKtxRegistrar : ComponentRegistrar {

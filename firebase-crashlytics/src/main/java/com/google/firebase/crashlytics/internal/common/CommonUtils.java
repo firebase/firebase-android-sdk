@@ -132,28 +132,6 @@ public class CommonUtils {
     }
   }
 
-  /**
-   * Returns the RunningAppProcessInfo object for the given package, or null if it cannot be found.
-   */
-  public static ActivityManager.RunningAppProcessInfo getAppProcessInfo(
-      String packageName, Context context) {
-    final ActivityManager actman =
-        (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-    final List<ActivityManager.RunningAppProcessInfo> processes = actman.getRunningAppProcesses();
-    ActivityManager.RunningAppProcessInfo procInfo = null;
-    // According to docs, the result of getRunningAppProcesses can be null instead of empty.
-    // Yay.
-    if (processes != null) {
-      for (ActivityManager.RunningAppProcessInfo info : processes) {
-        if (info.processName.equals(packageName)) {
-          procInfo = info;
-          break;
-        }
-      }
-    }
-    return procInfo;
-  }
-
   public static String streamToString(InputStream is) {
     // Previous code was running into this: http://code.google.com/p/android/issues/detail?id=14562
     // on Android 2.3.3. The below code below does not exhibit that problem.
