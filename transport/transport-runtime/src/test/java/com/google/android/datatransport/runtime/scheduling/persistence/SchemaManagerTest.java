@@ -123,9 +123,9 @@ public class SchemaManagerTest {
   }
 
   @Test
-  public void upgradingV3ToV4_nonEmptyDB_isLossless() {
-    int oldVersion = 3;
-    int newVersion = 4;
+  public void upgradingV4ToV6_nonEmptyDB_isLossless() {
+    int oldVersion = 4;
+    int newVersion = 6;
     SchemaManager schemaManager =
         new SchemaManager(ApplicationProvider.getApplicationContext(), DB_NAME, oldVersion);
     SQLiteEventStore store =
@@ -134,7 +134,7 @@ public class SchemaManagerTest {
     // We cannot simulate older operations with a newer client
     PersistedEvent event1 = simulatedPersistOnV1Database(schemaManager, CONTEXT1, EVENT1);
 
-    // Upgrade to V4
+    // Upgrade to V6
     schemaManager.onUpgrade(schemaManager.getWritableDatabase(), oldVersion, newVersion);
     assertThat(store.loadBatch(CONTEXT1)).containsExactly(event1);
 
