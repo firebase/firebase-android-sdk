@@ -20,16 +20,18 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import android.os.Build;
+import androidx.annotation.RequiresApi;
 import com.google.firebase.firestore.FieldValue;
 
 
@@ -51,22 +53,33 @@ class RecordMapper<T> extends BeanMapper<T> {
   private final Constructor<T> constructor;
   private final Map<String, Integer> constructorParamIndexes = new HashMap<>();
 
+  @RequiresApi(api = Build.VERSION_CODES.O)
   RecordMapper(Class<T> clazz) {
     super(clazz);
 
-    constructor = getCanonicalConstructor(clazz);
+    Constructor<?>[] constructors = clazz.getConstructors();
+    if (constructors.length != 1) {
+      throw new RuntimeException("Record class has custom constructor(s): " + clazz.getName());
+    }
 
-    Field[] recordComponents = clazz.getDeclaredFields();
+    //noinspection unchecked
+    constructor = (Constructor<T>) constructors[0];
+
+    Parameter[] recordComponents = constructor.getParameters();
     if (recordComponents.length == 0) {
       throw new RuntimeException("No properties to serialize found on class " + clazz.getName());
     }
 
-    for (int i = 0; i < recordComponents.length; i++) {
-      Field recordComponent = recordComponents[i];
-      String propertyName = propertyName(recordComponent);
-      constructorParamIndexes.put(propertyName, i);
-      accessors.put(propertyName, getAccessor(clazz, recordComponent));
-      applyFieldAnnotations(recordComponent);
+    try {
+      for (int i = 0; i < recordComponents.length; i++) {
+        Field field = clazz.getDeclaredField(recordComponents[i].getName());
+        String propertyName = propertyName(field);
+        constructorParamIndexes.put(propertyName, i);
+        accessors.put(propertyName, getAccessor(clazz, field));
+        applyFieldAnnotations(field);
+      }
+    } catch (NoSuchFieldException e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -139,26 +152,6 @@ class RecordMapper<T> extends BeanMapper<T> {
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  private static <T> Constructor<T> getCanonicalConstructor(Class<T> cls) {
-    try {
-      Class<?>[] paramTypes = getParamTypes(cls);
-      Constructor<T> constructor = cls.getDeclaredConstructor(paramTypes);
-      constructor.setAccessible(true);
-      return constructor;
-    } catch (NoSuchMethodException e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
-  private static <T> Class<?>[] getParamTypes(Class<T> cls) {
-    Field[] recordComponents = cls.getDeclaredFields();
-    List<Class<?>> types = new ArrayList<>(recordComponents.length);
-    for (Field element : recordComponents) {
-      types.add(element.getType());
-    }
-    return types.toArray(CLASSES_ARRAY_TYPE);
   }
 
   private static Method getAccessor(Class<?> clazz, Field recordComponent) {

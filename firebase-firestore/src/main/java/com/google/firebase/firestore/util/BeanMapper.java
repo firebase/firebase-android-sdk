@@ -25,6 +25,7 @@ import com.google.firebase.firestore.ServerTimestamp;
 import com.google.firebase.firestore.ThrowOnExtraProperties;
 
 import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -116,7 +117,7 @@ abstract class BeanMapper<T> {
     return annotatedName != null? annotatedName : field.getName();
   }
 
-  static String annotatedName(AccessibleObject obj) {
+  static String annotatedName(AnnotatedElement obj) {
     if (obj.isAnnotationPresent(PropertyName.class)) {
       PropertyName annotation = obj.getAnnotation(PropertyName.class);
       return annotation.value();

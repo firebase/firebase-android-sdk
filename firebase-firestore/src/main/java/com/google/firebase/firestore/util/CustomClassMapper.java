@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import android.net.Uri;
+import android.os.Build;
 import com.google.common.collect.Sets;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
@@ -374,7 +375,7 @@ public class CustomClassMapper {
     @SuppressWarnings("unchecked")
     BeanMapper<T> mapper = (BeanMapper<T>) mappers.get(clazz);
     if (mapper == null) {
-      if (isRecordType(clazz)) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && isRecordType(clazz)) {
         mapper = new RecordMapper<>(clazz);
       } else {
         mapper = new PojoBeanMapper<>(clazz);
