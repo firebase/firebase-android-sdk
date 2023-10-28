@@ -404,7 +404,8 @@ public class SessionReportingCoordinatorTest {
     String byteBackedSessionName = "byte";
     BytesBackedNativeSessionFile byteSession =
         new BytesBackedNativeSessionFile(byteBackedSessionName, "not_applicable", testBytes);
-    reportingCoordinator.finalizeSessionWithNativeEvent("id", Collections.singletonList(byteSession), null);
+    reportingCoordinator.finalizeSessionWithNativeEvent(
+        "id", Collections.singletonList(byteSession), null);
 
     ArgumentCaptor<CrashlyticsReport.FilesPayload> filesPayload =
         ArgumentCaptor.forClass(CrashlyticsReport.FilesPayload.class);

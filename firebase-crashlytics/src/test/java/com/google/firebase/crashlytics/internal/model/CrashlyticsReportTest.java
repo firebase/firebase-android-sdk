@@ -49,8 +49,8 @@ public class CrashlyticsReportTest {
     final CrashlyticsReport testReport = makeTestReport();
 
     assertNull(testReport.getSession().getEvents());
-        final CrashlyticsReport withAnrEventsReport =
-                testReport.withEvents(Collections.singletonList(makeAnrEvent()));
+    final CrashlyticsReport withAnrEventsReport =
+        testReport.withEvents(Collections.singletonList(makeAnrEvent()));
 
     assertNotEquals(testReport, withAnrEventsReport);
     assertNotNull(withAnrEventsReport.getSession().getEvents());
@@ -274,7 +274,7 @@ public class CrashlyticsReportTest {
                 .setExecution(
                     Execution.builder()
                         .setBinaries(
-                                Collections.singletonList(
+                            Collections.singletonList(
                                 Execution.BinaryImage.builder()
                                     .setBaseAddress(0)
                                     .setName("name")
@@ -290,7 +290,7 @@ public class CrashlyticsReportTest {
                                 .build())
                         .setSignal(Signal.builder().setCode("0").setName("0").setAddress(0).build())
                         .setThreads(
-                                Collections.singletonList(
+                            Collections.singletonList(
                                 Session.Event.Application.Execution.Thread.builder()
                                     .setName("name")
                                     .setImportance(4)
@@ -326,28 +326,32 @@ public class CrashlyticsReportTest {
 
   private static List<Frame> makeTestFrames() {
     ArrayList<Frame> frames = new ArrayList<>();
-    frames.add(Frame.builder()
+    frames.add(
+        Frame.builder()
             .setPc(0)
             .setSymbol("func1")
             .setFile("Test.java")
             .setOffset(36)
             .setImportance(4)
             .build());
-    frames.add(Frame.builder()
+    frames.add(
+        Frame.builder()
             .setPc(0)
             .setSymbol("func2")
             .setFile("Test.java")
             .setOffset(5637)
             .setImportance(4)
             .build());
-    frames.add(Frame.builder()
+    frames.add(
+        Frame.builder()
             .setPc(0)
             .setSymbol("func3")
             .setFile("Test.java")
             .setOffset(22429)
             .setImportance(4)
             .build());
-    frames.add(Frame.builder()
+    frames.add(
+        Frame.builder()
             .setPc(0)
             .setSymbol("func4")
             .setFile("Test.java")

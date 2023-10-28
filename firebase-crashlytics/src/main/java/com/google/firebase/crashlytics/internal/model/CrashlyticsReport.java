@@ -1020,7 +1020,7 @@ public abstract class CrashlyticsReport {
 
           @NonNull
           public abstract Builder setAppProcessDetails(
-                  @Nullable List<ProcessDetails> appProcessDetails);
+              @Nullable List<ProcessDetails> appProcessDetails);
 
           @NonNull
           public abstract Builder setUiOrientation(int value);

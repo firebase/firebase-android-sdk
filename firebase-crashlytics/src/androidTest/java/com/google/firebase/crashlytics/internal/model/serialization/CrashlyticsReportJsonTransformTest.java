@@ -24,12 +24,10 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Signal;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Thread.Frame;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.User;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -229,28 +227,32 @@ public class CrashlyticsReportJsonTransformTest {
 
   private static List<Frame> makeTestFrames() {
     ArrayList<Frame> frames = new ArrayList<>();
-    frames.add(Frame.builder()
+    frames.add(
+        Frame.builder()
             .setPc(0)
             .setSymbol("func1")
             .setFile("Test.java")
             .setOffset(36)
             .setImportance(4)
             .build());
-    frames.add(Frame.builder()
+    frames.add(
+        Frame.builder()
             .setPc(0)
             .setSymbol("func2")
             .setFile("Test.java")
             .setOffset(5637)
             .setImportance(4)
             .build());
-    frames.add(Frame.builder()
+    frames.add(
+        Frame.builder()
             .setPc(0)
             .setSymbol("func3")
             .setFile("Test.java")
             .setOffset(22429)
             .setImportance(4)
             .build());
-    frames.add(Frame.builder()
+    frames.add(
+        Frame.builder()
             .setPc(0)
             .setSymbol("func4")
             .setFile("Test.java")
@@ -262,7 +264,7 @@ public class CrashlyticsReportJsonTransformTest {
 
   private static CrashlyticsReport.ApplicationExitInfo makeAppExitInfo(boolean withBuildIds) {
     List<CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch>
-            buildIdMappingForArchImmutableList = null;
+        buildIdMappingForArchImmutableList = null;
     if (withBuildIds) {
       buildIdMappingForArchImmutableList =
           Collections.singletonList(

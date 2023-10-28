@@ -36,7 +36,6 @@ import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.Settings.FeatureFlagData;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -458,8 +457,7 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     processDetails.add(process1);
     processDetails.add(process2);
     CrashlyticsReport.Session.Event testEvent =
-        makeTestEvent(
-            "java.lang.Exception", "reason", process1, processDetails);
+        makeTestEvent("java.lang.Exception", "reason", process1, processDetails);
 
     reportPersistence.persistReport(testReport);
     reportPersistence.persistEvent(testEvent, sessionId);
@@ -855,7 +853,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     byte[] testContents = {0, 2, 20, 10};
     return CrashlyticsReport.FilesPayload.builder()
         .setOrgId("orgId")
-        .setFiles(Collections.singletonList(
+        .setFiles(
+            Collections.singletonList(
                 CrashlyticsReport.FilesPayload.File.builder()
                     .setContents(testContents)
                     .setFilename("bytes")
@@ -868,7 +867,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
     CrashlyticsReport.FilesPayload filesPayload =
         CrashlyticsReport.FilesPayload.builder()
             .setOrgId("orgId")
-            .setFiles(Collections.singletonList(
+            .setFiles(
+                Collections.singletonList(
                     CrashlyticsReport.FilesPayload.File.builder()
                         .setContents(testContents)
                         .setFilename("bytes")
@@ -920,7 +920,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
                 .setAppProcessDetails(appProcessDetails)
                 .setExecution(
                     Execution.builder()
-                        .setBinaries(Collections.singletonList(
+                        .setBinaries(
+                            Collections.singletonList(
                                 Execution.BinaryImage.builder()
                                     .setBaseAddress(0)
                                     .setName("name")
@@ -935,7 +936,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
                                 .setType(type)
                                 .build())
                         .setSignal(Signal.builder().setCode("0").setName("0").setAddress(0).build())
-                        .setThreads(Collections.singletonList(
+                        .setThreads(
+                            Collections.singletonList(
                                 Session.Event.Application.Execution.Thread.builder()
                                     .setName("name")
                                     .setImportance(4)
@@ -965,7 +967,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
                 .setBackground(false)
                 .setExecution(
                     Execution.builder()
-                        .setBinaries(Collections.singletonList(
+                        .setBinaries(
+                            Collections.singletonList(
                                 Execution.BinaryImage.builder()
                                     .setBaseAddress(0)
                                     .setName("name")
@@ -991,7 +994,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
 
   private static List<Frame> makeTestFrames() {
     ArrayList<Frame> l = new ArrayList<>();
-    l.add(Frame.builder()
+    l.add(
+        Frame.builder()
             .setPc(0)
             .setSymbol("func1")
             .setFile("Test.java")
@@ -1014,7 +1018,8 @@ public class CrashlyticsReportPersistenceTest extends CrashlyticsTestCase {
             .setOffset(22429)
             .setImportance(4)
             .build());
-    l.add(Frame.builder()
+    l.add(
+        Frame.builder()
             .setPc(3)
             .setSymbol("func4")
             .setFile("Test.java")
