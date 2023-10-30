@@ -14,13 +14,26 @@
   ~ limitations under the License.
   -->
 
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
 
-    <include layout="@layout/content_main" />
+<LinearLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  android:layout_width="wrap_content"
+  android:layout_height="wrap_content"
+  android:orientation="vertical">
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+  <Button
+    android:id="@+id/widgetCrashButton"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/widget_crash_button_text"/>
+
+  <TextView
+    android:id="@+id/widgetTimeText"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:textSize="32dp"
+    android:textColor="#fafafa"
+    android:text=""/>
+
+</LinearLayout>
+
