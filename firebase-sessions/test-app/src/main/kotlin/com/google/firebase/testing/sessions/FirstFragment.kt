@@ -20,6 +20,7 @@ import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.icu.text.SimpleDateFormat
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -65,10 +66,12 @@ class FirstFragment : Fragment() {
     }
     binding.buttonForegroundProcess.setOnClickListener {
       if (binding.buttonForegroundProcess.getText().startsWith("Start")) {
-        ForegroundService.startService(
-          getContext()!!,
-          "Starting service at ${DATE_FMT.format(Date())}"
-        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+          ForegroundService.startService(
+            getContext()!!,
+            "Starting service at ${DATE_FMT?.format(Date()) ?: ""}"
+          )
+        }
         binding.buttonForegroundProcess.setText("Stop foreground service")
       } else {
         ForegroundService.stopService(getContext()!!)
@@ -98,6 +101,11 @@ class FirstFragment : Fragment() {
   }
 
   companion object {
-    val DATE_FMT = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+    val DATE_FMT =
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+      } else {
+        null
+      }
   }
 }

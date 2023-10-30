@@ -22,6 +22,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.icu.text.SimpleDateFormat
+import android.os.Build
 import android.widget.RemoteViews
 import com.google.firebase.FirebaseApp
 import java.util.Date
@@ -43,7 +44,9 @@ class CrashWidgetProvider : AppWidgetProvider() {
       val views: RemoteViews =
         RemoteViews(context.packageName, R.layout.crash_widget).apply {
           setOnClickPendingIntent(R.id.widgetCrashButton, getPendingCrashIntent(context))
-          setTextViewText(R.id.widgetTimeText, DATE_FMT.format(Date()))
+          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            setTextViewText(R.id.widgetTimeText, DATE_FMT?.format(Date()) ?: "")
+          }
         }
 
       // Tell the AppWidgetManager to perform an update on the current
@@ -73,6 +76,11 @@ class CrashWidgetProvider : AppWidgetProvider() {
 
   companion object {
     val CRASH_BUTTON_CLICK = "widgetCrashButtonClick"
-    val DATE_FMT = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+    val DATE_FMT =
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        SimpleDateFormat("HH:mm:ss", Locale.US)
+      } else {
+        null
+      }
   }
 }

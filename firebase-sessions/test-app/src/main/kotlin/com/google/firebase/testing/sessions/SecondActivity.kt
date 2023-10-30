@@ -19,6 +19,7 @@ package com.google.firebase.testing.sessions
 import android.app.ActivityManager
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 
@@ -34,8 +35,10 @@ class SecondActivity : BaseActivity() {
       startActivity(intent)
     }
     findViewById<Button>(R.id.kill_background_processes).setOnClickListener {
-      getSystemService(ActivityManager::class.java)
-        .killBackgroundProcesses("com.google.firebase.testing.sessions")
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        getSystemService(ActivityManager::class.java)
+          .killBackgroundProcesses("com.google.firebase.testing.sessions")
+      }
     }
   }
 }
