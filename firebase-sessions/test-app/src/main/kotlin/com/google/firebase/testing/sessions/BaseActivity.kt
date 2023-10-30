@@ -24,7 +24,6 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.FirebaseApp
 
-/**  */
 open class BaseActivity : AppCompatActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {

@@ -29,7 +29,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.google.firebase.FirebaseApp
 
-/**  */
 class ForegroundService : Service() {
   private val CHANNEL_ID = "CrashForegroundService"
   val receiver = CrashBroadcastReceiver()
