@@ -48,8 +48,8 @@ android {
 }
 
 dependencies {
-  api("com.google.firebase:firebase-common:20.4.2")
-  api("com.google.firebase:firebase-common-ktx:20.4.2")
+  api("com.google.firebase:firebase-common:20.4.3")
+  api("com.google.firebase:firebase-common-ktx:20.4.3")
 
   implementation("com.google.firebase:firebase-components:17.1.3")
   implementation("com.google.firebase:firebase-installations-interop:17.1.1") {

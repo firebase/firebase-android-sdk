@@ -18,6 +18,7 @@ package com.google.firebase.sessions
 
 import com.google.firebase.encoders.annotations.Encodable
 import com.google.firebase.encoders.json.NumberedEnum
+import com.google.firebase.processinfo.ProcessDetails
 
 /**
  * Contains the relevant information around a Firebase Session Event.
@@ -35,6 +36,12 @@ internal data class SessionEvent(
 
   /** Information about the application that is generating the session events. */
   val applicationInfo: ApplicationInfo,
+
+  /** Details about this process **/
+  val currentProcessDetails: ProcessDetails,
+
+  /** Details about all processes for this app **/
+  val appProcessDetails: List<ProcessDetails>
 )
 
 /** Enum denoting all possible session event types. */

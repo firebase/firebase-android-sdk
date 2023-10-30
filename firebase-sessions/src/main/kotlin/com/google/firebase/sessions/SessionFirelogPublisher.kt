@@ -21,6 +21,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
 import com.google.firebase.installations.FirebaseInstallationsApi
+import com.google.firebase.processinfo.ProcessDetailsProvider
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.settings.SessionsSettings
 import kotlin.coroutines.CoroutineContext
@@ -67,6 +68,8 @@ internal class SessionFirelogPublisherImpl(
             firebaseApp,
             sessionDetails,
             sessionSettings,
+            ProcessDetailsProvider.getCurrentProcessDetails(firebaseApp.applicationContext),
+            ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext),
             FirebaseSessionsDependencies.getRegisteredSubscribers(),
             getFirebaseInstallationId(),
           )

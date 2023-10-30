@@ -20,6 +20,7 @@ import android.os.Build
 import com.google.firebase.FirebaseApp
 import com.google.firebase.encoders.DataEncoder
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder
+import com.google.firebase.processinfo.ProcessDetails
 import com.google.firebase.sessions.api.SessionSubscriber
 import com.google.firebase.sessions.settings.SessionsSettings
 
@@ -37,6 +38,8 @@ internal object SessionEvents {
     firebaseApp: FirebaseApp,
     sessionDetails: SessionDetails,
     sessionsSettings: SessionsSettings,
+    processDetails: ProcessDetails,
+    appProcessDetails: List<ProcessDetails>,
     subscribers: Map<SessionSubscriber.Name, SessionSubscriber> = emptyMap(),
     firebaseInstallationId: String = "",
   ) =
@@ -55,7 +58,9 @@ internal object SessionEvents {
           ),
           firebaseInstallationId,
         ),
-      applicationInfo = getApplicationInfo(firebaseApp)
+      applicationInfo = getApplicationInfo(firebaseApp),
+      currentProcessDetails = processDetails,
+      appProcessDetails = appProcessDetails,
     )
 
   fun getApplicationInfo(firebaseApp: FirebaseApp): ApplicationInfo {

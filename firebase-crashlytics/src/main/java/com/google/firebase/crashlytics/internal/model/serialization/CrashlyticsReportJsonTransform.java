@@ -22,12 +22,14 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
-import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
+import com.google.firebase.processinfo.ProcessDetails;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class CrashlyticsReportJsonTransform {
@@ -294,13 +296,10 @@ public class CrashlyticsReportJsonTransform {
     jsonReader.beginObject();
     while (jsonReader.hasNext()) {
       String name = jsonReader.nextName();
-      switch (name) {
-        case "identifier":
-          builder.setIdentifier(jsonReader.nextString());
-          break;
-        default:
-          jsonReader.skipValue();
-          break;
+      if (name.equals("identifier")) {
+        builder.setIdentifier(jsonReader.nextString());
+      } else {
+        jsonReader.skipValue();
       }
     }
     jsonReader.endObject();
@@ -500,9 +499,9 @@ public class CrashlyticsReportJsonTransform {
   }
 
   @NonNull
-  private static Event.Application.ProcessDetails parseProcessDetails(
+  private static ProcessDetails parseProcessDetails(
       @NonNull JsonReader jsonReader) throws IOException {
-    Event.Application.ProcessDetails.Builder builder = Event.Application.ProcessDetails.builder();
+    ProcessDetails.Builder builder = ProcessDetails.builder();
 
     jsonReader.beginObject();
     while (jsonReader.hasNext()) {
@@ -764,13 +763,10 @@ public class CrashlyticsReportJsonTransform {
     jsonReader.beginObject();
     while (jsonReader.hasNext()) {
       String name = jsonReader.nextName();
-      switch (name) {
-        case "content":
-          builder.setContent(jsonReader.nextString());
-          break;
-        default:
-          jsonReader.skipValue();
-          break;
+      if (name.equals("content")) {
+        builder.setContent(jsonReader.nextString());
+      } else {
+        jsonReader.skipValue();
       }
     }
     jsonReader.endObject();
@@ -829,7 +825,7 @@ public class CrashlyticsReportJsonTransform {
   }
 
   @NonNull
-  private static <T> ImmutableList<T> parseArray(
+  private static <T> List<T> parseArray(
       @NonNull JsonReader jsonReader, @NonNull ObjectParser<T> objectParser) throws IOException {
     final List<T> objects = new ArrayList<>();
 
@@ -839,7 +835,7 @@ public class CrashlyticsReportJsonTransform {
     }
     jsonReader.endArray();
 
-    return ImmutableList.from(objects);
+    return Collections.unmodifiableList(objects);
   }
 
   private interface ObjectParser<T> {

@@ -14,37 +14,33 @@
  * limitations under the License.
  */
 
-package com.google.firebase.crashlytics.internal
+package com.google.firebase.processinfo
 
 import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
 import android.os.Process
-import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.ProcessDetails
-import com.google.firebase.crashlytics.internal.model.ImmutableList
 
 /**
  * Provider of ProcessDetails.
  *
  * @hide
  */
-internal object ProcessDetailsProvider {
+object ProcessDetailsProvider {
   /** Gets the details of all running app processes. */
-  fun getAppProcessDetails(context: Context): ImmutableList<ProcessDetails> {
+  fun getAppProcessDetails(context: Context): List<ProcessDetails> {
     val defaultProcessName = context.applicationInfo.processName
     val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
     val runningAppProcesses = activityManager?.runningAppProcesses ?: listOf()
 
-    return ImmutableList.from(
-      runningAppProcesses.filterNotNull().map { runningAppProcessInfo ->
-        ProcessDetails.builder()
-          .setProcessName(runningAppProcessInfo.processName)
-          .setPid(runningAppProcessInfo.pid)
-          .setImportance(runningAppProcessInfo.importance)
-          .setDefaultProcess(runningAppProcessInfo.processName == defaultProcessName)
-          .build()
-      }
-    )
+    return runningAppProcesses.filterNotNull().map { runningAppProcessInfo ->
+      ProcessDetails.builder()
+        .setProcessName(runningAppProcessInfo.processName)
+        .setPid(runningAppProcessInfo.pid)
+        .setImportance(runningAppProcessInfo.importance)
+        .setDefaultProcess(runningAppProcessInfo.processName == defaultProcessName)
+        .build()
+    }
   }
 
   /**
