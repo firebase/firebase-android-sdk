@@ -135,6 +135,7 @@ public class SQLiteEventStore
               values.put("num_attempts", 0);
               values.put("inline", inline);
               values.put("payload", inline ? payloadBytes : new byte[0]);
+              values.put("product_id", event.getProductId());
               long newEventId = db.insert("events", null, values);
               if (!inline) {
                 int numChunks = (int) Math.ceil((double) payloadBytes.length / maxBlobSizePerRow);
@@ -448,6 +449,7 @@ public class SQLiteEventStore
               "payload",
               "code",
               "inline",
+              "product_id",
             },
             "context_id = ?",
             new String[] {contextId.toString()},
@@ -473,6 +475,9 @@ public class SQLiteEventStore
             }
             if (!cursor.isNull(6)) {
               event.setCode(cursor.getInt(6));
+            }
+            if (!cursor.isNull(8)) {
+              event.setProductId(cursor.getInt(8));
             }
             events.add(PersistedEvent.create(id, transportContext, event.build()));
           }

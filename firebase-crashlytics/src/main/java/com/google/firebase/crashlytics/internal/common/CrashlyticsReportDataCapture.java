@@ -32,11 +32,11 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.BinaryImage;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.ProcessDetails;
-import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.TrimmedThrowableData;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -135,7 +135,7 @@ public class CrashlyticsReportDataCapture {
 
   private CrashlyticsReport.ApplicationExitInfo addBuildIdInfo(
       CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
-    ImmutableList<CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch>
+    List<CrashlyticsReport.ApplicationExitInfo.BuildIdMappingForArch>
         buildIdMappingForArchImmutableList = null;
     if (settingsProvider.getSettingsSync().featureFlagData.collectBuildIds
         && appData.buildIdInfoList.size() > 0) {
@@ -149,7 +149,7 @@ public class CrashlyticsReportDataCapture {
                 .setBuildId(buildIdInfo.getBuildId())
                 .build());
       }
-      buildIdMappingForArchImmutableList = ImmutableList.from(buildIdMappingForArchList);
+      buildIdMappingForArchImmutableList = Collections.unmodifiableList(buildIdMappingForArchList);
     }
 
     return CrashlyticsReport.ApplicationExitInfo.builder()
@@ -327,7 +327,7 @@ public class CrashlyticsReportDataCapture {
         .build();
   }
 
-  private ImmutableList<Execution.Thread> populateThreadsList(
+  private List<Execution.Thread> populateThreadsList(
       TrimmedThrowableData trimmedEvent,
       Thread eventThread,
       int eventThreadImportance,
@@ -350,7 +350,7 @@ public class CrashlyticsReportDataCapture {
       }
     }
 
-    return ImmutableList.from(threadsList);
+    return Collections.unmodifiableList(threadsList);
   }
 
   private Execution.Thread populateThreadData(Thread thread, StackTraceElement[] stacktrace) {
@@ -362,18 +362,18 @@ public class CrashlyticsReportDataCapture {
     return Execution.Thread.builder()
         .setName(thread.getName())
         .setImportance(importance)
-        .setFrames(ImmutableList.from(populateFramesList(stacktrace, importance)))
+        .setFrames(populateFramesList(stacktrace, importance))
         .build();
   }
 
-  private ImmutableList<Execution.Thread.Frame> populateFramesList(
+  private List<Execution.Thread.Frame> populateFramesList(
       StackTraceElement[] stacktrace, int importance) {
     final List<Execution.Thread.Frame> framesList = new ArrayList<>();
     for (StackTraceElement element : stacktrace) {
       framesList.add(
           populateFrameData(element, Execution.Thread.Frame.builder().setImportance(importance)));
     }
-    return ImmutableList.from(framesList);
+    return Collections.unmodifiableList(framesList);
   }
 
   private Execution.Exception populateExceptionData(
@@ -405,7 +405,7 @@ public class CrashlyticsReportDataCapture {
         Execution.Exception.builder()
             .setType(type)
             .setReason(reason)
-            .setFrames(ImmutableList.from(populateFramesList(stacktrace, eventThreadImportance)))
+            .setFrames(populateFramesList(stacktrace, eventThreadImportance))
             .setOverflowCount(overflowCount);
 
     if (cause != null && overflowCount == 0) {
@@ -439,8 +439,8 @@ public class CrashlyticsReportDataCapture {
     return frameBuilder.setPc(pc).setSymbol(symbol).setFile(file).setOffset(offset).build();
   }
 
-  private ImmutableList<BinaryImage> populateBinaryImagesList() {
-    return ImmutableList.from(populateBinaryImageData());
+  private List<BinaryImage> populateBinaryImagesList() {
+    return Collections.singletonList(populateBinaryImageData());
   }
 
   private Execution.BinaryImage populateBinaryImageData() {
