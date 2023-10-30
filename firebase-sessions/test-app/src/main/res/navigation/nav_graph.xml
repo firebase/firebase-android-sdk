@@ -13,14 +13,16 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/FirstFragment">
 
-    <include layout="@layout/content_main" />
+    <fragment
+        android:id="@+id/FirstFragment"
+        android:name="com.google.firebase.testing.sessions.FirstFragment"
+        android:label="@string/first_fragment_label"
+        tools:layout="@layout/fragment_first" />
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</navigation>

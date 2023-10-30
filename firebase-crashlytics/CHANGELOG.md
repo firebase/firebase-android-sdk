@@ -1,5 +1,6 @@
 # Unreleased
 
+* [changed] Include more details about app processes in reports.
 
 # 18.5.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-crashlytics-ktx`

@@ -16,17 +16,17 @@
 
 package com.google.firebase.testing.sessions
 
-import android.os.Bundle
-import com.google.firebase.testing.sessions.databinding.ActivityMainBinding
+import android.app.Application
+import android.content.IntentFilter
+import android.util.Log
 
-class MainActivity : BaseActivity() {
+class TestApplication : Application() {
 
-  private lateinit var binding: ActivityMainBinding
+  val broadcastReceiver = CrashBroadcastReceiver()
 
-  override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-
-    binding = ActivityMainBinding.inflate(layoutInflater)
-    setContentView(binding.root)
+  override fun onCreate() {
+    super.onCreate()
+    registerReceiver(broadcastReceiver, IntentFilter(CrashBroadcastReceiver.CRASH_ACTION))
+    registerReceiver(broadcastReceiver, IntentFilter(CrashBroadcastReceiver.TOAST_ACTION))
   }
 }

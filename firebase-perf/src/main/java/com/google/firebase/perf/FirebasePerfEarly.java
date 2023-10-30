@@ -15,17 +15,13 @@
 package com.google.firebase.perf;
 
 import android.content.Context;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.metrics.AppStartTrace;
-import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
-import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
-import com.google.firebase.sessions.api.SessionSubscriber;
 import java.util.concurrent.Executor;
 
 /**
@@ -55,31 +51,7 @@ public class FirebasePerfEarly {
       uiExecutor.execute(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
     }
 
-    // Register with Firebase sessions to receive updates about session changes.
-    FirebaseSessionsDependencies.register(
-        new SessionSubscriber() {
-          @Override
-          public void onSessionChanged(@NonNull SessionDetails sessionDetails) {
-            PerfSession perfSession = PerfSession.createWithId(sessionDetails.getSessionId());
-            SessionManager.getInstance().updatePerfSession(perfSession);
-          }
-
-          @Override
-          public boolean isDataCollectionEnabled() {
-            // If there is no cached config data available for data collection, be conservative.
-            // Return false.
-            if (!configResolver.isCollectionEnabledConfigValueAvailable()) {
-              return false;
-            }
-            return ConfigResolver.getInstance().isPerformanceMonitoringEnabled();
-          }
-
-          @NonNull
-          @Override
-          public Name getSessionSubscriberName() {
-            return SessionSubscriber.Name.PERFORMANCE;
-          }
-        });
+    // TODO: Bring back Firebase Sessions dependency to watch for updates to sessions.
 
     // In the case of cold start, we create a session and start collecting gauges as early as
     // possible.
