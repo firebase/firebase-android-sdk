@@ -101,9 +101,7 @@ internal class FirebaseSessionsRegistrar : ComponentRegistrar {
       Component.builder(SessionLifecycleServiceBinder::class.java)
         .name("sessions-service-binder")
         .add(Dependency.required(firebaseApp))
-        .factory { container ->
-          SessionLifecycleServiceBinderImpl(container.get(firebaseApp))
-        }
+        .factory { container -> SessionLifecycleServiceBinderImpl(container.get(firebaseApp)) }
         .build(),
       LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
     )
