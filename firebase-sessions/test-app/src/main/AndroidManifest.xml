@@ -15,61 +15,61 @@
   -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+  xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES"/>
+  <application
+    android:icon="@mipmap/ic_launcher"
+    android:label="@string/app_name"
+    android:name=".TestApplication"
+    android:supportsRtl="true"
+    android:theme="@style/Theme.Widget_test_app"
+    tools:targetApi="31">
+    <activity
+      android:exported="true"
+      android:label="@string/app_name"
+      android:name=".MainActivity"
+      android:theme="@style/Theme.Widget_test_app.NoActionBar">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
 
-    <application
-        android:name=".TestApplication"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:supportsRtl="true"
-        android:theme="@style/Theme.Widget_test_app"
-        tools:targetApi="31">
-        <meta-data
-          android:name="firebase_performance_logcat_enabled"
-          android:value="true" />
-        <activity
-          android:name=".MainActivity"
-          android:exported="true"
-          android:label="@string/app_name"
-          android:theme="@style/Theme.Widget_test_app.NoActionBar"
-          >
-          <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
-            <category android:name="android.intent.category.LAUNCHER" />
-          </intent-filter>
-        </activity>
+    <activity
+      android:exported="true"
+      android:label="@string/app_name"
+      android:name=".SecondActivity"
+      android:process=":second"
+      android:theme="@style/Theme.Widget_test_app.NoActionBar" />
 
-        <activity
-          android:name=".SecondActivity"
-          android:exported="true"
-          android:label="@string/app_name"
-          android:theme="@style/Theme.Widget_test_app.NoActionBar" 
-          android:process=":second"/>
+    <meta-data
+      android:name="firebase_performance_logcat_enabled"
+      android:value="true" />
 
-      <receiver
-        android:name="CrashWidgetProvider"
-        android:process=":widgetProcess"
-        android:exported="false">
-        <intent-filter>
-          <action
-            android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-        </intent-filter>
-        <meta-data
-          android:name="android.appwidget.provider"
-          android:resource="@xml/homescreen_widget" />
-      </receiver>
+    <receiver
+      android:exported="false"
+      android:name="CrashWidgetProvider"
+      android:process=":widgetProcess">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data
+        android:name="android.appwidget.provider"
+        android:resource="@xml/homescreen_widget" />
+    </receiver>
 
-      <receiver android:name=".CrashBroadcastReceiver" />
+    <receiver android:name=".CrashBroadcastReceiver" />
 
-      <service
-        android:name=".ForegroundService"
-        android:process=":foregroundServiceProcess"
-        android:enabled="true"
-        android:exported="false" />
+    <service
+      android:enabled="true"
+      android:exported="false"
+      android:name=".ForegroundService"
+      android:process=":foregroundServiceProcess" />
 
-    </application>
+  </application>
+
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
+
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 </manifest>

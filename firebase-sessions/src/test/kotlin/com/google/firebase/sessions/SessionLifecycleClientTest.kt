@@ -46,8 +46,7 @@ import org.robolectric.Shadows.shadowOf
 @MediumTest
 @RunWith(RobolectricTestRunner::class)
 internal class SessionLifecycleClientTest {
-
-  lateinit var fakeService: FakeSessionLifecycleServiceBinder
+  private lateinit var fakeService: FakeSessionLifecycleServiceBinder
 
   @Before
   fun setUp() {
@@ -189,8 +188,8 @@ internal class SessionLifecycleClientTest {
   fun doesNotSendLifecycleEventsWithoutEnabledSubscribers() =
     runTest(UnconfinedTestDispatcher()) {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
-      val crashlyticsSubscriber = addSubscriber(false, SessionSubscriber.Name.CRASHLYTICS)
-      val perfSubscriber = addSubscriber(false, SessionSubscriber.Name.PERFORMANCE)
+      addSubscriber(collectionEnabled = false, SessionSubscriber.Name.CRASHLYTICS)
+      addSubscriber(collectionEnabled = false, SessionSubscriber.Name.MATT_SAYS_HI)
       client.bindToService()
 
       fakeService.serviceConnected()
@@ -205,8 +204,8 @@ internal class SessionLifecycleClientTest {
   fun sendsLifecycleEventsWhenAtLeastOneEnabledSubscriber() =
     runTest(UnconfinedTestDispatcher()) {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
-      val crashlyticsSubscriber = addSubscriber(true, SessionSubscriber.Name.CRASHLYTICS)
-      val perfSubscriber = addSubscriber(false, SessionSubscriber.Name.PERFORMANCE)
+      addSubscriber(collectionEnabled = true, SessionSubscriber.Name.CRASHLYTICS)
+      addSubscriber(collectionEnabled = false, SessionSubscriber.Name.MATT_SAYS_HI)
       client.bindToService()
 
       fakeService.serviceConnected()
@@ -234,7 +233,7 @@ internal class SessionLifecycleClientTest {
     runTest(UnconfinedTestDispatcher()) {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
       val crashlyticsSubscriber = addSubscriber(true, SessionSubscriber.Name.CRASHLYTICS)
-      val perfSubscriber = addSubscriber(true, SessionSubscriber.Name.PERFORMANCE)
+      val mattSaysHiSubscriber = addSubscriber(true, SessionSubscriber.Name.MATT_SAYS_HI)
       client.bindToService()
 
       fakeService.serviceConnected()
@@ -242,7 +241,7 @@ internal class SessionLifecycleClientTest {
 
       waitForMessages()
       assertThat(crashlyticsSubscriber.sessionChangedEvents).containsExactly(SessionDetails("123"))
-      assertThat(perfSubscriber.sessionChangedEvents).containsExactly(SessionDetails("123"))
+      assertThat(mattSaysHiSubscriber.sessionChangedEvents).containsExactly(SessionDetails("123"))
     }
 
   @Test
@@ -250,7 +249,7 @@ internal class SessionLifecycleClientTest {
     runTest(UnconfinedTestDispatcher()) {
       val client = SessionLifecycleClient(backgroundDispatcher() + coroutineContext)
       val crashlyticsSubscriber = addSubscriber(true, SessionSubscriber.Name.CRASHLYTICS)
-      val perfSubscriber = addSubscriber(false, SessionSubscriber.Name.PERFORMANCE)
+      val mattSaysHiSubscriber = addSubscriber(false, SessionSubscriber.Name.MATT_SAYS_HI)
       client.bindToService()
 
       fakeService.serviceConnected()
@@ -258,7 +257,7 @@ internal class SessionLifecycleClientTest {
 
       waitForMessages()
       assertThat(crashlyticsSubscriber.sessionChangedEvents).containsExactly(SessionDetails("123"))
-      assertThat(perfSubscriber.sessionChangedEvents).containsExactly(SessionDetails("123"))
+      assertThat(mattSaysHiSubscriber.sessionChangedEvents).containsExactly(SessionDetails("123"))
     }
 
   private fun addSubscriber(

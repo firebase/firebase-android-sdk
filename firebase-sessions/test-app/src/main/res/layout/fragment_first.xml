@@ -13,64 +13,63 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<ScrollView
-  xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
   android:layout_width="fill_parent"
   android:layout_height="fill_parent">
-  <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-      xmlns:app="http://schemas.android.com/apk/res-auto"
-      xmlns:tools="http://schemas.android.com/tools"
-      android:layout_width="match_parent"
-      android:layout_height="match_parent"
-      tools:context=".FirstFragment">
+  <LinearLayout xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    tools:context=".FirstFragment">
 
-      <Button
-          android:id="@+id/button_crash"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="@string/crash_button_text" />
+    <Button
+      android:id="@+id/button_crash"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/crash_button_text" />
 
-      <Button
-          android:id="@+id/button_non_fatal"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="@string/non_fatal_button_text"
-          app:layout_constraintTop_toBottomOf="@id/button_crash" />
+    <Button
+      android:id="@+id/button_non_fatal"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/non_fatal_button_text"
+      app:layout_constraintTop_toBottomOf="@id/button_crash" />
 
-      <Button
-          android:id="@+id/button_anr"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="@string/button_anr_text"
-          app:layout_constraintTop_toBottomOf="@id/button_non_fatal" />
+    <Button
+      android:id="@+id/button_anr"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/button_anr_text"
+      app:layout_constraintTop_toBottomOf="@id/button_non_fatal" />
 
-      <Button
-          android:id="@+id/button_foreground_process"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="@string/start_foreground_service_text"
-          app:layout_constraintTop_toBottomOf="@id/button_anr" />
+    <Button
+      android:id="@+id/button_foreground_process"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/start_foreground_service_text"
+      app:layout_constraintTop_toBottomOf="@id/button_anr" />
 
-      <Button
-          android:id="@+id/start_splitscreen"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="@string/start_splitcreen_text"
-          app:layout_constraintTop_toBottomOf="@id/button_foreground_process" />
+    <Button
+      android:id="@+id/start_splitscreen"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/start_splitcreen_text"
+      app:layout_constraintTop_toBottomOf="@id/button_foreground_process" />
 
-      <Button
-          android:id="@+id/start_splitscreen_same"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="@string/start_splitcreen_same_text"
-          app:layout_constraintTop_toBottomOf="@id/start_splitscreen" />
+    <Button
+      android:id="@+id/start_splitscreen_same"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/start_splitcreen_same_text"
+      app:layout_constraintTop_toBottomOf="@id/start_splitscreen" />
 
-      <Button
-          android:id="@+id/next_activity_button"
-          android:layout_width="wrap_content"
-          android:layout_height="wrap_content"
-          android:text="@string/next_activity_text"
-          app:layout_constraintTop_toBottomOf="@id/start_splitscreen_same" />
+    <Button
+      android:id="@+id/next_activity_button"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/next_activity_text"
+      app:layout_constraintTop_toBottomOf="@id/start_splitscreen_same" />
 
-  </androidx.constraintlayout.widget.ConstraintLayout>
+  </LinearLayout>
 </ScrollView>

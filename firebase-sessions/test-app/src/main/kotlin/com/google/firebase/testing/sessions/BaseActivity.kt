@@ -19,12 +19,12 @@ package com.google.firebase.testing.sessions
 import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo
 import android.app.Application
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.FirebaseApp
 
-/**  */
 open class BaseActivity : AppCompatActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,7 +64,12 @@ open class BaseActivity : AppCompatActivity() {
     return processInfo.importance
   }
 
-  private fun getProcessName(): String = Application.getProcessName()
+  private fun getProcessName(): String =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      Application.getProcessName()
+    } else {
+      ""
+    }
 
   companion object {
     val TAG = "BaseActivity"

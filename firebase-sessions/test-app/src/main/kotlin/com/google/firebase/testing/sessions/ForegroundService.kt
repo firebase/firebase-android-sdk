@@ -29,7 +29,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.google.firebase.FirebaseApp
 
-/**  */
 class ForegroundService : Service() {
   private val CHANNEL_ID = "CrashForegroundService"
   val receiver = CrashBroadcastReceiver()
@@ -100,7 +99,7 @@ class ForegroundService : Service() {
   }
 
   companion object {
-    val TAG = "CrashWidgetForegroundService"
+    val TAG = "CrashWidgetForeServ"
 
     fun startService(context: Context, message: String) {
       Log.i(TAG, "Starting foreground serice")
