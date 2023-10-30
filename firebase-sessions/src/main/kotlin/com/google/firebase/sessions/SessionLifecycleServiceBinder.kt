@@ -58,6 +58,6 @@ internal class SessionLifecycleServiceBinderImpl(private val firebaseApp: Fireba
   }
 
   companion object {
-    const val TAG = "SessionLifecycleServiceBinder"
+    const val TAG = "LifecycleServiceBinder"
   }
 }

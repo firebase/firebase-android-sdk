@@ -18,7 +18,6 @@ package com.google.firebase.testing.sessions
 
 import android.app.Application
 import android.content.IntentFilter
-import android.util.Log
 
 class TestApplication : Application() {
 
