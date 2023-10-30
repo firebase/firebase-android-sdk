@@ -24,6 +24,8 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAt
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
 import com.google.firebase.encoders.DataEncoder;
 import com.google.firebase.encoders.json.JsonDataEncoderBuilder;
+import com.google.firebase.processinfo.ProcessDetails;
+
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -497,9 +499,9 @@ public class CrashlyticsReportJsonTransform {
   }
 
   @NonNull
-  private static Event.Application.ProcessDetails parseProcessDetails(
+  private static ProcessDetails parseProcessDetails(
       @NonNull JsonReader jsonReader) throws IOException {
-    Event.Application.ProcessDetails.Builder builder = Event.Application.ProcessDetails.builder();
+    ProcessDetails.Builder builder = ProcessDetails.builder();
 
     jsonReader.beginObject();
     while (jsonReader.hasNext()) {

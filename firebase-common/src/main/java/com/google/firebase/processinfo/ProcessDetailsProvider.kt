@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package com.google.firebase.crashlytics.internal
+package com.google.firebase.processinfo
 
 import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
 import android.os.Process
-import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.ProcessDetails
 
 /**
  * Provider of ProcessDetails.
  *
  * @hide
  */
-internal object ProcessDetailsProvider {
+object ProcessDetailsProvider {
   /** Gets the details of all running app processes. */
   fun getAppProcessDetails(context: Context): List<ProcessDetails> {
     val defaultProcessName = context.applicationInfo.processName

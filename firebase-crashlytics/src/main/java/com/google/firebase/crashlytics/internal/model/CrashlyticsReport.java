@@ -23,6 +23,8 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.encoders.annotations.Encodable;
 import com.google.firebase.encoders.annotations.Encodable.Field;
 import com.google.firebase.encoders.annotations.Encodable.Ignore;
+import com.google.firebase.processinfo.ProcessDetails;
+
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.charset.Charset;
@@ -959,43 +961,6 @@ public abstract class CrashlyticsReport {
 
             @NonNull
             public abstract Execution build();
-          }
-        }
-
-        @AutoValue
-        public abstract static class ProcessDetails {
-          @NonNull
-          public abstract String getProcessName();
-
-          public abstract int getPid();
-
-          public abstract int getImportance();
-
-          public abstract boolean isDefaultProcess();
-
-          @NonNull
-          public static Builder builder() {
-            return new AutoValue_CrashlyticsReport_Session_Event_Application_ProcessDetails
-                .Builder();
-          }
-
-          /** Builder for {@link ProcessDetails}. */
-          @AutoValue.Builder
-          public abstract static class Builder {
-            @NonNull
-            public abstract Builder setProcessName(@NonNull String processName);
-
-            @NonNull
-            public abstract Builder setPid(int pid);
-
-            @NonNull
-            public abstract Builder setImportance(int importance);
-
-            @NonNull
-            public abstract Builder setDefaultProcess(boolean isDefaultProcess);
-
-            @NonNull
-            public abstract ProcessDetails build();
           }
         }
 

@@ -31,10 +31,11 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Signal;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.Execution.Thread.Frame;
-import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.ProcessDetails;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.Settings.FeatureFlagData;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
+import com.google.firebase.processinfo.ProcessDetails;
+
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
