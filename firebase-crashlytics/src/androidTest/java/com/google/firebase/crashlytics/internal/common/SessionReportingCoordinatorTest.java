@@ -35,12 +35,10 @@ import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.CustomAttribute;
-import com.google.firebase.crashlytics.internal.model.ImmutableList;
 import com.google.firebase.crashlytics.internal.persistence.CrashlyticsReportPersistence;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -233,8 +231,9 @@ public class SessionReportingCoordinatorTest {
     final CustomAttribute customAttribute2 =
         CustomAttribute.builder().setKey(testKey2).setValue(testValue2).build();
 
-    final ImmutableList<CustomAttribute> expectedCustomAttributes =
-        ImmutableList.from(customAttribute1, customAttribute2);
+    final List<CustomAttribute> expectedCustomAttributes = new ArrayList<>();
+    expectedCustomAttributes.add(customAttribute1);
+    expectedCustomAttributes.add(customAttribute2);
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
     when(reportMetadata.getInternalKeys()).thenReturn(attributes);
@@ -294,8 +293,9 @@ public class SessionReportingCoordinatorTest {
     final CustomAttribute customAttribute2 =
         CustomAttribute.builder().setKey(testKey2).setValue(testValue2).build();
 
-    final ImmutableList<CustomAttribute> expectedCustomAttributes =
-        ImmutableList.from(customAttribute1, customAttribute2);
+    final List<CustomAttribute> expectedCustomAttributes = new ArrayList<>();
+    expectedCustomAttributes.add(customAttribute1);
+    expectedCustomAttributes.add(customAttribute2);
 
     when(reportMetadata.getCustomKeys()).thenReturn(attributes);
 
@@ -331,8 +331,9 @@ public class SessionReportingCoordinatorTest {
     final CustomAttribute customAttribute2 =
         CustomAttribute.builder().setKey(testKey2).setValue(testValue2).build();
 
-    final ImmutableList<CustomAttribute> expectedCustomAttributes =
-        ImmutableList.from(customAttribute1, customAttribute2);
+    final List<CustomAttribute> expectedCustomAttributes = new ArrayList<>();
+    expectedCustomAttributes.add(customAttribute1);
+    expectedCustomAttributes.add(customAttribute2);
 
     when(reportMetadata.getInternalKeys()).thenReturn(attributes);
 
@@ -403,7 +404,8 @@ public class SessionReportingCoordinatorTest {
     String byteBackedSessionName = "byte";
     BytesBackedNativeSessionFile byteSession =
         new BytesBackedNativeSessionFile(byteBackedSessionName, "not_applicable", testBytes);
-    reportingCoordinator.finalizeSessionWithNativeEvent("id", Arrays.asList(byteSession), null);
+    reportingCoordinator.finalizeSessionWithNativeEvent(
+        "id", Collections.singletonList(byteSession), null);
 
     ArgumentCaptor<CrashlyticsReport.FilesPayload> filesPayload =
         ArgumentCaptor.forClass(CrashlyticsReport.FilesPayload.class);
