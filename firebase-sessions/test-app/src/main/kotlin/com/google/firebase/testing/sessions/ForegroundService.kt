@@ -99,7 +99,7 @@ class ForegroundService : Service() {
   }
 
   companion object {
-    val TAG = "CrashWidgetForeServ"
+    val TAG = "WidgetForegroundService"
 
     fun startService(context: Context, message: String) {
       Log.i(TAG, "Starting foreground serice")

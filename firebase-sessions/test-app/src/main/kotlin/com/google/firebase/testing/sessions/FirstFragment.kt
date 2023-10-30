@@ -66,12 +66,7 @@ class FirstFragment : Fragment() {
     }
     binding.buttonForegroundProcess.setOnClickListener {
       if (binding.buttonForegroundProcess.getText().startsWith("Start")) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-          ForegroundService.startService(
-            getContext()!!,
-            "Starting service at ${DATE_FMT?.format(Date()) ?: ""}"
-          )
-        }
+        ForegroundService.startService(getContext()!!, "Starting service at ${getDateText()}")
         binding.buttonForegroundProcess.setText("Stop foreground service")
       } else {
         ForegroundService.stopService(getContext()!!)
@@ -101,11 +96,9 @@ class FirstFragment : Fragment() {
   }
 
   companion object {
-    val DATE_FMT =
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-        SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-      } else {
-        null
-      }
+    fun getDateText(): String =
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+        SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+      else "unknown"
   }
 }
