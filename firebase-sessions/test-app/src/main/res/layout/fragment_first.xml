@@ -16,11 +16,11 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
   android:layout_width="fill_parent"
   android:layout_height="fill_parent">
-  <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+  <LinearLayout xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
     tools:context=".FirstFragment">
 
     <Button
@@ -71,5 +71,5 @@
       android:text="@string/next_activity_text"
       app:layout_constraintTop_toBottomOf="@id/start_splitscreen_same" />
 
-  </androidx.constraintlayout.widget.ConstraintLayout>
+  </LinearLayout>
 </ScrollView>
