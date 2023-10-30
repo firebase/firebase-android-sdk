@@ -44,7 +44,7 @@ class FirebaseSessionsTest {
   }
 
   @Test
-  fun initializeSessions_generatesSessionEvent() {
+  fun coldStart_generatesSessionEventOnFirstForeground() {
     // Add a fake dependency and register it, otherwise sessions will never send.
     val fakeSessionSubscriber = FakeSessionSubscriber()
     FirebaseSessionsDependencies.register(fakeSessionSubscriber)
@@ -54,24 +54,84 @@ class FirebaseSessionsTest {
         // Wait for the settings to be fetched from the server.
         Thread.sleep(TIME_TO_READ_SETTINGS)
       }
-      // Move the activity to the background and then foreground
-      // This is necessary because the initial app launch does not yet know whether the sdk is
-      // enabled, and so the first session isnt' created until a lifecycle event happens after the
-      // settings are read.
-      scenario.moveToState(State.CREATED)
+      // Bring to foreground
       scenario.moveToState(State.RESUMED)
       scenario.onActivity {
         // Wait for the session start event to send.
-        Thread.sleep(TIME_TO_LOG_SESSION)
+        Thread.sleep(TIME_TO_PROPAGATE_SESSION)
         // Assert that some session was generated and sent to the subscriber.
         assertThat(fakeSessionSubscriber.sessionDetails).isNotNull()
       }
     }
   }
 
+  @Test
+  fun newSessionAfterLongBackground() {
+    // Add a fake dependency and register it, otherwise sessions will never send.
+    val fakeSessionSubscriber = FakeSessionSubscriber()
+    FirebaseSessionsDependencies.register(fakeSessionSubscriber)
+
+    ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+      scenario.onActivity {
+        // Wait for the settings to be fetched from the server.
+        Thread.sleep(TIME_TO_READ_SETTINGS)
+      }
+      // Bring to foreground, and then go to background
+      scenario.moveToState(State.RESUMED)
+      scenario.moveToState(State.CREATED)
+      // Wait for the session timeout in background
+      scenario.onActivity {
+        // Wait for the session start event to send.
+        Thread.sleep(BACKGROUND_SESSION_TIMEOUT)
+      }
+      val coldStartSession = fakeSessionSubscriber.sessionDetails
+      // Foreground after the timeout
+      scenario.moveToState(State.RESUMED)
+      scenario.onActivity {
+        // Wait for the settings to be fetched from the server.
+        Thread.sleep(TIME_TO_PROPAGATE_SESSION)
+        // Assert that some session was generated and sent to the subscriber.
+        assertThat(fakeSessionSubscriber.sessionDetails).isNotEqualTo(coldStartSession)
+      }
+    }
+  }
+
+  @Test
+  fun noNewSessionAfterShortBackground() {
+    // Add a fake dependency and register it, otherwise sessions will never send.
+    val fakeSessionSubscriber = FakeSessionSubscriber()
+    FirebaseSessionsDependencies.register(fakeSessionSubscriber)
+
+    ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+      scenario.onActivity {
+        // Wait for the settings to be fetched from the server.
+        Thread.sleep(TIME_TO_READ_SETTINGS)
+      }
+      // Bring to foreground, and then go to background
+      scenario.moveToState(State.RESUMED)
+      scenario.moveToState(State.CREATED)
+      // Wait for a small amount of time
+      scenario.onActivity {
+        // Wait for the session start event to send.
+        Thread.sleep(1_000L)
+      }
+      val coldStartSession = fakeSessionSubscriber.sessionDetails
+      // Foreground after the timeout
+      scenario.moveToState(State.RESUMED)
+      scenario.onActivity {
+        // Wait for the settings to be fetched from the server.
+        Thread.sleep(TIME_TO_PROPAGATE_SESSION)
+        // Assert that some session was generated and sent to the subscriber.
+        assertThat(fakeSessionSubscriber.sessionDetails).isEqualTo(coldStartSession)
+      }
+    }
+  }
+
   companion object {
     private const val TIME_TO_READ_SETTINGS = 60_000L
-    private const val TIME_TO_LOG_SESSION = 10_000L
+    private const val TIME_TO_PROPAGATE_SESSION = 5_000L
+    // The test app has background timeout override to 5s
+    private const val BACKGROUND_SESSION_TIMEOUT = 6_000L
 
     init {
       FirebaseSessionsDependencies.addDependency(SessionSubscriber.Name.MATT_SAYS_HI)
