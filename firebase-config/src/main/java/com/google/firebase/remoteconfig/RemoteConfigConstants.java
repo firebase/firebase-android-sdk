@@ -89,16 +89,26 @@ public final class RemoteConfigConstants {
 
   /**
    * Select keys of fields in the experiment descriptions returned from the Firebase Remote Config
-   * server.
+   * server. Other then AFFECTED_PARAMETER_KEYS, the rest are here for testing.
    */
   @StringDef({
     ExperimentDescriptionFieldKey.EXPERIMENT_ID,
-    ExperimentDescriptionFieldKey.VARIANT_ID
+    ExperimentDescriptionFieldKey.VARIANT_ID,
+    ExperimentDescriptionFieldKey.TRIGGER_EVENT,
+    ExperimentDescriptionFieldKey.EXPERIMENT_START_TIME,
+    ExperimentDescriptionFieldKey.TRIGGER_TIMEOUT_MILLIS,
+    ExperimentDescriptionFieldKey.TIME_TO_LIVE_MILLIS,
+    ExperimentDescriptionFieldKey.AFFECTED_PARAMETER_KEYS
   })
   @Retention(RetentionPolicy.SOURCE)
   public @interface ExperimentDescriptionFieldKey {
     String EXPERIMENT_ID = "experimentId";
     String VARIANT_ID = "variantId";
+    String TRIGGER_EVENT = "triggerEvent";
+    String EXPERIMENT_START_TIME = "experimentStartTime";
+    String TRIGGER_TIMEOUT_MILLIS = "triggetTimeoutMillis";
+    String TIME_TO_LIVE_MILLIS = "timeToLiveMillis";
+    String AFFECTED_PARAMETER_KEYS = "affectedParameterKeys";
   }
 
   private RemoteConfigConstants() {}

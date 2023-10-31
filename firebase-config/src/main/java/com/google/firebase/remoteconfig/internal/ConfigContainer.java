@@ -14,7 +14,10 @@
 
 package com.google.firebase.remoteconfig.internal;
 
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.AFFECTED_PARAMETER_KEYS;
+
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -168,6 +171,37 @@ public class ConfigContainer {
     return containerJson.toString().equals(that.toString());
   }
 
+  /** Creates a map where the key is the config key and the value if the experiment description. */
+  private Map<String, JSONObject> createExperimentsMap(JSONArray allExperiments)
+      throws JSONException {
+    Map<String, JSONObject> experimentsMap = new HashMap<>();
+    if (allExperiments == null) {
+      return experimentsMap;
+    }
+
+    // Iterate through all experiments to check if it has the `affectedParameterKeys` field.
+    for (int i = 0; i < allExperiments.length(); i++) {
+      JSONObject experiment = allExperiments.getJSONObject(i);
+      if (!experiment.has(AFFECTED_PARAMETER_KEYS)) {
+        continue;
+      }
+
+      // Since a config key can only have one experiment associated with it, map the key to the
+      // experiment.
+      JSONArray affectedKeys = experiment.getJSONArray(AFFECTED_PARAMETER_KEYS);
+      for (int j = 0; j < affectedKeys.length(); j++) {
+        String key = affectedKeys.getString(j);
+        JSONObject experimentsCopy = new JSONObject(experiment.toString());
+        // Removing `affectedParameterKeys` because its values never come in the same order which
+        // would affect the diffing.
+        experimentsCopy.remove(AFFECTED_PARAMETER_KEYS);
+        experimentsMap.put(key, experimentsCopy);
+      }
+    }
+
+    return experimentsMap;
+  }
+
   /**
    * @param other The other {@link ConfigContainer} against which to compute the diff
    * @return The set of config keys that have changed between the this config and {@code other}
@@ -176,6 +210,10 @@ public class ConfigContainer {
   public Set<String> getChangedParams(ConfigContainer other) throws JSONException {
     // Make a deep copy of the other config before modifying it
     JSONObject otherConfig = ConfigContainer.deepCopyOf(other.containerJson).getConfigs();
+
+    // Config key to experiments map.
+    Map<String, JSONObject> thisExperiments = createExperimentsMap(this.getAbtExperiments());
+    Map<String, JSONObject> otherExperiments = createExperimentsMap(other.getAbtExperiments());
 
     Set<String> changed = new HashSet<>();
     Iterator<String> keys = this.getConfigs().keys();
@@ -209,6 +247,20 @@ public class ConfigContainer {
               .getJSONObject(key)
               .toString()
               .equals(other.getPersonalizationMetadata().getJSONObject(key).toString())) {
+        changed.add(key);
+        continue;
+      }
+
+      // If one and only one of the experiments map contains the key, add it to changed.
+      if (thisExperiments.containsKey(key) != otherExperiments.containsKey(key)) {
+        changed.add(key);
+        continue;
+      }
+
+      // If both experiment maps contains the key, compare the experiments to see if it's different.
+      if (otherExperiments.containsKey(key)
+          && thisExperiments.containsKey(key)
+          && !otherExperiments.get(key).toString().equals(thisExperiments.get(key).toString())) {
         changed.add(key);
         continue;
       }
