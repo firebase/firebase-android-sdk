@@ -28,31 +28,38 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
  * @hide
  */
 internal object ProcessDetailsProvider {
-  /** Gets the details of all running app processes. */
+  /** Gets the details for all of this app's running processes. */
   fun getAppProcessDetails(context: Context): List<ProcessDetails> {
+    val appUid = context.applicationInfo.uid
     val defaultProcessName = context.applicationInfo.processName
     val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
     val runningAppProcesses = activityManager?.runningAppProcesses ?: listOf()
 
-    return runningAppProcesses.filterNotNull().map { runningAppProcessInfo ->
-      ProcessDetails.builder()
-        .setProcessName(runningAppProcessInfo.processName)
-        .setPid(runningAppProcessInfo.pid)
-        .setImportance(runningAppProcessInfo.importance)
-        .setDefaultProcess(runningAppProcessInfo.processName == defaultProcessName)
-        .build()
-    }
+    return runningAppProcesses
+      .filterNotNull()
+      .filter {
+        // Only collect process info for this app's processes.
+        it.uid == appUid
+      }
+      .map { runningAppProcessInfo ->
+        ProcessDetails.builder()
+          .setProcessName(runningAppProcessInfo.processName)
+          .setPid(runningAppProcessInfo.pid)
+          .setImportance(runningAppProcessInfo.importance)
+          .setDefaultProcess(runningAppProcessInfo.processName == defaultProcessName)
+          .build()
+      }
   }
 
   /**
-   * Gets the current process details.
+   * Gets this app's current process details.
    *
    * If the current process details are not found for whatever reason, returns process details with
    * just the current process name and pid set.
    */
   fun getCurrentProcessDetails(context: Context): ProcessDetails {
     val pid = Process.myPid()
-    return getAppProcessDetails(context).find { processDetails -> processDetails.pid == pid }
+    return getAppProcessDetails(context).find { it.pid == pid }
       ?: buildProcessDetails(getProcessName(), pid)
   }
 
