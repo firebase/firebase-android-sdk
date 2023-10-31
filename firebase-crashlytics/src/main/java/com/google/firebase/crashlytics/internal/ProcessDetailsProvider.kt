@@ -17,6 +17,7 @@
 package com.google.firebase.crashlytics.internal
 
 import android.app.ActivityManager
+import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.Process
@@ -78,10 +79,12 @@ internal object ProcessDetailsProvider {
       .setDefaultProcess(isDefaultProcess)
       .build()
 
-  /** Gets the current process name. If the API is not available, returns an empty string. */
+  /** Gets the app's current process name. If the API is not available, returns an empty string. */
   private fun getProcessName(): String =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
       Process.myProcessName()
+    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      Application.getProcessName() ?: ""
     } else {
       ""
     }
