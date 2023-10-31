@@ -32,7 +32,7 @@ android {
   compileSdk = 33
   defaultConfig {
     applicationId = "com.google.firebase.testing.sessions"
-    minSdk = 16
+    minSdk = 18
     targetSdk = 33
     versionCode = 1
     versionName = "1.0"
@@ -71,6 +71,7 @@ dependencies {
   implementation(libs.androidx.core)
 
   androidTestImplementation("com.google.firebase:firebase-common:20.4.2")
+  androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)

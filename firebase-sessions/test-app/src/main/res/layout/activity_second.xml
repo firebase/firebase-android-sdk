@@ -31,11 +31,19 @@
     app:layout_constraintLeft_toLeftOf="parent" />
 
   <Button
+    android:id="@+id/second_crash_button"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/crash_button_text"
+    app:layout_constraintTop_toBottomOf="@id/prev_activity_button"
+    app:layout_constraintLeft_toLeftOf="parent" />
+
+  <Button
     android:id="@+id/kill_background_processes"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:text="@string/kill_processes_button_text"
-    app:layout_constraintTop_toBottomOf="@id/prev_activity_button"
+    app:layout_constraintTop_toBottomOf="@id/second_crash_button"
     app:layout_constraintLeft_toLeftOf="parent" />
 
 </LinearLayout>

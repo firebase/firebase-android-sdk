@@ -34,6 +34,9 @@ class SecondActivity : BaseActivity() {
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK)
       startActivity(intent)
     }
+    findViewById<Button>(R.id.second_crash_button).setOnClickListener {
+      throw IllegalStateException("SecondActivity has crashed")
+    }
     findViewById<Button>(R.id.kill_background_processes).setOnClickListener {
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         getSystemService(ActivityManager::class.java)
