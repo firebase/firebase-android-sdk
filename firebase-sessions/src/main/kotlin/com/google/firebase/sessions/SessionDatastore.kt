@@ -40,7 +40,7 @@ internal data class FirebaseSessionsData(val sessionId: String?)
 /** Handles reading to and writing from the [DataStore]. */
 internal interface SessionDatastore {
   /** Stores a new session ID value in the [DataStore] */
-  fun updateSessionId(sessionId: String): Unit
+  fun updateSessionId(sessionId: String)
 
   /**
    * Gets the currently stored session ID from the [DataStore]. This will be null if no session has
@@ -50,7 +50,7 @@ internal interface SessionDatastore {
 
   companion object {
     val instance: SessionDatastore
-      get() = Firebase.app.get(SessionDatastore::class.java)
+      get() = Firebase.app[SessionDatastore::class.java]
   }
 }
 
@@ -96,8 +96,8 @@ internal class SessionDatastoreImpl(
     )
 
   private companion object {
-    private val TAG = "FirebaseSessionsRepo"
+    private const val TAG = "FirebaseSessionsRepo"
     private val Context.dataStore: DataStore<Preferences> by
-      preferencesDataStore(name = "firebase_session_data")
+      preferencesDataStore(name = SessionDataStoreConfigs.SESSIONS_CONFIGS_NAME)
   }
 }
