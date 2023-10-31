@@ -65,11 +65,7 @@ open class BaseActivity : AppCompatActivity() {
   }
 
   private fun getProcessName(): String =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-      Application.getProcessName()
-    } else {
-      ""
-    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Application.getProcessName() else "unknown"
 
   companion object {
     val TAG = "BaseActivity"

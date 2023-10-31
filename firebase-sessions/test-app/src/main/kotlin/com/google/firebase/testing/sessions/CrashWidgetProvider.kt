@@ -44,9 +44,7 @@ class CrashWidgetProvider : AppWidgetProvider() {
       val views: RemoteViews =
         RemoteViews(context.packageName, R.layout.crash_widget).apply {
           setOnClickPendingIntent(R.id.widgetCrashButton, getPendingCrashIntent(context))
-          if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            setTextViewText(R.id.widgetTimeText, DATE_FMT?.format(Date()) ?: "")
-          }
+          setTextViewText(R.id.widgetTimeText, getDateText())
         }
 
       // Tell the AppWidgetManager to perform an update on the current
@@ -76,11 +74,10 @@ class CrashWidgetProvider : AppWidgetProvider() {
 
   companion object {
     val CRASH_BUTTON_CLICK = "widgetCrashButtonClick"
-    val DATE_FMT =
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-        SimpleDateFormat("HH:mm:ss", Locale.US)
-      } else {
-        null
-      }
+
+    fun getDateText(): String =
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+        SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+      else "unknown"
   }
 }
