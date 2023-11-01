@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package com.google.firebase.crashlytics.internal
+package com.google.firebase.processinfo
 
 import android.app.ActivityManager
 import android.content.Context
 import android.os.Build
 import android.os.Process
-import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event.Application.ProcessDetails
 
 /**
  * Provider of ProcessDetails.
  *
  * @hide
  */
-internal object ProcessDetailsProvider {
+object ProcessDetailsProvider {
   /** Gets the details of all running app processes. */
   fun getAppProcessDetails(context: Context): List<ProcessDetails> {
     val defaultProcessName = context.applicationInfo.processName
@@ -35,12 +34,12 @@ internal object ProcessDetailsProvider {
     val runningAppProcesses = activityManager?.runningAppProcesses ?: listOf()
 
     return runningAppProcesses.filterNotNull().map { runningAppProcessInfo ->
-      ProcessDetails.builder()
-        .setProcessName(runningAppProcessInfo.processName)
-        .setPid(runningAppProcessInfo.pid)
-        .setImportance(runningAppProcessInfo.importance)
-        .setDefaultProcess(runningAppProcessInfo.processName == defaultProcessName)
-        .build()
+      ProcessDetails(
+        processName = runningAppProcessInfo.processName,
+        pid = runningAppProcessInfo.pid,
+        importance = runningAppProcessInfo.importance,
+        isDefault = runningAppProcessInfo.processName == defaultProcessName,
+      )
     }
   }
 
@@ -63,13 +62,7 @@ internal object ProcessDetailsProvider {
     pid: Int = 0,
     importance: Int = 0,
     isDefaultProcess: Boolean = false
-  ) =
-    ProcessDetails.builder()
-      .setProcessName(processName)
-      .setPid(pid)
-      .setImportance(importance)
-      .setDefaultProcess(isDefaultProcess)
-      .build()
+  ) = ProcessDetails(processName, pid, importance, isDefaultProcess)
 
   /** Gets the current process name. If the API is not available, returns an empty string. */
   private fun getProcessName(): String =

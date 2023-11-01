@@ -25,7 +25,6 @@ import android.os.Environment;
 import android.os.StatFs;
 import android.text.TextUtils;
 import com.google.firebase.crashlytics.BuildConfig;
-import com.google.firebase.crashlytics.internal.ProcessDetailsProvider;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Architecture;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.Event;
@@ -35,6 +34,7 @@ import com.google.firebase.crashlytics.internal.model.CrashlyticsReport.Session.
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
 import com.google.firebase.crashlytics.internal.stacktrace.TrimmedThrowableData;
+import com.google.firebase.processinfo.ProcessDetailsProvider;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -242,7 +242,8 @@ public class CrashlyticsReportDataCapture {
       int maxChainedExceptions,
       boolean includeAllThreads) {
     Boolean isBackground = null;
-    ProcessDetails currentProcessDetails = processDetailsProvider.getCurrentProcessDetails(context);
+    ProcessDetails currentProcessDetails =
+        adaptProcessDetails(processDetailsProvider.getCurrentProcessDetails(context));
     if (currentProcessDetails.getImportance() > 0) {
       // Several different types of "background" states, easiest to check for not foreground.
       isBackground =
@@ -253,7 +254,8 @@ public class CrashlyticsReportDataCapture {
     return Event.Application.builder()
         .setBackground(isBackground)
         .setCurrentProcessDetails(currentProcessDetails)
-        .setAppProcessDetails(processDetailsProvider.getAppProcessDetails(context))
+        .setAppProcessDetails(
+            adaptProcessDetails(processDetailsProvider.getAppProcessDetails(context)))
         .setUiOrientation(orientation)
         .setExecution(
             populateExecutionData(
@@ -262,6 +264,25 @@ public class CrashlyticsReportDataCapture {
                 eventThreadImportance,
                 maxChainedExceptions,
                 includeAllThreads))
+        .build();
+  }
+
+  private List<ProcessDetails> adaptProcessDetails(
+      List<com.google.firebase.processinfo.ProcessDetails> appProcessDetailsList) {
+    ArrayList<ProcessDetails> processDetailsList = new ArrayList<>();
+    for (com.google.firebase.processinfo.ProcessDetails processDetails : appProcessDetailsList) {
+      processDetailsList.add(adaptProcessDetails(processDetails));
+    }
+    return processDetailsList;
+  }
+
+  private ProcessDetails adaptProcessDetails(
+      com.google.firebase.processinfo.ProcessDetails appProcessDetails) {
+    return ProcessDetails.builder()
+        .setProcessName(appProcessDetails.getProcessName())
+        .setPid(appProcessDetails.getPid())
+        .setImportance(appProcessDetails.getImportance())
+        .setDefaultProcess(appProcessDetails.isDefault())
         .build();
   }
 
@@ -484,9 +505,10 @@ public class CrashlyticsReportDataCapture {
   /** Builds a ProcessDetails object from the details in applicationExitInfo. */
   private ProcessDetails processDetailsFromApplicationExitInfo(
       CrashlyticsReport.ApplicationExitInfo applicationExitInfo) {
-    return processDetailsProvider.buildProcessDetails(
-        applicationExitInfo.getProcessName(),
-        applicationExitInfo.getPid(),
-        applicationExitInfo.getImportance());
+    return adaptProcessDetails(
+        processDetailsProvider.buildProcessDetails(
+            applicationExitInfo.getProcessName(),
+            applicationExitInfo.getPid(),
+            applicationExitInfo.getImportance()));
   }
 }
