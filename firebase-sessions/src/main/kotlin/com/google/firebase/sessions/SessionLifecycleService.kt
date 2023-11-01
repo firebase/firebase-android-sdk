@@ -85,7 +85,6 @@ internal class SessionLifecycleService : Service() {
           super.handleMessage(msg)
         }
       }
-      lastMsgTimeMs = msg.getWhen()
     }
 
     /**
@@ -94,7 +93,7 @@ internal class SessionLifecycleService : Service() {
      * new session.
      */
     private fun handleForegrounding(msg: Message) {
-      Log.d(TAG, "Activity foregrounding at ${msg.getWhen()}")
+      Log.d(TAG, "Activity foregrounding at ${msg.getWhen()}.")
       if (!hasForegrounded) {
         Log.d(TAG, "Cold start detected.")
         hasForegrounded = true
@@ -103,6 +102,7 @@ internal class SessionLifecycleService : Service() {
         Log.d(TAG, "Session too long in background. Creating new session.")
         newSession()
       }
+      lastMsgTimeMs = msg.getWhen()
     }
 
     /**
@@ -112,6 +112,7 @@ internal class SessionLifecycleService : Service() {
      */
     private fun handleBackgrounding(msg: Message) {
       Log.d(TAG, "Activity backgrounding at ${msg.getWhen()}")
+      lastMsgTimeMs = msg.getWhen()
     }
 
     /**
@@ -186,7 +187,7 @@ internal class SessionLifecycleService : Service() {
 
   /** Called when a new [SessionLifecycleClient] binds to this service. */
   override fun onBind(intent: Intent): IBinder? {
-    Log.d(TAG, "Service bound to new client")
+    Log.d(TAG, "Service bound to new client on process ${intent.getAction()}")
     val callbackMessenger = getClientCallback(intent)
     if (callbackMessenger != null) {
       val clientBoundMsg = Message.obtain(null, CLIENT_BOUND, 0, 0)

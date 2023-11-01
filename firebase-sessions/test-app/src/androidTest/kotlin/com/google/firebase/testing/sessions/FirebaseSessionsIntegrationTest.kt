@@ -28,6 +28,7 @@ import androidx.test.uiautomator.UiObject2
 import androidx.test.uiautomator.Until
 import com.google.common.truth.Truth.assertThat
 import java.util.regex.Pattern
+import org.junit.After
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
@@ -45,12 +46,19 @@ class FirebaseSessionsIntegrationTest {
     device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
   }
 
+  @After
+  fun cleanup() {
+    // Make sure all processes are killed
+    Runtime.getRuntime().exec(arrayOf("am", "force-stop", TEST_APP_PACKAGE))
+  }
+
   @Test
   fun sameSessionIdBetweenActivitiesOnDifferentProcesses() {
     launchApp()
 
     val sessionId1 = getCurrentSessionId()
     navigateToSecondActivity()
+    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
     val sessionId2 = getCurrentSessionId()
 
     assertThat(sessionId1).isEqualTo(sessionId2)
@@ -62,7 +70,6 @@ class FirebaseSessionsIntegrationTest {
 
     val sessionId1 = getCurrentSessionId()
     background()
-    Thread.sleep(1_000)
     foreground()
     val sessionId2 = getCurrentSessionId()
 
@@ -78,6 +85,8 @@ class FirebaseSessionsIntegrationTest {
     // Test app overrides the background time from 30m, to 5s.
     Thread.sleep(6_000)
     foreground()
+    device.waitForIdle()
+    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
     val sessionId2 = getCurrentSessionId()
 
     assertThat(sessionId1).isNotEqualTo(sessionId2)
@@ -91,6 +100,7 @@ class FirebaseSessionsIntegrationTest {
     getButton("CRASH!").click()
 
     launchApp()
+    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
     val newSession = getCurrentSessionId()
     assertThat(newSession).isNotEqualTo(origSession)
   }
@@ -101,7 +111,9 @@ class FirebaseSessionsIntegrationTest {
     val origSession = getCurrentSessionId()
 
     getButton("NON FATAL").click()
+    device.waitForIdle()
 
+    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
     val newSession = getCurrentSessionId()
     assertThat(origSession).isEqualTo(newSession)
   }
@@ -115,6 +127,7 @@ class FirebaseSessionsIntegrationTest {
     getButton("CRASH!").click()
 
     launchApp()
+    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
     val newSession = getCurrentSessionId()
     assertThat(newSession).isNotEqualTo(origSession)
   }
@@ -137,26 +150,27 @@ class FirebaseSessionsIntegrationTest {
 
     // Wait for the app to appear
     device.wait(Until.hasObject(By.pkg(TEST_APP_PACKAGE).depth(0)), LAUNCH_TIMEOUT)
+    device.waitForIdle()
   }
 
   private fun navigateToSecondActivity() {
-    device.wait(Until.hasObject(By.text("NEXT ACTIVITY").depth(0)), LAUNCH_TIMEOUT)
+    device.wait(Until.hasObject(By.text("NEXT ACTIVITY").depth(0)), TRANSITION_TIMEOUT)
     val nextActivityButton =
       device.findObject(By.text("NEXT ACTIVITY").clazz("android.widget.Button"))
     nextActivityButton?.click()
-    device.wait(Until.hasObject(By.pkg(TEST_APP_PACKAGE).depth(0)), LAUNCH_TIMEOUT)
+    device.wait(Until.hasObject(By.pkg(TEST_APP_PACKAGE).depth(0)), TRANSITION_TIMEOUT)
   }
 
   private fun navigateBackToMainActivity() {
-    device.wait(Until.hasObject(By.text("PREVIOUS ACTIVITY").depth(0)), LAUNCH_TIMEOUT)
+    device.wait(Until.hasObject(By.text("PREVIOUS ACTIVITY").depth(0)), TRANSITION_TIMEOUT)
     val nextActivityButton =
       device.findObject(By.text("PREVIOUS ACTIVITY").clazz("android.widget.Button"))
     nextActivityButton?.click()
-    device.wait(Until.hasObject(By.pkg(TEST_APP_PACKAGE).depth(0)), LAUNCH_TIMEOUT)
+    device.wait(Until.hasObject(By.pkg(TEST_APP_PACKAGE).depth(0)), TRANSITION_TIMEOUT)
   }
 
   private fun getButton(text: String): UiObject2 {
-    device.wait(Until.hasObject(By.text(text).depth(0)), LAUNCH_TIMEOUT)
+    device.wait(Until.hasObject(By.text(text).depth(0)), TRANSITION_TIMEOUT)
     val button = device.findObject(By.text(text).clazz("android.widget.Button"))
     if (button == null) {
       fail("Could not locate button with text $text")
@@ -166,23 +180,31 @@ class FirebaseSessionsIntegrationTest {
 
   private fun background() {
     device.pressHome()
-    device.wait(Until.hasObject(By.pkg(device.launcherPackageName).depth(0)), LAUNCH_TIMEOUT)
+    device.wait(Until.hasObject(By.pkg(device.launcherPackageName).depth(0)), TRANSITION_TIMEOUT)
   }
 
   private fun foreground() {
     device.pressRecentApps()
-    device.wait(
-      Until.hasObject(By.res(Pattern.compile("$TEST_APP_PACKAGE.*")).depth(0)),
-      LAUNCH_TIMEOUT
-    )
-    device.findObject(By.res(Pattern.compile("$TEST_APP_PACKAGE.*")))?.click()
+    Thread.sleep(1_000L)
+    device.click(device.displayWidth / 2, device.displayHeight / 2)
+    device.wait(Until.hasObject(By.pkg(TEST_APP_PACKAGE).depth(0)), TRANSITION_TIMEOUT)
+    device.waitForIdle()
   }
 
-  private fun getCurrentSessionId() =
-    device.findObject(By.res(Pattern.compile(".*session_id_(fragment|second)_text")))?.getText()
+  private fun getCurrentSessionId(): String? {
+    device.wait(
+      Until.hasObject(By.res(Pattern.compile(".*session_id_(fragment|second)_text")).depth(0)),
+      TRANSITION_TIMEOUT
+    )
+    return device
+      .findObject(By.res(Pattern.compile(".*session_id_(fragment|second)_text")))
+      ?.getText()
+  }
 
   companion object {
     private const val TEST_APP_PACKAGE = "com.google.firebase.testing.sessions"
     private const val LAUNCH_TIMEOUT = 5_000L
+    private const val TRANSITION_TIMEOUT = 1_000L
+    private const val TIME_TO_PROPAGATE_SESSION = 5_000L
   }
 }
