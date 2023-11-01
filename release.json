@@ -1,0 +1,8 @@
+{
+    "name": "m139_3",
+    "libraries": [
+        ":transport:transport-api",
+        ":transport:transport-backend-cct",
+        ":transport:transport-runtime"
+    ]
+}
