@@ -98,6 +98,7 @@ class FirebaseSessionsIntegrationTest {
     val origSession = getCurrentSessionId()
 
     getButton("CRASH!").click()
+    dismissPossibleErrorDialog()
 
     launchApp()
     Thread.sleep(TIME_TO_PROPAGATE_SESSION)
@@ -106,7 +107,7 @@ class FirebaseSessionsIntegrationTest {
   }
 
   @Test
-  fun nonFatalMainProcess() {
+  fun nonFatalMainActivity() {
     launchApp()
     val origSession = getCurrentSessionId()
 
@@ -119,12 +120,28 @@ class FirebaseSessionsIntegrationTest {
   }
 
   @Test
+  fun anrMainActivity() {
+    launchApp()
+    val origSession = getCurrentSessionId()
+
+    getButton("ANR").click()
+    device.waitForIdle()
+    dismissPossibleAnrDialog()
+
+    launchApp()
+    Thread.sleep(TIME_TO_PROPAGATE_SESSION)
+    val newSession = getCurrentSessionId()
+    assertThat(origSession).isNotEqualTo(newSession)
+  }
+
+  @Test
   fun crashSecondaryProcess() {
     launchApp()
     navigateToSecondActivity()
     val origSession = getCurrentSessionId()
 
     getButton("CRASH!").click()
+    dismissPossibleErrorDialog()
 
     launchApp()
     Thread.sleep(TIME_TO_PROPAGATE_SESSION)
@@ -176,6 +193,22 @@ class FirebaseSessionsIntegrationTest {
       fail("Could not locate button with text $text")
     }
     return button
+  }
+
+  private fun dismissPossibleAnrDialog() {
+    device.wait(
+      Until.hasObject(By.clazz("com.android.server.am.AppNotRespondingDialog")),
+      TRANSITION_TIMEOUT
+    )
+    device.findObject(By.text("Close app").clazz("android.widget.Button"))?.click()
+  }
+
+  private fun dismissPossibleErrorDialog() {
+    device.wait(
+      Until.hasObject(By.clazz("com.android.server.am.AppErrorDialog")),
+      TRANSITION_TIMEOUT
+    )
+    device.findObject(By.text("Close app").clazz("android.widget.Button"))?.click()
   }
 
   private fun background() {
