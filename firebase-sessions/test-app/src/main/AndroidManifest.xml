@@ -42,6 +42,13 @@
       </intent-filter>
     </activity>
 
+    <activity
+      android:exported="true"
+      android:label="@string/app_name"
+      android:name=".SecondActivity"
+      android:process=":second"
+      android:theme="@style/Theme.Widget_test_app.NoActionBar" />
+
     <receiver
       android:exported="false"
       android:name="CrashWidgetProvider"
