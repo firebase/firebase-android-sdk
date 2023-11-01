@@ -145,7 +145,14 @@ internal constructor(
 
     try {
       val sessionEvent =
-        SessionEvents.startSession(firebaseApp, sessionDetails, sessionSettings, subscribers)
+        SessionEvents.startSession(
+          firebaseApp,
+          sessionDetails,
+          sessionSettings,
+          ProcessDetailsProvider.getCurrentProcessDetails(firebaseApp.applicationContext),
+          ProcessDetailsProvider.getAppProcessDetails(firebaseApp.applicationContext),
+          subscribers
+        )
       sessionCoordinator.attemptLoggingSessionEvent(sessionEvent)
     } catch (ex: IllegalStateException) {
       // This can happen if the app suddenly deletes the instance of FirebaseApp.

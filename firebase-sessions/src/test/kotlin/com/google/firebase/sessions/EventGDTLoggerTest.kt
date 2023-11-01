@@ -49,6 +49,8 @@ class EventGDTLoggerTest {
           localOverrideSettings = FakeSettingsProvider(),
           remoteSettings = FakeSettingsProvider(),
         ),
+        TestSessionEventData.TEST_PROCESS_DETAILS,
+        TestSessionEventData.TEST_APP_PROCESS_DETAILS,
       )
     val fakeTransportFactory = FakeTransportFactory()
     val fakeTransportFactoryProvider = FakeProvider(fakeTransportFactory as TransportFactory)

@@ -35,6 +35,12 @@ internal data class SessionEvent(
 
   /** Information about the application that is generating the session events. */
   val applicationInfo: ApplicationInfo,
+
+  /** Information about this process */
+  val currentProcessDetails: ProcessDetails,
+
+  /** Information about all processes running for this app */
+  val appProcessDetails: List<ProcessDetails>,
 )
 
 /** Enum denoting all possible session event types. */
@@ -75,6 +81,14 @@ internal data class DataCollectionStatus(
   val performance: DataCollectionState = DataCollectionState.COLLECTION_SDK_NOT_INSTALLED,
   val crashlytics: DataCollectionState = DataCollectionState.COLLECTION_SDK_NOT_INSTALLED,
   val sessionSamplingRate: Double = 1.0,
+)
+
+/** Container for information about the process */
+internal data class ProcessDetails(
+  val processName: String,
+  val pid: Int,
+  val importance: Int,
+  val isDefault: Boolean,
 )
 
 /** Enum denoting different data collection states. */
