@@ -139,7 +139,9 @@ internal class SessionLifecycleService : Service() {
     private fun broadcastSession() {
       Log.d(TAG, "Broadcasting new session: ${SessionGenerator.instance.currentSession}")
       SessionFirelogPublisher.instance.logSession(SessionGenerator.instance.currentSession)
-      boundClients.forEach { maybeSendSessionToClient(it) }
+      // Create a defensive copy because DeadObjectExceptions on send will modify boundClients
+      val clientsToSend = ArrayList(boundClients)
+      clientsToSend.forEach { maybeSendSessionToClient(it) }
     }
 
     private fun maybeSendSessionToClient(client: Messenger) {

@@ -22,6 +22,7 @@ import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
+import android.widget.TextView
 
 /** Second activity from the MainActivity that runs on a different process. */
 class SecondActivity : BaseActivity() {
@@ -33,6 +34,7 @@ class SecondActivity : BaseActivity() {
       val intent = Intent(this, MainActivity::class.java)
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK)
       startActivity(intent)
+      finish()
     }
     findViewById<Button>(R.id.second_crash_button).setOnClickListener {
       throw IllegalStateException("SecondActivity has crashed")
@@ -43,5 +45,19 @@ class SecondActivity : BaseActivity() {
           .killBackgroundProcesses("com.google.firebase.testing.sessions")
       }
     }
+  }
+
+  override fun onResume() {
+    super.onResume()
+    TestApplication.sessionSubscriber.registerView(
+      findViewById<TextView>(R.id.session_id_second_text)
+    )
+  }
+
+  override fun onPause() {
+    super.onPause()
+    TestApplication.sessionSubscriber.unregisterView(
+      findViewById<TextView>(R.id.session_id_second_text)
+    )
   }
 }
