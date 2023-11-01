@@ -79,7 +79,8 @@ class FirebaseSessionsIntegrationTest {
 
   @Test
   fun crashSecondaryProcess() {
-    val nextActivityButton = device.findObject(By.text("NEXT ACTIVITY").clazz("android.widget.Button"))
+    val nextActivityButton =
+      device.findObject(By.text("NEXT ACTIVITY").clazz("android.widget.Button"))
     nextActivityButton?.click()
     device.wait(Until.hasObject(By.pkg(TEST_APP_PACKAGE).depth(0)), LAUNCH_TIMEOUT)
     val crashButton = device.findObject(By.text("CRASH!").clazz("android.widget.Button"))
