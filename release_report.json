@@ -1,0 +1,72 @@
+{
+    "changesByLibraryName": {
+        "transport/transport-api": [
+            {
+                "commitId": "3c7a382f12e306998ec63c63bcb834be25fb9998",
+                "prId": "5491",
+                "author": "Rodrigo Lazo",
+                "message": "Add package declaration to transport* manifest files (#5491)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3c7a382f12e306998ec63c63bcb834be25fb9998",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5491"
+            },
+            {
+                "commitId": "ccc73392a74adc13c1ecddfa11f8cf5102dda02d",
+                "prId": "5485",
+                "author": "Rodrigo Lazo",
+                "message": "Add support for productId in transport (#5485)\n\nAllow logging the productId together with the event in transport.\r\n\r\nFor googlers b/303136538",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ccc73392a74adc13c1ecddfa11f8cf5102dda02d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5485"
+            }
+        ],
+        "transport/transport-backend-cct": [
+            {
+                "commitId": "3c7a382f12e306998ec63c63bcb834be25fb9998",
+                "prId": "5491",
+                "author": "Rodrigo Lazo",
+                "message": "Add package declaration to transport* manifest files (#5491)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3c7a382f12e306998ec63c63bcb834be25fb9998",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5491"
+            },
+            {
+                "commitId": "ccc73392a74adc13c1ecddfa11f8cf5102dda02d",
+                "prId": "5485",
+                "author": "Rodrigo Lazo",
+                "message": "Add support for productId in transport (#5485)\n\nAllow logging the productId together with the event in transport.\r\n\r\nFor googlers b/303136538",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ccc73392a74adc13c1ecddfa11f8cf5102dda02d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5485"
+            }
+        ],
+        "transport/transport-runtime": [
+            {
+                "commitId": "3c7a382f12e306998ec63c63bcb834be25fb9998",
+                "prId": "5491",
+                "author": "Rodrigo Lazo",
+                "message": "Add package declaration to transport* manifest files (#5491)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3c7a382f12e306998ec63c63bcb834be25fb9998",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5491"
+            },
+            {
+                "commitId": "a92113ae06fed2deafc28ee932bf7e6d9b383f1d",
+                "prId": "5487",
+                "author": "Rodrigo Lazo",
+                "message": "Don't use immutablemap in testing (#5487)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a92113ae06fed2deafc28ee932bf7e6d9b383f1d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5487"
+            },
+            {
+                "commitId": "ccc73392a74adc13c1ecddfa11f8cf5102dda02d",
+                "prId": "5485",
+                "author": "Rodrigo Lazo",
+                "message": "Add support for productId in transport (#5485)\n\nAllow logging the productId together with the event in transport.\r\n\r\nFor googlers b/303136538",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ccc73392a74adc13c1ecddfa11f8cf5102dda02d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5485"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-crashlytics:ktx",
+        ":firebase-datatransport"
+    ]
+}
