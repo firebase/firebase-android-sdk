@@ -35,12 +35,20 @@
       android:exported="true"
       android:label="@string/app_name"
       android:name=".MainActivity"
+      android:process=":main"
       android:theme="@style/Theme.Widget_test_app.NoActionBar">
       <intent-filter>
         <action android:name="android.intent.action.MAIN" />
         <category android:name="android.intent.category.LAUNCHER" />
       </intent-filter>
     </activity>
+
+    <activity
+      android:exported="true"
+      android:label="@string/app_name"
+      android:name=".SecondActivity"
+      android:process=":second"
+      android:theme="@style/Theme.Widget_test_app.NoActionBar" />
 
     <receiver
       android:exported="false"
