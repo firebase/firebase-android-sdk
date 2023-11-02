@@ -56,8 +56,12 @@ dependencies {
     implementation("com.google.firebase:firebase-perf:20.4.1")
     implementation("com.google.firebase:firebase-sessions:$latestReleasedVersion")
   } else {
-    implementation(project(":firebase-crashlytics"))
-    implementation(project(":firebase-perf"))
+    implementation(project(":firebase-crashlytics")) {
+      exclude(group = "com.google.firebase", module = "firebase-sessions")
+    }
+    implementation(project(":firebase-perf")) {
+      exclude(group = "com.google.firebase", module = "firebase-sessions")
+    }
     implementation(project(":firebase-sessions"))
   }
 
