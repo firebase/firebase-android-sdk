@@ -45,6 +45,24 @@ android {
   }
   kotlinOptions { jvmTarget = "1.8" }
   buildFeatures { viewBinding = true }
+  buildTypes {
+    release {
+      // We only want to actually crash the app for the scheduled runs, not the integration tests
+      buildConfigField(
+        "boolean",
+        "SHOULD_CRASH_APP",
+        if (project.hasProperty("useReleasedVersions")) "true" else "false"
+      )
+    }
+    debug {
+      // We only want to actually crash the app for the scheduled runs, not the integration tests
+      buildConfigField(
+        "boolean",
+        "SHOULD_CRASH_APP",
+        if (project.hasProperty("useReleasedVersions")) "true" else "false"
+      )
+    }
+  }
 }
 
 dependencies {

@@ -94,9 +94,10 @@ class FirebaseSessionsIntegrationTest {
 
   @Test
   fun newSessionFollowingCrash() {
+    if (!BuildConfig.SHOULD_CRASH_APP) return
+
     launchApp()
     val origSession = getCurrentSessionId()
-
     getButton("CRASH!").click()
     dismissPossibleErrorDialog()
 
@@ -121,6 +122,7 @@ class FirebaseSessionsIntegrationTest {
 
   @Test
   fun anrMainActivity() {
+    if (!BuildConfig.SHOULD_CRASH_APP) return
     launchApp()
     val origSession = getCurrentSessionId()
 
@@ -136,6 +138,7 @@ class FirebaseSessionsIntegrationTest {
 
   @Test
   fun crashSecondaryProcess() {
+    if (!BuildConfig.SHOULD_CRASH_APP) return
     launchApp()
     navigateToSecondActivity()
     val origSession = getCurrentSessionId()
