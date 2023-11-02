@@ -16,6 +16,7 @@
 package com.google.firebase.sessions
 
 import android.app.ActivityManager
+import android.app.Application
 import android.content.Context
 import android.os.Build
 import android.os.Process
@@ -26,30 +27,38 @@ import android.os.Process
  * @hide
  */
 internal object ProcessDetailsProvider {
-  /** Gets the details of all running app processes. */
+  /** Gets the details for all of this app's running processes. */
   fun getAppProcessDetails(context: Context): List<ProcessDetails> {
+    val appUid = context.applicationInfo.uid
     val defaultProcessName = context.applicationInfo.processName
     val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
     val runningAppProcesses = activityManager?.runningAppProcesses ?: listOf()
 
-    return runningAppProcesses.filterNotNull().map { runningAppProcessInfo ->
-      ProcessDetails(
-        processName = runningAppProcessInfo.processName,
-        pid = runningAppProcessInfo.pid,
-        importance = runningAppProcessInfo.importance,
-        isDefault = runningAppProcessInfo.processName == defaultProcessName,
-      )
-    }
+    return runningAppProcesses
+      .filterNotNull()
+      .filter {
+        // Only collect process info for this app's processes.
+        it.uid == appUid
+      }
+      .map { runningAppProcessInfo ->
+        ProcessDetails(
+          processName = runningAppProcessInfo.processName,
+          pid = runningAppProcessInfo.pid,
+          importance = runningAppProcessInfo.importance,
+          isDefault = runningAppProcessInfo.processName == defaultProcessName,
+        )
+      }
   }
+
   /**
-   * Gets the current process details.
+   * Gets this app's current process details.
    *
    * If the current process details are not found for whatever reason, returns process details with
    * just the current process name and pid set.
    */
   fun getCurrentProcessDetails(context: Context): ProcessDetails {
     val pid = Process.myPid()
-    return getAppProcessDetails(context).find { processDetails -> processDetails.pid == pid }
+    return getAppProcessDetails(context).find { it.pid == pid }
       ?: buildProcessDetails(getProcessName(), pid)
   }
 
@@ -61,10 +70,12 @@ internal object ProcessDetailsProvider {
     isDefaultProcess: Boolean = false
   ) = ProcessDetails(processName, pid, importance, isDefaultProcess)
 
-  /** Gets the current process name. If the API is not available, returns an empty string. */
+  /** Gets the app's current process name. If the API is not available, returns an empty string. */
   private fun getProcessName(): String =
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
       Process.myProcessName()
+    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      Application.getProcessName() ?: ""
     } else {
       ""
     }
