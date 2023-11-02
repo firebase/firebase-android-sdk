@@ -29,4 +29,6 @@
   <string name="next_activity_text">Next activity</string>
   <string name="prev_activity_text">Previous activity</string>
   <string name="kill_processes_button_text">Kill Background Processes</string>
+  <string name="no_session_text">No Session Set</string>
+  <string name="session_id_label">Session Id: </string>
 </resources>

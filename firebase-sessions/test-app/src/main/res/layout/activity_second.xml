@@ -31,11 +31,37 @@
     app:layout_constraintLeft_toLeftOf="parent" />
 
   <Button
+    android:id="@+id/second_crash_button"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/crash_button_text"
+    app:layout_constraintTop_toBottomOf="@id/prev_activity_button"
+    app:layout_constraintLeft_toLeftOf="parent" />
+
+  <Button
     android:id="@+id/kill_background_processes"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:text="@string/kill_processes_button_text"
-    app:layout_constraintTop_toBottomOf="@id/prev_activity_button"
+    app:layout_constraintTop_toBottomOf="@id/second_crash_button"
     app:layout_constraintLeft_toLeftOf="parent" />
+
+  <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal">
+    <TextView
+      android:id="@+id/session_id_second_label"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/session_id_label"
+      android:labelFor="@id/session_id_second_text"/>
+    <TextView
+      android:id="@+id/session_id_second_text"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:hint="@string/session_id_label"
+      android:text="@string/no_session_text"/>
+  </LinearLayout>
 
 </LinearLayout>

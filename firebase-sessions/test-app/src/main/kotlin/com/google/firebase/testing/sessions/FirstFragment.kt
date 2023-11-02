@@ -61,7 +61,7 @@ class FirstFragment : Fragment() {
     }
     binding.buttonAnr.setOnClickListener {
       while (true) {
-        Thread.sleep(10_000)
+        Thread.sleep(1_000)
       }
     }
     binding.buttonForegroundProcess.setOnClickListener {
@@ -77,6 +77,7 @@ class FirstFragment : Fragment() {
       val intent = Intent(getContext()!!, SecondActivity::class.java)
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_LAUNCH_ADJACENT)
       startActivity(intent)
+      activity?.finish()
     }
     binding.startSplitscreenSame.setOnClickListener {
       val intent = Intent(getContext()!!, MainActivity::class.java)
@@ -88,6 +89,16 @@ class FirstFragment : Fragment() {
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK)
       startActivity(intent)
     }
+  }
+
+  override fun onResume() {
+    super.onResume()
+    TestApplication.sessionSubscriber.registerView(binding.sessionIdFragmentText)
+  }
+
+  override fun onPause() {
+    super.onPause()
+    TestApplication.sessionSubscriber.unregisterView(binding.sessionIdFragmentText)
   }
 
   override fun onDestroyView() {
