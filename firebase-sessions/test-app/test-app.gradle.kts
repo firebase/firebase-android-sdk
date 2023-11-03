@@ -51,7 +51,7 @@ android {
       buildConfigField(
         "boolean",
         "SHOULD_CRASH_APP",
-        if (project.hasProperty("useReleasedVersions")) "true" else "false"
+        project.hasProperty("useReleasedVersions").toString()
       )
     }
     debug {
@@ -59,7 +59,7 @@ android {
       buildConfigField(
         "boolean",
         "SHOULD_CRASH_APP",
-        if (project.hasProperty("useReleasedVersions")) "true" else "false"
+        project.hasProperty("useReleasedVersions").toString()
       )
     }
   }
