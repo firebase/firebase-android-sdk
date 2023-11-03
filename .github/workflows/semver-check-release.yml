@@ -1,4 +1,4 @@
-name: Semver Check
+name: Release Semver Check
 
 on:
   workflow_dispatch:
