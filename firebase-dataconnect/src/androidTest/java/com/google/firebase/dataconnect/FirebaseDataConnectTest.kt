@@ -20,46 +20,27 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.app
-import com.google.firebase.initialize
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
+import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
+import com.google.firebase.dataconnect.testutil.TestFirebaseAppFactory
+import com.google.firebase.dataconnect.testutil.installEmulatorSchema
 import java.util.UUID
-import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.thread
 import kotlin.concurrent.withLock
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import org.junit.After
-import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class FirebaseDataConnectTest {
 
-  private val createdFirebaseApps = CopyOnWriteArrayList<FirebaseApp>()
-
-  @After
-  fun deleteFirebaseApps() {
-    while (createdFirebaseApps.isNotEmpty()) {
-      createdFirebaseApps.removeAt(0).delete()
-    }
-  }
-
-  private lateinit var logLevelBefore: Logger.Level
-
-  @Before
-  fun setupLogLevel() {
-    logLevelBefore = logLevel
-    logLevel = Logger.Level.DEBUG
-  }
-
-  @After
-  fun restoreLogLevelBefore() {
-    logLevel = logLevelBefore
-  }
+  @JvmField @Rule val firebaseAppFactory = TestFirebaseAppFactory()
+  @JvmField @Rule val dataConnectFactory = TestDataConnectFactory()
+  @JvmField @Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
 
   @Test
   fun getInstance_without_specifying_an_app_should_use_the_default_app() {
@@ -98,8 +79,8 @@ class FirebaseDataConnectTest {
 
   @Test
   fun getInstance_should_return_distinct_instances_for_distinct_apps() {
-    val nonDefaultApp1 = createNonDefaultFirebaseApp()
-    val nonDefaultApp2 = createNonDefaultFirebaseApp()
+    val nonDefaultApp1 = firebaseAppFactory.newInstance()
+    val nonDefaultApp2 = firebaseAppFactory.newInstance()
     val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp1, "TestLocation", "TestService")
     val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp2, "TestLocation", "TestService")
     assertThat(instance1).isNotSameInstanceAs(instance2)
@@ -107,7 +88,7 @@ class FirebaseDataConnectTest {
 
   @Test
   fun getInstance_should_return_distinct_instances_for_distinct_locations() {
-    val nonDefaultApp = createNonDefaultFirebaseApp()
+    val nonDefaultApp = firebaseAppFactory.newInstance()
     val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation1", "TestService")
     val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation2", "TestService")
     assertThat(instance1).isNotSameInstanceAs(instance2)
@@ -115,7 +96,7 @@ class FirebaseDataConnectTest {
 
   @Test
   fun getInstance_should_return_distinct_instances_for_distinct_services() {
-    val nonDefaultApp = createNonDefaultFirebaseApp()
+    val nonDefaultApp = firebaseAppFactory.newInstance()
     val instance1 = FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService1")
     val instance2 = FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation", "TestService2")
     assertThat(instance1).isNotSameInstanceAs(instance2)
@@ -123,7 +104,7 @@ class FirebaseDataConnectTest {
 
   @Test
   fun getInstance_should_return_a_new_instance_after_the_instance_is_terminated() {
-    val nonDefaultApp = createNonDefaultFirebaseApp()
+    val nonDefaultApp = firebaseAppFactory.newInstance()
     val instance1A = FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation1", "TestService1")
     val instance2A = FirebaseDataConnect.getInstance(nonDefaultApp, "TestLocation2", "TestService2")
     assertThat(instance1A).isNotSameInstanceAs(instance2A)
@@ -145,7 +126,7 @@ class FirebaseDataConnectTest {
     val apps =
       mutableListOf<FirebaseApp>().run {
         for (i in 0..4) {
-          add(createNonDefaultFirebaseApp())
+          add(firebaseAppFactory.newInstance())
         }
         toList()
       }
@@ -200,13 +181,13 @@ class FirebaseDataConnectTest {
 
   @Test
   fun toString_should_return_a_string_that_contains_the_required_information() {
-    val app = createNonDefaultFirebaseApp()
+    val app = firebaseAppFactory.newInstance()
     val instance =
       FirebaseDataConnect.getInstance(app = app, location = "TestLocation", service = "TestService")
 
     val toStringResult = instance.toString()
 
-    assertThat(toStringResult).containsMatch("appName=${app.name}\\W")
+    assertThat(toStringResult).containsMatch("app=${app.name}\\W")
     assertThat(toStringResult).containsMatch("projectId=${app.options.projectId}\\W")
     assertThat(toStringResult).containsMatch("location=TestLocation\\W")
     assertThat(toStringResult).containsMatch("service=TestService\\W")
@@ -214,46 +195,175 @@ class FirebaseDataConnectTest {
 
   @Test
   fun helloWorld() = runTest {
-    val dc = FirebaseDataConnect.getInstance("TestLocation", "TestService")
-    dc.settings = dataConnectSettings { connectToEmulator() }
+    val dc = dataConnectFactory.newInstance(service = "local")
 
-    dc.executeMutation(
-      MutationRef(revision = "TestRevision", operationSet = "crud", operationName = "createPost"),
-      variables =
-        mapOf("id" to UUID.randomUUID().toString(), "content" to "${System.currentTimeMillis()}")
-    )
+    val postId = "${UUID.randomUUID()}"
+    val postContent = "${System.currentTimeMillis()}"
 
-    dc.executeQuery(
-      QueryRef(revision = "TestRevision", operationSet = "crud", operationName = "listPosts"),
-      variables = emptyMap()
-    )
-  }
+    run {
+      val mutation =
+        IdentityMutationRef(
+          dataConnect = dc,
+          operationName = "createPost",
+          operationSet = "crud",
+          revision = "TestRevision",
+          variables = mapOf("data" to mapOf("id" to postId, "content" to postContent))
+        )
+      val mutationResponse = mutation.execute()
+      assertWithMessage("mutationResponse")
+        .that(mutationResponse)
+        .containsExactlyEntriesIn(mapOf("post_insert" to null))
+    }
 
-  @Test
-  fun testQueryRefBasicWorks() {
-    runBlocking {
-      val testingStr = "reload"
-      val query = GetPost()
-
-      launch {
-        query.get("id")
-
-        val listener = query.listen()
-        val value = listener.receive()
-
-        query.reload()
-      }
+    run {
+      val query =
+        IdentityQueryRef(
+          dataConnect = dc,
+          operationName = "getPost",
+          operationSet = "crud",
+          revision = "TestRevision",
+          variables = mapOf("id" to postId)
+        )
+      val queryResult = query.execute()
+      assertWithMessage("queryResponse")
+        .that(queryResult)
+        .containsExactlyEntriesIn(
+          mapOf("post" to mapOf("content" to postContent, "comments" to emptyList<Unit>()))
+        )
     }
   }
 
-  private fun createNonDefaultFirebaseApp(): FirebaseApp {
-    val firebaseApp =
-      Firebase.initialize(
-        Firebase.app.applicationContext,
-        Firebase.app.options,
-        UUID.randomUUID().toString()
-      )
-    createdFirebaseApps.add(firebaseApp)
-    return firebaseApp
+  @Test
+  fun testInstallEmulatorSchema() {
+    suspend fun FirebaseDataConnect.createPerson(id: String, name: String, age: Int? = null) =
+      IdentityMutationRef(
+          dataConnect = this,
+          operationName = "createPerson",
+          operationSet = "ops",
+          revision = "42",
+          variables =
+            mapOf(
+              "data" to
+                buildMap {
+                  put("id", id)
+                  put("name", name)
+                  age?.let { put("age", it) }
+                }
+            )
+        )
+        .execute()
+
+    suspend fun FirebaseDataConnect.getPerson(id: String) =
+      IdentityQueryRef(
+          dataConnect = this,
+          operationName = "getPerson",
+          operationSet = "ops",
+          revision = "42",
+          variables = mapOf("id" to id)
+        )
+        .execute()
+
+    suspend fun FirebaseDataConnect.getAllPeople() =
+      IdentityQueryRef(
+          dataConnect = this,
+          operationName = "getAllPeople",
+          operationSet = "ops",
+          revision = "42",
+          variables = emptyMap()
+        )
+        .execute()
+
+    fun Map<*, *>.assertEqualsGetPersonResponse(name: String, age: Double?) {
+      assertThat(keys).containsExactly("person")
+      get("person").let {
+        assertThat(it).isInstanceOf(Map::class.java)
+        (it as Map<*, *>).let { assertThat(it).containsExactly("name", name, "age", age) }
+      }
+    }
+
+    data class IdNameAgeTuple(val id: Any?, val name: Any?, val age: Any?)
+
+    fun Map<*, *>.assertEqualsGetPeopleResponse(vararg entries: IdNameAgeTuple) {
+      assertThat(keys).containsExactly("people")
+      get("people").let {
+        assertThat(it).isInstanceOf(List::class.java)
+        val actualPeople =
+          (it as Iterable<*>).mapIndexed { index, entry ->
+            assertWithMessage("people[$index]").that(entry).isInstanceOf(Map::class.java)
+            (entry as Map<*, *>).let {
+              assertWithMessage("people[$index].keys")
+                .that(it.keys)
+                .containsExactly("id", "name", "age")
+              IdNameAgeTuple(id = it["id"], name = it["name"], age = it["age"])
+            }
+          }
+        assertThat(actualPeople).containsExactlyElementsIn(entries)
+      }
+    }
+
+    val dataConnect = dataConnectFactory.newInstance()
+
+    runBlocking {
+      dataConnect.installEmulatorSchema("testing_graphql_schemas/person")
+
+      dataConnect.createPerson(id = "TestId1", name = "TestName1")
+      dataConnect.createPerson(id = "TestId2", name = "TestName2", age = 999)
+
+      dataConnect
+        .getPerson(id = "TestId1")
+        .assertEqualsGetPersonResponse(name = "TestName1", age = null)
+      dataConnect
+        .getPerson(id = "TestId2")
+        .assertEqualsGetPersonResponse(name = "TestName2", age = 999.0)
+
+      dataConnect
+        .getAllPeople()
+        .assertEqualsGetPeopleResponse(
+          IdNameAgeTuple(id = "TestId1", name = "TestName1", age = null),
+          IdNameAgeTuple(id = "TestId2", name = "TestName2", age = 999.0),
+        )
+    }
   }
+}
+
+private class IdentityQueryRef(
+  dataConnect: FirebaseDataConnect,
+  operationName: String,
+  operationSet: String,
+  revision: String,
+  variables: Map<String, Any?>
+) :
+  QueryRef<Map<String, Any?>, Map<String, Any?>>(
+    dataConnect = dataConnect,
+    operationName = operationName,
+    operationSet = operationSet,
+    revision = revision,
+    variables = variables
+  ) {
+  override val codec =
+    object : Codec<Map<String, Any?>, Map<String, Any?>> {
+      override fun encodeVariables(variables: Map<String, Any?>) = variables
+      override fun decodeResult(map: Map<String, Any?>) = map
+    }
+}
+
+private class IdentityMutationRef(
+  dataConnect: FirebaseDataConnect,
+  operationName: String,
+  operationSet: String,
+  revision: String,
+  variables: Map<String, Any?>
+) :
+  MutationRef<Map<String, Any?>, Map<String, Any?>>(
+    dataConnect = dataConnect,
+    operationName = operationName,
+    operationSet = operationSet,
+    revision = revision,
+    variables = variables
+  ) {
+  override val codec =
+    object : Codec<Map<String, Any?>, Map<String, Any?>> {
+      override fun encodeVariables(variables: Map<String, Any?>) = variables
+      override fun decodeResult(map: Map<String, Any?>) = map
+    }
 }

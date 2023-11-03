@@ -23,8 +23,8 @@ import org.robolectric.RobolectricTestRunner
 class FirebaseDataConnectSettingsTest {
 
   @Test
-  fun `defaultInstance properties should have the expected values`() {
-    FirebaseDataConnectSettings.defaultInstance.apply {
+  fun `defaults properties should have the expected values`() {
+    FirebaseDataConnectSettings.defaults.apply {
       assertThat(hostName).isEqualTo("firestore.googleapis.com")
       assertThat(port).isEqualTo(443)
       assertThat(sslEnabled).isEqualTo(true)
@@ -34,11 +34,10 @@ class FirebaseDataConnectSettingsTest {
   @Test
   fun `builder should be initialized with values from the object given to the constructor`() {
     val settings =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
+      FirebaseDataConnectSettings.defaults.builder.build {
         hostName = "abc123"
         port = 987654321
         sslEnabled = false
-        build()
       }
     settings.builder.apply {
       assertThat(hostName).isEqualTo("abc123")
@@ -49,12 +48,8 @@ class FirebaseDataConnectSettingsTest {
 
   @Test
   fun `builder can change the hostName`() {
-    val defaultSettings = FirebaseDataConnectSettings.defaultInstance
-    val settings =
-      defaultSettings.builder.run {
-        hostName = "abc123"
-        build()
-      }
+    val defaultSettings = FirebaseDataConnectSettings.defaults
+    val settings = defaultSettings.builder.build { hostName = "abc123" }
     settings.apply {
       assertThat(hostName).isEqualTo("abc123")
       assertThat(port).isEqualTo(defaultSettings.port)
@@ -64,12 +59,8 @@ class FirebaseDataConnectSettingsTest {
 
   @Test
   fun `builder can change the port`() {
-    val defaultSettings = FirebaseDataConnectSettings.defaultInstance
-    val settings =
-      defaultSettings.builder.run {
-        port = 987654321
-        build()
-      }
+    val defaultSettings = FirebaseDataConnectSettings.defaults
+    val settings = defaultSettings.builder.build { port = 987654321 }
     settings.apply {
       assertThat(hostName).isEqualTo(defaultSettings.hostName)
       assertThat(port).isEqualTo(987654321)
@@ -79,12 +70,8 @@ class FirebaseDataConnectSettingsTest {
 
   @Test
   fun `builder can change the sslEnabled`() {
-    val defaultSettings = FirebaseDataConnectSettings.defaultInstance
-    val settings =
-      defaultSettings.builder.run {
-        sslEnabled = !defaultSettings.sslEnabled
-        build()
-      }
+    val defaultSettings = FirebaseDataConnectSettings.defaults
+    val settings = defaultSettings.builder.build { sslEnabled = !defaultSettings.sslEnabled }
     settings.apply {
       assertThat(hostName).isEqualTo(defaultSettings.hostName)
       assertThat(port).isEqualTo(defaultSettings.port)
@@ -94,7 +81,7 @@ class FirebaseDataConnectSettingsTest {
 
   @Test
   fun `connectToEmulator() should set the correct values`() {
-    FirebaseDataConnectSettings.defaultInstance.builder.apply {
+    FirebaseDataConnectSettings.defaults.builder.apply {
       connectToEmulator()
       assertThat(hostName).isEqualTo("10.0.2.2")
       assertThat(port).isEqualTo(9510)
@@ -105,19 +92,19 @@ class FirebaseDataConnectSettingsTest {
   @Test
   @Suppress("ReplaceCallWithBinaryOperator")
   fun `equals() should return true for same instance`() {
-    val settings = FirebaseDataConnectSettings.defaultInstance
+    val settings = FirebaseDataConnectSettings.defaults
     assertThat(settings.equals(settings)).isTrue()
   }
 
   @Test
   fun `equals() should return false for null`() {
-    val settings = FirebaseDataConnectSettings.defaultInstance
+    val settings = FirebaseDataConnectSettings.defaults
     assertThat(settings.equals(null)).isFalse()
   }
 
   @Test
   fun `equals() should return false for a different type`() {
-    val settings = FirebaseDataConnectSettings.defaultInstance
+    val settings = FirebaseDataConnectSettings.defaults
     assertThat(settings.equals("an instance of a different class")).isFalse()
   }
 
@@ -125,18 +112,16 @@ class FirebaseDataConnectSettingsTest {
   @Suppress("ReplaceCallWithBinaryOperator")
   fun `equals() should return true for distinct instances with the same property values`() {
     val settings1 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
+      FirebaseDataConnectSettings.defaults.builder.build {
         hostName = "abc123"
         port = 987654321
         sslEnabled = true
-        build()
       }
     val settings2 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
+      FirebaseDataConnectSettings.defaults.builder.build {
         hostName = "abc123"
         port = 987654321
         sslEnabled = true
-        build()
       }
     // validate the assumption that `settings1` and `settings2` are distinct objects.
     assertThat(settings1).isNotSameInstanceAs(settings2)
@@ -147,18 +132,16 @@ class FirebaseDataConnectSettingsTest {
   @Suppress("ReplaceCallWithBinaryOperator")
   fun `equals() should return false when hostName differs`() {
     val settings1 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
+      FirebaseDataConnectSettings.defaults.builder.build {
         hostName = "abc123"
         port = 987654321
         sslEnabled = true
-        build()
       }
     val settings2 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
+      FirebaseDataConnectSettings.defaults.builder.build {
         hostName = "zzzzzz"
         port = 987654321
         sslEnabled = true
-        build()
       }
     assertThat(settings1.equals(settings2)).isFalse()
   }
@@ -167,18 +150,16 @@ class FirebaseDataConnectSettingsTest {
   @Suppress("ReplaceCallWithBinaryOperator")
   fun `equals() should return false when port differs`() {
     val settings1 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
+      FirebaseDataConnectSettings.defaults.builder.build {
         hostName = "abc123"
         port = 987654321
         sslEnabled = true
-        build()
       }
     val settings2 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
+      FirebaseDataConnectSettings.defaults.builder.build {
         hostName = "abc123"
         port = -1
         sslEnabled = true
-        build()
       }
     assertThat(settings1.equals(settings2)).isFalse()
   }
@@ -187,43 +168,39 @@ class FirebaseDataConnectSettingsTest {
   @Suppress("ReplaceCallWithBinaryOperator")
   fun `equals() should return false when sslEnabled differs`() {
     val settings1 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
+      FirebaseDataConnectSettings.defaults.builder.build {
         hostName = "abc123"
         port = 987654321
         sslEnabled = true
-        build()
       }
     val settings2 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
+      FirebaseDataConnectSettings.defaults.builder.build {
         hostName = "abc123"
         port = 987654321
         sslEnabled = false
-        build()
       }
     assertThat(settings1.equals(settings2)).isFalse()
   }
 
   @Test
   fun `hashCode() should return the same value when invoked on the same object`() {
-    val settings = FirebaseDataConnectSettings.defaultInstance
+    val settings = FirebaseDataConnectSettings.defaults
     assertThat(settings.hashCode()).isEqualTo(settings.hashCode())
   }
 
   @Test
   fun `hashCode() should return the same value when invoked on a distinct, but equal object`() {
     val settings1 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
+      FirebaseDataConnectSettings.defaults.builder.build {
         hostName = "abc123"
         port = 987654321
         sslEnabled = true
-        build()
       }
     val settings2 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
+      FirebaseDataConnectSettings.defaults.builder.build {
         hostName = "abc123"
         port = 987654321
         sslEnabled = true
-        build()
       }
     // validate the assumption that `settings1` and `settings2` are distinct objects.
     assertThat(settings1).isNotSameInstanceAs(settings2)
@@ -232,84 +209,36 @@ class FirebaseDataConnectSettingsTest {
 
   @Test
   fun `hashCode() should return the different values when hostName differs`() {
-    val settings1 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
-        hostName = "abc123"
-        build()
-      }
-    val settings2 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
-        hostName = "xyz987"
-        build()
-      }
+    val settings1 = FirebaseDataConnectSettings.defaults.builder.build { hostName = "abc123" }
+    val settings2 = FirebaseDataConnectSettings.defaults.builder.build { hostName = "xyz987" }
     assertThat(settings1.hashCode()).isNotEqualTo(settings2.hashCode())
   }
 
   @Test
   fun `hashCode() should return the different values when port differs`() {
-    val settings1 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
-        port = 987
-        build()
-      }
-    val settings2 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
-        port = 123
-        build()
-      }
+    val settings1 = FirebaseDataConnectSettings.defaults.builder.build { port = 987 }
+    val settings2 = FirebaseDataConnectSettings.defaults.builder.build { port = 123 }
     assertThat(settings1.hashCode()).isNotEqualTo(settings2.hashCode())
   }
 
   @Test
   fun `hashCode() should return the different values when sslEnabled differs`() {
-    val settings1 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
-        sslEnabled = true
-        build()
-      }
-    val settings2 =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
-        sslEnabled = false
-        build()
-      }
+    val settings1 = FirebaseDataConnectSettings.defaults.builder.build { sslEnabled = true }
+    val settings2 = FirebaseDataConnectSettings.defaults.builder.build { sslEnabled = false }
     assertThat(settings1.hashCode()).isNotEqualTo(settings2.hashCode())
   }
 
   @Test
   fun `toString() should return a string that contains the property values`() {
     val settings =
-      FirebaseDataConnectSettings.defaultInstance.builder.run {
+      FirebaseDataConnectSettings.defaults.builder.build {
         hostName = "abc123"
         port = 987654321
         sslEnabled = true
-        build()
       }
     val toStringResult = settings.toString()
     assertThat(toStringResult).containsMatch("hostName=abc123\\W")
     assertThat(toStringResult).containsMatch("port=987654321\\W")
     assertThat(toStringResult).containsMatch("sslEnabled=true\\W")
-  }
-
-  @Test
-  fun `dataConnectSettings() should use the default values`() {
-    dataConnectSettings {
-      assertThat(hostName).isEqualTo(FirebaseDataConnectSettings.defaultInstance.hostName)
-      assertThat(port).isEqualTo(FirebaseDataConnectSettings.defaultInstance.port)
-      assertThat(sslEnabled).isEqualTo(FirebaseDataConnectSettings.defaultInstance.sslEnabled)
-    }
-  }
-
-  @Test
-  fun `dataConnectSettings() should create an object that uses the specified values`() {
-    val settings = dataConnectSettings {
-      hostName = "abc123"
-      port = 987654321
-      sslEnabled = false
-    }
-    settings.apply {
-      assertThat(hostName).isEqualTo("abc123")
-      assertThat(port).isEqualTo(987654321)
-      assertThat(sslEnabled).isEqualTo(false)
-    }
   }
 }

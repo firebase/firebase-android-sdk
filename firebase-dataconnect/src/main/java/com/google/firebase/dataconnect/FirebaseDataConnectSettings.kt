@@ -28,10 +28,14 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
     get() = Builder(this)
 
   companion object {
-    val defaultInstance
+    val defaults
       get() =
         FirebaseDataConnectSettings(
-          SettingsValues(hostName = "firestore.googleapis.com", port = 443, sslEnabled = true)
+          SettingsValues(
+            hostName = "firestore.googleapis.com",
+            port = 443,
+            sslEnabled = true,
+          )
         )
   }
 
@@ -46,10 +50,16 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
       sslEnabled = false
     }
 
-    fun build() =
+    fun build(): FirebaseDataConnectSettings =
       FirebaseDataConnectSettings(
-        SettingsValues(hostName = hostName, port = port, sslEnabled = sslEnabled)
+        SettingsValues(
+          hostName = hostName,
+          port = port,
+          sslEnabled = sslEnabled,
+        )
       )
+
+    fun build(block: Builder.() -> Unit): FirebaseDataConnectSettings = apply(block).build()
   }
 
   override fun equals(other: Any?) =
@@ -64,11 +74,12 @@ class FirebaseDataConnectSettings private constructor(private val values: Settin
   override fun hashCode() = values.hashCode()
 
   override fun toString() =
-    "FirebaseDataConnectSettings{hostName=$hostName, port=$port, sslEnabled=$sslEnabled}"
+    "FirebaseDataConnectSettings{" +
+      "hostName=$hostName, " +
+      "port=$port, " +
+      "sslEnabled=$sslEnabled" +
+      "}"
 }
-
-inline fun dataConnectSettings(block: FirebaseDataConnectSettings.Builder.() -> Unit) =
-  FirebaseDataConnectSettings.defaultInstance.builder.apply(block).build()
 
 // Use a data class internally to store the settings to get the convenience of the equals(),
 // hashCode(), and copy() auto-generated methods.

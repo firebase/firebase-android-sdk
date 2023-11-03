@@ -13,19 +13,36 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-import java.util.Objects
+import kotlinx.coroutines.flow.Flow
 
-open class QueryRef
-constructor(val revision: String, val operationSet: String, val operationName: String) {
+abstract class QueryRef<VariablesType, ResultType>(
+  dataConnect: FirebaseDataConnect,
+  operationName: String,
+  operationSet: String,
+  revision: String,
+  variables: VariablesType
+) :
+  BaseRef<VariablesType, ResultType>(
+    dataConnect = dataConnect,
+    operationName = operationName,
+    operationSet = operationSet,
+    revision = revision,
+    variables = variables
+  ) {
+  private val subscription: QuerySubscription<VariablesType, ResultType> by lazy {
+    QuerySubscription(this)
+  }
 
-  override fun equals(other: Any?) =
-    other is QueryRef &&
-      revision == other.revision &&
-      operationSet == other.operationSet &&
-      operationName == other.operationName
+  val lastResult: Result<ResultType>?
+    get() = subscription.lastResult
 
-  override fun hashCode() = Objects.hash(revision, operationSet, operationName)
+  override suspend fun execute(): ResultType = dataConnect.executeQuery(this)
 
-  override fun toString() =
-    "QueryRef{revision=$revision, operationSet=$operationSet operationName=$operationName}"
+  fun subscribe(): Flow<Result<ResultType>> = subscription.subscribe()
+
+  fun reload(): Unit = subscription.reload()
+
+  override fun onUpdate() {
+    reload()
+  }
 }

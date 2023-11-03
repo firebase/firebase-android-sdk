@@ -18,9 +18,11 @@ import com.google.android.gms.security.ProviderInstaller
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import com.google.protobuf.listValue
 import com.google.protobuf.struct
 import com.google.protobuf.value
 import google.internal.firebase.firemat.v0.DataServiceGrpcKt.DataServiceCoroutineStub
+import google.internal.firebase.firemat.v0.DataServiceOuterClass.GraphqlError
 import google.internal.firebase.firemat.v0.executeMutationRequest
 import google.internal.firebase.firemat.v0.executeQueryRequest
 import io.grpc.ManagedChannel
@@ -83,14 +85,18 @@ internal class DataConnectGrpcClient(
 
   private val grpcStub: DataServiceCoroutineStub by lazy { DataServiceCoroutineStub(grpcChannel) }
 
+  data class ExecuteQueryResult(val data: Map<String, Any?>, val errors: List<GraphqlError>)
+
+  data class ExecuteMutationResult(val data: Map<String, Any?>, val errors: List<GraphqlError>)
+
   suspend fun executeQuery(
-    revision: String,
     operationSet: String,
     operationName: String,
+    revision: String,
     variables: Map<String, Any?>
-  ): Struct {
+  ): ExecuteQueryResult {
     val request = executeQueryRequest {
-      this.name = name(revision, operationSet)
+      this.name = name(operationSet = operationSet, revision = revision)
       this.operationName = operationName
       this.variables = structFromMap(variables)
     }
@@ -98,27 +104,31 @@ internal class DataConnectGrpcClient(
     logger.debug { "executeQuery() sending request: $request" }
     val response = grpcStub.executeQuery(request)
     logger.debug { "executeQuery() got response: $response" }
-    return response.data
+    return ExecuteQueryResult(
+      data = mapFromStruct(response.data),
+      errors = response.errorsList,
+    )
   }
 
   suspend fun executeMutation(
-    revision: String,
     operationSet: String,
     operationName: String,
+    revision: String,
     variables: Map<String, Any?>
-  ): Struct {
+  ): ExecuteMutationResult {
     val request = executeMutationRequest {
-      this.name = name(revision, operationSet)
+      this.name = name(operationSet = operationSet, revision = revision)
       this.operationName = operationName
-      this.variables = struct {
-        this.fields.put("data", value { structValue = structFromMap(variables) })
-      }
+      this.variables = structFromMap(variables)
     }
 
     logger.debug { "executeMutation() sending request: $request" }
     val response = grpcStub.executeMutation(request)
     logger.debug { "executeMutation() got response: $response" }
-    return response.data
+    return ExecuteMutationResult(
+      data = mapFromStruct(response.data),
+      errors = response.errorsList,
+    )
   }
 
   override fun toString(): String {
@@ -133,26 +143,50 @@ internal class DataConnectGrpcClient(
     logger.debug { "close() done" }
   }
 
-  private fun name(revision: String, operationSet: String): String =
+  private fun name(operationSet: String, revision: String): String =
     "projects/$projectId/locations/$location/services/$service/" +
       "operationSets/$operationSet/revisions/$revision"
 }
 
-private fun structFromMap(map: Map<String, Any?>): Struct =
-  Struct.newBuilder().run {
-    map.keys.sorted().forEach { key -> putFields(key, protoValueFromObject(map[key])) }
-    build()
+private fun mapFromStruct(struct: Struct): Map<String, Any?> =
+  struct.fieldsMap.mapValues { objectFromStructValue(it.value) }
+
+private fun objectFromStructValue(struct: Value): Any? =
+  struct.run {
+    when (kindCase) {
+      Value.KindCase.NULL_VALUE -> null
+      Value.KindCase.BOOL_VALUE -> boolValue
+      Value.KindCase.NUMBER_VALUE -> numberValue
+      Value.KindCase.STRING_VALUE -> stringValue
+      Value.KindCase.LIST_VALUE -> listValue.valuesList.map { objectFromStructValue(it) }
+      Value.KindCase.STRUCT_VALUE -> mapFromStruct(structValue)
+      else -> throw IllegalArgumentException("unsupported Struct kind: $kindCase")
+    }
   }
 
-private fun protoValueFromObject(obj: Any?): Value =
-  Value.newBuilder()
-    .run {
-      when (obj) {
-        null -> setNullValue(NullValue.NULL_VALUE)
-        is String -> setStringValue(obj)
-        is Boolean -> setBoolValue(obj)
-        is Double -> setNumberValue(obj)
-        else -> throw IllegalArgumentException("unsupported value type: ${obj::class}")
-      }
-    }
-    .build()
+private fun structFromMap(map: Map<String, Any?>) = struct {
+  map.keys.sorted().forEach { key -> fields.put(key, valueFromObject(map[key])) }
+}
+
+private fun valueFromObject(obj: Any?): Value = value {
+  when (obj) {
+    null -> nullValue = NullValue.NULL_VALUE
+    is String -> stringValue = obj
+    is Boolean -> boolValue = obj
+    is Int -> numberValue = obj.toDouble()
+    is Double -> numberValue = obj
+    is Map<*, *> ->
+      structValue =
+        obj.let {
+          struct {
+            it.forEach { entry ->
+              val key = entry.key as? String ?: error("unsupported map key: $entry.key")
+              fields.put(key, valueFromObject(entry.value))
+            }
+          }
+        }
+    is Iterable<*> ->
+      listValue = obj.let { listValue { it.forEach { values.add(valueFromObject(it)) } } }
+    else -> throw IllegalArgumentException("unsupported value type: ${obj::class}")
+  }
+}

@@ -13,104 +13,173 @@
 // limitations under the License.
 package com.google.firebase.dataconnect
 
-import com.google.protobuf.Struct
-import java.io.Closeable
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 
-/**
- * Manages a subscription to a query.
- *
- * This class is entirely thread-safe. It is completely safe to call any methods, get any property,
- * or set any settable property concurrently from multiple threads.
- */
-interface QuerySubscription : Closeable {
+internal class QuerySubscription<VariablesType, ResultType>
+internal constructor(internal val query: QueryRef<VariablesType, ResultType>) {
+  // TODO: Call `coroutineScope.cancel()` when this object is no longer needed.
+  internal val coroutineScope =
+    CoroutineScope(
+      query.dataConnect.coroutineScope.coroutineContext.let {
+        it + SupervisorJob(it.job) + CoroutineName("QuerySubscriptionImpl")
+      }
+    )
 
-  /** The `FirebaseDataConnect` instance that this object uses. */
-  val dataConnect: FirebaseDataConnect
+  private val eventLoop = QuerySubscriptionEventLoop(this)
 
-  /** The query that is executed by this subscription. */
-  val query: QueryRef
+  val lastResult: Result<ResultType>?
+    get() = eventLoop.lastResult.get()
 
-  /** Returns whether this object has been closed. */
-  val isClosed: Boolean
+  fun reload() = eventLoop.reload()
 
-  /**
-   * Creates and returns a channel to which events from this query subscription are sent.
-   *
-   * This property returns a new object each time it is accessed. Each access is equivalent to
-   * calling [sendTo] with a new [Channel] opened in [Channel.CONFLATED] mode. For greater control
-   * over the semantics of the channel, call [sendTo] directly.
-   */
-  val channel: ReceiveChannel<QueryResult>
+  fun subscribe() =
+    channelFlow {
+        eventLoop.registerSendChannel(channel)
+        awaitClose { eventLoop.unregisterSendChannel(channel) }
+      }
+      .buffer(Channel.UNLIMITED)
 
-  /**
-   * The variables used when the query is executed.
-   *
-   * When this property is set, a _copy_ of the given map is made and stored internally. Therefore,
-   * any changes to the given map after setting this property have no effect on this object.
-   *
-   * Setting this property will cause the underlying query to be re-executed with the new variables,
-   * as if [reload] had been called. As a result, if the variables are set after this object is
-   * closed then the query is, in fact, _not_ re-executed (the same as [reload]).
-   */
-  var variables: Map<String, Any?>
-
-  /**
-   * Forcefully re-executes the query and posts the result to all associated channels.
-   *
-   * If no channels are registered then this method does nothing and returns as if successful.
-   *
-   * If this object is closed, then this method does nothing and returns as if successful.
-   */
-  fun reload()
-
-  /**
-   * Registers a channel to have events sent to it.
-   *
-   * The first invocation of this method triggers actual execution of the query. The result of the
-   * query execution is sent to each registered channel concurrently.
-   *
-   * All subsequent invocations of this method immediately deliver the result most recently sent to
-   * previously-registered channels.
-   *
-   * The given channel will be closed when this object is closed by a call to [close]. If this
-   * method is invoked _after_ this object is already closed then the given channel will immediately
-   * be closed.
-   *
-   * If the given channel is already registered then it will be registered again and will have each
-   * event sent to it multiple times, once per registration. That is, this method does _not_ check
-   * for duplicates. In order to completely unregister a channel, a matching number of
-   * [stopSendingTo] invocations are required.
-   */
-  fun sendTo(channel: SendChannel<QueryResult>)
-
-  /**
-   * Unregisters a channel from having events sent to it.
-   *
-   * If the given channel is not currently registered then this method does nothing and returns as
-   * if successful.
-   *
-   * If this object is closed then this method does nothing and returns as if successful.
-   */
-  fun stopSendingTo(channel: SendChannel<QueryResult>)
-
-  /**
-   * Closes this object.
-   *
-   * All channels currently-registered via [sendTo] will be closed by invoking their
-   * [SendChannel.close] method.
-   *
-   * If this object is already closed then this method does nothing. If another thread is
-   * concurrently invoking this method then this invocation will block, waiting for the other to
-   * complete the close operation.
-   */
-  override fun close()
+  init {
+    coroutineScope.launch { eventLoop.run() }
+  }
 }
 
-sealed interface QueryResult
+private class QuerySubscriptionEventLoop<VariablesType, ResultType>(
+  private val subscription: QuerySubscription<VariablesType, ResultType>
+) {
 
-class SuccessQueryResult(val data: Struct) : QueryResult
+  val lastResult = AtomicReference<Result<ResultType>>()
 
-class FailedQueryResult(val errors: List<String>) : QueryResult
+  private val running = AtomicBoolean(false)
+  private val eventChannel = Channel<Event>(Channel.UNLIMITED)
+  private val registeredSendChannels = mutableListOf<SendChannel<Result<ResultType>>>()
+  private var reloadJob: Job? = null
+  private var pendingReload = false
+
+  suspend fun run() {
+    if (!running.compareAndSet(false, true)) {
+      throw IllegalStateException("run() has already been invoked")
+    }
+
+    try {
+      for (event in eventChannel) {
+        processEvent(event)
+      }
+    } finally {
+      registeredSendChannels.clear()
+      reloadJob = null
+    }
+  }
+
+  fun registerSendChannel(channel: SendChannel<Result<ResultType>>) {
+    eventChannel.trySend(RegisterSendChannelEvent(channel))
+  }
+
+  fun unregisterSendChannel(channel: SendChannel<Result<ResultType>>) {
+    eventChannel.trySend(UnregisterSendChannelEvent(channel))
+  }
+
+  fun reload() {
+    eventChannel.trySend(ReloadEvent)
+  }
+
+  private fun processEvent(event: Event): Unit =
+    when (event) {
+      is RegisterSendChannelEvent -> processRegisterSendChannelEvent(event)
+      is UnregisterSendChannelEvent -> processUnregisterSendChannelEvent(event)
+      is ReloadEvent -> processReloadEvent()
+      is ResultEvent -> processResultEvent(event)
+    }
+
+  private fun processRegisterSendChannelEvent(event: RegisterSendChannelEvent) {
+    registeredSendChannels.add(event.typedChannel())
+
+    lastResult.get().also {
+      if (it != null) {
+        event.typedChannel<Result<ResultType>>().trySend(it)
+      } else if (reloadJob == null) {
+        processReloadEvent()
+      }
+    }
+  }
+
+  private fun processUnregisterSendChannelEvent(event: UnregisterSendChannelEvent) {
+    registeredSendChannels.listIterator().let {
+      while (it.hasNext()) {
+        if (it.next() === event.channel) {
+          it.remove()
+          break
+        }
+      }
+    }
+  }
+
+  private fun processReloadEvent() {
+    if (reloadJob?.isActive == true) {
+      pendingReload = true
+      return
+    }
+
+    reloadJob =
+      subscription.coroutineScope.launch {
+        val result =
+          try {
+            Result.success(subscription.query.execute())
+          } catch (e: Throwable) {
+            Result.failure(e)
+          }
+
+        eventChannel.trySend(ResultEvent(result))
+      }
+  }
+
+  private fun processResultEvent(event: ResultEvent) {
+    if (pendingReload) {
+      pendingReload = false
+      reload()
+    }
+
+    lastResult.set(event.typedResult())
+
+    registeredSendChannels.iterator().let {
+      while (it.hasNext()) {
+        val sendResult = it.next().trySend(event.typedResult())
+        if (sendResult.isClosed) {
+          it.remove()
+        }
+      }
+    }
+  }
+
+  private sealed interface Event
+  private object ReloadEvent : Event
+
+  private sealed class SendChannelEvent(val channel: SendChannel<*>) : Event {
+    @Suppress("UNCHECKED_CAST")
+    fun <T> typedChannel(): SendChannel<T> {
+      return channel as SendChannel<T>
+    }
+  }
+
+  private class RegisterSendChannelEvent(channel: SendChannel<*>) : SendChannelEvent(channel)
+  private class UnregisterSendChannelEvent(channel: SendChannel<*>) : SendChannelEvent(channel)
+
+  private class ResultEvent(val result: Result<*>) : Event {
+    @Suppress("UNCHECKED_CAST")
+    fun <T> typedResult(): Result<T> {
+      return result as Result<T>
+    }
+  }
+}

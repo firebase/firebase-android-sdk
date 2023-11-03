@@ -16,24 +16,25 @@ package com.google.firebase.dataconnect
 import android.util.Log
 import java.util.concurrent.atomic.AtomicInteger
 
-interface Logger {
+enum class LogLevel {
+  DEBUG,
+  INFO,
+  WARNING,
+}
+
+@Volatile var logLevel: LogLevel = LogLevel.INFO
+
+internal interface Logger {
   val id: String
 
   fun info(message: () -> Any?)
   fun debug(message: () -> Any?)
   fun warn(message: () -> Any?)
   fun warn(e: Throwable?, message: () -> Any?)
-
-  enum class Level {
-    DEBUG,
-    INFO,
-    WARNING,
-  }
 }
 
-@Volatile var logLevel: Logger.Level = Logger.Level.INFO
-
-fun Logger(name: String): Logger = LoggerImpl(name = name, idInt = nextLoggerId.getAndIncrement())
+internal fun Logger(name: String): Logger =
+  LoggerImpl(name = name, idInt = nextLoggerId.getAndIncrement())
 
 private const val LOG_TAG = "FirebaseDataConnect"
 
@@ -42,29 +43,29 @@ private const val LOG_TAG = "FirebaseDataConnect"
 // in logs due to the "uniqueness" of their first 4 digits.
 private val nextLoggerId = AtomicInteger(0x591F0000)
 
-private fun isLogEnabledFor(level: Logger.Level) =
+private fun isLogEnabledFor(level: LogLevel) =
   when (logLevel) {
-    Logger.Level.DEBUG ->
+    LogLevel.DEBUG ->
       when (level) {
-        Logger.Level.DEBUG -> true
-        Logger.Level.INFO -> true
-        Logger.Level.WARNING -> true
+        LogLevel.DEBUG -> true
+        LogLevel.INFO -> true
+        LogLevel.WARNING -> true
       }
-    Logger.Level.INFO ->
+    LogLevel.INFO ->
       when (level) {
-        Logger.Level.DEBUG -> false
-        Logger.Level.INFO -> true
-        Logger.Level.WARNING -> true
+        LogLevel.DEBUG -> false
+        LogLevel.INFO -> true
+        LogLevel.WARNING -> true
       }
-    Logger.Level.WARNING ->
+    LogLevel.WARNING ->
       when (level) {
-        Logger.Level.DEBUG -> false
-        Logger.Level.INFO -> false
-        Logger.Level.WARNING -> true
+        LogLevel.DEBUG -> false
+        LogLevel.INFO -> false
+        LogLevel.WARNING -> true
       }
   }
 
-private fun runIfLogEnabled(level: Logger.Level, block: () -> Unit) {
+private fun runIfLogEnabled(level: LogLevel, block: () -> Unit) {
   if (isLogEnabledFor(level)) {
     block()
   }
@@ -87,13 +88,13 @@ private class LoggerImpl(private val name: String, private val idInt: Int) : Log
     }
 
   override fun info(message: () -> Any?) =
-    runIfLogEnabled(Logger.Level.INFO) { Log.i(LOG_TAG, "$id ${message()}") }
+    runIfLogEnabled(LogLevel.INFO) { Log.i(LOG_TAG, "$id ${message()}") }
 
   override fun debug(message: () -> Any?) =
-    runIfLogEnabled(Logger.Level.DEBUG) { Log.d(LOG_TAG, "$id ${message()}") }
+    runIfLogEnabled(LogLevel.DEBUG) { Log.d(LOG_TAG, "$id ${message()}") }
 
   override fun warn(message: () -> Any?) = warn(null, message)
 
   override fun warn(e: Throwable?, message: () -> Any?) =
-    runIfLogEnabled(Logger.Level.WARNING) { Log.w(LOG_TAG, "$id ${message()}", e) }
+    runIfLogEnabled(LogLevel.WARNING) { Log.w(LOG_TAG, "$id ${message()}", e) }
 }

@@ -1,0 +1,69 @@
+// Adapted from http://google3/firebase/firemat/emulator/server/api/emulator_service.proto;rcl=578315096
+
+// API protos for the FireMAT Emulator Service.
+
+syntax = "proto3";
+
+package firemat.emulator.server.api;
+
+import "google/internal/firebase/firematdata/v0/data_service.proto";
+import "google/protobuf/empty.proto";
+
+service EmulatorService {
+  // Surfaces GQL parsing errors.
+  rpc GetCompileErrors(GetCompileErrorsRequest) returns (GetCompileErrorsResponse) {
+  }
+
+  // Sets up a lightweight dummy engine instance.
+  rpc SetupSchema(SetupSchemaRequest) returns (google.protobuf.Empty) {
+  }
+}
+
+message GetCompileErrorsRequest {
+  // Relative path to document being compiled from the firemat.yaml location.
+  string document_path = 1;
+
+  // This is the `{service}` portion of the schema resource name of
+  // `projects/{project}/locations/{location}/services/{service}/schemas/{schema}`
+  // in production APIs. If left empty, this defaults to `local`
+  string service_id = 2;
+}
+
+message GetCompileErrorsResponse {
+  repeated google.internal.firebase.firemat.v0.GraphqlError errors = 1;
+}
+
+message SetupSchemaRequest {
+  // This is the `{service}` portion of the schema resource name of
+  // `projects/{project}/locations/{location}/services/{service}/schemas/{schema}`
+  // in production APIs.
+  string service_id = 1;
+
+  // Each service can have a single schema, named "main".
+  Source schema = 2;
+
+  // Mapping of operation set name to operation set source.
+  map<string, Source> operation_sets = 3;
+}
+
+// The below resources should stay in line with the control plane protos found
+// here:
+// http://google3/google/firebase/dataconnect/v1main/resources.proto;l=395-416;rcl=577941647
+
+// Used to represent a set of source files.
+message Source {
+  // The files that comprise the source set.
+  repeated File files = 1;
+}
+
+// Individual files.
+message File {
+  // The file name including folder path, if applicable. The path should be
+  // relative to a local workspace (e.g. schema/*.gql) and not an absolute path
+  // (e.g. /some/absolute/path/config/schema/*.gql).
+  string path = 1;
+
+  // The file's textual content. There is a 1 MB size limit on the file contents
+  // (to match server control plane limits).
+  string content = 2;
+}
