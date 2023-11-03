@@ -26,6 +26,9 @@ public abstract class LogEvent {
   @Nullable
   public abstract Integer getEventCode();
 
+  @Nullable
+  public abstract ComplianceData getComplianceData();
+
   public abstract long getEventUptimeMs();
 
   @SuppressWarnings("mutable")
@@ -62,6 +65,9 @@ public abstract class LogEvent {
 
     @NonNull
     public abstract Builder setEventCode(@Nullable Integer value);
+
+    @NonNull
+    public abstract Builder setComplianceData(@Nullable ComplianceData value);
 
     @NonNull
     public abstract Builder setEventUptimeMs(long value);

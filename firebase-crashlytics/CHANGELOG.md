@@ -1,5 +1,15 @@
 # Unreleased
+* [changed] Include more details about app processes in reports.
 
+# 18.5.1
+* [fixed] Internal improvement to fix compatibility with Flutter and Unity SDKs. Github
+  [#10759](https://github.com/firebase/flutterfire/issues/10759)
+
+
+## Kotlin
+The Kotlin extensions library transitively includes the updated
+`firebase-crashlytics` library. The Kotlin extensions library has no additional
+updates.
 
 # 18.5.0
 * [changed] Added Kotlin extensions (KTX) APIs from `com.google.firebase:firebase-crashlytics-ktx`
@@ -12,8 +22,6 @@
   now deprecated. As early as April 2024, we'll no longer release KTX modules. For details, see the
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration)
 
-* [fixed] Fixed Flutter and Unity on-demand fatal `setUserIdentifier` behaviour. Github
-  [#10759](https://github.com/firebase/flutterfire/issues/10759)
 
 ## Kotlin
 The Kotlin extensions library transitively includes the updated
