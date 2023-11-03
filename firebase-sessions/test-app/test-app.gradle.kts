@@ -1,8 +1,3 @@
-@file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
-
-import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension
-import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
-
 /*
  * Copyright 2023 Google LLC
  *
@@ -18,6 +13,11 @@ import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+@file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
+
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 
 plugins {
   id("com.android.application")
@@ -67,12 +67,10 @@ android {
 
 dependencies {
   if (project.hasProperty("useReleasedVersions")) {
-    val latestReleasedVersion: String by project
-    println("Using sessions released version: $latestReleasedVersion")
-    // TODO(mrober): How to find the released versions of crashlytics and perf?
-    implementation("com.google.firebase:firebase-crashlytics:18.4.3")
-    implementation("com.google.firebase:firebase-perf:20.4.1")
-    implementation("com.google.firebase:firebase-sessions:$latestReleasedVersion")
+    implementation(platform("com.google.firebase:firebase-bom:latest.release"))
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-perf")
+    implementation("com.google.firebase:firebase-sessions")
   } else {
     implementation(project(":firebase-crashlytics")) {
       exclude(group = "com.google.firebase", module = "firebase-sessions")
