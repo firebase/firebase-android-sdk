@@ -16,7 +16,6 @@
 
 package com.google.firebase.sessions
 
-import android.os.Bundle
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.FirebaseApp
@@ -32,9 +31,7 @@ class ProcessDetailsProviderTest {
 
   @Before
   fun before() {
-    val metadata = Bundle()
-    metadata.putDouble("firebase_sessions_sampling_rate", 0.5)
-    firebaseApp = FakeFirebaseApp(metadata).firebaseApp
+    firebaseApp = FakeFirebaseApp().firebaseApp
   }
 
   @After
