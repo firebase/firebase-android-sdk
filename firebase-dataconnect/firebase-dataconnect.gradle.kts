@@ -16,6 +16,7 @@ plugins {
   id("firebase-library")
   id("kotlin-android")
   id("com.google.protobuf")
+  id("org.jetbrains.dokka") version "1.9.10"
 }
 
 firebaseLibrary {
